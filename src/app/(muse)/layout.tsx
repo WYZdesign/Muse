@@ -21,6 +21,8 @@ export const metadata: Metadata = {
 export default function MuseLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
+      <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
+      <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png" />
       <link rel="manifest" href="/manifest.json" />
       <link rel="apple-touch-icon" href="/icons/muse-192.png" />
       <link rel="apple-touch-icon" sizes="180x180" href="/icons/muse-192.png" />
