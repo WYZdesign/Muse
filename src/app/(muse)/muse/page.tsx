@@ -64,8 +64,6 @@ function MusePage() {
   const [discoverSearchOpen, setDiscoverSearchOpen] = useState(false);
   const [savedBriefs, setSavedBriefs] = useState<number[]>([]);
   const [appliedBriefs, setAppliedBriefs] = useState<number[]>([]);
-  const [viewport, setViewport] = useState<number>(390);
-  const [showViewportBar, setShowViewportBar] = useState(true);
   const [showAgeGate, setShowAgeGate] = useState(false);
   const [pendingNsfw, setPendingNsfw] = useState(false);
   const [userTier, setUserTier] = useState<string>("free");
@@ -210,7 +208,8 @@ function MusePage() {
       id: p.id, name: p.name || "Creative", img: p.avatar || "", type: p.type || "artist",
       bio: p.bio || "", loc: p.loc || "Unknown", styles: Array.isArray(p.styles) ? p.styles : [],
       score: 70, nsfw: !!p.show_nsfw, looking: Array.isArray(p.looking) ? p.looking : [],
-      zodiac: p.zodiac || "", chinese: p.chinese || "", mbti: p.mbti || "", lifePath: p.life_path || ""
+      zodiac: p.zodiac || "", chinese: p.chinese || "", mbti: p.mbti || "", lifePath: p.life_path || "",
+      photos: Array.isArray(p.photos) ? p.photos : [], collabs: p.collabs || 0, verified: !!p.verified
     });
     try {
       const [profiles, briefs, feed, forum, events] = await Promise.all([
@@ -441,9 +440,6 @@ function MusePage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setViewport(window.innerWidth >= 820 ? 820 : window.innerWidth >= 430 ? 430 : window.innerWidth >= 390 ? 390 : 360);
-      const h = () => setViewport(window.innerWidth >= 820 ? 820 : window.innerWidth >= 430 ? 430 : window.innerWidth >= 390 ? 390 : 360);
-      window.addEventListener("resize", h);
       const lastReset = localStorage.getItem("muse_last_reset");
       const now = Date.now();
       if (!lastReset || now - parseInt(lastReset) > 86400000) {
@@ -451,7 +447,6 @@ function MusePage() {
         setSuperLikes(3);
         localStorage.setItem("muse_last_reset", String(now));
       }
-      return () => window.removeEventListener("resize", h);
     }
   }, []);
 
@@ -714,18 +709,6 @@ function MusePage() {
       <Confetti active={showConfetti} />
       {swipeDir && <SwipeParticles active dir={swipeDir} />}
       <BackgroundScene flash={screenFlash} />
-      <div className="dt-toggle">
-        {showViewportBar ? (
-          <>
-            {[{l:"S",w:360,t:"Small phone"},{l:"M",w:390,t:"Regular phone"},{l:"L",w:430,t:"Large phone"},{l:"T",w:820,t:"Tablet"}].map(v => (
-              <button key={v.w} className={"dt-btn"+(viewport===v.w?" active":"")} title={v.t} onClick={()=>setViewport(v.w)}>{v.l}</button>
-            ))}
-            <button className="dt-btn dt-hide" title="Hide toolbar" onClick={()=>setShowViewportBar(false)}>x</button>
-          </>
-        ) : (
-          <button className="dt-btn dt-show" title="Viewport toolbar" onClick={()=>setShowViewportBar(true)}>V</button>
-        )}
-      </div>
       {showMatchOverlay && (
         <div className="match-overlay" onClick={() => setShowMatchOverlay(null)}>
           {Array.from({length:40}).map((_,i)=><div key={i} className="confetti-piece" style={{
@@ -1109,8 +1092,8 @@ function MusePage() {
       )}
       {screen === "auth" ? (
         <div className="phone-wrap">
-          <div className="phone" id="muse-app" style={{ width: viewport >= 820 ? Math.min(viewport, 768) : viewport, height: viewport >= 820 ? 1080 : 844, maxWidth: "100%" }}>
-            {viewport < 820 && <div className="notch" />}
+          <div className="phone" id="muse-app">
+            <div className="notch" />
             <div className="screen-el active">
               <div className="onboard" style={{paddingTop:30}}>
                 <div className="sparkle" style={{top:"8%",left:"6%",fontSize:24}}>✦</div>
@@ -1150,8 +1133,8 @@ function MusePage() {
         </div>
       ) : (
 <div className="phone-wrap">
-<div className="phone" id="muse-app" style={{ width: viewport >= 820 ? Math.min(viewport, 768) : viewport, height: viewport >= 820 ? 1080 : 844, maxWidth: "100%" }}>
-{viewport < 820 && <div className="notch" />}
+<div className="phone" id="muse-app">
+<div className="notch" />
             <div className={"screen-el"+(screen==="onboard"?" active":"")}>
               <div className="onboard">
                 {obStep === 0 && (
@@ -1504,52 +1487,59 @@ function MusePage() {
                   {filteredProfiles.slice(currentIdx, currentIdx+3).map((profile, idx) => {
                     const isTop = idx === 0;
                     return (
-                       <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")} style={{zIndex:3-idx,transform:"translateX("+(isTop?dragOffset:0)+"px) scale("+(Math.max(0.92, 1 - idx * 0.04))+")",opacity:isTop?1-dragOpacity*0.3:1}} onPointerDown={isTop?onPointerDown:undefined} onPointerMove={isTop?onPointerMove:undefined} onPointerUp={isTop?onPointerUp:undefined} onPointerCancel={isTop?onPointerUp:undefined}>
-                        <div style={{position:"relative",width:"100%",height:"100%"}}>
-                          <img src={profile.img} alt={profile.name} draggable="false" onError={handleImgError} style={{width:"100%",height:"100%",objectFit:"cover"}} />
-                          <div style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();const p=filteredProfiles[currentIdx];if(p){setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}}} />
-                          <div style={{position:"absolute",right:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();const p=filteredProfiles[currentIdx];if(p){setCurrentPhotoIdx(prev=>{const max=(p as any).photos?.length||1;return Math.min(max-1,prev+1)})}}} />
-                          <div style={{position:"absolute",bottom:10,left:"50%",transform:"translateX(-50%)",display:"flex",gap:6,zIndex:6}}>
-                            {((profile as any).photos?.length > 0 ? (profile as any).photos : [profile.img]).map((_:any,i:number)=><div key={i} style={{width:6,height:6,borderRadius:"50%",background:i===currentPhotoIdx?"var(--gold)":"rgba(255,255,255,0.3)",transition:"all .2s"}} />)}
-                          </div>
-                        </div>
-                        <div className="card-shine" />
-                        <div className="card-gradient" />
-                        <div className="card-border" />
-                        {isTop && dragOffset > 30 && <div style={{position:"absolute",top:40,left:20,fontSize:28,fontWeight:900,color:"#4ade80",border:"4px solid #4ade80",borderRadius:12,padding:"6px 16px",transform:"rotate(-15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>LIKE</div>}
-                        {isTop && dragOffset < -30 && <div style={{position:"absolute",top:40,right:20,fontSize:28,fontWeight:900,color:"#ef4444",border:"4px solid #ef4444",borderRadius:12,padding:"6px 16px",transform:"rotate(15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>NOPE</div>}
-                        {isTop && dragOffset > 150 && <div style={{position:"absolute",top:40,right:20,fontSize:22,fontWeight:900,color:"#818cf8",border:"4px solid #818cf8",borderRadius:12,padding:"6px 16px",transform:"rotate(-15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:2}}>SUPER</div>}
-                        {profile.online && (
-                          <div className="card-online">
-                            <div className="card-online-dot" />
-                            <span className="card-online-text">Online</span>
-                          </div>
-                        )}
-                        <div className="card-info" style={{position:"relative",zIndex:3}}>
-                          {profile.verified && <div className="card-verified">Verified</div>}
-                          {profile.nsfw && <div className="card-nsfw-badge">18+</div>}
-                          <div>
-                            <span className="card-name">{profile.name}</span>
-                            <span className="card-collabs">{profile.collabs} collabs</span>
-                          </div>
-                          <div className="card-type">{profile.type}</div>
-                          <div className="card-bio">{profile.bio}</div>
-                          <div className="card-looking">Looking for: <span>{profile.looking.join(", ")}</span></div>
-                          <div className="tags">{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div>
-                          <div className="match-score">
-                            <div className="score-bar"><div className="score-fill" style={{width:profile.score+"%"}} /></div>
-                            <span className="score-text">{profile.score}%</span>
-                          </div>
-                          {expandedProfile === profile.id ? (
-                            <div style={{animation:"fadeIn .3s ease"}}>
-                              <div className="card-section"><div className="card-section-title">Creative Style</div><div className="card-section-tags">{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div></div>
-                              <div className="card-section"><div className="card-section-title">Personality</div><div className="card-section-tags">{(profile as any).zodiac && <span className="tag">♈ {(profile as any).zodiac}</span>}{(profile as any).mbti && <span className="tag">🧠 {(profile as any).mbti}</span>}{(profile as any).lifePath && <span className="tag">🔮 Path {(profile as any).lifePath}</span>}</div></div>
-                              <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges?.length ? (profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>) : <span style={{fontSize:12,color:"var(--muted)"}}>No badges yet</span>}</div></div>
-                              <button style={{marginTop:8,background:"none",border:"1px solid rgba(255,255,255,0.1)",borderRadius:99,color:"var(--muted)",fontSize:12,padding:"6px 16px",width:"100%",cursor:"pointer"}} onClick={()=>setExpandedProfile(null)}>Show less</button>
+                       <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")+(expandedProfile===profile.id?" expanded":"")} style={{zIndex:3-idx,transform:"translateX("+(isTop?dragOffset:0)+"px) scale("+(Math.max(0.92, 1 - idx * 0.04))+")",opacity:isTop?1-dragOpacity*0.3:1}} onPointerDown={isTop&&expandedProfile!==profile.id?onPointerDown:undefined} onPointerMove={isTop&&expandedProfile!==profile.id?onPointerMove:undefined} onPointerUp={isTop&&expandedProfile!==profile.id?onPointerUp:undefined} onPointerCancel={isTop&&expandedProfile!==profile.id?onPointerUp:undefined}>
+                        <div style={{position:"relative",width:"100%",height:"100%",display:"flex",flexDirection:"column"}}>
+                          <div style={{position:"relative",width:"100%",flex:expandedProfile===profile.id?"0 0 auto":"1 1 auto",minHeight:expandedProfile===profile.id?340:0,overflow:"hidden"}}>
+                            <img src={((profile as any).photos?.length ? (profile as any).photos[currentPhotoIdx] : profile.img) || profile.img} alt={profile.name} draggable="false" onError={handleImgError} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",top:0,left:0}} />
+                            {isTop && expandedProfile!==profile.id && <>
+                              <div style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
+                              <div style={{position:"absolute",right:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();const max=(profile as any).photos?.length||1;setCurrentPhotoIdx(prev=>Math.min(max-1,prev+1))}} />
+                            </>}
+                            <div style={{position:"absolute",bottom:10,left:"50%",transform:"translateX(-50%)",display:"flex",gap:6,zIndex:6}}>
+                              {((profile as any).photos?.length > 0 ? (profile as any).photos : [profile.img]).map((_:any,i:number)=><div key={i} style={{width:i===currentPhotoIdx?18:6,height:6,borderRadius:3,background:i===currentPhotoIdx?"var(--gold)":"rgba(255,255,255,0.3)",transition:"all .2s"}} />)}
                             </div>
-                          ) : (
-                            <button style={{marginTop:8,background:"none",border:"1px solid rgba(255,255,255,0.1)",borderRadius:99,color:"var(--muted)",fontSize:12,padding:"6px 16px",width:"100%",cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();setExpandedProfile(expandedProfile===profile.id?null:profile.id)}}>Show more</button>
-                          )}
+                            <div className="card-shine" />
+                            <div className="card-gradient" />
+                            <div className="card-border" />
+                            {isTop && dragOffset > 30 && <div style={{position:"absolute",top:40,left:20,fontSize:28,fontWeight:900,color:"#4ade80",border:"4px solid #4ade80",borderRadius:12,padding:"6px 16px",transform:"rotate(-15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>LIKE</div>}
+                            {isTop && dragOffset < -30 && <div style={{position:"absolute",top:40,right:20,fontSize:28,fontWeight:900,color:"#ef4444",border:"4px solid #ef4444",borderRadius:12,padding:"6px 16px",transform:"rotate(15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>NOPE</div>}
+                            {isTop && dragOffset > 150 && <div style={{position:"absolute",top:40,right:20,fontSize:22,fontWeight:900,color:"#818cf8",border:"4px solid #818cf8",borderRadius:12,padding:"6px 16px",transform:"rotate(-15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:2}}>SUPER</div>}
+                            {profile.online && (
+                              <div className="card-online">
+                                <div className="card-online-dot" />
+                                <span className="card-online-text">Online</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="card-info" style={{position:"relative",zIndex:3,flex:expandedProfile===profile.id?"0 0 auto":"0 0 auto"}}>
+                            {profile.verified && <div className="card-verified">Verified</div>}
+                            {profile.nsfw && <div className="card-nsfw-badge">18+</div>}
+                            <div>
+                              <span className="card-name">{profile.name}</span>
+                              <span className="card-collabs">{profile.collabs} collabs</span>
+                            </div>
+                            <div className="card-type">{profile.type}</div>
+                            <div className="card-bio">{profile.bio}</div>
+                            <div className="card-looking">Looking for: <span>{profile.looking.join(", ")}</span></div>
+                            <div className="tags">{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div>
+                            <div className="match-score">
+                              <div className="score-bar"><div className="score-fill" style={{width:profile.score+"%"}} /></div>
+                              <span className="score-text">{profile.score}%</span>
+                            </div>
+                            {expandedProfile === profile.id ? (
+                              <div className="card-expanded-scroll">
+                                <div className="card-section"><div className="card-section-title">All Photos</div><div className="card-photo-grid">{((profile as any).photos||[profile.img]).map((p:any,i:number)=><div key={i} className="card-photo-thumb" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}} style={{opacity:i===currentPhotoIdx?1:0.6,border:i===currentPhotoIdx?"2px solid var(--gold)":"2px solid transparent"}}><img src={p} alt="" /></div>)}</div></div>
+                                <div className="card-section"><div className="card-section-title">About</div><div className="card-section-text">{profile.bio}</div></div>
+                                <div className="card-section"><div className="card-section-title">Creative Style</div><div className="card-section-tags">{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div></div>
+                                <div className="card-section"><div className="card-section-title">Personality</div><div className="card-section-tags">{(profile as any).zodiac && <span className="tag">♈ {(profile as any).zodiac}</span>}{(profile as any).chinese && <span className="tag">{(profile as any).chinese}</span>}{(profile as any).mbti && <span className="tag">🧠 {(profile as any).mbti}</span>}{(profile as any).lifePath && <span className="tag">🔮 Path {(profile as any).lifePath}</span>}</div></div>
+                                <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges?.length ? (profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>) : <span style={{fontSize:12,color:"var(--muted)"}}>No badges yet</span>}</div></div>
+                                <div className="card-section"><div className="card-section-title">Location</div><div className="card-section-text">📍 {profile.loc}</div></div>
+                                <button className="card-collapse-btn" onClick={(e)=>{e.stopPropagation();setExpandedProfile(null);setCurrentPhotoIdx(0)}}>▲ Collapse</button>
+                              </div>
+                            ) : (
+                              <button className="card-expand-btn" onClick={(e)=>{e.stopPropagation();setExpandedProfile(profile.id);setCurrentPhotoIdx(0)}}>▼ View full profile</button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -2122,8 +2112,8 @@ function MusePage() {
       {/* SUBSCRIPTION SCREEN */}
       {screen === "subscription" && (
         <div className="phone-wrap">
-          <div className="phone" id="muse-app" style={{ width: viewport >= 820 ? Math.min(viewport, 768) : viewport, height: viewport >= 820 ? 1080 : 844, maxWidth: "100%" }}>
-            {viewport < 820 && <div className="notch" />}
+          <div className="phone" id="muse-app">
+            <div className="notch" />
             <div className="hdr">
               <div className="logo-link">muse</div>
               <button className="hdr-btn" onClick={()=>showScreen("profile")}><FiArrowLeft size={18} /></button>
@@ -2154,8 +2144,8 @@ function MusePage() {
       {/* ─── COMMUNITY SCREEN ─── */}
       {screen==="community" && (
         <div className="phone-wrap">
-          <div className="phone" id="muse-app" style={{ width: viewport >= 820 ? Math.min(viewport, 768) : viewport, height: viewport >= 820 ? 1080 : 844, maxWidth: "100%" }}>
-            {viewport < 820 && <div className="notch" />}
+          <div className="phone" id="muse-app">
+            <div className="notch" />
             <div className="screen-el active">
               <div className="conn-scroll" style={{padding:0}}>
                 <div className="hdr">
@@ -2187,8 +2177,8 @@ function MusePage() {
       {/* ─── EVENTS SCREEN ─── */}
       {screen==="events" && (
         <div className="phone-wrap">
-          <div className="phone" id="muse-app" style={{ width: viewport >= 820 ? Math.min(viewport, 768) : viewport, height: viewport >= 820 ? 1080 : 844, maxWidth: "100%" }}>
-            {viewport < 820 && <div className="notch" />}
+          <div className="phone" id="muse-app">
+            <div className="notch" />
             <div className="screen-el active">
               <div className="conn-scroll" style={{padding:0}}>
                 <div className="hdr">
@@ -2215,8 +2205,8 @@ function MusePage() {
       {/* ─── SESSIONS SCREEN ─── */}
       {screen==="sessions" && (
         <div className="phone-wrap">
-          <div className="phone" id="muse-app" style={{ width: viewport >= 820 ? Math.min(viewport, 768) : viewport, height: viewport >= 820 ? 1080 : 844, maxWidth: "100%" }}>
-            {viewport < 820 && <div className="notch" />}
+          <div className="phone" id="muse-app">
+            <div className="notch" />
             <div className="screen-el active">
               <div className="conn-scroll" style={{padding:0}}>
                 <div className="hdr">
@@ -2250,8 +2240,8 @@ function MusePage() {
       {/* ─── FORUM SCREEN ─── */}
       {screen==="forum" && (
         <div className="phone-wrap">
-          <div className="phone" id="muse-app" style={{ width: viewport >= 820 ? Math.min(viewport, 768) : viewport, height: viewport >= 820 ? 1080 : 844, maxWidth: "100%" }}>
-            {viewport < 820 && <div className="notch" />}
+          <div className="phone" id="muse-app">
+            <div className="notch" />
             <div className="screen-el active">
               <div className="conn-scroll" style={{padding:0}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 16px 0"}}>
@@ -2299,8 +2289,8 @@ function MusePage() {
       {/* SETTINGS SCREEN */}
       {screen === "settings" && (
         <div className="phone-wrap">
-          <div className="phone" id="muse-app" style={{ width: viewport >= 820 ? Math.min(viewport, 768) : viewport, height: viewport >= 820 ? 1080 : 844, maxWidth: "100%" }}>
-            {viewport < 820 && <div className="notch" />}
+          <div className="phone" id="muse-app">
+            <div className="notch" />
             <div className="hdr">
               <div className="logo-link">muse</div>
               <button className="hdr-btn" onClick={()=>showScreen("profile")}><FiArrowLeft size={18} /></button>

@@ -6,12 +6,13 @@
 -- 1. ADD MISSING COLUMNS TO EXISTING TABLES
 -- ============================================================
 
--- Profiles: preferences JSONB for discovery/notification prefs + tier
+-- Profiles: preferences JSONB for discovery/notification prefs + tier + photos
 ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}';
 ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS tier TEXT DEFAULT 'free';
 ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION;
 ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS long DOUBLE PRECISION;
 ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS city TEXT DEFAULT '';
+ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS photos TEXT[] DEFAULT '{}';
 
 -- ============================================================
 -- 2. NEW TABLES

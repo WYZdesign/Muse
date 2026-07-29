@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "profiles") {
-      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path, show_nsfw").limit(50);
+      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path, show_nsfw, photos").limit(50);
       return NextResponse.json({ profiles: data || [] });
     }
 

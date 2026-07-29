@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import { trackError } from "@/lib/errorTracker";
 
 interface Props { children: React.ReactNode; }
 interface State { hasError: boolean; error: Error | null; }
