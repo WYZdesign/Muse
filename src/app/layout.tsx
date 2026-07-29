@@ -22,7 +22,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
+<head>
+        <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png" />
         <link rel="manifest" href="/muse-manifest.json" />
         <link rel="apple-touch-icon" href="/icons/muse-192.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/muse-192.png" />
@@ -34,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#0a0612" />
         <meta name="format-detection" content="telephone=no" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900" rel="stylesheet" />
       </head>
       <body>
         {children}

@@ -21,19 +21,6 @@ export const metadata: Metadata = {
 export default function MuseLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
-      <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png" />
-      <link rel="manifest" href="/manifest.json" />
-      <link rel="apple-touch-icon" href="/icons/muse-192.png" />
-      <link rel="apple-touch-icon" sizes="180x180" href="/icons/muse-192.png" />
-      <link rel="apple-touch-icon" sizes="192x192" href="/icons/muse-192.png" />
-      <link rel="apple-touch-icon" sizes="512x512" href="/icons/muse-512.png" />
-      <meta name="apple-mobile-web-app-capable" content="yes" />
-      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      <meta name="apple-mobile-web-app-title" content="Muse" />
-      <meta name="mobile-web-app-capable" content="yes" />
-      <meta name="theme-color" content="#0a0612" />
-      <meta name="format-detection" content="telephone=no" />
       {children}
     </>
   );
