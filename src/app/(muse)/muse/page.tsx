@@ -1486,18 +1486,18 @@ function MusePage() {
                       </div>
                     )}
                   </div>
-                  <div style={{display:"flex",gap:8}}>
-                    {discoverSearchOpen ? (
-                      <button className="hdr-btn" onClick={()=>{setDiscoverSearchOpen(false);setDiscoverSearch("")}}><FiX size={18} /></button>
-                    ) : (
-                      <>
-                        <button className="hdr-btn" onClick={()=>setShowDiscoveryPrefs(true)}><FiSettings size={18} /></button>
-                        <button className="hdr-btn" onClick={()=>setShowFilterModal(true)}><FiFilter size={18} /></button>
-                        <button className="hdr-btn" onClick={()=>setMapView(v=>!v)} title="Map View"><span style={{fontSize:16}}>🗺️</span></button>
-                        <button className={"hdr-btn"+(boostActive?" hdr-btn-glow":"")} onClick={()=>{if(!boostActive){const end=Date.now()+1800000;setBoostActive(true);setBoostEnd(end);try{localStorage.setItem("muse_boost",""+end);}catch{}showToast("Boost on for 30 min!");}else{setBoostActive(false);setBoostEnd(0);try{localStorage.removeItem("muse_boost");}catch{}showToast("Boost off");}}}><FiZap size={18} /></button>
-                      </>
-                    )}
-                  </div>
+<div style={{display:"flex",gap:4}}>
+{discoverSearchOpen ? (
+<button className="hdr-btn" onClick={()=>{setDiscoverSearchOpen(false);setDiscoverSearch("")}} style={{width:34,height:34}}><FiX size={16} /></button>
+) : (
+<>
+<button className="hdr-btn" onClick={()=>setShowDiscoveryPrefs(true)} style={{width:34,height:34}}><FiSettings size={16} /></button>
+<button className="hdr-btn" onClick={()=>setShowFilterModal(true)} style={{width:34,height:34}}><FiFilter size={16} /></button>
+<button className="hdr-btn" onClick={()=>setMapView(v=>!v)} title="Map View" style={{width:34,height:34}}><FiCompass size={16} /></button>
+<button className={"hdr-btn"+(boostActive?" hdr-btn-glow":"")} onClick={()=>{if(!boostActive){const end=Date.now()+1800000;setBoostActive(true);setBoostEnd(end);try{localStorage.setItem("muse_boost",""+end);}catch{}showToast("Boost on for 30 min!");}else{setBoostActive(false);setBoostEnd(0);try{localStorage.removeItem("muse_boost");}catch{}showToast("Boost off");}}} style={{width:34,height:34}}><FiZap size={16} /></button>
+</>
+)}
+</div>
                 </div>
                 {mapView && <MuseMap filteredProfiles={filteredProfiles} myGeo={myGeo} containerRef={mapContainerRef} />}
                 {boostActive && <div className="boost-badge" style={{display:"flex",justifyContent:"center",gap:8}}>BOOST ACTIVE {(()=>{const mins=Math.max(0,Math.ceil((boostEnd-Date.now())/60000));if(mins<=0){setBoostActive(false);try{localStorage.removeItem("muse_boost");}catch{}return"";}return <span style={{fontWeight:400}}>({mins}m left)</span>;})()}</div>}
@@ -1665,16 +1665,11 @@ function MusePage() {
               <div className={"screen-el"+(screen==="matches"?" active":"")}>
               <div className="hdr">
                 <div className="logo-link">muse</div>
-                <div style={{display:"flex",gap:10}}>
-                  <button className="hdr-btn" style={{position:"relative"}} onClick={()=>setShowLikesYou(!showLikesYou)}>
-                    <FiHeart size={18} />
-                    {likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:18,height:18,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:10,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>{likedBy.length}</span>}
-                  </button>
-                  {!searchOpen ? (
-                    <button className="hdr-btn" onClick={()=>setSearchOpen(true)}><FiSearch size={18} /></button>
-                  ) : (
+<div style={{display:"flex",gap:10}}>
+{!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-3,right:-3,width:14,height:14,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:8,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>{likedBy.length}</span>}</button>)}
+{!searchOpen ? (<button className="hdr-btn" style={{width:34,height:34}} onClick={()=>setSearchOpen(true)}><FiSearch size={16} /></button>) : (
                     <div style={{display:"flex",alignItems:"center",gap:6,animation:"fadeIn .2s ease"}}>
-                      <input className="inp" placeholder="Search..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} autoFocus style={{margin:0,padding:"8px 12px",fontSize:13,width:140,borderRadius:99}} />
+                      <input className="inp" placeholder="Search..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} autoFocus style={{margin:0,padding:"6px 10px",fontSize:12,width:120,borderRadius:99}} />
                       <button className="hdr-btn" style={{width:30,height:30,borderRadius:"50%",fontSize:12}} onClick={()=>{setSearchOpen(false);setSearchQuery("")}}>✕</button>
                     </div>
                   )}
