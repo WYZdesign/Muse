@@ -6,7 +6,6 @@ import ErrorBoundary from "./ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
 import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles } from "@/app/muse-realtime";
-import { trackEvent } from "@/lib/errorTracker";
 import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import Nav from "./components/Nav";
@@ -323,7 +322,7 @@ function MusePage() {
           localStorage.removeItem("muse_user");
         }
       })
-      .catch(() => {});
+      .catch(() => { /* silently handled */ });
   }, []);
 
   useEffect(() => {
@@ -332,7 +331,7 @@ function MusePage() {
 
     // Capture geolocation for distance matching (best-effort, silent on denial).
     getGeolocation().then(g => { if (g) { setMyGeo(g); try { localStorage.setItem("muse_geo", JSON.stringify(g)); } catch {} } })
-      .catch(() => {});
+      .catch(() => { /* silently handled */ });
 
     // Handle post-checkout return: refresh tier from server
     const params = new URLSearchParams(window.location.search);
@@ -538,7 +537,7 @@ function MusePage() {
         trackEvent("muse_match", { name: p.name, type: p.type });
         setActivityFeed(prev => [{id:Date.now(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
         flash("#FFD700");
-        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id }) }).catch(() => {});
+        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id }) }).catch(() => { /* silently handled */ });
       }
       if (Math.random() > 0.4 && !likedBy.find(l => l.id === p.id)) {
         setLikedBy(prev => [...prev, p]);
