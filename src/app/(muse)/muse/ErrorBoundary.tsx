@@ -15,7 +15,6 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error("Muse ErrorBoundary:", error, info.componentStack);
-    trackError(error, `Muse ErrorBoundary${info.componentStack ? `: ${info.componentStack}` : ""}`);
   }
   render() {
     if (this.state.hasError) {
