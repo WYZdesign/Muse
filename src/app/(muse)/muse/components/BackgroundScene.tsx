@@ -3,6 +3,13 @@ import { useEffect, useRef, useMemo } from "react";
 
 const PC = ["#FFD700","#FF6B6B","#D4A5FF","#98FB98","#FFDAB9","#87CEEB","#FF8A80","#FFD1A4","#FFB5C2","#FFE4B5","#FF9A56","#E6E6FA"];
 
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export default function BackgroundScene({ flash }: { flash: string | null }) {
   const cometRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
@@ -110,12 +117,12 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
         for (let t = 0; t < c.tailLen; t++) {
           const p = t / c.tailLen, tw = c.size * (1 - p) * 1.8;
           ctx!.beginPath(); ctx!.arc(c.x - c.vx * (t + 3), c.y - c.vy * (t + 3), Math.max(tw, 0.5), 0, Math.PI * 2);
-          ctx!.fillStyle = `${c.color.replace(")",",")}, ${opacity * (1 - p) * 0.5})`; ctx!.fill();
+          ctx!.fillStyle = hexToRgba(c.color, opacity * (1 - p) * 0.5); ctx!.fill();
         }
         const g = ctx!.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.size * 4);
         g.addColorStop(0, `rgba(255, 255, 255, ${opacity})`);
-        g.addColorStop(0.3, `${c.color.replace(")",",")}, ${opacity * 0.6})`);
-        g.addColorStop(1, `${c.color.replace(")",",")}, 0)`);
+        g.addColorStop(0.3, hexToRgba(c.color, opacity * 0.6));
+        g.addColorStop(1, hexToRgba(c.color, 0));
         ctx!.beginPath(); ctx!.arc(c.x, c.y, c.size * 4, 0, Math.PI * 2); ctx!.fillStyle = g; ctx!.fill();
         ctx!.beginPath(); ctx!.arc(c.x, c.y, c.size * 0.7, 0, Math.PI * 2);
         ctx!.fillStyle = `rgba(255, 255, 255, ${opacity})`; ctx!.fill();
