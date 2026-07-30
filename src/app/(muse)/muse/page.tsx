@@ -789,7 +789,7 @@ function MusePage() {
                     <div className="menu-tabs">
                       {["Channels","Events"].map((t,i)=><div key={t} className={"menu-tab"+(menuTab.community===i?" active":"")} onClick={()=>setMenuTab(tab=>({...tab,community:i}))}>{t}</div>)}
                     </div>
-                    {menuTab.community===0 && <>
+                    {menuTab.community===0 && <div key="ch" style={{display:"contents"}}>
                     {COMMUNITIES.filter(c => showNsfw || !c.nsfw).map(c => (
                       <div key={c.id} className="conn-card" style={{margin:"0 0 10px"}}>
                         <img src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
@@ -803,8 +803,8 @@ function MusePage() {
                         </div>
                       </div>
                     ))}
-                    </>}
-                    {menuTab.community===1 && <>
+                    </div>}
+                    {menuTab.community===1 && <div key="ev" style={{display:"contents"}}>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Events</div>
                     {EVENTS.filter(e => showNsfw || !e.nsfw).map(ev => (
                       <div key={ev.id} className="conn-card" style={{flexDirection:"column",margin:"0 0 10px"}}>
@@ -814,7 +814,7 @@ function MusePage() {
                         <button className={"conn-btn "+(rsvpdEvents.includes(ev.id)?"conn-btn-ghost":"conn-btn-primary")} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter(x=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
                       </div>
                     ))}
-                    </>}
+                    </div>}
                   </div>
                 )}
                   <div className="conn-scroll">
@@ -822,7 +822,7 @@ function MusePage() {
                     <div className="menu-tabs">
                       {["Sessions","Bookings"].map((t,i)=><div key={t} className={"menu-tab"+(menuTab.sessions===i?" active":"")} onClick={()=>setMenuTab(tab=>({...tab,sessions:i}))}>{t}</div>)}
                     </div>
-                    {menuTab.sessions===0 && <>
+                    {menuTab.sessions===0 && <div key="ss" style={{display:"contents"}}>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>One-on-One Sessions</div>
                     {SESSIONS.map(s => (
                       <div key={s.id} className="conn-card" style={{margin:"0 0 10px"}}>
@@ -839,8 +839,8 @@ function MusePage() {
                         </div>
                       </div>
                     ))}
-                    </>}
-                    {menuTab.sessions===1 && <>
+                    </div>}
+                    {menuTab.sessions===1 && <div key="bk" style={{display:"contents"}}>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Your Bookings</div>
                     {matches.filter(m => m.booked).length === 0 ? (
                       <div style={{textAlign:"center",padding:30,color:"var(--muted)",fontSize:13}}>
@@ -859,10 +859,9 @@ function MusePage() {
                               <button className="conn-btn conn-btn-ghost" onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
                             </div>
                           </div>
-                        </div>
-                      ))
-                    )}
-                    </>}
+                      </div>
+                    ))}
+                    </div>}
                   </div>
                 )}
                 {hamburgerScreen === "network" && (
@@ -871,7 +870,7 @@ function MusePage() {
                     <div className="menu-tabs">
                       {["Professionals","Forum"].map((t,i)=><div key={t} className={"menu-tab"+(menuTab.network===i?" active":"")} onClick={()=>setMenuTab(tab=>({...tab,network:i}))}>{t}</div>)}
                     </div>
-                    {menuTab.network===0 && <>
+                    {menuTab.network===0 && <div key="pr" style={{display:"contents"}}>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Creative Professionals</div>
                     {PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
                       <div key={p.id} className="conn-card" style={{margin:"0 0 10px",flexDirection:"column",alignItems:"center",textAlign:"center",padding:"0 0 16px 0",gap:0}}>
@@ -890,8 +889,8 @@ function MusePage() {
                         </div>
                       </div>
                     ))}
-                    </>}
-                    {menuTab.network===1 && <>
+                    </div>}
+                    {menuTab.network===1 && <div key="fm" style={{display:"contents"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                       <span style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>Forum</span>
                       <button className="conn-btn conn-btn-primary" style={{fontSize:11,padding:"6px 14px"}} onClick={()=>setShowNewPost(!showNewPost)}>+ Post</button>
@@ -935,7 +934,7 @@ function MusePage() {
                           </div>
                       </div>
                     ))}
-                    </>}
+                    </div>}
                   </div>
                 )}
                 {hamburgerScreen === "profile" && (
@@ -991,7 +990,7 @@ function MusePage() {
                     <div className="menu-tabs">
                       {["Preferences","Safety"].map((t,i)=><div key={t} className={"menu-tab"+(menuTab.settings===i?" active":"")} onClick={()=>setMenuTab(tab=>({...tab,settings:i}))}>{t}</div>)}
                     </div>
-                    {menuTab.settings===0 && <>
+                    {menuTab.settings===0 && <div key="pf" style={{display:"contents"}}>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Discovery Preferences</div>
                     <div style={{marginBottom:16}}>
                       <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Age Range</div>
@@ -1027,8 +1026,8 @@ function MusePage() {
                       ))}
                     </div>
                     <button className="btn btn-gold" style={{width:"100%",fontSize:12}} onClick={()=>{apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-preferences",preferences:discoveryPrefs})});showToast("Preferences saved!")}}>Save Preferences</button>
-                    </>}
-                    {menuTab.settings===1 && <>
+                    </div>}
+                    {menuTab.settings===1 && <div key="sy" style={{display:"contents"}}>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Safety & Privacy</div>
                     <div style={{padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                       <div><div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>Show Distance</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Display your approximate location</div></div>
@@ -1046,7 +1045,7 @@ function MusePage() {
                       <div><div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>Blocked Users</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{blockedUsers.length} blocked</div></div>
                     </div>
                     <button className="btn" style={{width:"100%",marginTop:12,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",color:"var(--text)",fontSize:13}} onClick={async()=>{try{const raw=localStorage.getItem("muse_user");const t=raw?JSON.parse(raw).access_token:"";if(!t){showToast("Please sign in again");return;}const res=await fetch("/api/muse?type=export&access_token="+encodeURIComponent(t));if(!res.ok){showToast("Export failed");return;}const j=await res.json();const blob=new Blob([JSON.stringify(j,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="muse-my-data.json";a.click();URL.revokeObjectURL(url);showToast("Data exported");}catch(e){showToast("Export failed");}}}>Export My Data</button>
-                    </>}
+                    </div>}
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"24px 0 10px"}}>Help & Support</div>
                     {[
                       {q:"How does matching work?",a:"Swipe right on creators you'd like to connect with. If they swipe right back, it's a match! You can then message each other."},
@@ -1472,7 +1471,7 @@ function MusePage() {
                             {isTop && expandedProfile!==profile.id && <>
                               <div style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
                               <div style={{position:"absolute",right:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();const max=(profile as any).photos?.length||1;setCurrentPhotoIdx(prev=>Math.min(max-1,prev+1))}} />
-                            </>}
+                            </div>}
                             <div style={{position:"absolute",bottom:10,left:"50%",transform:"translateX(-50%)",display:"flex",gap:6,zIndex:6}}>
                               {((profile as any).photos?.length > 0 ? (profile as any).photos : [profile.img]).map((_:any,i:number)=><div key={i} style={{width:i===currentPhotoIdx?18:6,height:6,borderRadius:3,background:i===currentPhotoIdx?"var(--gold)":"rgba(255,255,255,0.3)",transition:"all .2s"}} />)}
                             </div>
@@ -1672,7 +1671,7 @@ function MusePage() {
                           <div style={{position:"absolute",top:8,right:8,padding:"4px 10px",borderRadius:99,background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:10,fontWeight:700,color:"#fff"}}>♥ Liked You</div>
                         </div>
                     ))}
-                    </>}
+                    </div>}
                   </div>
                 )}
                 </div>
