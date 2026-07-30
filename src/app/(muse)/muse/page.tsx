@@ -155,6 +155,7 @@ function MusePage() {
   const [showDiscoveryPrefs, setShowDiscoveryPrefs] = useState(false);
   const [showActivityFeed, setShowActivityFeed] = useState(false);
   const [showHamburger, setShowHamburger] = useState(false);
+  const [showPremiumPopup, setShowPremiumPopup] = useState(true);
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
   const [showStories, setShowStories] = useState(false);
   const [unmatchTarget, setUnmatchTarget] = useState<string|null>(null);
@@ -439,7 +440,7 @@ function MusePage() {
       const q = discoverSearch.toLowerCase();
       list = list.filter(p => p.name.toLowerCase().includes(q) || p.type?.toLowerCase().includes(q) || p.loc?.toLowerCase().includes(q) || p.styles?.some(s => s.toLowerCase().includes(q)));
     }
-    return list;
+    return list.map(p => { const geo = CITY_GEO[p.loc]; return geo ? { ...p, lat: geo.lat, lng: geo.long } : p; });
   }, [showNsfw, filterStyles, filterScore, myGeo, discoveryPrefs.distance, discoverSearch]);
 
   useEffect(() => {
@@ -766,6 +767,7 @@ function MusePage() {
                   {key:"network",icon:"Ne",label:"Network",desc:"Professionals & forum",grad:"linear-gradient(135deg,#B3E5FC,#64B5F6,#00BCD4)"},
                   {key:"profile",icon:"Yo",label:"Profile",desc:"Edit profile & premium",grad:"linear-gradient(135deg,#FFD700,#FFB5C2,#B388FF)"},
                   {key:"settings",icon:"St",label:"Settings",desc:"Preferences, safety & help",grad:"linear-gradient(135deg,#CE93D8,#B388FF,#A5D6A7)"},
+                  {key:"moments",icon:"Mo",label:"Moments",desc:"Stories, maps & real-time",grad:"linear-gradient(135deg,#FF9800,#FF5722,#FFEB3B)"},
                 ].map(item => (
                   <div key={item.key} className="hamburger-item" onClick={() => setHamburgerScreen(item.key)}>
                     <div className="hamburger-item-icon" style={{background:item.grad}}>{item.icon}</div>
@@ -851,18 +853,18 @@ function MusePage() {
                     <div className="hamburger-title">Network</div>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Creative Professionals</div>
                     {PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
-                      <div key={p.id} className="conn-card" style={{margin:"0 0 10px"}}>
-                        <img src={p.img} alt={p.name} className="conn-avatar" onError={handleImgError} />
-                        <div className="conn-content">
+                      <div key={p.id} className="conn-card" style={{margin:"0 0 10px",flexDirection:"column",alignItems:"center",textAlign:"center",padding:"0 0 16px 0",gap:0}}>
+                        <img src={p.img} alt={p.name} style={{width:"100%",height:140,objectFit:"cover",borderRadius:"16px 16px 0 0"}} onError={handleImgError} />
+                        <div className="conn-content" style={{padding:"12px 16px 0",display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center",width:"100%"}}>
                           <div className="conn-name">{p.name}</div>
                           <div className="conn-meta">{p.type} · {p.loc} · {p.exp}</div>
-                          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6}}>
+                          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6,justifyContent:"center"}}>
                             {p.skills.slice(0,3).map(s=><span key={s} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{s}</span>)}
                             {p.skills.length>3 && <span className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>+{p.skills.length-3}</span>}
                           </div>
-                          <div className="conn-actions" style={{marginTop:8}}>
-                            <button className="conn-btn conn-btn-primary" onClick={()=>{showToast("Connection request sent to "+p.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})})}}>Connect</button>
-                            <button className="conn-btn conn-btn-ghost" onClick={()=>showToast(p.openings+" open positions!")}>View Openings</button>
+                          <div className="conn-actions" style={{marginTop:8,justifyContent:"center",width:"100%"}}>
+                            <button className="conn-btn conn-btn-primary" style={{flex:1,textAlign:"center"}} onClick={()=>{showToast("Connection request sent to "+p.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})})}}>Connect</button>
+                            <button className="conn-btn conn-btn-ghost" style={{flex:1,textAlign:"center"}} onClick={()=>showToast(p.openings+" open positions!")}>View ({p.openings})</button>
                           </div>
                         </div>
                       </div>
@@ -1450,23 +1452,13 @@ function MusePage() {
                             <div className="card-bio">{profile.bio}</div>
                             <div className="card-looking">Looking for: <span>{profile.looking.join(", ")}</span></div>
                             <div className="tags">{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div>
-                            <div className="match-score">
-                              <div className="score-bar"><div className="score-fill" style={{width:profile.score+"%"}} /></div>
-                              <span className="score-text">{profile.score}%</span>
-                            </div>
-                            {expandedProfile === profile.id ? (
-                              <div className="card-expanded-scroll">
-                                <div className="card-section"><div className="card-section-title">All Photos</div><div className="card-photo-grid">{((profile as any).photos||[profile.img]).map((p:any,i:number)=><div key={i} className="card-photo-thumb" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}} style={{opacity:i===currentPhotoIdx?1:0.6,border:i===currentPhotoIdx?"2px solid var(--gold)":"2px solid transparent"}}><img src={p} alt="" /></div>)}</div></div>
-                                <div className="card-section"><div className="card-section-title">About</div><div className="card-section-text">{profile.bio}</div></div>
-                                <div className="card-section"><div className="card-section-title">Creative Style</div><div className="card-section-tags">{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div></div>
-                                <div className="card-section"><div className="card-section-title">Personality</div><div className="card-section-tags">{(profile as any).zodiac && <span className="tag">♈ {(profile as any).zodiac}</span>}{(profile as any).chinese && <span className="tag">{(profile as any).chinese}</span>}{(profile as any).mbti && <span className="tag">🧠 {(profile as any).mbti}</span>}{(profile as any).lifePath && <span className="tag">🔮 Path {(profile as any).lifePath}</span>}</div></div>
-                                <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges?.length ? (profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>) : <span style={{fontSize:12,color:"var(--muted)"}}>No badges yet</span>}</div></div>
-                                <div className="card-section"><div className="card-section-title">Location</div><div className="card-section-text">📍 {profile.loc}</div></div>
-                                <button className="card-collapse-btn" onClick={(e)=>{e.stopPropagation();setExpandedProfile(null);setCurrentPhotoIdx(0)}}>▲ Collapse</button>
-                              </div>
-                            ) : (
-                              <button className="card-expand-btn" onClick={(e)=>{e.stopPropagation();setExpandedProfile(profile.id);setCurrentPhotoIdx(0)}}>▼ View full profile</button>
-                            )}
+                            <div className="match-score"><div className="score-bar"><div className="score-fill" style={{width:profile.score+"%"}} /></div><span className="score-text">{profile.score}%</span></div>
+                            <div className="card-section"><div className="card-section-title">All Photos</div><div className="card-photo-grid">{((profile as any).photos||[profile.img]).map((p:any,i:number)=><div key={i} className="card-photo-thumb" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}} style={{opacity:i===currentPhotoIdx?1:0.6,border:i===currentPhotoIdx?"2px solid var(--gold)":"2px solid transparent"}}><img src={p} alt="" /></div>)}</div></div>
+                            <div className="card-section"><div className="card-section-title">About</div><div className="card-section-text">{profile.bio}</div></div>
+                            <div className="card-section"><div className="card-section-title">Creative Style</div><div className="card-section-tags">{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div></div>
+                            <div className="card-section"><div className="card-section-title">Personality</div><div className="card-section-tags">{(profile as any).zodiac && <span className="tag">♈ {(profile as any).zodiac}</span>}{(profile as any).chinese && <span className="tag">{(profile as any).chinese}</span>}{(profile as any).mbti && <span className="tag">🧠 {(profile as any).mbti}</span>}{(profile as any).lifePath && <span className="tag">🔮 Path {(profile as any).lifePath}</span>}</div></div>
+                            <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges?.length ? (profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>) : <span style={{fontSize:12,color:"var(--muted)"}}>No badges yet</span>}</div></div>
+                            <div className="card-section" style={{paddingBottom:16}}><div className="card-section-title">Location</div><div className="card-section-text">📍 {profile.loc}</div></div>
                           </div>
                         </div>
                       </div>
@@ -1493,6 +1485,14 @@ function MusePage() {
                 </>)}
               </div>
               <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+              {showPremiumPopup && (
+                <div className="premium-popup">
+                  <button className="premium-popup-close" onClick={()=>setShowPremiumPopup(false)}>✕</button>
+                  <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
+                  <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
+                  <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
+                </div>
+              )}
             </div>
             <div className={"screen-el"+(screen==="connections"?" active":"")}>
               <div className="hdr">
