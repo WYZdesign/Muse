@@ -410,6 +410,9 @@ function MusePage() {
   }, []);
 
   const getReferralTier = (c:number) => c>=50?{tier:"Platinum",discount:20}:c>=20?{tier:"Gold",discount:20}:c>=5?{tier:"Silver",discount:10}:c>=1?{tier:"Bronze",discount:0}:{tier:"None",discount:0};
+  const trackEvent = (event: string, data?: Record<string, unknown>) => {
+    try { if (typeof window !== "undefined" && (window as any).gtag) { (window as any).gtag("event", event, data); } } catch {}
+  };
   const checkProfileBadges = (stats:any, createdAt:number):{name:string;desc:string;icon:string;color:string}[] => {
     const b:{name:string;desc:string;icon:string;color:string}[] = [];
     if (createdAt && Date.now()-createdAt > 31536000000) b.push({name:"Full Moon",icon:"🌕",color:"#C0C0FF",desc:"1 year on Muse"});
