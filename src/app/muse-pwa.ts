@@ -68,7 +68,7 @@ export async function subscribeToMusePush(): Promise<{ ok: boolean; error?: stri
     if (!sub) {
       sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+        applicationServerKey: urlBase64ToUint8Array(vapidKey) as any,
       });
     }
 

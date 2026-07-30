@@ -1408,7 +1408,7 @@ function MusePage() {
 </>)}
 </div>
                 </div>
-                {mapView && <MuseMap filteredProfiles={filteredProfiles} myGeo={myGeo} containerRef={mapContainerRef} />}
+                {mapView && <MuseMap filteredProfiles={filteredProfiles} myGeo={myGeo ? {lat:myGeo.lat, lng:myGeo.long} : undefined} containerRef={mapContainerRef} />}
                 {boostActive && <div className="boost-badge" style={{display:"flex",justifyContent:"center",gap:8}}>BOOST ACTIVE {(()=>{const mins=Math.max(0,Math.ceil((boostEnd-Date.now())/60000));if(mins<=0){setBoostActive(false);try{localStorage.removeItem("muse_boost");}catch{}return"";}return <span style={{fontWeight:400}}>({mins}m left)</span>;})()}</div>}
                 {!mapView && (<><div className="card-stack">
                   {filteredProfiles.slice(currentIdx, currentIdx+3).map((profile, idx) => {
@@ -2183,7 +2183,7 @@ function MusePage() {
                       <input className="inp" placeholder="Title" value={newPostTitle} onChange={e=>setNewPostTitle(e.target.value)} style={{marginBottom:8}} />
                       <textarea className="inp" placeholder="What's on your mind?" rows={3} value={newPostBody} onChange={e=>setNewPostBody(e.target.value)} style={{marginBottom:10,resize:"none"}} />
                       <div style={{display:"flex",gap:8}}>
-                        <button className="conn-btn conn-btn-primary" onClick={async()=>{if(!newPostTitle.trim()||!newPostBody.trim()){showToast("Title and body required");return;}const np={id:Date.now(),author:(authUser?.profile?.name||authUser?.email||""),avatar:currentUser.avatar,title:newPostTitle.trim(),body:newPostBody.trim(),time:"Just now",likes:0,comments:0,tags:[]};setForumPosts(prev=>[np,...prev]);setNewPostTitle("");setNewPostBody("");showToast("Posted!");try{apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum-post",post:np})});}catch{}}}>Post</button>
+                        <button className="conn-btn conn-btn-primary" onClick={async()=>{if(!newPostTitle.trim()||!newPostBody.trim()){showToast("Title and body required");return;}const np={id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,title:newPostTitle.trim(),body:newPostBody.trim(),time:"Just now",votes:1,comments:[],cat:"General",pinned:false as boolean};setForumPosts(prev=>[np,...prev as any]);setNewPostTitle("");setNewPostBody("");showToast("Posted!");try{apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum-post",post:np})});}catch{}}}>Post</button>
                         <button className="conn-btn conn-btn-ghost" onClick={()=>{setNewPostTitle("");setNewPostBody("");setShowNewPost(false)}}>Cancel</button>
                       </div>
                     </div>
@@ -2200,8 +2200,8 @@ function MusePage() {
                       <div style={{fontWeight:700,fontSize:15,color:"var(--text)",marginBottom:4}}>{p.title}</div>
                       <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.6,marginBottom:8}}>{p.body}</div>
                       <div style={{display:"flex",gap:12,color:"var(--muted)",fontSize:12}}>
-                        <span onClick={()=>{setForumPosts(prev=>prev.map(x=>x.id===p.id?{...x,likes:(x.likes||0)+1}:x));showToast("Liked!")}} style={{cursor:"pointer"}}>♡ {p.likes||0}</span>
-                        <span style={{cursor:"pointer"}}>💬 {p.comments||0}</span>
+                        <span onClick={()=>{setForumPosts(prev=>prev.map(x=>x.id===p.id?{...x,votes:(x.votes||0)+1}:x));showToast("Liked!")}} style={{cursor:"pointer"}}>♡ {p.votes||0}</span>
+                        <span style={{cursor:"pointer"}}>💬 {p.comments.length||0}</span>
                         <button style={{marginLeft:"auto",background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:12}} onClick={()=>setForumPosts(prev=>prev.filter(x=>x.id!==p.id))}>⋮</button>
                       </div>
                     </div>

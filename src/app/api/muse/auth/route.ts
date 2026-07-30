@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
       if (!access_token || !new_password) return NextResponse.json({ error: "Token and new password required" }, { status: 400 });
       const pwErr = validatePassword(new_password);
       if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
-      const { error } = await supabase.auth.updateUser(access_token, { password: new_password });
+      const { error } = await supabase.auth.updateUser(access_token, { password: new_password } as any);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
       return NextResponse.json({ success: true, message: "Password updated" });
     }
