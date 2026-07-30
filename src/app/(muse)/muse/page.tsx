@@ -790,7 +790,7 @@ function MusePage() {
                       {["Channels","Events"].map((t,i)=><div key={t} className={"menu-tab"+(menuTab.community===i?" active":"")} onClick={()=>setMenuTab(tab=>({...tab,community:i}))}>{t}</div>)}
                     </div>
                     {menuTab.community===0 && <div key="ch" style={{display:"contents"}}>
-                    {COMMUNITIES.filter(c => showNsfw || !c.nsfw).map(c => (
+                    {COMMUNITIES.filter(c => showNsfw || !c.nsfw).map(c => { return (
                       <div key={c.id} className="conn-card" style={{margin:"0 0 10px"}}>
                         <img src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
                         <div className="conn-content">
@@ -802,11 +802,11 @@ function MusePage() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                    );})}
                     </div>}
                     {menuTab.community===1 && <div key="ev" style={{display:"contents"}}>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Events</div>
-                    {EVENTS.filter(e => showNsfw || !e.nsfw).map(ev => (
+                    {EVENTS.filter(e => showNsfw || !e.nsfw).map(ev => { return (
                       <div key={ev.id} className="conn-card" style={{flexDirection:"column",margin:"0 0 10px"}}>
                         <div className="conn-name">{ev.title}</div>
                         <div className="conn-meta">{ev.date} · {ev.loc}</div>
@@ -824,7 +824,7 @@ function MusePage() {
                     </div>
                     {menuTab.sessions===0 && <div key="ss" style={{display:"contents"}}>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>One-on-One Sessions</div>
-                    {SESSIONS.map(s => (
+                    {SESSIONS.map(s => { return (
                       <div key={s.id} className="conn-card" style={{margin:"0 0 10px"}}>
                         <img src={s.img} alt={s.name} className="conn-avatar" style={{borderRadius:"50%"}} onError={handleImgError} />
                         <div className="conn-content">
@@ -838,7 +838,7 @@ function MusePage() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                    );})}
                     </div>}
                     {menuTab.sessions===1 && <div key="bk" style={{display:"contents"}}>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Your Bookings</div>
@@ -848,7 +848,7 @@ function MusePage() {
                         No bookings yet.<br/>Swipe right and book sessions with your matches!
                       </div>
                     ) : (
-                      matches.filter(m => m.booked).map(m => (
+                      matches.filter(m => m.booked).map(m => { return (
                         <div key={m.id} className="conn-card" style={{margin:"0 0 10px"}}>
                           <img src={m.img} alt={m.name} className="conn-avatar" onError={handleImgError} />
                           <div className="conn-content">
@@ -872,7 +872,7 @@ function MusePage() {
                     </div>
                     {menuTab.network===0 && <div key="pr" style={{display:"contents"}}>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Creative Professionals</div>
-                    {PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
+                    {PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => { return (
                       <div key={p.id} className="conn-card" style={{margin:"0 0 10px",flexDirection:"column",alignItems:"center",textAlign:"center",padding:"0 0 16px 0",gap:0}}>
                         <img src={p.img} alt={p.name} style={{width:"100%",height:140,objectFit:"cover",borderRadius:"16px 16px 0 0"}} onError={handleImgError} />
                         <div className="conn-content" style={{padding:"12px 16px 0",display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center",width:"100%"}}>
@@ -1669,8 +1669,8 @@ function MusePage() {
                             <div style={{fontSize:12,background:"linear-gradient(90deg,var(--gold),var(--amber))",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:600}}>{p.type}</div>
                           </div>
                           <div style={{position:"absolute",top:8,right:8,padding:"4px 10px",borderRadius:99,background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:10,fontWeight:700,color:"#fff"}}>♥ Liked You</div>
-                        </div>
-                    ))}
+                      </div>
+                    );})}
                     </div>}
                   </div>
                 )}
