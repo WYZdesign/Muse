@@ -2069,67 +2069,6 @@ function MusePage() {
           </div>
         </div>
       )}
-      {/* ─── COMMUNITY SCREEN ─── */}
-      {screen==="community" && (
-        <div className="phone-wrap">
-          <div className="phone" id="muse-app">
-            <div className="notch" />
-            <div className="screen-el active">
-              <div className="conn-scroll" style={{padding:0}}>
-                <div className="hdr">
-                  <button className="hdr-btn" onClick={()=>setScreen("discover")}><FiArrowLeft size={18} /></button>
-                  <div className="hdr-title">Community</div>
-                  <button className="hdr-btn" onClick={()=>showToast("Create community coming soon")}><FiPlus size={18} /></button>
-                </div>
-                <div style={{padding:"0 16px"}}>
-                  {COMMUNITIES.filter(c => showNsfw || !c.nsfw).map(c => (
-                    <div key={c.id} className="conn-card" style={{margin:"0 0 10px"}}>
-                      <img src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
-                      <div className="conn-content">
-                        <div className="conn-name">{c.name}</div>
-                        <div className="conn-meta">{c.members} members · {c.desc}</div>
-                        <div className="conn-actions" style={{marginTop:8}}>
-                          <button className={"conn-btn conn-btn-primary"+(c.cat==="nsfw"?" conn-nsfw-tag":"")} onClick={()=>{showToast("Joined "+c.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id,memberCount:c.members})})}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
-                          <button className="conn-btn conn-btn-ghost" onClick={()=>showToast(c.name+" community opened!")}>Learn</button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <Nav active="community" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
-            </div>
-          </div>
-        </div>
-      )}
-      {/* ─── EVENTS SCREEN ─── */}
-      {screen==="events" && (
-        <div className="phone-wrap">
-          <div className="phone" id="muse-app">
-            <div className="notch" />
-            <div className="screen-el active">
-              <div className="conn-scroll" style={{padding:0}}>
-                <div className="hdr">
-                  <button className="hdr-btn" onClick={()=>setScreen("discover")}><FiArrowLeft size={18} /></button>
-                  <div className="hdr-title">Events</div>
-                  <button className="hdr-btn" onClick={()=>showToast("Host event coming soon")}><FiPlus size={18} /></button>
-                </div>
-                <div style={{padding:"0 16px"}}>
-                  {EVENTS.filter(e => showNsfw || !e.nsfw).map(ev => (
-                    <div key={ev.id} className="conn-card" style={{flexDirection:"column",margin:"0 0 10px"}}>
-                      <div className="conn-name">{ev.title}</div>
-                      <div className="conn-meta">{ev.date} · {ev.loc}</div>
-                      <div style={{fontSize:13,color:"var(--text2)",margin:"4px 0 8px",lineHeight:1.5}}>{ev.desc}</div>
-                      <button className={"conn-btn "+(rsvpdEvents.includes(ev.id)?"conn-btn-ghost":"conn-btn-primary")} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter(x=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <Nav active="events" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
-            </div>
-          </div>
-        </div>
-      )}
       {/* ─── SESSIONS SCREEN ─── */}
       {screen==="sessions" && (
         <div className="phone-wrap">
@@ -2165,55 +2104,6 @@ function MusePage() {
           </div>
         </div>
       )}
-      {/* ─── FORUM SCREEN ─── */}
-      {screen==="forum" && (
-        <div className="phone-wrap">
-          <div className="phone" id="muse-app">
-            <div className="notch" />
-            <div className="screen-el active">
-              <div className="conn-scroll" style={{padding:0}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 16px 0"}}>
-                  <button className="hdr-btn" onClick={()=>setScreen("discover")}><FiArrowLeft size={18} /></button>
-                  <div className="hdr-title" style={{margin:0}}>Forum</div>
-                  <button className="conn-btn conn-btn-primary" style={{fontSize:11,padding:"6px 14px"}} onClick={()=>setShowNewPost(!showNewPost)}>+ Post</button>
-                </div>
-                <div style={{padding:"8px 16px 0"}}>
-                  {showNewPost && (
-                    <div className="conn-card" style={{flexDirection:"column",margin:"0 0 14px"}}>
-                      <input className="inp" placeholder="Title" value={newPostTitle} onChange={e=>setNewPostTitle(e.target.value)} style={{marginBottom:8}} />
-                      <textarea className="inp" placeholder="What's on your mind?" rows={3} value={newPostBody} onChange={e=>setNewPostBody(e.target.value)} style={{marginBottom:10,resize:"none"}} />
-                      <div style={{display:"flex",gap:8}}>
-                        <button className="conn-btn conn-btn-primary" onClick={async()=>{if(!newPostTitle.trim()||!newPostBody.trim()){showToast("Title and body required");return;}const np={id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,title:newPostTitle.trim(),body:newPostBody.trim(),time:"Just now",votes:1,comments:[],cat:"General",pinned:false as boolean};setForumPosts(prev=>[np,...prev as any]);setNewPostTitle("");setNewPostBody("");showToast("Posted!");try{apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum-post",post:np})});}catch{}}}>Post</button>
-                        <button className="conn-btn conn-btn-ghost" onClick={()=>{setNewPostTitle("");setNewPostBody("");setShowNewPost(false)}}>Cancel</button>
-                      </div>
-                    </div>
-                  )}
-                  {forumPosts.map(p=>(
-                    <div key={p.id} className="conn-card" style={{flexDirection:"column",margin:"0 0 10px"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-                        <img src={p.avatar} alt="" style={{width:36,height:36,borderRadius:"50%",objectFit:"cover"}} onError={handleImgError} />
-                        <div>
-                          <div style={{fontWeight:700,fontSize:14,color:"var(--text)"}}>{p.author}</div>
-                          <div style={{fontSize:11,color:"var(--muted)"}}>{p.time}</div>
-                        </div>
-                      </div>
-                      <div style={{fontWeight:700,fontSize:15,color:"var(--text)",marginBottom:4}}>{p.title}</div>
-                      <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.6,marginBottom:8}}>{p.body}</div>
-                      <div style={{display:"flex",gap:12,color:"var(--muted)",fontSize:12}}>
-                        <span onClick={()=>{setForumPosts(prev=>prev.map(x=>x.id===p.id?{...x,votes:(x.votes||0)+1}:x));showToast("Liked!")}} style={{cursor:"pointer"}}>♡ {p.votes||0}</span>
-                        <span style={{cursor:"pointer"}}>💬 {p.comments.length||0}</span>
-                        <button style={{marginLeft:"auto",background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:12}} onClick={()=>setForumPosts(prev=>prev.filter(x=>x.id!==p.id))}>⋮</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <Nav active="forum" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* SETTINGS SCREEN */}
       {screen === "settings" && (
         <div className="phone-wrap">
