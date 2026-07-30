@@ -1,4 +1,7 @@
 {
+  "redirects": [
+    { "source": "/", "destination": "/muse", "permanent": true }
+  ],
   "crons": [
     { "path": "/api/backup", "schedule": "0 6 * * *" }
   ],
