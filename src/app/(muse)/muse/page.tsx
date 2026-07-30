@@ -164,6 +164,7 @@ function MusePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{startX:number;startY:number;active:boolean}>({startX:0,startY:0,active:false});
   const [dragOffset, setDragOffset] = useState(0);
+  const [dragOffsetY, setDragOffsetY] = useState(0);
   const [dragOpacity, setDragOpacity] = useState(0);
 
   const handleImgError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -577,9 +578,12 @@ function MusePage() {
     if (!dragRef.current.active) return;
     const dx = e.clientX - dragRef.current.startX;
     const dy = e.clientY - dragRef.current.startY;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
-      setDragOffset(dx);
-      setDragOpacity(Math.min(Math.abs(dx) / 120, 1));
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    if (absDx > absDy) {
+      if (absDx > 5) { setDragOffset(dx); setDragOffsetY(0); setDragOpacity(Math.min(absDx / 100, 1)); }
+    } else {
+      if (absDy > 5) { setDragOffsetY(dy); setDragOffset(0); setDragOpacity(Math.min(absDy / 80, 1)); }
     }
   }, []);
 
@@ -587,10 +591,14 @@ function MusePage() {
     if (!dragRef.current.active) return;
     dragRef.current.active = false;
     const dx = e.clientX - dragRef.current.startX;
-    if (Math.abs(dx) > 100) {
+    const dy = e.clientY - dragRef.current.startY;
+    if (Math.abs(dy) > Math.abs(dx) && dy < -60) {
+      doSwipe("super");
+    } else if (Math.abs(dx) > 80) {
       doSwipe(dx > 0 ? "right" : "left");
     }
     setDragOffset(0);
+    setDragOffsetY(0);
     setDragOpacity(0);
   }, [doSwipe]);
 
@@ -748,20 +756,15 @@ function MusePage() {
             <div className="hamburger-close" onClick={() => setShowHamburger(false)}><FiX size={18} /></div>
             {!hamburgerScreen ? (
               <>
-                <div className="hamburger-title">More</div>
+                <div className="hamburger-title">Menu</div>
                 {[
-                  {key:"matches",icon:"♡",label:"Matches",desc:"Your sparks & conversations",grad:"linear-gradient(135deg,#FFB5C2,#FF4757)",screen:"matches" as Screen},
-                  {key:"community",icon:"Cm",label:"Community",desc:"Channels & groups to join",grad:"linear-gradient(135deg,#FF8A80,#FF4757)",screen:"community" as Screen},
-                  {key:"events",icon:"Ev",label:"Events",desc:"Workshops, meetups, shoots",grad:"linear-gradient(135deg,#FFE4B5,#FFD700)",screen:"events" as Screen},
-                  {key:"sessions",icon:"Se",label:"Sessions",desc:"Book one-on-one sessions",grad:"linear-gradient(135deg,#E1BEE7,#9C27B0)",screen:"sessions" as Screen},
-                  {key:"forum",icon:"Fo",label:"Forum",desc:"Discussions & advice",grad:"linear-gradient(135deg,#B3E5FC,#64B5F6)",screen:"forum" as Screen},
-                  {key:"professional",icon:"Pr",label:"Professional",desc:"Creative professionals",grad:"linear-gradient(135deg,#F8BBD0,#FF4081)",screen:null},
-                  {key:"premium",icon:"Pl",label:"Premium",desc:"Muse Premium features",grad:"linear-gradient(135deg,#FFF9C4,#FFD700)",screen:null},
-                  {key:"preferences",icon:"Dp",label:"Preferences",desc:"Discovery & notifications",grad:"linear-gradient(135deg,#CE93D8,#B388FF)",screen:null},
-                  {key:"safety",icon:"Sp",label:"Safety",desc:"Privacy & safety tools",grad:"linear-gradient(135deg,#A5D6A7,#66BB6A)",screen:null},
-                  {key:"help",icon:"Hp",label:"Help",desc:"Support & resources",grad:"linear-gradient(135deg,#80DEEA,#00BCD4)",screen:null},
+                  {key:"community",icon:"Cm",label:"Community",desc:"Channels, groups & events",grad:"linear-gradient(135deg,#FF8A80,#FF4757,#FFD700)"},
+                  {key:"sessions",icon:"Se",label:"Sessions",desc:"Bookings & one-on-ones",grad:"linear-gradient(135deg,#E1BEE7,#9C27B0,#FF4081)"},
+                  {key:"network",icon:"Ne",label:"Network",desc:"Professionals & forum",grad:"linear-gradient(135deg,#B3E5FC,#64B5F6,#00BCD4)"},
+                  {key:"profile",icon:"Yo",label:"Profile",desc:"Edit profile & premium",grad:"linear-gradient(135deg,#FFD700,#FFB5C2,#B388FF)"},
+                  {key:"settings",icon:"St",label:"Settings",desc:"Preferences, safety & help",grad:"linear-gradient(135deg,#CE93D8,#B388FF,#A5D6A7)"},
                 ].map(item => (
-                  <div key={item.key} className="hamburger-item" onClick={() => { if (item.screen) { setHamburgerScreen(""); setShowHamburger(false); showScreen(item.screen); } else { setHamburgerScreen(item.key); } }}>
+                  <div key={item.key} className="hamburger-item" onClick={() => setHamburgerScreen(item.key)}>
                     <div className="hamburger-item-icon" style={{background:item.grad}}>{item.icon}</div>
                     <div><div className="hamburger-item-label">{item.label}</div><div className="hamburger-item-desc">{item.desc}</div></div>
                   </div>
@@ -773,6 +776,7 @@ function MusePage() {
                 {hamburgerScreen === "community" && (
                   <div className="conn-scroll">
                     <div className="hamburger-title">Community</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Channels & Groups</div>
                     {COMMUNITIES.filter(c => showNsfw || !c.nsfw).map(c => (
                       <div key={c.id} className="conn-card" style={{margin:"0 0 10px"}}>
                         <img src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
@@ -786,11 +790,7 @@ function MusePage() {
                         </div>
                       </div>
                     ))}
-                  </div>
-                )}
-                {hamburgerScreen === "events" && (
-                  <div className="conn-scroll">
-                    <div className="hamburger-title">Events</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"20px 0 10px"}}>Events</div>
                     {EVENTS.filter(e => showNsfw || !e.nsfw).map(ev => (
                       <div key={ev.id} className="conn-card" style={{flexDirection:"column",margin:"0 0 10px"}}>
                         <div className="conn-name">{ev.title}</div>
@@ -804,6 +804,7 @@ function MusePage() {
                 {hamburgerScreen === "sessions" && (
                   <div className="conn-scroll">
                     <div className="hamburger-title">Sessions</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>One-on-One Sessions</div>
                     {SESSIONS.map(s => (
                       <div key={s.id} className="conn-card" style={{margin:"0 0 10px"}}>
                         <img src={s.img} alt={s.name} className="conn-avatar" style={{borderRadius:"50%"}} onError={handleImgError} />
@@ -819,12 +820,52 @@ function MusePage() {
                         </div>
                       </div>
                     ))}
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"20px 0 10px"}}>Your Bookings</div>
+                    {matches.filter(m => m.booked).length === 0 ? (
+                      <div style={{textAlign:"center",padding:30,color:"var(--muted)",fontSize:13}}>
+                        <div style={{fontSize:32,marginBottom:10}}>📋</div>
+                        No bookings yet.<br/>Swipe right and book sessions with your matches!
+                      </div>
+                    ) : (
+                      matches.filter(m => m.booked).map(m => (
+                        <div key={m.id} className="conn-card" style={{margin:"0 0 10px"}}>
+                          <img src={m.img} alt={m.name} className="conn-avatar" onError={handleImgError} />
+                          <div className="conn-content">
+                            <div className="conn-name">{m.name}</div>
+                            <div className="conn-meta">{m.type} · Booked Session</div>
+                            <div className="conn-actions" style={{marginTop:8}}>
+                              <button className="conn-btn conn-btn-primary" onClick={() => { setHamburgerScreen(""); setShowHamburger(false); openChat(m); }}>Message</button>
+                              <button className="conn-btn conn-btn-ghost" onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
-                {hamburgerScreen === "forum" && (
-                  <div className="conn-scroll" style={{padding:"0 0 80px"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                      <div className="hamburger-title" style={{marginBottom:0}}>Forum</div>
+                {hamburgerScreen === "network" && (
+                  <div className="conn-scroll">
+                    <div className="hamburger-title">Network</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Creative Professionals</div>
+                    {PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
+                      <div key={p.id} className="conn-card" style={{margin:"0 0 10px"}}>
+                        <img src={p.img} alt={p.name} className="conn-avatar" onError={handleImgError} />
+                        <div className="conn-content">
+                          <div className="conn-name">{p.name}</div>
+                          <div className="conn-meta">{p.type} · {p.loc} · {p.exp}</div>
+                          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6}}>
+                            {p.skills.slice(0,3).map(s=><span key={s} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{s}</span>)}
+                            {p.skills.length>3 && <span className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>+{p.skills.length-3}</span>}
+                          </div>
+                          <div className="conn-actions" style={{marginTop:8}}>
+                            <button className="conn-btn conn-btn-primary" onClick={()=>{showToast("Connection request sent to "+p.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})})}}>Connect</button>
+                            <button className="conn-btn conn-btn-ghost" onClick={()=>showToast(p.openings+" open positions!")}>View Openings</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"20px 0 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span>Forum</span>
                       <button className="conn-btn conn-btn-primary" style={{fontSize:11,padding:"6px 14px"}} onClick={()=>setShowNewPost(!showNewPost)}>+ Post</button>
                     </div>
                     {showNewPost && (
@@ -862,58 +903,11 @@ function MusePage() {
                                 </div>
                               </div>
                             )}
-                             {post.comments.length>0 && expandedPost!==post.id && <button className="conn-btn conn-btn-ghost" style={{fontSize:11,padding:"4px 8px",marginTop:6}} onClick={()=>{setExpandedPost(post.id===expandedPost?null:post.id)}}>{post.comments.length} replies</button>}
+                            {post.comments.length>0 && expandedPost!==post.id && <button className="conn-btn conn-btn-ghost" style={{fontSize:11,padding:"4px 8px",marginTop:6}} onClick={()=>{setExpandedPost(post.id===expandedPost?null:post.id)}}>{post.comments.length} replies</button>}
                           </div>
                         </div>
                       </div>
                     ))}
-                  </div>
-                )}
-                {hamburgerScreen === "professional" && (
-                  <div className="conn-scroll">
-                    <div className="hamburger-title">Professional</div>
-                    {PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
-                      <div key={p.id} className="conn-card" style={{margin:"0 0 10px"}}>
-                        <img src={p.img} alt={p.name} className="conn-avatar" onError={handleImgError} />
-                        <div className="conn-content">
-                          <div className="conn-name">{p.name}</div>
-                          <div className="conn-meta">{p.type} · {p.loc} · {p.exp}</div>
-                          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6}}>
-                            {p.skills.slice(0,3).map(s=><span key={s} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{s}</span>)}
-                            <span className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>+{p.skills.length-3}</span>
-                          </div>
-                          <div className="conn-actions" style={{marginTop:8}}>
-                            <button className="conn-btn conn-btn-primary" onClick={()=>{showToast("Connection request sent to "+p.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})})}}>Connect</button>
-                            <button className="conn-btn conn-btn-ghost" onClick={()=>showToast(p.openings+" open positions!")}>View Openings</button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {hamburgerScreen === "bookings" && (
-                  <div className="conn-scroll">
-                    <div className="hamburger-title">Bookings</div>
-                    {matches.filter(m => m.booked).length === 0 ? (
-                      <div style={{textAlign:"center",padding:30,color:"var(--muted)",fontSize:13}}>
-                        <div style={{fontSize:32,marginBottom:10}}>📋</div>
-                        No bookings yet.<br/>Swipe right and book sessions with your matches!
-                      </div>
-                    ) : (
-                      matches.filter(m => m.booked).map(m => (
-                        <div key={m.id} className="conn-card" style={{margin:"0 0 10px"}}>
-                          <img src={m.img} alt={m.name} className="conn-avatar" onError={handleImgError} />
-                          <div className="conn-content">
-                            <div className="conn-name">{m.name}</div>
-                            <div className="conn-meta">{m.type} · Booked Session</div>
-                            <div className="conn-actions" style={{marginTop:8}}>
-                              <button className="conn-btn conn-btn-primary" onClick={() => { setHamburgerScreen(""); setShowHamburger(false); openChat(m); }}>Message</button>
-                              <button className="conn-btn conn-btn-ghost" onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
                   </div>
                 )}
                 {hamburgerScreen === "profile" && (
@@ -924,55 +918,30 @@ function MusePage() {
                       <div style={{fontSize:18,fontWeight:700,color:"var(--text)"}}>{currentUser.name}</div>
                       <div style={{fontSize:13,color:"var(--muted)"}}>{currentUser.type} · {currentUser.exp}</div>
                     </div>
-                    {[
-                      {key:"edit",icon:"Ep",label:"Edit Profile",desc:"Update your bio, skills, portfolio",grad:"linear-gradient(135deg,#FFD700,#FFBF00)"},
-                      {key:"preferences",icon:"Df",label:"Preferences",desc:"Discovery filters & notifications",grad:"linear-gradient(135deg,#D4A5FF,#B388FF)"},
-                      {key:"premium",icon:"Mp",label:"Muse Premium",desc:"Unlimited boosts, superlikes & more",grad:"linear-gradient(135deg,#FFB5C2,#FF8A80)"},
-                      {key:"safety",icon:"Sp",label:"Safety & Privacy",desc:"Account security, blocking, data",grad:"linear-gradient(135deg,#87CEEB,#64B5F6)"},
-                      {key:"help",icon:"Hs",label:"Help & Support",desc:"FAQ, contact us, report a bug",grad:"linear-gradient(135deg,#98FB98,#66BB6A)"},
-                    ].map(item => (
-                      <div key={item.key} className="hamburger-item" onClick={() => {
-                        if (item.key === "edit") setHamburgerScreen(""), setShowHamburger(false), setScreen("profile");
-                        else if (item.key === "premium") setHamburgerScreen("premium");
-                        else if (item.key === "preferences") setHamburgerScreen("preferences");
-                        else if (item.key === "safety") setHamburgerScreen("safety");
-                        else if (item.key === "help") setHamburgerScreen("help");
-                      }}>
-                        <div className="hamburger-item-icon" style={{background:item.grad}}>{item.icon}</div>
-                        <div><div className="hamburger-item-label">{item.label}</div><div className="hamburger-item-desc">{item.desc}</div></div>
-                      </div>
-                    ))}
-                    <button className="btn btn-gold" style={{width:"100%",marginTop:16,fontSize:12,padding:"12px 0"}} onClick={async () => { try { await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})}); } catch(e){} localStorage.removeItem("muse_user"); localStorage.removeItem("muse_state"); setAuthUser(null); setScreen("auth"); setHamburgerScreen(""); setShowHamburger(false); showToast("Logged out"); }}>Log Out</button>
-                  </div>
-                )}
-                {hamburgerScreen === "premium" && (
-                  <div className="conn-scroll">
-                    <div className="hamburger-title">Muse Premium</div>
-                    <div style={{textAlign:"center",padding:10,marginBottom:16}}>
-                      <div style={{fontSize:36,marginBottom:8}}>✨</div>
-                      <div style={{fontSize:16,fontWeight:700,color:"var(--gold)",marginBottom:6}}>$9.99/month</div>
-                      <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.5}}>Unlock the full Muse experience</div>
+                    <button className="hamburger-item" style={{width:"100%",marginBottom:6}} onClick={() => { setHamburgerScreen(""); setShowHamburger(false); setScreen("profile"); }}>
+                      <div className="hamburger-item-icon" style={{background:"linear-gradient(135deg,#FFD700,#FFBF00,#FF8A80)"}}>Ep</div>
+                      <div><div className="hamburger-item-label">Edit Profile</div><div className="hamburger-item-desc">Update your bio, skills, portfolio</div></div>
+                    </button>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"20px 0 10px"}}>Muse Premium</div>
+                    <div style={{textAlign:"center",padding:12,marginBottom:10,background:"linear-gradient(135deg,rgba(255,215,0,0.08),rgba(255,138,128,0.06))",borderRadius:16,border:"1px solid rgba(255,215,0,0.15)"}}>
+                      <div style={{fontSize:24,marginBottom:6}}>✨</div>
+                      <div style={{fontSize:16,fontWeight:700,color:"var(--gold)"}}>$9.99/month</div>
+                      <div style={{fontSize:12,color:"var(--text2)",marginBottom:10}}>Unlimited likes, superlikes, boosts & more</div>
+                      <button className="btn btn-gold" style={{fontSize:12,padding:"8px 20px"}} onClick={()=>{showToast("Coming soon! Premium features are being built.")}}>Upgrade</button>
                     </div>
-                    {[
-                      {icon:"∞",label:"Unlimited Likes",desc:"No daily cap, swipe as much as you want"},
-                      {icon:"★",label:"5 Superlikes/week",desc:"Stand out from the crowd"},
-                      {icon:"⚡",label:"3 Boosts/week",desc:"Top of the stack in your area"},
-                      {icon:"✉",label:"Direct Notes",desc:"Send messages before matching"},
-                      {icon:"◉",label:"See Who Liked You",desc:"Know who's interested instantly"},
-                      {icon:"◆",label:"Premium Filters",desc:"Filter by style, availability, rate"},
-                    ].map((item,i) => (
-                      <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-                        <div style={{fontSize:20,minWidth:30,textAlign:"center"}}>{item.icon}</div>
-                        <div><div style={{fontSize:14,fontWeight:600,color:"var(--text)"}}>{item.label}</div><div style={{fontSize:12,color:"var(--muted)",marginTop:2}}>{item.desc}</div></div>
-                      </div>
-                    ))}
-                    <button className="btn btn-gold" style={{width:"100%",marginTop:16,fontSize:14,padding:"14px 0"}} onClick={()=>setHamburgerScreen("premium")}>Upgrade to Premium</button>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"20px 0 10px"}}>Statistics</div>
+                    <div className="stats-row" style={{marginTop:8}}>
+                      <div className="stat"><div className="stat-num">{currentUser.stats?.matches||0}</div><div className="stat-label">Matches</div></div>
+                      <div className="stat"><div className="stat-num">{currentUser.stats?.likes||0}</div><div className="stat-label">Likes</div></div>
+                      <div className="stat"><div className="stat-num">{currentUser.stats?.bookingsCompleted||0}</div><div className="stat-label">Bookings</div></div>
+                    </div>
+                    <button className="btn btn-gold" style={{width:"100%",marginTop:24,fontSize:12,padding:"12px 0"}} onClick={async () => { try { await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})}); } catch(e){} localStorage.removeItem("muse_user"); localStorage.removeItem("muse_state"); setAuthUser(null); setScreen("auth"); setHamburgerScreen(""); setShowHamburger(false); showToast("Logged out"); }}>Log Out</button>
                   </div>
                 )}
-                {hamburgerScreen === "preferences" && (
+                {hamburgerScreen === "settings" && (
                   <div className="conn-scroll">
-                    <div className="hamburger-back" onClick={() => setHamburgerScreen("")}><FiArrowLeft size={16} /> Back</div>
-                    <div className="hamburger-title">Discovery Preferences</div>
+                    <div className="hamburger-title">Settings</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Discovery Preferences</div>
                     <div style={{marginBottom:16}}>
                       <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Age Range</div>
                       <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -1006,83 +975,45 @@ function MusePage() {
                         </div>
                       ))}
                     </div>
-                    <button className="btn btn-gold" style={{width:"100%"}} onClick={()=>{apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-preferences",preferences:discoveryPrefs})});showToast("Preferences saved!")}}>Save Preferences</button>
-                  </div>
-                )}
-                {hamburgerScreen === "safety" && (
-                  <div className="conn-scroll">
-                    <div className="hamburger-back" onClick={() => setHamburgerScreen("")}><FiArrowLeft size={16} /> Back</div>
-                    <div className="hamburger-title">Safety & Privacy</div>
-                    <div style={{marginBottom:20}}>
-                      <div style={{fontSize:15,fontWeight:700,color:"var(--text)",marginBottom:12}}>Account Security</div>
-                      <div style={{padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <div><div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>Two-Factor Authentication</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Add an extra layer of security</div></div>
-                        <div style={{padding:"6px 14px",borderRadius:99,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)",fontSize:12,color:"var(--muted)",cursor:"pointer"}} onClick={()=>showToast("2FA setup coming soon!")}>Set Up</div>
-                      </div>
-                      <div style={{padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <div><div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>Change Password</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Update your account password</div></div>
-                        <div style={{padding:"6px 14px",borderRadius:99,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)",fontSize:12,color:"var(--muted)",cursor:"pointer"}} onClick={async()=>{if(!authUser?.email){showToast("Not logged in");return;}try{const r=await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forgot-password",email:authUser.email})});const j=await r.json();showToast(j.message||j.error||"Check your email for reset link!");}catch{showToast("Network error");}}}>Change</div>
+                    <button className="btn btn-gold" style={{width:"100%",fontSize:12}} onClick={()=>{apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-preferences",preferences:discoveryPrefs})});showToast("Preferences saved!")}}>Save Preferences</button>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"24px 0 10px"}}>Safety & Privacy</div>
+                    <div style={{padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <div><div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>Show Distance</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Display your approximate location</div></div>
+                      <div onClick={()=>setShowNsfw(p=>!p)} style={{width:44,height:24,borderRadius:12,background:showNsfw?"rgba(255,215,0,0.3)":"rgba(255,255,255,0.1)",cursor:"pointer",position:"relative",transition:"all .25s"}}>
+                        <div style={{width:20,height:20,borderRadius:"50%",background:showNsfw?"var(--gold)":"var(--muted)",position:"absolute",top:2,left:showNsfw?22:2,transition:"all .25s"}} />
                       </div>
                     </div>
-                    <div style={{marginBottom:20}}>
-                      <div style={{fontSize:15,fontWeight:700,color:"var(--text)",marginBottom:12}}>Privacy</div>
-                      <div style={{padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <div><div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>Show Distance</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Display your approximate location</div></div>
-                        <div onClick={()=>setShowNsfw(p=>!p)} style={{width:44,height:24,borderRadius:12,background:showNsfw?"rgba(255,215,0,0.3)":"rgba(255,255,255,0.1)",cursor:"pointer",position:"relative",transition:"all .25s"}}>
-                          <div style={{width:20,height:20,borderRadius:"50%",background:showNsfw?"var(--gold)":"var(--muted)",position:"absolute",top:2,left:showNsfw?22:2,transition:"all .25s"}} />
-                        </div>
-                      </div>
-                      <div style={{padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <div><div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>Online Status</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Show when you're active</div></div>
-                        <div style={{width:44,height:24,borderRadius:12,background:"rgba(255,215,0,0.3)",cursor:"pointer",position:"relative"}}>
-                          <div style={{width:20,height:20,borderRadius:"50%",background:"var(--gold)",position:"absolute",top:2,left:22,transition:"all .25s"}} />
-                        </div>
+                    <div style={{padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <div><div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>Online Status</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Show when you're active</div></div>
+                      <div style={{width:44,height:24,borderRadius:12,background:"rgba(255,215,0,0.3)",cursor:"pointer",position:"relative"}}>
+                        <div style={{width:20,height:20,borderRadius:"50%",background:"var(--gold)",position:"absolute",top:2,left:22,transition:"all .25s"}} />
                       </div>
                     </div>
-                    <div style={{marginBottom:20}}>
-                      <div style={{fontSize:15,fontWeight:700,color:"var(--text)",marginBottom:12}}>Blocked Users</div>
-                      {blockedUsers.length === 0 ? (
-                        <div style={{fontSize:13,color:"var(--muted)",padding:"12px 0"}}>No blocked users</div>
-                      ) : (
-                        <div style={{fontSize:13,color:"var(--text2)",padding:"12px 0"}}>{blockedUsers.length} user{blockedUsers.length!==1?"s":""} blocked</div>
-                      )}
+                    <div style={{padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <div><div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>Blocked Users</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{blockedUsers.length} blocked</div></div>
                     </div>
-                    <div style={{marginBottom:20}}>
-                      <div style={{fontSize:15,fontWeight:700,color:"var(--text)",marginBottom:12}}>Your Data</div>
-                      <button className="btn" style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",color:"var(--text)",fontSize:13}} onClick={async()=>{try{const raw=localStorage.getItem("muse_user");const t=raw?JSON.parse(raw).access_token:"";if(!t){showToast("Please sign in again");return;}const res=await fetch("/api/muse?type=export&access_token="+encodeURIComponent(t));if(!res.ok){showToast("Export failed");return;}const j=await res.json();const blob=new Blob([JSON.stringify(j,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="muse-my-data.json";a.click();URL.revokeObjectURL(url);showToast("Data exported");}catch(e){showToast("Export failed");}}}>Export My Data</button>
+                    <button className="btn" style={{width:"100%",marginTop:12,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",color:"var(--text)",fontSize:13}} onClick={async()=>{try{const raw=localStorage.getItem("muse_user");const t=raw?JSON.parse(raw).access_token:"";if(!t){showToast("Please sign in again");return;}const res=await fetch("/api/muse?type=export&access_token="+encodeURIComponent(t));if(!res.ok){showToast("Export failed");return;}const j=await res.json();const blob=new Blob([JSON.stringify(j,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="muse-my-data.json";a.click();URL.revokeObjectURL(url);showToast("Data exported");}catch(e){showToast("Export failed");}}}>Export My Data</button>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"24px 0 10px"}}>Help & Support</div>
+                    {[
+                      {q:"How does matching work?",a:"Swipe right on creators you'd like to connect with. If they swipe right back, it's a match! You can then message each other."},
+                      {q:"What are Briefs?",a:"Briefs are creative opportunities posted by brands and clients. You can browse open briefs, apply to paid ones, or respond to vision briefs."},
+                      {q:"How do I upgrade to Premium?",a:"Go to Settings → Muse Premium to see plan options."},
+                      {q:"How do I report someone?",a:"Tap the ••• menu on any profile or post, then select Report. Choose a reason and we'll review it within 24 hours."},
+                      {q:"How do I delete my account?",a:"Go to Settings → Safety & Privacy → Delete Account. This permanently removes all your data."},
+                    ].map((faq,i) => (
+                      <div key={i} style={{marginBottom:10,padding:"12px 14px",borderRadius:12,background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.04)"}}>
+                        <div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:6}}>{faq.q}</div>
+                        <div style={{fontSize:12,color:"var(--text2)",lineHeight:1.5}}>{faq.a}</div>
+                      </div>
+                    ))}
+                    <div style={{marginTop:12}}>
+                      <button className="btn btn-outline" style={{width:"100%",fontSize:13}} onClick={()=>window.open("mailto:support@wyzdesign.com?subject=Muse%20Support%20Request")}>Email Support</button>
                     </div>
-                    <div>
+                    <div style={{marginTop:20}}>
                       <div style={{fontSize:15,fontWeight:700,color:"var(--coral)",marginBottom:12}}>Danger Zone</div>
                       <button className="btn" style={{width:"100%",background:"rgba(255,107,107,0.1)",border:"1px solid rgba(255,107,107,0.3)",color:"var(--coral)",fontSize:13}} onClick={()=>{if(confirm("Delete your account? This cannot be undone.")){fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"delete-account"})});showToast("Account deleted");setTimeout(()=>window.location.reload(),1500)}}}>Delete Account</button>
                     </div>
-                  </div>
-                )}
-                {hamburgerScreen === "help" && (
-                  <div className="conn-scroll">
-                    <div className="hamburger-back" onClick={() => setHamburgerScreen("")}><FiArrowLeft size={16} /> Back</div>
-                    <div className="hamburger-title">Help & Support</div>
-                    <div style={{marginBottom:20}}>
-                      {[
-                        {q:"How does matching work?",a:"Swipe right on creators you'd like to connect with. If they swipe right back, it's a match! You can then message each other."},
-                        {q:"What are Briefs?",a:"Briefs are creative opportunities posted by brands and clients. You can browse open briefs, apply to paid ones, or respond to vision briefs."},
-                        {q:"How do I upgrade to Premium?",a:"Go to your Profile → Muse Premium to see plan options. Premium gives you unlimited likes, superlikes, boosts, and more."},
-                        {q:"How do I report someone?",a:"Tap the ••• menu on any profile or post, then select Report. Choose a reason and we'll review it within 24 hours."},
-                        {q:"Can I change my creative type?",a:"Yes! Go to Edit Profile and update your type. This affects who you're matched with in discovery."},
-                        {q:"How do I delete my account?",a:"Go to Safety & Privacy → Delete Account. This permanently removes all your data and cannot be undone."},
-                      ].map((faq,i) => (
-                        <div key={i} style={{marginBottom:12,padding:"12px 14px",borderRadius:12,background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.04)"}}>
-                          <div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:6}}>{faq.q}</div>
-                          <div style={{fontSize:12,color:"var(--text2)",lineHeight:1.5}}>{faq.a}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <div>
-                      <div style={{fontSize:15,fontWeight:700,color:"var(--text)",marginBottom:12}}>Contact Us</div>
-                      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                        <button className="btn btn-outline" style={{width:"100%",fontSize:13}} onClick={()=>window.open("mailto:support@wyzdesign.com?subject=Muse%20Support%20Request")}>Email Support</button>
-                        <button className="btn btn-outline" style={{width:"100%",fontSize:13}} onClick={()=>showToast("Bug report form coming soon!")}>Report a Bug</button>
-                      </div>
-                    </div>
+                    <button className="btn btn-gold" style={{width:"100%",marginTop:16,fontSize:12,padding:"12px 0"}} onClick={async () => { try { await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})}); } catch(e){} localStorage.removeItem("muse_user"); localStorage.removeItem("muse_state"); setAuthUser(null); setScreen("auth"); setHamburgerScreen(""); setShowHamburger(false); showToast("Logged out"); }}>Log Out</button>
                   </div>
                 )}
               </>
@@ -1456,29 +1387,22 @@ function MusePage() {
               <div className="discover-wrap">
                 <div className="hdr">
                   <div className="logo-link">muse</div>
-                  <div style={{flex:1,margin:"0 10px",position:"relative"}}>
+                  <div style={{flex:1}} />
+                  <div style={{display:"flex",gap:4}}>
                     {!discoverSearchOpen ? (
-                      <button className="hdr-btn" onClick={()=>setDiscoverSearchOpen(true)} style={{width:"100%",borderRadius:99,justifyContent:"flex-start",padding:"0 14px",gap:8,fontSize:13,color:"var(--muted)",background:"var(--glass)"}}>
-                        <FiSearch size={14} /> Search creatives...
-                      </button>
+                      <button className="hdr-btn" style={{width:34,height:34}} onClick={()=>setDiscoverSearchOpen(true)}><FiSearch size={16} /></button>
                     ) : (
-                      <div style={{position:"relative",animation:"fadeIn .2s ease"}}>
-                        <FiSearch size={14} style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"var(--muted)"}} />
-                        <input className="inp" placeholder="Search creatives..." value={discoverSearch} onChange={e=>setDiscoverSearch(e.target.value)} autoFocus style={{margin:0,padding:"8px 12px 8px 34px",fontSize:13,borderRadius:99}} />
+                      <div style={{display:"flex",alignItems:"center",gap:6,animation:"fadeIn .2s ease"}}>
+                        <input className="inp" placeholder="Search..." value={discoverSearch} onChange={e=>setDiscoverSearch(e.target.value)} autoFocus style={{margin:0,padding:"6px 10px",fontSize:12,width:120,borderRadius:99}} />
+                        <button className="hdr-btn" style={{width:30,height:30,borderRadius:"50%",fontSize:12}} onClick={()=>{setDiscoverSearchOpen(false);setDiscoverSearch("")}}>✕</button>
                       </div>
                     )}
-                  </div>
-<div style={{display:"flex",gap:4}}>
-{discoverSearchOpen ? (
-<button className="hdr-btn" onClick={()=>{setDiscoverSearchOpen(false);setDiscoverSearch("")}} style={{width:34,height:34}}><FiX size={16} /></button>
-) : (
-<>
+                    {!discoverSearchOpen && (<>
 <button className="hdr-btn" onClick={()=>setShowDiscoveryPrefs(true)} style={{width:34,height:34}}><FiSettings size={16} /></button>
 <button className="hdr-btn" onClick={()=>setShowFilterModal(true)} style={{width:34,height:34}}><FiFilter size={16} /></button>
 <button className="hdr-btn" onClick={()=>setMapView(v=>!v)} title="Map View" style={{width:34,height:34}}><FiCompass size={16} /></button>
 <button className={"hdr-btn"+(boostActive?" hdr-btn-glow":"")} onClick={()=>{if(!boostActive){const end=Date.now()+1800000;setBoostActive(true);setBoostEnd(end);try{localStorage.setItem("muse_boost",""+end);}catch{}showToast("Boost on for 30 min!");}else{setBoostActive(false);setBoostEnd(0);try{localStorage.removeItem("muse_boost");}catch{}showToast("Boost off");}}} style={{width:34,height:34}}><FiZap size={16} /></button>
-</>
-)}
+</>)}
 </div>
                 </div>
                 {mapView && <MuseMap filteredProfiles={filteredProfiles} myGeo={myGeo} containerRef={mapContainerRef} />}
@@ -1487,7 +1411,7 @@ function MusePage() {
                   {filteredProfiles.slice(currentIdx, currentIdx+3).map((profile, idx) => {
                     const isTop = idx === 0;
                     return (
-                       <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")+(expandedProfile===profile.id?" expanded":"")} style={{zIndex:3-idx,transform:"translateX("+(isTop?dragOffset:0)+"px) scale("+(Math.max(0.92, 1 - idx * 0.04))+")",opacity:isTop?1-dragOpacity*0.3:1}} onPointerDown={isTop&&expandedProfile!==profile.id?onPointerDown:undefined} onPointerMove={isTop&&expandedProfile!==profile.id?onPointerMove:undefined} onPointerUp={isTop&&expandedProfile!==profile.id?onPointerUp:undefined} onPointerCancel={isTop&&expandedProfile!==profile.id?onPointerUp:undefined}>
+                       <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")+(expandedProfile===profile.id?" expanded":"")} style={{zIndex:3-idx,transform:"translate("+(isTop?dragOffset:0)+"px, "+(isTop?dragOffsetY:0)+"px) scale("+(Math.max(0.92, 1 - idx * 0.04))+")",opacity:isTop?1-dragOpacity*0.3:1}} onPointerDown={isTop&&expandedProfile!==profile.id?onPointerDown:undefined} onPointerMove={isTop&&expandedProfile!==profile.id?onPointerMove:undefined} onPointerUp={isTop&&expandedProfile!==profile.id?onPointerUp:undefined} onPointerCancel={isTop&&expandedProfile!==profile.id?onPointerUp:undefined}>
                         <div style={{position:"relative",width:"100%",height:"100%",display:"flex",flexDirection:"column"}}>
                           <div style={{position:"relative",width:"100%",flex:expandedProfile===profile.id?"0 0 auto":"1 1 auto",minHeight:expandedProfile===profile.id?340:0,overflow:"hidden"}}>
                             <img src={((profile as any).photos?.length ? (profile as any).photos[currentPhotoIdx] : profile.img) || profile.img} alt={profile.name} draggable="false" onError={handleImgError} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",top:0,left:0}} />
@@ -1501,9 +1425,10 @@ function MusePage() {
                             <div className="card-shine" />
                             <div className="card-gradient" />
                             <div className="card-border" />
-                            {isTop && dragOffset > 30 && <div style={{position:"absolute",top:40,left:20,fontSize:28,fontWeight:900,color:"#4ade80",border:"4px solid #4ade80",borderRadius:12,padding:"6px 16px",transform:"rotate(-15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>LIKE</div>}
-                            {isTop && dragOffset < -30 && <div style={{position:"absolute",top:40,right:20,fontSize:28,fontWeight:900,color:"#ef4444",border:"4px solid #ef4444",borderRadius:12,padding:"6px 16px",transform:"rotate(15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>NOPE</div>}
-                            {isTop && dragOffset > 150 && <div style={{position:"absolute",top:40,right:20,fontSize:22,fontWeight:900,color:"#818cf8",border:"4px solid #818cf8",borderRadius:12,padding:"6px 16px",transform:"rotate(-15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:2}}>SUPER</div>}
+                            {isTop && dragOffset > 25 && <div style={{position:"absolute",top:40,left:20,fontSize:28,fontWeight:900,color:"#4ade80",border:"4px solid #4ade80",borderRadius:12,padding:"6px 16px",transform:"rotate(-15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>LIKE</div>}
+                            {isTop && dragOffset < -25 && <div style={{position:"absolute",top:40,right:20,fontSize:28,fontWeight:900,color:"#ef4444",border:"4px solid #ef4444",borderRadius:12,padding:"6px 16px",transform:"rotate(15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>NOPE</div>}
+                            {isTop && Math.abs(dragOffsetY) > 25 && <div style={{position:"absolute",top:"40%",left:"50%",transform:"translate(-50%,-50%) rotate(-5deg)",fontSize:26,fontWeight:900,color:"#818cf8",border:"4px solid #818cf8",borderRadius:12,padding:"6px 16px",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:2,background:"rgba(129,140,248,0.15)"}}>SUPER</div>}
+                            {isTop && Math.abs(dragOffset) > 130 && <span style={{display:"none"}} />}
                             {profile.online && (
                               <div className="card-online">
                                 <div className="card-online-dot" />
@@ -1655,7 +1580,7 @@ function MusePage() {
               <div className="hdr">
                 <div className="logo-link">muse</div>
 <div style={{display:"flex",gap:10}}>
-{!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-3,right:-3,width:14,height:14,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:8,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>{likedBy.length}</span>}</button>)}
+{!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
 {!searchOpen ? (<button className="hdr-btn" style={{width:34,height:34}} onClick={()=>setSearchOpen(true)}><FiSearch size={16} /></button>) : (
                     <div style={{display:"flex",alignItems:"center",gap:6,animation:"fadeIn .2s ease"}}>
                       <input className="inp" placeholder="Search..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} autoFocus style={{margin:0,padding:"6px 10px",fontSize:12,width:120,borderRadius:99}} />

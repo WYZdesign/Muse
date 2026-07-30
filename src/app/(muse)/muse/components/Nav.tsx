@@ -1,5 +1,5 @@
 "use client";
-import { FiCompass, FiUsers, FiZap, FiHeart, FiUser, FiMenu } from "react-icons/fi";
+import { FiCompass, FiUsers, FiZap, FiHeart, FiCalendar, FiMenu } from "react-icons/fi";
 import type { Screen } from "./types";
 
 const gradMap: Record<string,string> = {
@@ -7,7 +7,7 @@ const gradMap: Record<string,string> = {
   connections: "linear-gradient(90deg,#87CEEB,#64B5F6,#7B68EE)",
   briefs: "linear-gradient(90deg,#98FB98,#66BB6A,#00BCD4)",
   matches: "linear-gradient(90deg,#FF69B4,#FF4757,#FF6B6B)",
-  profile: "linear-gradient(90deg,#D4A5FF,#B388FF,#FFD700)",
+  sessions: "linear-gradient(90deg,#E1BEE7,#9C27B0,#FF4081)",
 };
 
 const tabs: { key: Screen|string; label: string; icon: React.ReactNode; hasScreen: boolean }[] = [
@@ -15,7 +15,7 @@ const tabs: { key: Screen|string; label: string; icon: React.ReactNode; hasScree
   { key:"connections", label:"Feed", icon:<FiUsers size={22} />, hasScreen:true },
   { key:"briefs", label:"Collab", icon:<FiZap size={22} />, hasScreen:false },
   { key:"matches", label:"Matches", icon:<FiHeart size={22} />, hasScreen:true },
-  { key:"profile", label:"Profile", icon:<FiUser size={22} />, hasScreen:true },
+  { key:"sessions", label:"Sessions", icon:<FiCalendar size={22} />, hasScreen:true },
 ];
 
 export default function Nav({ active, onNavigate, onHamburgerToggle }: { active: string; onNavigate: (s: Screen) => void; onHamburgerToggle?: () => void }) {
@@ -31,9 +31,9 @@ export default function Nav({ active, onNavigate, onHamburgerToggle }: { active:
           </button>
         );
       })}
-      <button className="nav-item" onClick={() => onHamburgerToggle?.()} aria-label="More">
+      <button className="nav-item" onClick={() => onHamburgerToggle?.()} aria-label="Menu">
         <span className="nav-icon"><FiMenu size={22} /></span>
-        <span>More</span>
+        <span>Menu</span>
       </button>
     </div>
   );
