@@ -814,9 +814,9 @@ function MusePage() {
                         <button className={"conn-btn "+(rsvpdEvents.includes(ev.id)?"conn-btn-ghost":"conn-btn-primary")} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter(x=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
                       </div>
                     ))}
+                    </>}
                   </div>
                 )}
-                {hamburgerScreen === "sessions" && (
                   <div className="conn-scroll">
                     <div className="hamburger-title">Sessions</div>
                     <div className="menu-tabs">
@@ -1543,8 +1543,9 @@ function MusePage() {
                   <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
                   <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts. Join today.</div>
                   <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
-                </div>
-              )}
+                  </div>
+                )}
+                {hamburgerScreen === "sessions" && (
               <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
             <div className={"screen-el"+(screen==="connections"?" active":"")}>
