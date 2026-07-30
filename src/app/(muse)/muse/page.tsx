@@ -933,7 +933,6 @@ function MusePage() {
                             )}
                             {post.comments.length>0 && expandedPost!==post.id && <button className="conn-btn conn-btn-ghost" style={{fontSize:11,padding:"4px 8px",marginTop:6}} onClick={()=>{setExpandedPost(post.id===expandedPost?null:post.id)}}>{post.comments.length} replies</button>}
                           </div>
-                        </div>
                       </div>
                     ))}
                     </>}
@@ -1545,9 +1544,6 @@ function MusePage() {
                   <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
                   </div>
                 )}
-                {hamburgerScreen === "sessions" && (
-              <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
-            </div>
             <div className={"screen-el"+(screen==="connections"?" active":"")}>
               <div className="hdr">
                 <div className="logo-link">Feed</div>
