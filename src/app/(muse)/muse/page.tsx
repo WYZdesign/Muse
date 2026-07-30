@@ -6,7 +6,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
 import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles } from "@/app/muse-realtime";
-import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar } from "react-icons/fi";
+import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2 } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import Nav from "./components/Nav";
 import Confetti from "./components/Confetti";
@@ -762,12 +762,12 @@ function MusePage() {
               <>
                 <div className="hamburger-title">Menu</div>
                 {[
-                  {key:"community",icon:"Cm",label:"Community",desc:"Channels, groups & events",grad:"linear-gradient(135deg,#FF8A80,#FF4757,#FFD700)"},
-                  {key:"sessions",icon:"Se",label:"Sessions",desc:"Bookings & one-on-ones",grad:"linear-gradient(135deg,#E1BEE7,#9C27B0,#FF4081)"},
-                  {key:"network",icon:"Ne",label:"Network",desc:"Professionals & forum",grad:"linear-gradient(135deg,#B3E5FC,#64B5F6,#00BCD4)"},
-                  {key:"profile",icon:"Yo",label:"Profile",desc:"Edit profile & premium",grad:"linear-gradient(135deg,#FFD700,#FFB5C2,#B388FF)"},
-                  {key:"settings",icon:"St",label:"Settings",desc:"Preferences, safety & help",grad:"linear-gradient(135deg,#CE93D8,#B388FF,#A5D6A7)"},
-                  {key:"moments",icon:"Mo",label:"Moments",desc:"Stories, maps & real-time",grad:"linear-gradient(135deg,#FF9800,#FF5722,#FFEB3B)"},
+                  {key:"community",icon:<FiUsers size={20} />,label:"Community",desc:"Channels, groups & events",grad:"linear-gradient(135deg,#FF8A80,#FF4757,#FFD700)"},
+                  {key:"sessions",icon:<FiCalendar size={20} />,label:"Sessions",desc:"Bookings & one-on-ones",grad:"linear-gradient(135deg,#E1BEE7,#9C27B0,#FF4081)"},
+                  {key:"network",icon:<FiShare2 size={20} />,label:"Network",desc:"Professionals & forum",grad:"linear-gradient(135deg,#B3E5FC,#64B5F6,#00BCD4)"},
+                  {key:"profile",icon:<FiUser size={20} />,label:"Profile",desc:"Edit profile & premium",grad:"linear-gradient(135deg,#FFD700,#FFB5C2,#B388FF)"},
+                  {key:"settings",icon:<FiSettings size={20} />,label:"Settings",desc:"Preferences, safety & help",grad:"linear-gradient(135deg,#CE93D8,#B388FF,#A5D6A7)"},
+                  {key:"moments",icon:<FiCamera size={20} />,label:"Moments",desc:"Stories, maps & real-time",grad:"linear-gradient(135deg,#FF6B6B,#FFD93D,#6BCB77)"},
                 ].map(item => (
                   <div key={item.key} className="hamburger-item" onClick={() => setHamburgerScreen(item.key)}>
                     <div className="hamburger-item-icon" style={{background:item.grad}}>{item.icon}</div>
@@ -1019,6 +1019,25 @@ function MusePage() {
                       <button className="btn" style={{width:"100%",background:"rgba(255,107,107,0.1)",border:"1px solid rgba(255,107,107,0.3)",color:"var(--coral)",fontSize:13}} onClick={()=>{if(confirm("Delete your account? This cannot be undone.")){fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"delete-account"})});showToast("Account deleted");setTimeout(()=>window.location.reload(),1500)}}}>Delete Account</button>
                     </div>
                     <button className="btn btn-gold" style={{width:"100%",marginTop:16,fontSize:12,padding:"12px 0"}} onClick={async () => { try { await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})}); } catch(e){} localStorage.removeItem("muse_user"); localStorage.removeItem("muse_state"); setAuthUser(null); setScreen("auth"); setHamburgerScreen(""); setShowHamburger(false); showToast("Logged out"); }}>Log Out</button>
+                  </div>
+                )}
+                {hamburgerScreen === "moments" && (
+                  <div className="conn-scroll">
+                    <div className="hamburger-title">Moments</div>
+                    <div style={{textAlign:"center",padding:8,fontSize:13,color:"var(--gold)",fontWeight:700,marginBottom:12}}>Snapshots from creatives near you</div>
+                    {[...Array(6)].map((_,i)=><div key={i} className="conn-card" style={{flexDirection:"column",margin:"0 0 10px",padding:0,overflow:"hidden"}}>
+                      <div style={{position:"relative",height:160,background:`linear-gradient(135deg,${["#FF6B6B","#4ECDC4","#FFD93D","#A78BFA","#FF8A80","#6BCB77"][i]},#0a0612)`}}>
+                        <div style={{position:"absolute",top:10,left:10,display:"flex",alignItems:"center",gap:8,background:"rgba(0,0,0,0.5)",borderRadius:99,padding:"4px 10px"}}>
+                          <div style={{width:28,height:28,borderRadius:"50%",background:"var(--gold)",border:"2px solid #fff"}} />
+                          <span style={{fontSize:12,color:"#fff",fontWeight:600}}>creative_{100+i}</span>
+                        </div>
+                        <div style={{position:"absolute",bottom:10,right:10,fontSize:10,color:"#fff",background:"rgba(0,0,0,0.5)",borderRadius:8,padding:"3px 10px"}}>{["5m","12m","28m","1h","2h","3h"][i]} ago</div>
+                      </div>
+                      <div style={{padding:"8px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <span style={{fontSize:12,color:"var(--text2)"}}>📍 {["Los Angeles","Miami","NYC","Chicago","Austin","Portland"][i]}</span>
+                        <button className="conn-btn conn-btn-primary" style={{fontSize:10,padding:"4px 10px"}} onClick={()=>showToast("Story viewed!")}>View</button>
+                      </div>
+                    </div>)}
                   </div>
                 )}
               </>
