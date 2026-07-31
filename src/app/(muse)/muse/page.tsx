@@ -377,6 +377,19 @@ function MusePage() {
 
   const showToast = useCallback((msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); }, []);
 
+  const doLogout = useCallback(async (extra?: () => void) => {
+    try { await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})}); } catch(e) {}
+    localStorage.removeItem("muse_user");
+    localStorage.removeItem("muse_state");
+    setAuthUser(null); setScreen("auth");
+    if (extra) extra();
+    showToast("Logged out");
+  }, [showToast]);
+
+  const doLogoutWithHamburger = useCallback(async () => {
+    await doLogout(); setHamburgerScreen(""); setShowHamburger(false);
+  }, [doLogout]);
+
   const uploadImage = useCallback(async (file: File, folder: string): Promise<string | null> => {
     try {
       const fd = new FormData();
@@ -942,7 +955,7 @@ function MusePage() {
                       <div className="stat"><div className="stat-num">{currentUser.stats?.likes||0}</div><div className="stat-label">Likes</div></div>
                       <div className="stat"><div className="stat-num">{currentUser.stats?.bookingsCompleted||0}</div><div className="stat-label">Bookings</div></div>
                     </div>
-                    <button className="btn btn-gold" style={{width:"100%",marginTop:24,fontSize:12,padding:"12px 0"}} onClick={async () => { try { await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})}); } catch(e){} localStorage.removeItem("muse_user"); localStorage.removeItem("muse_state"); setAuthUser(null); setScreen("auth"); setHamburgerScreen(""); setShowHamburger(false); showToast("Logged out"); }}>Log Out</button>
+                    <button className="btn btn-gold" style={{width:"100%",marginTop:24,fontSize:12,padding:"12px 0"}} onClick={doLogoutWithHamburger}>Log Out</button>
                   </div>
                 )}
                 {hamburgerScreen === "settings" && (
@@ -1020,7 +1033,7 @@ function MusePage() {
                       <div style={{fontSize:15,fontWeight:700,color:"var(--coral)",marginBottom:12}}>Danger Zone</div>
                       <button className="btn" style={{width:"100%",background:"rgba(255,107,107,0.1)",border:"1px solid rgba(255,107,107,0.3)",color:"var(--coral)",fontSize:13}} onClick={()=>{if(confirm("Delete your account? This cannot be undone.")){fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"delete-account"})});showToast("Account deleted");setTimeout(()=>window.location.reload(),1500)}}}>Delete Account</button>
                     </div>
-                    <button className="btn btn-gold" style={{width:"100%",marginTop:16,fontSize:12,padding:"12px 0"}} onClick={async () => { try { await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})}); } catch(e){} localStorage.removeItem("muse_user"); localStorage.removeItem("muse_state"); setAuthUser(null); setScreen("auth"); setHamburgerScreen(""); setShowHamburger(false); showToast("Logged out"); }}>Log Out</button>
+                    <button className="btn btn-gold" style={{width:"100%",marginTop:16,fontSize:12,padding:"12px 0"}} onClick={doLogoutWithHamburger}>Log Out</button>
                   </div>
                 )}
                 {hamburgerScreen === "moments" && (
@@ -2007,7 +2020,7 @@ function MusePage() {
                 </div>
                 <div className="profile-btn"><button className="btn btn-outline" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio||""); setEditLoc(obData.loc||""); setShowEditProfile(true); }}>Edit Profile</button></div>
                 <div className="profile-btn"><button className="btn btn-outline" onClick={() => setShowShareProfile(true)}>Share Profile</button></div>
-                <div className="profile-btn"><button className="btn btn-outline" style={{borderColor:"rgba(255,138,128,0.2)",color:"var(--coral)"}} onClick={async()=>{try{await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})});}catch(e){} localStorage.removeItem("muse_user");setAuthUser(null);setScreen("auth");showToast("Logged out")}}>Log Out</button></div>
+                <div className="profile-btn"><button className="btn btn-outline" style={{borderColor:"rgba(255,138,128,0.2)",color:"var(--coral)"}} onClick={doLogout}>Log Out</button></div>
               </div>
               <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
@@ -2263,7 +2276,7 @@ function MusePage() {
                   </div>
                 ))}
               </div>
-              <button className="btn btn-outline" style={{width:"100%",marginBottom:20}} onClick={async()=>{try{await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})});}catch(e){} localStorage.removeItem("muse_user");setAuthUser(null);setScreen("auth");showToast("Logged out")}}>Log Out</button>
+              <button className="btn btn-outline" style={{width:"100%",marginBottom:20}} onClick={doLogout}>Log Out</button>
             </div>
             <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
           </div>

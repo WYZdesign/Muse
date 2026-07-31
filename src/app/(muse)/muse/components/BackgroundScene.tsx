@@ -159,7 +159,9 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
     }
     for (let i = 0; i < 2; i++) spawnComet();
     animId = requestAnimationFrame(animate);
-    return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", resize); window.removeEventListener("mousemove", onMouse); window.removeEventListener("touchmove", onMouse); };
+    const onVis = () => { if (document.hidden) { cancelAnimationFrame(animId); } else { animId = requestAnimationFrame(animate); } };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { cancelAnimationFrame(animId); document.removeEventListener("visibilitychange", onVis); window.removeEventListener("resize", resize); window.removeEventListener("mousemove", onMouse); window.removeEventListener("touchmove", onMouse); };
   }, []);
 
   return (
