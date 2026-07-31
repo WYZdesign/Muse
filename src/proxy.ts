@@ -15,7 +15,7 @@ function originAllowed(origin: string): boolean {
   return false;
 }
 
-export function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/api/") && !["GET", "HEAD", "OPTIONS"].includes(request.method)) {
     const origin = request.headers.get("origin") || "";
     const referer = request.headers.get("referer") || "";
