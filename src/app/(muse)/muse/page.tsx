@@ -377,16 +377,13 @@ function MusePage() {
 
   const showToast = useCallback((msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); }, []);
 
-  const doLogout = useCallback(async (extra?: () => void) => {
+  const doLogout = useCallback(async () => {
     try { await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})}); } catch(e) {}
-    localStorage.removeItem("muse_user");
-    localStorage.removeItem("muse_state");
-    setAuthUser(null); setScreen("auth");
-    if (extra) extra();
-    showToast("Logged out");
+    localStorage.removeItem("muse_user"); localStorage.removeItem("muse_state");
+    setAuthUser(null); setScreen("auth"); showToast("Logged out");
   }, [showToast]);
 
-  const doLogoutWithHamburger = useCallback(async () => {
+  const doLogoutFull = useCallback(async () => {
     await doLogout(); setHamburgerScreen(""); setShowHamburger(false);
   }, [doLogout]);
 
@@ -955,7 +952,7 @@ function MusePage() {
                       <div className="stat"><div className="stat-num">{currentUser.stats?.likes||0}</div><div className="stat-label">Likes</div></div>
                       <div className="stat"><div className="stat-num">{currentUser.stats?.bookingsCompleted||0}</div><div className="stat-label">Bookings</div></div>
                     </div>
-                    <button className="btn btn-gold" style={{width:"100%",marginTop:24,fontSize:12,padding:"12px 0"}} onClick={doLogoutWithHamburger}>Log Out</button>
+                    <button className="btn btn-gold" style={{width:"100%",marginTop:24,fontSize:12,padding:"12px 0"}} onClick={doLogoutFull}>Log Out</button>
                   </div>
                 )}
                 {hamburgerScreen === "settings" && (
@@ -1033,7 +1030,7 @@ function MusePage() {
                       <div style={{fontSize:15,fontWeight:700,color:"var(--coral)",marginBottom:12}}>Danger Zone</div>
                       <button className="btn" style={{width:"100%",background:"rgba(255,107,107,0.1)",border:"1px solid rgba(255,107,107,0.3)",color:"var(--coral)",fontSize:13}} onClick={()=>{if(confirm("Delete your account? This cannot be undone.")){fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"delete-account"})});showToast("Account deleted");setTimeout(()=>window.location.reload(),1500)}}}>Delete Account</button>
                     </div>
-                    <button className="btn btn-gold" style={{width:"100%",marginTop:16,fontSize:12,padding:"12px 0"}} onClick={doLogoutWithHamburger}>Log Out</button>
+                    <button className="btn btn-gold" style={{width:"100%",marginTop:16,fontSize:12,padding:"12px 0"}} onClick={doLogoutFull}>Log Out</button>
                   </div>
                 )}
                 {hamburgerScreen === "moments" && (
