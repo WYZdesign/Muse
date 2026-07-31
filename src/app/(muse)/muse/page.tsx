@@ -115,7 +115,7 @@ function MusePage() {
   const [rsvpdEvents, setRsvpdEvents] = useState<number[]>([]);
   const [feedPosts, setFeedPosts] = useState<{id:number;author:string;avatar:string;type:string;text:string;likes:number;comments:number;shares:number;time:string;liked:boolean;saved:boolean;img?:string;reactions?:Record<string,number>}[]>([]);
   const [feedText, setFeedText] = useState("");
-  const [feedImage, setFeedImage] = useState<string|null>(null);
+  const [feedMedia, setFeedMedia] = useState<string[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [feedReactions, setFeedReactions] = useState<Record<number,string[]>>({});
   const [feedPostsStatic, setFeedPostsStatic] = useState<{id:number;author:string;avatar:string;type:string;text:string;likes:number;comments:number;shares:number;time:string;liked:boolean;saved:boolean;img?:string}[]>([{id:401,author:"Maya Chen",avatar:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",type:"photo",text:"Golden hour never gets old. Shot this at El Matador Beach last weekend.",likes:234,comments:18,shares:5,time:"2h ago",img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600",liked:false,saved:false},{id:402,author:"Jordan Rivera",avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",type:"text",text:"Just wrapped principal photography on a 30-min short. 14-hour days for 12 days straight. The footage is incredible!",likes:189,comments:32,shares:12,time:"5h ago",liked:false,saved:false},{id:403,author:"Sam Taylor",avatar:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",type:"photo",text:"New album art I designed. Surreal dreamlike aesthetic.",likes:312,comments:24,shares:8,time:"8h ago",img:"https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=600",liked:false,saved:false},{id:404,author:"Riley Patel",avatar:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",type:"photo",text:"Motion graphics reel. 6 months of work in 90 seconds.",likes:567,comments:45,shares:23,time:"1d ago",liked:false,saved:false}]);
@@ -146,7 +146,7 @@ function MusePage() {
   const [showLikesYou, setShowLikesYou] = useState(false);
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
-  const [stories, setStories] = useState<{id:number;author:string;avatar:string;img:string;time:string;views:number}[]>([]);
+  const [stories, setStories] = useState<any[]>([]);
   const [showStory, setShowStory] = useState<number|null>(null);
   const [theme, setTheme] = useState<"dark"|"light">("dark");
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
@@ -788,10 +788,11 @@ function MusePage() {
                         <div className="conn-content">
                           <div className="conn-name">{c.name}</div>
                           <div className="conn-meta">{c.members} members · {c.desc}</div>
-                          <div className="conn-actions" style={{marginTop:8}}>
-                            <button className={"conn-btn conn-btn-primary"+(c.cat==="nsfw"?" conn-nsfw-tag":"")} onClick={()=>{showToast("Joined "+c.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id,memberCount:c.members})})}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
-                            <button className="conn-btn conn-btn-ghost" onClick={()=>showToast(c.name+" community opened!")}>Learn</button>
-                          </div>
+                           <div className="conn-actions" style={{marginTop:8,display:"flex",gap:6}}>
+                             <button className={"conn-btn conn-btn-primary"+(c.cat==="nsfw"?" conn-nsfw-tag":"")} style={{flex:1}} onClick={()=>{showToast("Joined "+c.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id,memberCount:c.members})})}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
+                             <button className="conn-btn conn-btn-ghost" style={{flex:1}} onClick={()=>showToast(c.name+" community opened!")}>Learn</button>
+                             <button className="conn-btn conn-btn-ghost" style={{flex:1}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/community/"+c.id);showToast("Link copied!")}}>Share</button>
+                           </div>
                         </div>
                       </div>
                     ))}
@@ -819,9 +820,10 @@ function MusePage() {
                           <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6}}>
                             {s.skills.map(sk=><span key={sk} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{sk}</span>)}
                           </div>
-                          <div className="conn-actions" style={{marginTop:8}}>
-                            <button className="conn-btn conn-btn-primary" onClick={()=>{showToast("Session request sent to "+s.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})})}}>{s.available?"Book Session":"Waitlist"}</button>
-                          </div>
+                           <div className="conn-actions" style={{marginTop:8,display:"flex",gap:6}}>
+                             <button className="conn-btn conn-btn-primary" style={{flex:1}} onClick={()=>{showToast("Session request sent to "+s.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})})}}>{s.available?"Book Session":"Waitlist"}</button>
+                             <button className="conn-btn conn-btn-ghost" style={{flex:1}} onClick={()=>showToast(s.name+"'s full profile coming soon!")}>View Profile</button>
+                           </div>
                         </div>
                       </div>
                     ))}
@@ -838,10 +840,10 @@ function MusePage() {
                           <div className="conn-content">
                             <div className="conn-name">{m.name}</div>
                             <div className="conn-meta">{m.type} · Booked Session</div>
-                            <div className="conn-actions" style={{marginTop:8}}>
-                              <button className="conn-btn conn-btn-primary" onClick={() => { setHamburgerScreen(""); setShowHamburger(false); openChat(m); }}>Message</button>
-                              <button className="conn-btn conn-btn-ghost" onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
-                            </div>
+                             <div className="conn-actions" style={{marginTop:8,display:"flex",gap:6}}>
+                               <button className="conn-btn conn-btn-primary" style={{flex:1}} onClick={() => { setHamburgerScreen(""); setShowHamburger(false); openChat(m); }}>Message</button>
+                               <button className="conn-btn conn-btn-ghost" style={{flex:1}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
+                             </div>
                           </div>
                         </div>
                       ))
@@ -1437,7 +1439,7 @@ function MusePage() {
                     return (
                        <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")+(expandedProfile===profile.id?" expanded":"")} style={{zIndex:3-idx,transform:"translate("+(isTop?dragOffset:0)+"px, "+(isTop?dragOffsetY:0)+"px) scale("+(Math.max(0.92, 1 - idx * 0.04))+")",opacity:isTop?1-dragOpacity*0.3:1}} onPointerDown={isTop&&expandedProfile!==profile.id?onPointerDown:undefined} onPointerMove={isTop&&expandedProfile!==profile.id?onPointerMove:undefined} onPointerUp={isTop&&expandedProfile!==profile.id?onPointerUp:undefined} onPointerCancel={isTop&&expandedProfile!==profile.id?onPointerUp:undefined}>
                         <div style={{position:"relative",width:"100%",height:"100%",display:"flex",flexDirection:"column"}}>
-                          <div style={{position:"relative",width:"100%",flex:expandedProfile===profile.id?"0 0 auto":"1 1 auto",minHeight:expandedProfile===profile.id?340:0,overflow:"hidden"}}>
+                           <div style={{position:"relative",width:"100%",flex:expandedProfile===profile.id?"0 0 340px":"0 0 65%",minHeight:expandedProfile===profile.id?340:0,overflow:"hidden"}}>
                             <img src={((profile as any).photos?.length ? (profile as any).photos[currentPhotoIdx] : profile.img) || profile.img} alt={profile.name} draggable="false" onError={handleImgError} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",top:0,left:0}} />
                             {isTop && expandedProfile!==profile.id && <>
                               <div style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
@@ -1460,7 +1462,7 @@ function MusePage() {
                               </div>
                             )}
                           </div>
-                          <div className="card-info" style={{position:"relative",zIndex:3,flex:expandedProfile===profile.id?"0 0 auto":"0 0 auto"}}>
+                           <div className="card-info" style={{position:"relative",zIndex:3,flex:1,overflowY:"auto",minHeight:0}}>
                             {profile.verified && <div className="card-verified">Verified</div>}
                             {profile.nsfw && <div className="card-nsfw-badge">18+</div>}
                             <div>
@@ -1504,14 +1506,6 @@ function MusePage() {
                 </>)}
               </div>
               <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
-              {showPremiumPopup && (
-                <div className="premium-popup">
-                  <button className="premium-popup-close" onClick={()=>setShowPremiumPopup(false)}>✕</button>
-                  <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
-                  <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
-                  <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
-                </div>
-              )}
             </div>
             <div className={"screen-el"+(screen==="connections"?" active":"")}>
               <div className="hdr">
@@ -1527,14 +1521,16 @@ function MusePage() {
                   <img src={currentUser.avatar} alt="" style={{width:40,height:40,borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                   <div style={{flex:1,display:"flex",flexDirection:"column",gap:8}}>
                     <textarea className="inp" placeholder="Share your work, ideas, or find collaborators..." rows={2} value={feedText} onChange={e=>setFeedText(e.target.value)} style={{resize:"none",fontSize:13,padding:"10px 14px",borderRadius:14,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)"}} />
-                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                       <label style={{width:32,height:32,borderRadius:8,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14,color:"var(--text2)"}}>
                         <FiImage size={14} />
-                        <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"feed");if(url)setFeedImage(url)}}} />
+                        <input type="file" accept="image/*,video/*" multiple style={{display:"none"}} onChange={async e=>{const files=Array.from(e.target.files||[]);if(!files.length)return;showToast("Uploading "+files.length+" file(s)...");const urls:string[]=[];for(const f of files){const url=await uploadImage(f,"feed");if(url)urls.push(url)}setFeedMedia(prev=>[...prev,...urls]);}} />
                       </label>
                       <button style={{width:32,height:32,borderRadius:8,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14,color:"var(--text2)"}} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
-                      {feedImage && <div style={{position:"relative",width:32,height:32}}><img src={feedImage} alt="" style={{width:32,height:32,borderRadius:8,objectFit:"cover"}} /><button onClick={()=>setFeedImage(null)} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"var(--coral)",border:"none",color:"#fff",fontSize:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><FiX size={10} /></button></div>}
-                      <button className="conn-btn conn-btn-primary" style={{marginLeft:"auto",fontSize:12,padding:"7px 18px"}} onClick={async()=>{if(feedText.trim()||feedImage){const txt=feedText.trim();setFeedText("");setFeedImage(null);setFeedPosts(prev=>[{id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,type:feedImage?"photo":"text",text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedImage||undefined,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,image:feedImage,userId:currentUser.id})});}catch{}showToast("Posted!")}}}>Post</button>
+                      {feedMedia.slice(0,4).map((url,i)=><div key={i} style={{position:"relative",width:32,height:32}}>{url.endsWith(".mp4")||url.includes("video")?<video src={url} style={{width:32,height:32,borderRadius:8,objectFit:"cover"}} />:<img src={url} alt="" style={{width:32,height:32,borderRadius:8,objectFit:"cover"}} />}<button onClick={()=>setFeedMedia(prev=>prev.filter((_,j)=>j!==i))} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"var(--coral)",border:"none",color:"#fff",fontSize:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><FiX size={10} /></button></div>)}
+                      {feedMedia.length>4&&<span style={{fontSize:11,color:"var(--muted)"}}>+{feedMedia.length-4}</span>}
+                      <button className="conn-btn conn-btn-primary" style={{marginLeft:"auto",fontSize:12,padding:"7px 18px"}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();const hasVideo=feedMedia.some(u=>u.endsWith(".mp4")||u.includes("video"));const type=feedMedia.length?hasVideo?"video":"photo":"text";setFeedText("");setFeedMedia([]);setFeedPosts(prev=>[{id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,type,text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedMedia[0]||undefined,media:feedMedia,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,media:feedMedia,userId:currentUser.id})});}catch{}showToast("Posted!")}}}>Post</button>
+                      <button className="conn-btn conn-btn-ghost" style={{fontSize:11,padding:"6px 12px"}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();setFeedText("");setFeedMedia([]);const moment={id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,type:feedMedia.length?"photo":"text",text:txt,img:feedMedia[0]||undefined,media:[...feedMedia],time:"Just now"};setStories(prev=>[moment,...prev]);showToast("Moment posted!");}}}>⚡ Moment</button>
                     </div>
                     {showEmojiPicker && <div style={{display:"flex",gap:6,flexWrap:"wrap",padding:"8px 0"}}>{["😍","🔥","❤️","😂","😢","😡","👍","🎉","✨","💯","👏","🙌"].map(e=><span key={e} style={{fontSize:22,cursor:"pointer",transition:"transform .15s"}} onClick={()=>{setFeedText(prev=>prev+" "+e);setShowEmojiPicker(false)}} onMouseEnter={e=>e.currentTarget.style.transform="scale(1.3)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>{e}</span>)}</div>}
                   </div>
@@ -1836,6 +1832,79 @@ function MusePage() {
               </div>
               <Nav active="portfolio" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
+            <div className={"screen-el"+(screen==="moments"?" active":"")}>
+              <div className="hdr">
+                <div className="logo-link">muse</div>
+                <div style={{width:40}} />
+              </div>
+              <div className="moments-page">
+                <div className="moments-hero">
+                  <h2>Moments</h2>
+                  <p>Capture & share in the now</p>
+                </div>
+                <div className="moments-quick-capture" onClick={()=>{showToast("Capture a moment! Feature coming soon.")}}>
+                  <div className="moments-quick-capture-icon">📸</div>
+                  <span>What's happening? Snap a moment...</span>
+                </div>
+                <div className="moments-story-row">
+                  {stories.slice(0, 8).map((s,i)=>(
+                    <div key={s.id} className="moments-story-item" onClick={()=>setShowStory(i)}>
+                      <div className="moments-story-ring">
+                        <img src={s.img||s.avatar} alt="" onError={handleImgError} />
+                      </div>
+                      <span className="moments-story-name">{s.author.split(" ")[0]}</span>
+                    </div>
+                  ))}
+                  {stories.length===0 && [1,2,3,4,5].map(i=>(
+                    <div key={i} className="moments-story-item" style={{opacity:0.5}}>
+                      <div className="moments-story-ring" style={{background:"rgba(255,255,255,0.08)"}}>
+                        <div style={{width:"100%",height:"100%",borderRadius:"50%",background:"rgba(255,255,255,0.04)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>👤</div>
+                      </div>
+                      <span className="moments-story-name">...</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="moments-tab-row">
+                  {["All","Photos","Videos","Trending"].map(t=>(
+                    <span key={t} className={"moments-tab"+(t==="All"?" active":"")}>{t}</span>
+                  ))}
+                </div>
+                {stories.map(s=>(
+                  <div key={s.id} className="moments-card">
+                    <img src={s.img||s.avatar} alt="" className="moments-card-img" onError={handleImgError} />
+                    <div className="moments-card-body">
+                      <div className="moments-card-user">
+                        <img src={s.avatar} alt="" className="moments-card-avatar" onError={handleImgError} />
+                        <div>
+                          <div className="moments-card-username">{s.author}</div>
+                          <div className="moments-card-loc">📍 {s.time}</div>
+                        </div>
+                      </div>
+                      <div className="moments-card-caption">{s.text || "A creative moment captured."}</div>
+                      <div className="moments-card-stats">
+                        <span>♥ {s.likes||0}</span><span>💬 {s.comments||0}</span><span>↗ Share</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {stories.length===0 && [1,2,3].map(i=>(
+                  <div key={i} className="moments-card" style={{opacity:0.7}}>
+                    <div className="moments-card-img" style={{background:"linear-gradient(135deg,rgba(255,107,107,0.15),rgba(255,217,61,0.1))",height:220}} />
+                    <div className="moments-card-body">
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                        <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}} />
+                        <div>
+                          <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>Coming Soon</div>
+                          <div style={{fontSize:11,color:"var(--muted)"}}>Moments are being created...</div>
+                        </div>
+                      </div>
+                      <div style={{fontSize:13,color:"var(--text2)"}}>Be the first to post a Moment and light up this feed!</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Nav active="moments" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+            </div>
             <div className={"screen-el"+(screen==="profile"?" active":"")}>
               <div className="hdr">
                 <div className="logo-link">muse</div>
@@ -2085,41 +2154,6 @@ function MusePage() {
               ))}
             </div>
             <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
-          </div>
-        </div>
-      )}
-      {/* ─── SESSIONS SCREEN ─── */}
-      {screen==="sessions" && (
-        <div className="phone-wrap">
-          <div className="phone" id="muse-app">
-            <div className="notch" />
-            <div className="screen-el active">
-              <div className="conn-scroll" style={{padding:0}}>
-                <div className="hdr">
-                  <button className="hdr-btn" onClick={()=>setScreen("discover")}><FiArrowLeft size={18} /></button>
-                  <div className="hdr-title">Sessions</div>
-                  <div style={{width:40}} />
-                </div>
-                <div style={{padding:"0 16px"}}>
-                  {SESSIONS.map(s => (
-                    <div key={s.id} className="conn-card" style={{margin:"0 0 10px"}}>
-                      <img src={s.img} alt={s.name} className="conn-avatar" style={{borderRadius:"50%"}} onError={handleImgError} />
-                      <div className="conn-content">
-                        <div className="conn-name">{s.name}</div>
-                        <div className="conn-meta">{s.type} · {s.rate} · ★ {s.rating}</div>
-                        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6}}>
-                          {s.skills.map(sk=><span key={sk} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{sk}</span>)}
-                        </div>
-                        <div className="conn-actions" style={{marginTop:8}}>
-                          <button className="conn-btn conn-btn-primary" onClick={()=>{showToast("Session request sent to "+s.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})})}}>{s.available?"Book Session":"Waitlist"}</button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <Nav active="sessions" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
-            </div>
           </div>
         </div>
       )}
@@ -2488,6 +2522,15 @@ function MusePage() {
             </div>
           )}
           <div style={{position:"absolute",bottom:30,color:"rgba(255,255,255,0.5)",fontSize:12}}>Tap anywhere to close</div>
+        </div>
+      )}
+      {/* GLOBAL PREMIUM POPUP */}
+      {showPremiumPopup && (
+        <div className="premium-popup">
+          <button className="premium-popup-close" onClick={()=>setShowPremiumPopup(false)}>✕</button>
+          <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
+          <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
+          <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
         </div>
       )}
     </div>

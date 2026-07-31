@@ -1,5 +1,5 @@
 "use client";
-import { FiCompass, FiUsers, FiZap, FiHeart, FiCalendar, FiMenu } from "react-icons/fi";
+import { FiCompass, FiUsers, FiZap, FiHeart, FiCamera, FiMenu } from "react-icons/fi";
 import type { Screen } from "./types";
 
 const gradMap: Record<string,string> = {
@@ -7,7 +7,7 @@ const gradMap: Record<string,string> = {
   connections: "linear-gradient(90deg,#87CEEB,#64B5F6,#7B68EE)",
   briefs: "linear-gradient(90deg,#98FB98,#66BB6A,#00BCD4)",
   matches: "linear-gradient(90deg,#FF69B4,#FF4757,#FF6B6B)",
-  sessions: "linear-gradient(90deg,#E1BEE7,#9C27B0,#FF4081)",
+  moments: "linear-gradient(90deg,#FF6B6B,#FFD93D,#6BCB77)",
 };
 
 const tabs: { key: Screen|string; label: string; icon: React.ReactNode; hasScreen: boolean }[] = [
@@ -15,7 +15,7 @@ const tabs: { key: Screen|string; label: string; icon: React.ReactNode; hasScree
   { key:"connections", label:"Feed", icon:<FiUsers size={22} />, hasScreen:true },
   { key:"briefs", label:"Collab", icon:<FiZap size={22} />, hasScreen:false },
   { key:"matches", label:"Matches", icon:<FiHeart size={22} />, hasScreen:true },
-  { key:"sessions", label:"Sessions", icon:<FiCalendar size={22} />, hasScreen:true },
+  { key:"moments", label:"Moments", icon:<FiCamera size={22} />, hasScreen:true },
 ];
 
 export default function Nav({ active, onNavigate, onHamburgerToggle }: { active: string; onNavigate: (s: Screen) => void; onHamburgerToggle?: () => void }) {
@@ -25,9 +25,9 @@ export default function Nav({ active, onNavigate, onHamburgerToggle }: { active:
         const isActive = active === tab.key;
         const grad = gradMap[tab.key] || gradMap.discover;
         return (
-          <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else onNavigate("briefs"); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined}>
-            <span className="nav-icon" style={isActive?{filter:"drop-shadow(0 2px 8px rgba(255,215,0,0.5))"}:{}}>{tab.icon}</span>
-            <span style={isActive?{background:grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",fontWeight:800}:{}}>{tab.label}</span>
+          <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs"); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined}>
+            <span className={"nav-icon"+(isActive?" nav-icon-glow":"")} style={isActive?{background:grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",animation:"iconHueShift 4s ease-in-out infinite"}:{}}>{tab.icon}</span>
+            <span style={isActive?{background:grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",fontWeight:800,animation:"iconHueShift 4s ease-in-out infinite"}:{}}>{tab.label}</span>
           </button>
         );
       })}

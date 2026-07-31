@@ -104,20 +104,42 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
         c.x += c.vx; c.y += c.vy;
         if (Math.random() > 0.7) c.sparks.push({ x: c.x, y: c.y, vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2, life: 20 + Math.random() * 30, size: 1 + Math.random() * 2 });
         const fadeIn = Math.min(c.life / 20, 1), fadeOut = c.life > c.maxLife - 60 ? (c.maxLife - c.life) / 60 : 1, opacity = fadeIn * fadeOut;
-        for (let t = 0; t < c.tailLen * 0.4; t++) {
-          const p = t / (c.tailLen * 0.4), tw = 8 * (1 - p);
-          ctx!.beginPath(); ctx!.arc(c.x - c.vx * (t + 5) * 1.4 + (Math.random() - 0.5) * 6, c.y - c.vy * (t + 5) * 1.2 + (Math.random() - 0.5) * 6, tw * 0.5, 0, Math.PI * 2);
-          ctx!.fillStyle = `rgba(150, 180, 255, ${opacity * (1 - p) * 0.2})`; ctx!.fill();
+        // Fluid trail via smooth path
+        const tailSteps = Math.floor(c.tailLen);
+        ctx!.beginPath();
+        ctx!.moveTo(c.x, c.y);
+        for (let t = 1; t <= tailSteps; t++) {
+          const p = t / tailSteps;
+          const tx = c.x - c.vx * t * 0.85 + Math.sin(t * 0.25 + c.life * 0.04) * (1 - p) * 18;
+          const ty = c.y - c.vy * t * 0.85 + Math.cos(t * 0.25 + c.life * 0.04) * (1 - p) * 18;
+          ctx!.lineTo(tx, ty);
         }
-        for (let t = 0; t < c.tailLen; t++) {
-          const p = t / c.tailLen, tw = c.size * (1 - p) * 1.5;
-          ctx!.beginPath(); ctx!.arc(c.x - c.vx * (t + 3) * 0.8, c.y - c.vy * (t + 3) * 0.8, Math.max(tw, 0.3), 0, Math.PI * 2);
-          ctx!.fillStyle = `rgba(255, 255, 255, ${opacity * (1 - p) * 0.15})`; ctx!.fill();
+        const endX = c.x - c.vx * tailSteps * 0.85, endY = c.y - c.vy * tailSteps * 0.85;
+        const tailGrad = ctx!.createLinearGradient(c.x, c.y, endX, endY);
+        tailGrad.addColorStop(0, hexToRgba(c.color, opacity));
+        tailGrad.addColorStop(0.25, hexToRgba(c.color, opacity * 0.6));
+        tailGrad.addColorStop(0.5, `rgba(160, 190, 255, ${opacity * 0.25})`);
+        tailGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx!.strokeStyle = tailGrad;
+        ctx!.lineWidth = c.size * 2.8;
+        ctx!.lineCap = 'round';
+        ctx!.stroke();
+        // Inner bright core
+        ctx!.beginPath();
+        ctx!.moveTo(c.x, c.y);
+        for (let t = 1; t <= tailSteps * 0.5; t++) {
+          const p = t / (tailSteps * 0.5);
+          const tx = c.x - c.vx * t * 0.85, ty = c.y - c.vy * t * 0.85;
+          ctx!.lineTo(tx, ty);
         }
-        for (let t = 0; t < c.tailLen; t++) {
-          const p = t / c.tailLen, tw = c.size * (1 - p) * 1.8;
-          ctx!.beginPath(); ctx!.arc(c.x - c.vx * (t + 3), c.y - c.vy * (t + 3), Math.max(tw, 0.5), 0, Math.PI * 2);
-          ctx!.fillStyle = hexToRgba(c.color, opacity * (1 - p) * 0.5); ctx!.fill();
+        ctx!.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.3})`;
+        ctx!.lineWidth = c.size * 1.2;
+        ctx!.stroke();
+        // Soft aura scatter around head
+        for (let t = 0; t < tailSteps * 0.15; t++) {
+          const p = t / (tailSteps * 0.15), rad = c.size * (1 - p) * 3;
+          ctx!.beginPath(); ctx!.arc(c.x - c.vx * t + (Math.random()-0.5)*8, c.y - c.vy * t + (Math.random()-0.5)*8, rad, 0, Math.PI*2);
+          ctx!.fillStyle = `rgba(180,200,255,${opacity*(1-p)*0.15})`; ctx!.fill();
         }
         const g = ctx!.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.size * 4);
         g.addColorStop(0, `rgba(255, 255, 255, ${opacity})`);
