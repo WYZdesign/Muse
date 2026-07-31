@@ -6,7 +6,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
 import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles } from "@/app/muse-realtime";
-import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCamera, FiShare2 } from "react-icons/fi";
+import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2 } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import Nav from "./components/Nav";
 import Confetti from "./components/Confetti";
