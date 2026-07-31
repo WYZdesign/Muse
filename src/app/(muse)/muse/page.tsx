@@ -186,20 +186,13 @@ function MusePage() {
   // POST calls so the server can authenticate writes. Falls back to a plain
   // fetch for GET/other endpoints and for /api/muse/auth (which manages its own auth).
   const apiFetch = useCallback(async (url: string, opts: RequestInit = {}) => {
-    if (typeof url === "string" && url.startsWith("/api/muse") && !url.includes("/auth") && (!opts.method || opts.method.toUpperCase() === "POST")) {
-      try {
-        const raw = localStorage.getItem("muse_user");
-        const token = raw ? (JSON.parse(raw).access_token || "") : "";
-        if (token) {
-          const ct = (opts.headers && (opts.headers as Record<string,string>)["Content-Type"]) || "application/json";
-          if (ct.includes("application/json") && typeof opts.body === "string") {
-            const parsed = JSON.parse(opts.body);
-            parsed.access_token = token;
-            opts = { ...opts, body: JSON.stringify(parsed) };
-          }
-        }
-      } catch {}
-    }
+    try {
+      const raw = localStorage.getItem("muse_user");
+      const token = raw ? (JSON.parse(raw).access_token || "") : "";
+      if (token) {
+        opts.headers = { ...(opts.headers || {}), "Authorization": `Bearer ${token}` };
+      }
+    } catch {}
     return fetch(url, opts);
   }, []);
 

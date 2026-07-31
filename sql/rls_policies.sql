@@ -95,5 +95,43 @@ WITH CHECK (auth.uid() = (SELECT auth_id FROM public.muse_profiles WHERE id = us
 -- DELETE FROM auth.users WHERE email LIKE '%test%' OR email LIKE '%council%' OR email LIKE '%.wy%';
 -- DELETE FROM public.muse_profiles WHERE auth_id NOT IN (SELECT id FROM auth.users);
 
+-- ═══ CLAUDE'S PRIORITY 2 FIXES — DROP UNSAFE POLICIES ═══
+-- These policies OR together with above — one USING(true) opens the table.
+
+-- Messages: drop and recreate with proper participant restrictions
+DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages;
+DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
+DROP POLICY IF EXISTS "Users can read their messages" ON muse_messages;
+CREATE POLICY "muse_messages_select" ON muse_messages
+  FOR SELECT USING (sender_id = auth.uid()::text OR receiver_id = auth.uid()::text);
+CREATE POLICY "muse_messages_insert" ON muse_messages
+  FOR INSERT WITH CHECK (sender_id = auth.uid()::text);
+
+-- Reports/blocks: restrict to owning row
+DROP POLICY IF EXISTS "Users can view own reports" ON muse_reports;
+DROP POLICY IF EXISTS "Users can view own blocks" ON muse_blocks;
+DROP POLICY IF EXISTS "Users can delete own blocks" ON muse_blocks;
+CREATE POLICY "muse_reports_owner" ON muse_reports
+  FOR SELECT USING (reporter_id = auth.uid()::text);
+CREATE POLICY "muse_blocks_owner" ON muse_blocks
+  FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "muse_blocks_delete" ON muse_blocks
+  FOR DELETE USING (user_id = auth.uid()::text);
+
+-- Drop dangerous "Service can manage" policies (service_role already
+-- bypasses RLS — these open tables to anon/authenticated too)
+DROP POLICY IF EXISTS "Service can manage communities" ON muse_communities;
+DROP POLICY IF EXISTS "Service can manage sessions" ON muse_sessions;
+DROP POLICY IF EXISTS "Service can manage bookings" ON muse_bookings;
+DROP POLICY IF EXISTS "Service can manage notifications" ON muse_notifications;
+
+-- Matches: must be the user_id side inserting
+DROP POLICY IF EXISTS "Users can create matches" ON muse_matches;
+CREATE POLICY "muse_matches_insert_self" ON muse_matches
+  FOR INSERT WITH CHECK (user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()));
+
+-- NOTE: client_msg_id column needed for message dedup:
+-- ALTER TABLE muse_messages ADD COLUMN IF NOT EXISTS client_msg_id TEXT UNIQUE;
+
 -- ── VERIFY POLICIES ──
 SELECT schemaname, tablename, policyname, cmd, permissive FROM pg_policies WHERE schemaname = 'public';
