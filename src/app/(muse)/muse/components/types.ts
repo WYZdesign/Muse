@@ -3,6 +3,7 @@ export type Brief = typeof BRIEFS[number];
 export type Match = Partial<Profile> & {
   id: number; name: string; img: string; type: string;
   bio?: string; location?: string; distanceMi?: number; booked?: boolean;
+  intent?: string;
   messages: { from: string; text: string; time: string; img?: string }[];
 };
 export type Screen = "auth"|"onboard"|"discover"|"connections"|"matches"|"chat"|"profile"|"briefs"|"portfolio"|"settings"|"subscription"|"community"|"events"|"sessions"|"moments"|"forum";
