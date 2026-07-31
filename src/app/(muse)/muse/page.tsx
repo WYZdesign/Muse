@@ -24,7 +24,7 @@ export default function MusePageWrapper() {
 }
 
 function MusePage() {
-  const [screen, setScreen] = useState<"auth"|"onboard"|"discover"|"connections"|"matches"|"chat"|"profile"|"briefs"|"portfolio"|"settings"|"subscription"|"community"|"events"|"sessions"|"forum">("auth");
+  const [screen, setScreen] = useState<Screen>("auth");
   const [authMode, setAuthMode] = useState<"login"|"signup">("signup");
   const [authEmail, setAuthEmail] = useState("");
   const [authPass, setAuthPass] = useState("");
@@ -113,7 +113,7 @@ function MusePage() {
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [eventsFilter, setEventsFilter] = useState<"all"|"upcoming"|"past">("all");
   const [rsvpdEvents, setRsvpdEvents] = useState<number[]>([]);
-  const [feedPosts, setFeedPosts] = useState<{id:number;author:string;avatar:string;type:string;text:string;likes:number;comments:number;shares:number;time:string;liked:boolean;saved:boolean;img?:string;reactions?:Record<string,number>}[]>([]);
+  const [feedPosts, setFeedPosts] = useState<{id:number;author:string;avatar:string;type:string;text:string;likes:number;comments:number;shares:number;time:string;liked:boolean;saved:boolean;img?:string;media?:string[];reactions?:Record<string,number>}[]>([]);
   const [feedText, setFeedText] = useState("");
   const [feedMedia, setFeedMedia] = useState<string[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
