@@ -1759,7 +1759,7 @@ function MusePage() {
                   const filtered = museCat==="all"?allBriefs:allBriefs.filter(b=>b.cat===museCat);
                   if(filtered.length===0) return (
                     <div className="empty-state">
-                      <div className="empty-icon"><FiFile size={48} /></div>
+                      <div className="empty-icon"><FiPlus size={48} /></div>
                       <div className="empty-title">No posts yet</div>
                       <div className="empty-sub">{museCat==="all"?"Post a project, collab, or idea":"No "+museCat+" posts yet, be the first!"}</div>
                     </div>
