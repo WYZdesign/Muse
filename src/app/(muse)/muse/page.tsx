@@ -6,7 +6,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
 import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles } from "@/app/muse-realtime";
-import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2 } from "react-icons/fi";
+import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCamera, FiShare2 } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import Nav from "./components/Nav";
 import Confetti from "./components/Confetti";
@@ -2557,7 +2557,9 @@ const MuseMap = ({ filteredProfiles, myGeo, containerRef }: { filteredProfiles: 
       filteredProfiles.forEach(p => {
         if (p.lat && p.lng) {
           const el = document.createElement("div"); el.className = "map-marker";
-          el.innerHTML = `<div style='width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF8A80);border:2px solid #0a0612;box-shadow:0 0 12px rgba(255,215,0,0.4);cursor:pointer'></div>`;
+          const dot = document.createElement("div");
+          dot.style.cssText = "width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF8A80);border:2px solid #0a0612;box-shadow:0 0 12px rgba(255,215,0,0.4);cursor:pointer";
+          el.appendChild(dot);
           new w.mapboxgl.Marker({ element: el }).setLngLat([p.lng, p.lat]).setPopup(new w.mapboxgl.Popup({ offset: 25 }).setText(p.name + " · " + p.type)).addTo(map);
         }
       });
