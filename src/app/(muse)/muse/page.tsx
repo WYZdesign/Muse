@@ -303,6 +303,16 @@ function MusePage() {
 
   useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{localStorage.removeItem("muse_boost");}catch{}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd]);
 
+  useEffect(() => {
+    if (screen !== "discover") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") { e.preventDefault(); doSwipe("left"); }
+      if (e.key === "ArrowRight") { e.preventDefault(); doSwipe("right"); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [screen, doSwipe]);
+
   const applySession = useCallback((accessToken: string, refreshToken?: string) => {
     fetch("/api/muse/auth", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ action: "session", access_token: accessToken }) })
       .then(r => r.json())
@@ -517,11 +527,14 @@ function MusePage() {
       if (authMode === "signup") setObStep(0);
       trackEvent(authMode === "signup" ? "muse_signup" : "muse_login", { email: authEmail?.slice(0,3) + "***" });
       flash("#FFD700");
-    } catch { setFormErrors({ email: "Network error" }); }
+    } catch { showToast("Upload failed"); setAuthLoading(false); }
     setAuthLoading(false);
   }, [authMode, authEmail, authPass, authName, authLoading, flash]);
 
   const swipeLocked = useRef(false);
+  const [showIntentPicker, setShowIntentPicker] = useState(false);
+  const [intentProfile, setIntentProfile] = useState<Profile|null>(null);
+  const [userDefaultIntent, setUserDefaultIntent] = useState<string>("");
 
   const doSwipe = useCallback((dir: "left" | "right" | "super") => {
     if (swipeLocked.current) return;
@@ -534,6 +547,8 @@ function MusePage() {
     if (!p) return;
     if (dir === "super" && superLikes <= 0) { showToast("No super likes left!"); return; }
     if (dir === "right" || dir === "super") {
+      if (!userDefaultIntent) { setIntentProfile(p); setShowIntentPicker(true); swipeLocked.current = false; return; }
+      const intent = dir === "super" ? "super" : userDefaultIntent;
       const matchScore = calcMatch({ styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath }, p);
         const isMatch = matchScore > 55 || Math.random() > 0.5;
       if (isMatch) {
@@ -547,7 +562,7 @@ function MusePage() {
         trackEvent("muse_match", { name: p.name, type: p.type });
         setActivityFeed(prev => [{id:Date.now(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
         flash("#FFD700");
-        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id }) }).catch(() => { /* silently handled */ });
+        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id, intent }) }).catch(() => { /* silently handled */ });
       }
       if (Math.random() > 0.4 && !likedBy.find(l => l.id === p.id)) {
         setLikedBy(prev => [...prev, p]);
@@ -752,6 +767,68 @@ function MusePage() {
           <button className="match-btn" onClick={() => { setShowMatchOverlay(null); openChat(showMatchOverlay); }}>Send a Message</button>
         </div>
       )}
+      {showIntentPicker && intentProfile && (
+        <div className="intent-overlay" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null)}}>
+          <div className="intent-modal" onClick={e=>e.stopPropagation()}>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <img src={intentProfile.img} alt="" style={{width:60,height:60,borderRadius:"50%",objectFit:"cover",marginBottom:8}} onError={handleImgError} />
+              <div style={{fontSize:16,fontWeight:700,color:"var(--text)"}}>{intentProfile.name}</div>
+              <div style={{fontSize:12,color:"var(--muted)"}}>{intentProfile.type}</div>
+            </div>
+            <div style={{fontSize:13,color:"var(--text2)",textAlign:"center",marginBottom:16}}>What's your intent with {intentProfile.name.split(" ")[0]}?</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {[
+                {icon:"🤝",label:"Collaborate",desc:"Work together on a project",intent:"collab"},
+                {icon:"💼",label:"Hire / Commission",desc:"Professional paid work",intent:"hire"},
+                {icon:"🔗",label:"Connect",desc:"Grow your creative network",intent:"connect"},
+                {icon:"👁️",label:"Inspired By",desc:"Your work inspires me",intent:"inspire"},
+              ].map(({icon,label,desc,intent})=>(
+                <button key={intent} className="intent-btn" onClick={()=>{
+                  setUserDefaultIntent(intent);
+                  setShowIntentPicker(false);
+                  const p = intentProfile;
+                  setIntentProfile(null);
+                  if(!p) return;
+                  const matchScore=calcMatch({styles:obData.styles||[],looking:obData.looking||[],zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,lifePath:obData.lifePath},p);
+                  const isMatch=matchScore>55||Math.random()>0.5;
+                  if(isMatch){
+                    const newMatch:Match={...p,messages:[],intent};
+                    setMatches(prev=>[...prev,newMatch]);
+                    setMatchStreak(prev=>prev+1);
+                    setShowMatchOverlay(newMatch);
+                    setShowConfetti(true);
+                    setTimeout(()=>setShowConfetti(false),3000);
+                    setExpandedMatchId(String(newMatch.id));
+                    trackEvent("muse_match",{name:p.name,type:p.type,intent});
+                    setActivityFeed(prev=>[{id:Date.now(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"! · "+icon+" "+label,time:"Just now",read:false},...prev]);
+                    flash("#FFD700");
+                    apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"match",target_id:p.id,intent})}).catch(()=>{});
+                  }
+                  if(Math.random()>0.4&&!likedBy.find(l=>l.id===p.id)){
+                    setLikedBy(prev=>[...prev,p]);
+                    setActivityFeed(prev=>[{id:Date.now(),type:"like",from:p.name,avatar:p.img,text:p.name+" liked your profile!",time:"Just now",read:false},...prev]);
+                  }
+                  setDailyLikes(prev=>Math.max(0,prev-1));
+                  setCurrentUser(prev=>({...prev,stats:{...prev.stats,likes:prev.stats.likes+1}}));
+                  setRewindStack(prev=>[...prev,currentIdx]);
+                  setCurrentIdx(prev=>prev+1);
+                  setCurrentPhotoIdx(0);
+                }} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,background:"var(--glass)",cursor:"pointer",width:"100%",textAlign:"left",transition:"all .15s"}}
+                onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.borderColor="var(--gold)"}}
+                onMouseLeave={e=>{e.currentTarget.style.background="var(--glass)";e.currentTarget.style.borderColor="rgba(255,255,255,0.06)"}}
+                >
+                  <span style={{fontSize:28}}>{icon}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>{label}</div>
+                    <div style={{fontSize:11,color:"var(--muted)"}}>{desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button className="intent-skip" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null);doSwipe("left")}} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"none",color:"var(--muted)",fontSize:12,cursor:"pointer"}}>Skip this profile</button>
+          </div>
+        </div>
+      )}
       {showAgeGate && (
         <div className="age-gate">
           <div className="age-gate-icon">18+</div>
@@ -777,7 +854,7 @@ function MusePage() {
                   {key:"network",icon:<FiShare2 size={20} />,label:"Network",desc:"Professionals & forum",grad:"linear-gradient(135deg,#B3E5FC,#64B5F6,#00BCD4)"},
                   {key:"profile",icon:<FiUser size={20} />,label:"Profile",desc:"Edit profile & premium",grad:"linear-gradient(135deg,#FFD700,#FFB5C2,#B388FF)"},
                   {key:"settings",icon:<FiSettings size={20} />,label:"Settings",desc:"Preferences, safety & help",grad:"linear-gradient(135deg,#CE93D8,#B388FF,#A5D6A7)"},
-                  {key:"moments",icon:<FiCamera size={20} />,label:"Moments",desc:"Stories, maps & real-time",grad:"linear-gradient(135deg,#FF6B6B,#FFD93D,#6BCB77)"},
+                  {key:"moments",icon:<FiCamera size={20} />,label:"BTS",desc:"Behind the scenes — raw & real",grad:"linear-gradient(135deg,#FF6B6B,#FFD93D,#6BCB77)"},
                 ].map(item => (
                   <div key={item.key} className="hamburger-item" onClick={() => setHamburgerScreen(item.key)}>
                     <div className="hamburger-item-icon" style={{background:item.grad}}>{item.icon}</div>
@@ -1009,7 +1086,7 @@ function MusePage() {
                     <div style={{padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                       <div><div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>Blocked Users</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{blockedUsers.length} blocked</div></div>
                     </div>
-                    <button className="btn" style={{width:"100%",marginTop:12,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",color:"var(--text)",fontSize:13}} onClick={async()=>{try{const raw=localStorage.getItem("muse_user");const t=raw?JSON.parse(raw).access_token:"";if(!t){showToast("Please sign in again");return;}const res=await fetch("/api/muse?type=export&access_token="+encodeURIComponent(t));if(!res.ok){showToast("Export failed");return;}const j=await res.json();const blob=new Blob([JSON.stringify(j,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="muse-my-data.json";a.click();URL.revokeObjectURL(url);showToast("Data exported");}catch(e){showToast("Export failed");}}}>Export My Data</button>
+                    <button className="btn" style={{width:"100%",marginTop:12,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",color:"var(--text)",fontSize:13}} onClick={async()=>{try{const raw=localStorage.getItem("muse_user");const t=raw?JSON.parse(raw).access_token:"";if(!t){showToast("Please sign in again");return;}const res=await fetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"export",access_token:t})});if(!res.ok){showToast("Export failed");return;}const j=await res.json();const blob=new Blob([JSON.stringify(j,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="muse-my-data.json";a.click();URL.revokeObjectURL(url);showToast("Data exported");}catch(e){showToast("Export failed");}}}>Export My Data</button>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"24px 0 10px"}}>Help & Support</div>
                     {[
                       {q:"How does matching work?",a:"Swipe right on creators you'd like to connect with. If they swipe right back, it's a match! You can then message each other."},
@@ -1035,7 +1112,7 @@ function MusePage() {
                 )}
                 {hamburgerScreen === "moments" && (
                   <div className="conn-scroll">
-                    <div className="hamburger-title">Moments</div>
+                    <div className="hamburger-title">BTS</div>
                     <div style={{textAlign:"center",padding:8,fontSize:13,color:"var(--gold)",fontWeight:700,marginBottom:12}}>Snapshots from creatives near you</div>
                     {[...Array(6)].map((_,i)=><div key={i} className="conn-card" style={{flexDirection:"column",margin:"0 0 10px",padding:0,overflow:"hidden"}}>
                       <div style={{position:"relative",height:160,background:`linear-gradient(135deg,${["#FF6B6B","#4ECDC4","#FFD93D","#A78BFA","#FF8A80","#6BCB77"][i]},#0a0612)`}}>
@@ -1172,9 +1249,12 @@ function MusePage() {
                     <div className="step-title">Know Yourself?</div>
                     <div className="step-sub">Do you know your zodiac, MBTI, or life path?</div>
                     <div style={{display:"flex",flexDirection:"column",gap:12,width:"100%",maxWidth:320}}>
-                      <button className="btn btn-gold" onClick={()=>setObStep(6)}>Yes, I know them</button>
-                      <button className="btn btn-outline" onClick={()=>setObStep(10)}>No, help me discover</button>
-                      <button className="ob-skip" onClick={()=>setObStep(14)}>Skip for now</button>
+                      <button className="btn btn-gold" onClick={()=>setObStep(14)} style={{background:"linear-gradient(135deg,var(--gold),var(--amber))"}}>Skip — Set Up Later</button>
+                      <div style={{fontSize:11,color:"var(--muted)",textAlign:"center",margin:"4px 0"}}>You can always add these in your profile settings</div>
+                      <div style={{display:"flex",gap:10}}>
+                        <button className="btn btn-outline" style={{flex:1}} onClick={()=>setObStep(6)}>Set Now</button>
+                        <button className="btn btn-outline" style={{flex:1}} onClick={()=>setObStep(10)}>Help Me Discover</button>
+                      </div>
                       <button className="back-link" onClick={()=>setObStep(4)}>Back</button>
                     </div>
                   </div>
@@ -1849,8 +1929,8 @@ function MusePage() {
               </div>
               <div className="moments-page">
                 <div className="moments-hero">
-                  <h2>Moments</h2>
-                  <p>Capture & share in the now</p>
+                  <h2>Behind The Scenes</h2>
+                  <p>Raw creative process. BTS, WIP, unpolished gold.</p>
                 </div>
                 <div className="moments-quick-capture" onClick={()=>{showToast("Capture a moment! Feature coming soon.")}}>
                   <div className="moments-quick-capture-icon">📸</div>

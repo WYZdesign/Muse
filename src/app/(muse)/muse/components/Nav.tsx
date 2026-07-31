@@ -15,7 +15,7 @@ const tabs: { key: Screen|string; label: string; icon: React.ReactNode; hasScree
   { key:"connections", label:"Feed", icon:<FiUsers size={22} />, hasScreen:true },
   { key:"briefs", label:"Collab", icon:<FiZap size={22} />, hasScreen:false },
   { key:"matches", label:"Matches", icon:<FiHeart size={22} />, hasScreen:true },
-  { key:"moments", label:"Moments", icon:<FiCamera size={22} />, hasScreen:true },
+  { key:"moments", label:"BTS", icon:<FiCamera size={22} />, hasScreen:true },
 ];
 
 export default function Nav({ active, onNavigate, onHamburgerToggle }: { active: string; onNavigate: (s: Screen) => void; onHamburgerToggle?: () => void }) {
