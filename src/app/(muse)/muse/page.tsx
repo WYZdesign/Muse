@@ -303,16 +303,6 @@ function MusePage() {
 
   useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{localStorage.removeItem("muse_boost");}catch{}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd]);
 
-  useEffect(() => {
-    if (screen !== "discover") return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") { e.preventDefault(); doSwipe("left"); }
-      if (e.key === "ArrowRight") { e.preventDefault(); doSwipe("right"); }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [screen, doSwipe]);
-
   const applySession = useCallback((accessToken: string, refreshToken?: string) => {
     fetch("/api/muse/auth", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ action: "session", access_token: accessToken }) })
       .then(r => r.json())
@@ -579,6 +569,8 @@ function MusePage() {
     setCurrentIdx(prev => prev + 1);
     setCurrentPhotoIdx(0);
   }, [currentIdx, dailyLikes, superLikes, filteredProfiles, flash, obData]);
+
+  useEffect(() => { if(screen!=="discover")return;const onKey=(e:KeyboardEvent)=>{if(e.key==="ArrowLeft"){e.preventDefault();doSwipe("left")}if(e.key==="ArrowRight"){e.preventDefault();doSwipe("right")}};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey)},[screen,doSwipe]);
 
   const doRewind = useCallback(() => {
     if (rewindStack.length === 0) { showToast("Nothing to rewind!"); return; }
