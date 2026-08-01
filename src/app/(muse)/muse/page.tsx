@@ -148,7 +148,7 @@ function MusePage() {
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
   const [stories, setStories] = useState<any[]>([]);
   const [showStory, setShowStory] = useState<number|null>(null);
-  const [theme, setTheme] = useState<"dark"|"light">("dark");
+  const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"villa"|"deepsea">("lasunset");
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
   const [discoveryPrefs, setDiscoveryPrefs] = useState<{ageMin:number;ageMax:number;distance:number;gender:string}>({ageMin:18,ageMax:50,distance:50,gender:"all"});
   const [myGeo, setMyGeo] = useState<{lat:number;long:number;city:string}|null>(null);
@@ -284,7 +284,7 @@ function MusePage() {
       if (d.profileViews) setProfileViews(d.profileViews);
       if (d.profileViewers) setProfileViewers(d.profileViewers);
       if (d.stories) setStories(d.stories);
-      if (d.theme) setTheme(d.theme);
+      if (d.theme) setTheme((["lasunset","deepspace","nebula","villa","deepsea"].includes(d.theme) ? d.theme : "lasunset"));
       if (d.activityFeed) setActivityFeed(d.activityFeed);
       if (d.discoveryPrefs) setDiscoveryPrefs(d.discoveryPrefs);
       if (d.chatImages) setChatImages(d.chatImages);
@@ -718,7 +718,7 @@ function MusePage() {
   return !hydrated ? (
     <div style={{"display":"contents"}}>
       <div className="scene"><div className="scene-wash" /><div className="scene-glow" /></div>
-      <div className="app">
+      <div className="app" data-theme={theme}>
         <div className="skeleton-container">
           {[1,2,3].map(i => (
             <div key={i} className="skeleton-block">
@@ -2301,6 +2301,14 @@ function MusePage() {
                     ))}
                   </div>
                 )}
+              </div>
+              <div className="settings-group">
+                <div className="settings-group-title">Appearance</div>
+                <div className="theme-grid" style={{margin:"12px 0 4px"}}>
+                  {(["lasunset","deepspace","nebula","villa","deepsea"] as const).map(t => (
+                    <div key={t} className={"theme-swatch"+(theme===t?" active":"")} data-val={t} title={t} onClick={()=>setTheme(t)} style={{textTransform:"capitalize"}}>{theme===t?"✓":t.slice(0,3)}</div>
+                  ))}
+                </div>
               </div>
               <div className="settings-group">
                 <div className="settings-group-title">Privacy</div>
