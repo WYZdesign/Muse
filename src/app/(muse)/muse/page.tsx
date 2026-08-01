@@ -182,7 +182,7 @@ function MusePage() {
   const [typingTarget, setTypingTarget] = useState<number|null>(null);
   const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{startX:number;startY:number;active:boolean}>({startX:0,startY:0,active:false});
+  const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number}>({startX:0,startY:0,active:false,relY:0});
   const [dragOffset, setDragOffset] = useState(0);
   const [dragOffsetY, setDragOffsetY] = useState(0);
   const [dragOpacity, setDragOpacity] = useState(0);
@@ -621,7 +621,9 @@ function MusePage() {
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
-    dragRef.current = { startX: e.clientX, startY: e.clientY, active: true };
+    const cardTop = (e.currentTarget as HTMLElement).getBoundingClientRect().top;
+    const relY = e.clientY - cardTop;
+    dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY };
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   }, []);
 
@@ -643,7 +645,9 @@ function MusePage() {
     dragRef.current.active = false;
     const dx = e.clientX - dragRef.current.startX;
     const dy = e.clientY - dragRef.current.startY;
-    if (Math.abs(dy) > Math.abs(dx) && dy < -60) {
+    const cardHeight = (e.currentTarget as HTMLElement).getBoundingClientRect().height;
+    const startedInTopThird = dragRef.current.relY < cardHeight * 0.3;
+    if (Math.abs(dy) > Math.abs(dx) && dy < -50 && startedInTopThird) {
       doSwipe("super");
     } else if (Math.abs(dx) > 80) {
       doSwipe(dx > 0 ? "right" : "left");
