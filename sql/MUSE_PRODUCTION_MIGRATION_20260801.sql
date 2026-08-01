@@ -288,13 +288,24 @@ DROP POLICY IF EXISTS "Service can manage notifications" ON muse_notifications;
 
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime'
+  ) THEN
     CREATE PUBLICATION supabase_realtime;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication p
+    JOIN pg_publication_rel pr ON pr.prpubid = p.oid
+    JOIN pg_class c ON c.oid = pr.prrelid
+    WHERE p.pubname = 'supabase_realtime'
+      AND c.relname = 'muse_messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE muse_messages;
   END IF;
 END
 $$;
-
-ALTER PUBLICATION supabase_realtime ADD TABLE muse_messages;
 
 -- ============================================================
 -- 7. PROFILE COLUMN GATING (remove email from public SELECT)
