@@ -633,9 +633,7 @@ function MusePage() {
     setChatInput("");
     setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
     const myId = authUser?.id || "local";
-    try {
-      await persistMessage({ myId, theirId: targetId, text: clean });
-    } catch {}
+    await persistMessage({ myId, theirId: targetId, text: clean });
     // Show typing + simulated reply only when no real remote partner is present.
     setTypingTarget(Number(chatTarget.id));
     setTimeout(() => {

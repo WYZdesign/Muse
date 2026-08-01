@@ -14,30 +14,30 @@ function convoIdFor(a: string, b: string): string {
 }
 
 /**
- * Persist a chat message to Supabase and return it. Falls back silently
- * (the UI keeps its local copy) if not authenticated.
+ * Persist a chat message to Supabase. Returns true on success. Returns false
+ * (never throws) when the message can't be written — the UI keeps its local
+ * copy either way. A unique-violation on client_msg_id is treated as success
+ * because the message was already persisted by an earlier retry (dedup).
  */
 export async function persistMessage(opts: {
   myId: string;
   theirId: string;
   text: string;
   clientMsgId?: string;
-}): Promise<void> {
-  try {
-    if (!opts.myId || opts.myId === "local") return;
-    const convo = convoIdFor(opts.myId, opts.theirId);
-    // Use the service client for the insert so RLS (which requires the
-    // authenticated profile) doesn't reject an unauthenticated anon write.
-    // client_msg_id provides idempotent dedup of retries/echoes.
-    await getServiceClient().from("muse_messages").insert({
-      match_id: convo,
-      sender_id: opts.myId,
-      receiver_id: opts.theirId,
-      text: opts.text.trim().slice(0, 2000),
-      img: "",
-      client_msg_id: opts.clientMsgId || `${opts.myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    });
-  } catch {}
+}): Promise<boolean> {
+  if (!opts.myId || opts.myId === "local") return false;
+  if (!opts.theirId || !opts.text.trim()) return false;
+  const convo = convoIdFor(opts.myId, opts.theirId);
+  const { error } = await getServiceClient().from("muse_messages").insert({
+    match_id: convo,
+    sender_id: opts.myId,
+    receiver_id: opts.theirId,
+    text: opts.text.trim().slice(0, 2000),
+    img: "",
+    client_msg_id: opts.clientMsgId || `${opts.myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  });
+  if (error && (error as { code?: string }).code === "23505") return true;
+  return !error;
 }
 
 /**
