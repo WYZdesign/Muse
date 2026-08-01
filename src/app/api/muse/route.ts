@@ -247,6 +247,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "match") {
+      if (!checkRate(ip, "match", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { error } = await sb.from("muse_matches").insert({ user_id: profile.id, target_id: rest.target_id });
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id: rest.target_id } });
@@ -379,6 +380,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "connect") {
+      if (!checkRate(ip, "connect", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { targetId } = rest;
       if (!targetId) return NextResponse.json({ error: "targetId required" }, { status: 400 });
       await sb.from("muse_connections").upsert({ user_id: profile.id, target_id: targetId, status: "pending" }).select();
@@ -394,6 +396,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "sync") {
+      if (!checkRate(ip, "sync", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const results: string[] = [];
       if (rest.matches?.length) {
         for (const m of rest.matches) {

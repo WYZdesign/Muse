@@ -193,7 +193,9 @@ function MusePage() {
         opts.headers = { ...(opts.headers || {}), "Authorization": `Bearer ${token}` };
       }
     } catch {}
-    return fetch(url, opts);
+    const res = await fetch(url, opts);
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res;
   }, []);
 
   // Pulls real data from the API on mount; silently keeps the static demo
@@ -577,7 +579,7 @@ function MusePage() {
     setRewindStack(prev => [...prev, currentIdx]);
     setCurrentIdx(prev => prev + 1);
     setCurrentPhotoIdx(0);
-  }, [currentIdx, dailyLikes, superLikes, filteredProfiles, flash, obData]);
+  }, [currentIdx, dailyLikes, superLikes, filteredProfiles, flash, obData, userDefaultIntent]);
 
   useEffect(() => { if(screen!=="discover")return;const onKey=(e:KeyboardEvent)=>{if(e.key==="ArrowLeft"){e.preventDefault();doSwipe("left")}if(e.key==="ArrowRight"){e.preventDefault();doSwipe("right")}};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey)},[screen,doSwipe]);
 
@@ -876,7 +878,7 @@ function MusePage() {
                           <div className="conn-name">{c.name}</div>
                           <div className="conn-meta">{c.members} members · {c.desc}</div>
                            <div className="conn-actions" style={{marginTop:8,display:"flex",gap:6}}>
-                             <button className={"conn-btn conn-btn-primary"+(c.cat==="nsfw"?" conn-nsfw-tag":"")} style={{flex:1}} onClick={()=>{showToast("Joined "+c.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id,memberCount:c.members})})}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
+                              <button className={"conn-btn conn-btn-primary"+(c.cat==="nsfw"?" conn-nsfw-tag":"")} style={{flex:1}} onClick={async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id,memberCount:c.members})});showToast("Joined "+c.name+"!")}catch{showToast("Failed to join")}}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
                              <button className="conn-btn conn-btn-ghost" style={{flex:1}} onClick={()=>showToast(c.name+" community opened!")}>Learn</button>
                              <button className="conn-btn conn-btn-ghost" style={{flex:1}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/community/"+c.id);showToast("Link copied!")}}>Share</button>
                            </div>
@@ -967,7 +969,7 @@ function MusePage() {
                         <input className="inp" placeholder="Title" value={newPostTitle} onChange={e=>setNewPostTitle(e.target.value)} style={{marginBottom:8}} />
                         <textarea className="inp" placeholder="What's on your mind?" rows={3} value={newPostBody} onChange={e=>setNewPostBody(e.target.value)} style={{marginBottom:10,resize:"none"}} />
                         <div style={{display:"flex",gap:8}}>
-                          <button className="conn-btn conn-btn-primary" onClick={async()=>{if(newPostTitle.trim()){const title=newPostTitle.trim();const body=newPostBody.trim();setForumPosts(prev=>[{id:Date.now(),title,body,author:currentUser.name,avatar:currentUser.avatar,votes:1,comments:[],cat:"General",time:"Just now",pinned:false},...prev]);setNewPostTitle("");setNewPostBody("");setShowNewPost(false);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",title,body,userId:currentUser.id})});}catch{}showToast("Posted!")}}}>Post</button>
+                           <button className="conn-btn conn-btn-primary" onClick={async()=>{if(newPostTitle.trim()){const title=newPostTitle.trim();const body=newPostBody.trim();setForumPosts(prev=>[{id:Date.now(),title,body,author:currentUser.name,avatar:currentUser.avatar,votes:1,comments:[],cat:"General",time:"Just now",pinned:false},...prev]);setNewPostTitle("");setNewPostBody("");setShowNewPost(false);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",title,body,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
                           <button className="conn-btn conn-btn-ghost" onClick={()=>setShowNewPost(false)}>Cancel</button>
                         </div>
                       </div>
@@ -993,7 +995,7 @@ function MusePage() {
                               <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid rgba(255,255,255,0.06)"}}>
                                 {post.comments.map((c,i)=><div key={i} style={{fontSize:13,color:"var(--text2)",padding:"6px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}><strong style={{color:"var(--text)"}}>{c.author}</strong>: {c.text}</div>)}
                                 <div style={{display:"flex",gap:8,marginTop:8}}>
-                                  <input className="inp" placeholder="Reply..." value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&commentText.trim()){const txt=commentText.trim();setForumPosts(prev=>prev.map(p=>p.id===post.id?{...p,comments:[...p.comments,{author:currentUser.name,text:txt}]}:p));setCommentText("");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",type:"reply",postId:post.id,text:txt,userId:currentUser.id})});showToast("Reply posted!")}}} style={{flex:1,fontSize:12,padding:"8px 12px"}} />
+                                  <input className="inp" placeholder="Reply..." value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={async e=>{if(e.key==="Enter"&&commentText.trim()){const txt=commentText.trim();setForumPosts(prev=>prev.map(p=>p.id===post.id?{...p,comments:[...p.comments,{author:currentUser.name,text:txt}]}:p));setCommentText("");await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",type:"reply",postId:post.id,text:txt,userId:currentUser.id})});showToast("Reply posted!")}}} style={{flex:1,fontSize:12,padding:"8px 12px"}} />
                                 </div>
                               </div>
                             )}
@@ -1069,7 +1071,7 @@ function MusePage() {
                         </div>
                       ))}
                     </div>
-                    <button className="btn btn-gold" style={{width:"100%",fontSize:12}} onClick={()=>{apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-preferences",preferences:discoveryPrefs})});showToast("Preferences saved!")}}>Save Preferences</button>
+                    <button className="btn btn-gold" style={{width:"100%",fontSize:12}} onClick={async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-preferences",preferences:discoveryPrefs})});showToast("Preferences saved!")}catch{showToast("Failed to save")}}}>Save Preferences</button>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"24px 0 10px"}}>Safety & Privacy</div>
                     <div style={{padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                       <div><div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>Show Distance</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Display your approximate location</div></div>
@@ -1619,7 +1621,7 @@ function MusePage() {
                       <button style={{width:32,height:32,borderRadius:8,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14,color:"var(--text2)"}} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
                       {feedMedia.slice(0,4).map((url,i)=><div key={i} style={{position:"relative",width:32,height:32}}>{url.endsWith(".mp4")||url.includes("video")?<video src={url} style={{width:32,height:32,borderRadius:8,objectFit:"cover"}} />:<img src={url} alt="" style={{width:32,height:32,borderRadius:8,objectFit:"cover"}} />}<button onClick={()=>setFeedMedia(prev=>prev.filter((_,j)=>j!==i))} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"var(--coral)",border:"none",color:"#fff",fontSize:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><FiX size={10} /></button></div>)}
                       {feedMedia.length>4&&<span style={{fontSize:11,color:"var(--muted)"}}>+{feedMedia.length-4}</span>}
-                      <button className="conn-btn conn-btn-primary" style={{marginLeft:"auto",fontSize:12,padding:"7px 18px"}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();const hasVideo=feedMedia.some(u=>u.endsWith(".mp4")||u.includes("video"));const type=feedMedia.length?hasVideo?"video":"photo":"text";setFeedText("");setFeedMedia([]);setFeedPosts(prev=>[{id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,type,text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedMedia[0]||undefined,media:feedMedia,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,media:feedMedia,userId:currentUser.id})});}catch{}showToast("Posted!")}}}>Post</button>
+                       <button className="conn-btn conn-btn-primary" style={{marginLeft:"auto",fontSize:12,padding:"7px 18px"}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();const hasVideo=feedMedia.some(u=>u.endsWith(".mp4")||u.includes("video"));const type=feedMedia.length?hasVideo?"video":"photo":"text";setFeedText("");setFeedMedia([]);setFeedPosts(prev=>[{id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,type,text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedMedia[0]||undefined,media:feedMedia,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,media:feedMedia,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
                       <button className="conn-btn conn-btn-ghost" style={{fontSize:11,padding:"6px 12px"}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();setFeedText("");setFeedMedia([]);const moment={id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,type:feedMedia.length?"photo":"text",text:txt,img:feedMedia[0]||undefined,media:[...feedMedia],time:"Just now"};setStories(prev=>[moment,...prev]);showToast("Moment posted!");}}}>⚡ Moment</button>
                     </div>
                     {showEmojiPicker && <div style={{display:"flex",gap:6,flexWrap:"wrap",padding:"8px 0"}}>{["😍","🔥","❤️","😂","😢","😡","👍","🎉","✨","💯","👏","🙌"].map(e=><span key={e} style={{fontSize:22,cursor:"pointer",transition:"transform .15s"}} onClick={()=>{setFeedText(prev=>prev+" "+e);setShowEmojiPicker(false)}} onMouseEnter={e=>e.currentTarget.style.transform="scale(1.3)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>{e}</span>)}</div>}
@@ -1674,8 +1676,8 @@ function MusePage() {
                       </div>
                       {replyingTo === post.id && (
                         <div style={{display:"flex",gap:8,padding:"10px 18px",borderTop:"1px solid rgba(255,255,255,0.04)"}}>
-                          <input className="inp" placeholder="Write a reply..." value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&commentText.trim()){const txt=commentText.trim();setFeedPosts(prev=>prev.map(p=>p.id===post.id?{...p,comments:p.comments+1}:p));setCommentText("");setReplyingTo(null);apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",type:"reply",postId:post.id,text:txt})});showToast("Reply posted!")}}} style={{flex:1,fontSize:13,padding:"8px 12px",borderRadius:10,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",color:"var(--text)"}} />
-                          <button className="conn-btn conn-btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>{if(commentText.trim()){const txt=commentText.trim();setFeedPosts(prev=>prev.map(p=>p.id===post.id?{...p,comments:p.comments+1}:p));setCommentText("");setReplyingTo(null);apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",type:"reply",postId:post.id,text:txt})});showToast("Reply posted!")}}}>Send</button>
+                          <input className="inp" placeholder="Write a reply..." value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&commentText.trim()){const txt=commentText.trim();setFeedPosts(prev=>prev.map(p=>p.id===post.id?{...p,comments:p.comments+1}:p));setCommentText("");setReplyingTo(null);(async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",type:"reply",postId:post.id,text:txt})})}catch{}})();showToast("Reply posted!")}}} style={{flex:1,fontSize:13,padding:"8px 12px",borderRadius:10,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",color:"var(--text)"}} />
+                          <button className="conn-btn conn-btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>{if(commentText.trim()){const txt=commentText.trim();setFeedPosts(prev=>prev.map(p=>p.id===post.id?{...p,comments:p.comments+1}:p));setCommentText("");setReplyingTo(null);(async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",type:"reply",postId:post.id,text:txt})})}catch{}})();showToast("Reply posted!")}}}>Send</button>
                         </div>
                       )}
                     </div>
@@ -2385,7 +2387,7 @@ function MusePage() {
               {icon:"💼",label:"Scam or Fraud",desc:"Selling, soliciting, or phishing"},
               {icon:"📋",label:"Other",desc:"Something else not listed above"},
             ].map(r=>(
-              <div key={r.label} className="report-option" onClick={async()=>{if(reportTarget){try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"report",target_id:reportTarget.id,target_type:reportTarget.type,reason:r.label})});}catch{}}showToast("Reported: "+r.label);setShowReport(false);setReportTarget(null)}}>
+              <div key={r.label} className="report-option" onClick={async()=>{if(reportTarget){try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"report",target_id:reportTarget.id,target_type:reportTarget.type,reason:r.label})});}catch{showToast("Failed to report")}}showToast("Reported: "+r.label);setShowReport(false);setReportTarget(null)}}>
                 <div className="report-option-icon">{r.icon}</div>
                 <div>
                   <div className="report-option-text">{r.label}</div>
