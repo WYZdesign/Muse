@@ -208,11 +208,11 @@ function MusePage() {
     });
     try {
       const [profiles, briefs, feed, forum, events] = await Promise.all([
-        fetch("/api/muse?type=profiles").then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch("/api/muse?type=briefs").then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch("/api/muse?type=feed").then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch("/api/muse?type=forum").then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch("/api/muse?type=events").then(r => r.ok ? r.json() : null).catch(() => null),
+        apiFetch("/api/muse?type=profiles").then(r => r.ok ? r.json() : null).catch(() => null),
+        apiFetch("/api/muse?type=briefs").then(r => r.ok ? r.json() : null).catch(() => null),
+        apiFetch("/api/muse?type=feed").then(r => r.ok ? r.json() : null).catch(() => null),
+        apiFetch("/api/muse?type=forum").then(r => r.ok ? r.json() : null).catch(() => null),
+        apiFetch("/api/muse?type=events").then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
       if (profiles?.profiles?.length) setLiveProfiles(profiles.profiles.map(mapProfile));
       if (briefs?.briefs?.length) setLiveBriefs(briefs.briefs);
@@ -235,7 +235,7 @@ function MusePage() {
       }
       if (events?.events?.length) setLiveEvents(events.events);
     } catch {}
-  }, []);
+  }, [apiFetch]);
 
   // ─── PERSISTENCE ───
   const STORAGE_KEY = "muse_v1";
@@ -260,7 +260,7 @@ function MusePage() {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const d = JSON.parse(raw);
-      if (d.currentUser) setCurrentUser(d.currentUser);
+      if (d.currentUser) setCurrentUser(prev => ({ ...prev, ...d.currentUser, stats: { ...prev.stats, ...(d.currentUser.stats || {}) }, portfolio: Array.isArray(d.currentUser.portfolio) ? d.currentUser.portfolio : (prev.portfolio || []) }));
       if (d.obData) setObData(d.obData);
       if (d.obStep) setObStep(d.obStep);
       if (d.matches) setMatches(d.matches);

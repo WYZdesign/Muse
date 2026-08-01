@@ -1,6 +1,17 @@
--- Muse Chat Fix: text keys + realtime + participant RLS
+-- Muse Chat Fix v2: drop old policies first, then convert types, then recreate.
 -- Run in Supabase Dashboard → SQL Editor → Run.
 -- Idempotent — safe to re-run.
+
+-- 0. Drop ALL existing muse_messages policies (they block ALTER TYPE and
+--    compare against the old uuid columns)
+DROP POLICY IF EXISTS "Users can read own messages" ON muse_messages;
+DROP POLICY IF EXISTS "Users can read their messages" ON muse_messages;
+DROP POLICY IF EXISTS "Users can send messages" ON muse_messages;
+DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages;
+DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
+DROP POLICY IF EXISTS "muse_messages_select" ON muse_messages;
+DROP POLICY IF EXISTS "muse_messages_update" ON muse_messages;
+DROP POLICY IF EXISTS "muse_messages_delete" ON muse_messages;
 
 -- 1. muse_messages key columns → TEXT (app writes "userA__userB" string keys)
 DO $$
@@ -35,19 +46,17 @@ BEGIN
 END $$;
 
 -- 3. RLS: messages readable only by conversation participants.
--- sender_id/receiver_id store muse_profiles.id (UUID as TEXT), so map auth.uid()
--- through muse_profiles.auth_id to the profile id.
+-- sender_id/receiver_id store muse_profiles.id (UUID cast to TEXT), so map
+-- auth.uid() through muse_profiles.auth_id to the profile id, cast to text.
 ALTER TABLE muse_messages ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages;
-DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
 CREATE POLICY "muse_messages_participants" ON muse_messages FOR SELECT
   USING (
-    sender_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
-    OR receiver_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+    sender_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
+    OR receiver_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
   );
 CREATE POLICY "muse_messages_insert" ON muse_messages FOR INSERT
   WITH CHECK (
-    sender_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+    sender_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
   );
 
 -- 4. Notifications: app reference + basic policies (service-role writes, owner reads)

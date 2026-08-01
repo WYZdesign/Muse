@@ -75,8 +75,14 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "profiles") {
-      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path, show_nsfw, photos").limit(50);
-      return NextResponse.json({ profiles: data || [] });
+      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path, show_nsfw, photos").limit(100);
+      const visible = (data || []).filter((p: any) => {
+        if (profileId && String(p.id) === String(profileId)) return false;
+        const hasAvatar = typeof p.avatar === "string" && p.avatar.trim().length > 0;
+        const hasPhotos = Array.isArray(p.photos) && p.photos.length > 0;
+        return hasAvatar || hasPhotos;
+      });
+      return NextResponse.json({ profiles: visible });
     }
 
     if (type === "matches" && profileId) {
