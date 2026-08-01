@@ -9,6 +9,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 export function getServiceClient() {
   const url = process.env.SUPABASE_URL || supabaseUrl;
-  const key = process.env.SUPABASE_SECRET_KEY || "";
+  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
   return createClient(url, key, { auth: { persistSession: false } });
 }

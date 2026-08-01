@@ -128,7 +128,19 @@ export async function POST(req: NextRequest) {
       for (const k of allowed) if (body[k] !== undefined) updates[k] = body[k];
       if (Object.keys(updates).length === 0) return NextResponse.json({ error: "No updatable fields" }, { status: 400 });
       const sb = getServiceClient();
-      const { data, error } = await sb.from("muse_profiles").update(updates).eq("auth_id", user.id).select("*").single();
+      const { data: existing } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
+      if (!existing) {
+        const name = (user.user_metadata?.name as string) || (user.email ? user.email.split("@")[0] : "Creative");
+        const avatar = (user.user_metadata?.avatar_url as string) || (user.user_metadata?.picture as string) || "";
+        const { error: createErr } = await sb.from("muse_profiles").insert({
+          auth_id: user.id,
+          email: (user.email || "").toLowerCase(),
+          name: typeof updates.name === "string" ? updates.name : name,
+          avatar: typeof updates.avatar === "string" ? updates.avatar : avatar,
+        });
+        if (createErr) return NextResponse.json({ error: createErr.message }, { status: 500 });
+      }
+      const { data, error } = await sb.from("muse_profiles").update(updates).eq("auth_id", user.id).select("*").maybeSingle();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ success: true, profile: data });
     }
