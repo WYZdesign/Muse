@@ -372,6 +372,11 @@ function MusePage() {
   }, [loadState, applySession]);
   useEffect(() => { const t = setTimeout(saveState, 300); return () => clearTimeout(t); }, [saveState]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    try { const raw = localStorage.getItem("muse_v1"); const d = raw ? JSON.parse(raw) : {}; d.theme = theme; localStorage.setItem("muse_v1", JSON.stringify(d)); } catch {}
+  }, [theme]);
+
   const showToast = useCallback((msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); }, []);
 
   const doLogout = useCallback(async () => {
