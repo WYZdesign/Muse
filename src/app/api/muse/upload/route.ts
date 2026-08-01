@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServiceClient } from "@/lib/supabase";
+import { supabase, getServiceClient } from "@/lib/supabase";
 
 const ALLOWED_SIGNATURES: Record<string, { bytes: number[]; ext: string }> = {
   "89504e47": { bytes: [0x89,0x50,0x4E,0x47], ext: "png" },
@@ -27,8 +27,21 @@ function safeFilename(folder: string, ext: string): string {
   return `${folder}/${uuid}.${ext}`;
 }
 
+async function authedProfileId(req: NextRequest): Promise<string | null> {
+  const header = req.headers.get("authorization") || "";
+  const bearer = header.replace(/^Bearer\s+/i, "").trim();
+  if (!bearer) return null;
+  const { data, error } = await supabase.auth.getUser(bearer);
+  if (error || !data.user) return null;
+  const { data: profile } = await getServiceClient().from("muse_profiles").select("id").eq("auth_id", data.user.id).maybeSingle();
+  return profile?.id ?? null;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const profileId = await authedProfileId(req);
+    if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const folder = (formData.get("folder") as string) || "avatars";
@@ -45,7 +58,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid file extension" }, { status: 400 });
     }
 
-    const path = safeFilename(folder, ext);
+    const safeFolder = folder.replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "avatars";
+    const path = safeFilename(safeFolder, ext);
     const sb = getServiceClient();
     const { data, error } = await sb.storage.from("muse-uploads").upload(path, buffer, {
       contentType: `image/${ext}`,
@@ -63,6 +77,9 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const profileId = await authedProfileId(req);
+    if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
     const { path } = await req.json();
     if (!path) return NextResponse.json({ error: "No path" }, { status: 400 });
     const sb = getServiceClient();

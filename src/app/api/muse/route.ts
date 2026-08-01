@@ -148,9 +148,11 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "export") {
-      const token = req.nextUrl.searchParams.get("access_token");
-      if (!token) return NextResponse.json({ error: "access_token required" }, { status: 400 });
       const authSb = getServiceClient();
+      const header = req.headers.get("authorization") || "";
+      const bearer = header.replace(/^Bearer\s+/i, "").trim();
+      const token = bearer;
+      if (!token) return NextResponse.json({ error: "Authorization header required" }, { status: 400 });
       const { data: authUser, error: authErr } = await authSb.auth.getUser(token);
       if (authErr || !authUser.user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 

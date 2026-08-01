@@ -385,7 +385,9 @@ function MusePage() {
       const fd = new FormData();
       fd.append("file", file);
       fd.append("folder", folder);
-      const r = await fetch("/api/muse/upload", { method: "POST", body: fd });
+      const raw = localStorage.getItem("muse_user");
+      const token = raw ? (JSON.parse(raw).access_token || "") : "";
+      const r = await fetch("/api/muse/upload", { method: "POST", headers: token ? { "Authorization": `Bearer ${token}` } : {}, body: fd });
       const j = await r.json();
       if (j.success && j.url) return j.url;
       showToast("Upload failed: " + (j.error || "Unknown"));
@@ -672,7 +674,7 @@ function MusePage() {
     try {
       await fetch("/api/muse/auth", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(localStorage.getItem("muse_user") ? { "Authorization": `Bearer ${JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""}` } : {}) },
         body: JSON.stringify({
           action: "update-profile",
           name: editName,
@@ -1088,7 +1090,7 @@ function MusePage() {
                     </div>
                     <div style={{marginTop:20}}>
                       <div style={{fontSize:15,fontWeight:700,color:"var(--coral)",marginBottom:12}}>Danger Zone</div>
-                      <button className="btn" style={{width:"100%",background:"rgba(255,107,107,0.1)",border:"1px solid rgba(255,107,107,0.3)",color:"var(--coral)",fontSize:13}} onClick={()=>{if(confirm("Delete your account? This cannot be undone.")){fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"delete-account"})});showToast("Account deleted");setTimeout(()=>window.location.reload(),1500)}}}>Delete Account</button>
+                      <button className="btn" style={{width:"100%",background:"rgba(255,107,107,0.1)",border:"1px solid rgba(255,107,107,0.3)",color:"var(--coral)",fontSize:13}} onClick={()=>{if(confirm("Delete your account? This cannot be undone.")){const t=localStorage.getItem("muse_user");fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json",...(t?{"Authorization":`Bearer ${JSON.parse(t).access_token||""}`}:{})},body:JSON.stringify({action:"delete-account"})});showToast("Account deleted");setTimeout(()=>window.location.reload(),1500)}}}>Delete Account</button>
                     </div>
                     <button className="btn btn-gold" style={{width:"100%",marginTop:16,fontSize:12,padding:"12px 0"}} onClick={doLogoutFull}>Log Out</button>
                   </div>

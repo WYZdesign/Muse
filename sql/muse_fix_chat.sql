@@ -62,11 +62,10 @@ CREATE POLICY "muse_messages_insert" ON muse_messages FOR INSERT
 -- 4. Notifications: app reference + basic policies (service-role writes, owner reads)
 CREATE TABLE IF NOT EXISTS muse_notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL,
-  from_id UUID,
-  type TEXT DEFAULT '',
-  title TEXT DEFAULT '',
-  body TEXT DEFAULT '',
+  user_id UUID NOT NULL REFERENCES muse_profiles(id) ON DELETE CASCADE,
+  from_id UUID REFERENCES muse_profiles(id) ON DELETE SET NULL,
+  type TEXT DEFAULT 'system',
+  text TEXT DEFAULT '',
   read BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now()
 );

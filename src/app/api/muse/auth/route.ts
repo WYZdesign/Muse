@@ -9,6 +9,13 @@ function validatePassword(pw: string): string | null {
   return null;
 }
 
+function bearerOrBodyToken(req: NextRequest, body: Record<string, unknown>): string {
+  const header = req.headers.get("authorization") || "";
+  const bearer = header.replace(/^Bearer\s+/i, "").trim();
+  if (bearer) return bearer;
+  return typeof body.access_token === "string" ? body.access_token : "";
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -105,31 +112,48 @@ export async function POST(req: NextRequest) {
       if (!access_token || !new_password) return NextResponse.json({ error: "Token and new password required" }, { status: 400 });
       const pwErr = validatePassword(new_password);
       if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
-      const { error } = await supabase.auth.updateUser(access_token, { password: new_password } as any);
+      const { error: setErr } = await supabase.auth.setSession({ access_token, refresh_token: "" });
+      if (setErr) return NextResponse.json({ error: setErr.message }, { status: 400 });
+      const { error } = await supabase.auth.updateUser({ password: new_password });
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
       return NextResponse.json({ success: true, message: "Password updated" });
     }
 
     if (action === "update-profile") {
-      const { auth_id, updates } = body;
-      if (!auth_id) return NextResponse.json({ error: "auth_id required" }, { status: 400 });
+      const accessToken = bearerOrBodyToken(req, body);
+      const { data: { user }, error: authErr } = await supabase.auth.getUser(accessToken);
+      if (authErr || !user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      const allowed = ["name", "bio", "loc", "city", "lat", "long", "avatar", "type", "styles", "looking", "photos", "preferences"];
+      const updates: Record<string, unknown> = {};
+      for (const k of allowed) if (body[k] !== undefined) updates[k] = body[k];
+      if (Object.keys(updates).length === 0) return NextResponse.json({ error: "No updatable fields" }, { status: 400 });
       const sb = getServiceClient();
-      const { data, error } = await sb.from("muse_profiles").update(updates).eq("auth_id", auth_id).select("*").single();
+      const { data, error } = await sb.from("muse_profiles").update(updates).eq("auth_id", user.id).select("*").single();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ success: true, profile: data });
     }
 
     if (action === "delete-account") {
-      const { auth_id } = body;
-      if (!auth_id) return NextResponse.json({ error: "auth_id required" }, { status: 400 });
+      const accessToken = bearerOrBodyToken(req, body);
+      const { data: { user }, error: authErr } = await supabase.auth.getUser(accessToken);
+      if (authErr || !user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
       const sb = getServiceClient();
-      await sb.from("muse_messages").delete().or(`sender_id.eq.${auth_id},receiver_id.eq.${auth_id}`);
-      await sb.from("muse_matches").delete().or(`user_a.eq.${auth_id},user_b.eq.${auth_id}`);
-      await sb.from("muse_feed_posts").delete().eq("author_id", auth_id);
-      await sb.from("muse_briefs").delete().eq("author_id", auth_id);
-      await sb.from("muse_forum_posts").delete().eq("author_id", auth_id);
-      const { error } = await sb.from("muse_profiles").delete().eq("auth_id", auth_id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
+      if (profile) {
+        const pid = profile.id;
+        await sb.from("muse_messages").delete().or(`sender_id.eq.${pid},receiver_id.eq.${pid}`);
+        await sb.from("muse_matches").delete().or(`user_id.eq.${pid},target_id.eq.${pid}`);
+        await sb.from("muse_feed_posts").delete().eq("author_id", pid);
+        await sb.from("muse_briefs").delete().eq("author_id", pid);
+        await sb.from("muse_forum_posts").delete().eq("author_id", pid);
+        await sb.from("muse_connections").delete().or(`user_id.eq.${pid},target_id.eq.${pid}`);
+        await sb.from("muse_community_members").delete().eq("user_id", pid);
+        await sb.from("muse_bookings").delete().eq("user_id", pid);
+        await sb.from("muse_reports").delete().eq("reporter_id", pid);
+        await sb.from("muse_blocks").delete().eq("user_id", pid);
+        await sb.from("muse_profiles").delete().eq("id", pid);
+      }
+      await sb.auth.admin.deleteUser(user.id);
       return NextResponse.json({ success: true });
     }
 
