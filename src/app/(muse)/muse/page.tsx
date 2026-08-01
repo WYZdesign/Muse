@@ -461,7 +461,7 @@ function MusePage() {
   };
 
   const filteredProfiles = useMemo(() => {
-    const base = liveProfiles?.length ? liveProfiles : PROFILES;
+    const base = liveProfiles?.length ? [...PROFILES, ...liveProfiles.filter((lp:any) => !PROFILES.some((dp:any) => dp.id === lp.id))] : PROFILES;
     let list = showNsfw ? base : base.filter(p => !p.nsfw);
     if (filterStyles.length > 0) list = list.filter(p => p.styles.some(s => filterStyles.includes(s)));
     if (filterScore > 50) list = list.filter(p => p.score >= filterScore);
@@ -1561,8 +1561,8 @@ function MusePage() {
                     const isTop = idx === 0;
                     return (
                        <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")+(expandedProfile===profile.id?" expanded":"")} style={{zIndex:3-idx,transform:"translate("+(isTop?dragOffset:0)+"px, "+(isTop?dragOffsetY:0)+"px) scale("+(Math.max(0.92, 1 - idx * 0.04))+")",opacity:isTop?1-dragOpacity*0.3:1}}>
-                        <div style={{position:"relative",width:"100%",height:"100%",display:"flex",flexDirection:"column"}}>
-                           <div style={{position:"relative",width:"100%",flex:expandedProfile===profile.id?"0 0 320px":"0 0 75%",minHeight:0,overflow:"hidden"}}
+                        <div style={{position:"relative",width:"100%",height:"100%",display:"flex",flexDirection:"column",overflowY:"auto"}}>
+                           <div style={{position:"relative",width:"100%",minHeight:"70vh",overflow:"hidden",flexShrink:0}}
                              onPointerDown={isTop&&expandedProfile!==profile.id?onPointerDown:undefined}
                              onPointerMove={isTop&&expandedProfile!==profile.id?onPointerMove:undefined}
                              onPointerUp={isTop&&expandedProfile!==profile.id?onPointerUp:undefined}
@@ -1590,7 +1590,7 @@ function MusePage() {
                               </div>
                             )}
                           </div>
-                           <div className="card-info" style={{position:"relative",zIndex:3,flex:1,overflowY:"auto",minHeight:0}}>
+                           <div className="card-info" style={{position:"relative",zIndex:3,flexShrink:0}}>
                             {profile.verified && <div className="card-verified">Verified</div>}
                             {profile.nsfw && <div className="card-nsfw-badge">18+</div>}
                             <div>

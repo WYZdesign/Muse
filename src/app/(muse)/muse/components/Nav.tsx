@@ -10,6 +10,22 @@ const gradMap: Record<string,string> = {
   moments: "linear-gradient(90deg,#FFD700,#FF69B4,#FFFFFF)",
 };
 
+const gradMid: Record<string,string> = {
+  discover: "#FFD700",
+  connections: "#4169E1",
+  briefs: "#20B2AA",
+  matches: "#FF4757",
+  moments: "#FF69B4",
+};
+
+const gradFirst: Record<string,string> = {
+  discover: "#98FB98",
+  connections: "#00CED1",
+  briefs: "#98FB98",
+  matches: "#FF8C00",
+  moments: "#FFD700",
+};
+
 const tabs: { key: Screen|string; label: string; icon: React.ReactNode; hasScreen: boolean }[] = [
   { key:"discover", label:"Discover", icon:<FiCompass size={22} />, hasScreen:true },
   { key:"connections", label:"Feed", icon:<FiUsers size={22} />, hasScreen:true },
@@ -24,10 +40,12 @@ export default function Nav({ active, onNavigate, onHamburgerToggle }: { active:
       {tabs.map(tab => {
         const isActive = active === tab.key;
         const grad = gradMap[tab.key] || gradMap.discover;
+        const mid = gradMid[tab.key] || "#FFD700";
+        const first = gradFirst[tab.key] || "#FFD700";
         return (
           <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs"); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined}>
-            <span className={"nav-icon"+(isActive?" nav-icon-glow":"")} style={isActive?{background:grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",animation:"iconHueShift 4s ease-in-out infinite"}:{color:grad.split(",")[0].replace("linear-gradient(90deg,",""),opacity:0.55}}>{tab.icon}</span>
-            <span style={isActive?{background:grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",fontWeight:800,animation:"iconHueShift 4s ease-in-out infinite"}:{color:grad.split(",")[0].replace("linear-gradient(90deg,",""),opacity:0.55,fontWeight:600}}>{tab.label}</span>
+            <span className={"nav-icon"+(isActive?" nav-icon-glow":"")} style={isActive?{color:mid}:{color:first,opacity:0.55}}>{tab.icon}</span>
+            <span style={isActive?{background:grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",fontWeight:800,animation:"iconHueShift 4s ease-in-out infinite"}:{color:first,opacity:0.55,fontWeight:600}}>{tab.label}</span>
           </button>
         );
       })}
