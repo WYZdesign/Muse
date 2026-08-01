@@ -28,14 +28,26 @@ export async function persistMessage(opts: {
   if (!opts.myId || opts.myId === "local") return false;
   if (!opts.theirId || !opts.text.trim()) return false;
   const convo = convoIdFor(opts.myId, opts.theirId);
-  const { error } = await getServiceClient().from("muse_messages").insert({
+  const payload = {
     match_id: convo,
     sender_id: opts.myId,
     receiver_id: opts.theirId,
     text: opts.text.trim().slice(0, 2000),
     img: "",
     client_msg_id: opts.clientMsgId || `${opts.myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  });
+  };
+  let { error } = await getServiceClient().from("muse_messages").insert(payload);
+  // Fall back to the base schema (no receiver_id / client_msg_id columns)
+  // when the migration hasn't been applied yet — messages still persist,
+  // just without receiver routing or dedup.
+  if (error && (error as { code?: string }).code === "42703") {
+    ({ error } = await getServiceClient().from("muse_messages").insert({
+      match_id: convo,
+      sender_id: opts.myId,
+      text: payload.text,
+      img: "",
+    }));
+  }
   if (error && (error as { code?: string }).code === "23505") return true;
   return !error;
 }
