@@ -6,7 +6,7 @@ export type Match = Partial<Profile> & {
   intent?: string;
   messages: { from: string; text: string; time: string; img?: string }[];
 };
-export type Screen = "auth"|"onboard"|"discover"|"connections"|"matches"|"chat"|"profile"|"briefs"|"portfolio"|"settings"|"subscription"|"community"|"events"|"sessions"|"moments"|"forum";
+export type Screen = "auth"|"onboard"|"discover"|"connections"|"matches"|"chat"|"profile"|"briefs"|"portfolio"|"settings"|"subscription"|"community"|"events"|"sessions"|"moments"|"forum"|"network";
 
 export const PROFILES = [
   { id:1,name:"Luna Martinez",type:"Photographer",img:"/models/ARCANA/Bodypaint-11.JPG",loc:"Los Angeles, CA",bio:"Golden hour chaser. Capturing raw emotion through natural light.",collabs:47,score:77,verified:true,styles:["Editorial", "Fine Art", "Fashion"],looking:["Videographer", "Editor"],connection:"collab",nsfw:false,online:true,zodiac:"Sagittarius",chinese:"Rooster",mbti:"INTJ",lifePath:9,badges:[{name: "Verified Pro", desc: "Identity verified by Muse", icon: "\u2713", color: "#FFD700"}, {name: "Top Creator", desc: "80+ collaborations completed", icon: "\u2605", color: "#FF8A80"}],photos:["/models/ARCANA/Bodypaint-11.JPG", "/models/ARCANA/Bodypaint-10.JPG", "/models/ARCANA/Bodypaint-3.JPG", "/models/ARCANA/Bodypaint.JPG", "/models/ARCANA/Bodypaint-5.JPG", "/models/ARCANA/Bodypaint-4.JPG", "/models/ARCANA/Bodypaint-8.JPG", "/models/ARCANA/Bodypaint-15.JPG", "/models/ARCANA/Bodypaint-2.JPG", "/models/ARCANA/Bodypaint-7.JPG"] },

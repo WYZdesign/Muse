@@ -60,6 +60,7 @@ a{color:inherit;text-decoration:none}
 .star.bright{width:3px;height:3px;box-shadow:0 0 6px rgba(255,255,255,0.6),0 0 12px rgba(255,255,255,0.2)}
 .star.warm{background:#FFE4B5;box-shadow:0 0 4px rgba(255,228,181,0.3)}
 .star.blue{background:#B0C4FF;box-shadow:0 0 4px rgba(176,196,255,0.3)}
+.star.gold{background:#FFD700;width:3px;height:3px;box-shadow:0 0 8px rgba(255,215,0,0.5),0 0 16px rgba(255,215,0,0.2)}
 @keyframes twinkle{0%,100%{opacity:0.15;transform:scale(0.6)}50%{opacity:1;transform:scale(1.3)}}
 
 /* Shooting comets - random directions, tail trails BEHIND head */
@@ -76,6 +77,13 @@ a{color:inherit;text-decoration:none}
 .nf-7{width:260px;height:190px;top:60%;left:5%;background:radial-gradient(ellipse,rgba(212,165,255,0.1),rgba(160,80,220,0.03) 50%,transparent 70%);animation-duration:31s;animation-delay:14s}
 .nf-8{width:340px;height:260px;top:55%;right:5%;background:radial-gradient(ellipse,rgba(255,107,107,0.11),rgba(255,138,128,0.04) 50%,transparent 70%);animation-duration:27s;animation-delay:2s}
 @keyframes nebulaDrift{0%,100%{transform:translate(0,0) scale(1);opacity:0.6}25%{transform:translate(30px,-20px) scale(1.08);opacity:0.8}50%{transform:translate(-20px,25px) scale(0.95);opacity:0.5}75%{transform:translate(15px,10px) scale(1.04);opacity:0.7}}
+
+/* ═══ AURORA LIGHTS ═══ */
+.aurora-strip{position:absolute;width:100%;height:120px;pointer-events:none;z-index:1;animation:auroraFlow 12s ease-in-out infinite;filter:blur(60px);mix-blend-mode:screen;opacity:0.35}
+.aurora-s1{top:5%;left:-10%;background:linear-gradient(120deg,transparent 0%,rgba(0,200,180,0.5) 20%,rgba(120,220,120,0.4) 45%,rgba(0,180,220,0.35) 65%,rgba(212,165,255,0.25) 85%,transparent 100%)}
+.aurora-s2{top:15%;right:-10%;width:110%;background:linear-gradient(100deg,transparent 0%,rgba(255,138,128,0.4) 25%,rgba(212,165,255,0.35) 50%,rgba(100,200,255,0.3) 75%,transparent 100%);animation-delay:-6s;height:100px}
+.aurora-s3{top:10%;left:0;background:linear-gradient(140deg,transparent 0%,rgba(212,165,255,0.35) 30%,rgba(255,181,194,0.3) 55%,rgba(80,220,180,0.25) 80%,transparent 100%);animation-delay:-3s;height:90px;opacity:0.25}
+@keyframes auroraFlow{0%,100%{transform:translateX(0) skewY(-3deg) scaleY(1)}25%{transform:translateX(8%) skewY(2deg) scaleY(1.3)}50%{transform:translateX(-5%) skewY(-1deg) scaleY(0.8)}75%{transform:translateX(4%) skewY(4deg) scaleY(1.2)}}
 
 /* Sparkles */
 .sparkle-field{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;overflow:hidden}
@@ -363,8 +371,8 @@ img{background-color:#1a0a2e}
 @keyframes matchPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 .match-subtitle{font-size:16px;color:var(--text2);margin-bottom:32px;text-align:center;line-height:1.6}
 .match-avatars{display:flex;margin-bottom:36px}
-.match-av{width:110px;height:110px;border-radius:50%;border:4px solid var(--gold);object-fit:cover;animation:matchBounce .7s cubic-bezier(.4,0,.2,1)}
-.match-av:nth-child(2){margin-left:-24px;border-color:var(--amber);animation-delay:.2s}
+.match-av{width:80px;height:80px;border-radius:50%;border:3px solid var(--gold);object-fit:cover;animation:matchBounce .7s cubic-bezier(.4,0,.2,1)}
+.match-av:nth-child(2){margin-left:-20px;border-color:var(--amber);animation-delay:.2s}
 @keyframes matchBounce{0%{transform:scale(0) rotate(-15deg)}60%{transform:scale(1.15) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
 .match-btn{padding:18px 56px;border-radius:99px;background:linear-gradient(135deg,var(--gold),var(--amber));color:#0a0612;font-size:17px;font-weight:700;box-shadow:0 10px 40px rgba(255,215,0,0.25);transition:all .3s}
 .match-btn:hover{transform:scale(1.05);box-shadow:0 14px 50px rgba(255,215,0,0.35)}
@@ -648,8 +656,8 @@ img{background-color:#1a0a2e}
 
 /* ═══ NAV SHIMMER ═══ */
 .nav-item.active{overflow:hidden}
-.nav-item.active::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,transparent 25%,rgba(255,255,255,0.055) 40%,rgba(255,255,255,0.105) 50%,rgba(255,255,255,0.055) 60%,transparent 75%,transparent 100%);animation:navShimmer 5s ease-in-out infinite}
-@keyframes navShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.nav-item.active::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,255,255,0.12) 0%,rgba(255,255,255,0.06) 25%,transparent 60%,transparent 100%);animation:navShimmer 4s ease-in-out infinite}
+@keyframes navShimmer{0%,100%{opacity:0.3}50%{opacity:1}}
 
 /* ═══ MENU ICON SWIRL ═══ */
 .hamburger-item-icon{position:relative;overflow:hidden}

@@ -103,6 +103,9 @@ function MusePage() {
   const [pushEnabled, setPushEnabled] = useState<boolean>(false);
   const [connTab, setConnTab] = useState<"community"|"events"|"sessions"|"forum"|"feed"|"professional">("community");
   const [forumPosts, setForumPosts] = useState<{id:number;title:string;body:string;author:string;avatar:string;votes:number;comments:{author:string;text:string}[];cat:string;time:string;pinned:boolean}[]>([]);
+  const [commTab, setCommTab] = useState<"groups"|"events">("groups");
+  const [sessTab, setSessTab] = useState<"sessions"|"bookings">("sessions");
+  const [netTab, setNetTab] = useState<"pros"|"forum">("pros");
   const [forumSort, setForumSort] = useState<"hot"|"new"|"top">("hot");
   const [forumCategory, setForumCategory] = useState<string>("all");
   const [newPostTitle, setNewPostTitle] = useState("");
@@ -156,6 +159,7 @@ function MusePage() {
   const [showActivityFeed, setShowActivityFeed] = useState(false);
   const [showHamburger, setShowHamburger] = useState(false);
   const [showPremiumPopup, setShowPremiumPopup] = useState(true);
+  const [viewProfile, setViewProfile] = useState<any>(null);
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
   const [showStories, setShowStories] = useState(false);
   const [unmatchTarget, setUnmatchTarget] = useState<string|null>(null);
@@ -856,9 +860,14 @@ function MusePage() {
                   {key:"network",icon:<FiShare2 size={20} />,label:"Network",desc:"Professionals & forum",grad:"linear-gradient(135deg,#B3E5FC,#64B5F6,#00BCD4)"},
                   {key:"profile",icon:<FiUser size={20} />,label:"Profile",desc:"Edit profile & premium",grad:"linear-gradient(135deg,#FFD700,#FFB5C2,#B388FF)"},
                   {key:"settings",icon:<FiSettings size={20} />,label:"Settings",desc:"Preferences, safety & help",grad:"linear-gradient(135deg,#CE93D8,#B388FF,#A5D6A7)"},
-                  {key:"moments",icon:<FiCamera size={20} />,label:"BTS",desc:"Behind the scenes — raw & real",grad:"linear-gradient(135deg,#FF6B6B,#FFD93D,#6BCB77)"},
                 ].map(item => (
-                  <div key={item.key} className="hamburger-item" onClick={() => setHamburgerScreen(item.key)}>
+                  <div key={item.key} className="hamburger-item" onClick={() => {
+                    if (item.key === "community" || item.key === "sessions" || item.key === "network") {
+                      setShowHamburger(false); showScreen(item.key as any);
+                    } else {
+                      setHamburgerScreen(item.key);
+                    }
+                  }}>
                     <div className="hamburger-item-icon" style={{background:item.grad}}>{item.icon}</div>
                     <div><div className="hamburger-item-label">{item.label}</div><div className="hamburger-item-desc">{item.desc}</div></div>
                   </div>
@@ -1529,10 +1538,15 @@ function MusePage() {
                   {filteredProfiles.slice(currentIdx, currentIdx+3).map((profile, idx) => {
                     const isTop = idx === 0;
                     return (
-                       <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")+(expandedProfile===profile.id?" expanded":"")} style={{zIndex:3-idx,transform:"translate("+(isTop?dragOffset:0)+"px, "+(isTop?dragOffsetY:0)+"px) scale("+(Math.max(0.92, 1 - idx * 0.04))+")",opacity:isTop?1-dragOpacity*0.3:1}} onPointerDown={isTop&&expandedProfile!==profile.id?onPointerDown:undefined} onPointerMove={isTop&&expandedProfile!==profile.id?onPointerMove:undefined} onPointerUp={isTop&&expandedProfile!==profile.id?onPointerUp:undefined} onPointerCancel={isTop&&expandedProfile!==profile.id?onPointerUp:undefined}>
+                       <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")+(expandedProfile===profile.id?" expanded":"")} style={{zIndex:3-idx,transform:"translate("+(isTop?dragOffset:0)+"px, "+(isTop?dragOffsetY:0)+"px) scale("+(Math.max(0.92, 1 - idx * 0.04))+")",opacity:isTop?1-dragOpacity*0.3:1}}>
                         <div style={{position:"relative",width:"100%",height:"100%",display:"flex",flexDirection:"column"}}>
-                           <div style={{position:"relative",width:"100%",flex:expandedProfile===profile.id?"0 0 340px":"0 0 65%",minHeight:expandedProfile===profile.id?340:0,overflow:"hidden"}}>
-                            <img src={((profile as any).photos?.length ? (profile as any).photos[currentPhotoIdx] : profile.img) || profile.img} alt={profile.name} draggable="false" onError={handleImgError} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",top:0,left:0}} />
+                           <div style={{position:"relative",width:"100%",flex:expandedProfile===profile.id?"0 0 320px":"0 0 50%",minHeight:0,overflow:"hidden"}}
+                             onPointerDown={isTop&&expandedProfile!==profile.id?onPointerDown:undefined}
+                             onPointerMove={isTop&&expandedProfile!==profile.id?onPointerMove:undefined}
+                             onPointerUp={isTop&&expandedProfile!==profile.id?onPointerUp:undefined}
+                             onPointerCancel={isTop&&expandedProfile!==profile.id?onPointerUp:undefined}
+                           >
+                            <img src={((profile as any).photos?.length ? (profile as any).photos[currentPhotoIdx] : profile.img) || profile.img} alt={profile.name} draggable="false" onError={handleImgError} style={{width:"100%",height:"100%",objectFit:"contain",objectPosition:"center top",background:"#0a0612"}} />
                             {isTop && expandedProfile!==profile.id && <>
                               <div style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
                               <div style={{position:"absolute",right:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();const max=(profile as any).photos?.length||1;setCurrentPhotoIdx(prev=>Math.min(max-1,prev+1))}} />
@@ -1713,14 +1727,7 @@ function MusePage() {
                   ) : (
                     <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12}}>
                       {likedBy.map(p => (
-                        <div key={p.id} style={{position:"relative",borderRadius:16,overflow:"hidden",aspectRatio:"3/4",cursor:"pointer"}} onClick={()=>{
-                          if (!matches.find(m => m.id === p.id)) {
-                            setMatches(prev => [...prev, {...p, messages:[]}]);
-                          }
-                          const target = matches.find(m => m.id === p.id) || {...p, messages:[]};
-                          setChatTarget(target);
-                          showScreen("chat");
-                        }}>
+                        <div key={p.id} style={{position:"relative",borderRadius:16,overflow:"hidden",aspectRatio:"3/4",cursor:"pointer"}} onClick={()=>setViewProfile(p)}>
                           <img src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover"}} />
                           <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"12px",background:"linear-gradient(to top,rgba(10,6,18,0.9),transparent)"}}>
                             <div style={{fontSize:15,fontWeight:700}}>{p.name}</div>
@@ -1780,7 +1787,7 @@ function MusePage() {
                 <div className="chat-wrap">
                   <div className="chat-header">
                     <button className="chat-back" onClick={()=>showScreen("matches")}><FiArrowLeft size={20} /></button>
-                     <img src={chatTarget.img} alt={chatTarget.name} className="chat-avatar" onError={handleImgError} />
+                     <img src={chatTarget.img} alt={chatTarget.name} className="chat-avatar" onError={handleImgError} onClick={()=>setViewProfile(chatTarget)} style={{cursor:"pointer"}} />
                     <div className="chat-info">
                       <div className="chat-name">{chatTarget.name}</div>
                       <div className="chat-type">{chatTarget.type}</div>
@@ -1896,6 +1903,162 @@ function MusePage() {
                 })()}
               </div>
               <Nav active="briefs" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+            </div>
+
+            <div className={"screen-el"+(screen==="community"?" active":"")}>
+              <div className="hdr">
+                <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
+                <span style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:18,fontWeight:800,color:"var(--gold)"}}>Community</span>
+                <div style={{width:36}} />
+              </div>
+              <div className="conn-tabs" style={{padding:"0 16px"}}>
+                {(["groups","events"] as const).map(t => (
+                  <div key={t} className={"conn-tab"+(commTab===t?" active":"")} onClick={()=>setCommTab(t)}>{t==="groups"?"Groups":"Events"}</div>
+                ))}
+              </div>
+              <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
+                {commTab === "groups" && COMMUNITIES.filter(c => showNsfw || !c.nsfw).map(c => (
+                  <div key={c.id} className="conn-card" style={{marginBottom:10,padding:14}}>
+                    <img src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
+                    <div className="conn-content" style={{flex:1}}>
+                      <div className="conn-name" style={{fontSize:15}}>{c.name}</div>
+                      <div className="conn-meta" style={{fontSize:12}}>{c.members} members · {c.desc}</div>
+                      <div style={{display:"flex",gap:6,marginTop:8}}>
+                        <button className={"conn-btn conn-btn-primary"+(c.cat==="nsfw"?" conn-nsfw-tag":"")} style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id,memberCount:c.members})});showToast("Joined "+c.name+"!")}catch{showToast("Failed to join")}}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
+                        <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/community/"+c.id);showToast("Link copied!")}}>Share</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {commTab === "events" && EVENTS.filter(e => showNsfw || !e.nsfw).map(ev => (
+                  <div key={ev.id} className="conn-card" style={{flexDirection:"column",marginBottom:10,padding:16}}>
+                    <div className="conn-name" style={{fontSize:15}}>{ev.title}</div>
+                    <div className="conn-meta" style={{fontSize:12,marginBottom:6}}>{ev.date} · {ev.loc}</div>
+                    <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.5,marginBottom:10}}>{ev.desc}</div>
+                    <button className={"conn-btn "+(rsvpdEvents.includes(ev.id)?"conn-btn-ghost":"conn-btn-primary")} style={{padding:"10px 0",fontSize:13,width:"100%"}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter(x=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
+                  </div>
+                ))}
+                {commTab === "events" && EVENTS.length===0 && (
+                  <div style={{textAlign:"center",padding:40,color:"var(--muted)",fontSize:13}}>No upcoming events</div>
+                )}
+              </div>
+            </div>
+
+            <div className={"screen-el"+(screen==="sessions"?" active":"")}>
+              <div className="hdr">
+                <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
+                <span style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:18,fontWeight:800,color:"var(--gold)"}}>Sessions</span>
+                <div style={{width:36}} />
+              </div>
+              <div className="conn-tabs" style={{padding:"0 16px"}}>
+                {(["sessions","bookings"] as const).map(t => (
+                  <div key={t} className={"conn-tab"+(sessTab===t?" active":"")} onClick={()=>setSessTab(t)}>{t==="sessions"?"Discover":"My Bookings"}</div>
+                ))}
+              </div>
+              <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
+                {sessTab === "sessions" && SESSIONS.map(s => (
+                  <div key={s.id} className="conn-card" style={{marginBottom:10,padding:14}}>
+                    <img src={s.img} alt={s.name} className="conn-avatar" style={{borderRadius:"50%"}} onError={handleImgError} />
+                    <div className="conn-content" style={{flex:1}}>
+                      <div className="conn-name" style={{fontSize:15}}>{s.name}</div>
+                      <div className="conn-meta" style={{fontSize:12}}>{s.type} · {s.rate} · ★ {s.rating}</div>
+                      <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6}}>
+                        {s.skills.map(sk=><span key={sk} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{sk}</span>)}
+                      </div>
+                      <div style={{display:"flex",gap:6,marginTop:8}}>
+                        <button className="conn-btn conn-btn-primary" style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={()=>{showToast("Session request sent to "+s.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})})}}>{s.available?"Book":"Waitlist"}</button>
+                        <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={()=>{setViewProfile(s);showToast(s.name+"'s profile")}}>Profile</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {sessTab === "bookings" && matches.filter(m => m.booked).length === 0 ? (
+                  <div style={{textAlign:"center",padding:40,color:"var(--muted)",fontSize:13}}>
+                    <div style={{fontSize:32,marginBottom:10}}>📋</div>
+                    No bookings yet.<br/>Book sessions with your matches!
+                  </div>
+                ) : (
+                  matches.filter(m => m.booked).map(m => (
+                    <div key={m.id} className="conn-card" style={{marginBottom:10,padding:14}}>
+                      <img src={m.img} alt={m.name} className="conn-avatar" onError={handleImgError} />
+                      <div className="conn-content" style={{flex:1}}>
+                        <div className="conn-name" style={{fontSize:15}}>{m.name}</div>
+                        <div className="conn-meta" style={{fontSize:12}}>{m.type} · Booked Session</div>
+                        <div style={{display:"flex",gap:6,marginTop:8}}>
+                          <button className="conn-btn conn-btn-primary" style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={()=>{openChat(m)}}>Message</button>
+                          <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className={"screen-el"+(screen==="network"?" active":"")}>
+              <div className="hdr">
+                <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
+                <span style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:18,fontWeight:800,color:"var(--gold)"}}>Network</span>
+                <div style={{width:36}} />
+              </div>
+              <div className="conn-tabs" style={{padding:"0 16px"}}>
+                {(["pros","forum"] as const).map(t => (
+                  <div key={t} className={"conn-tab"+(netTab===t?" active":"")} onClick={()=>setNetTab(t)}>{t==="pros"?"Professionals":"Forum"}</div>
+                ))}
+              </div>
+              <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
+                {netTab === "pros" && PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
+                  <div key={p.id} className="conn-card" style={{flexDirection:"column",marginBottom:14,padding:0,overflow:"hidden",borderRadius:16}}>
+                    <img src={p.img} alt={p.name} style={{width:"100%",height:160,objectFit:"cover"}} onError={handleImgError} />
+                    <div style={{padding:"14px 16px"}}>
+                      <div className="conn-name" style={{fontSize:15}}>{p.name}</div>
+                      <div className="conn-meta" style={{fontSize:12,marginBottom:6}}>{p.type} · {p.loc} · {p.exp}</div>
+                      <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
+                        {p.skills.map(s=><span key={s} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{s}</span>)}
+                      </div>
+                      <div style={{display:"flex",gap:6}}>
+                        <button className="conn-btn conn-btn-primary" style={{flex:1,fontSize:12,padding:"10px 12px"}} onClick={()=>{showToast("Connection request sent to "+p.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})})}}>Connect</button>
+                        <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"10px 12px"}} onClick={()=>showToast(p.openings+" open positions!")}>{p.openings} openings</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {netTab === "forum" && (
+                  <>
+                    {showNewPost && (
+                      <div className="conn-card" style={{flexDirection:"column",padding:14,marginBottom:10}}>
+                        <input className="inp" placeholder="Title" value={newPostTitle} onChange={e=>setNewPostTitle(e.target.value)} style={{marginBottom:8}} />
+                        <textarea className="inp" placeholder="What's on your mind?" rows={3} value={newPostBody} onChange={e=>setNewPostBody(e.target.value)} style={{marginBottom:10,resize:"none"}} />
+                        <div style={{display:"flex",gap:8}}>
+                          <button className="conn-btn conn-btn-primary" style={{flex:1,fontSize:13,padding:"10px 0"}} onClick={async()=>{if(newPostTitle.trim()){const title=newPostTitle.trim();const body=newPostBody.trim();setForumPosts(prev=>[{id:Date.now(),title,body,author:currentUser.name,avatar:currentUser.avatar,votes:1,comments:[],cat:"General",time:"Just now",pinned:false},...prev]);setNewPostTitle("");setNewPostBody("");setShowNewPost(false);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",title,body,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
+                          <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:13,padding:"10px 0"}} onClick={()=>setShowNewPost(false)}>Cancel</button>
+                        </div>
+                      </div>
+                    )}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                      <div style={{display:"flex",gap:6}}>{(["hot","new","top"] as const).map(s=>(<div key={s} className={"conn-tab-sub"+(forumSort===s?" active":"")} onClick={()=>setForumSort(s)}>{s.charAt(0).toUpperCase()+s.slice(1)}</div>))}</div>
+                      <button className="conn-btn conn-btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setShowNewPost(!showNewPost)}>+ Post</button>
+                    </div>
+                    {FORUM_POSTS.filter(p => forumCategory==="all"||p.cat===forumCategory).sort((a,b)=>forumSort==="top"?(b.votes+b.comments.length*2)-(a.votes+a.comments.length*2):forumSort==="new"?(b.id-a.id):(b.votes*2+b.comments.length)-(a.votes*2+a.comments.length)).map(post=>(
+                      <div key={post.id} className="conn-card" style={{flexDirection:"column",marginBottom:8,padding:14}}>
+                        {post.pinned && <div style={{fontSize:10,color:"var(--gold)",fontWeight:700,marginBottom:4}}>📌 Pinned</div>}
+                        <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+                          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:36}}>
+                            <button style={{background:"none",border:"none",color:post.votes>0?"var(--gold)":"var(--muted)",cursor:"pointer",fontSize:18,padding:0}} onClick={()=>setForumPosts(prev=>prev.map(p=>p.id===post.id?{...p,votes:p.votes+1}:p))}>▲</button>
+                            <span style={{fontSize:13,fontWeight:700,color:"var(--text)"}}>{post.votes}</span>
+                            <button style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:18,padding:0}} onClick={()=>setForumPosts(prev=>prev.map(p=>p.id===post.id?{...p,votes:p.votes-1}:p))}>▼</button>
+                          </div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:14,fontWeight:700,color:"var(--text)",marginBottom:4}}>{post.title}</div>
+                            <div style={{fontSize:12,color:"var(--text2)",marginBottom:6}}>{post.author}</div>
+                            <div style={{fontSize:11,color:"var(--muted)",lineHeight:1.4}}>{post.body.slice(0,120)}{post.body.length>120?"...":""}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
             </div>
             <div className={"screen-el"+(screen==="portfolio"?" active":"")}>
               <div className="hdr">
@@ -2633,6 +2796,31 @@ function MusePage() {
           <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
           <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
           <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
+        </div>
+      )}
+      {viewProfile && (
+        <div className="modal-overlay" onClick={()=>setViewProfile(null)}>
+          <div className="modal-panel" onClick={e=>e.stopPropagation()} style={{maxWidth:400,width:"90%",maxHeight:"85vh",overflowY:"auto",borderRadius:24,padding:0,background:"linear-gradient(180deg,#0f081e,#0a0612)"}}>
+            <div style={{position:"relative",width:"100%",aspectRatio:"3/4",overflow:"hidden"}}>
+              <img src={viewProfile.img} alt={viewProfile.name} style={{width:"100%",height:"100%",objectFit:"cover"}} />
+              <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px",background:"linear-gradient(to top,rgba(10,6,18,0.95),transparent)"}}>
+                <div style={{fontSize:24,fontWeight:800,fontFamily:"'Playfair Display',serif",fontStyle:"italic"}}>{viewProfile.name}</div>
+                <div style={{fontSize:14,color:"var(--gold)",fontWeight:600}}>{viewProfile.type}</div>
+              </div>
+              <button onClick={()=>setViewProfile(null)} style={{position:"absolute",top:12,right:12,width:32,height:32,borderRadius:"50%",background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+            </div>
+            <div style={{padding:20}}>
+              {viewProfile.bio && <p style={{color:"var(--text2)",lineHeight:1.6,fontSize:14,marginBottom:16}}>{viewProfile.bio}</p>}
+              {viewProfile.location && <div style={{fontSize:13,color:"var(--text2)",marginBottom:12}}>📍 {viewProfile.location}{typeof viewProfile.distanceMi==="number"?` · ${viewProfile.distanceMi} mi`:""}</div>}
+              {viewProfile.styles?.length > 0 && <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>{viewProfile.styles.map((s:string)=><span key={s} className="tag">{s}</span>)}</div>}
+              {viewProfile.zodiac && <div style={{fontSize:13,color:"var(--text2)",marginBottom:4}}>♈ {viewProfile.zodiac}{viewProfile.mbti?` · 🧠 ${viewProfile.mbti}`:""}</div>}
+              {typeof viewProfile.collabs === "number" && <div style={{fontSize:13,color:"var(--text2)",marginBottom:16}}>🤝 {viewProfile.collabs} collaborations</div>}
+              <button className="btn btn-gold" style={{width:"100%"}} onClick={()=>{
+                if(!matches.find((m:any)=>m.id===viewProfile.id)) setMatches((prev:any)=>[...prev,{...viewProfile,messages:[]}]);
+                setChatTarget({...viewProfile,messages:[]});setViewProfile(null);showScreen("chat");
+              }}>Message</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

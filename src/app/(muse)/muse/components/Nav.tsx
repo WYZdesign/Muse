@@ -1,5 +1,5 @@
 "use client";
-import { FiCompass, FiUsers, FiZap, FiHeart, FiCamera, FiMenu } from "react-icons/fi";
+import { FiCompass, FiUsers, FiZap, FiCamera, FiMenu } from "react-icons/fi";
 import type { Screen } from "./types";
 
 const gradMap: Record<string,string> = {
@@ -14,7 +14,7 @@ const tabs: { key: Screen|string; label: string; icon: React.ReactNode; hasScree
   { key:"discover", label:"Discover", icon:<FiCompass size={22} />, hasScreen:true },
   { key:"connections", label:"Feed", icon:<FiUsers size={22} />, hasScreen:true },
   { key:"briefs", label:"Collab", icon:<FiZap size={22} />, hasScreen:false },
-  { key:"matches", label:"Matches", icon:<FiHeart size={22} />, hasScreen:true },
+  { key:"matches", label:"Matches", icon:<FiCamera size={22} />, hasScreen:true },
   { key:"moments", label:"BTS", icon:<FiCamera size={22} />, hasScreen:true },
 ];
 
@@ -26,8 +26,8 @@ export default function Nav({ active, onNavigate, onHamburgerToggle }: { active:
         const grad = gradMap[tab.key] || gradMap.discover;
         return (
           <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs"); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined}>
-            <span className={"nav-icon"+(isActive?" nav-icon-glow":"")} style={isActive?{background:grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",animation:"iconHueShift 4s ease-in-out infinite"}:{}}>{tab.icon}</span>
-            <span style={isActive?{background:grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",fontWeight:800,animation:"iconHueShift 4s ease-in-out infinite"}:{}}>{tab.label}</span>
+            <span className={"nav-icon"+(isActive?" nav-icon-glow":"")} style={isActive?{background:grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",animation:"iconHueShift 4s ease-in-out infinite"}:{color:grad.split(",")[0].replace("linear-gradient(90deg,",""),opacity:0.55}}>{tab.icon}</span>
+            <span style={isActive?{background:grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",fontWeight:800,animation:"iconHueShift 4s ease-in-out infinite"}:{color:grad.split(",")[0].replace("linear-gradient(90deg,",""),opacity:0.55,fontWeight:600}}>{tab.label}</span>
           </button>
         );
       })}
