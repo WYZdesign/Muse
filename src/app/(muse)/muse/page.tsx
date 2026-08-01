@@ -288,8 +288,9 @@ function MusePage() {
       if (d.activityFeed) setActivityFeed(d.activityFeed);
       if (d.discoveryPrefs) setDiscoveryPrefs(d.discoveryPrefs);
       if (d.chatImages) setChatImages(d.chatImages);
-      if (d.screen && d.screen!=="auth") setScreen(d.screen);
+      if (d.screen && ["onboard","discover","connections","matches","chat","briefs","portfolio","moments","profile","settings","subscription"].includes(d.screen)) setScreen(d.screen);
       if (d.authUser) setAuthUser(d.authUser);
+      if (d.authUser && !["onboard","discover","connections","matches","chat","briefs","portfolio","moments","profile","settings","subscription"].includes(d.screen||"")) setScreen("discover");
     } catch(e) {}
     try { const b=localStorage.getItem("muse_boost"); if(b){const e=parseInt(b);if(e>Date.now()){setBoostActive(true);setBoostEnd(e);}else{localStorage.removeItem("muse_boost");}} } catch(e) {}
   }, []);
@@ -313,7 +314,10 @@ function MusePage() {
             setScreen("onboard");
           }
         } else {
-          localStorage.removeItem("muse_user");
+          ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium"].forEach(k => { try { localStorage.removeItem(k); } catch {} });
+          setAuthUser(null);
+          setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free" }));
+          setScreen("auth");
         }
       })
       .catch(() => { /* silently handled */ });
@@ -372,8 +376,9 @@ function MusePage() {
 
   const doLogout = useCallback(async () => {
     try { await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})}); } catch(e) {}
-    localStorage.removeItem("muse_user"); localStorage.removeItem("muse_state");
-    setAuthUser(null); setScreen("auth"); showToast("Logged out");
+    const keys = ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium"];
+    keys.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+    setAuthUser(null); setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free" })); setScreen("auth"); showToast("Logged out");
   }, [showToast]);
 
   const doLogoutFull = useCallback(async () => {

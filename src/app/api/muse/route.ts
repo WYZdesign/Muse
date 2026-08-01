@@ -199,7 +199,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "notifications" && user) {
-      const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).single();
+      const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ notifications: [] });
       const { data } = await sb.from("muse_notifications").select("*").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(30);
       return NextResponse.json({ notifications: data || [] });
