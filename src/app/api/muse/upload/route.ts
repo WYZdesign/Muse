@@ -9,13 +9,17 @@ const ALLOWED_SIGNATURES: Record<string, { bytes: number[]; ext: string }> = {
 };
 
 function validateMagicBytes(buffer: Buffer): { valid: boolean; ext: string } {
-  const hex = buffer.slice(0, 4).toString("hex");
+  const hex = buffer.slice(0, 12).toString("hex");
   const match = ALLOWED_SIGNATURES[hex.slice(0, 8)]
     || ALLOWED_SIGNATURES[hex.slice(0, 4)]
     || ALLOWED_SIGNATURES[hex.slice(0, 6)];
   if (match) {
     for (let i = 0; i < match.bytes.length; i++) {
       if (buffer[i] !== match.bytes[i]) return { valid: false, ext: "" };
+    }
+    // RIFF container: bytes 8-11 must spell "WEBP" for a valid WebP file.
+    if (match.ext === "webp" && buffer.slice(8, 12).toString("ascii") !== "WEBP") {
+      return { valid: false, ext: "" };
     }
     return { valid: true, ext: match.ext };
   }
@@ -59,7 +63,7 @@ export async function POST(req: NextRequest) {
     }
 
     const safeFolder = folder.replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "avatars";
-    const path = safeFilename(safeFolder, ext);
+    const path = safeFilename(`${profileId}/${safeFolder}`, ext);
     const sb = getServiceClient();
     const { data, error } = await sb.storage.from("muse-uploads").upload(path, buffer, {
       contentType: `image/${ext}`,
@@ -71,7 +75,7 @@ export async function POST(req: NextRequest) {
     const { data: urlData } = sb.storage.from("muse-uploads").getPublicUrl(data.path);
     return NextResponse.json({ success: true, url: urlData.publicUrl, path: data.path });
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
 }
 
@@ -82,6 +86,9 @@ export async function DELETE(req: NextRequest) {
 
     const { path } = await req.json();
     if (!path) return NextResponse.json({ error: "No path" }, { status: 400 });
+    // Ownership gate: files are stored under {profileId}/ so only the uploader
+    // may delete them. A path without the caller's profile prefix is rejected.
+    if (!path.startsWith(`${profileId}/`)) return NextResponse.json({ error: "Not your file" }, { status: 403 });
     const sb = getServiceClient();
     const { error } = await sb.storage.from("muse-uploads").remove([path]);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -41,11 +41,14 @@ export async function POST(req: NextRequest) {
       if (!endpoint || !p256dh || !auth) {
         return NextResponse.json({ success: false, error: "Incomplete subscription payload" }, { status: 400 });
       }
+      // Requires UNIQUE(endpoint) on muse_push_subscriptions — see SQL migration.
       const { data, error } = await sb
         .from("muse_push_subscriptions")
         .upsert({ user_id: userId, endpoint, p256dh, auth }, { onConflict: "endpoint" })
         .select();
       if (error) {
+        // 409 unique-violation on endpoint is benign — record already exists.
+        if ((error as { code?: string }).code === "23505") return NextResponse.json({ success: true });
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
       }
       return NextResponse.json({ success: true, data });

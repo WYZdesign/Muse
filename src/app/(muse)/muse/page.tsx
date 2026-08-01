@@ -31,7 +31,7 @@ function MusePage() {
   const [authName, setAuthName] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [authUser, setAuthUser] = useState<{id:string;email:string;profile?:Record<string,unknown>}|null>(null);
+  const [authUser, setAuthUser] = useState<{id:string;email:string;profile?:{id:string;[key:string]:unknown}}|null>(null);
   const [obStep, setObStep] = useState(0);
   const [obData, setObData] = useState<{name?:string;loc?:string;bio?:string;type?:string;looking?:string[];conn?:string[];styles?:string[];zodiac?:string;chinese?:string;mbti?:string;lifePath?:number}>({});
   const [currentUser, setCurrentUser] = useState({ id:"you", name:"You", type:"Photographer", exp:"New here", avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", stats:{matches:0,likes:0,superLikes:0,passes:0,bookingsCompleted:0,matchesReceived:0,messagesSent:0}, createdAt:Date.now(), referrals:0, portfolio:[] as {img:string;title:string;type:string}[] });
@@ -648,8 +648,10 @@ function MusePage() {
     setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, userMsg] } : m));
     setChatInput("");
     setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
-    const myId = authUser?.id || "local";
-    await persistMessage({ myId, theirId: targetId, text: clean });
+    const myId = authUser?.profile?.id || authUser?.id || "local";
+    let token = "";
+    try { token = (JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""); } catch {}
+    await persistMessage({ myId, theirId: targetId, text: clean, token });
     // Show typing + simulated reply only when no real remote partner is present.
     setTypingTarget(Number(chatTarget.id));
     setTimeout(() => {
@@ -664,8 +666,8 @@ function MusePage() {
 
   // Real-time incoming messages for the active conversation.
   useEffect(() => {
-    if (!chatTarget || !authUser?.id) return;
-    const myId = authUser.id;
+    if (!chatTarget || !authUser?.profile?.id) return;
+    const myId = authUser.profile.id;
     const theirId = String(chatTarget.id);
     const unsub = subscribeToConversation({
       myId,
@@ -741,7 +743,6 @@ function MusePage() {
     </div>
   ) : (
     <div style={{"display":"contents"}}>
-      <link rel="manifest" href="/muse/manifest.json" />
       <Confetti active={showConfetti} />
       {swipeDir && <SwipeParticles active dir={swipeDir} />}
       <BackgroundScene flash={screenFlash} />

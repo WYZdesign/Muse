@@ -58,6 +58,17 @@ function validateInput(data: Record<string, unknown>): string | null {
   return null;
 }
 
+/**
+ * True when the given profile id is one of the two participants encoded in a
+ * convo match_id (format: `[a,b].sort().join("__")`). Convo keys are opaque to
+ * callers — reading or writing a conversation requires being a participant.
+ */
+function isConvoParticipant(matchId: string, profileId: string): boolean {
+  if (!matchId || !profileId) return false;
+  const parts = matchId.split("__");
+  return parts.includes(profileId);
+}
+
 export async function GET(req: NextRequest) {
   try {
     const sb = getServiceClient();
@@ -86,13 +97,18 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "matches" && profileId) {
-      const { data } = await sb.from("muse_matches").select("*, target_id(*)").eq("user_id", profileId);
+      const { data } = await sb.from("muse_matches").select("id, user_id, target_id(id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path)").eq("user_id", profileId);
       return NextResponse.json({ matches: data || [] });
     }
 
     if (type === "messages" && profileId) {
       const matchId = req.nextUrl.searchParams.get("match_id");
       if (!matchId) return NextResponse.json({ messages: [] });
+      // Participant-only reads: the convo key embeds both profile ids, so an
+      // arbitrary match_id can only be queried by one of the two people in it.
+      if (!isConvoParticipant(matchId, profileId)) {
+        return NextResponse.json({ error: "Not a conversation participant" }, { status: 403 });
+      }
       const { data } = await sb.from("muse_messages").select("*").eq("match_id", matchId).order("created_at");
       return NextResponse.json({ messages: data || [] });
     }
@@ -207,7 +223,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ error: "Unknown type" }, { status: 400 });
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 }
 
@@ -218,80 +234,6 @@ export async function POST(req: NextRequest) {
     const actionType = rawType || rawAction;
 
     const ip = req.headers.get("x-forwarded-for") || "unknown";
-
-    if (actionType === "register") {
-      const { email, password, name, type: userType, bio, loc, avatar } = rest;
-      if (!email || !password || !name) return NextResponse.json({ error: "email, password, name required" }, { status: 400 });
-      const sb = getServiceClient();
-      const { data: authData, error: authErr } = await sb.auth.admin.createUser({ email, password, email_confirm: true });
-      if (authErr) return NextResponse.json({ error: authErr.message }, { status: 500 });
-      const userId = authData.user?.id;
-      if (!userId) return NextResponse.json({ error: "User creation failed" }, { status: 500 });
-      const { error: profileErr } = await sb.from("muse_profiles").insert({ auth_id: userId, name, type: userType || "Photographer", bio: bio || "", loc: loc || "", avatar: avatar || "" });
-      if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 });
-      return NextResponse.json({ success: true, userId });
-    }
-
-    if (actionType === "login") {
-      const { email, password } = rest;
-      if (!email || !password) return NextResponse.json({ error: "email, password required" }, { status: 400 });
-      const sb = getServiceClient();
-      const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) return NextResponse.json({ error: error.message }, { status: 401 });
-      const { data: profile } = await sb.from("muse_profiles").select("*").eq("auth_id", data.user.id).single();
-      return NextResponse.json({ user: data.user, session: data.session, profile });
-    }
-
-    if (actionType === "session") {
-      const { token } = rest;
-      if (!token) return NextResponse.json({ error: "token required" }, { status: 400 });
-      const sb = getServiceClient();
-      const { data, error } = await sb.auth.getUser(token);
-      if (error || !data.user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-      const { data: profile } = await sb.from("muse_profiles").select("*").eq("auth_id", data.user.id).single();
-      return NextResponse.json({ user: data.user, profile });
-    }
-
-    if (actionType === "logout") {
-      const sb = getServiceClient();
-      await sb.auth.signOut();
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "forgot-password") {
-      const { email } = rest;
-      if (!email) return NextResponse.json({ error: "email required" }, { status: 400 });
-      const sb = getServiceClient();
-      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://wyzdesign.com"}/muse` });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ message: "Password reset email sent. Check your inbox." });
-    }
-
-    if (actionType === "update-profile") {
-      const { data: { user } } = await getAuthUser();
-      if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-      const sb = getServiceClient();
-      const { error } = await sb.from("muse_profiles").update(rest).eq("auth_id", user.id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "delete-account") {
-      const { data: { user } } = await getAuthUser();
-      if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-      const sb = getServiceClient();
-      const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).single();
-      if (profile) {
-        await sb.from("muse_messages").delete().match({ sender_id: profile.id });
-        await sb.from("muse_matches").delete().or(`user_id.eq.${profile.id},target_id.eq.${profile.id}`);
-        await sb.from("muse_feed_posts").delete().eq("author_id", profile.id);
-        await sb.from("muse_briefs").delete().eq("author_id", profile.id);
-        await sb.from("muse_forum_posts").delete().eq("author_id", profile.id);
-        await sb.from("muse_profiles").delete().eq("id", profile.id);
-      }
-      await sb.auth.admin.deleteUser(user.id);
-      return NextResponse.json({ success: true });
-    }
 
     const { user, profile } = await getAuthedProfile(req, body);
     if (!user || !profile) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -315,14 +257,24 @@ export async function POST(req: NextRequest) {
       if (!checkRate(ip, "message", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const vErr = validateInput(rest);
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
-      const { match_id, toId, text, image_url, img } = rest;
+      const { toId, text, image_url, img, client_msg_id } = rest;
       if (!text?.trim()) return NextResponse.json({ error: "text required" }, { status: 400 });
-      if (match_id) {
-        const { error } = await sb.from("muse_messages").insert({ match_id, sender_id: profile.id, receiver_id: toId || "", text: text.trim(), img: img || image_url || "" });
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-      await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message", details: { to: toId || match_id } });
-      return NextResponse.json({ success: true });
+      if (!toId) return NextResponse.json({ error: "toId required" }, { status: 400 });
+      // Canonical convo key derived server-side so the sender is always a
+      // participant — a client-supplied match_id can't target another pair.
+      const matchId = [profile.id, String(toId)].sort().join("__");
+      const { error } = await sb.from("muse_messages").insert({
+        match_id: matchId,
+        sender_id: profile.id,
+        receiver_id: String(toId),
+        text: text.trim(),
+        img: img || image_url || "",
+        client_msg_id: typeof client_msg_id === "string" ? client_msg_id.slice(0, 120) : undefined,
+      });
+      // Treat duplicate client_msg_id as success (already persisted by retry).
+      if (error && (error as { code?: string }).code !== "23505") return NextResponse.json({ error: error.message }, { status: 500 });
+      await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message", details: { to: toId } });
+      return NextResponse.json({ success: true, match_id: matchId });
     }
 
     if (actionType === "feed") {
@@ -405,7 +357,9 @@ export async function POST(req: NextRequest) {
       const { communityId } = rest;
       if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
       await sb.from("muse_community_members").upsert({ community_id: communityId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar }).select();
-      await sb.from("muse_communities").update({ member_count: rest.memberCount ? rest.memberCount + 1 : 1 }).eq("id", communityId);
+      // Count server-side — never trust a client-supplied member count.
+      const { count } = await sb.from("muse_community_members").select("*", { count: "exact", head: true }).eq("community_id", communityId);
+      await sb.from("muse_communities").update({ member_count: (count ?? 0) }).eq("id", communityId);
       return NextResponse.json({ success: true });
     }
 
@@ -420,7 +374,7 @@ export async function POST(req: NextRequest) {
       const { sessionId, hostId } = rest;
       if (!sessionId) return NextResponse.json({ error: "sessionId required" }, { status: 400 });
       await sb.from("muse_bookings").insert({ session_id: sessionId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, host_id: hostId || null, status: "pending" });
-      await sb.from("muse_notifications").insert({ user_id: hostId || profile.id, from_id: profile.id, type: "booking", text: `${profile.name} requested to book a session`, read: false });
+      await sb.from("muse_notifications").insert({ user_id: hostId || profile.id, from_id: profile.id, type: "booking", body: `${profile.name} requested to book a session`, read: false });
       return NextResponse.json({ success: true });
     }
 
@@ -428,7 +382,7 @@ export async function POST(req: NextRequest) {
       const { targetId } = rest;
       if (!targetId) return NextResponse.json({ error: "targetId required" }, { status: 400 });
       await sb.from("muse_connections").upsert({ user_id: profile.id, target_id: targetId, status: "pending" }).select();
-      await sb.from("muse_notifications").insert({ user_id: targetId, from_id: profile.id, type: "connection", text: `${profile.name} wants to connect`, read: false });
+      await sb.from("muse_notifications").insert({ user_id: targetId, from_id: profile.id, type: "connection", body: `${profile.name} wants to connect`, read: false });
       return NextResponse.json({ success: true });
     }
 
@@ -457,6 +411,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Unknown action type" }, { status: 400 });
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

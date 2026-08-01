@@ -1,4 +1,4 @@
-import { supabase, getServiceClient } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 export type RealtimeMessage = {
   id?: string;
@@ -14,42 +14,41 @@ function convoIdFor(a: string, b: string): string {
 }
 
 /**
- * Persist a chat message to Supabase. Returns true on success. Returns false
- * (never throws) when the message can't be written — the UI keeps its local
- * copy either way. A unique-violation on client_msg_id is treated as success
- * because the message was already persisted by an earlier retry (dedup).
+ * Persist a chat message through the server API (which resolves the caller's
+ * profile id from the Bearer token and stores sender_id in the profile
+ * namespace — the same namespace export/delete-account expect). Returns true
+ * on success. Returns false (never throws) when the message can't be written —
+ * the UI keeps its local copy either way.
  */
 export async function persistMessage(opts: {
   myId: string;
   theirId: string;
   text: string;
   clientMsgId?: string;
+  token?: string;
 }): Promise<boolean> {
   if (!opts.myId || opts.myId === "local") return false;
   if (!opts.theirId || !opts.text.trim()) return false;
   const convo = convoIdFor(opts.myId, opts.theirId);
-  const payload = {
-    match_id: convo,
-    sender_id: opts.myId,
-    receiver_id: opts.theirId,
-    text: opts.text.trim().slice(0, 2000),
-    img: "",
-    client_msg_id: opts.clientMsgId || `${opts.myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  };
-  let { error } = await getServiceClient().from("muse_messages").insert(payload);
-  // Fall back to the base schema (no receiver_id / client_msg_id columns)
-  // when the migration hasn't been applied yet — messages still persist,
-  // just without receiver routing or dedup.
-  if (error && (error as { code?: string }).code === "42703") {
-    ({ error } = await getServiceClient().from("muse_messages").insert({
-      match_id: convo,
-      sender_id: opts.myId,
-      text: payload.text,
-      img: "",
-    }));
+  try {
+    const res = await fetch("/api/muse", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(opts.token ? { Authorization: `Bearer ${opts.token}` } : {}),
+      },
+      body: JSON.stringify({
+        action: "message",
+        match_id: convo,
+        toId: opts.theirId,
+        text: opts.text.trim().slice(0, 2000),
+        client_msg_id: opts.clientMsgId || `${opts.myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
-  if (error && (error as { code?: string }).code === "23505") return true;
-  return !error;
 }
 
 /**

@@ -112,9 +112,11 @@ export async function POST(req: NextRequest) {
       if (!access_token || !new_password) return NextResponse.json({ error: "Token and new password required" }, { status: 400 });
       const pwErr = validatePassword(new_password);
       if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
-      const { error: setErr } = await supabase.auth.setSession({ access_token, refresh_token: "" });
-      if (setErr) return NextResponse.json({ error: setErr.message }, { status: 400 });
-      const { error } = await supabase.auth.updateUser({ password: new_password });
+      // Verify the token first, then use the admin API (no session needed).
+      const { data: tokenUser, error: verifyErr } = await supabase.auth.getUser(access_token);
+      if (verifyErr || !tokenUser.user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      const sb = getServiceClient();
+      const { error } = await sb.auth.admin.updateUserById(tokenUser.user.id, { password: new_password });
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
       return NextResponse.json({ success: true, message: "Password updated" });
     }
@@ -157,10 +159,15 @@ export async function POST(req: NextRequest) {
         await sb.from("muse_matches").delete().or(`user_id.eq.${pid},target_id.eq.${pid}`);
         await sb.from("muse_feed_posts").delete().eq("author_id", pid);
         await sb.from("muse_briefs").delete().eq("author_id", pid);
+        await sb.from("muse_brief_applications").delete().eq("user_id", pid);
         await sb.from("muse_forum_posts").delete().eq("author_id", pid);
+        await sb.from("muse_forum_replies").delete().eq("user_id", pid);
         await sb.from("muse_connections").delete().or(`user_id.eq.${pid},target_id.eq.${pid}`);
         await sb.from("muse_community_members").delete().eq("user_id", pid);
         await sb.from("muse_bookings").delete().eq("user_id", pid);
+        await sb.from("muse_notifications").delete().or(`user_id.eq.${pid},from_id.eq.${pid}`);
+        await sb.from("muse_push_subscriptions").delete().eq("user_id", pid);
+        await sb.from("muse_activity_log").delete().eq("user_id", pid);
         await sb.from("muse_reports").delete().eq("reporter_id", pid);
         await sb.from("muse_blocks").delete().eq("user_id", pid);
         await sb.from("muse_profiles").delete().eq("id", pid);
@@ -171,6 +178,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

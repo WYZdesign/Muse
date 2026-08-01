@@ -12,7 +12,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Muse — Where Creatives Connect",
   description: "Find your creative match. AI-powered matchmaking for photographers, models, filmmakers, musicians, designers, and artists.",
-  manifest: "/manifest.json",
+  manifest: "/muse/manifest.json",
   icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png", shortcut: "/favicon.ico" },
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Muse", startupImage: "/apple-touch-icon.png" },
   openGraph: { title: "Muse — Where Creatives Connect", description: "AI-powered matchmaking for creatives. Find your muse.", url: "https://muse.wyzdesign.com/muse", siteName: "Muse", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 1200 }] },
