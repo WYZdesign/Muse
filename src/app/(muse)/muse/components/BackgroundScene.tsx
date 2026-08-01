@@ -84,8 +84,8 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
     let animId = 0, spawnTimer = 0;
 
     function spawnComet() {
-      if (comets.filter((c: any) => c.active).length >= 5) return;
-      const angle = Math.random() * Math.PI * 2, speed = 1.5 + Math.random() * 3.5, edge = Math.random();
+      if (comets.filter((c: any) => c.active).length >= 6) return;
+      const angle = Math.random() * Math.PI * 2, speed = 2 + Math.random() * 4, edge = Math.random();
       let x: number, y: number;
       if (edge < 0.25) { x = -50; y = Math.random() * h; }
       else if (edge < 0.5) { x = w + 50; y = Math.random() * h; }
@@ -107,7 +107,7 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
     function animate() {
       ctx!.clearRect(0, 0, w, h);
       spawnTimer++;
-      if (spawnTimer > 50 + Math.random() * 100) { spawnComet(); spawnTimer = 0; }
+      if (spawnTimer > 35 + Math.random() * 70) { spawnComet(); spawnTimer = 0; }
       for (let i = comets.length - 1; i >= 0; i--) {
         const c = comets[i];
         if (!c.active) continue;
@@ -115,7 +115,7 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
         if (c.life > c.maxLife) { c.active = false; comets.splice(i, 1); continue; }
         const dx = mice.x - c.x, dy = mice.y - c.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 350 && dist > 10) { c.vx += dx / dist * 0.04; c.vy += dy / dist * 0.04; }
+        if (dist < 600 && dist > 5) { c.vx += dx / dist * 0.1; c.vy += dy / dist * 0.1; }
         c.x += c.vx; c.y += c.vy;
         if (Math.random() > 0.65) {
           c.sparks.push({ x: c.x, y: c.y, vx: (Math.random()-0.5)*2.5, vy: (Math.random()-0.5)*2.5, life: 25+Math.random()*35, size: 1+Math.random()*2.5, color: c.color });

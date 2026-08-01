@@ -117,7 +117,7 @@ a{color:inherit;text-decoration:none}
 @keyframes screenIn{from{opacity:0;transform:scale(0.95) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .glass{background:rgba(255,255,255,0.05);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.08);border-radius:18px}
 .hdr{padding:54px 16px 14px;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:10;overflow-x:hidden;max-width:100vw;flex-shrink:0}
-.logo-link{font-size:32px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(120deg,var(--gold),var(--amber),var(--pink),var(--lavender),var(--sunset-orange),var(--gold));background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite;text-decoration:none;cursor:pointer}
+.logo-link{font-size:40px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(120deg,var(--gold),var(--amber),var(--pink),var(--lavender),var(--sunset-orange),var(--gold));background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite;text-decoration:none;cursor:pointer;line-height:1}
 @keyframes logoShimmer{0%,100%{filter:brightness(1) hue-rotate(0deg)}50%{filter:brightness(1.2) hue-rotate(5deg)}}
 @keyframes lavaFlow{0%{background-position:0% 50%}25%{background-position:50% 100%}50%{background-position:100% 50%}75%{background-position:50% 0%}100%{background-position:0% 50%}}
 .lava{background-size:300% 300%!important;animation:lavaFlow 6s ease-in-out infinite}

@@ -1560,56 +1560,48 @@ function MusePage() {
                   {filteredProfiles.slice(currentIdx, currentIdx+3).map((profile, idx) => {
                     const isTop = idx === 0;
                     return (
-                       <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")+(expandedProfile===profile.id?" expanded":"")} style={{zIndex:3-idx,transform:"translate("+(isTop?dragOffset:0)+"px, "+(isTop?dragOffsetY:0)+"px) scale("+(Math.max(0.92, 1 - idx * 0.04))+")",opacity:isTop?1-dragOpacity*0.3:1}}>
-                        <div style={{position:"relative",width:"100%",height:"100%",display:"flex",flexDirection:"column",overflowY:"auto"}}>
-                           <div style={{position:"relative",width:"100%",minHeight:"70vh",overflow:"hidden",flexShrink:0}}
-                             onPointerDown={isTop&&expandedProfile!==profile.id?onPointerDown:undefined}
-                             onPointerMove={isTop&&expandedProfile!==profile.id?onPointerMove:undefined}
-                             onPointerUp={isTop&&expandedProfile!==profile.id?onPointerUp:undefined}
-                             onPointerCancel={isTop&&expandedProfile!==profile.id?onPointerUp:undefined}
-                           >
-                            <img src={((profile as any).photos?.length ? (profile as any).photos[currentPhotoIdx] : profile.img) || profile.img} alt={profile.name} draggable="false" onError={handleImgError} style={{width:"100%",height:"100%",objectFit:"contain",objectPosition:"center top",background:"#0a0612"}} />
-                            {isTop && expandedProfile!==profile.id && <>
-                              <div style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
-                              <div style={{position:"absolute",right:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();const max=(profile as any).photos?.length||1;setCurrentPhotoIdx(prev=>Math.min(max-1,prev+1))}} />
-                            </>}
-                            <div style={{position:"absolute",bottom:10,left:"50%",transform:"translateX(-50%)",display:"flex",gap:6,zIndex:6}}>
-                              {((profile as any).photos?.length > 0 ? (profile as any).photos : [profile.img]).map((_:any,i:number)=><div key={i} style={{width:i===currentPhotoIdx?18:6,height:6,borderRadius:3,background:i===currentPhotoIdx?"var(--gold)":"rgba(255,255,255,0.3)",transition:"all .2s"}} />)}
-                            </div>
-                            <div className="card-shine" />
-                            <div className="card-gradient" />
-                            <div className="card-border" />
-                            {isTop && dragOffset > 25 && <div style={{position:"absolute",top:40,left:20,fontSize:28,fontWeight:900,color:"#4ade80",border:"4px solid #4ade80",borderRadius:12,padding:"6px 16px",transform:"rotate(-15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>LIKE</div>}
-                            {isTop && dragOffset < -25 && <div style={{position:"absolute",top:40,right:20,fontSize:28,fontWeight:900,color:"#ef4444",border:"4px solid #ef4444",borderRadius:12,padding:"6px 16px",transform:"rotate(15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>NOPE</div>}
-                            {isTop && Math.abs(dragOffsetY) > 25 && <div style={{position:"absolute",top:"40%",left:"50%",transform:"translate(-50%,-50%) rotate(-5deg)",fontSize:26,fontWeight:900,color:"#818cf8",border:"4px solid #818cf8",borderRadius:12,padding:"6px 16px",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:2,background:"rgba(129,140,248,0.15)"}}>SUPER</div>}
-                            {isTop && Math.abs(dragOffset) > 130 && <span style={{display:"none"}} />}
-                            {profile.online && (
-                              <div className="card-online">
-                                <div className="card-online-dot" />
-                                <span className="card-online-text">Online</span>
-                              </div>
-                            )}
+                       <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")+(expandedProfile===profile.id?" expanded":"")} style={{zIndex:3-idx,transform:"translate("+(isTop?dragOffset:0)+"px, "+(isTop?dragOffsetY:0)+"px) scale("+(Math.max(0.92, 1 - idx * 0.04))+")",opacity:isTop?1-dragOpacity*0.3:1}}
+                         onPointerDown={isTop?onPointerDown:undefined}
+                         onPointerMove={isTop?onPointerMove:undefined}
+                         onPointerUp={isTop?onPointerUp:undefined}
+                         onPointerCancel={isTop?onPointerUp:undefined}
+                         onClick={()=>{if(isTop){if(expandedProfile===profile.id){setExpandedProfile(null)}else{setExpandedProfile(profile.id)}}}}
+                       >
+                        <img src={((profile as any).photos?.length ? (profile as any).photos[currentPhotoIdx] : profile.img) || profile.img} alt={profile.name} draggable="false" onError={handleImgError} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",top:0,left:0}} />
+                        {isTop && <>
+                          <div style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
+                          <div style={{position:"absolute",right:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();const max=(profile as any).photos?.length||1;setCurrentPhotoIdx(prev=>Math.min(max-1,prev+1))}} />
+                        </>}
+                        <div style={{position:"absolute",bottom:expandedProfile===profile.id?"50%":"0",left:0,right:0,padding:"40px 20px 20px",background:"linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.7) 40%,transparent 100%)",zIndex:4}}>
+                          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                            <span style={{fontSize:22,fontWeight:800,color:"#fff",fontFamily:"'Playfair Display',serif",fontStyle:"italic"}}>{profile.name}</span>
+                            {profile.verified && <span style={{fontSize:16,color:"var(--gold)"}}>✓</span>}
+                            {profile.online && <div style={{width:8,height:8,borderRadius:"50%",background:"#4ade80",marginLeft:4}} />}
                           </div>
-                           <div className="card-info" style={{position:"relative",zIndex:3,flexShrink:0}}>
-                            {profile.verified && <div className="card-verified">Verified</div>}
-                            {profile.nsfw && <div className="card-nsfw-badge">18+</div>}
-                            <div>
-                              <span className="card-name">{profile.name}</span>
-                              <span className="card-collabs">{profile.collabs} collabs</span>
-                            </div>
-                            <div className="card-type">{profile.type}</div>
-                            <div className="card-bio">{profile.bio}</div>
-                            <div className="card-looking">Looking for: <span>{profile.looking.join(", ")}</span></div>
-                            <div className="tags">{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div>
-                            <div className="match-score"><div className="score-bar"><div className="score-fill" style={{width:profile.score+"%"}} /></div><span className="score-text">{profile.score}%</span></div>
-                            <div className="card-section"><div className="card-section-title">All Photos</div><div className="card-photo-grid">{((profile as any).photos||[profile.img]).map((p:any,i:number)=><div key={i} className="card-photo-thumb" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}} style={{opacity:i===currentPhotoIdx?1:0.6,border:i===currentPhotoIdx?"2px solid var(--gold)":"2px solid transparent"}}><img src={p} alt="" /></div>)}</div></div>
-                            <div className="card-section"><div className="card-section-title">About</div><div className="card-section-text">{profile.bio}</div></div>
-                            <div className="card-section"><div className="card-section-title">Creative Style</div><div className="card-section-tags">{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div></div>
-                            <div className="card-section"><div className="card-section-title">Personality</div><div className="card-section-tags">{(profile as any).zodiac && <span className="tag">♈ {(profile as any).zodiac}</span>}{(profile as any).chinese && <span className="tag">{(profile as any).chinese}</span>}{(profile as any).mbti && <span className="tag">🧠 {(profile as any).mbti}</span>}{(profile as any).lifePath && <span className="tag">🔮 Path {(profile as any).lifePath}</span>}</div></div>
-                            <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges?.length ? (profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>) : <span style={{fontSize:12,color:"var(--muted)"}}>No badges yet</span>}</div></div>
-                            <div className="card-section" style={{paddingBottom:16}}><div className="card-section-title">Location</div><div className="card-section-text">📍 {profile.loc}</div></div>
-                          </div>
+                          <div style={{fontSize:14,fontWeight:600,color:"var(--gold)",marginBottom:6}}>{profile.type} · {profile.loc?.split(",")[0]}</div>
+                          <div style={{fontSize:13,color:"rgba(255,255,255,0.75)",lineHeight:1.5,marginBottom:8}}>{profile.bio}</div>
+                          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:4}}>{profile.styles.slice(0,4).map(s=><span key={s} style={{fontSize:10,padding:"3px 8px",borderRadius:99,background:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.8)"}}>{s}</span>)}</div>
                         </div>
+                        {expandedProfile === profile.id && (
+                          <div style={{position:"absolute",bottom:0,left:0,right:0,top:"50%",zIndex:4, overflowY:"auto",background:"rgba(10,6,18,0.95)",padding:"0 20px 20px"}}>
+                            <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.6,marginBottom:12}}>{profile.bio}</div>
+                            <div style={{fontSize:12,color:"var(--text2)",marginBottom:8}}>Looking for: {profile.looking.join(", ")}</div>
+                            <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:12}}>{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div>
+                            <div className="match-score" style={{marginBottom:12}}><div className="score-bar"><div className="score-fill" style={{width:profile.score+"%"}} /></div><span className="score-text">{profile.score}%</span></div>
+                            {(profile as any).photos?.length > 1 && <div style={{marginBottom:12}}><div style={{fontSize:12,fontWeight:700,color:"var(--text)",marginBottom:8}}>Photos</div><div style={{display:"flex",gap:6,overflowX:"auto"}}>{((profile as any).photos||[]).map((p:any,i:number)=><div key={i} className="card-photo-thumb" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}} style={{opacity:i===currentPhotoIdx?1:0.6,border:i===currentPhotoIdx?"2px solid var(--gold)":"2px solid transparent"}}><img src={p} alt="" /></div>)}</div></div>}
+                            {(profile as any).badges?.length > 0 && <div style={{marginBottom:12}}><div style={{fontSize:12,fontWeight:700,color:"var(--text)",marginBottom:8}}>Badges</div><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{(profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>)}</div></div>}
+                            <div style={{fontSize:12,color:"var(--muted)"}}>📍 {profile.loc}</div>
+                          </div>
+                        )}
+                        <div style={{position:"absolute",bottom:12,left:"50%",transform:"translateX(-50%)",display:"flex",gap:6,zIndex:6}}>
+                          {((profile as any).photos?.length > 0 ? (profile as any).photos : [profile.img]).map((_:any,i:number)=><div key={i} style={{width:i===currentPhotoIdx?18:6,height:6,borderRadius:3,background:i===currentPhotoIdx?"var(--gold)":"rgba(255,255,255,0.35)",transition:"all .2s"}} />)}
+                        </div>
+                        <div className="card-shine" />
+                        <div className="card-gradient" />
+                        <div className="card-border" />
+                        {isTop && dragOffset > 25 && <div style={{position:"absolute",top:40,left:20,fontSize:28,fontWeight:900,color:"#4ade80",border:"4px solid #4ade80",borderRadius:12,padding:"6px 16px",transform:"rotate(-15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>LIKE</div>}
+                        {isTop && dragOffset < -25 && <div style={{position:"absolute",top:40,right:20,fontSize:28,fontWeight:900,color:"#ef4444",border:"4px solid #ef4444",borderRadius:12,padding:"6px 16px",transform:"rotate(15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>NOPE</div>}
+                        {isTop && Math.abs(dragOffsetY) > 25 && <div style={{position:"absolute",top:"40%",left:"50%",transform:"translate(-50%,-50%) rotate(-5deg)",fontSize:26,fontWeight:900,color:"#818cf8",border:"4px solid #818cf8",borderRadius:12,padding:"6px 16px",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:2,background:"rgba(129,140,248,0.15)"}}>SUPER</div>}
                       </div>
                     );
                   })}
