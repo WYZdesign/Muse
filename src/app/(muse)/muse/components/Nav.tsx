@@ -1,13 +1,13 @@
 "use client";
-import { FiCompass, FiUsers, FiZap, FiCamera, FiMenu } from "react-icons/fi";
+import { FiCompass, FiUsers, FiZap, FiCamera, FiEye, FiMenu } from "react-icons/fi";
 import type { Screen } from "./types";
 
 const gradMap: Record<string,string> = {
-  discover: "linear-gradient(90deg,#FFD700,#FF8A80,#D4A5FF)",
-  connections: "linear-gradient(90deg,#87CEEB,#64B5F6,#7B68EE)",
-  briefs: "linear-gradient(90deg,#98FB98,#66BB6A,#00BCD4)",
-  matches: "linear-gradient(90deg,#FF69B4,#FF4757,#FF6B6B)",
-  moments: "linear-gradient(90deg,#FF6B6B,#FFD93D,#6BCB77)",
+  discover: "linear-gradient(90deg,#98FB98,#FFD700,#FFB5C2)",
+  connections: "linear-gradient(90deg,#00CED1,#4169E1,#8A2BE2)",
+  briefs: "linear-gradient(90deg,#98FB98,#20B2AA,#00BCD4)",
+  matches: "linear-gradient(90deg,#FF8C00,#FF4757,#FF69B4)",
+  moments: "linear-gradient(90deg,#FFD700,#FF69B4,#FFFFFF)",
 };
 
 const tabs: { key: Screen|string; label: string; icon: React.ReactNode; hasScreen: boolean }[] = [
@@ -15,7 +15,7 @@ const tabs: { key: Screen|string; label: string; icon: React.ReactNode; hasScree
   { key:"connections", label:"Feed", icon:<FiUsers size={22} />, hasScreen:true },
   { key:"briefs", label:"Collab", icon:<FiZap size={22} />, hasScreen:false },
   { key:"matches", label:"Matches", icon:<FiCamera size={22} />, hasScreen:true },
-  { key:"moments", label:"BTS", icon:<FiCamera size={22} />, hasScreen:true },
+  { key:"moments", label:"BTS", icon:<FiEye size={22} />, hasScreen:true },
 ];
 
 export default function Nav({ active, onNavigate, onHamburgerToggle }: { active: string; onNavigate: (s: Screen) => void; onHamburgerToggle?: () => void }) {

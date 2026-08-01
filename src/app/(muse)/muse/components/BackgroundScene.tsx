@@ -124,19 +124,17 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
         const fadeOut = c.life > c.maxLife - 70 ? (c.maxLife - c.life) / 70 : 1;
         const opacity = fadeIn * fadeOut;
 
-        // Liquid sine-wave tail
-        const tailSteps = Math.floor(c.tailLen);
-        ctx!.beginPath();
-        ctx!.moveTo(c.x, c.y);
-        for (let t = 1; t <= tailSteps; t++) {
-          const p = t / tailSteps;
-          const phase = t * c.freq + c.life * 0.03;
-          const sw = (1 - p) * c.amp;
-          const tx = c.x - c.vx * t * 0.8 + Math.sin(phase) * sw;
-          const ty = c.y - c.vy * t * 0.8 + Math.cos(phase * 1.3) * sw * 0.7;
-          ctx!.lineTo(tx, ty);
-        }
-        const endX = c.x - c.vx * tailSteps * 0.8, endY = c.y - c.vy * tailSteps * 0.8;
+          // Subtle tail path — mainly straight with slight wiggle
+          const tailSteps = Math.floor(c.tailLen);
+          ctx!.beginPath();
+          ctx!.moveTo(c.x, c.y);
+          for (let t = 1; t <= tailSteps; t++) {
+            const p = t / tailSteps;
+            const tx = c.x - c.vx * t * 0.85 + Math.sin(t * 0.15 + c.life * 0.02) * (1 - p) * 6;
+            const ty = c.y - c.vy * t * 0.85 + Math.cos(t * 0.12 + c.life * 0.02) * (1 - p) * 5;
+            ctx!.lineTo(tx, ty);
+          }
+        const endX = c.x - c.vx * tailSteps * 0.85, endY = c.y - c.vy * tailSteps * 0.85;
         const tailGrad = ctx!.createLinearGradient(c.x, c.y, endX, endY);
         tailGrad.addColorStop(0, hexToRgba(c.color, opacity));
         tailGrad.addColorStop(0.2, hexToRgba(c.color, opacity * 0.7));
@@ -210,6 +208,9 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
         ))}
       </div>
       <div className="particles" ref={particlesRef} />
+      <div className="ocean-waves">
+        <div className="wave wave-1" /><div className="wave wave-2" /><div className="wave wave-3" />
+      </div>
       {flash && <div className="screen-flash" style={{background:flash}} />}
     </>
   );

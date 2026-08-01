@@ -158,7 +158,22 @@ function MusePage() {
   const [showDiscoveryPrefs, setShowDiscoveryPrefs] = useState(false);
   const [showActivityFeed, setShowActivityFeed] = useState(false);
   const [showHamburger, setShowHamburger] = useState(false);
-  const [showPremiumPopup, setShowPremiumPopup] = useState(true);
+  const [showPremiumPopup, setShowPremiumPopup] = useState(() => {
+    try {
+      const c = localStorage.getItem("muse_open_count");
+      const count = c ? parseInt(c) + 1 : 1;
+      localStorage.setItem("muse_open_count", String(count));
+      return count % 3 === 0;
+    } catch { return false; }
+  });
+
+  useEffect(() => {
+    try {
+      const c = localStorage.getItem("muse_open_count");
+      const count = c ? parseInt(c) + 1 : 1;
+      localStorage.setItem("muse_open_count", String(count));
+    } catch {}
+  }, []);
   const [viewProfile, setViewProfile] = useState<any>(null);
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
   const [showStories, setShowStories] = useState(false);
@@ -446,7 +461,7 @@ function MusePage() {
   };
 
   const filteredProfiles = useMemo(() => {
-    const base = liveProfiles || PROFILES;
+    const base = liveProfiles?.length ? liveProfiles : PROFILES;
     let list = showNsfw ? base : base.filter(p => !p.nsfw);
     if (filterStyles.length > 0) list = list.filter(p => p.styles.some(s => filterStyles.includes(s)));
     if (filterScore > 50) list = list.filter(p => p.score >= filterScore);
@@ -462,7 +477,7 @@ function MusePage() {
       list = list.filter(p => p.name.toLowerCase().includes(q) || p.type?.toLowerCase().includes(q) || p.loc?.toLowerCase().includes(q) || p.styles?.some(s => s.toLowerCase().includes(q)));
     }
     return list.map(p => { const geo = CITY_GEO[p.loc]; return geo ? { ...p, lat: geo.lat, lng: geo.long } : p; });
-  }, [showNsfw, filterStyles, filterScore, myGeo, discoveryPrefs.distance, discoverSearch]);
+  }, [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoveryPrefs.distance, discoverSearch]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -744,8 +759,11 @@ function MusePage() {
               <div className="skeleton-pulse" style={{width:"40%",height:"12px",marginTop:8}} />
             </div>
           ))}
-        </div>
-      </div>
+            </div>
+            <div className="hamburger-waves">
+              <div className="wave wave-1" /><div className="wave wave-2" /><div className="wave wave-3" />
+            </div>
+          </div>
     </div>
   ) : (
     <div style={{"display":"contents"}}>
@@ -1540,7 +1558,7 @@ function MusePage() {
                     return (
                        <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")+(expandedProfile===profile.id?" expanded":"")} style={{zIndex:3-idx,transform:"translate("+(isTop?dragOffset:0)+"px, "+(isTop?dragOffsetY:0)+"px) scale("+(Math.max(0.92, 1 - idx * 0.04))+")",opacity:isTop?1-dragOpacity*0.3:1}}>
                         <div style={{position:"relative",width:"100%",height:"100%",display:"flex",flexDirection:"column"}}>
-                           <div style={{position:"relative",width:"100%",flex:expandedProfile===profile.id?"0 0 320px":"0 0 50%",minHeight:0,overflow:"hidden"}}
+                           <div style={{position:"relative",width:"100%",flex:expandedProfile===profile.id?"0 0 320px":"0 0 75%",minHeight:0,overflow:"hidden"}}
                              onPointerDown={isTop&&expandedProfile!==profile.id?onPointerDown:undefined}
                              onPointerMove={isTop&&expandedProfile!==profile.id?onPointerMove:undefined}
                              onPointerUp={isTop&&expandedProfile!==profile.id?onPointerUp:undefined}
@@ -2789,7 +2807,7 @@ function MusePage() {
           <div style={{position:"absolute",bottom:30,color:"rgba(255,255,255,0.5)",fontSize:12}}>Tap anywhere to close</div>
         </div>
       )}
-      {/* GLOBAL PREMIUM POPUP */}
+      {/* GLOBAL PREMIUM */}
       {showPremiumPopup && (
         <div className="premium-popup">
           <button className="premium-popup-close" onClick={()=>setShowPremiumPopup(false)}>✕</button>
@@ -2797,6 +2815,16 @@ function MusePage() {
           <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
           <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
         </div>
+      )}
+      {!showPremiumPopup && (
+        <button
+          onClick={() => setShowPremiumPopup(true)}
+          className="premium-star-tab"
+          aria-label="Premium"
+          title="Muse Premium"
+        >
+          <div className="premium-star-icon">✦</div>
+        </button>
       )}
       {viewProfile && (
         <div className="modal-overlay" onClick={()=>setViewProfile(null)}>
