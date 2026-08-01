@@ -512,9 +512,13 @@ function MusePage() {
       });
       const j = await r.json();
       if (!r.ok) { setFormErrors({ email: j.error || "Auth failed" }); setAuthLoading(false); return; }
+      // /api/muse/auth login returns the auth user but NOT a session token, so
+      // mint a real session via supabase-js — otherwise every authed API call
+      // carries an empty Bearer and silently 401s.
+      const { data: s } = await supabase.auth.signInWithPassword({ email: authEmail.trim(), password: authPass });
       const userObj = { id: j.user.id, email: j.user.email, profile: j.profile || null };
       setAuthUser(userObj);
-      localStorage.setItem("muse_user", JSON.stringify({ access_token: j.user.access_token || "", refresh_token: j.user.refresh_token || "", user: userObj }));
+      localStorage.setItem("muse_user", JSON.stringify({ access_token: s?.session?.access_token || "", refresh_token: s?.session?.refresh_token || "", user: userObj }));
       if (j.profile) {
         setCurrentUser(prev => ({ ...prev, name: j.profile.name || prev.name, avatar: j.profile.avatar || prev.avatar, type: j.profile.type || prev.type }));
       }
@@ -2514,7 +2518,9 @@ function MusePage() {
             <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Are you sure?</div>
             <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>This action is permanent and cannot be undone. All your data, matches, messages, and portfolio will be permanently deleted.</div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <button className="btn btn-gold" style={{width:"100%",borderColor:"var(--coral)",background:"linear-gradient(135deg,var(--coral),#ff4444)"}} onClick={async()=>{if(authUser?.id){try{await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"delete-account",auth_id:authUser.id})});}catch(e){}}localStorage.removeItem("muse_user");localStorage.removeItem("muse_v1");setAuthUser(null);setShowDeleteConfirm(false);setScreen("auth");showToast("Account deleted. We're sorry to see you go.")}}>Yes, Delete My Account</button>
+              <button className="btn btn-gold" style={{width:"100%",borderColor:"var(--coral)",background:"linear-gradient(135deg,var(--coral),#ff4444)"}} onClick={async()=>{try{const raw=localStorage.getItem("muse_user");const tok=raw?JSON.parse(raw).access_token||"":"";
+                await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json",...(tok?{"Authorization":`Bearer ${tok}`}:{})},body:JSON.stringify({action:"delete-account"})});
+                }catch(e){}localStorage.removeItem("muse_user");localStorage.removeItem("muse_v1");setAuthUser(null);setShowDeleteConfirm(false);setScreen("auth");showToast("Account deleted. We're sorry to see you go.")}}>Yes, Delete My Account</button>
               <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setShowDeleteConfirm(false)}>Cancel</button>
             </div>
           </div>
