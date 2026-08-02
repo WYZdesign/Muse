@@ -1881,16 +1881,21 @@ function MusePage() {
                   <div className="chat-input-wrap">
                     <label style={{cursor:"pointer",color:"var(--muted)",fontSize:18,display:"flex",alignItems:"center"}}>
                       <FiImage size={18} />
-                      <input type="file" accept="image/*" style={{display:"none"}} onChange={(e)=>{
+                      <input type="file" accept="image/*" style={{display:"none"}} onChange={async (e)=>{
                         const f=e.target.files?.[0];
                         if(f&&chatTarget){
-                          const r=new FileReader();
-                          r.onload=()=>{
-                            const imgMsg={from:"me",text:"",img:r.result as string,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})};
+                          showToast("Uploading photo...");
+                          const url=await uploadImage(f,"chat");
+                          if(url){
+                            const now=new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+                            const imgMsg={from:"me",text:"",img:url,time:now};
                             setChatTarget(prev=>prev?{...prev,messages:[...prev.messages,imgMsg]}:prev);
                             setMatches(prev=>prev.map(m=>m.id===chatTarget.id?{...m,messages:[...m.messages,imgMsg]}:m));
-                          };
-                          r.readAsDataURL(f);
+                            const myId=authUser?.profile?.id||authUser?.id||"local";
+                            let token="";try{token=(JSON.parse(localStorage.getItem("muse_user")||"{}").access_token||"")}catch{}
+                            await persistMessage({myId,theirId:String(chatTarget.id),text:"",img:url,token});
+                            showToast("Photo sent!");
+                          }
                         }
                       }} />
                     </label>

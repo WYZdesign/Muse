@@ -24,11 +24,12 @@ export async function persistMessage(opts: {
   myId: string;
   theirId: string;
   text: string;
+  img?: string;
   clientMsgId?: string;
   token?: string;
 }): Promise<boolean> {
   if (!opts.myId || opts.myId === "local") return false;
-  if (!opts.theirId || !opts.text.trim()) return false;
+  if (!opts.theirId || (!opts.text.trim() && !opts.img)) return false;
   const convo = convoIdFor(opts.myId, opts.theirId);
   try {
     const res = await fetch("/api/muse", {
@@ -42,6 +43,7 @@ export async function persistMessage(opts: {
         match_id: convo,
         toId: opts.theirId,
         text: opts.text.trim().slice(0, 2000),
+        img: opts.img || "",
         client_msg_id: opts.clientMsgId || `${opts.myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       }),
     });
