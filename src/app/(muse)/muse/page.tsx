@@ -158,7 +158,13 @@ function MusePage() {
   const [showLikesYou, setShowLikesYou] = useState(false);
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
-  const [stories, setStories] = useState<any[]>([]);
+  const [stories, setStories] = useState<any[]>([
+    {id:501,author:"Maya Chen",avatar:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",type:"photo",text:"Behind the scenes of today's editorial shoot. The light was absolutely magical.",likes:87,comments:12,shares:3,time:"12m ago",img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600"},
+    {id:502,author:"Jordan Rivera",avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",type:"photo",text:"Color grading session. Testing new LUTs for the indie film.",likes:45,comments:8,shares:2,time:"1h ago",img:"https://images.unsplash.com/photo-1535016120720-40c646be5580?w=600"},
+    {id:503,author:"Sam Taylor",avatar:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",type:"photo",text:"Studio session vibes. New album art coming together.",likes:62,comments:9,shares:4,time:"3h ago",img:"https://images.unsplash.com/photo-1598488035139-bdbb2231cb64?w=600"},
+    {id:504,author:"Riley Patel",avatar:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",type:"photo",text:"Motion capture test for the music video. The visuals are insane.",likes:134,comments:21,shares:7,time:"5h ago",img:"https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600"},
+    {id:505,author:"Avery Nguyen",avatar:"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",type:"photo",text:"Golden hour at the pier. Sometimes the best shots are the simplest.",likes:98,comments:15,shares:6,time:"8h ago",img:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600"},
+  ]);
   const [showStory, setShowStory] = useState<number|null>(null);
   const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"villa"|"deepsea">("lasunset");
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
@@ -499,7 +505,23 @@ function MusePage() {
       const q = discoverSearch.toLowerCase();
       list = list.filter(p => p.name.toLowerCase().includes(q) || p.type?.toLowerCase().includes(q) || p.loc?.toLowerCase().includes(q) || p.styles?.some(s => s.toLowerCase().includes(q)));
     }
-    return list.map(p => { const geo = CITY_GEO[p.loc]; return geo ? { ...p, lat: geo.lat, lng: geo.long } : p; });
+    return list.map(p => {
+      const geo = CITY_GEO[p.loc];
+      let boosted = geo ? { ...p, lat: geo.lat, lng: geo.long } : { ...p };
+      // Badge influence on match score
+      if (boosted.badges?.length) {
+        const badgeBoost = boosted.badges.reduce((acc: number, b: any) => {
+          if (b.name === "Verified Pro") return acc + 5;
+          if (b.name === "Top Creator" || b.name === "Creative Sage") return acc + 3;
+          if (b.name === "Super Collab") return acc + 4;
+          if (b.name === "Quick Responder" || b.name === "Match Magnet") return acc + 2;
+          if (b.name === "Style Icon" || b.name === "Local Legend") return acc + 1;
+          return acc;
+        }, 0);
+        boosted.score = Math.min(99, boosted.score + badgeBoost);
+      }
+      return boosted;
+    });
   }, [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoveryPrefs.distance, discoverSearch]);
 
   useEffect(() => {
