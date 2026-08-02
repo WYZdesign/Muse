@@ -1557,7 +1557,7 @@ function MusePage() {
             <div className={"screen-el"+(screen==="discover"?" active":"")}>
               <div className="discover-wrap">
                 <div className="hdr">
-                  <div className="logo-link">muse</div>
+                  <div className="logo-link" style={{fontSize:28}}>Discover</div>
                   <div style={{flex:1}} />
                   <div style={{display:"flex",gap:4}}>
                     {!discoverSearchOpen ? (
