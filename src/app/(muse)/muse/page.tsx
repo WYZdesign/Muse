@@ -169,10 +169,16 @@ function MusePage() {
   const [showHamburger, setShowHamburger] = useState(false);
   const [showPremiumPopup, setShowPremiumPopup] = useState(() => {
     try {
+      const seen = sessionStorage.getItem("muse_premium_seen");
+      if (seen) return false;
       const c = localStorage.getItem("muse_open_count");
       const count = c ? parseInt(c) + 1 : 1;
       localStorage.setItem("muse_open_count", String(count));
-      return count % 3 === 0;
+      if (count % 3 === 0) {
+        sessionStorage.setItem("muse_premium_seen", "1");
+        return true;
+      }
+      return false;
     } catch { return false; }
   });
 
@@ -183,6 +189,13 @@ function MusePage() {
       localStorage.setItem("muse_open_count", String(count));
     } catch {}
   }, []);
+
+  useEffect(() => {
+    if (!showPremiumPopup) return;
+    const t = setTimeout(() => setShowPremiumPopup(false), 5000);
+    return () => clearTimeout(t);
+  }, [showPremiumPopup]);
+
   const [viewProfile, setViewProfile] = useState<any>(null);
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
   const [showStories, setShowStories] = useState(false);
@@ -543,13 +556,12 @@ function MusePage() {
       });
       const j = await r.json();
       if (!r.ok) { setFormErrors({ email: j.error || "Auth failed" }); setAuthLoading(false); return; }
-      // /api/muse/auth login returns the auth user but NOT a session token, so
-      // mint a real session via supabase-js — otherwise every authed API call
-      // carries an empty Bearer and silently 401s.
-      const { data: s } = await supabase.auth.signInWithPassword({ email: authEmail.trim(), password: authPass });
+      // The login endpoint now returns the session token directly — use it.
+      const accessToken = j.session?.access_token || "";
+      const refreshToken = j.session?.refresh_token || "";
       const userObj = { id: j.user.id, email: j.user.email, profile: j.profile || null };
       setAuthUser(userObj);
-      localStorage.setItem("muse_user", JSON.stringify({ access_token: s?.session?.access_token || "", refresh_token: s?.session?.refresh_token || "", user: userObj }));
+      localStorage.setItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken, user: userObj }));
       if (j.profile) {
         setCurrentUser(prev => ({ ...prev, name: j.profile.name || prev.name, avatar: j.profile.avatar || prev.avatar, type: j.profile.type || prev.type }));
       }

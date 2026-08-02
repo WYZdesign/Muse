@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       const sb = getServiceClient();
       const { data: profile } = await sb.from("muse_profiles").select("*").eq("auth_id", authData.user.id).maybeSingle();
 
-      return NextResponse.json({ success: true, user: authData.user, profile });
+      return NextResponse.json({ success: true, user: authData.user, profile, session: authData.session });
     }
 
     if (action === "session") {
