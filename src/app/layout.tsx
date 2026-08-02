@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://muse.wyzdesign.com"),
   title: "Muse — Where Creatives Connect",
   description: "Find your creative match. AI-powered matchmaking for photographers, models, filmmakers, musicians, designers, and artists.",
-  manifest: "/muse/manifest.json",
+  manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Muse", startupImage: "/apple-touch-icon.png" },
   icons: {
     icon: "/favicon.ico",
