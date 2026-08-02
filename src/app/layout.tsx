@@ -14,8 +14,15 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://muse.wyzdesign.com"),
   title: "Muse — Where Creatives Connect",
   description: "Find your creative match. AI-powered matchmaking for photographers, models, filmmakers, musicians, designers, and artists.",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Muse" },
-  openGraph: { title: "Muse — Where Creatives Connect", description: "AI-powered matchmaking for creatives. Find your muse.", url: "https://muse.wyzdesign.com", siteName: "Muse", type: "website" },
+  manifest: "/muse/manifest.json",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Muse", startupImage: "/apple-touch-icon.png" },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  openGraph: { title: "Muse — Where Creatives Connect", description: "AI-powered matchmaking for creatives. Find your muse.", url: "https://muse.wyzdesign.com", siteName: "Muse", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 1200, alt: "Muse — Where Creatives Connect" }] },
+  twitter: { card: "summary_large_image", title: "Muse — Where Creatives Connect", description: "AI-powered matchmaking for creatives. Find your muse.", images: ["/og-image.png"] },
   robots: { index: true, follow: true },
 };
 
@@ -25,10 +32,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 <head>
         <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png" />
-        <link rel="apple-touch-icon" href="/icons/muse-192.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/muse-192.png" />
-        <link rel="apple-touch-icon" sizes="192x192" href="/icons/muse-192.png" />
-        <link rel="apple-touch-icon" sizes="512x512" href="/icons/muse-512.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Muse" />

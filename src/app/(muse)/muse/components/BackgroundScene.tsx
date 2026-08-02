@@ -124,24 +124,24 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
         const fadeOut = c.life > c.maxLife - 70 ? (c.maxLife - c.life) / 70 : 1;
         const opacity = fadeIn * fadeOut;
 
-          // Subtle tail path — mainly straight with slight wiggle
+          // Super thin, smooth tail — follows velocity with a barely-there curve
           const tailSteps = Math.floor(c.tailLen);
           ctx!.beginPath();
           ctx!.moveTo(c.x, c.y);
           for (let t = 1; t <= tailSteps; t++) {
             const p = t / tailSteps;
-            const tx = c.x - c.vx * t * 0.85 + Math.sin(t * 0.15 + c.life * 0.02) * (1 - p) * 6;
-            const ty = c.y - c.vy * t * 0.85 + Math.cos(t * 0.12 + c.life * 0.02) * (1 - p) * 5;
+            const tx = c.x - c.vx * t * 0.9 + Math.sin(t * 0.18 + c.life * 0.03) * (1 - p) * 2.2;
+            const ty = c.y - c.vy * t * 0.9 + Math.cos(t * 0.16 + c.life * 0.03) * (1 - p) * 1.8;
             ctx!.lineTo(tx, ty);
           }
-        const endX = c.x - c.vx * tailSteps * 0.85, endY = c.y - c.vy * tailSteps * 0.85;
+        const endX = c.x - c.vx * tailSteps * 0.9, endY = c.y - c.vy * tailSteps * 0.9;
         const tailGrad = ctx!.createLinearGradient(c.x, c.y, endX, endY);
         tailGrad.addColorStop(0, hexToRgba(c.color, opacity));
-        tailGrad.addColorStop(0.2, hexToRgba(c.color, opacity * 0.7));
-        tailGrad.addColorStop(0.5, `rgba(160, 200, 255, ${opacity * 0.3})`);
+        tailGrad.addColorStop(0.15, hexToRgba(c.color, opacity * 0.55));
+        tailGrad.addColorStop(0.45, `rgba(160, 200, 255, ${opacity * 0.2})`);
         tailGrad.addColorStop(1, 'rgba(0,0,0,0)');
         ctx!.strokeStyle = tailGrad;
-        ctx!.lineWidth = c.size * 3;
+        ctx!.lineWidth = Math.max(1, c.size * 0.6);
         ctx!.lineCap = 'round';
         ctx!.stroke();
 

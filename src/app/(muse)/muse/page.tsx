@@ -13,6 +13,15 @@ import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
 import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, CONNECTIONS, PC, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CONN_TYPES, ICEBREAKERS, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Brief, type Match, type Screen } from "./components/types";
 
+const DEMO_MOMENTS: any[] = [
+  { id: 9001, author: "Maya Chen", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800", time: "12m ago", text: "Golden hour setup for tonight's shoot. The light is unreal right now 🌅", likes: 87, comments: 12 },
+  { id: 9002, author: "Jordan Rivera", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100", img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800", time: "28m ago", text: "Lens test on the new 85mm. Creamy bokeh for days 📷", likes: 143, comments: 21 },
+  { id: 9003, author: "Sam Taylor", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100", img: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800", time: "1h ago", text: "WIP color grade. Pulling shadows, pushing the teal-orange split.", likes: 56, comments: 8 },
+  { id: 9004, author: "Riley Patel", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100", img: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800", time: "2h ago", text: "Studio setup build-out. T-minus 3 days to the big shoot 🎬", likes: 231, comments: 34 },
+  { id: 9005, author: "Avery Brooks", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100", img: "https://images.unsplash.com/photo-1493514789931-586cb221d7a7?w=800", time: "3h ago", text: "Location scouting found this gem. Natural diffusers everywhere.", likes: 98, comments: 15 },
+  { id: 9006, author: "Kai Tanaka", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100", img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800", time: "4h ago", text: "First edit pass on the campaign. Client's gonna love this one.", likes: 312, comments: 41 },
+];
+
 
 
 
@@ -182,7 +191,7 @@ function MusePage() {
   const [typingTarget, setTypingTarget] = useState<number|null>(null);
   const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number}>({startX:0,startY:0,active:false,relY:0});
+  const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number;startTime:number}>({startX:0,startY:0,active:false,relY:0,startTime:0});
   const [dragOffset, setDragOffset] = useState(0);
   const [dragOffsetY, setDragOffsetY] = useState(0);
   const [dragOpacity, setDragOpacity] = useState(0);
@@ -304,7 +313,8 @@ function MusePage() {
       if (d.likedBy) setLikedBy(d.likedBy);
       if (d.profileViews) setProfileViews(d.profileViews);
       if (d.profileViewers) setProfileViewers(d.profileViewers);
-      if (d.stories) setStories(d.stories);
+      if (d.stories && d.stories.length) setStories(d.stories);
+      else setStories(DEMO_MOMENTS);
       if (d.theme) setTheme((["lasunset","deepspace","nebula","villa","deepsea"].includes(d.theme) ? d.theme : "lasunset"));
       if (d.activityFeed) setActivityFeed(d.activityFeed);
       if (d.discoveryPrefs) setDiscoveryPrefs(d.discoveryPrefs);
@@ -623,7 +633,7 @@ function MusePage() {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     const cardTop = (e.currentTarget as HTMLElement).getBoundingClientRect().top;
     const relY = e.clientY - cardTop;
-    dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY };
+    dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY, startTime: Date.now() };
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   }, []);
 
@@ -1561,44 +1571,47 @@ function MusePage() {
                     const isTop = idx === 0;
                     return (
                        <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")+(expandedProfile===profile.id?" expanded":"")} style={{zIndex:3-idx,transform:"translate("+(isTop?dragOffset:0)+"px, "+(isTop?dragOffsetY:0)+"px) scale("+(Math.max(0.92, 1 - idx * 0.04))+")",opacity:isTop?1-dragOpacity*0.3:1}}
-                         onPointerDown={isTop?onPointerDown:undefined}
-                         onPointerMove={isTop?onPointerMove:undefined}
-                         onPointerUp={isTop?onPointerUp:undefined}
-                         onPointerCancel={isTop?onPointerUp:undefined}
-                         onClick={()=>{if(isTop){if(expandedProfile===profile.id){setExpandedProfile(null)}else{setExpandedProfile(profile.id)}}}}
+                         onPointerDown={(e)=>{if(isTop){const t=Date.now();dragRef.current={startX:e.clientX,startY:e.clientY,active:true,relY:e.clientY-(e.currentTarget as HTMLElement).getBoundingClientRect().top,startTime:t};(e.target as HTMLElement).setPointerCapture?.(e.pointerId)}}}
+                         onPointerMove={(e)=>{if(!isTop||!dragRef.current.active)return;const dx=e.clientX-dragRef.current.startX;const dy=e.clientY-dragRef.current.startY;const absDx=Math.abs(dx);const absDy=Math.abs(dy);if(absDx>absDy){if(absDx>5){setDragOffset(dx);setDragOffsetY(0);setDragOpacity(Math.min(absDx/100,1))}}else{if(absDy>5){setDragOffsetY(dy);setDragOffset(0);setDragOpacity(Math.min(absDy/80,1))}}}}
+                         onPointerUp={(e)=>{if(!isTop||!dragRef.current.active)return;dragRef.current.active=false;const dx=e.clientX-dragRef.current.startX;const dy=e.clientY-dragRef.current.startY;const dt=Date.now()-dragRef.current.startTime;const speed=Math.sqrt(dx*dx+dy*dy)/(dt||1);if(speed>0.35&&Math.abs(dy)>Math.abs(dx)&&dy<-40){doSwipe("super")}else if(speed>0.2&&Math.abs(dx)>50){doSwipe(dx>0?"right":"left")}setDragOffset(0);setDragOffsetY(0);setDragOpacity(0)}}
+                         onPointerCancel={(e)=>{if(!isTop||!dragRef.current.active)return;dragRef.current.active=false;setDragOffset(0);setDragOffsetY(0);setDragOpacity(0)}}
                        >
-                        <img src={((profile as any).photos?.length ? (profile as any).photos[currentPhotoIdx] : profile.img) || profile.img} alt={profile.name} draggable="false" onError={handleImgError} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",top:0,left:0}} />
-                        {isTop && <>
-                          <div style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
-                          <div style={{position:"absolute",right:0,top:0,bottom:0,width:"35%",zIndex:5,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();const max=(profile as any).photos?.length||1;setCurrentPhotoIdx(prev=>Math.min(max-1,prev+1))}} />
-                        </>}
-                        <div style={{position:"absolute",bottom:expandedProfile===profile.id?"50%":"0",left:0,right:0,padding:"40px 20px 20px",background:"linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.7) 40%,transparent 100%)",zIndex:4}}>
-                          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
-                            <span style={{fontSize:22,fontWeight:800,color:"#fff",fontFamily:"'Playfair Display',serif",fontStyle:"italic"}}>{profile.name}</span>
-                            {profile.verified && <span style={{fontSize:16,color:"var(--gold)"}}>✓</span>}
-                            {profile.online && <div style={{width:8,height:8,borderRadius:"50%",background:"#4ade80",marginLeft:4}} />}
+                        <div style={{position:"relative",width:"100%",height:"100%",display:"flex",flexDirection:"column",overflowY:"auto"}} onClick={(e)=>{if(isTop&&e.currentTarget.scrollTop>20){e.stopPropagation()}}}>
+                          <div style={{position:"relative",width:"100%",minHeight:"85%",flexShrink:0,overflow:"hidden"}}>
+                            <img src={((profile as any).photos?.length ? (profile as any).photos[currentPhotoIdx] : profile.img) || profile.img} alt={profile.name} draggable="false" onError={handleImgError} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",top:0,left:0}} />
+                            {isTop && (
+                              <>
+                                <div style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:5}} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
+                                <div style={{position:"absolute",right:0,top:0,bottom:0,width:"35%",zIndex:5}} onClick={(e)=>{e.stopPropagation();const max=(profile as any).photos?.length||1;setCurrentPhotoIdx(prev=>Math.min(max-1,prev+1))}} />
+                              </>
+                            )}
+                            <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"50px 20px 20px",background:"linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.5) 50%,transparent 100%)",zIndex:4}}>
+                              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                                <span style={{fontSize:24,fontWeight:800,color:"#fff",fontFamily:"'Playfair Display',serif",fontStyle:"italic"}}>{profile.name}</span>
+                                {profile.verified && <span style={{fontSize:18,color:"var(--gold)"}}>✓</span>}
+                                {profile.online && <div style={{width:8,height:8,borderRadius:"50%",background:"#4ade80"}} />}
+                              </div>
+                              <div style={{fontSize:15,fontWeight:600,color:"var(--gold)",marginBottom:4}}>{profile.type} · {profile.loc?.split(",")[0]}</div>
+                              <div style={{fontSize:13,color:"rgba(255,255,255,0.8)",lineHeight:1.4}}>{profile.bio?.slice(0,100)}{(profile.bio?.length||0)>100?"...":""}</div>
+                              <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:6}}>{profile.styles.slice(0,4).map(s=><span key={s} style={{fontSize:10,padding:"3px 8px",borderRadius:99,background:"rgba(255,255,255,0.12)",color:"rgba(255,255,255,0.85)"}}>{s}</span>)}</div>
+                            </div>
+                            <div style={{position:"absolute",bottom:100,left:"50%",transform:"translateX(-50%)",display:"flex",gap:6,zIndex:6}}>
+                              {((profile as any).photos?.length > 0 ? (profile as any).photos : [profile.img]).map((_:any,i:number)=><div key={i} style={{width:i===currentPhotoIdx?18:6,height:6,borderRadius:3,background:i===currentPhotoIdx?"var(--gold)":"rgba(255,255,255,0.35)",transition:"all .2s"}} />)}
+                            </div>
+                            <div className="card-shine" />
+                            <div className="card-gradient" />
+                            <div className="card-border" />
                           </div>
-                          <div style={{fontSize:14,fontWeight:600,color:"var(--gold)",marginBottom:6}}>{profile.type} · {profile.loc?.split(",")[0]}</div>
-                          <div style={{fontSize:13,color:"rgba(255,255,255,0.75)",lineHeight:1.5,marginBottom:8}}>{profile.bio}</div>
-                          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:4}}>{profile.styles.slice(0,4).map(s=><span key={s} style={{fontSize:10,padding:"3px 8px",borderRadius:99,background:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.8)"}}>{s}</span>)}</div>
-                        </div>
-                        {expandedProfile === profile.id && (
-                          <div style={{position:"absolute",bottom:0,left:0,right:0,top:"50%",zIndex:4, overflowY:"auto",background:"rgba(10,6,18,0.95)",padding:"0 20px 20px"}}>
-                            <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.6,marginBottom:12}}>{profile.bio}</div>
-                            <div style={{fontSize:12,color:"var(--text2)",marginBottom:8}}>Looking for: {profile.looking.join(", ")}</div>
-                            <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:12}}>{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div>
-                            <div className="match-score" style={{marginBottom:12}}><div className="score-bar"><div className="score-fill" style={{width:profile.score+"%"}} /></div><span className="score-text">{profile.score}%</span></div>
-                            {(profile as any).photos?.length > 1 && <div style={{marginBottom:12}}><div style={{fontSize:12,fontWeight:700,color:"var(--text)",marginBottom:8}}>Photos</div><div style={{display:"flex",gap:6,overflowX:"auto"}}>{((profile as any).photos||[]).map((p:any,i:number)=><div key={i} className="card-photo-thumb" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}} style={{opacity:i===currentPhotoIdx?1:0.6,border:i===currentPhotoIdx?"2px solid var(--gold)":"2px solid transparent"}}><img src={p} alt="" /></div>)}</div></div>}
-                            {(profile as any).badges?.length > 0 && <div style={{marginBottom:12}}><div style={{fontSize:12,fontWeight:700,color:"var(--text)",marginBottom:8}}>Badges</div><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{(profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>)}</div></div>}
+                          <div style={{padding:"20px 20px 80px",flexShrink:0}}>
+                            {profile.bio && <div style={{marginBottom:16}}><div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:6}}>About</div><div style={{fontSize:13,color:"var(--text2)",lineHeight:1.6}}>{profile.bio}</div></div>}
+                            {profile.looking.length>0 && <div style={{marginBottom:16}}><div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:6}}>Looking for</div><div style={{fontSize:13,color:"var(--text2)"}}>{profile.looking.join(", ")}</div></div>}
+                            <div style={{marginBottom:16}}><div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:8}}>Creative Style</div><div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div></div>
+                            <div className="match-score" style={{marginBottom:16}}><div className="score-bar"><div className="score-fill" style={{width:profile.score+"%"}} /></div><span className="score-text">{profile.score}%</span></div>
+                            {(profile as any).photos?.length > 1 && <div style={{marginBottom:16}}><div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:8}}>Photos</div><div style={{display:"flex",gap:6,overflowX:"auto"}}>{((profile as any).photos||[]).map((p:any,i:number)=><div key={i} className="card-photo-thumb" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}} style={{opacity:i===currentPhotoIdx?1:0.6,border:i===currentPhotoIdx?"2px solid var(--gold)":"2px solid transparent"}}><img src={p} alt="" /></div>)}</div></div>}
+                            {(profile as any).badges?.length > 0 && <div style={{marginBottom:16}}><div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:8}}>Badges</div><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{(profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>)}</div></div>}
                             <div style={{fontSize:12,color:"var(--muted)"}}>📍 {profile.loc}</div>
                           </div>
-                        )}
-                        <div style={{position:"absolute",bottom:12,left:"50%",transform:"translateX(-50%)",display:"flex",gap:6,zIndex:6}}>
-                          {((profile as any).photos?.length > 0 ? (profile as any).photos : [profile.img]).map((_:any,i:number)=><div key={i} style={{width:i===currentPhotoIdx?18:6,height:6,borderRadius:3,background:i===currentPhotoIdx?"var(--gold)":"rgba(255,255,255,0.35)",transition:"all .2s"}} />)}
                         </div>
-                        <div className="card-shine" />
-                        <div className="card-gradient" />
-                        <div className="card-border" />
                         {isTop && dragOffset > 25 && <div style={{position:"absolute",top:40,left:20,fontSize:28,fontWeight:900,color:"#4ade80",border:"4px solid #4ade80",borderRadius:12,padding:"6px 16px",transform:"rotate(-15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>LIKE</div>}
                         {isTop && dragOffset < -25 && <div style={{position:"absolute",top:40,right:20,fontSize:28,fontWeight:900,color:"#ef4444",border:"4px solid #ef4444",borderRadius:12,padding:"6px 16px",transform:"rotate(15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>NOPE</div>}
                         {isTop && Math.abs(dragOffsetY) > 25 && <div style={{position:"absolute",top:"40%",left:"50%",transform:"translate(-50%,-50%) rotate(-5deg)",fontSize:26,fontWeight:900,color:"#818cf8",border:"4px solid #818cf8",borderRadius:12,padding:"6px 16px",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:2,background:"rgba(129,140,248,0.15)"}}>SUPER</div>}

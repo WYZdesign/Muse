@@ -130,11 +130,11 @@ a{color:inherit;text-decoration:none}
 .nav{flex-shrink:0;height:72px;background:rgba(10,6,18,0.95);backdrop-filter:blur(40px);border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-around;padding-bottom:6px;z-index:100;position:sticky;bottom:0;overflow:hidden}
 .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;font-weight:600;padding:8px 6px;transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;min-width:0;flex:1}
 .nav-item.active{color:var(--gold)}
-.nav-item.active::after{content:'';position:absolute;top:-1px;width:24px;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--gold),var(--amber));animation:navGlow 2s ease-in-out infinite}
-@keyframes navGlow{0%,100%{box-shadow:0 0 8px rgba(255,215,0,0.3)}50%{box-shadow:0 0 16px rgba(255,215,0,0.6)}}
+.nav-item.active::after{content:'';position:absolute;top:-1px;width:24px;height:3px;border-radius:2px;background:var(--line-color,#FFD700);animation:navGlow 2s ease-in-out infinite}
+@keyframes navGlow{0%,100%{box-shadow:0 0 8px var(--line-color,#FFD700)}50%{box-shadow:0 0 16px var(--line-color,#FFD700)}}
 @keyframes typingDot{0%,60%,100%{opacity:0.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
 .nav-icon{font-size:22px;transition:all .3s cubic-bezier(.4,0,.2,1)}
-.nav-item.active .nav-icon{transform:scale(1.15) translateY(-2px);filter:drop-shadow(0 2px 5px rgba(255,215,0,0.28))}
+.nav-item.active .nav-icon{transform:scale(1.15) translateY(-2px);filter:drop-shadow(0 2px 5px rgba(255,255,255,0.24))}
 .nav-muse-btn{position:relative;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--pink),var(--lavender));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;margin-top:-18px;border:3px solid rgba(10,6,18,0.95);box-shadow:0 0 20px rgba(255,215,0,0.2),0 4px 15px rgba(0,0,0,0.3);transition:all .3s cubic-bezier(.4,0,.2,1)}
 .nav-muse-btn:hover{transform:scale(1.08);box-shadow:0 0 30px rgba(255,215,0,0.4)}
 .nav-muse-btn.active{transform:scale(1.12);box-shadow:0 0 35px rgba(255,215,0,0.5)}
@@ -668,7 +668,7 @@ img{background-color:#1a0a2e}
 
 /* ═══ NAV SHIMMER ═══ */
 .nav-item.active{overflow:hidden}
-.nav-item.active::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,255,255,0.12) 0%,rgba(255,255,255,0.06) 20%,transparent 45%,transparent 100%);animation:navShimmer 4s ease-in-out infinite}
+.nav-item.active::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,255,255,0.10) 0%,rgba(255,255,255,0.05) 20%,transparent 45%,transparent 100%);animation:navShimmer 4s ease-in-out infinite}
 @keyframes navShimmer{0%,100%{opacity:0.3}50%{opacity:1}}
 
 /* ═══ MENU ICON SWIRL ═══ */
@@ -711,7 +711,7 @@ img{background-color:#1a0a2e}
 
 /* ═══ NAV ICON HUE SHIFT ═══ */
 @keyframes iconHueShift{0%,100%{filter:hue-rotate(0deg) drop-shadow(0 0 6px currentColor)}50%{filter:hue-rotate(25deg) drop-shadow(0 0 12px currentColor)}}
-.nav-icon-glow{filter:drop-shadow(0 2px 5px rgba(255,215,0,0.28))}
+.nav-icon-glow{filter:drop-shadow(0 2px 5px rgba(255,255,255,0.24))}
 
 /* ═══ SWIPE CARD FULL-IMAGE HERO ═══ */
 .swipe-card{height:100%;display:flex;flex-direction:column;position:absolute;inset:2px;overflow:hidden;border-radius:24px}

@@ -26,6 +26,14 @@ const gradFirst: Record<string,string> = {
   moments: "#FFD700",
 };
 
+const lineColor: Record<string,string> = {
+  discover: "#FFD700",
+  connections: "#4169E1",
+  briefs: "#20B2AA",
+  matches: "#FF8C00",
+  moments: "#FF69B4",
+};
+
 const tabs: { key: Screen|string; label: string; icon: React.ReactNode; hasScreen: boolean }[] = [
   { key:"discover", label:"Discover", icon:<FiCompass size={22} />, hasScreen:true },
   { key:"connections", label:"Feed", icon:<FiUsers size={22} />, hasScreen:true },
@@ -43,7 +51,7 @@ export default function Nav({ active, onNavigate, onHamburgerToggle }: { active:
         const mid = gradMid[tab.key] || "#FFD700";
         const first = gradFirst[tab.key] || "#FFD700";
         return (
-          <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs"); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined}>
+          <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs"); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined} style={isActive ? { ["--line-color" as string]: lineColor[tab.key] || "#FFD700" } : undefined}>
             <span className={"nav-icon"+(isActive?" nav-icon-glow":"")} style={isActive?{color:mid}:{color:first,opacity:0.55}}>{tab.icon}</span>
             <span style={isActive?{background:grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",fontWeight:800,animation:"iconHueShift 4s ease-in-out infinite"}:{color:first,opacity:0.55,fontWeight:600}}>{tab.label}</span>
           </button>
