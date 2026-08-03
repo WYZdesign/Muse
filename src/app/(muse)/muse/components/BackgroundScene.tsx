@@ -85,7 +85,7 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
 
     function spawnComet() {
       if (comets.filter((c: any) => c.active).length >= 6) return;
-      const angle = Math.random() * Math.PI * 2, speed = 2 + Math.random() * 4, edge = Math.random();
+      const angle = Math.random() * Math.PI * 2, speed = (2 + Math.random() * 4) * 0.7, edge = Math.random();
       let x: number, y: number;
       if (edge < 0.25) { x = -50; y = Math.random() * h; }
       else if (edge < 0.5) { x = w + 50; y = Math.random() * h; }

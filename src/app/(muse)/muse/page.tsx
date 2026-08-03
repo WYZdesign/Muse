@@ -11,7 +11,7 @@ import BackgroundScene from "./components/BackgroundScene";
 import Nav from "./components/Nav";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
-import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, CONNECTIONS, PC, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CONN_TYPES, ICEBREAKERS, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Brief, type Match, type Screen } from "./components/types";
+import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, CONNECTIONS, PC, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CONN_TYPES, ICEBREAKERS, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Brief, type Match, type Screen } from "./components/types";
 
 const DEMO_MOMENTS: any[] = [
   { id: 9001, author: "Maya Chen", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800", time: "12m ago", text: "Golden hour setup for tonight's shoot. The light is unreal right now 🌅", likes: 87, comments: 12 },
@@ -42,13 +42,18 @@ function MusePage() {
   const [showPass, setShowPass] = useState(false);
   const [authUser, setAuthUser] = useState<{id:string;email:string;profile?:{id:string;[key:string]:unknown}}|null>(null);
   const [obStep, setObStep] = useState(0);
-  const [obData, setObData] = useState<{name?:string;loc?:string;bio?:string;type?:string;looking?:string[];conn?:string[];styles?:string[];zodiac?:string;chinese?:string;mbti?:string;lifePath?:number}>({});
-  const [currentUser, setCurrentUser] = useState({ id:"you", name:"You", type:"Photographer", exp:"New here", avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", stats:{matches:0,likes:0,superLikes:0,passes:0,bookingsCompleted:0,matchesReceived:0,messagesSent:0}, createdAt:Date.now(), referrals:0, portfolio:[] as {img:string;title:string;type:string}[] });
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [chatTarget, setChatTarget] = useState<Match | null>(null);
-  const [chatInput, setChatInput] = useState("");
-  const [connFilter, setConnFilter] = useState("all");
+   const [obData, setObData] = useState<{name?:string;loc?:string;bio?:string;type?:string;looking?:string[];conn?:string[];styles?:string[];zodiac?:string;chinese?:string;mbti?:string;lifePath?:number}>({});
+   const [currentUser, setCurrentUser] = useState({ id:"you", name:"You", type:"Photographer", exp:"New here", avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", stats:{matches:0,likes:0,superLikes:0,passes:0,bookingsCompleted:0,matchesReceived:0,messagesSent:0}, createdAt:Date.now(), referrals:0, portfolios:[] as {img:string;title:string;type:string}[] });
+   const [excludedPortfolios, setExcludedPortfolios] = useState<string[]>(EXCLUDED_PORTFOLIOS);
+   const [portfolioAccess, setPortfolioAccess] = useState<{[key: string]: "public" | "private" | "invite"}>({});
+   const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
+   const [showPortfolioModal, setShowPortfolioModal] = useState(false);
+   const [portfolioStats, setPortfolioStats] = useState<any>({});
+   const [currentIdx, setCurrentIdx] = useState(0);
+   const [matches, setMatches] = useState<Match[]>([]);
+   const [chatTarget, setChatTarget] = useState<Match | null>(null);
+   const [chatInput, setChatInput] = useState("");
+   const [connFilter, setConnFilter] = useState("all");
   const [showNsfw, setShowNsfw] = useState(false);
   const [showMatchOverlay, setShowMatchOverlay] = useState<Match | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -60,8 +65,8 @@ function MusePage() {
   const [discoverSearch, setDiscoverSearch] = useState("");
   const [mapView, setMapView] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const [dailyLikes, setDailyLikes] = useState(10);
-  const [superLikes, setSuperLikes] = useState(3);
+  const [dailyLikes, setDailyLikes] = useState(999);
+  const [superLikes, setSuperLikes] = useState(999);
   const [screenFlash, setScreenFlash] = useState<string | null>(null);
   const [matchStreak, setMatchStreak] = useState(0);
   const [rewindStack, setRewindStack] = useState<number[]>([]);
@@ -210,10 +215,12 @@ function MusePage() {
   const [typingTarget, setTypingTarget] = useState<number|null>(null);
   const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number;startTime:number}>({startX:0,startY:0,active:false,relY:0,startTime:0});
   const [dragOffset, setDragOffset] = useState(0);
   const [dragOffsetY, setDragOffsetY] = useState(0);
   const [dragOpacity, setDragOpacity] = useState(0);
+  const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number;startTime:number}>({startX:0,startY:0,active:false,relY:0,startTime:0});
+  const rafRef = useRef<number>(0);
+  const dragValuesRef = useRef({x:0,y:0,opacity:0});
 
   const handleImgError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const el = e.currentTarget;
@@ -309,7 +316,7 @@ function MusePage() {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const d = JSON.parse(raw);
-      if (d.currentUser) setCurrentUser(prev => ({ ...prev, ...d.currentUser, stats: { ...prev.stats, ...(d.currentUser.stats || {}) }, portfolio: Array.isArray(d.currentUser.portfolio) ? d.currentUser.portfolio : (prev.portfolio || []) }));
+      if (d.currentUser) setCurrentUser(prev => ({ ...prev, ...d.currentUser, stats: { ...prev.stats, ...(d.currentUser.stats || {}) }, portfolios: Array.isArray(d.currentUser.portfolios) ? d.currentUser.portfolios : (prev.portfolios || []) }));
       if (d.obData) setObData(d.obData);
       if (d.obStep) setObStep(d.obStep);
       if (d.matches) setMatches(d.matches);
@@ -619,13 +626,16 @@ function MusePage() {
         const newMatch: Match = { ...p, messages: [] };
         setMatches(prev => [...prev, newMatch]);
         setMatchStreak(prev => prev + 1);
-        setShowMatchOverlay(newMatch);
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 3000);
-        setExpandedMatchId(String(newMatch.id));
-        trackEvent("muse_match", { name: p.name, type: p.type });
-        setActivityFeed(prev => [{id:Date.now(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
-        flash("#FFD700");
+        // Delay match overlay so swipe animation completes first
+        setTimeout(() => {
+          setShowMatchOverlay(newMatch);
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 3000);
+          setExpandedMatchId(String(newMatch.id));
+          trackEvent("muse_match", { name: p.name, type: p.type });
+          setActivityFeed(prev => [{id:Date.now(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
+          flash("#FFD700");
+        }, 450);
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id, intent }) }).catch(() => { /* silently handled */ });
       }
       if (Math.random() > 0.4 && !likedBy.find(l => l.id === p.id)) {
@@ -677,11 +687,24 @@ function MusePage() {
     const dy = e.clientY - dragRef.current.startY;
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
+    dragValuesRef.current = { x: 0, y: 0, opacity: 0 };
     if (absDx > absDy) {
-      if (absDx > 5) { setDragOffset(dx); setDragOffsetY(0); setDragOpacity(Math.min(absDx / 100, 1)); }
+      if (absDx > 5) {
+        dragValuesRef.current.x = dx;
+        dragValuesRef.current.opacity = Math.min(absDx / 100, 1);
+      }
     } else {
-      if (absDy > 5) { setDragOffsetY(dy); setDragOffset(0); setDragOpacity(Math.min(absDy / 80, 1)); }
+      if (absDy > 5) {
+        dragValuesRef.current.y = dy;
+        dragValuesRef.current.opacity = Math.min(absDy / 80, 1);
+      }
     }
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      setDragOffset(dragValuesRef.current.x);
+      setDragOffsetY(dragValuesRef.current.y);
+      setDragOpacity(dragValuesRef.current.opacity);
+    });
   }, []);
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
@@ -862,20 +885,23 @@ function MusePage() {
                   setIntentProfile(null);
                   if(!p) return;
                   const matchScore=calcMatch({styles:obData.styles||[],looking:obData.looking||[],zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,lifePath:obData.lifePath},p);
-                  const isMatch=matchScore>55||Math.random()>0.5;
-                  if(isMatch){
-                    const newMatch:Match={...p,messages:[],intent};
-                    setMatches(prev=>[...prev,newMatch]);
-                    setMatchStreak(prev=>prev+1);
-                    setShowMatchOverlay(newMatch);
-                    setShowConfetti(true);
-                    setTimeout(()=>setShowConfetti(false),3000);
-                    setExpandedMatchId(String(newMatch.id));
-                    trackEvent("muse_match",{name:p.name,type:p.type,intent});
-                    setActivityFeed(prev=>[{id:Date.now(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"! · "+icon+" "+label,time:"Just now",read:false},...prev]);
-                    flash("#FFD700");
-                    apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"match",target_id:p.id,intent})}).catch(()=>{});
-                  }
+const isMatch=matchScore>55||Math.random()>0.5;
+                   if(isMatch){
+                     const newMatch:Match={...p,messages:[],intent};
+                     setMatches(prev=>[...prev,newMatch]);
+                     setMatchStreak(prev=>prev+1);
+                     // Delay match overlay so swipe animation completes first
+                     setTimeout(() => {
+                       setShowMatchOverlay(newMatch);
+                       setShowConfetti(true);
+                       setTimeout(()=>setShowConfetti(false),3000);
+                       setExpandedMatchId(String(newMatch.id));
+                       trackEvent("muse_match",{name:p.name,type:p.type,intent});
+                       setActivityFeed(prev=>[{id:Date.now(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"! · "+icon+" "+label,time:"Just now",read:false},...prev]);
+                       flash("#FFD700");
+                     }, 450);
+                     apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"match",target_id:p.id,intent})}).catch(()=>{});
+                   }
                   if(Math.random()>0.4&&!likedBy.find(l=>l.id===p.id)){
                     setLikedBy(prev=>[...prev,p]);
                     setActivityFeed(prev=>[{id:Date.now(),type:"like",from:p.name,avatar:p.img,text:p.name+" liked your profile!",time:"Just now",read:false},...prev]);
@@ -2130,7 +2156,7 @@ function MusePage() {
                 <button className="hdr-btn" onClick={()=>setShowPortfolioUpload(true)}><FiPlus size={18} /></button>
               </div>
               <div className="portfolio-scroll">
-                {currentUser.portfolio.length === 0 && (
+                {currentUser.portfolios.length === 0 && (
                   <div className="empty-state">
                     <div className="empty-icon"><FiImage size={48} /></div>
                     <div className="empty-title">No portfolio items yet</div>
@@ -2138,7 +2164,7 @@ function MusePage() {
                   </div>
                 )}
                 <div className="portfolio-grid">
-                  {currentUser.portfolio.map((item, i) => (
+                  {currentUser.portfolios.map((item: {img:string;title:string;type:string}, i: number) => (
                     <div key={i} className="portfolio-item">
                       <img src={item.img} alt={item.title} />
                       <div className="portfolio-item-overlay">
@@ -2431,7 +2457,7 @@ function MusePage() {
               showToast("Uploading "+files.length+" file(s)...");
               for(const f of files){
                 const url = await uploadImage(f,"portfolio");
-                if(url) setCurrentUser(prev=>({...prev,portfolio:[...prev.portfolio,{img:url,title:uploadTitle||"Work "+(prev.portfolio.length+1),type:"photo"}]}));
+                if(url) setCurrentUser(prev=>({...prev,portfolios:[...prev.portfolios,{img:url,title:uploadTitle||"Work "+(prev.portfolios.length+1),type:"photo"}]}));
               }
               setShowPortfolioUpload(false);showToast(files.length+" work(s) added!");
             }} />
@@ -2853,25 +2879,26 @@ function MusePage() {
           <div style={{position:"absolute",bottom:30,color:"rgba(255,255,255,0.5)",fontSize:12}}>Tap anywhere to close</div>
         </div>
       )}
-      {/* GLOBAL PREMIUM */}
-      {showPremiumPopup && (
-        <div className="premium-popup">
-          <button className="premium-popup-close" onClick={()=>setShowPremiumPopup(false)}>✕</button>
-          <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
-          <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
-          <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
-        </div>
-      )}
-      {!showPremiumPopup && (
-        <button
-          onClick={() => setShowPremiumPopup(true)}
-          className="premium-star-tab"
-          aria-label="Premium"
-          title="Muse Premium"
-        >
-          <div className="premium-star-icon">✦</div>
-        </button>
-      )}
+      {/* GLOBAL PREMIUM — scoped inside phone via absolute positioning */}
+      <div className="premium-wrap">
+        {showPremiumPopup ? (
+          <div className="premium-popup">
+            <button className="premium-popup-close" onClick={()=>setShowPremiumPopup(false)}>✕</button>
+            <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
+            <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
+            <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowPremiumPopup(true)}
+            className="premium-star-tab"
+            aria-label="Premium"
+            title="Muse Premium"
+          >
+            <div className="premium-star-icon">✦</div>
+          </button>
+        )}
+      </div>
       {viewProfile && (
         <div className="modal-overlay" onClick={()=>setViewProfile(null)}>
           <div className="modal-panel" onClick={e=>e.stopPropagation()} style={{maxWidth:400,width:"90%",maxHeight:"85vh",overflowY:"auto",borderRadius:24,padding:0,background:"linear-gradient(180deg,#0f081e,#0a0612)"}}>
