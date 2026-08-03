@@ -768,3 +768,36 @@ img{background-color:#1a0a2e}
 .intent-modal{background:var(--bg);border-radius:20px 20px 0 0;padding:24px 20px 32px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease}
 .intent-btn:hover{background:rgba(255,255,255,.06)!important;border-color:var(--gold)!important}
 @keyframes slideUp{0%{transform:translateY(100%)}100%{transform:translateY(0)}}
+
+/* ═══ ALBUM GALLERY (Model Mayhem-style portfolio browser) ═══ */
+.album-gallery{margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06)}
+.album-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none}
+.album-tabs::-webkit-scrollbar{width:0;height:0}
+.album-tab{display:flex;align-items:center;gap:6px;flex-shrink:0;padding:6px 12px 6px 6px;border-radius:99px;background:var(--surface);border:1px solid rgba(255,255,255,0.06);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.album-tab.active{background:rgba(255,215,0,0.1);border-color:rgba(255,215,0,0.25);color:var(--gold)}
+.album-tab-cover{width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.album-tab-count{font-size:10px;color:var(--muted);background:rgba(255,255,255,0.06);border-radius:99px;padding:1px 6px}
+.album-tab.active .album-tab-count{color:var(--gold);background:rgba(255,215,0,0.12)}
+.album-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
+.album-thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:2px solid transparent;padding:0;cursor:pointer;background:var(--surface)}
+.album-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.album-thumb.active{border-color:var(--gold)}
+.album-enlarged{border-radius:16px;overflow:hidden;background:var(--surface);border:1px solid rgba(255,255,255,0.06)}
+.album-enlarged img{width:100%;max-height:420px;object-fit:cover;display:block}
+.album-caption{padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.5}
+.album-error{padding:16px;text-align:center;color:var(--muted);font-size:13px;background:var(--surface);border-radius:12px}
+.album-loading{padding:16px;text-align:center;color:var(--muted);font-size:13px}
+
+/* ═══ MY ALBUMS MANAGER (owner-side album CRUD + privacy) ═══ */
+.text-input{padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid rgba(255,255,255,0.08);color:var(--text);font-size:14px;outline:none}
+.text-input:focus{border-color:rgba(255,215,0,0.3)}
+.my-albums{padding:16px 18px 90px}
+.my-albums-detail{padding:16px 18px 90px}
+.my-albums-detail-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.album-access-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.access-pill{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:99px;background:var(--surface);border:1px solid rgba(255,255,255,0.08);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.access-pill.active{background:rgba(255,215,0,0.1);border-color:rgba(255,215,0,0.3);color:var(--gold)}
+.album-upload-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:14px;border:2px dashed rgba(255,215,0,0.2);background:var(--surface);color:var(--gold);font-size:13px;font-weight:600;cursor:pointer}
+.album-thumb-owner{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--surface)}
+.album-thumb-owner img{width:100%;height:100%;object-fit:cover;display:block}
+.album-thumb-remove{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.7);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}

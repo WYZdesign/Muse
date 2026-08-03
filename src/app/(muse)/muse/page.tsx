@@ -9,9 +9,16 @@ import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles 
 import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2 } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import Nav from "./components/Nav";
+import AlbumGallery from "./components/AlbumGallery";
+import MyAlbumsManager from "./components/MyAlbumsManager";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
 import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, CONNECTIONS, PC, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CONN_TYPES, ICEBREAKERS, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Brief, type Match, type Screen } from "./components/types";
+
+function getAccessToken(): string {
+  if (typeof window === "undefined") return "";
+  try { return JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
+}
 
 const DEMO_MOMENTS: any[] = [
   { id: 9001, author: "Maya Chen", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800", time: "12m ago", text: "Golden hour setup for tonight's shoot. The light is unreal right now 🌅", likes: 87, comments: 12 },
@@ -100,8 +107,6 @@ function MusePage() {
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editLoc, setEditLoc] = useState("");
-  const [showPortfolioUpload, setShowPortfolioUpload] = useState(false);
-  const [uploadTitle, setUploadTitle] = useState("");
   const [showShareProfile, setShowShareProfile] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [reportTarget, setReportTarget] = useState<{id:number|string;type:string;name:string} | null>(null);
@@ -142,7 +147,6 @@ function MusePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
-  const portfolioInputRef = useRef<HTMLInputElement>(null);
 
   // Personality Discovery
   const [obStep10Known, setObStep10Known] = useState<"yes"|"no"|"test"|null>(null);
@@ -484,7 +488,15 @@ function MusePage() {
 
   const getReferralTier = (c:number) => c>=50?{tier:"Platinum",discount:20}:c>=20?{tier:"Gold",discount:20}:c>=5?{tier:"Silver",discount:10}:c>=1?{tier:"Bronze",discount:0}:{tier:"None",discount:0};
   const trackEvent = (event: string, data?: Record<string, unknown>) => {
-    try { if (typeof window !== "undefined" && (window as any).gtag) { (window as any).gtag("event", event, data); } } catch {}
+    // Real analytics sink: writes to muse_events_log via the server (RLS on
+    // that table blocks direct client writes by design). Fire-and-forget —
+    // never blocks the UI or throws on failure.
+    try {
+      if (typeof window !== "undefined" && (window as any).gtag) { (window as any).gtag("event", event, data); }
+    } catch {}
+    try {
+      fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-event", name: event, props: data || {} }), keepalive: true }).catch(() => {});
+    } catch {}
   };
   const checkProfileBadges = (stats:any, createdAt:number):{name:string;desc:string;icon:string;color:string}[] => {
     const b:{name:string;desc:string;icon:string;color:string}[] = [];
@@ -544,7 +556,7 @@ function MusePage() {
   }, []);
 
   const flash = useCallback((color: string) => { setScreenFlash(color); setTimeout(() => setScreenFlash(null), 300); }, []);
-  const showScreen = useCallback((s: typeof screen) => { setScreen(s); }, []);
+  const showScreen = useCallback((s: typeof screen) => { setScreen(s); trackEvent("screen_view", { screen: s }); }, []);
   const openHamburger = useCallback(() => { setHamburgerScreen(""); setShowHamburger(true); }, []);
 
   const handleOAuth = useCallback(async (provider: "google" | "facebook") => {
@@ -617,6 +629,7 @@ function MusePage() {
     const p = filteredProfiles[currentIdx];
     if (!p) return;
     if (dir === "super" && superLikes <= 0) { showToast("No super likes left!"); return; }
+    trackEvent("swipe", { direction: dir, target_type: p.type });
     if (dir === "right" || dir === "super") {
       if (!userDefaultIntent) { setIntentProfile(p); setShowIntentPicker(true); swipeLocked.current = false; return; }
       const intent = dir === "super" ? "super" : userDefaultIntent;
@@ -744,6 +757,7 @@ function MusePage() {
     let token = "";
     try { token = (JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""); } catch {}
     await persistMessage({ myId, theirId: targetId, text: clean, token });
+    trackEvent("message_sent", { has_match: true });
     // Show typing + simulated reply only when no real remote partner is present.
     setTypingTarget(Number(chatTarget.id));
     setTimeout(() => {
@@ -1670,6 +1684,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                             {(profile as any).photos?.length > 1 && <div style={{marginBottom:16}}><div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:8}}>Photos</div><div style={{display:"flex",gap:6,overflowX:"auto"}}>{((profile as any).photos||[]).map((p:any,i:number)=><div key={i} className="card-photo-thumb" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}} style={{opacity:i===currentPhotoIdx?1:0.6,border:i===currentPhotoIdx?"2px solid var(--gold)":"2px solid transparent"}}><img src={p} alt="" /></div>)}</div></div>}
                             {(profile as any).badges?.length > 0 && <div style={{marginBottom:16}}><div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:8}}>Badges</div><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{(profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>)}</div></div>}
                             <div style={{fontSize:12,color:"var(--muted)"}}>📍 {profile.loc}</div>
+                            <AlbumGallery profileId={profile.id} authToken={getAccessToken()} />
                           </div>
                         </div>
                         {isTop && dragOffset > 25 && <div style={{position:"absolute",top:40,left:20,fontSize:28,fontWeight:900,color:"#4ade80",border:"4px solid #4ade80",borderRadius:12,padding:"6px 16px",transform:"rotate(-15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>LIKE</div>}
@@ -2153,27 +2168,14 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="portfolio"?" active":"")}>
               <div className="hdr">
                 <div className="logo-link">muse</div>
-                <button className="hdr-btn" onClick={()=>setShowPortfolioUpload(true)}><FiPlus size={18} /></button>
               </div>
               <div className="portfolio-scroll">
-                {currentUser.portfolios.length === 0 && (
-                  <div className="empty-state">
-                    <div className="empty-icon"><FiImage size={48} /></div>
-                    <div className="empty-title">No portfolio items yet</div>
-                    <div className="empty-sub">Upload your work to showcase your talent</div>
-                  </div>
-                )}
-                <div className="portfolio-grid">
-                  {currentUser.portfolios.map((item: {img:string;title:string;type:string}, i: number) => (
-                    <div key={i} className="portfolio-item">
-                      <img src={item.img} alt={item.title} />
-                      <div className="portfolio-item-overlay">
-                        <div className="portfolio-item-title">{item.title}</div>
-                        <div className="portfolio-item-likes">♥ {(item as any).likes || 0}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <MyAlbumsManager
+                  authToken={getAccessToken()}
+                  uploadImage={uploadImage}
+                  showToast={showToast}
+                  matchOptions={matches.map((m: any) => ({ id: m.id, name: m.name, avatar: m.img || m.avatar }))}
+                />
               </div>
               <Nav active="portfolio" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
@@ -2441,34 +2443,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
         </div>
       )}
 
-      {/* PORTFOLIO UPLOAD MODAL */}
-      {showPortfolioUpload && (
-        <div className="modal-overlay">
-          <div className="modal-header">
-            <button className="modal-back" onClick={()=>setShowPortfolioUpload(false)}><FiArrowLeft size={20} /></button>
-            <div className="modal-title">Add Work</div>
-            <button className="modal-close" onClick={()=>setShowPortfolioUpload(false)}><FiX size={18} /></button>
-          </div>
-          <div className="modal-body">
-            <input className="inp" placeholder="Title" value={uploadTitle} onChange={e=>setUploadTitle(e.target.value)} />
-            <input ref={portfolioInputRef} type="file" accept="image/*" multiple style={{display:"none"}} onChange={async (e)=>{
-              const files = Array.from(e.target.files||[]);
-              if(files.length===0) return;
-              showToast("Uploading "+files.length+" file(s)...");
-              for(const f of files){
-                const url = await uploadImage(f,"portfolio");
-                if(url) setCurrentUser(prev=>({...prev,portfolios:[...prev.portfolios,{img:url,title:uploadTitle||"Work "+(prev.portfolios.length+1),type:"photo"}]}));
-              }
-              setShowPortfolioUpload(false);showToast(files.length+" work(s) added!");
-            }} />
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
-              {[1,2,3,4,5,6].map(i=>(
-                <div key={i} style={{aspectRatio:"3/4",borderRadius:10,overflow:"hidden",cursor:"pointer",border:"2px dashed rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.03)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,color:"var(--muted)"}} onClick={()=>portfolioInputRef.current?.click()}>+</div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       {/* SUBSCRIPTION SCREEN */}
       {screen === "subscription" && (

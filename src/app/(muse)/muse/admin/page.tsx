@@ -1,0 +1,145 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+
+type AnalyticsData = {
+  totals: { users: number; matches: number; albums: number };
+  signupsByDay: Record<string, number>;
+  retention: { activeLastWeek: number; activePriorWeek: number; retainedCount: number; retentionRatePct: number | null };
+  featureUsage: Record<string, number>;
+  recentEvents: { name: string; props: Record<string, unknown>; created_at: string }[];
+};
+
+/**
+ * Real admin analytics dashboard — reads live aggregated data from Supabase
+ * via GET /api/muse?type=admin-analytics (server-side enforces ADMIN_EMAILS
+ * allowlist regardless of anything checked here). No LLM/chat interface:
+ * there's no AI API key configured in this project's environment, so an
+ * "ask your data questions" assistant isn't something that can honestly be
+ * built right now. This shows the real numbers instead.
+ */
+export default function AdminDashboard() {
+  const [status, setStatus] = useState<"loading" | "unauthenticated" | "forbidden" | "ready" | "error">("loading");
+  const [data, setData] = useState<AnalyticsData | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) { if (!cancelled) setStatus("unauthenticated"); return; }
+      try {
+        const r = await fetch("/api/muse?type=admin-analytics", { headers: { Authorization: `Bearer ${token}` } });
+        if (r.status === 403) { if (!cancelled) setStatus("forbidden"); return; }
+        if (!r.ok) { if (!cancelled) setStatus("error"); return; }
+        const j = await r.json();
+        if (!cancelled) { setData(j); setStatus("ready"); }
+      } catch {
+        if (!cancelled) setStatus("error");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const box: React.CSSProperties = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 20 };
+  const label: React.CSSProperties = { fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 };
+  const bigNum: React.CSSProperties = { fontSize: 32, fontWeight: 800, color: "#ffd700" };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0a0612", color: "#f5f0ff", padding: "32px 24px", fontFamily: "system-ui, sans-serif" }}>
+      <div style={{ maxWidth: 960, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Muse — Admin Dashboard</h1>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 28 }}>Real aggregated data from Supabase. No AI/chat layer — none is configured in this environment.</p>
+
+        {status === "loading" && <p style={{ color: "rgba(255,255,255,0.6)" }}>Loading…</p>}
+        {status === "unauthenticated" && (
+          <div style={box}>
+            <p>You need to be signed in as an admin to view this page.</p>
+            <a href="/muse" style={{ color: "#ffd700" }}>Go to Muse and sign in →</a>
+          </div>
+        )}
+        {status === "forbidden" && (
+          <div style={box}>
+            <p>Your account is signed in but isn't listed in <code>ADMIN_EMAILS</code>.</p>
+          </div>
+        )}
+        {status === "error" && (
+          <div style={box}>
+            <p>Something went wrong loading analytics. Check the server logs.</p>
+          </div>
+        )}
+
+        {status === "ready" && data && (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 24 }}>
+              <div style={box}><div style={label}>Total Users</div><div style={bigNum}>{data.totals.users}</div></div>
+              <div style={box}><div style={label}>Total Matches</div><div style={bigNum}>{data.totals.matches}</div></div>
+              <div style={box}><div style={label}>Total Albums</div><div style={bigNum}>{data.totals.albums}</div></div>
+              <div style={box}>
+                <div style={label}>Week-over-Week Retention</div>
+                <div style={bigNum}>{data.retention.retentionRatePct !== null ? `${data.retention.retentionRatePct}%` : "—"}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>
+                  {data.retention.retainedCount} of {data.retention.activePriorWeek} returned this week
+                </div>
+              </div>
+            </div>
+
+            <div style={{ ...box, marginBottom: 24 }}>
+              <div style={label}>Signups — last 30 days</div>
+              {Object.keys(data.signupsByDay).length === 0 ? (
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>No signups in this window yet.</p>
+              ) : (
+                <div style={{ display: "flex", gap: 3, alignItems: "flex-end", height: 80, marginTop: 10 }}>
+                  {Object.entries(data.signupsByDay).sort().map(([day, count]) => {
+                    const max = Math.max(...Object.values(data.signupsByDay), 1);
+                    return (
+                      <div key={day} title={`${day}: ${count}`} style={{ flex: 1, background: "#ffd700", opacity: 0.7, height: `${Math.max(4, (count / max) * 100)}%`, borderRadius: 2 }} />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div style={{ ...box, marginBottom: 24 }}>
+              <div style={label}>Feature Usage — last 30 days (from muse_events_log)</div>
+              {Object.keys(data.featureUsage).length === 0 ? (
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>
+                  No events logged yet. This is expected right after deploying — event tracking (screen views, swipes, messages) was just wired up and needs real usage to populate.
+                </p>
+              ) : (
+                <div>
+                  {Object.entries(data.featureUsage).sort((a, b) => b[1] - a[1]).map(([name, count]) => (
+                    <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13 }}>
+                      <span>{name}</span>
+                      <span style={{ color: "#ffd700", fontWeight: 700 }}>{count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={box}>
+              <div style={label}>Recent Events</div>
+              {data.recentEvents.length === 0 ? (
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>No events yet.</p>
+              ) : (
+                <div style={{ maxHeight: 300, overflowY: "auto" }}>
+                  {data.recentEvents.map((e, i) => (
+                    <div key={i} style={{ fontSize: 12, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.7)" }}>
+                      <span style={{ color: "#ffd700" }}>{e.name}</span>{" "}
+                      <span style={{ color: "rgba(255,255,255,0.4)" }}>{new Date(e.created_at).toLocaleString()}</span>
+                      {e.props && Object.keys(e.props).length > 0 && (
+                        <span style={{ color: "rgba(255,255,255,0.4)" }}> — {JSON.stringify(e.props)}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
