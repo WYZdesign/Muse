@@ -35,6 +35,28 @@ export async function POST(req: NextRequest) {
         }
         break;
       }
+      case "payment_intent.succeeded": {
+        const pi = event.data.object as Stripe.PaymentIntent;
+        const musePayerId = pi.metadata?.muse_payer_id;
+        const musePayeeId = pi.metadata?.muse_payee_id;
+        if (musePayerId && musePayeeId) {
+          // Update booking payment status
+          await sb.from("muse_booking_payments").update({
+            status: "succeeded",
+            stripe_transfer_id: pi.transfer_data?.destination as string || null,
+            updated_at: new Date().toISOString(),
+          }).eq("stripe_payment_intent", pi.id);
+        }
+        break;
+      }
+      case "payment_intent.payment_failed": {
+        const pi = event.data.object as Stripe.PaymentIntent;
+        await sb.from("muse_booking_payments").update({
+          status: "failed",
+          updated_at: new Date().toISOString(),
+        }).eq("stripe_payment_intent", pi.id);
+        break;
+      }
       // Any other event — no-op, acknowledged to avoid Stripe retry spam.
     }
 
