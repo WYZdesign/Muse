@@ -59,7 +59,7 @@ type Props = {
   responderName: string;
   responderId: string;
   bookingId?: string;
-  onSubmit: (form: DisclosureForm) => Promise<void>;
+  onSubmit: (form: DisclosureForm & { responderId: string; bookingId?: string }) => Promise<void>;
   onCancel: () => void;
   existingDisclosure?: Record<string, unknown> | null;
   onConfirm?: (disclosureId: string) => Promise<void>;

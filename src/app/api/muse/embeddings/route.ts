@@ -121,10 +121,13 @@ export async function POST(req: NextRequest) {
 
 /** Deterministic uint64 hash from a string — safe for Qdrant point IDs */
 function hashToUint64(str: string): number {
-  let hash = 0xcbf29ce484222325n;
+  let hash = BigInt("0xcbf29ce484222325");
+  const prime = BigInt("0x100000001b3");
+  const mask = BigInt("0xffffffffffffffff");
+  const positiveMask = BigInt("0x7fffffffffffffff");
   for (let i = 0; i < str.length; i++) {
     hash ^= BigInt(str.charCodeAt(i));
-    hash = (hash * 0x100000001b3n) & 0xffffffffffffffffn;
+    hash = (hash * prime) & mask;
   }
-  return Number(hash & 0x7fffffffffffffffn); // keep positive
+  return Number(hash & positiveMask);
 }

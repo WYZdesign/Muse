@@ -33,7 +33,7 @@ export default function AdminModerationPanel() {
     })();
   }, []);
 
-  const headers = token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : {};
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
 
   const loadTab = async (t: string) => {
     setTab(t as any);
