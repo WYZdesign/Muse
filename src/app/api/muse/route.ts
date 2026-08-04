@@ -994,6 +994,27 @@ export async function POST(req: NextRequest) {
       const { count: total } = await sb.from("muse_prompt_bank").select("*", { count: "exact", head: true }).eq("active", true);
       const pct = total && total > 0 ? Math.round(((count || 0) / total) * 100) : 0;
       await sb.from("muse_profiles").update({ profile_completion_pct: pct, prompt_completed_at: new Date().toISOString() }).eq("id", profile.id);
+
+      // Fire-and-forget: embed prompt response in background (don't block response)
+      if (responseText && typeof responseText === "string" && responseText.trim()) {
+        const embedText = `${responseText}`.trim();
+        const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
+        const QDRANT_URL = process.env.QDRANT_URL || "http://localhost:6333";
+        fetch(`${OLLAMA_URL}/api/embeddings`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "nomic-embed-text", prompt: embedText }),
+        }).then(async r => r.ok ? r.json() : null).then(async data => {
+          if (!data?.embedding?.length) return;
+          const pointId = hashToUint64(`response:${profile.id}:${promptId}`);
+          await fetch(`${QDRANT_URL}/collections/muse_embeddings/points`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ points: [{ id: pointId, vector: data.embedding, payload: { user_id: profile.id, embedding_type: "prompt_response", prompt_id: promptId, text_source: embedText.slice(0, 2000), updated_at: new Date().toISOString() } }] }),
+          });
+        }).catch(() => {}); // silent fail — non-critical background task
+      }
+
       return NextResponse.json({ success: true, completionPct: pct });
     }
 
@@ -1142,6 +1163,18 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Unknown action type" }, { status: 400 });
   } catch (e: unknown) {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Server error" }, { status: 500 });
   }
+}
+
+function hashToUint64(str: string): number {
+  let hash = BigInt("0xcbf29ce484222325");
+  const prime = BigInt("0x100000001b3");
+  const mask = BigInt("0xffffffffffffffff");
+  const positiveMask = BigInt("0x7fffffffffffffff");
+  for (let i = 0; i < str.length; i++) {
+    hash ^= BigInt(str.charCodeAt(i));
+    hash = (hash * prime) & mask;
+  }
+  return Number(hash & positiveMask);
 }
