@@ -520,21 +520,17 @@ function MusePage() {
     let list = showNsfw ? base : base.filter(p => !p.nsfw);
     if (filterStyles.length > 0) list = list.filter(p => p.styles.some(s => filterStyles.includes(s)));
     if (filterScore > 50) list = list.filter(p => p.score >= filterScore);
-    if (myGeo) {
-      list = list.filter(p => {
-        const g = CITY_GEO[p.loc];
-        if (!g) return true;
-        return distanceMiles(myGeo, g) <= discoveryPrefs.distance;
-      });
-    }
     if (discoverSearch.trim()) {
       const q = discoverSearch.toLowerCase();
       list = list.filter(p => p.name.toLowerCase().includes(q) || p.type?.toLowerCase().includes(q) || p.loc?.toLowerCase().includes(q) || p.styles?.some(s => s.toLowerCase().includes(q)));
     }
-    return list.map(p => {
+    // Sort by distance if geolocation is available (closest first),
+    // but never discard profiles far away — this is a global creative network.
+    const enriched = list.map(p => {
       const geo = CITY_GEO[p.loc];
+      const distMi = myGeo && geo ? distanceMiles(myGeo, geo) : null;
       let boosted = geo ? { ...p, lat: geo.lat, lng: geo.long } : { ...p };
-      // Badge influence on match score
+      if (distMi !== null) (boosted as any).distanceMi = distMi;
       if (boosted.badges?.length) {
         const badgeBoost = boosted.badges.reduce((acc: number, b: any) => {
           if (b.name === "Verified Pro") return acc + 5;
@@ -548,6 +544,13 @@ function MusePage() {
       }
       return boosted;
     });
+    // Sort: if geo available, closest profiles first, then by distance
+    if (myGeo) enriched.sort((a: any, b: any) => {
+      const da = a.distanceMi ?? 99999;
+      const db = b.distanceMi ?? 99999;
+      return da - db;
+    });
+    return enriched;
   }, [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoveryPrefs.distance, discoverSearch]);
 
   useEffect(() => {
@@ -1661,7 +1664,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                        >
                         <div style={{position:"relative",width:"100%",height:"100%",display:"flex",flexDirection:"column",overflowY:"auto"}} onClick={(e)=>{if(isTop&&e.currentTarget.scrollTop>20){e.stopPropagation()}}}>
                           <div style={{position:"relative",width:"100%",minHeight:"85%",flexShrink:0,overflow:"hidden"}}>
-                            <img src={((profile as any).photos?.length ? (profile as any).photos[currentPhotoIdx] : profile.img) || profile.img} alt={profile.name} draggable="false" onError={handleImgError} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",top:0,left:0}} />
+                            <img src={((profile as any).photos?.length ? (profile as any).photos[currentPhotoIdx] : profile.img) || profile.img} alt={profile.name} draggable="false" onError={handleImgError} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top",position:"absolute",top:0,left:0}} />
                             {isTop && (
                               <>
                                 <div style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:5}} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
