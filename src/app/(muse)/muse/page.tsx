@@ -192,6 +192,8 @@ function MusePage() {
   const [showHamburger, setShowHamburger] = useState(false);
   const [showPremiumPopup, setShowPremiumPopup] = useState(() => {
     try {
+      const hidden = localStorage.getItem("muse_hide_premium");
+      if (hidden) return false;
       const seen = sessionStorage.getItem("muse_premium_seen");
       if (seen) return false;
       const c = localStorage.getItem("muse_open_count");
@@ -669,16 +671,18 @@ function MusePage() {
   const [intentProfile, setIntentProfile] = useState<Profile|null>(null);
   const [userDefaultIntent, setUserDefaultIntent] = useState<string>("");
 
+  const isUnlimited = authUser?.email === "torree.marcel@gmail.com";
+
   const doSwipe = useCallback((dir: "left" | "right" | "super") => {
     if (swipeLocked.current) return;
     swipeLocked.current = true;
     setTimeout(() => { swipeLocked.current = false; }, 500);
     setSwipeDir(dir === "left" ? "left" : "right");
     setTimeout(() => setSwipeDir(null), 800);
-    if (dailyLikes <= 0 && dir !== "super") { showToast("No likes left today!"); return; }
+    if (!isUnlimited && dailyLikes <= 0 && dir !== "super") { showToast("No likes left today!"); return; }
     const p = filteredProfiles[currentIdx];
     if (!p) return;
-    if (dir === "super" && superLikes <= 0) { showToast("No super likes left!"); return; }
+    if (!isUnlimited && dir === "super" && superLikes <= 0) { showToast("No super likes left!"); return; }
     trackEvent("swipe", { direction: dir, target_type: p.type });
     if (dir === "right" || dir === "super") {
       if (!userDefaultIntent) { setIntentProfile(p); setShowIntentPicker(true); swipeLocked.current = false; return; }
@@ -705,11 +709,11 @@ function MusePage() {
         setLikedBy(prev => [...prev, p]);
         setActivityFeed(prev => [{id:Date.now(),type:"like",from:p.name,avatar:p.img,text:p.name+" liked your profile!",time:"Just now",read:false},...prev]);
       }
-      if (dir === "super") { setSuperLikes(prev => Math.max(0, prev - 1)); setCurrentUser(prev => ({ ...prev, stats: { ...prev.stats, superLikes: prev.stats.superLikes + 1 } })); flash("#D4A5FF"); }
-      else { setDailyLikes(prev => Math.max(0, prev - 1)); }
+      if (dir === "super") { if (!isUnlimited) { setSuperLikes(prev => Math.max(0, prev - 1)); } setCurrentUser(prev => ({ ...prev, stats: { ...prev.stats, superLikes: prev.stats.superLikes + 1 } })); flash("#D4A5FF"); }
+      else { if (!isUnlimited) { setDailyLikes(prev => Math.max(0, prev - 1)); } }
       setCurrentUser(prev => ({ ...prev, stats: { ...prev.stats, likes: prev.stats.likes + 1 } }));
     } else {
-      setDailyLikes(prev => Math.max(0, prev - 1));
+      if (!isUnlimited) { setDailyLikes(prev => Math.max(0, prev - 1)); }
       setCurrentUser(prev => ({ ...prev, stats: { ...prev.stats, passes: prev.stats.passes + 1 } }));
     }
     setRewindStack(prev => [...prev, currentIdx]);
@@ -730,11 +734,11 @@ function MusePage() {
 
   const doLikeWithNote = useCallback(() => {
     const p = filteredProfiles[currentIdx];
-    if (!p || dailyLikes <= 0) { showToast("No likes left today!"); return; }
+    if (!p || (!isUnlimited && dailyLikes <= 0)) { showToast("No likes left today!"); return; }
     setNoteTargetProfile(p);
     setLikeNoteText("");
     setShowLikeNote(true);
-  }, [currentIdx, dailyLikes, filteredProfiles]);
+  }, [currentIdx, dailyLikes, filteredProfiles, isUnlimited]);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
@@ -1332,11 +1336,11 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <button className="conn-btn conn-btn-primary" style={{fontSize:10,padding:"4px 10px"}} onClick={()=>showToast("Story viewed!")}>View</button>
                       </div>
                     </div>)}
-                  </div>
+</div>
                 )}
               </>
             )}
-          </div>
+</div>
         </div>
       )}
       {screen === "auth" ? (
@@ -1810,8 +1814,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <button className="action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
                   <button className="action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎♥</button>
                 </div>
-                {dailyLikes < 10 && <div className="limit-bar"><div className="limit-dots">{Array.from({length:10},(_,i)=><div key={i} className={"limit-dot"+(i<dailyLikes?" filled":"")} />)}</div><div className="limit-text">{dailyLikes} likes left</div></div>}
-                {superLikes < 3 && <div className="limit-bar"><div className="limit-dots">{Array.from({length:3},(_,i)=><div key={i} className={"limit-dot"+(i<superLikes?" super-filled":"")} />)}</div><div className="limit-text">{superLikes} super likes left</div></div>}
+                {!isUnlimited && dailyLikes < 10 && <div className="limit-bar"><div className="limit-dots">{Array.from({length:10},(_,i)=><div key={i} className={"limit-dot"+(i<dailyLikes?" filled":"")} />)}</div><div className="limit-text">{dailyLikes} likes left</div></div>}
+                {!isUnlimited && superLikes < 3 && <div className="limit-bar"><div className="limit-dots">{Array.from({length:3},(_,i)=><div key={i} className={"limit-dot"+(i<superLikes?" super-filled":"")} />)}</div><div className="limit-text">{superLikes} super likes left</div></div>}
+                {isUnlimited && <div className="limit-bar" style={{background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",borderRadius:99,padding:"6px 16px",marginTop:8}}><div style={{fontSize:12,fontWeight:700,color:"var(--gold)"}}>∞ Unlimited Likes & Super Likes</div></div>}
                 </>)}
               </div>
               <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
@@ -1819,7 +1824,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="connections"?" active":"")}>
               <div className="hdr">
                 <div className="logo-link">Feed</div>
-                <div style={{display:"flex",gap:4}}>
+                <div style={{display:"flex",gap:4,marginRight:44}}>
                   {(["all","photos","text"] as const).map(f=>(
                     <div key={f} className={"conn-tab-sub"+(feedFilter===f?" active":"")} onClick={()=>setFeedFilter(f)} style={{fontSize:11,padding:"5px 10px",borderRadius:99}}>{f==="all"?"All":f==="photos"?"Photos":"Text"}</div>
                   ))}
@@ -1975,6 +1980,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       )}
                     </div>
                     <div className="match-time">{m.messages?.[m.messages.length-1]?.time || ""}</div>
+
+                    {/* Match Action Buttons Overlay - 80% opacity, outside swipe area */}
+                    <div className="match-card-actions" style={{position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",display:"flex",flexDirection:"column",gap:8,zIndex:10,pointerEvents:"auto",opacity:0.8}}>
+                      <button className="match-card-btn" onClick={(e)=>{e.stopPropagation();setChatTarget(m);showScreen("chat");}} style={{padding:"8px 14px",borderRadius:99,background:"linear-gradient(135deg,var(--gold),var(--amber))",color:"#0a0612",fontSize:12,fontWeight:700,boxShadow:"0 4px 16px rgba(255,215,0,0.2)",whiteSpace:"nowrap"}}>Message</button>
+                      <button className="match-card-btn" onClick={(e)=>{e.stopPropagation();setUnmatchTarget(m.name);}} style={{padding:"8px 14px",borderRadius:99,background:"rgba(255,138,128,0.15)",border:"1px solid rgba(255,138,128,0.3)",color:"var(--coral)",fontSize:12,fontWeight:600,whiteSpace:"nowrap"}}>Unmatch</button>
+                    </div>
                   </div>
                   );
                 })}
@@ -2131,19 +2142,23 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div className="conn-meta" style={{fontSize:12}}>{c.members} members · {c.desc}</div>
                       <div style={{display:"flex",gap:6,marginTop:8}}>
                         <button className={"conn-btn conn-btn-primary"+(c.cat==="nsfw"?" conn-nsfw-tag":"")} style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id,memberCount:c.members})});showToast("Joined "+c.name+"!")}catch{showToast("Failed to join")}}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
+                        <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={()=>showToast(c.name+" community info opened!")}>Learn</button>
                         <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/community/"+c.id);showToast("Link copied!")}}>Share</button>
                       </div>
                     </div>
                   </div>
                 ))}
-                {commTab === "events" && EVENTS.filter(e => showNsfw || !e.nsfw).map(ev => (
-                  <div key={ev.id} className="conn-card" style={{flexDirection:"column",marginBottom:10,padding:16}}>
-                    <div className="conn-name" style={{fontSize:15}}>{ev.title}</div>
-                    <div className="conn-meta" style={{fontSize:12,marginBottom:6}}>{ev.date} · {ev.loc}</div>
-                    <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.5,marginBottom:10}}>{ev.desc}</div>
-                    <button className={"conn-btn "+(rsvpdEvents.includes(ev.id)?"conn-btn-ghost":"conn-btn-primary")} style={{padding:"10px 0",fontSize:13,width:"100%"}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter(x=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
-                  </div>
-                ))}
+{commTab === "events" && EVENTS.filter(e => showNsfw || !e.nsfw).map(ev => (
+                    <div key={ev.id} className="conn-card" style={{flexDirection:"column",marginBottom:10,padding:16}}>
+                      <div className="conn-name" style={{fontSize:15}}>{ev.title}</div>
+                      <div className="conn-meta" style={{fontSize:12,marginBottom:6}}>{ev.date} · {ev.loc}</div>
+                      <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.5,marginBottom:10}}>{ev.desc}</div>
+                      <div style={{display:"flex",gap:6}}>
+                        <button className={"conn-btn "+(rsvpdEvents.includes(ev.id)?"conn-btn-ghost":"conn-btn-primary")} style={{flex:1,padding:"10px 0",fontSize:13}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter(x=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
+                        <button className="conn-btn conn-btn-ghost" style={{flex:1,padding:"10px 0",fontSize:13}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/"+ev.id);showToast("Event link copied!")}}>Share</button>
+                      </div>
+                    </div>
+                  ))}
                 {commTab === "events" && EVENTS.length===0 && (
                   <div style={{textAlign:"center",padding:40,color:"var(--muted)",fontSize:13}}>No upcoming events</div>
                 )}
@@ -2163,9 +2178,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
                 {sessTab === "sessions" && SESSIONS.map(s => (
-                  <div key={s.id} className="conn-card" style={{marginBottom:10,padding:14}}>
-                    <img src={s.img} alt={s.name} className="conn-avatar" style={{borderRadius:"50%"}} onError={handleImgError} />
-                    <div className="conn-content" style={{flex:1}}>
+                  <div key={s.id} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row"}}>
+                    <img src={s.img} alt={s.name} style={{width:"25%",height:"100%",minHeight:100,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                    <div className="conn-content" style={{flex:1,padding:14,display:"flex",flexDirection:"column",justifyContent:"center"}}>
                       <div className="conn-name" style={{fontSize:15}}>{s.name}</div>
                       <div className="conn-meta" style={{fontSize:12}}>{s.type} · {s.rate} · ★ {s.rating}</div>
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6}}>
@@ -2185,9 +2200,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   </div>
                 ) : (
                   matches.filter(m => m.booked).map(m => (
-                    <div key={m.id} className="conn-card" style={{marginBottom:10,padding:14}}>
-                      <img src={m.img} alt={m.name} className="conn-avatar" onError={handleImgError} />
-                      <div className="conn-content" style={{flex:1}}>
+                    <div key={m.id} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row"}}>
+                      <img src={m.img} alt={m.name} style={{width:"25%",height:"100%",minHeight:100,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                      <div className="conn-content" style={{flex:1,padding:14,display:"flex",flexDirection:"column",justifyContent:"center"}}>
                         <div className="conn-name" style={{fontSize:15}}>{m.name}</div>
                         <div className="conn-meta" style={{fontSize:12}}>{m.type} · Booked Session</div>
                         <div style={{display:"flex",gap:6,marginTop:8}}>
@@ -2215,7 +2230,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
                 {netTab === "pros" && PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
                   <div key={p.id} className="conn-card" style={{flexDirection:"column",marginBottom:14,padding:0,overflow:"hidden",borderRadius:16}}>
-                    <img src={p.img} alt={p.name} style={{width:"100%",height:160,objectFit:"cover"}} onError={handleImgError} />
+                    <img src={p.img} alt={p.name} style={{width:"100%",height:"auto",minHeight:160,objectFit:"fill"}} onError={handleImgError} />
                     <div style={{padding:"14px 16px"}}>
                       <div className="conn-name" style={{fontSize:15}}>{p.name}</div>
                       <div className="conn-meta" style={{fontSize:12,marginBottom:6}}>{p.type} · {p.loc} · {p.exp}</div>
@@ -2225,6 +2240,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{display:"flex",gap:6}}>
                         <button className="conn-btn conn-btn-primary" style={{flex:1,fontSize:12,padding:"10px 12px"}} onClick={()=>{showToast("Connection request sent to "+p.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})})}}>Connect</button>
                         <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"10px 12px"}} onClick={()=>showToast(p.openings+" open positions!")}>{p.openings} openings</button>
+                        <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"10px 12px"}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/pro/"+p.id);showToast("Profile link copied!")}}>Share</button>
                       </div>
                     </div>
                   </div>
@@ -2354,8 +2370,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <Nav active="moments" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
             <div className={"screen-el"+(screen==="profile"?" active":"")}>
-              <div className="hdr">
-                <div className="logo-link">muse</div>
+              <div className="hdr" style={{justifyContent:"space-between"}}>
+                <div style={{position:"absolute",left:"50%",transform:"translateX(-50%)",fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:18,fontWeight:800,color:"var(--gold)"}}>Your Profile</div>
                 <div style={{display:"flex",gap:10}}>
                   <button className="hdr-btn" onClick={()=>{setEditName(currentUser.name);setEditBio(obData.bio||"");setEditLoc(obData.loc||"");setEditAvatar(currentUser.avatar||"");setShowEditProfile(true)}}><FiEdit2 size={18} /></button>
                   <button className="hdr-btn" onClick={()=>setScreen("settings")}><FiSettings size={18} /></button>
@@ -2451,6 +2467,55 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         </button>
                       );
                     })}
+                  </div>
+                </div>
+                <div className="section">
+                  <div className="section-title">Portfolio Preview</div>
+                  <div className="section-text" style={{marginBottom:10}}>Your showcased work</div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                    {currentUser.portfolios.length > 0 ? currentUser.portfolios.slice(0,6).map((p,i)=>(
+                      <div key={i} style={{aspectRatio:"3/4",borderRadius:12,overflow:"hidden",background:"#1a0a2e",position:"relative"}} onClick={()=>setSelectedPortfolio(p)}>
+                        <img src={p.img} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
+                        <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px",background:"linear-gradient(to top,rgba(10,6,18,0.9),transparent)"}}>
+                          <div style={{fontSize:11,fontWeight:600,color:"var(--text)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.title}</div>
+                          <div style={{fontSize:9,color:"var(--muted)"}}>{p.type}</div>
+                        </div>
+                      </div>
+                    )) : (
+                      [1,2,3].map(i=>(
+                        <div key={i} style={{aspectRatio:"3/4",borderRadius:12,background:"rgba(255,255,255,0.03)",border:"2px dashed rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--muted)",fontSize:11}}>Add Portfolio</div>
+                      ))
+                    )}
+                  </div>
+                </div>
+                <div className="section">
+                  <div className="section-title">Recent Matches</div>
+                  <div className="section-text" style={{marginBottom:10}}>Your latest connections</div>
+                  <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:8,scrollbarWidth:"none"}}>
+                    {matches.length > 0 ? matches.slice(0,5).map(m=>(
+                      <div key={m.id} style={{flexShrink:0,width:60,height:60,borderRadius:"50%",overflow:"hidden",background:"#1a0a2e",border:"2px solid rgba(255,215,0,0.2)"}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>
+                        <img src={m.img} alt={m.name} style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
+                      </div>
+                    )) : (
+                      <div style={{flexShrink:0,width:60,height:60,borderRadius:"50%",background:"rgba(255,255,255,0.03)",border:"2px dashed rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--muted)",fontSize:11}}>No matches yet</div>
+                    )}
+                  </div>
+                </div>
+                <div className="section">
+                  <div className="section-title">Activity</div>
+                  <div className="section-text" style={{marginBottom:10}}>Recent interactions</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    {activityFeed.length > 0 ? activityFeed.slice(0,4).map(a=>(
+                      <div key={a.id} style={{display:"flex",gap:10,padding:"10px",background:"rgba(255,255,255,0.02)",borderRadius:12,border:"1px solid rgba(255,255,255,0.04)"}}>
+                        <img src={a.avatar} alt="" style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",background:"#1a0a2e"}} onError={handleImgError} />
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:13,fontWeight:600,color:"var(--text)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}><strong>{a.from}</strong> {a.text}</div>
+                          <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{a.time}</div>
+                        </div>
+                      </div>
+                    )) : (
+                      <div style={{padding:"16px",textAlign:"center",color:"var(--muted)",fontSize:13}}>No recent activity. Start swiping to see your interactions here!</div>
+                    )}
                   </div>
                 </div>
                 <div className="profile-btn"><button className="btn btn-outline" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio||""); setEditLoc(obData.loc||""); setEditAvatar(currentUser.avatar||""); setShowEditProfile(true); }}>Edit Profile</button></div>
@@ -2967,24 +3032,35 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div style={{position:"absolute",bottom:30,color:"rgba(255,255,255,0.5)",fontSize:12}}>Tap anywhere to close</div>
         </div>
       )}
-      {/* GLOBAL PREMIUM — scoped inside phone via absolute positioning */}
+      {/* GLOBAL PREMIUM — centered in phone viewport */}
       <div className="premium-wrap">
         {showPremiumPopup ? (
           <div className="premium-popup">
-            <button className="premium-popup-close" onClick={()=>setShowPremiumPopup(false)}>✕</button>
+            <button className="premium-popup-close" onClick={() => { try{localStorage.setItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); }}>✕</button>
             <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
             <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
             <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
+            <div style={{marginTop:8,fontSize:10,color:"var(--muted)",textAlign:"center"}} onClick={() => { try{localStorage.setItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); }}>Don&apos;t show again</div>
           </div>
         ) : (
-          <button
-            onClick={() => setShowPremiumPopup(true)}
-            className="premium-star-tab"
-            aria-label="Premium"
-            title="Muse Premium"
-          >
-            <div className="premium-star-icon">✦</div>
-          </button>
+          <>
+            <button
+              onClick={() => setShowPremiumPopup(true)}
+              className="premium-star-tab"
+              aria-label="Premium"
+              title="Muse Premium"
+              style={{top:"auto",bottom:0,transform:"translateY(0)"}}
+            >
+              <div className="premium-star-icon">✦</div>
+            </button>
+            <button
+              onClick={() => { try{localStorage.setItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); }}
+              className="premium-close-btn"
+              aria-label="Close Premium"
+              title="Don't show again"
+              style={{position:"absolute",top:"-40px",right:0,background:"rgba(10,6,18,0.8)",border:"1px solid rgba(255,255,255,0.1)",color:"var(--muted)",width:24,height:24,borderRadius:"50%",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",zIndex:400}}
+            >✕</button>
+          </>
         )}
       </div>
       {viewProfile && (

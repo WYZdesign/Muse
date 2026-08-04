@@ -51,7 +51,7 @@ a{color:inherit;text-decoration:none}
 @keyframes orbH{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(-20px,-25px) scale(1.05)}50%{transform:translate(30px,15px) scale(0.96)}75%{transform:translate(-10px,30px) scale(1.04)}}
 
 /* Animated gradient wash - cycles through sunset colors */
-.scene-wash{position:absolute;inset:0;z-index:0;opacity:0.4;animation:colorWash 30s ease-in-out infinite;background:linear-gradient(135deg,rgba(255,107,107,0.2),rgba(255,181,194,0.15),rgba(212,165,255,0.1),rgba(255,215,0,0.15),rgba(255,154,86,0.2));background-size:400% 400%}
+.scene-wash{position:absolute;inset:0;z-index:0;opacity:0.34;animation:colorWash 30s ease-in-out infinite;background:linear-gradient(135deg,rgba(255,107,107,0.17),rgba(255,181,194,0.1275),rgba(212,165,255,0.085),rgba(255,215,0,0.1275),rgba(255,154,86,0.17));background-size:400% 400%}
 @keyframes colorWash{0%{background-position:0% 50%}25%{background-position:100% 0%}50%{background-position:100% 100%}75%{background-position:0% 100%}100%{background-position:0% 50%}}
 
 /* Stars */
@@ -683,15 +683,16 @@ img{background-color:#1a0a2e}
    Below 431px the phone fills the full viewport edge-to-edge, so right:14px is already correct.
    At 431px+ the phone is centered in the viewport (app-wrap uses flex justify-content:center)
    at a fixed max-width of 430px, so we re-anchor to the phone's right edge using that known width. */
-.premium-wrap{position:fixed;bottom:80px;right:14px;z-index:400;pointer-events:none}
-@media (min-width:431px){
-  .premium-wrap{right:calc(50% - 201px)}
+.premium-wrap{position:fixed;bottom:50%;left:50%;transform:translate(-50%,-50%);z-index:400;pointer-events:none}
+@media (max-width:767px){
+  .premium-wrap{bottom:50vh;left:50%;transform:translate(-50%,-50%)}
 }
-.premium-popup{position:relative;pointer-events:auto;background:linear-gradient(135deg,rgba(15,8,30,0.96),rgba(10,6,18,0.98));border:1px solid rgba(255,215,0,0.2);border-radius:16px;padding:14px 16px;max-width:220px;animation:popupSlide .4s cubic-bezier(.4,0,.2,1);box-shadow:0 8px 30px rgba(0,0,0,0.5)}
+.premium-popup{position:relative;pointer-events:auto;background:linear-gradient(135deg,rgba(15,8,30,0.96),rgba(10,6,18,0.98));border:1px solid rgba(255,215,0,0.2);border-radius:16px;padding:14px 16px;max-width:220px;width:100%;margin:0 auto;animation:popupSlide .4s cubic-bezier(.4,0,.2,1);box-shadow:0 8px 30px rgba(0,0,0,0.5)}
 .premium-popup-close{position:absolute;top:6px;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px;line-height:1}
+.premium-popup-close:hover{color:var(--gold)}
 @keyframes popupSlide{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
 
-.premium-star-tab{position:absolute;top:50%;right:0;transform:translateY(-50%);z-index:399;background:linear-gradient(135deg,rgba(15,8,30,0.9),rgba(10,6,18,0.95));border:1px solid rgba(255,215,0,0.15);border-right:none;border-radius:14px 0 0 14px;padding:10px 8px;cursor:pointer;transition:all 0.3s;backdrop-filter:blur(8px)}
+.premium-star-tab{position:absolute;top:50%;right:0;transform:translateY(-50%);z-index:399;background:linear-gradient(135deg,rgba(15,8,30,0.9),rgba(10,6,18,0.95));border:1px solid rgba(255,215,0,0.15);border-right:none;border-radius:14px 0 0 14px;padding:10px 8px;cursor:pointer;transition:all 0.3s;backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center}
 .premium-star-tab:hover{background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(15,8,30,0.9));border-color:rgba(255,215,0,0.3)}
 .premium-star-icon{font-size:18px;color:#FFD700;animation:starTwinkle 2s ease-in-out infinite;filter:drop-shadow(0 0 6px rgba(255,215,0,0.4))}
 @keyframes starTwinkle{0%,100%{opacity:0.5;transform:scale(0.9)}50%{opacity:1;transform:scale(1.15)}}
@@ -721,6 +722,8 @@ img{background-color:#1a0a2e}
 
 /* ═══ NAV ICON HUE SHIFT ═══ */
 @keyframes iconHueShift{0%,100%{filter:hue-rotate(0deg) drop-shadow(0 0 6px currentColor)}50%{filter:hue-rotate(25deg) drop-shadow(0 0 12px currentColor)}}
+@keyframes hueShift{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(30deg)}}
+@keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .nav-icon-glow{filter:drop-shadow(0 2px 5px rgba(255,255,255,0.24))}
 
 /* ═══ SWIPE CARD FULL-IMAGE HERO ═══ */

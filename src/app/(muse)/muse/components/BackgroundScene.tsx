@@ -73,13 +73,6 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
     resize();
     window.addEventListener("resize", resize);
     const COLORS = ["#FFD700","#FF8A80","#D4A5FF","#FFBF00","#FFDAB9","#87CEEB","#98FB98","#FF69B4","#FFB5C2","#E6E6FA"];
-    const mice = { x: w/2, y: h/2 };
-    const onMouse = (e: MouseEvent | TouchEvent) => {
-      const p = "touches" in e ? { x: (e as TouchEvent).touches[0].clientX, y: (e as TouchEvent).touches[0].clientY } : { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY };
-      mice.x = p.x; mice.y = p.y;
-    };
-    window.addEventListener("mousemove", onMouse);
-    window.addEventListener("touchmove", onMouse);
     const comets: any[] = [];
     let animId = 0, spawnTimer = 0;
 
@@ -113,9 +106,6 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
         if (!c.active) continue;
         c.life++;
         if (c.life > c.maxLife) { c.active = false; comets.splice(i, 1); continue; }
-        const dx = mice.x - c.x, dy = mice.y - c.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 600 && dist > 5) { c.vx += dx / dist * 0.1; c.vy += dy / dist * 0.1; }
         c.x += c.vx; c.y += c.vy;
         if (Math.random() > 0.65) {
           c.sparks.push({ x: c.x, y: c.y, vx: (Math.random()-0.5)*2.5, vy: (Math.random()-0.5)*2.5, life: 25+Math.random()*35, size: 1+Math.random()*2.5, color: c.color });
@@ -174,7 +164,7 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
     animId = requestAnimationFrame(animate);
     const onVis = () => { if (document.hidden) { cancelAnimationFrame(animId); } else { animId = requestAnimationFrame(animate); } };
     document.addEventListener("visibilitychange", onVis);
-    return () => { cancelAnimationFrame(animId); document.removeEventListener("visibilitychange", onVis); window.removeEventListener("resize", resize); window.removeEventListener("mousemove", onMouse); window.removeEventListener("touchmove", onMouse); };
+    return () => { cancelAnimationFrame(animId); document.removeEventListener("visibilitychange", onVis); window.removeEventListener("resize", resize); };
   }, []);
 
   return (

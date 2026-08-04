@@ -1,5 +1,6 @@
 "use client";
 import { FiCompass, FiUsers, FiZap, FiCamera, FiEye, FiMenu } from "react-icons/fi";
+import { isValidElement } from "react";
 import type { Screen } from "./types";
 
 const lineColor: Record<string,string> = {
@@ -19,6 +20,12 @@ const tabs: { key: string; label: string; icon: React.ReactNode; hasScreen: bool
 ];
 
 export default function Nav({ active, onNavigate, onHamburgerToggle, unreadCount }: { active: string; onNavigate: (s: Screen) => void; onHamburgerToggle?: () => void; unreadCount?: number }) {
+  const activeIconStyle = (color: string) => ({
+    color,
+    filter: "drop-shadow(0 0 8px " + color + "80) drop-shadow(0 0 12px " + color + "40) hue-rotate(0deg)",
+    animation: "hueShift 3s ease-in-out infinite"
+  });
+
   return (
     <div className="nav" role="navigation" aria-label="Main navigation">
       {tabs.map(tab => {
@@ -26,8 +33,8 @@ export default function Nav({ active, onNavigate, onHamburgerToggle, unreadCount
         const color = lineColor[tab.key] || "#FFD700";
         return (
           <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs" as Screen); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined} style={isActive ? { ["--line-color" as string]: color } : undefined}>
-            <span className="nav-icon" style={isActive?{color}:undefined}>{tab.icon}</span>
-            <span style={isActive?{color,fontWeight:800}:{color:"var(--muted)",fontWeight:600}}>{tab.label}</span>
+            <span className="nav-icon" style={isActive ? activeIconStyle(color) : undefined}>{tab.icon}</span>
+            <span style={isActive?{color,fontWeight:800,background:"linear-gradient(90deg,"+color+","+color+")",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"gradientShift 4s ease-in-out infinite"}:{color:"var(--muted)",fontWeight:600}}>{tab.label}</span>
           </button>
         );
       })}
