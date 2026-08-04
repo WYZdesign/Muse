@@ -9,6 +9,9 @@ type AnalyticsData = {
   retention: { activeLastWeek: number; activePriorWeek: number; retainedCount: number; retentionRatePct: number | null };
   featureUsage: Record<string, number>;
   recentEvents: { name: string; props: Record<string, unknown>; created_at: string }[];
+  referrals?: { total: number; signedUp: number; rewarded: number };
+  payments?: { total: number; succeeded: number; totalVolume: number; totalCommission: number };
+  connectedAccounts?: number;
 };
 
 /**
@@ -85,6 +88,23 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+
+            {data.referrals && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
+                <div style={{ ...box, borderLeft: "3px solid #4ecdc4" }}><div style={label}>Referrals</div><div style={{ ...bigNum, color: "#4ecdc4" }}>{data.referrals.total}</div></div>
+                <div style={{ ...box, borderLeft: "3px solid #ffd700" }}><div style={label}>Referred Signups</div><div style={{ ...bigNum, color: "#ffd700" }}>{data.referrals.signedUp}</div></div>
+                <div style={{ ...box, borderLeft: "3px solid #ff69b4" }}><div style={label}>Rewards Issued</div><div style={{ ...bigNum, color: "#ff69b4" }}>{data.referrals.rewarded}</div></div>
+              </div>
+            )}
+
+            {data.payments && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
+                <div style={{ ...box, borderLeft: "3px solid #98FB98" }}><div style={label}>Total Payments</div><div style={{ ...bigNum, color: "#98FB98" }}>{data.payments.total}</div></div>
+                <div style={{ ...box, borderLeft: "3px solid #4ecdc4" }}><div style={label}>Volume</div><div style={{ ...bigNum, color: "#4ecdc4" }}>${(data.payments.totalVolume / 100).toFixed(0)}</div></div>
+                <div style={{ ...box, borderLeft: "3px solid #FFD700" }}><div style={label}>Commission (5%)</div><div style={{ ...bigNum, color: "#FFD700" }}>${(data.payments.totalCommission / 100).toFixed(0)}</div></div>
+                <div style={{ ...box, borderLeft: "3px solid #E1BEE7" }}><div style={label}>Connected Accounts</div><div style={{ ...bigNum, color: "#E1BEE7" }}>{data.connectedAccounts || 0}</div></div>
+              </div>
+            )}
 
             <div style={{ ...box, marginBottom: 24 }}>
               <div style={label}>Signups — last 30 days</div>

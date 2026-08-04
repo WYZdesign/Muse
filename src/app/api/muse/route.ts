@@ -320,12 +320,40 @@ export async function GET(req: NextRequest) {
       const { count: totalMatches } = await sb.from("muse_matches").select("*", { count: "exact", head: true });
       const { count: totalAlbums } = await sb.from("muse_albums").select("*", { count: "exact", head: true });
 
+      // Referral stats (safe to query even if tables don't exist yet)
+      let referrals = undefined;
+      try {
+        const { count: refTotal } = await sb.from("muse_referrals").select("*", { count: "exact", head: true });
+        const { count: refSignedUp } = await sb.from("muse_referrals").select("*", { count: "exact", head: true }).neq("status", "pending");
+        const { count: refRewarded } = await sb.from("muse_referrals").select("*", { count: "exact", head: true }).eq("status", "reward_issued");
+        referrals = { total: refTotal || 0, signedUp: refSignedUp || 0, rewarded: refRewarded || 0 };
+      } catch { /* table may not exist yet */ }
+
+      // Payment stats
+      let payments = undefined;
+      let connectedAccounts = 0;
+      try {
+        const { data: payData } = await sb.from("muse_booking_payments").select("amount_cents, commission_cents, status");
+        const succeeded = (payData || []).filter((p: any) => p.status === "succeeded");
+        payments = {
+          total: (payData || []).length,
+          succeeded: succeeded.length,
+          totalVolume: succeeded.reduce((s: number, p: any) => s + (p.amount_cents || 0), 0),
+          totalCommission: succeeded.reduce((s: number, p: any) => s + (p.commission_cents || 0), 0),
+        };
+        const { count } = await sb.from("muse_stripe_connect").select("*", { count: "exact", head: true });
+        connectedAccounts = count || 0;
+      } catch { /* tables may not exist yet */ }
+
       return NextResponse.json({
         totals: { users: totalUsers || 0, matches: totalMatches || 0, albums: totalAlbums || 0 },
         signupsByDay,
         retention: { activeLastWeek: activeLastWeek.size, activePriorWeek: activePriorWeek.size, retainedCount: retained, retentionRatePct: retentionRate },
         featureUsage,
         recentEvents: recentEvents.data || [],
+        referrals,
+        payments,
+        connectedAccounts,
       });
     }
 

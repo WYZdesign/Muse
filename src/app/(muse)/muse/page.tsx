@@ -425,6 +425,10 @@ function MusePage() {
     const upgraded = params.get("upgraded");
     if (upgraded) showToast("Welcome to Muse " + (upgraded.charAt(0).toUpperCase() + upgraded.slice(1)) + "! ✨");
 
+    // Handle Stripe Connect onboarding return
+    const connected = params.get("connected");
+    if (connected === "true") showToast("Stripe account connected! You can now receive payments. 💰");
+
     // Handle referral code from URL
     const refCode = params.get("ref");
     if (refCode) {
