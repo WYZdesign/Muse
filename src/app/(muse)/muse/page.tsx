@@ -18,6 +18,7 @@ import SafetyCheckinModal from "./components/SafetyCheckinModal";
 import PromptBankModal from "./components/PromptBankModal";
 import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
+import PaymentHistory from "./components/PaymentHistory";
 import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, CONNECTIONS, PC, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CONN_TYPES, ICEBREAKERS, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Brief, type Match, type Screen } from "./components/types";
 
 function getAccessToken(): string {
@@ -217,6 +218,7 @@ function MusePage() {
   const [promptResponses, setPromptResponses] = useState<any[]>([]);
   const [showReferral, setShowReferral] = useState(false);
   const [showConnect, setShowConnect] = useState(false);
+  const [showPaymentHistory, setShowPaymentHistory] = useState(false);
 
   useEffect(() => {
     try {
@@ -2675,6 +2677,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 {[
                   {icon:<FiZap size={18}/>,label:"Subscription",desc:"Manage your plan",action:()=>showScreen("subscription")},
                   {icon:<FiDollarSign size={18}/>,label:"Marketplace Payments",desc:"Connect Stripe to receive bookings",action:()=>setShowConnect(true)},
+                  {icon:<FiDollarSign size={18}/>,label:"Payment History",desc:"View earnings and transactions",action:()=>setShowPaymentHistory(true)},
                   {icon:<FiGift size={18}/>,label:"Referral Program",desc:"Invite friends, earn free months",action:()=>setShowReferral(true)},
                   {icon:<FiShield size={18}/>,label:"Safety Center",desc:"Check-ins, emergency contacts, trusted friends",action:()=>setShowSafetyCheckin(true)},
                   {icon:<FiStar size={18}/>,label:"Profile Completion",desc:`${Math.round((promptResponses.length / Math.max(promptBankData.length, 1)) * 100)}% — answer prompts to improve matches`,action:()=>setShowPromptBank(true)},
@@ -3064,6 +3067,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
       {/* ══════ STRIPE CONNECT PANEL ══════ */}
       {showConnect && (
         <ConnectPanel onClose={() => setShowConnect(false)} />
+      )}
+      {/* ══════ PAYMENT HISTORY ══════ */}
+      {showPaymentHistory && (
+        <PaymentHistory userId={authUser?.id || ""} onClose={() => setShowPaymentHistory(false)} />
       )}
     </div>
   );

@@ -1114,7 +1114,23 @@ export async function POST(req: NextRequest) {
     }
 
     // ════════════════════════════════════════════════════════════════
-    // ADMIN — moderation panel data
+    // PAYMENT HISTORY — bookings where user is payer or payee
+    // ════════════════════════════════════════════════════════════════
+
+    if (actionType === "get-payments") {
+      const { data: asPayee } = await sb.from("muse_booking_payments").select("*, payer_id(name, avatar), payee_id(name, avatar), booking_id(session_id, status)")
+        .eq("payee_id", profile.id).order("created_at", { ascending: false }).limit(50);
+      const { data: asPayer } = await sb.from("muse_booking_payments").select("*, payer_id(name, avatar), payee_id(name, avatar), booking_id(session_id, status)")
+        .eq("payer_id", profile.id).order("created_at", { ascending: false }).limit(50);
+      // Merge and dedupe
+      const all = [...(asPayee || []), ...(asPayer || [])];
+      const deduped = Array.from(new Map(all.map((p: any) => [p.id, p])).values());
+      deduped.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      return NextResponse.json({ payments: deduped });
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // ADMIN — suspension
     // ════════════════════════════════════════════════════════════════
 
     if (actionType === "admin-reports") {
