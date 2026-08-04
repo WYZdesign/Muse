@@ -430,6 +430,12 @@ function MusePage() {
     if (refCode) {
       setObData(prev => ({ ...prev, referralCode: refCode.toUpperCase() }));
       localStorage.setItem("muse_referral_code", refCode.toUpperCase());
+    } else {
+      // Load stored referral code from localStorage
+      try {
+        const stored = localStorage.getItem("muse_referral_code");
+        if (stored) setObData(prev => ({ ...prev, referralCode: stored }));
+      } catch {}
     }
 
     // Handle OAuth redirect: Supabase returns tokens in URL hash or via getSession
