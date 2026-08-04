@@ -107,6 +107,7 @@ function MusePage() {
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editLoc, setEditLoc] = useState("");
+  const [editAvatar, setEditAvatar] = useState("");
   const [showShareProfile, setShowShareProfile] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [reportTarget, setReportTarget] = useState<{id:number|string;type:string;name:string} | null>(null);
@@ -147,6 +148,7 @@ function MusePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const editAvatarInputRef = useRef<HTMLInputElement>(null);
 
   // Personality Discovery
   const [obStep10Known, setObStep10Known] = useState<"yes"|"no"|"test"|null>(null);
@@ -349,7 +351,12 @@ function MusePage() {
       if (d.activityFeed) setActivityFeed(d.activityFeed);
       if (d.discoveryPrefs) setDiscoveryPrefs(d.discoveryPrefs);
       if (d.chatImages) setChatImages(d.chatImages);
-      if (d.screen && ["onboard","discover","connections","matches","chat","briefs","portfolio","moments","profile","settings","subscription"].includes(d.screen)) setScreen(d.screen);
+      if (d.screen && ["onboard","discover","connections","matches","chat","briefs","portfolio","moments","profile","settings","subscription"].includes(d.screen)) {
+        // Chat requires a chatTarget to render (screen-el guards on chatTarget);
+        // chatTarget is not persisted, so a restored "chat" screen would render
+        // a blank phone. Fall back to matches instead.
+        setScreen(d.screen === "chat" ? "matches" : d.screen);
+      }
       if (d.authUser) setAuthUser(d.authUser);
       if (d.authUser && !["onboard","discover","connections","matches","chat","briefs","portfolio","moments","profile","settings","subscription"].includes(d.screen||"")) setScreen("discover");
     } catch(e) {}
@@ -789,7 +796,7 @@ function MusePage() {
   }, [chatTarget?.id, authUser?.id]);
 
   const saveProfileEdits = useCallback(async () => {
-    setCurrentUser(prev => ({ ...prev, name: editName || prev.name }));
+    setCurrentUser(prev => ({ ...prev, name: editName || prev.name, avatar: editAvatar || prev.avatar }));
     setObData(prev => ({ ...prev, bio: editBio, loc: editLoc }));
     const geo = await getGeolocation();
     setShowEditProfile(false);
@@ -802,12 +809,13 @@ function MusePage() {
           name: editName,
           bio: editBio,
           loc: editLoc,
+          avatar: editAvatar,
           ...(geo ? { lat: geo.lat, long: geo.long, city: geo.city } : {}),
         }),
       });
     } catch {}
     showToast("Saved!");
-  }, [editName, editBio, editLoc, showToast]);
+  }, [editName, editBio, editLoc, editAvatar, showToast]);
 
   const toggleObSelect = (key: string, val: string | number) => {
     setObData(prev => ({ ...prev, [key]: val }));
@@ -857,6 +865,7 @@ function MusePage() {
       <BackgroundScene flash={screenFlash} />
       {showMatchOverlay && (
         <div className="match-overlay" onClick={() => setShowMatchOverlay(null)}>
+          <button className="match-overlay-close" onClick={(e)=>{e.stopPropagation();setShowMatchOverlay(null)}} aria-label="Close"><FiX size={22} /></button>
           {Array.from({length:40}).map((_,i)=><div key={i} className="confetti-piece" style={{
             left:Math.random()*100+"%",
             width:(Math.random()*6+4)+"px",
@@ -2256,7 +2265,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div className="hdr">
                 <div className="logo-link">muse</div>
                 <div style={{display:"flex",gap:10}}>
-                  <button className="hdr-btn" onClick={()=>setShowEditProfile(true)}><FiEdit2 size={18} /></button>
+                  <button className="hdr-btn" onClick={()=>{setEditName(currentUser.name);setEditBio(obData.bio||"");setEditLoc(obData.loc||"");setEditAvatar(currentUser.avatar||"");setShowEditProfile(true)}}><FiEdit2 size={18} /></button>
                   <button className="hdr-btn" onClick={()=>setScreen("settings")}><FiSettings size={18} /></button>
                 </div>
               </div>
@@ -2352,7 +2361,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     })}
                   </div>
                 </div>
-                <div className="profile-btn"><button className="btn btn-outline" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio||""); setEditLoc(obData.loc||""); setShowEditProfile(true); }}>Edit Profile</button></div>
+                <div className="profile-btn"><button className="btn btn-outline" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio||""); setEditLoc(obData.loc||""); setEditAvatar(currentUser.avatar||""); setShowEditProfile(true); }}>Edit Profile</button></div>
                 <div className="profile-btn"><button className="btn btn-outline" onClick={() => setShowShareProfile(true)}>Share Profile</button></div>
                 <div className="profile-btn"><button className="btn btn-outline" style={{borderColor:"rgba(255,138,128,0.2)",color:"var(--coral)"}} onClick={doLogout}>Log Out</button></div>
               </div>
@@ -2419,6 +2428,13 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <button className="modal-close" onClick={()=>setShowEditProfile(false)}><FiX size={18} /></button>
           </div>
           <div className="modal-body">
+            <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
+              <div style={{position:"relative"}}>
+                <img src={editAvatar || currentUser.avatar} alt="" style={{width:88,height:88,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--gold)",background:"#1a0a2e"}} onError={handleImgError} />
+                <button type="button" onClick={()=>editAvatarInputRef.current?.click()} style={{position:"absolute",bottom:0,right:0,width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,var(--gold),var(--amber))",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#0a0612"}} title="Upload profile photo" aria-label="Upload profile photo">+</button>
+                <input ref={editAvatarInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setEditAvatar(url);showToast("Photo added!")}}}} />
+              </div>
+            </div>
             <input className="inp" placeholder="Display Name" value={editName} onChange={e=>setEditName(e.target.value)} />
             <textarea className="inp" placeholder="Bio" rows={3} value={editBio} onChange={e=>setEditBio(e.target.value)} />
             <input className="inp" placeholder="Location" value={editLoc} onChange={e=>setEditLoc(e.target.value)} />
@@ -2490,7 +2506,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div className="settings-group">
                 <div className="settings-group-title">Account</div>
                 {[
-                  {icon:<FiUser size={18}/>,label:"Edit Profile",desc:"Name, bio, photos",action:()=>setShowEditProfile(true)},
+                  {icon:<FiUser size={18}/>,label:"Edit Profile",desc:"Name, bio, photos",action:()=>{setEditName(currentUser.name);setEditBio(obData.bio||"");setEditLoc(obData.loc||"");setEditAvatar(currentUser.avatar||"");setShowEditProfile(true)}},
                   {icon:<FiSettings size={18}/>,label:"Notifications",desc:"Push and email alerts",action:()=>setShowNotificationsSettings(!showNotificationsSettings)},
                   {icon:<FiLink size={18}/>,label:"Connected Accounts",desc:"Instagram, Spotify, etc.",action:()=>setShowConnectedAccounts(!showConnectedAccounts)},
                   {icon:<FiStar size={18}/>,label:"Personality Profile",desc:"Zodiac, MBTI, Life Path",action:()=>{setScreen("onboard");setObStep(7)}},
