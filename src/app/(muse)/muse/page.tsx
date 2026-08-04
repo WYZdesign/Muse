@@ -6,7 +6,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
 import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles } from "@/app/muse-realtime";
-import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2 } from "react-icons/fi";
+import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2, FiShield } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import Nav from "./components/Nav";
 import AlbumGallery from "./components/AlbumGallery";
@@ -15,6 +15,7 @@ import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
 import DisclosureModal from "./components/DisclosureModal";
 import SafetyCheckinModal from "./components/SafetyCheckinModal";
+import PromptBankModal from "./components/PromptBankModal";
 import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, CONNECTIONS, PC, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CONN_TYPES, ICEBREAKERS, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Brief, type Match, type Screen } from "./components/types";
 
 function getAccessToken(): string {
@@ -771,6 +772,18 @@ function MusePage() {
     const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const clean = sanitizeInput(chatInput.trim());
     if (!clean) return;
+
+    // ═══ DISCLOSURE TRIGGER ═══
+    // Intercept messages containing payment + NSFW keywords → show disclosure form
+    const lower = clean.toLowerCase();
+    const hasPayment = /\$[\d]+|\bpay\b|\bcompensation\b|\brate\b|\bbudget\b|\bfee\b|\bcharged?\b/i.test(lower);
+    const hasNsfw = /\bnude\b|\bnudity\b|\bnsfw\b|\bnsf[ww]\b|\bexplicit\b|\bboudoir\b|\bpenetrat\b|\bsexual\b|\berotic\b|\btopless\b|\bundressed\b|\bintimate\b|\bsensual\b|\badult\b/i.test(lower);
+    if (hasPayment && hasNsfw) {
+      setDisclosureTarget({ id: String(chatTarget.id), name: chatTarget.name || "Unknown" });
+      setShowDisclosureModal(true);
+      return; // Don't send the raw message — disclosure replaces it
+    }
+
     const userMsg = { from: "me", text: clean, time: now };
     const targetId = String(chatTarget.id);
     setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, userMsg] } : prev);
@@ -811,6 +824,30 @@ function MusePage() {
     });
     return unsub;
   }, [chatTarget?.id, authUser?.id]);
+
+  // ═══ SAFETY: fetch check-ins and safety profile on mount ═══
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    const token = getAccessToken();
+    if (!token) return;
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+    fetch("/api/muse", { method: "POST", headers, body: JSON.stringify({ type: "get-checkins" }) })
+      .then(r => r.json()).then(d => { if (d.checkins) setSafetyCheckins(d.checkins); }).catch(() => {});
+    fetch("/api/muse", { method: "POST", headers, body: JSON.stringify({ type: "get-safety-profile" }) })
+      .then(r => r.json()).then(d => { if (d.safety) setSafetyProfile(d.safety); }).catch(() => {});
+  }, [authUser?.profile?.id]);
+
+  // ═══ PROMPTS: fetch prompt bank and user responses ═══
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    const token = getAccessToken();
+    if (!token) return;
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+    fetch("/api/muse", { method: "POST", headers, body: JSON.stringify({ type: "get-prompts" }) })
+      .then(r => r.json()).then(d => { if (d.prompts) setPromptBankData(d.prompts); }).catch(() => {});
+    fetch("/api/muse", { method: "POST", headers, body: JSON.stringify({ type: "get-prompt-responses" }) })
+      .then(r => r.json()).then(d => { if (d.responses) setPromptResponses(d.responses); }).catch(() => {});
+  }, [authUser?.profile?.id]);
 
   const saveProfileEdits = useCallback(async () => {
     setCurrentUser(prev => ({ ...prev, name: editName || prev.name, avatar: editAvatar || prev.avatar }));
@@ -2613,6 +2650,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 <div className="settings-group-title">Support</div>
                 {[
                   {icon:<FiZap size={18}/>,label:"Subscription",desc:"Manage your plan",action:()=>showScreen("subscription")},
+                  {icon:<FiShield size={18}/>,label:"Safety Center",desc:"Check-ins, emergency contacts, trusted friends",action:()=>setShowSafetyCheckin(true)},
+                  {icon:<FiStar size={18}/>,label:"Profile Completion",desc:`${Math.round((promptResponses.length / Math.max(promptBankData.length, 1)) * 100)}% — answer prompts to improve matches`,action:()=>setShowPromptBank(true)},
                   {icon:<FiFile size={18}/>,label:"Terms of Service",desc:"Legal terms",action:()=>setShowTerms(true)},
                   {icon:<FiFile size={18}/>,label:"Privacy Policy",desc:"How we handle your data",action:()=>setShowPrivacy(true)},
                   {icon:<FiFile size={18}/>,label:"Community Guidelines",desc:"Standards & expectations",action:()=>setShowGuidelines(true)},
@@ -2970,6 +3009,26 @@ const isMatch=matchScore>55||Math.random()>0.5;
             setToastMsg("Details shared with trusted contact");
           }}
           onClose={() => setShowSafetyCheckin(false)}
+        />
+      )}
+      {/* ══════ PROMPT BANK MODAL ══════ */}
+      {showPromptBank && (
+        <PromptBankModal
+          prompts={promptBankData}
+          responses={promptResponses}
+          onSaveResponse={async (promptId, text, choices) => {
+            const r = await fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ type: "save-prompt-response", promptId, responseText: text, responseChoices: choices }) });
+            const d = await r.json();
+            if (d.success) {
+              setPromptResponses(prev => {
+                const existing = prev.findIndex(r => r.prompt_id === promptId);
+                const newResp = { id: "new", prompt_id: promptId, response_text: text, response_choices: choices };
+                if (existing >= 0) { const copy = [...prev]; copy[existing] = newResp; return copy; }
+                return [...prev, newResp];
+              });
+            }
+          }}
+          onClose={() => setShowPromptBank(false)}
         />
       )}
     </div>
