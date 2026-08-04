@@ -6,7 +6,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
 import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles } from "@/app/muse-realtime";
-import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2, FiShield } from "react-icons/fi";
+import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2, FiShield, FiGift, FiDollarSign } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import Nav from "./components/Nav";
 import AlbumGallery from "./components/AlbumGallery";
@@ -16,6 +16,8 @@ import SwipeParticles from "./components/SwipeParticles";
 import DisclosureModal from "./components/DisclosureModal";
 import SafetyCheckinModal from "./components/SafetyCheckinModal";
 import PromptBankModal from "./components/PromptBankModal";
+import ReferralPanel from "./components/ReferralPanel";
+import ConnectPanel from "./components/ConnectPanel";
 import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, CONNECTIONS, PC, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CONN_TYPES, ICEBREAKERS, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Brief, type Match, type Screen } from "./components/types";
 
 function getAccessToken(): string {
@@ -52,7 +54,7 @@ function MusePage() {
   const [showPass, setShowPass] = useState(false);
   const [authUser, setAuthUser] = useState<{id:string;email:string;profile?:{id:string;[key:string]:unknown}}|null>(null);
   const [obStep, setObStep] = useState(0);
-   const [obData, setObData] = useState<{name?:string;loc?:string;bio?:string;type?:string;looking?:string[];conn?:string[];styles?:string[];zodiac?:string;chinese?:string;mbti?:string;lifePath?:number}>({});
+   const [obData, setObData] = useState<{name?:string;loc?:string;bio?:string;type?:string;looking?:string[];conn?:string[];styles?:string[];zodiac?:string;chinese?:string;mbti?:string;lifePath?:number;referralCode?:string}>({});
    const [currentUser, setCurrentUser] = useState({ id:"you", name:"You", type:"Photographer", exp:"New here", avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", stats:{matches:0,likes:0,superLikes:0,passes:0,bookingsCompleted:0,matchesReceived:0,messagesSent:0}, createdAt:Date.now(), referrals:0, portfolios:[] as {img:string;title:string;type:string}[] });
    const [excludedPortfolios, setExcludedPortfolios] = useState<string[]>(EXCLUDED_PORTFOLIOS);
    const [portfolioAccess, setPortfolioAccess] = useState<{[key: string]: "public" | "private" | "invite"}>({});
@@ -213,6 +215,8 @@ function MusePage() {
   const [showPromptBank, setShowPromptBank] = useState(false);
   const [promptBankData, setPromptBankData] = useState<any[]>([]);
   const [promptResponses, setPromptResponses] = useState<any[]>([]);
+  const [showReferral, setShowReferral] = useState(false);
+  const [showConnect, setShowConnect] = useState(false);
 
   useEffect(() => {
     try {
@@ -276,22 +280,22 @@ function MusePage() {
   // Pulls real data from the API on mount; silently keeps the static demo
   // arrays when the table is empty or the request fails (graceful fallback).
   const bootstrapData = useCallback(async () => {
-    const mapProfile = (p: any) => ({
-      id: p.id, name: p.name || "Creative", img: p.avatar || "", type: p.type || "artist",
-      bio: p.bio || "", loc: p.loc || "Unknown", styles: Array.isArray(p.styles) ? p.styles : [],
-      score: 70, nsfw: !!p.show_nsfw, looking: Array.isArray(p.looking) ? p.looking : [],
-      zodiac: p.zodiac || "", chinese: p.chinese || "", mbti: p.mbti || "", lifePath: p.life_path || "",
-      photos: Array.isArray(p.photos) ? p.photos : [], collabs: p.collabs || 0, verified: !!p.verified
-    });
     try {
-      const [profiles, briefs, feed, forum, events] = await Promise.all([
-        apiFetch("/api/muse?type=profiles").then(r => r.ok ? r.json() : null).catch(() => null),
+      const [matchData, briefs, feed, forum, events] = await Promise.all([
+        apiFetch("/api/muse/match?limit=50").then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch("/api/muse?type=briefs").then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch("/api/muse?type=feed").then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch("/api/muse?type=forum").then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch("/api/muse?type=events").then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
-      if (profiles?.profiles?.length) setLiveProfiles(profiles.profiles.map(mapProfile));
+      if (matchData?.profiles?.length) setLiveProfiles(matchData.profiles.map((p: any) => ({
+        id: p.id, name: p.name || "Creative", img: p.avatar || "", type: p.type || "artist",
+        bio: p.bio || "", loc: p.loc || "Unknown", styles: Array.isArray(p.styles) ? p.styles : [],
+        score: p.matchScore || 70, nsfw: !!p.show_nsfw, looking: Array.isArray(p.looking) ? p.looking : [],
+        zodiac: p.zodiac || "", chinese: p.chinese || "", mbti: p.mbti || "", lifePath: p.life_path || "",
+        photos: Array.isArray(p.photos) ? p.photos : [], collabs: p.collabs || 0, verified: !!p.verified,
+        matchScore: p.matchScore, rulesScore: p.rulesScore, cosineScore: p.cosineScore,
+      })));
       if (briefs?.briefs?.length) setLiveBriefs(briefs.briefs);
       if (feed?.posts?.length) {
         setLiveFeed(feed.posts);
@@ -418,6 +422,13 @@ function MusePage() {
     const params = new URLSearchParams(window.location.search);
     const upgraded = params.get("upgraded");
     if (upgraded) showToast("Welcome to Muse " + (upgraded.charAt(0).toUpperCase() + upgraded.slice(1)) + "! ✨");
+
+    // Handle referral code from URL
+    const refCode = params.get("ref");
+    if (refCode) {
+      setObData(prev => ({ ...prev, referralCode: refCode.toUpperCase() }));
+      localStorage.setItem("muse_referral_code", refCode.toUpperCase());
+    }
 
     // Handle OAuth redirect: Supabase returns tokens in URL hash or via getSession
     (async () => {
@@ -658,7 +669,7 @@ function MusePage() {
     if (dir === "right" || dir === "super") {
       if (!userDefaultIntent) { setIntentProfile(p); setShowIntentPicker(true); swipeLocked.current = false; return; }
       const intent = dir === "super" ? "super" : userDefaultIntent;
-      const matchScore = calcMatch({ styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath }, p);
+      const matchScore = (p as any).matchScore ?? calcMatch({ styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath }, p);
         const isMatch = matchScore > 55 || Math.random() > 0.5;
       if (isMatch) {
         const newMatch: Match = { ...p, messages: [] };
@@ -961,7 +972,7 @@ function MusePage() {
                   const p = intentProfile;
                   setIntentProfile(null);
                   if(!p) return;
-                  const matchScore=calcMatch({styles:obData.styles||[],looking:obData.looking||[],zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,lifePath:obData.lifePath},p);
+                  const matchScore = (p as any).matchScore ?? calcMatch({styles:obData.styles||[],looking:obData.looking||[],zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,lifePath:obData.lifePath},p);
 const isMatch=matchScore>55||Math.random()>0.5;
                    if(isMatch){
                      const newMatch:Match={...p,messages:[],intent};
@@ -1660,6 +1671,15 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div className="sparkle" style={{bottom:"15%",right:"6%",fontSize:16}}>✧</div>
                     <div className="step-title" style={{fontSize:32}}>You're All Set!</div>
                     <div className="step-sub">Ready to find your creative connections?</div>
+                    <div style={{width:"100%",maxWidth:360,marginBottom:16}}>
+                      <div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginBottom:6}}>Have a referral code? (optional)</div>
+                      <div style={{display:"flex",gap:8}}>
+                        <input className="inp" placeholder="MUSE-XXXXXX" value={obData.referralCode || ""} onChange={e=>setObData(prev=>({...prev,referralCode:e.target.value}))} style={{margin:0,flex:1,textTransform:"uppercase",letterSpacing:1,fontFamily:"monospace"}} />
+                      </div>
+                      {obData.referralCode && obData.referralCode.length >= 6 && (
+                        <div style={{fontSize:11,color:"#4ecdc4",marginTop:6}}>🎉 You and your friend will both get a free month when you subscribe!</div>
+                      )}
+                    </div>
                     <button className="btn btn-gold" onClick={async ()=>{
                       setCurrentUser(prev=>({...prev,name:obData.name||prev.name,type:obData.type||prev.type,avatar:obProfilePic||prev.avatar}));
                       const geo = await getGeolocation();
@@ -1671,6 +1691,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                           avatar:obProfilePic,
                           ...(geo ? { lat: geo.lat, long: geo.long, city: geo.city } : {})
                         }})});}catch(e){}
+                        // Apply referral code if entered
+                        if (obData.referralCode) {
+                          try { await fetch("/api/muse/referral", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ action: "apply", referralCode: obData.referralCode.trim().toUpperCase() }) }); } catch {}
+                        }
                       }
                       setScreen("discover");showToast("Welcome to Muse!")
                     }}>Enter Muse</button>
@@ -2650,6 +2674,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 <div className="settings-group-title">Support</div>
                 {[
                   {icon:<FiZap size={18}/>,label:"Subscription",desc:"Manage your plan",action:()=>showScreen("subscription")},
+                  {icon:<FiDollarSign size={18}/>,label:"Marketplace Payments",desc:"Connect Stripe to receive bookings",action:()=>setShowConnect(true)},
+                  {icon:<FiGift size={18}/>,label:"Referral Program",desc:"Invite friends, earn free months",action:()=>setShowReferral(true)},
                   {icon:<FiShield size={18}/>,label:"Safety Center",desc:"Check-ins, emergency contacts, trusted friends",action:()=>setShowSafetyCheckin(true)},
                   {icon:<FiStar size={18}/>,label:"Profile Completion",desc:`${Math.round((promptResponses.length / Math.max(promptBankData.length, 1)) * 100)}% — answer prompts to improve matches`,action:()=>setShowPromptBank(true)},
                   {icon:<FiFile size={18}/>,label:"Terms of Service",desc:"Legal terms",action:()=>setShowTerms(true)},
@@ -3030,6 +3056,14 @@ const isMatch=matchScore>55||Math.random()>0.5;
           }}
           onClose={() => setShowPromptBank(false)}
         />
+      )}
+      {/* ══════ REFERRAL PANEL ══════ */}
+      {showReferral && (
+        <ReferralPanel onClose={() => setShowReferral(false)} />
+      )}
+      {/* ══════ STRIPE CONNECT PANEL ══════ */}
+      {showConnect && (
+        <ConnectPanel onClose={() => setShowConnect(false)} />
       )}
     </div>
   );

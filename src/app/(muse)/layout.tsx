@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: "Muse — Where Creatives Connect",
   description: "Find your creative match. AI-powered matchmaking for photographers, models, filmmakers, musicians, designers, and artists.",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png", shortcut: "/favicon.ico" },
+  icons: { icon: "/muse-icon.png", apple: "/apple-touch-icon.png", shortcut: "/muse-icon.png" },
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Muse", startupImage: "/apple-touch-icon.png" },
   openGraph: { title: "Muse — Where Creatives Connect", description: "AI-powered matchmaking for creatives. Find your muse.", url: "https://muse.wyzdesign.com/muse", siteName: "Muse", type: "website", images: [{ url: "https://muse.wyzdesign.com/og-image.png", width: 1200, height: 1200, alt: "Muse — Where Creatives Connect" }] },
   twitter: { card: "summary_large_image", title: "Muse — Where Creatives Connect", description: "AI-powered matchmaking for creatives. Find your muse.", images: ["https://muse.wyzdesign.com/og-image.png"] },

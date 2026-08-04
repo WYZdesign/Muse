@@ -1,4 +1,4 @@
-export type Profile = typeof PROFILES[number] & { photos?: string[]; badges?: {name:string;desc:string;icon:string;color:string}[] };
+export type Profile = typeof PROFILES[number] & { photos?: string[]; badges?: {name:string;desc:string;icon:string;color:string}[]; matchScore?: number; rulesScore?: number; cosineScore?: number };
 export type Brief = typeof BRIEFS[number];
 export type Match = Partial<Profile> & {
   id: number; name: string; img: string; type: string;
