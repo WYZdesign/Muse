@@ -13,6 +13,8 @@ import AlbumGallery from "./components/AlbumGallery";
 import MyAlbumsManager from "./components/MyAlbumsManager";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
+import DisclosureModal from "./components/DisclosureModal";
+import SafetyCheckinModal from "./components/SafetyCheckinModal";
 import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, CONNECTIONS, PC, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CONN_TYPES, ICEBREAKERS, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Brief, type Match, type Screen } from "./components/types";
 
 function getAccessToken(): string {
@@ -198,6 +200,18 @@ function MusePage() {
       return false;
     } catch { return false; }
   });
+
+  // ═══ TRUST & SAFETY STATE ═══
+  const [showDisclosureModal, setShowDisclosureModal] = useState(false);
+  const [disclosureTarget, setDisclosureTarget] = useState<{id:string;name:string} | null>(null);
+  const [disclosureBookingId, setDisclosureBookingId] = useState<string | undefined>();
+  const [existingDisclosure, setExistingDisclosure] = useState<Record<string, unknown> | null>(null);
+  const [showSafetyCheckin, setShowSafetyCheckin] = useState(false);
+  const [safetyCheckins, setSafetyCheckins] = useState<any[]>([]);
+  const [safetyProfile, setSafetyProfile] = useState<any>(null);
+  const [showPromptBank, setShowPromptBank] = useState(false);
+  const [promptBankData, setPromptBankData] = useState<any[]>([]);
+  const [promptResponses, setPromptResponses] = useState<any[]>([]);
 
   useEffect(() => {
     try {
@@ -2917,6 +2931,46 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
           </div>
         </div>
+      )}
+      {/* ══════ DISCLOSURE MODAL ══════ */}
+      {showDisclosureModal && disclosureTarget && (
+        <DisclosureModal
+          responderName={disclosureTarget.name}
+          responderId={disclosureTarget.id}
+          bookingId={disclosureBookingId}
+          existingDisclosure={existingDisclosure}
+          onSubmit={async (form) => {
+            const r = await fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ type: "create-disclosure", ...form, responderId: disclosureTarget.id, bookingId: disclosureBookingId }) });
+            const d = await r.json();
+            if (d.blocked) { setShowDisclosureModal(false); setToastMsg("Request blocked — violates Muse terms"); return; }
+            if (d.success) { setShowDisclosureModal(false); setToastMsg("Disclosure sent for review"); }
+          }}
+          onCancel={() => { setShowDisclosureModal(false); setDisclosureTarget(null); }}
+          onConfirm={existingDisclosure ? async (discId) => {
+            await fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ type: "confirm-disclosure", disclosureId: discId }) });
+            setShowDisclosureModal(false); setToastMsg("Disclosure confirmed ✓");
+          } : undefined}
+        />
+      )}
+      {/* ══════ SAFETY CHECK-IN MODAL ══════ */}
+      {showSafetyCheckin && (
+        <SafetyCheckinModal
+          checkins={safetyCheckins}
+          safetyProfile={safetyProfile}
+          onRespond={async (id, response, shared, reason) => {
+            await fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ type: "respond-checkin", checkinId: id, response, sharedWithContact: shared, reason }) });
+            setSafetyCheckins(prev => prev.map(c => c.id === id ? { ...c, status: response, responded_at: new Date().toISOString() } : c));
+          }}
+          onSaveSafetyProfile={async (profile) => {
+            await fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ type: "save-safety-profile", ...profile }) });
+            setSafetyProfile(profile); setToastMsg("Safety profile saved");
+          }}
+          onShareDetails={async (bookingId, method) => {
+            await fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ type: "share-safety-details", bookingId, shareMethod: method }) });
+            setToastMsg("Details shared with trusted contact");
+          }}
+          onClose={() => setShowSafetyCheckin(false)}
+        />
       )}
     </div>
   );

@@ -50,7 +50,8 @@ export default function AdminDashboard() {
     <div style={{ minHeight: "100vh", background: "#0a0612", color: "#f5f0ff", padding: "32px 24px", fontFamily: "system-ui, sans-serif" }}>
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Muse — Admin Dashboard</h1>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 28 }}>Real aggregated data from Supabase. No AI/chat layer — none is configured in this environment.</p>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>Real aggregated data from Supabase. No AI/chat layer — none is configured in this environment.</p>
+        <a href="/muse/admin/moderation" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 10, background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "#ffd700", fontSize: 13, fontWeight: 600, textDecoration: "none", marginBottom: 24 }}>🛡️ Moderation Panel →</a>
 
         {status === "loading" && <p style={{ color: "rgba(255,255,255,0.6)" }}>Loading…</p>}
         {status === "unauthenticated" && (

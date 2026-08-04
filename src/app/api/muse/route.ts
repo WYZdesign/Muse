@@ -647,6 +647,499 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // DISCLOSURE SYSTEM — structured booking agreements
+    // ════════════════════════════════════════════════════════════════
+
+    if (actionType === "create-disclosure") {
+      if (!checkRate(ip, "create-disclosure", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const {
+        responderId, bookingId,
+        compensationAmount, compensationTiming, compensationMethod,
+        contentTypeNudity, contentTypeArtisticNude, contentTypeBoudoir, contentTypePortrait,
+        contentTypeFashion, contentTypeEditorial, contentTypeCommercial, contentTypeConceptual,
+        contentTypeOther, contentTypeOtherDesc,
+        boundaryFullNudity, boundaryImpliedNudity, boundaryPartials, boundaryNoPartials,
+        boundaryExplicitActs, boundaryPenetration, boundaryNoPenetration,
+        boundaryTouchingSelf, boundaryTouchingOther, boundaryNoTouching,
+        locationType, locationAddress, locationPublic,
+        othersPresent, othersCount, othersDesc,
+        usageRights, usageCustomDesc, editApprovalRequired, ndaRequired, modelReleaseRequired
+      } = rest;
+
+      if (!responderId) return NextResponse.json({ error: "responderId required" }, { status: 400 });
+
+      // HARD BLOCK: NSFW + payment combo → never proceed to disclosure
+      const hasNsfw = contentTypeNudity || contentTypeArtisticNude || boundaryExplicitActs || boundaryPenetration;
+      const hasPayment = compensationAmount && compensationAmount !== "0" && compensationAmount !== "Free";
+      if (hasNsfw && hasPayment) {
+        // Create a blocked disclosure record for audit trail
+        await sb.from("muse_disclosures").insert({
+          proposer_id: profile.id, responder_id: responderId, booking_id: bookingId || null,
+          status: "blocked", blocked_reason: "NSFW content with payment — violates Muse terms",
+          compensation_amount: compensationAmount || "",
+          content_type_nudity: !!contentTypeNudity,
+          content_type_artistic_nude: !!contentTypeArtisticNude,
+          boundary_explicit_acts: !!boundaryExplicitActs,
+          boundary_penetration: !!boundaryPenetration,
+        });
+        // Auto-strike the user (high-severity)
+        await sb.from("muse_strikes").insert({
+          user_id: profile.id, category: "high_severity", severity: "suspension",
+          reason: "Attempted to arrange paid explicit sexual content",
+          details: "Disclosure was hard-blocked: NSFW content + payment combination",
+        });
+        await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "disclosure_blocked", details: { responder_id: responderId } });
+        return NextResponse.json({ error: "This request violates Muse terms and has been blocked.", blocked: true }, { status: 403 });
+      }
+
+      const { data, error } = await sb.from("muse_disclosures").insert({
+        proposer_id: profile.id, responder_id: responderId, booking_id: bookingId || null,
+        compensation_amount: String(compensationAmount || ""),
+        compensation_timing: String(compensationTiming || ""),
+        compensation_method: String(compensationMethod || ""),
+        content_type_nudity: !!contentTypeNudity,
+        content_type_artistic_nudity: !!contentTypeArtisticNude,
+        content_type_boudoir: !!contentTypeBoudoir,
+        content_type_portrait: !!contentTypePortrait,
+        content_type_fashion: !!contentTypeFashion,
+        content_type_editorial: !!contentTypeEditorial,
+        content_type_commercial: !!contentTypeCommercial,
+        content_type_conceptual: !!contentTypeConceptual,
+        content_type_other: !!contentTypeOther,
+        content_type_other_desc: String(contentTypeOtherDesc || ""),
+        boundary_full_nudity: !!boundaryFullNudity,
+        boundary_implied_nudity: !!boundaryImpliedNudity,
+        boundary_partials: !!boundaryPartials,
+        boundary_no_partials: !!boundaryNoPartials,
+        boundary_explicit_acts: !!boundaryExplicitActs,
+        boundary_penetration: !!boundaryPenetration,
+        boundary_no_penetration: !!boundaryNoPenetration,
+        boundary_touching_self: !!boundaryTouchingSelf,
+        boundary_touching_other: !!boundaryTouchingOther,
+        boundary_no_touching: !!boundaryNoTouching,
+        location_type: String(locationType || ""),
+        location_address: String(locationAddress || ""),
+        location_public: locationPublic !== false,
+        others_present: !!othersPresent,
+        others_count: parseInt(othersCount) || 0,
+        others_desc: String(othersDesc || ""),
+        usage_rights: String(usageRights || ""),
+        usage_custom_desc: String(usageCustomDesc || ""),
+        edit_approval_required: !!editApprovalRequired,
+        nda_required: !!ndaRequired,
+        model_release_required: !!modelReleaseRequired,
+        status: "pending_responder",
+      }).select().single();
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      // Notify responder
+      await sb.from("muse_notifications").insert({
+        user_id: responderId, from_id: profile.id, type: "disclosure",
+        body: `${profile.name} sent a shoot disclosure for your review`, read: false
+      });
+      return NextResponse.json({ success: true, disclosure: data });
+    }
+
+    if (actionType === "confirm-disclosure") {
+      const { disclosureId } = rest;
+      if (!disclosureId) return NextResponse.json({ error: "disclosureId required" }, { status: 400 });
+      const { data: disc } = await sb.from("muse_disclosures").select("*").eq("id", disclosureId).maybeSingle();
+      if (!disc) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      const isProposer = String(disc.proposer_id) === String(profile.id);
+      const isResponder = String(disc.responder_id) === String(profile.id);
+      if (!isProposer && !isResponder) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+      const updates: Record<string, unknown> = {};
+      if (isProposer && disc.status === "pending_proposer") {
+        updates.status = "pending_responder";
+        updates.proposer_confirmed_at = new Date().toISOString();
+      } else if (isResponder && disc.status === "pending_responder") {
+        updates.status = "confirmed";
+        updates.responder_confirmed_at = new Date().toISOString();
+      } else {
+        return NextResponse.json({ error: "Cannot confirm in current state" }, { status: 400 });
+      }
+
+      const { error } = await sb.from("muse_disclosures").update(updates).eq("id", disclosureId);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      if (updates.status === "confirmed") {
+        const otherUserId = isProposer ? disc.responder_id : disc.proposer_id;
+        await sb.from("muse_notifications").insert({
+          user_id: otherUserId, from_id: profile.id, type: "disclosure_confirmed",
+          body: `${profile.name} confirmed the shoot disclosure`, read: false
+        });
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    if (actionType === "get-disclosures") {
+      const { data } = await sb.from("muse_disclosures").select("*, proposer_id(id, name, avatar), responder_id(id, name, avatar)")
+        .or(`proposer_id.eq.${profile.id},responder_id.eq.${profile.id}`)
+        .order("created_at", { ascending: false }).limit(20);
+      return NextResponse.json({ disclosures: data || [] });
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // STRIKE / ENFORCEMENT SYSTEM
+    // ════════════════════════════════════════════════════════════════
+
+    if (actionType === "get-strikes") {
+      const { data } = await sb.from("muse_strikes").select("*").eq("user_id", profile.id).order("created_at", { ascending: false });
+      return NextResponse.json({ strikes: data || [] });
+    }
+
+    if (actionType === "appeal-strike") {
+      const { strikeId, appealText } = rest;
+      if (!strikeId || !appealText) return NextResponse.json({ error: "strikeId and appealText required" }, { status: 400 });
+      const { error } = await sb.from("muse_strikes").update({
+        appeal_status: "pending", appeal_text: String(appealText).slice(0, 2000)
+      }).eq("id", strikeId).eq("user_id", profile.id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
+
+    if (actionType === "admin-resolve-appeal") {
+      // Admin only — resolve an appeal
+      const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+      if (!admins.includes((profile as any).email?.toLowerCase() || "")) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      const { strikeId, resolution } = rest; // resolution: 'upheld' | 'overturned'
+      if (!strikeId || !["upheld", "overturned"].includes(resolution)) {
+        return NextResponse.json({ error: "strikeId and valid resolution required" }, { status: 400 });
+      }
+      const updates: Record<string, unknown> = {
+        appeal_status: resolution,
+        appeal_resolved_at: new Date().toISOString(),
+        appeal_resolved_by: profile.id,
+      };
+      if (resolution === "overturned") {
+        updates.severity = "warning"; // downgrade on overturn
+      }
+      const { error } = await sb.from("muse_strikes").update(updates).eq("id", strikeId);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // BOOKING MANAGEMENT — enhanced with status flow
+    // ════════════════════════════════════════════════════════════════
+
+    if (actionType === "respond-booking") {
+      const { bookingId, response } = rest; // response: 'accept' | 'decline' | 'reschedule'
+      if (!bookingId || !response) return NextResponse.json({ error: "bookingId and response required" }, { status: 400 });
+      const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
+      if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      if (String(booking.host_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+      const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (response === "accept") {
+        updates.status = "confirmed";
+        updates.confirmed_at = new Date().toISOString();
+        // Create pre-shoot check-in for 24h reminder
+        await sb.from("muse_safety_checkins").insert({
+          booking_id: bookingId, user_id: booking.user_id, checkin_type: "pre_shoot_24h", status: "pending"
+        });
+        await sb.from("muse_safety_checkins").insert({
+          booking_id: bookingId, user_id: profile.id, checkin_type: "pre_shoot_24h", status: "pending"
+        });
+      } else if (response === "decline") {
+        updates.status = "cancelled";
+        updates.cancelled_at = new Date().toISOString();
+        updates.cancel_reason = "Host declined";
+      } else if (response === "reschedule") {
+        updates.status = "pending";
+        updates.reschedule_date = rest.newDate || "";
+      }
+
+      const { error } = await sb.from("muse_bookings").update(updates).eq("id", bookingId);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      await sb.from("muse_notifications").insert({
+        user_id: booking.user_id, from_id: profile.id, type: "booking_update",
+        body: `${profile.name} ${response === "accept" ? "accepted" : response === "decline" ? "declined" : "wants to reschedule"} your booking`, read: false
+      });
+      return NextResponse.json({ success: true });
+    }
+
+    if (actionType === "cancel-booking") {
+      const { bookingId, reason } = rest;
+      if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
+      const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
+      if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      const isParty = String(booking.user_id) === String(profile.id) || String(booking.host_id) === String(profile.id);
+      if (!isParty) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+      const { error } = await sb.from("muse_bookings").update({
+        status: "cancelled", cancelled_at: new Date().toISOString(),
+        cancel_reason: String(reason || "Cancelled by user"),
+        updated_at: new Date().toISOString()
+      }).eq("id", bookingId);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      const otherUserId = String(booking.user_id) === String(profile.id) ? booking.host_id : booking.user_id;
+      if (otherUserId) {
+        await sb.from("muse_notifications").insert({
+          user_id: otherUserId, from_id: profile.id, type: "booking_cancelled",
+          body: `${profile.name} cancelled the booking${reason ? `: ${reason}` : ""}`, read: false
+        });
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // PRE-SHOOT CHECK-IN
+    // ════════════════════════════════════════════════════════════════
+
+    if (actionType === "respond-checkin") {
+      const { checkinId, response, sharedWithContact } = rest; // response: 'confirmed' | 'cancelled'
+      if (!checkinId || !response) return NextResponse.json({ error: "checkinId and response required" }, { status: 400 });
+      const { data: checkin } = await sb.from("muse_safety_checkins").select("*").eq("id", checkinId).maybeSingle();
+      if (!checkin) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      if (String(checkin.user_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+      const updates: Record<string, unknown> = {
+        status: response, responded_at: new Date().toISOString(),
+        shared_with_contact: !!sharedWithContact
+      };
+      if (response === "cancelled") {
+        updates.cancelled_at = new Date().toISOString();
+        updates.cancel_reason = rest.reason || "Cancelled during check-in";
+      }
+      const { error } = await sb.from("muse_safety_checkins").update(updates).eq("id", checkinId);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      if (response === "cancelled" && checkin.booking_id) {
+        await sb.from("muse_bookings").update({
+          status: "cancelled", cancelled_at: new Date().toISOString(),
+          cancel_reason: updates.cancel_reason as string, updated_at: new Date().toISOString()
+        }).eq("id", checkin.booking_id);
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    if (actionType === "get-checkins") {
+      const { data } = await sb.from("muse_safety_checkins").select("*, booking_id(id, session_id, status)")
+        .eq("user_id", profile.id).order("created_at", { ascending: false }).limit(20);
+      return NextResponse.json({ checkins: data || [] });
+    }
+
+    if (actionType === "share-safety-details") {
+      const { bookingId, disclosureId, recipientName, recipientPhone, recipientEmail, shareMethod } = rest;
+      const { error } = await sb.from("muse_safety_shares").insert({
+        user_id: profile.id, booking_id: bookingId || null, disclosure_id: disclosureId || null,
+        recipient_name: String(recipientName || ""),
+        recipient_phone: String(recipientPhone || ""),
+        recipient_email: String(recipientEmail || ""),
+        share_method: String(shareMethod || "sms"),
+      });
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // SAFETY PROFILE — emergency contacts & trusted friends
+    // ════════════════════════════════════════════════════════════════
+
+    if (actionType === "save-safety-profile") {
+      const { emergencyContactName, emergencyContactPhone, emergencyContactRelation,
+        trustedFriendName, trustedFriendPhone, trustedFriendEmail, autoShareEnabled } = rest;
+      const { error } = await sb.from("muse_safety_profiles").upsert({
+        user_id: profile.id,
+        emergency_contact_name: String(emergencyContactName || ""),
+        emergency_contact_phone: String(emergencyContactPhone || ""),
+        emergency_contact_relation: String(emergencyContactRelation || ""),
+        trusted_friend_name: String(trustedFriendName || ""),
+        trusted_friend_phone: String(trustedFriendPhone || ""),
+        trusted_friend_email: String(trustedFriendEmail || ""),
+        auto_share_enabled: !!autoShareEnabled,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" });
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      // Mark profile as having emergency contact
+      await sb.from("muse_profiles").update({ emergency_contact_added: true }).eq("id", profile.id);
+      return NextResponse.json({ success: true });
+    }
+
+    if (actionType === "get-safety-profile") {
+      const { data } = await sb.from("muse_safety_profiles").select("*").eq("user_id", profile.id).maybeSingle();
+      return NextResponse.json({ safety: data || null });
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // PROMPT BANK — curated onboarding prompts
+    // ════════════════════════════════════════════════════════════════
+
+    if (actionType === "get-prompts") {
+      const { category } = rest;
+      let query = sb.from("muse_prompt_bank").select("*").eq("active", true).order("display_order");
+      if (category) query = query.eq("category", category);
+      const { data } = await query.limit(100);
+      return NextResponse.json({ prompts: data || [] });
+    }
+
+    if (actionType === "save-prompt-response") {
+      const { promptId, responseText, responseChoices } = rest;
+      if (!promptId) return NextResponse.json({ error: "promptId required" }, { status: 400 });
+      const { error } = await sb.from("muse_prompt_responses").upsert({
+        user_id: profile.id, prompt_id: promptId,
+        response_text: String(responseText || ""),
+        response_choices: Array.isArray(responseChoices) ? responseChoices : [],
+      }, { onConflict: "user_id,prompt_id" });
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      // Update completion percentage
+      const { count } = await sb.from("muse_prompt_responses").select("*", { count: "exact", head: true }).eq("user_id", profile.id);
+      const { count: total } = await sb.from("muse_prompt_bank").select("*", { count: "exact", head: true }).eq("active", true);
+      const pct = total && total > 0 ? Math.round(((count || 0) / total) * 100) : 0;
+      await sb.from("muse_profiles").update({ profile_completion_pct: pct, prompt_completed_at: new Date().toISOString() }).eq("id", profile.id);
+      return NextResponse.json({ success: true, completionPct: pct });
+    }
+
+    if (actionType === "get-prompt-responses") {
+      const { data } = await sb.from("muse_prompt_responses").select("*, prompt_id(id, prompt_text, category)").eq("user_id", profile.id);
+      return NextResponse.json({ responses: data || [] });
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // ADMIN BRAIN — AI-powered analytics (founder-only)
+    // ════════════════════════════════════════════════════════════════
+
+    if (actionType === "admin-brain") {
+      const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+      if (!admins.includes((profile as any).email?.toLowerCase() || "")) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      const { query: userQuery } = rest;
+      if (!userQuery || typeof userQuery !== "string") {
+        return NextResponse.json({ error: "query required" }, { status: 400 });
+      }
+
+      try {
+        const q = userQuery.toLowerCase();
+        let result: Record<string, unknown> = {};
+
+        // Parse intent from natural language query
+        if (q.includes("user") && (q.includes("count") || q.includes("total") || q.includes("how many"))) {
+          const { count } = await sb.from("muse_profiles").select("*", { count: "exact", head: true });
+          result = { answer: `Total registered users: ${count || 0}`, data: { count: count || 0 } };
+        } else if (q.includes("match") && (q.includes("count") || q.includes("total"))) {
+          const { count } = await sb.from("muse_matches").select("*", { count: "exact", head: true });
+          result = { answer: `Total matches: ${count || 0}`, data: { count: count || 0 } };
+        } else if (q.includes("report") || q.includes("flag")) {
+          const { data: reports } = await sb.from("muse_reports").select("*, reporter_id(id, name), target_id(id, name)").order("created_at", { ascending: false }).limit(20);
+          const { count } = await sb.from("muse_reports").select("*", { count: "exact", head: true });
+          result = { answer: `Total reports: ${count || 0}. Showing most recent.`, data: { reports: reports || [], count: count || 0 } };
+        } else if (q.includes("strike") || q.includes("suspension") || q.includes("ban")) {
+          const { data: strikes } = await sb.from("muse_strikes").select("*, user_id(id, name, avatar)").order("created_at", { ascending: false }).limit(20);
+          const { count } = await sb.from("muse_strikes").select("*", { count: "exact", head: true });
+          const suspended = (strikes || []).filter((s: any) => s.severity === "suspension" && (!s.suspension_ends_at || new Date(s.suspension_ends_at) > new Date()));
+          result = { answer: `Total strikes: ${count || 0}. Currently suspended: ${suspended.length}.`, data: { strikes: strikes || [], suspendedCount: suspended.length } };
+        } else if (q.includes("disclosure")) {
+          const { data: disclosures } = await sb.from("muse_disclosures").select("*, proposer_id(id, name), responder_id(id, name)").order("created_at", { ascending: false }).limit(20);
+          const blocked = (disclosures || []).filter((d: any) => d.status === "blocked");
+          result = { answer: `Total disclosures: ${(disclosures || []).length}. Blocked: ${blocked.length}.`, data: { disclosures: disclosures || [], blockedCount: blocked.length } };
+        } else if (q.includes("active") || q.includes("retention") || q.includes("engagement")) {
+          const since7d = new Date(Date.now() - 7 * 86400000).toISOString();
+          const since30d = new Date(Date.now() - 30 * 86400000).toISOString();
+          const [active7d, active30d, newUsers30d] = await Promise.all([
+            sb.from("muse_activity_log").select("user_id").gte("created_at", since7d),
+            sb.from("muse_activity_log").select("user_id").gte("created_at", since30d),
+            sb.from("muse_profiles").select("id").gte("created_at", since30d),
+          ]);
+          const activeUsers7d = new Set((active7d.data || []).map((r: any) => r.user_id).filter(Boolean)).size;
+          const activeUsers30d = new Set((active30d.data || []).map((r: any) => r.user_id).filter(Boolean)).size;
+          result = { answer: `Active users (7d): ${activeUsers7d}, Active (30d): ${activeUsers30d}, New signups (30d): ${(newUsers30d.data || []).length}`, data: { active7d: activeUsers7d, active30d: activeUsers30d, newUsers30d: (newUsers30d.data || []).length } };
+        } else if (q.includes("safety") || q.includes("checkin")) {
+          const { data: checkins } = await sb.from("muse_safety_checkins").select("*, user_id(id, name)").order("created_at", { ascending: false }).limit(20);
+          const pending = (checkins || []).filter((c: any) => c.status === "pending");
+          const cancelled = (checkins || []).filter((c: any) => c.status === "cancelled");
+          result = { answer: `Safety check-ins: ${(checkins || []).length} total. Pending: ${pending.length}. Cancelled: ${cancelled.length}.`, data: { checkins: checkins || [], pendingCount: pending.length, cancelledCount: cancelled.length } };
+        } else if (q.includes("user") && (q.includes("find") || q.includes("search") || q.includes("name"))) {
+          const searchTerm = q.replace(/.*(?:find|search|name)\s+(?:user\s*)?/i, "").trim();
+          const { data: users } = await sb.from("muse_profiles").select("id, name, email, type, created_at, profile_completion_pct").ilike("name", `%${searchTerm}%`).limit(10);
+          result = { answer: `Found ${(users || []).length} users matching "${searchTerm}".`, data: { users: users || [] } };
+        } else if (q.includes("prompt") && (q.includes("response") || q.includes("answer"))) {
+          const { count } = await sb.from("muse_prompt_responses").select("*", { count: "exact", head: true });
+          const { count: totalPrompts } = await sb.from("muse_prompt_bank").select("*", { count: "exact", head: true }).eq("active", true);
+          result = { answer: `Prompt responses: ${count || 0} across ${totalPrompts || 0} active prompts.`, data: { responseCount: count || 0, promptCount: totalPrompts || 0 } };
+        } else {
+          // Generic: return overview stats
+          const counts = await Promise.all([
+            sb.from("muse_profiles").select("*", { count: "exact", head: true }),
+            sb.from("muse_matches").select("*", { count: "exact", head: true }),
+            sb.from("muse_reports").select("*", { count: "exact", head: true }),
+            sb.from("muse_strikes").select("*", { count: "exact", head: true }),
+            sb.from("muse_disclosures").select("*", { count: "exact", head: true }),
+          ]);
+          result = {
+            answer: `Muse Overview: ${counts[0].count || 0} users, ${counts[1].count || 0} matches, ${counts[2].count || 0} reports, ${counts[3].count || 0} strikes, ${counts[4].count || 0} disclosures.`,
+            data: { users: counts[0].count || 0, matches: counts[1].count || 0, reports: counts[2].count || 0, strikes: counts[3].count || 0, disclosures: counts[4].count || 0 }
+          };
+        }
+
+        // Log the admin query for audit trail
+        await sb.from("muse_admin_audit_log").insert({
+          admin_user_id: profile.id, query_text: userQuery.slice(0, 1000),
+          query_result_summary: String(result.answer || "").slice(0, 500),
+          result_row_count: Array.isArray((result as any).data?.users) ? (result as any).data.users.length : 0,
+        });
+
+        return NextResponse.json(result);
+      } catch (err: unknown) {
+        return NextResponse.json({ error: "Query failed: " + (err instanceof Error ? err.message : "unknown") }, { status: 500 });
+      }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // ADMIN — moderation panel data
+    // ════════════════════════════════════════════════════════════════
+
+    if (actionType === "admin-reports") {
+      const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+      if (!admins.includes((profile as any).email?.toLowerCase() || "")) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      const { data: reports } = await sb.from("muse_reports").select("*, reporter_id(id, name, avatar), target_id(id, name, avatar)")
+        .order("created_at", { ascending: false }).limit(50);
+      return NextResponse.json({ reports: reports || [] });
+    }
+
+    if (actionType === "admin-strikes") {
+      const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+      if (!admins.includes((profile as any).email?.toLowerCase() || "")) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      const { data: strikes } = await sb.from("muse_strikes").select("*, user_id(id, name, avatar)")
+        .order("created_at", { ascending: false }).limit(50);
+      return NextResponse.json({ strikes: strikes || [] });
+    }
+
+    if (actionType === "admin-suspend-user") {
+      const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+      if (!admins.includes((profile as any).email?.toLowerCase() || "")) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      const { targetUserId, reason, durationDays } = rest;
+      if (!targetUserId) return NextResponse.json({ error: "targetUserId required" }, { status: 400 });
+      const suspensionEnd = durationDays ? new Date(Date.now() + durationDays * 86400000).toISOString() : null;
+      const { error } = await sb.from("muse_strikes").insert({
+        user_id: targetUserId, issued_by: profile.id,
+        reason: String(reason || "Suspended by admin"),
+        category: "high_severity",
+        severity: suspensionEnd ? "suspension" : "permanent_ban",
+        suspension_ends_at: suspensionEnd,
+      });
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      await sb.from("muse_notifications").insert({
+        user_id: targetUserId, from_id: profile.id, type: "suspension",
+        body: suspensionEnd ? `Your account has been suspended until ${new Date(suspensionEnd).toLocaleDateString()}` : "Your account has been permanently banned",
+        read: false
+      });
+      return NextResponse.json({ success: true });
+    }
+
     return NextResponse.json({ error: "Unknown action type" }, { status: 400 });
   } catch (e: unknown) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });

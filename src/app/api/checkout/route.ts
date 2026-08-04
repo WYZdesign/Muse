@@ -4,9 +4,11 @@ import Stripe from "stripe";
 export const runtime = "nodejs";
 
 const PRICE_MAP: Record<string, string> = {
-  spark: "price_spark_monthly",
-  muse: "price_muse_monthly",
-  sovereign: "price_sovereign_monthly",
+  muse_pro: "price_muse_pro_monthly",
+  // Legacy tiers kept for backward-compat redirects
+  spark: "price_muse_pro_monthly",
+  muse: "price_muse_pro_monthly",
+  sovereign: "price_muse_pro_monthly",
 };
 
 export async function POST(req: NextRequest) {
@@ -32,17 +34,17 @@ export async function POST(req: NextRequest) {
       // Create a product + recurring price dynamically — works for first-time
       // setup or when prices haven't been manually created in the Dashboard.
       const product = await stripe.products.create({
-        name: `Muse ${plan.charAt(0).toUpperCase() + plan.slice(1)}`,
-        metadata: { plan },
+        name: "Muse Pro",
+        metadata: { plan: "muse_pro" },
       });
-      const amount = { spark: 999, muse: 2499, sovereign: 4999 }[plan] || 2499;
+      const amount = 999; // $9.99/month
       const price = await stripe.prices.create({
         product: product.id,
         unit_amount: amount,
         currency: "usd",
         recurring: { interval: "month" },
-        lookup_key: PRICE_MAP[plan],
-        metadata: { plan },
+        lookup_key: "price_muse_pro_monthly",
+        metadata: { plan: "muse_pro" },
       });
       priceId = price.id;
     }
