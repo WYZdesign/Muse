@@ -543,6 +543,8 @@ function MusePage() {
     return b;
   };
 
+  const unreadNotificationCount = useMemo(() => activityFeed.filter(n => !n.read).length, [activityFeed]);
+
   const filteredProfiles = useMemo(() => {
     const base = liveProfiles?.length ? [...PROFILES, ...liveProfiles.filter((lp:any) => !PROFILES.some((dp:any) => dp.id === lp.id))] : PROFILES;
     let list = showNsfw ? base : base.filter(p => !p.nsfw);

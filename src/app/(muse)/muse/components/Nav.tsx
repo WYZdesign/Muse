@@ -18,7 +18,7 @@ const tabs: { key: string; label: string; icon: React.ReactNode; hasScreen: bool
   { key:"moments", label:"BTS", icon:<FiEye size={22} />, hasScreen:true },
 ];
 
-export default function Nav({ active, onNavigate, onHamburgerToggle }: { active: string; onNavigate: (s: Screen) => void; onHamburgerToggle?: () => void }) {
+export default function Nav({ active, onNavigate, onHamburgerToggle, unreadCount }: { active: string; onNavigate: (s: Screen) => void; onHamburgerToggle?: () => void; unreadCount?: number }) {
   return (
     <div className="nav" role="navigation" aria-label="Main navigation">
       {tabs.map(tab => {
@@ -31,8 +31,9 @@ export default function Nav({ active, onNavigate, onHamburgerToggle }: { active:
           </button>
         );
       })}
-      <button className="nav-item" onClick={() => onHamburgerToggle?.()} aria-label="Menu">
+      <button className="nav-item" onClick={() => onHamburgerToggle?.()} aria-label="Menu" style={{ position: "relative" }}>
         <span className="nav-icon"><FiMenu size={22} /></span>
+        {unreadCount && unreadCount > 0 ? <span style={{ position: "absolute", top: 2, right: 6, width: 16, height: 16, borderRadius: 8, background: "#ff6b6b", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
         <span>Menu</span>
       </button>
     </div>
