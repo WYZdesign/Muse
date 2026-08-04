@@ -331,12 +331,12 @@ function MusePage() {
         testLevels, obSelects, obProfilePic, obPortfolioItems, likedBy,
         profileViews, profileViewers, stories, theme, activityFeed,
         discoveryPrefs, chatImages, screen, filterStyles, filterScore,
-        searchQuery, connTab, museCat, connFilter, authUser
+        searchQuery, connTab, museCat, connFilter, authUser, chatTarget
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       try { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs }) }); } catch {}
     } catch(e) {}
-  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,connFilter,authUser]);
+  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,connFilter,authUser,chatTarget]);
 
   const loadState = useCallback(() => {
     try {
@@ -372,11 +372,11 @@ function MusePage() {
       if (d.activityFeed) setActivityFeed(d.activityFeed);
       if (d.discoveryPrefs) setDiscoveryPrefs(d.discoveryPrefs);
       if (d.chatImages) setChatImages(d.chatImages);
+      if (d.chatTarget) setChatTarget(d.chatTarget);
       if (d.screen && ["onboard","discover","connections","matches","chat","briefs","portfolio","moments","profile","settings","subscription"].includes(d.screen)) {
         // Chat requires a chatTarget to render (screen-el guards on chatTarget);
-        // chatTarget is not persisted, so a restored "chat" screen would render
-        // a blank phone. Fall back to matches instead.
-        setScreen(d.screen === "chat" ? "matches" : d.screen);
+        // chatTarget is now persisted, but fallback to matches if somehow missing.
+        setScreen(d.screen === "chat" && !d.chatTarget ? "matches" : d.screen);
       }
       if (d.authUser) setAuthUser(d.authUser);
       if (d.authUser && !["onboard","discover","connections","matches","chat","briefs","portfolio","moments","profile","settings","subscription"].includes(d.screen||"")) setScreen("discover");
