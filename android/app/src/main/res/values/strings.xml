@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Muse</string>
+    <string name="title_activity_main">Muse</string>
+    <string name="package_name">com.wyzdesign.muse</string>
+    <string name="custom_url_scheme">com.wyzdesign.muse</string>
+</resources>
