@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS muse_waitlist (
   phone text,
   source text default 'default',
   referred_by uuid references muse_profiles(id) on delete set null,
-  position int generated always as (row_number() over (order by created_at)) stored,
   created_at timestamptz default now()
 );
 CREATE INDEX IF NOT EXISTS idx_muse_waitlist_email ON muse_waitlist(email);

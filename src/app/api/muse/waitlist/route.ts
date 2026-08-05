@@ -39,6 +39,15 @@ export async function POST(req: NextRequest) {
       signups: 1,
     }, { onConflict: "date" });
 
+    // Record signup event for source attribution (QR / referral tracking)
+    if (source && source !== "default") {
+      await sb.from("muse_qr_events").insert({
+        source,
+        event_type: "signup",
+        created_at: new Date().toISOString(),
+      });
+    }
+
     return NextResponse.json({ success: true, message: "You're on the list!" });
   } catch (error) {
     console.error("Waitlist error:", error);

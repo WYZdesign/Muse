@@ -84,9 +84,7 @@ export const FORUM_POSTS = [
 
 export const TIERS = [
   { name:"Free",price:"$0",period:"forever",features:["10 likes/day","Basic profile","Chat with matches","Standard discover"],current:true },
-  { name:"Spark",price:"$9.99",period:"/month",features:["50 likes/day","See who likes you","Advanced filters","Read receipts","Profile boost (x1/week)"] },
-  { name:"Muse",price:"$24.99",period:"/month",features:["Unlimited likes","Priority discover","Incognito mode","Super likes (x5/day)","Profile boost (x3/week)","AI match insights"] },
-  { name:"Sovereign",price:"$49.99",period:"/month",features:["Everything in Muse","Private mode","AI match assistant","Featured profile","Early access features","Direct booking links","Dedicated support"] },
+  { name:"Muse Pro",price:"$9.99",period:"/month",features:["Unlimited likes","See who likes you","Advanced filters","Read receipts","Profile boost (x1/week)","Incognito mode","Priority discover"] },
 ];
 
 export const AESTHETICS = ["Portrait","Editorial","Commercial","Music Video","Documentary","Branding","Body Art","Fine Art","Fashion","Experimental","Dark","Dreamy","Bold","Vintage","Abstract","Film"];

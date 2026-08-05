@@ -34,7 +34,7 @@ export default function MuseLandingPage() {
   }, []);
 
   const generateQrCode = async (source: string) => {
-    const url = `https://wyzdesign.com/muse${QR_SOURCES[source as keyof typeof QR_SOURCES] || ""}`;
+    const url = `https://wyzdesign.com/muse/landing${QR_SOURCES[source as keyof typeof QR_SOURCES] || ""}`;
     try {
       const res = await fetch(`/api/qr?url=${encodeURIComponent(url)}`);
       const blob = await res.blob();
@@ -70,7 +70,7 @@ export default function MuseLandingPage() {
   };
 
   const copyLink = () => {
-    const url = `https://wyzdesign.com/muse${QR_SOURCES[selectedSource as keyof typeof QR_SOURCES] || ""}`;
+    const url = `https://wyzdesign.com/muse/landing${QR_SOURCES[selectedSource as keyof typeof QR_SOURCES] || ""}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

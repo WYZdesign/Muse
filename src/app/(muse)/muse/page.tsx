@@ -64,7 +64,7 @@ function MusePage() {
   const [authUser, setAuthUser] = useState<{id:string;email:string;profile?:{id:string;[key:string]:unknown}}|null>(null);
   const [obStep, setObStep] = useState(0);
    const [obData, setObData] = useState<{name?:string;loc?:string;bio?:string;type?:string;looking?:string[];conn?:string[];styles?:string[];zodiac?:string;chinese?:string;mbti?:string;lifePath?:number;referralCode?:string}>({});
-   const [currentUser, setCurrentUser] = useState({ id:"you", name:"You", type:"Photographer", exp:"New here", avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", stats:{matches:0,likes:0,superLikes:0,passes:0,bookingsCompleted:0,matchesReceived:0,messagesSent:0}, createdAt:Date.now(), referrals:0, portfolios:[] as {img:string;title:string;type:string}[] });
+   const [currentUser, setCurrentUser] = useState({ id:"you", name:"You", type:"Photographer", exp:"New here", avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", stats:{matches:0,likes:0,superLikes:0,passes:0,bookingsCompleted:0,matchesReceived:0,messagesSent:0}, createdAt:Date.now(), referrals:0, portfolios:[] as {img:string;title:string;type:string}[], foundingTier:"" as string, proExpiresAt:"" as string, tier:"free" });
    const [excludedPortfolios, setExcludedPortfolios] = useState<string[]>(EXCLUDED_PORTFOLIOS);
    const [portfolioAccess, setPortfolioAccess] = useState<{[key: string]: "public" | "private" | "invite"}>({});
    const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
@@ -408,7 +408,7 @@ function MusePage() {
           localStorage.setItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken || "", user: userObj }));
           ensureMusePushRegistered();
           if (d.profile) {
-            setCurrentUser(prev => ({ ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, type: d.profile.type || prev.type }));
+            setCurrentUser(prev => ({ ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, type: d.profile.type || prev.type, foundingTier: d.profile.founding_tier || "", proExpiresAt: d.profile.pro_expires_at || "", tier: d.profile.tier || "free" }));
             if (d.profile.tier) setUserTier(d.profile.tier);
             setScreen(d.profile.name && d.profile.type ? "discover" : "onboard");
           } else {
@@ -2509,8 +2509,24 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 </div>
                 <div className="section">
                   <div className="section-title">Subscription</div>
-                  <div style={{fontSize:13,color:"var(--text2)",marginBottom:10}}>Plan: <span style={{color:"var(--gold)",fontWeight:600}}>Free</span></div>
-                  <button className="btn btn-gold" style={{fontSize:14,padding:"14px 0"}} onClick={()=>setScreen("subscription")}>Upgrade</button>
+                  {currentUser.foundingTier && (
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                      <span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:12,fontWeight:700,padding:"6px 12px",borderRadius:99,background:currentUser.foundingTier==="founding"?"rgba(255,215,0,0.12)":"rgba(212,165,255,0.12)",border:`1px solid ${currentUser.foundingTier==="founding"?"rgba(255,215,0,0.35)":"rgba(212,165,255,0.35)"}`,color:currentUser.foundingTier==="founding"?"var(--gold)":"var(--lavender)"}}>
+                        {currentUser.foundingTier==="founding"?"🏆 FOUNDING MEMBER":"⭐ EARLY MEMBER"}
+                      </span>
+                      {currentUser.proExpiresAt && currentUser.tier==="muse_pro" && (
+                        <span style={{fontSize:11,color:"var(--muted)"}}>Pro until {new Date(currentUser.proExpiresAt).toLocaleDateString()}</span>
+                      )}
+                    </div>
+                  )}
+                  <div style={{fontSize:13,color:"var(--text2)",marginBottom:10}}>Plan: <span style={{color:"var(--gold)",fontWeight:600}}>{userTier==="muse_pro"||currentUser.tier==="muse_pro"?"Muse Pro":"Free"}</span></div>
+                  {currentUser.tier==="muse_pro" && !currentUser.foundingTier ? (
+                    <button className="btn btn-outline" style={{fontSize:14,padding:"14px 0"}} onClick={()=>setScreen("subscription")}>Manage Plan</button>
+                  ) : currentUser.tier==="muse_pro" && currentUser.foundingTier ? (
+                    <button className="btn btn-outline" style={{fontSize:14,padding:"14px 0"}} onClick={()=>setScreen("subscription")}>View Plan</button>
+                  ) : (
+                    <button className="btn btn-gold" style={{fontSize:14,padding:"14px 0"}} onClick={()=>setScreen("subscription")}>Upgrade</button>
+                  )}
                 </div>
                 <div className="section">
                   <div className="section-title">Badges</div>
@@ -2707,19 +2723,33 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 <div className="sub-title">Unlock Your Potential</div>
                 <div className="sub-subtitle">Choose the plan for your creative journey</div>
               </div>
-              {TIERS.map(tier => (
-                <div key={tier.name} className={"tier-card"+(tier.name.toLowerCase()===userTier?" current":"")} style={{position:"relative"}}>
-                  {tier.name.toLowerCase()===userTier && <div className="tier-current-badge" style={{position:"absolute",top:"-8px",right:"12px"}}>Current</div>}
+              {currentUser.foundingTier && (
+                <div style={{padding:"12px 16px",borderRadius:16,marginBottom:14,background:currentUser.foundingTier==="founding"?"rgba(255,215,0,0.1)":"rgba(212,165,255,0.1)",border:`1px solid ${currentUser.foundingTier==="founding"?"rgba(255,215,0,0.3)":"rgba(212,165,255,0.3)"}`}}>
+                  <div style={{fontSize:14,fontWeight:700,color:currentUser.foundingTier==="founding"?"var(--gold)":"var(--lavender)"}}>{currentUser.foundingTier==="founding"?"🏆 Founding Member — Lifetime Pro":"⭐ Early Member — Free Pro"}</div>
+                  <div style={{fontSize:12,color:"var(--text2)",marginTop:4}}>
+                    {currentUser.foundingTier==="founding"
+                      ? "You're locked in for life. Thanks for believing in Muse."
+                      : currentUser.proExpiresAt ? `Free Pro until ${new Date(currentUser.proExpiresAt).toLocaleDateString()}. Then $9.99/mo or earn it via referrals.` : "Free Pro as an early believer."}
+                  </div>
+                </div>
+              )}
+              {TIERS.map(tier => {
+                const tierKey = tier.name.toLowerCase().replace(" ","_");
+                const isCurrent = tierKey===userTier || (tierKey==="muse_pro" && currentUser.tier==="muse_pro");
+                return (
+                <div key={tier.name} className={"tier-card"+(isCurrent?" current":"")} style={{position:"relative"}}>
+                  {isCurrent && <div className="tier-current-badge" style={{position:"absolute",top:"-8px",right:"12px"}}>Current</div>}
                   <div className="tier-header">
                     <div className="tier-name">{tier.name}</div>
                     <div><span className="tier-price">{tier.price}</span><span className="tier-period">{tier.period}</span></div>
                   </div>
                   <ul className="tier-features">{tier.features.map(f=><li key={f}>{f}</li>)}</ul>
-                  <button className={"tier-btn"+(tier.name==="Sovereign"?" tier-btn-primary":" tier-btn-outline")} onClick={async()=>{if(tier.name.toLowerCase()===userTier)return;if(tier.name==="Free"){showToast("You're on the Free plan");return;}try{const r=await fetch("/api/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"subscription",plan:tier.name.toLowerCase(),email:authUser?.email,userId:authUser?.id})});const d=await r.json();if(d.url){window.location.href=d.url}else{showToast(d.error||"Checkout unavailable, try again later")}}catch{showToast("Checkout unavailable, try again later")}}}>
-                    {tier.name.toLowerCase()===userTier ? "Current Plan" : tier.name==="Free" ? "Free Plan" : "Select "+tier.name}
+                  <button className={"tier-btn"+(tier.name==="Muse Pro"?" tier-btn-primary":" tier-btn-outline")} onClick={async()=>{if(isCurrent)return;if(tier.name==="Free"){showToast("You're on the Free plan");return;}try{const r=await fetch("/api/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"subscription",plan:tierKey,email:authUser?.email,userId:authUser?.id})});const d=await r.json();if(d.url){window.location.href=d.url}else{showToast(d.error||"Checkout unavailable, try again later")}}catch{showToast("Checkout unavailable, try again later")}}}>
+                    {isCurrent ? "Current Plan" : tier.name==="Free" ? "Free Plan" : "Select "+tier.name}
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
             <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
           </div>
