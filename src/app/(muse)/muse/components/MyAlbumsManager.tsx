@@ -22,6 +22,19 @@ const ACCESS_META: Record<string, { icon: React.ReactNode; label: string }> = {
   invite: { icon: <FiUsers size={12} />, label: "Invite Only" },
 };
 
+function getAccessToken(): string {
+  if (typeof window === "undefined") return "";
+  try { return JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
+}
+
+async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = getAccessToken();
+  const headers = new Headers(options.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  if (!headers.has("Content-Type") && options.body) headers.set("Content-Type", "application/json");
+  return fetch(url, { ...options, headers });
+}
+
 /**
  * Full album management for the signed-in user's own profile: create/delete
  * albums, set per-album privacy (public / private / invite-only), upload
@@ -51,16 +64,12 @@ export default function MyAlbumsManager({
   const [showInviteManager, setShowInviteManager] = useState(false);
 
   const authedFetch = useCallback((body: Record<string, unknown>) =>
-    fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json", ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) }, body: JSON.stringify(body) }).then(r => r.json())
-  , [authToken]);
+    authFetch("/api/muse", { method: "POST", body: JSON.stringify(body) }).then(r => r.json())
+  , []);
 
   const refreshAlbums = useCallback(() => {
     if (!authToken) { setLoading(false); return; }
-    // profile_id is resolved server-side from the bearer token for the
-    // "list my own albums" case — we pass "me" and the API's isOwner check
-    // still requires a real profile_id match, so instead we fetch via the
-    // authed profile id embedded in the token by asking the server for it.
-    fetch("/api/muse?type=albums&profile_id=me", { headers: { Authorization: `Bearer ${authToken}` } })
+    authFetch("/api/muse?type=albums&profile_id=me")
       .then(r => r.json())
       .then(d => setAlbums(Array.isArray(d.albums) ? d.albums : []))
       .catch(() => setAlbums([]))
@@ -71,11 +80,11 @@ export default function MyAlbumsManager({
 
   const openAlbum = useCallback((album: Album) => {
     setSelected(album);
-    fetch(`/api/muse?type=album-photos&album_id=${album.id}`, { headers: { Authorization: `Bearer ${authToken}` } })
+    authFetch(`/api/muse?type=album-photos&album_id=${album.id}`)
       .then(r => r.json())
       .then(d => setPhotos(Array.isArray(d.photos) ? d.photos : []))
       .catch(() => setPhotos([]));
-  }, [authToken]);
+  }, []);
 
   const createAlbum = useCallback(async () => {
     if (!newTitle.trim()) { showToast("Album title required"); return; }

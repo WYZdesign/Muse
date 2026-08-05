@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getAccessToken, authFetch } from "../lib/auth-client";
 
 type ConnectStatus = {
   connected: boolean;
@@ -20,9 +21,8 @@ export default function ConnectPanel({ onClose }: Props) {
   const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/muse/connect", {
+    authFetch("/api/muse/connect", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` },
       body: JSON.stringify({ action: "account-status" }),
     }).then(r => r.json()).then(d => { setStatus(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
@@ -30,9 +30,8 @@ export default function ConnectPanel({ onClose }: Props) {
   const startOnboarding = async () => {
     setConnecting(true);
     try {
-      const r = await fetch("/api/muse/connect", {
+      const r = await authFetch("/api/muse/connect", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` },
         body: JSON.stringify({ action: "create-account" }),
       });
       const d = await r.json();
@@ -129,13 +128,4 @@ export default function ConnectPanel({ onClose }: Props) {
       </div>
     </div>
   );
-}
-
-function getAccessToken(): string {
-  if (typeof window === "undefined") return "";
-  try {
-    const stored = localStorage.getItem("muse_auth");
-    if (stored) { const parsed = JSON.parse(stored); return parsed.access_token || parsed.token || ""; }
-  } catch {}
-  return "";
 }

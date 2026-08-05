@@ -1701,7 +1701,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       setCurrentUser(prev=>({...prev,name:obData.name||prev.name,type:obData.type||prev.type,avatar:obProfilePic||prev.avatar}));
                       const geo = await getGeolocation();
                       if(authUser?.id){
-                        try{await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"update-profile",auth_id:authUser.id,updates:{
+                        try{await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"update-profile",auth_id:authUser.id,updates:{
                           name:obData.name,loc:obData.loc,bio:obData.bio,type:obData.type,
                           looking:obData.looking,styles:obData.styles,
                           zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,life_path:obData.lifePath,
@@ -2926,9 +2926,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Are you sure?</div>
             <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>This action is permanent and cannot be undone. All your data, matches, messages, and portfolio will be permanently deleted.</div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <button className="btn btn-gold" style={{width:"100%",borderColor:"var(--coral)",background:"linear-gradient(135deg,var(--coral),#ff4444)"}} onClick={async()=>{try{const raw=localStorage.getItem("muse_user");const tok=raw?JSON.parse(raw).access_token||"":"";
-                await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json",...(tok?{"Authorization":`Bearer ${tok}`}:{})},body:JSON.stringify({action:"delete-account"})});
-                }catch(e){}localStorage.removeItem("muse_user");localStorage.removeItem("muse_v1");setAuthUser(null);setShowDeleteConfirm(false);setScreen("auth");showToast("Account deleted. We're sorry to see you go.")}}>Yes, Delete My Account</button>
+              <button className="btn btn-gold" style={{width:"100%",borderColor:"var(--coral)",background:"linear-gradient(135deg,var(--coral),#ff4444)"}} onClick={async()=>{try{await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"delete-account"})});}catch(e){}localStorage.removeItem("muse_user");localStorage.removeItem("muse_v1");setAuthUser(null);setShowDeleteConfirm(false);setScreen("auth");showToast("Account deleted. We're sorry to see you go.")}}>Yes, Delete My Account</button>
               <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setShowDeleteConfirm(false)}>Cancel</button>
             </div>
           </div>
@@ -3095,14 +3093,14 @@ const isMatch=matchScore>55||Math.random()>0.5;
           bookingId={disclosureBookingId}
           existingDisclosure={existingDisclosure}
           onSubmit={async (form) => {
-            const r = await fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ type: "create-disclosure", ...form, responderId: disclosureTarget.id, bookingId: disclosureBookingId }) });
+            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "create-disclosure", ...form, responderId: disclosureTarget.id, bookingId: disclosureBookingId }) });
             const d = await r.json();
             if (d.blocked) { setShowDisclosureModal(false); setToastMsg("Request blocked — violates Muse terms"); return; }
             if (d.success) { setShowDisclosureModal(false); setToastMsg("Disclosure sent for review"); }
           }}
           onCancel={() => { setShowDisclosureModal(false); setDisclosureTarget(null); }}
           onConfirm={existingDisclosure ? async (discId) => {
-            await fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ type: "confirm-disclosure", disclosureId: discId }) });
+            await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "confirm-disclosure", disclosureId: discId }) });
             setShowDisclosureModal(false); setToastMsg("Disclosure confirmed ✓");
           } : undefined}
         />
@@ -3113,15 +3111,15 @@ const isMatch=matchScore>55||Math.random()>0.5;
           checkins={safetyCheckins}
           safetyProfile={safetyProfile}
           onRespond={async (id, response, shared, reason) => {
-            await fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ type: "respond-checkin", checkinId: id, response, sharedWithContact: shared, reason }) });
+            await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "respond-checkin", checkinId: id, response, sharedWithContact: shared, reason }) });
             setSafetyCheckins(prev => prev.map(c => c.id === id ? { ...c, status: response, responded_at: new Date().toISOString() } : c));
           }}
           onSaveSafetyProfile={async (profile) => {
-            await fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ type: "save-safety-profile", ...profile }) });
+            await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "save-safety-profile", ...profile }) });
             setSafetyProfile(profile); setToastMsg("Safety profile saved");
           }}
           onShareDetails={async (bookingId, method) => {
-            await fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ type: "share-safety-details", bookingId, shareMethod: method }) });
+            await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "share-safety-details", bookingId, shareMethod: method }) });
             setToastMsg("Details shared with trusted contact");
           }}
           onClose={() => setShowSafetyCheckin(false)}
@@ -3133,7 +3131,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           prompts={promptBankData}
           responses={promptResponses}
           onSaveResponse={async (promptId, text, choices) => {
-            const r = await fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ type: "save-prompt-response", promptId, responseText: text, responseChoices: choices }) });
+            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "save-prompt-response", promptId, responseText: text, responseChoices: choices }) });
             const d = await r.json();
             if (d.success) {
               setPromptResponses(prev => {

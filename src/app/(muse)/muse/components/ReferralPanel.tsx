@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getAccessToken, authFetch } from "../lib/auth-client";
 
 type ReferralData = {
   code: string;
@@ -23,9 +24,8 @@ export default function ReferralPanel({ onClose }: Props) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetch("/api/muse/referral", {
+    authFetch("/api/muse/referral", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` },
       body: JSON.stringify({ action: "status" }),
     }).then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
@@ -128,11 +128,3 @@ export default function ReferralPanel({ onClose }: Props) {
   );
 }
 
-function getAccessToken(): string {
-  if (typeof window === "undefined") return "";
-  try {
-    const stored = localStorage.getItem("muse_auth");
-    if (stored) { const parsed = JSON.parse(stored); return parsed.access_token || parsed.token || ""; }
-  } catch {}
-  return "";
-}

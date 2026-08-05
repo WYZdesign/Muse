@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getAccessToken, authFetch } from "../lib/auth-client";
 
 type Payment = {
   id: string;
@@ -26,9 +27,8 @@ export default function PaymentHistory({ userId, onClose }: Props) {
 
   useEffect(() => {
     // Fetch payments from booking_payments table
-    fetch("/api/muse", {
+    authFetch("/api/muse", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` },
       body: JSON.stringify({ type: "get-payments" }),
     }).then(r => r.json()).then(d => {
       setPayments(d.payments || []);
@@ -128,11 +128,3 @@ export default function PaymentHistory({ userId, onClose }: Props) {
   );
 }
 
-function getAccessToken(): string {
-  if (typeof window === "undefined") return "";
-  try {
-    const stored = localStorage.getItem("muse_auth");
-    if (stored) { const parsed = JSON.parse(stored); return parsed.access_token || parsed.token || ""; }
-  } catch {}
-  return "";
-}

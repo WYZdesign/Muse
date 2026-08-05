@@ -14,6 +14,19 @@ type AnalyticsData = {
   connectedAccounts?: number;
 };
 
+function getAccessToken(): string {
+  if (typeof window === "undefined") return "";
+  try { return JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
+}
+
+async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = getAccessToken();
+  const headers = new Headers(options.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  if (!headers.has("Content-Type") && options.body) headers.set("Content-Type", "application/json");
+  return fetch(url, { ...options, headers });
+}
+
 /**
  * Real admin analytics dashboard — reads live aggregated data from Supabase
  * via GET /api/muse?type=admin-analytics (server-side enforces ADMIN_EMAILS
@@ -33,7 +46,7 @@ export default function AdminDashboard() {
       const token = sessionData.session?.access_token;
       if (!token) { if (!cancelled) setStatus("unauthenticated"); return; }
       try {
-        const r = await fetch("/api/muse?type=admin-analytics", { headers: { Authorization: `Bearer ${token}` } });
+        const r = await authFetch("/api/muse?type=admin-analytics");
         if (r.status === 403) { if (!cancelled) setStatus("forbidden"); return; }
         if (!r.ok) { if (!cancelled) setStatus("error"); return; }
         const j = await r.json();

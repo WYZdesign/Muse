@@ -16,6 +16,19 @@ type Strike = {
 };
 type AuditLog = { id: string; query_text: string; query_result_summary: string; created_at: string };
 
+function getAccessToken(): string {
+  if (typeof window === "undefined") return "";
+  try { return JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
+}
+
+async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = getAccessToken();
+  const headers = new Headers(options.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  if (!headers.has("Content-Type") && options.body) headers.set("Content-Type", "application/json");
+  return fetch(url, { ...options, headers });
+}
+
 export default function AdminModerationPanel() {
   const [tab, setTab] = useState<"reports" | "strikes" | "brain" | "audit">("reports");
   const [reports, setReports] = useState<Report[]>([]);
@@ -33,20 +46,18 @@ export default function AdminModerationPanel() {
     })();
   }, []);
 
-  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
-
   const loadTab = async (t: string) => {
     setTab(t as any);
     if (t === "reports" && !reports.length) {
-      const r = await fetch("/api/muse", { method: "POST", headers, body: JSON.stringify({ type: "admin-reports" }) });
+      const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-reports" }) });
       if (r.ok) { const d = await r.json(); setReports(d.reports || []); }
     }
     if (t === "strikes" && !strikes.length) {
-      const r = await fetch("/api/muse", { method: "POST", headers, body: JSON.stringify({ type: "admin-strikes" }) });
+      const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-strikes" }) });
       if (r.ok) { const d = await r.json(); setStrikes(d.strikes || []); }
     }
     if (t === "audit") {
-      const r = await fetch("/api/muse?type=admin-analytics", { headers });
+      const r = await authFetch("/api/muse?type=admin-analytics");
       if (r.ok) { const d = await r.json(); /* audit comes from brain queries */ }
     }
   };
@@ -55,7 +66,7 @@ export default function AdminModerationPanel() {
     if (!brainQuery.trim()) return;
     setLoading(true);
     try {
-      const r = await fetch("/api/muse", { method: "POST", headers, body: JSON.stringify({ type: "admin-brain", query: brainQuery }) });
+      const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-brain", query: brainQuery }) });
       if (r.ok) {
         const d = await r.json();
         setBrainResult(d.answer || JSON.stringify(d.data || d, null, 2));
@@ -67,7 +78,7 @@ export default function AdminModerationPanel() {
   };
 
   const suspendUser = async (userId: string, reason: string, days: number | null) => {
-    const r = await fetch("/api/muse", { method: "POST", headers, body: JSON.stringify({ type: "admin-suspend-user", targetUserId: userId, reason, durationDays: days }) });
+    const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-suspend-user", targetUserId: userId, reason, durationDays: days }) });
     if (r.ok) {
       setStrikes(s => [...s, { id: "new", user_id: { id: userId, name: "", avatar: "" }, reason, category: "high_severity", severity: days ? "suspension" : "permanent_ban", suspension_ends_at: days ? new Date(Date.now() + days * 86400000).toISOString() : null, appeal_status: "none", created_at: new Date().toISOString() }]);
     }
