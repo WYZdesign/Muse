@@ -1,0 +1,47 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+const sb = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function POST(req: NextRequest) {
+  try {
+    const { email, phone, source } = await req.json();
+    
+    if (!email || !email.includes("@")) {
+      return NextResponse.json({ error: "Valid email required" }, { status: 400 });
+    }
+
+    // Check if already exists
+    const { data: existing } = await sb.from("muse_waitlist").select("id").eq("email", email).maybeSingle();
+    if (existing) {
+      return NextResponse.json({ error: "Email already on waitlist" }, { status: 409 });
+    }
+
+    // Insert waitlist entry
+    const { error } = await sb.from("muse_waitlist").insert({
+      email: email.toLowerCase(),
+      phone: phone || null,
+      source: source || "default",
+      created_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.error("Waitlist insert error:", error);
+      return NextResponse.json({ error: "Failed to join waitlist" }, { status: 500 });
+    }
+
+    // Increment counter in analytics
+    await sb.from("muse_landing_analytics").upsert({
+      date: new Date().toISOString().split("T")[0],
+      signups: 1,
+    }, { onConflict: "date" });
+
+    return NextResponse.json({ success: true, message: "You're on the list!" });
+  } catch (error) {
+    console.error("Waitlist error:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
