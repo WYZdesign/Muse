@@ -26,6 +26,14 @@ function getAccessToken(): string {
   try { return JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
 }
 
+async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = getAccessToken();
+  const headers = new Headers(options.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  if (!headers.has("Content-Type") && options.body) headers.set("Content-Type", "application/json");
+  return fetch(url, { ...options, headers });
+}
+
 const DEMO_MOMENTS: any[] = [
   { id: 9001, author: "Maya Chen", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800", time: "12m ago", text: "Golden hour setup for tonight's shoot. The light is unreal right now 🌅", likes: 87, comments: 12 },
   { id: 9002, author: "Jordan Rivera", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100", img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800", time: "28m ago", text: "Lens test on the new 85mm. Creamy bokeh for days 📷", likes: 143, comments: 21 },
@@ -389,7 +397,7 @@ function MusePage() {
   useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{localStorage.removeItem("muse_boost");}catch{}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd]);
 
   const applySession = useCallback((accessToken: string, refreshToken?: string) => {
-    fetch("/api/muse/auth", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ action: "session", access_token: accessToken }) })
+    authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "session", access_token: accessToken }) })
       .then(r => r.json())
       .then(d => {
         if (d.success && d.user) {
@@ -488,7 +496,7 @@ function MusePage() {
   const showToast = useCallback((msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); }, []);
 
   const doLogout = useCallback(async () => {
-    try { await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})}); } catch(e) {}
+    try { await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "logout" }) }); } catch(e) {}
     const keys = ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium"];
     keys.forEach(k => { try { localStorage.removeItem(k); } catch {} });
     setAuthUser(null); setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free" })); setScreen("auth"); showToast("Logged out");
@@ -503,9 +511,7 @@ function MusePage() {
       const fd = new FormData();
       fd.append("file", file);
       fd.append("folder", folder);
-      const raw = localStorage.getItem("muse_user");
-      const token = raw ? (JSON.parse(raw).access_token || "") : "";
-      const r = await fetch("/api/muse/upload", { method: "POST", headers: token ? { "Authorization": `Bearer ${token}` } : {}, body: fd });
+      const r = await authFetch("/api/muse/upload", { method: "POST", body: fd });
       const j = await r.json();
       if (j.success && j.url) return j.url;
       showToast("Upload failed: " + (j.error || "Unknown"));
@@ -542,7 +548,7 @@ function MusePage() {
       if (typeof window !== "undefined" && (window as any).gtag) { (window as any).gtag("event", event, data); }
     } catch {}
     try {
-      fetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-event", name: event, props: data || {} }), keepalive: true }).catch(() => {});
+      authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "track-event", name: event, props: data || {} }), keepalive: true }).catch(() => {});
     } catch {}
   };
   const checkProfileBadges = (stats:any, createdAt:number):{name:string;desc:string;icon:string;color:string}[] => {
@@ -857,24 +863,18 @@ function MusePage() {
   // ═══ SAFETY: fetch check-ins and safety profile on mount ═══
   useEffect(() => {
     if (!authUser?.profile?.id) return;
-    const token = getAccessToken();
-    if (!token) return;
-    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
-    fetch("/api/muse", { method: "POST", headers, body: JSON.stringify({ type: "get-checkins" }) })
+    authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-checkins" }) })
       .then(r => r.json()).then(d => { if (d.checkins) setSafetyCheckins(d.checkins); }).catch(() => {});
-    fetch("/api/muse", { method: "POST", headers, body: JSON.stringify({ type: "get-safety-profile" }) })
+    authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-safety-profile" }) })
       .then(r => r.json()).then(d => { if (d.safety) setSafetyProfile(d.safety); }).catch(() => {});
   }, [authUser?.profile?.id]);
 
   // ═══ PROMPTS: fetch prompt bank and user responses ═══
   useEffect(() => {
     if (!authUser?.profile?.id) return;
-    const token = getAccessToken();
-    if (!token) return;
-    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
-    fetch("/api/muse", { method: "POST", headers, body: JSON.stringify({ type: "get-prompts" }) })
+    authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-prompts" }) })
       .then(r => r.json()).then(d => { if (d.prompts) setPromptBankData(d.prompts); }).catch(() => {});
-    fetch("/api/muse", { method: "POST", headers, body: JSON.stringify({ type: "get-prompt-responses" }) })
+    authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-prompt-responses" }) })
       .then(r => r.json()).then(d => { if (d.responses) setPromptResponses(d.responses); }).catch(() => {});
   }, [authUser?.profile?.id]);
 
@@ -884,9 +884,8 @@ function MusePage() {
     const geo = await getGeolocation();
     setShowEditProfile(false);
     try {
-      await fetch("/api/muse/auth", {
+      await authFetch("/api/muse/auth", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...(localStorage.getItem("muse_user") ? { "Authorization": `Bearer ${JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""}` } : {}) },
         body: JSON.stringify({
           action: "update-profile",
           name: editName,
@@ -1295,7 +1294,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div style={{padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                       <div><div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>Blocked Users</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{blockedUsers.length} blocked</div></div>
                     </div>
-                    <button className="btn" style={{width:"100%",marginTop:12,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",color:"var(--text)",fontSize:13}} onClick={async()=>{try{const raw=localStorage.getItem("muse_user");const t=raw?JSON.parse(raw).access_token:"";if(!t){showToast("Please sign in again");return;}const res=await fetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"export",access_token:t})});if(!res.ok){showToast("Export failed");return;}const j=await res.json();const blob=new Blob([JSON.stringify(j,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="muse-my-data.json";a.click();URL.revokeObjectURL(url);showToast("Data exported");}catch(e){showToast("Export failed");}}}>Export My Data</button>
+                    <button className="btn" style={{width:"100%",marginTop:12,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",color:"var(--text)",fontSize:13}} onClick={async()=>{try{const res=await authFetch("/api/muse",{method:"POST",body:JSON.stringify({action:"export"})});if(!res.ok){showToast("Export failed");return;}const j=await res.json();const blob=new Blob([JSON.stringify(j,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="muse-my-data.json";a.click();URL.revokeObjectURL(url);showToast("Data exported");}catch(e){showToast("Export failed");}}}>Export My Data</button>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"24px 0 10px"}}>Help & Support</div>
                     {[
                       {q:"How does matching work?",a:"Swipe right on creators you'd like to connect with. If they swipe right back, it's a match! You can then message each other."},
@@ -1314,7 +1313,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     </div>
                     <div style={{marginTop:20}}>
                       <div style={{fontSize:15,fontWeight:700,color:"var(--coral)",marginBottom:12}}>Danger Zone</div>
-                      <button className="btn" style={{width:"100%",background:"rgba(255,107,107,0.1)",border:"1px solid rgba(255,107,107,0.3)",color:"var(--coral)",fontSize:13}} onClick={()=>{if(confirm("Delete your account? This cannot be undone.")){const t=localStorage.getItem("muse_user");fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json",...(t?{"Authorization":`Bearer ${JSON.parse(t).access_token||""}`}:{})},body:JSON.stringify({action:"delete-account"})});showToast("Account deleted");setTimeout(()=>window.location.reload(),1500)}}}>Delete Account</button>
+                      <button className="btn" style={{width:"100%",background:"rgba(255,107,107,0.1)",border:"1px solid rgba(255,107,107,0.3)",color:"var(--coral)",fontSize:13}} onClick={()=>{if(confirm("Delete your account? This cannot be undone.")){authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"delete-account"})});showToast("Account deleted");setTimeout(()=>window.location.reload(),1500)}}}>Delete Account</button>
                     </div>
                     <button className="btn btn-gold" style={{width:"100%",marginTop:16,fontSize:12,padding:"12px 0"}} onClick={doLogoutFull}>Log Out</button>
                   </div>
@@ -1369,7 +1368,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   </div>
                   {authMode==="signup" && authPass && (()=>{const l=authPass.length;const u=/[A-Z]/.test(authPass);const y=/[!@#$%^&*]/.test(authPass);const s=l>=8&&u&&y?l>=12?4:3:l>=6?2:1;const lbl=["","Weak","Fair","Strong","Very strong"][s];const col=["","var(--sunset)","var(--sunset-orange)","var(--amber)","var(--mint)"][s];const t=["","weak","fair","strong","vstrong"][s];return(<div><div className="pw-meter-label" style={{color:col}}>{lbl}</div><div className="pw-meter-wrap"><div className={"pw-meter-bar"+(s>=1?" "+t:"")}/><div className={"pw-meter-bar"+(s>=2?" "+t:"")}/><div className={"pw-meter-bar"+(s>=3?" "+t:"")}/><div className={"pw-meter-bar"+(s>=4?" "+t:"")}/></div></div>);})()}
                   {formErrors.pass && <div className="error-msg">{formErrors.pass}</div>}
-                  {authMode==="login" && <button type="button" onClick={async()=>{if(!authEmail.trim()){setFormErrors({email:"Enter your email first"});return;}setAuthLoading(true);try{const r=await fetch("/api/muse/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forgot-password",email:authEmail.trim()})});const j=await r.json();showToast(j.message||j.error||"Check your email for a password reset link!");}catch{showToast("Network error");}setAuthLoading(false);}} style={{background:"none",border:"none",color:"var(--gold)",fontSize:12,cursor:"pointer",textAlign:"right",width:"100%",marginTop:4,padding:0}}>Forgot password?</button>}
+                  {authMode==="login" && <button type="button" onClick={async()=>{if(!authEmail.trim()){setFormErrors({email:"Enter your email first"});return;}setAuthLoading(true);try{const r=await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"forgot-password",email:authEmail.trim()})});const j=await r.json();showToast(j.message||j.error||"Check your email for a password reset link!");}catch{showToast("Network error");}setAuthLoading(false);}} style={{background:"none",border:"none",color:"var(--gold)",fontSize:12,cursor:"pointer",textAlign:"right",width:"100%",marginTop:4,padding:0}}>Forgot password?</button>}
                   <button className="btn btn-gold" style={{marginTop:10,opacity:authLoading?0.6:1}} disabled={authLoading} onClick={handleAuthClick}>{authLoading?"Loading...":authMode==="login"?"Log In":"Create Account"}</button>
                   <div className="auth-divider"><span>or continue with</span></div>
                   <div style={{display:"flex",gap:10}}>
@@ -1711,7 +1710,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         }})});}catch(e){}
                         // Apply referral code if entered
                         if (obData.referralCode) {
-                          try { await fetch("/api/muse/referral", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAccessToken()}` }, body: JSON.stringify({ action: "apply", referralCode: obData.referralCode.trim().toUpperCase() }) }); } catch {}
+                          try { await authFetch("/api/muse/referral", { method: "POST", body: JSON.stringify({ action: "apply", referralCode: obData.referralCode.trim().toUpperCase() }) }); } catch {}
                         }
                       }
                       setScreen("discover");showToast("Welcome to Muse!")
