@@ -117,6 +117,8 @@ function MusePage() {
   const [liveFeed, setLiveFeed] = useState<any[] | null>(null);
   const [liveForum, setLiveForum] = useState<any[] | null>(null);
   const [liveEvents, setLiveEvents] = useState<any[] | null>(null);
+  const [liveCommunities, setLiveCommunities] = useState<typeof COMMUNITIES | null>(null);
+  const [liveSessions, setLiveSessions] = useState<typeof SESSIONS | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
@@ -826,9 +828,7 @@ function MusePage() {
     setChatInput("");
     setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
     const myId = authUser?.profile?.id || authUser?.id || "local";
-    let token = "";
-    try { token = (JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""); } catch {}
-    await persistMessage({ myId, theirId: targetId, text: clean, token });
+    await persistMessage({ myId, theirId: targetId, text: clean });
     trackEvent("message_sent", { has_match: true });
     // Show typing + simulated reply only when no real remote partner is present.
     setTypingTarget(Number(chatTarget.id));
@@ -876,6 +876,83 @@ function MusePage() {
       .then(r => r.json()).then(d => { if (d.prompts) setPromptBankData(d.prompts); }).catch(() => {});
     authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-prompt-responses" }) })
       .then(r => r.json()).then(d => { if (d.responses) setPromptResponses(d.responses); }).catch(() => {});
+  }, [authUser?.profile?.id]);
+
+  // ═══ DISCOVER: fetch real profiles from API ═══
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    let cancelled = false;
+    authFetch("/api/muse?type=profiles")
+      .then(r => r.json())
+      .then(d => { if (!cancelled && d.profiles) setLiveProfiles(d.profiles); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [authUser?.profile?.id]);
+
+  // ═══ FEED: fetch real feed posts from API ═══
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    let cancelled = false;
+    authFetch("/api/muse?type=feed")
+      .then(r => r.json())
+      .then(d => { if (!cancelled && d.posts) setLiveFeed(d.posts); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [authUser?.profile?.id]);
+
+  // ═══ BRIEFS: fetch real briefs from API ═══
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    let cancelled = false;
+    authFetch("/api/muse?type=briefs")
+      .then(r => r.json())
+      .then(d => { if (!cancelled && d.briefs) setLiveBriefs(d.briefs); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [authUser?.profile?.id]);
+
+  // ═══ FORUM: fetch real forum posts from API ═══
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    let cancelled = false;
+    authFetch("/api/muse?type=forum")
+      .then(r => r.json())
+      .then(d => { if (!cancelled && d.posts) setLiveForum(d.posts); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [authUser?.profile?.id]);
+
+  // ═══ EVENTS: fetch real events from API ═══
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    let cancelled = false;
+    authFetch("/api/muse?type=events")
+      .then(r => r.json())
+      .then(d => { if (!cancelled && d.events) setLiveEvents(d.events); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [authUser?.profile?.id]);
+
+  // ═══ COMMUNITIES: fetch real communities from API ═══
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    let cancelled = false;
+    authFetch("/api/muse?type=communities")
+      .then(r => r.json())
+      .then(d => { if (!cancelled && d.communities) setLiveCommunities(d.communities); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [authUser?.profile?.id]);
+
+  // ═══ SESSIONS: fetch real sessions from API ═══
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    let cancelled = false;
+    authFetch("/api/muse?type=sessions")
+      .then(r => r.json())
+      .then(d => { if (!cancelled && d.sessions) setLiveSessions(d.sessions); })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
 
   const saveProfileEdits = useCallback(async () => {
@@ -1077,7 +1154,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <div className="conn-scroll">
                     <div className="hamburger-title">Community</div>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Channels & Groups</div>
-                    {COMMUNITIES.filter(c => showNsfw || !c.nsfw).map(c => (
+                    {(liveCommunities || COMMUNITIES).filter(c => showNsfw || !c.nsfw).map(c => (
                       <div key={c.id} className="conn-card" style={{margin:"0 0 10px"}}>
                         <img src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
                         <div className="conn-content">
@@ -1092,7 +1169,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       </div>
                     ))}
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"20px 0 10px"}}>Events</div>
-                    {EVENTS.filter(e => showNsfw || !e.nsfw).map(ev => (
+                    {(liveEvents || EVENTS).filter(e => showNsfw || !e.nsfw).map(ev => (
                       <div key={ev.id} className="conn-card" style={{flexDirection:"column",margin:"0 0 10px"}}>
                         <div className="conn-name">{ev.title}</div>
                         <div className="conn-meta">{ev.date} · {ev.loc}</div>
@@ -1181,7 +1258,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       </div>
                     )}
                     <div style={{display:"flex",gap:6,marginBottom:12}}>{(["hot","new","top"] as const).map(s=>(<div key={s} className={"conn-tab-sub"+(forumSort===s?" active":"")} onClick={()=>setForumSort(s)}>{s.charAt(0).toUpperCase()+s.slice(1)}</div>))}</div>
-                    {FORUM_POSTS.sort((a,b)=>forumSort==="top"?(b.votes+b.comments.length*2)-(a.votes+a.comments.length*2):forumSort==="new"?(b.id-a.id):(b.votes*2+b.comments.length)-(a.votes*2+a.comments.length)).map(post=>(
+                    {(liveForum || FORUM_POSTS).sort((a,b)=>forumSort==="top"?(b.votes+b.comments.length*2)-(a.votes+a.comments.length*2):forumSort==="new"?(b.id-a.id):(b.votes*2+b.comments.length)-(a.votes*2+a.comments.length)).map(post=>(
                       <div key={post.id} className="conn-card" style={{flexDirection:"column",margin:"0 0 10px",padding:"14px 18px"}}>
                         {post.pinned && <div style={{fontSize:10,color:"var(--gold)",fontWeight:700,marginBottom:4}}>📌 Pinned</div>}
                         <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
@@ -1199,7 +1276,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                             </div>
                             {expandedPost===post.id && (
                               <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid rgba(255,255,255,0.06)"}}>
-                                {post.comments.map((c,i)=><div key={i} style={{fontSize:13,color:"var(--text2)",padding:"6px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}><strong style={{color:"var(--text)"}}>{c.author}</strong>: {c.text}</div>)}
+                                {post.comments.map((c: {author: string; text: string}, i: number)=><div key={i} style={{fontSize:13,color:"var(--text2)",padding:"6px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}><strong style={{color:"var(--text)"}}>{c.author}</strong>: {c.text}</div>)}
                                 <div style={{display:"flex",gap:8,marginTop:8}}>
                                   <input className="inp" placeholder="Reply..." value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={async e=>{if(e.key==="Enter"&&commentText.trim()){const txt=commentText.trim();setForumPosts(prev=>prev.map(p=>p.id===post.id?{...p,comments:[...p.comments,{author:currentUser.name,text:txt}]}:p));setCommentText("");await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",type:"reply",postId:post.id,text:txt,userId:currentUser.id})});showToast("Reply posted!")}}} style={{flex:1,fontSize:12,padding:"8px 12px"}} />
                                 </div>
@@ -2044,8 +2121,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                             setChatTarget(prev=>prev?{...prev,messages:[...prev.messages,imgMsg]}:prev);
                             setMatches(prev=>prev.map(m=>m.id===chatTarget.id?{...m,messages:[...m.messages,imgMsg]}:m));
                             const myId=authUser?.profile?.id||authUser?.id||"local";
-                            let token="";try{token=(JSON.parse(localStorage.getItem("muse_user")||"{}").access_token||"")}catch{}
-                            await persistMessage({myId,theirId:String(chatTarget.id),text:"",img:url,token});
+                            await persistMessage({myId,theirId:String(chatTarget.id),text:"",img:url});
                             showToast("Photo sent!");
                           }
                         }
@@ -2133,7 +2209,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 ))}
               </div>
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
-                {commTab === "groups" && COMMUNITIES.filter(c => showNsfw || !c.nsfw).map(c => (
+                {commTab === "groups" && (liveCommunities || COMMUNITIES).filter(c => showNsfw || !c.nsfw).map(c => (
                   <div key={c.id} className="conn-card" style={{marginBottom:10,padding:14}}>
                     <img src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
                     <div className="conn-content" style={{flex:1}}>
@@ -2176,7 +2252,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 ))}
               </div>
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
-                {sessTab === "sessions" && SESSIONS.map(s => (
+                {sessTab === "sessions" && (liveSessions || SESSIONS).map(s => (
                   <div key={s.id} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row"}}>
                     <img src={s.img} alt={s.name} style={{width:"25%",height:"100%",minHeight:100,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                     <div className="conn-content" style={{flex:1,padding:14,display:"flex",flexDirection:"column",justifyContent:"center"}}>
@@ -2260,7 +2336,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{display:"flex",gap:6}}>{(["hot","new","top"] as const).map(s=>(<div key={s} className={"conn-tab-sub"+(forumSort===s?" active":"")} onClick={()=>setForumSort(s)}>{s.charAt(0).toUpperCase()+s.slice(1)}</div>))}</div>
                       <button className="conn-btn conn-btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setShowNewPost(!showNewPost)}>+ Post</button>
                     </div>
-                    {FORUM_POSTS.filter(p => forumCategory==="all"||p.cat===forumCategory).sort((a,b)=>forumSort==="top"?(b.votes+b.comments.length*2)-(a.votes+a.comments.length*2):forumSort==="new"?(b.id-a.id):(b.votes*2+b.comments.length)-(a.votes*2+a.comments.length)).map(post=>(
+                    {(liveForum || FORUM_POSTS).filter(p => forumCategory==="all"||p.cat===forumCategory).sort((a,b)=>forumSort==="top"?(b.votes+b.comments.length*2)-(a.votes+a.comments.length*2):forumSort==="new"?(b.id-a.id):(b.votes*2+b.comments.length)-(a.votes*2+a.comments.length)).map(post=>(
                       <div key={post.id} className="conn-card" style={{flexDirection:"column",marginBottom:8,padding:14}}>
                         {post.pinned && <div style={{fontSize:10,color:"var(--gold)",fontWeight:700,marginBottom:4}}>📌 Pinned</div>}
                         <div style={{display:"flex",alignItems:"flex-start",gap:12}}>

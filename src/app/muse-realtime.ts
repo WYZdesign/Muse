@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { authFetch } from "@/app/(muse)/muse/lib/auth-client";
 
 export type RealtimeMessage = {
   id?: string;
@@ -26,18 +27,13 @@ export async function persistMessage(opts: {
   text: string;
   img?: string;
   clientMsgId?: string;
-  token?: string;
 }): Promise<boolean> {
   if (!opts.myId || opts.myId === "local") return false;
   if (!opts.theirId || (!opts.text.trim() && !opts.img)) return false;
   const convo = convoIdFor(opts.myId, opts.theirId);
   try {
-    const res = await fetch("/api/muse", {
+    const res = await authFetch("/api/muse", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(opts.token ? { Authorization: `Bearer ${opts.token}` } : {}),
-      },
       body: JSON.stringify({
         action: "message",
         match_id: convo,

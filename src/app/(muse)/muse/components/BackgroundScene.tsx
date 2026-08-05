@@ -48,7 +48,9 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
       frame = requestAnimationFrame(animate);
     };
     animate();
-    return () => { cancelAnimationFrame(frame); window.removeEventListener('mousemove', onMove); window.removeEventListener('deviceorientation', onGyro); };
+    const onVis = () => { if (document.hidden) cancelAnimationFrame(frame); else animate(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('mousemove', onMove); window.removeEventListener('deviceorientation', onGyro); document.removeEventListener("visibilitychange", onVis); };
   }, []);
 
   useEffect(() => {
