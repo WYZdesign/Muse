@@ -26,6 +26,16 @@ export default function Nav({ active, onNavigate, onHamburgerToggle, unreadCount
     animation: "hueShift 3s ease-in-out infinite"
   });
 
+  const activeLabelStyle = (color: string): React.CSSProperties => ({
+    color,
+    fontWeight: 800,
+    background: "linear-gradient(90deg," + color + ",rgba(255,255,255,0.95)," + color + "," + color + ")",
+    backgroundSize: "200% 100%",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    animation: "gradientShift 4s ease-in-out infinite"
+  });
+
   return (
     <div className="nav" role="navigation" aria-label="Main navigation">
       {tabs.map(tab => {
@@ -34,7 +44,7 @@ export default function Nav({ active, onNavigate, onHamburgerToggle, unreadCount
         return (
           <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs" as Screen); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined} style={isActive ? { ["--line-color" as string]: color } : undefined}>
             <span className="nav-icon" style={isActive ? activeIconStyle(color) : undefined}>{tab.icon}</span>
-            <span style={isActive?{color,fontWeight:800,background:"linear-gradient(90deg,"+color+","+color+")",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"gradientShift 4s ease-in-out infinite"}:{color:"var(--muted)",fontWeight:600}}>{tab.label}</span>
+            <span style={isActive ? activeLabelStyle(color) : { color:"var(--muted)", fontWeight:600 }}>{tab.label}</span>
           </button>
         );
       })}

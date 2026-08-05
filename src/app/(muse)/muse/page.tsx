@@ -217,6 +217,9 @@ function MusePage() {
       return false;
     } catch { return false; }
   });
+  const [premiumDismissed, setPremiumDismissed] = useState<boolean>(() => {
+    try { return !!localStorage.getItem("muse_hide_premium"); } catch { return false; }
+  });
 
   // ═══ TRUST & SAFETY STATE ═══
   const [showDisclosureModal, setShowDisclosureModal] = useState(false);
@@ -1180,7 +1183,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <div className="conn-name">{ev.title}</div>
                         <div className="conn-meta">{ev.date} · {ev.loc}</div>
                         <div style={{fontSize:13,color:"var(--text2)",margin:"4px 0 8px",lineHeight:1.5}}>{ev.desc}</div>
-                        <button className={"conn-btn "+(rsvpdEvents.includes(ev.id)?"conn-btn-ghost":"conn-btn-primary")} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter(x=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
+                        <div style={{display:"flex",gap:6,width:"100%"}}>
+                          <button className={"conn-btn "+(rsvpdEvents.includes(ev.id)?"conn-btn-ghost":"conn-btn-primary")} style={{flex:1}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter(x=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
+                          <button className="conn-btn conn-btn-ghost" style={{flex:1}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/"+ev.id);showToast("Event link copied!")}}>Share</button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1234,7 +1240,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Creative Professionals</div>
                     {PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
                       <div key={p.id} className="conn-card" style={{margin:"0 0 10px",flexDirection:"column",alignItems:"center",textAlign:"center",padding:"0 0 16px 0",gap:0}}>
-                        <img src={p.img} alt={p.name} style={{width:"100%",height:140,objectFit:"cover",borderRadius:"16px 16px 0 0"}} onError={handleImgError} />
+                        <img src={p.img} alt={p.name} style={{width:"100%",height:150,objectFit:"fill",borderRadius:"16px 16px 0 0"}} onError={handleImgError} />
                         <div className="conn-content" style={{padding:"12px 16px 0",display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center",width:"100%"}}>
                           <div className="conn-name">{p.name}</div>
                           <div className="conn-meta">{p.type} · {p.loc} · {p.exp}</div>
@@ -1245,6 +1251,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                           <div className="conn-actions" style={{marginTop:8,justifyContent:"center",width:"100%"}}>
                             <button className="conn-btn conn-btn-primary" style={{flex:1,textAlign:"center"}} onClick={()=>{showToast("Connection request sent to "+p.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})})}}>Connect</button>
                             <button className="conn-btn conn-btn-ghost" style={{flex:1,textAlign:"center"}} onClick={()=>showToast(p.openings+" open positions!")}>View ({p.openings})</button>
+                            <button className="conn-btn conn-btn-ghost" style={{flex:1,textAlign:"center"}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/pro/"+p.id);showToast("Profile link copied!")}}>Share</button>
                           </div>
                         </div>
                       </div>
@@ -2165,11 +2172,11 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div key={brief.id} className="brief-card">
                       <div className="brief-header" style={{flexWrap:"wrap",gap:6}}>
                         <img src={brief.authorImg} alt={brief.author} className="brief-avatar" />
-                        <div className="brief-info" style={{flex:1}}>
+                        <div className="brief-info" style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center"}}>
                           <div className="brief-author"><strong>{brief.author}</strong></div>
                           <div className="brief-meta">{brief.budget} · {brief.deadline}</div>
                         </div>
-                        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:4,width:"100%"}}>
+                        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:4,width:"100%",justifyContent:"center"}}>
                           {brief.cat==="tfp" && <span className="brief-tag" style={{background:"rgba(152,251,152,0.15)",borderColor:"rgba(152,251,152,0.3)",color:"var(--mint)"}}>TFP</span>}
                           {brief.cat==="paid" && <span className="brief-tag" style={{background:"rgba(255,215,0,0.12)",borderColor:"rgba(255,215,0,0.2)",color:"var(--gold)"}}>Paid</span>}
                           {brief.cat==="opencall" && <span className="brief-tag" style={{background:"rgba(135,206,235,0.12)",borderColor:"rgba(135,206,235,0.25)",color:"#87CEEB"}}>Open Call</span>}
@@ -2259,8 +2266,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
                 {sessTab === "sessions" && (liveSessions || SESSIONS).map(s => (
-                  <div key={s.id} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row"}}>
-                    <img src={s.img} alt={s.name} style={{width:"25%",height:"100%",minHeight:100,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                  <div key={s.id} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
+                    <img src={s.img} alt={s.name} style={{width:"25%",alignSelf:"stretch",minHeight:120,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                     <div className="conn-content" style={{flex:1,padding:14,display:"flex",flexDirection:"column",justifyContent:"center"}}>
                       <div className="conn-name" style={{fontSize:15}}>{s.name}</div>
                       <div className="conn-meta" style={{fontSize:12}}>{s.type} · {s.rate} · ★ {s.rating}</div>
@@ -2281,8 +2288,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   </div>
                 ) : (
                   matches.filter(m => m.booked).map(m => (
-                    <div key={m.id} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row"}}>
-                      <img src={m.img} alt={m.name} style={{width:"25%",height:"100%",minHeight:100,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                    <div key={m.id} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
+                      <img src={m.img} alt={m.name} style={{width:"25%",alignSelf:"stretch",minHeight:120,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                       <div className="conn-content" style={{flex:1,padding:14,display:"flex",flexDirection:"column",justifyContent:"center"}}>
                         <div className="conn-name" style={{fontSize:15}}>{m.name}</div>
                         <div className="conn-meta" style={{fontSize:12}}>{m.type} · Booked Session</div>
@@ -2452,6 +2459,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <div className={"screen-el"+(screen==="profile"?" active":"")}>
               <div className="hdr" style={{justifyContent:"space-between"}}>
+                <button className="hdr-btn" onClick={openHamburger}><FiMenu size={18} /></button>
                 <div style={{position:"absolute",left:"50%",transform:"translateX(-50%)",fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:18,fontWeight:800,color:"var(--gold)"}}>Your Profile</div>
                 <div style={{display:"flex",gap:10}}>
                   <button className="hdr-btn" onClick={()=>{setEditName(currentUser.name);setEditBio(obData.bio||"");setEditLoc(obData.loc||"");setEditAvatar(currentUser.avatar||"");setShowEditProfile(true)}}><FiEdit2 size={18} /></button>
@@ -2474,11 +2482,15 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <div className="profile-name">{currentUser.name}</div>
                   <div className="profile-type">{obData.type || "Creative"}</div>
                   <div className="profile-loc">{obData.loc || "Set your location"}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:6,justifyContent:"center",marginTop:6,fontSize:12,color:"var(--muted)"}}>
+                    <span>Member since {new Date(currentUser.createdAt).toLocaleDateString(undefined,{month:"short",year:"numeric"})}</span>
+                  </div>
                 </div>
                 <div className="stats-row">
                   <div className="stat"><div className="stat-num">{matches.length}</div><div className="stat-label">Matches</div></div>
                   <div className="stat"><div className="stat-num">{matchStreak}</div><div className="stat-label">Streak</div></div>
                   <div className="stat"><div className="stat-num">{currentUser.stats.likes}</div><div className="stat-label">Likes</div></div>
+                  <div className="stat"><div className="stat-num">{currentUser.stats.superLikes}</div><div className="stat-label">Superlikes</div></div>
                   <div className="stat"><div className="stat-num">{currentUser.stats.passes}</div><div className="stat-label">Passes</div></div>
                 </div>
                 <div className="section">
@@ -3141,37 +3153,29 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div style={{position:"absolute",bottom:30,color:"rgba(255,255,255,0.5)",fontSize:12}}>Tap anywhere to close</div>
         </div>
       )}
-      {/* GLOBAL PREMIUM — centered in phone viewport */}
-      <div className="premium-wrap">
-        {showPremiumPopup ? (
-          <div className="premium-popup">
-            <button className="premium-popup-close" onClick={() => { try{localStorage.setItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); }}>✕</button>
-            <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
-            <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
-            <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
-            <div style={{marginTop:8,fontSize:10,color:"var(--muted)",textAlign:"center"}} onClick={() => { try{localStorage.setItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); }}>Don&apos;t show again</div>
-          </div>
-        ) : (
-          <>
+      {/* GLOBAL PREMIUM — popup centered in viewport, star tab pinned to right edge */}
+      {!premiumDismissed && (
+        <div className="premium-wrap">
+          {showPremiumPopup ? (
+            <div className="premium-popup">
+              <button className="premium-popup-close" onClick={() => { try{localStorage.setItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }} aria-label="Dismiss premium" title="Dismiss premium">✕</button>
+              <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
+              <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
+              <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
+              <div style={{marginTop:8,fontSize:10,color:"var(--muted)",textAlign:"center"}} onClick={() => { try{localStorage.setItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }}>Don&apos;t show again</div>
+            </div>
+          ) : (
             <button
               onClick={() => setShowPremiumPopup(true)}
               className="premium-star-tab"
               aria-label="Premium"
               title="Muse Premium"
-              style={{top:"auto",bottom:0,transform:"translateY(0)"}}
             >
               <div className="premium-star-icon">✦</div>
             </button>
-            <button
-              onClick={() => { try{localStorage.setItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); }}
-              className="premium-close-btn"
-              aria-label="Close Premium"
-              title="Don't show again"
-              style={{position:"absolute",top:"-40px",right:0,background:"rgba(10,6,18,0.8)",border:"1px solid rgba(255,255,255,0.1)",color:"var(--muted)",width:24,height:24,borderRadius:"50%",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",zIndex:400}}
-            >✕</button>
-          </>
-        )}
-      </div>
+          )}
+        </div>
+      )}
       {viewProfile && (
         <div className="modal-overlay" onClick={()=>setViewProfile(null)}>
           <div className="modal-panel" onClick={e=>e.stopPropagation()} style={{maxWidth:400,width:"90%",maxHeight:"85vh",overflowY:"auto",borderRadius:24,padding:0,background:"linear-gradient(180deg,#0f081e,#0a0612)"}}>

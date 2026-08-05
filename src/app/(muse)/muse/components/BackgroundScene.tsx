@@ -31,26 +31,18 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
   useEffect(() => {
     const orbs = document.querySelectorAll('.scene-orb');
     if (!orbs.length) return;
-    let mx = 0.5, my = 0.5;
-    const onMove = (e: MouseEvent) => { mx = e.clientX / window.innerWidth; my = e.clientY / window.innerHeight; };
-    const onGyro = (e: DeviceOrientationEvent) => {
-      if (e.gamma != null) mx = (e.gamma + 45) / 90;
-      if (e.beta != null) my = (e.beta + 45) / 90;
-    };
-    window.addEventListener('mousemove', onMove, { passive: true });
-    window.addEventListener('deviceorientation', onGyro, { passive: true });
     let frame: number;
     const animate = () => {
       orbs.forEach((orb, i) => {
         const f = (i + 1) * 10;
-        (orb as HTMLElement).style.transform = `translate(${(mx - 0.5) * f}px,${(my - 0.5) * f}px)`;
+        (orb as HTMLElement).style.transform = `translate(${(Math.sin(Date.now()/6000 + i) - 0.5) * f}px,${(Math.cos(Date.now()/7000 + i*2) - 0.5) * f}px)`;
       });
       frame = requestAnimationFrame(animate);
     };
     animate();
     const onVis = () => { if (document.hidden) cancelAnimationFrame(frame); else animate(); };
     document.addEventListener("visibilitychange", onVis);
-    return () => { cancelAnimationFrame(frame); window.removeEventListener('mousemove', onMove); window.removeEventListener('deviceorientation', onGyro); document.removeEventListener("visibilitychange", onVis); };
+    return () => { cancelAnimationFrame(frame); document.removeEventListener("visibilitychange", onVis); };
   }, []);
 
   useEffect(() => {
