@@ -3,7 +3,8 @@
     { "source": "/", "destination": "/muse", "permanent": true }
   ],
   "crons": [
-    { "path": "/api/backup", "schedule": "0 6 * * *" }
+    { "path": "/api/backup", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/checkins", "schedule": "0 8 * * *" }
   ],
   "headers": [
     {
