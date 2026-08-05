@@ -14,6 +14,7 @@ import MyAlbumsManager from "./components/MyAlbumsManager";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
 import DisclosureModal from "./components/DisclosureModal";
+import AgeVerificationModal from "./components/AgeVerificationModal";
 import SafetyCheckinModal from "./components/SafetyCheckinModal";
 import PromptBankModal from "./components/PromptBankModal";
 import ReferralPanel from "./components/ReferralPanel";
@@ -222,6 +223,10 @@ function MusePage() {
   const [disclosureTarget, setDisclosureTarget] = useState<{id:string;name:string} | null>(null);
   const [disclosureBookingId, setDisclosureBookingId] = useState<string | undefined>();
   const [existingDisclosure, setExistingDisclosure] = useState<Record<string, unknown> | null>(null);
+  const [showAgeVerification, setShowAgeVerification] = useState(false);
+  const [ageVerified, setAgeVerified] = useState(false);
+  const [pendingDisclosureConfirm, setPendingDisclosureConfirm] = useState<string | null>(null);
+  const [pendingDisclosureCreate, setPendingDisclosureCreate] = useState<Record<string, unknown> | null>(null);
   const [showSafetyCheckin, setShowSafetyCheckin] = useState(false);
   const [safetyCheckins, setSafetyCheckins] = useState<any[]>([]);
   const [safetyProfile, setSafetyProfile] = useState<any>(null);
@@ -410,6 +415,7 @@ function MusePage() {
           if (d.profile) {
             setCurrentUser(prev => ({ ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, type: d.profile.type || prev.type, foundingTier: d.profile.founding_tier || "", proExpiresAt: d.profile.pro_expires_at || "", tier: d.profile.tier || "free" }));
             if (d.profile.tier) setUserTier(d.profile.tier);
+            if (d.profile.age_verified) setAgeVerified(true);
             setScreen(d.profile.name && d.profile.type ? "discover" : "onboard");
           } else {
             setScreen("onboard");
@@ -3199,6 +3205,15 @@ const isMatch=matchScore>55||Math.random()>0.5;
           bookingId={disclosureBookingId}
           existingDisclosure={existingDisclosure}
           onSubmit={async (form) => {
+            // Age gate: paid disclosures require verified 18+ identity before proposing
+            const hasPayment = form.compensationAmount && form.compensationAmount !== "0" && form.compensationAmount !== "Free" && form.compensationAmount !== "TFP";
+            if (hasPayment && !ageVerified) {
+              setPendingDisclosureConfirm(null);
+              setPendingDisclosureCreate(form as Record<string, unknown>);
+              setShowDisclosureModal(false);
+              setShowAgeVerification(true);
+              return;
+            }
             const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "create-disclosure", ...form, responderId: disclosureTarget.id, bookingId: disclosureBookingId }) });
             const d = await r.json();
             if (d.blocked) { setShowDisclosureModal(false); setToastMsg("Request blocked — violates Muse terms"); return; }
@@ -3206,9 +3221,49 @@ const isMatch=matchScore>55||Math.random()>0.5;
           }}
           onCancel={() => { setShowDisclosureModal(false); setDisclosureTarget(null); }}
           onConfirm={existingDisclosure ? async (discId) => {
+            // Age gate: paid disclosure confirmation requires verified 18+ identity
+            const disc = existingDisclosure as Record<string, unknown>;
+            const compAmount = String(disc.compensation_amount || "");
+            const hasPayment = compAmount && compAmount !== "0" && compAmount !== "Free" && compAmount !== "TFP";
+            if (hasPayment && !ageVerified) {
+              setPendingDisclosureConfirm(discId);
+              setShowDisclosureModal(false);
+              setShowAgeVerification(true);
+              return;
+            }
             await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "confirm-disclosure", disclosureId: discId }) });
             setShowDisclosureModal(false); setToastMsg("Disclosure confirmed ✓");
           } : undefined}
+        />
+      )}
+      {/* ══════ AGE VERIFICATION MODAL ══════ */}
+      {showAgeVerification && (
+        <AgeVerificationModal
+          purpose="age_gate"
+          authFetch={authFetch}
+          onVerified={async () => {
+            setAgeVerified(true);
+            setShowAgeVerification(false);
+            // Resume the blocked action after verification
+            if (pendingDisclosureConfirm) {
+              const discId = pendingDisclosureConfirm;
+              setPendingDisclosureConfirm(null);
+              await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "confirm-disclosure", disclosureId: discId }) });
+              setToastMsg("Disclosure confirmed ✓");
+            } else if (pendingDisclosureCreate) {
+              const form = pendingDisclosureCreate;
+              setPendingDisclosureCreate(null);
+              const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "create-disclosure", ...form, responderId: disclosureTarget?.id, bookingId: disclosureBookingId }) });
+              const d = await r.json();
+              if (d.blocked) { setToastMsg("Request blocked — violates Muse terms"); return; }
+              if (d.success) { setToastMsg("Disclosure sent for review"); }
+            }
+          }}
+          onClose={() => {
+            setShowAgeVerification(false);
+            setPendingDisclosureConfirm(null);
+            setPendingDisclosureCreate(null);
+          }}
         />
       )}
       {/* ══════ SAFETY CHECK-IN MODAL ══════ */}
