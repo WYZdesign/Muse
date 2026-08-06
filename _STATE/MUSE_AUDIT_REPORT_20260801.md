@@ -4,6 +4,27 @@ Four-phase audit: (a) own code audit, (b) frontend/backend/opsec subagent audits
 
 ---
 
+## ROUND 5 — 2026-08-06 UPDATE (Claude critique items resolved/verified)
+
+### Git/GitHub push — FIXED ✅ (was the blocker Claude could not verify)
+- **Root cause of `git push` failure:** remote returned `HTTP 500` because the 6 unpushed commits contained commit `4eb7736`, which added ~3.6GB of original JPGs (some 25MB, e.g. `DANIELLE/Danielle-26.JPG`). Later deleted by the WebP conversion commit (`797062f`), those blobs stayed in history — every push uploaded the whole 3.6GB pack and GitHub rejected it.
+- **Fix:** `git reset --soft c34d9b0` + one squashed commit (`8b25d45`) holding only the final tree (1036 WebP files + code). JPG blobs became unreachable → excluded from pack (1095 objects). Then `chore` commit `37a7702` gitignores `tsconfig.tsbuildinfo` + unreferenced `*_pp.webp` previews.
+- **Verified:** local `master` = remote `master` = `37a7702` (via `git ls-remote`). Working tree clean. Claude can `git pull` and see all updates.
+
+### 1. Real Discover data — VERIFIED ✅
+- `GET /api/muse?type=profiles` reads `muse_profiles` from Supabase via service client; filters to profiles with `avatar`/`photos`. No mock data. Verified route.ts.
+
+### 2. RLS + sender_id + auth-token chain — PARTIALLY RESOLVED
+- **Sender namespace fixed:** `persistMessage()` (muse-realtime.ts:24-50) routes chat writes through the server API (`POST /api/muse action=message`), which resolves the caller's profile id from the Bearer token and stores `sender_id: profile.id` (route.ts:420) — same namespace export/delete-account expect. The old browser-side `getServiceClient()` write path (HIGH #1) is gone.
+- **Convo-key IDOR closed:** `match_id` is now derived **server-side** from the verified profile + `toId` (route.ts:417) — a client-supplied `match_id` can no longer target another pair (was HIGH #2).
+- `client_msg_id` dedupe (23505 → success) handles retries; rate limit 60/min on message.
+- **Still requires Supabase Dashboard (DDL):** RLS is not enabled on live tables; `muse_messages` realtime publication; 9 missing tables; `muse_notifications.text` column. Unchanged from the dashboard checklist below — code-side auth chain is verified, DB-side RLS still needs Torreé to run SQL.
+
+### Build verification — PASSED ✅
+- `npx tsc --noEmit` clean; `npm run build` (Next 16.2.12, Turbopack) succeeds; `.next/BUILD_ID` created, no errors. Includes swipe-card v2 (portrait-aware hero via `PORTRAIT_IMG`, direct-DOM rAF drag, scroll-fading overlays, portfolio gallery lightbox).
+
+---
+
 ## VERIFIED FIXED + DEPLOYED (this session)
 
 | Fix | Commit | Live-verified |
