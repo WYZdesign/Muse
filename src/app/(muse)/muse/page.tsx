@@ -411,6 +411,11 @@ function MusePage() {
   useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{localStorage.removeItem("muse_boost");}catch{}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd]);
 
   const applySession = useCallback((accessToken: string, refreshToken?: string) => {
+    // Attach the session to the browser supabase client so realtime channels
+    // authenticate as the user (required once RLS policies are live).
+    if (accessToken) {
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || "" }).catch(() => {});
+    }
     authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "session", access_token: accessToken }) })
       .then(r => r.json())
       .then(d => {
@@ -676,6 +681,10 @@ function MusePage() {
       const userObj = { id: j.user.id, email: j.user.email, profile: j.profile || null };
       setAuthUser(userObj);
       localStorage.setItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken, user: userObj }));
+      // Attach session to browser supabase client so realtime works under RLS.
+      if (accessToken) {
+        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).catch(() => {});
+      }
       if (j.profile) {
         setCurrentUser(prev => ({ ...prev, name: j.profile.name || prev.name, avatar: j.profile.avatar || prev.avatar, type: j.profile.type || prev.type }));
       }

@@ -18,7 +18,8 @@ Four-phase audit: (a) own code audit, (b) frontend/backend/opsec subagent audits
 - **Sender namespace fixed:** `persistMessage()` (muse-realtime.ts:24-50) routes chat writes through the server API (`POST /api/muse action=message`), which resolves the caller's profile id from the Bearer token and stores `sender_id: profile.id` (route.ts:420) — same namespace export/delete-account expect. The old browser-side `getServiceClient()` write path (HIGH #1) is gone.
 - **Convo-key IDOR closed:** `match_id` is now derived **server-side** from the verified profile + `toId` (route.ts:417) — a client-supplied `match_id` can no longer target another pair (was HIGH #2).
 - `client_msg_id` dedupe (23505 → success) handles retries; rate limit 60/min on message.
-- **Still requires Supabase Dashboard (DDL):** RLS is not enabled on live tables; `muse_messages` realtime publication; 9 missing tables; `muse_notifications.text` column. Unchanged from the dashboard checklist below — code-side auth chain is verified, DB-side RLS still needs Torreé to run SQL.
+- **Browser realtime session fix (new):** `applySession` + email/password `handleAuthClick` now call `supabase.auth.setSession(...)` so the browser realtime channel authenticates as the user — required once RLS `authenticated`-only policies are live, otherwise chat realtime silently dies for email/password users.
+- **Still requires Supabase Dashboard (DDL):** RLS is not enabled on live tables; `muse_messages` realtime publication; 9 missing tables; `muse_notifications.text` column. **One consolidated, idempotent, paste-ready script now covers all of it: `sql/MUSE_DASHBOARD_FIX_20260806.sql`** — creates the 9 missing tables (defs only), adds `text`/`target_type`/`UNIQUE(endpoint)` columns, converts chat key columns to TEXT, enables realtime publication, and enables RLS with safe `authenticated`-only policies. Run it in Supabase Dashboard → SQL Editor → Run (safe to re-run). First run hit a Postgres syntax error at the push-subscription constraint (`ADD CONSTRAINT IF NOT EXISTS` is invalid) — fixed with a `pg_constraint`-guarded DO block; re-run the updated file.
 
 ### Build verification — PASSED ✅
 - `npx tsc --noEmit` clean; `npm run build` (Next 16.2.12, Turbopack) succeeds; `.next/BUILD_ID` created, no errors. Includes swipe-card v2 (portrait-aware hero via `PORTRAIT_IMG`, direct-DOM rAF drag, scroll-fading overlays, portfolio gallery lightbox).
@@ -103,10 +104,6 @@ Four-phase audit: (a) own code audit, (b) frontend/backend/opsec subagent audits
 
 ## SUPABASE DASHBOARD CHECKLIST (for Torreé)
 
-1. **Run `sql/muse_fix_chat.sql`** (v2) — messages columns + realtime publication (if not already: verify `muse_messages` has `receiver_id`, `client_msg_id` — the live probe shows YES).
-2. **Add the 9 missing tables** (from `MUSE_APPLY_ALL.sql` table defs only — NOT its RLS policies).
-3. **`ALTER TABLE muse_notifications ADD COLUMN text TEXT DEFAULT '';`**
-4. **Enable RLS per `sql/rls_policies.sql`** — but first strip the wide-open policies; add email-column restriction; `authenticated` only.
-5. **Enable Realtime** for `muse_messages` (publication) — required for chat to work.
-6. **Verify after each step** with: `GET /api/muse?type=admin` (stats), then live-test Connect/Report/Block/Book buttons.
-7. Optional hardening: rotate JWT secret (forces all stale sessions out), add `UNIQUE(endpoint)` on `muse_push_subscriptions`, URL-restrict the Mapbox token, delete the dead `/api/backup` cron in vercel.json.
+1. **Run `sql/MUSE_DASHBOARD_FIX_20260806.sql`** (one paste) — creates the 9 missing tables, adds `muse_notifications.text` + `target_type` + `UNIQUE(endpoint)`, converts chat key columns to TEXT, enables realtime on `muse_messages`, and enables RLS everywhere with safe `authenticated`-only policies. Idempotent — safe to re-run.
+2. **Verify after running** with the file's own verify queries (tables present, `rowsecurity = false` returns no rows, `muse_messages` columns, realtime publication, policies) and `GET /api/muse?type=admin` (stats), then live-test Connect/Report/Block/Book buttons.
+3. Optional hardening: rotate JWT secret (forces all stale sessions out), URL-restrict the Mapbox token, delete the dead `/api/backup` cron in vercel.json.
