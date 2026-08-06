@@ -1,6 +1,5 @@
 "use client";
 import { FiCompass, FiUsers, FiZap, FiCamera, FiEye, FiMenu } from "react-icons/fi";
-import { isValidElement } from "react";
 import type { Screen } from "./types";
 
 const lineColor: Record<string,string> = {
@@ -20,31 +19,22 @@ const tabs: { key: string; label: string; icon: React.ReactNode; hasScreen: bool
 ];
 
 export default function Nav({ active, onNavigate, onHamburgerToggle, unreadCount }: { active: string; onNavigate: (s: Screen) => void; onHamburgerToggle?: () => void; unreadCount?: number }) {
-  const activeIconStyle = (color: string) => ({
-    color,
-    filter: "drop-shadow(0 0 8px " + color + "80) drop-shadow(0 0 12px " + color + "40) hue-rotate(0deg)",
-    animation: "hueShift 3s ease-in-out infinite"
-  });
-
-  const activeLabelStyle = (color: string): React.CSSProperties => ({
-    color,
-    fontWeight: 800,
-    background: "linear-gradient(90deg," + color + ",rgba(255,255,255,0.95)," + color + "," + color + ")",
-    backgroundSize: "200% 100%",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    animation: "gradientShift 4s ease-in-out infinite"
-  });
-
   return (
     <div className="nav" role="navigation" aria-label="Main navigation">
       {tabs.map(tab => {
         const isActive = active === tab.key;
         const color = lineColor[tab.key] || "#FFD700";
+        const gradientStyle = isActive ? {
+          background: "linear-gradient(90deg," + color + ",rgba(255,255,255,0.95)," + color + "," + color + ")",
+          backgroundSize: "200% 100%",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          animation: "gradientShift 4s ease-in-out infinite",
+        } as React.CSSProperties : undefined;
         return (
-          <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs" as Screen); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined} style={isActive ? { ["--line-color" as string]: color } : undefined}>
-            <span className="nav-icon" style={isActive ? activeIconStyle(color) : undefined}>{tab.icon}</span>
-            <span style={isActive ? activeLabelStyle(color) : { color:"var(--muted)", fontWeight:600 }}>{tab.label}</span>
+          <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs" as Screen); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined}>
+            <span className={"nav-icon" + (isActive ? " nav-icon-grad grad-" + tab.key : "")} style={isActive ? { ...gradientStyle, display:"inline-flex", alignItems:"center", justifyContent:"center", filter:"drop-shadow(0 0 6px " + color + "80)" } : undefined}>{tab.icon}</span>
+            <span className={"nav-label" + (isActive ? " nav-label-grad grad-" + tab.key : "")} style={isActive ? gradientStyle : { color:"var(--muted)", fontWeight: 600 }}>{" " + tab.label}</span>
           </button>
         );
       })}

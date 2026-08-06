@@ -9,7 +9,7 @@ import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles 
 import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2, FiShield, FiGift, FiDollarSign } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import Nav from "./components/Nav";
-import AlbumGallery from "./components/AlbumGallery";
+import { PORTRAIT_IMG } from "./components/photoOrientation";
 import MyAlbumsManager from "./components/MyAlbumsManager";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
@@ -96,7 +96,10 @@ function MusePage() {
   const [likeNoteText, setLikeNoteText] = useState("");
   const [noteTargetProfile, setNoteTargetProfile] = useState<any>(null);
   const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
-  const [expandedProfile, setExpandedProfile] = useState<any>(null);
+  const [cardScrolled, setCardScrolled] = useState(false);
+  const cardScrollRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const [galleryView, setGalleryView] = useState<{ profileId: string | number; name: string; photos: string[]; idx: number } | null>(null);
   const [discoverSearchOpen, setDiscoverSearchOpen] = useState(false);
   const [savedBriefs, setSavedBriefs] = useState<number[]>([]);
   const [appliedBriefs, setAppliedBriefs] = useState<number[]>([]);
@@ -262,10 +265,11 @@ function MusePage() {
   const [typingTarget, setTypingTarget] = useState<number|null>(null);
   const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [dragOffsetY, setDragOffsetY] = useState(0);
-  const [dragOpacity, setDragOpacity] = useState(0);
-  const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number;startTime:number}>({startX:0,startY:0,active:false,relY:0,startTime:0});
+  const [matchSwiping, setMatchSwiping] = useState<{id:string;offset:number} | null>(null);
+  const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number;startTime:number;el:HTMLElement|null;axis:"x"|"y"|null}>({startX:0,startY:0,active:false,relY:0,startTime:0,el:null,axis:null});
+  const likeLabelRef = useRef<HTMLDivElement>(null);
+  const nopeLabelRef = useRef<HTMLDivElement>(null);
+  const superLabelRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
   const dragValuesRef = useRef({x:0,y:0,opacity:0});
 
@@ -736,6 +740,7 @@ function MusePage() {
     setRewindStack(prev => [...prev, currentIdx]);
     setCurrentIdx(prev => prev + 1);
     setCurrentPhotoIdx(0);
+    setCardScrolled(false);
   }, [currentIdx, dailyLikes, superLikes, filteredProfiles, flash, obData, userDefaultIntent]);
 
   useEffect(() => { if(screen!=="discover")return;const onKey=(e:KeyboardEvent)=>{if(e.key==="ArrowLeft"){e.preventDefault();doSwipe("left")}if(e.key==="ArrowRight"){e.preventDefault();doSwipe("right")}};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey)},[screen,doSwipe]);
@@ -746,6 +751,7 @@ function MusePage() {
     setRewindStack(stack => stack.slice(0, -1));
     setCurrentIdx(prev);
     setCurrentPhotoIdx(0);
+    setCardScrolled(false);
     flash("#D4A5FF");
   }, [rewindStack, flash]);
 
@@ -759,9 +765,9 @@ function MusePage() {
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
-    const cardTop = (e.currentTarget as HTMLElement).getBoundingClientRect().top;
-    const relY = e.clientY - cardTop;
-    dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY, startTime: Date.now() };
+    const card = e.currentTarget as HTMLElement;
+    const cardTop = card.getBoundingClientRect().top;
+    dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY: e.clientY - cardTop, startTime: Date.now(), el: card, axis: null };
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   }, []);
 
@@ -771,8 +777,12 @@ function MusePage() {
     const dy = e.clientY - dragRef.current.startY;
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
+    if (dragRef.current.axis === null) {
+      if (absDx < 5 && absDy < 5) return;
+      dragRef.current.axis = absDx > absDy ? "x" : "y";
+    }
     dragValuesRef.current = { x: 0, y: 0, opacity: 0 };
-    if (absDx > absDy) {
+    if (dragRef.current.axis === "x") {
       if (absDx > 5) {
         dragValuesRef.current.x = dx;
         dragValuesRef.current.opacity = Math.min(absDx / 100, 1);
@@ -785,9 +795,15 @@ function MusePage() {
     }
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => {
-      setDragOffset(dragValuesRef.current.x);
-      setDragOffsetY(dragValuesRef.current.y);
-      setDragOpacity(dragValuesRef.current.opacity);
+      const el = dragRef.current.el;
+      if (!el) return;
+      const v = dragValuesRef.current;
+      const rot = dragRef.current.axis === "x" ? v.x * 0.06 : 0;
+      el.style.transition = "none";
+      el.style.transform = `translate(${v.x}px, ${v.y}px) rotate(${rot}deg)`;
+      if (likeLabelRef.current) likeLabelRef.current.style.opacity = (dragRef.current.axis === "x" && v.x > 25) ? String(v.opacity) : "0";
+      if (nopeLabelRef.current) nopeLabelRef.current.style.opacity = (dragRef.current.axis === "x" && v.x < -25) ? String(v.opacity) : "0";
+      if (superLabelRef.current) superLabelRef.current.style.opacity = (dragRef.current.axis === "y" && v.y < -25) ? String(v.opacity) : "0";
     });
   }, []);
 
@@ -796,17 +812,42 @@ function MusePage() {
     dragRef.current.active = false;
     const dx = e.clientX - dragRef.current.startX;
     const dy = e.clientY - dragRef.current.startY;
+    const dt = Date.now() - dragRef.current.startTime;
+    const speed = Math.sqrt(dx * dx + dy * dy) / (dt || 1);
     const cardHeight = (e.currentTarget as HTMLElement).getBoundingClientRect().height;
     const startedInTopThird = dragRef.current.relY < cardHeight * 0.3;
-    if (Math.abs(dy) > Math.abs(dx) && dy < -50 && startedInTopThird) {
+    if (dragRef.current.axis === "y" && speed > 0.35 && Math.abs(dy) > Math.abs(dx) && dy < -40 && startedInTopThird) {
       doSwipe("super");
-    } else if (Math.abs(dx) > 80) {
+    } else if (dragRef.current.axis === "x" && speed > 0.2 && Math.abs(dx) > 50) {
       doSwipe(dx > 0 ? "right" : "left");
     }
-    setDragOffset(0);
-    setDragOffsetY(0);
-    setDragOpacity(0);
+    const el = dragRef.current.el;
+    if (el) {
+      el.style.transition = "transform .4s cubic-bezier(.4,0,.2,1)";
+      el.style.transform = "";
+    }
+    if (likeLabelRef.current) likeLabelRef.current.style.opacity = "0";
+    if (nopeLabelRef.current) nopeLabelRef.current.style.opacity = "0";
+    if (superLabelRef.current) superLabelRef.current.style.opacity = "0";
   }, [doSwipe]);
+
+  const onPointerCancel = useCallback(() => {
+    if (!dragRef.current.active) return;
+    dragRef.current.active = false;
+    const el = dragRef.current.el;
+    if (el) {
+      el.style.transition = "transform .4s cubic-bezier(.4,0,.2,1)";
+      el.style.transform = "";
+    }
+    if (likeLabelRef.current) likeLabelRef.current.style.opacity = "0";
+    if (nopeLabelRef.current) nopeLabelRef.current.style.opacity = "0";
+    if (superLabelRef.current) superLabelRef.current.style.opacity = "0";
+  }, []);
+
+  const openGallery = useCallback((profile: Profile) => {
+    const photos = ((profile as any).photos?.length ? (profile as any).photos : [profile.img]) as string[];
+    setGalleryView({ profileId: profile.id, name: profile.name, photos, idx: 0 });
+  }, []);
 
   const openChat = useCallback((match: Match) => { setChatTarget(match); setScreen("chat"); }, []);
 
@@ -1102,6 +1143,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   setRewindStack(prev=>[...prev,currentIdx]);
                   setCurrentIdx(prev=>prev+1);
                   setCurrentPhotoIdx(0);
+                  setCardScrolled(false);
                 }} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,background:"var(--glass)",cursor:"pointer",width:"100%",textAlign:"left",transition:"all .15s"}}
                 onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.borderColor="var(--gold)"}}
                 onMouseLeave={e=>{e.currentTarget.style.background="var(--glass)";e.currentTarget.style.borderColor="rgba(255,255,255,0.06)"}}
@@ -1169,11 +1211,11 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <div className="conn-content">
                           <div className="conn-name">{c.name}</div>
                           <div className="conn-meta">{c.members} members · {c.desc}</div>
-                           <div className="conn-actions" style={{marginTop:8,display:"flex",gap:6}}>
-                              <button className={"conn-btn conn-btn-primary"+(c.cat==="nsfw"?" conn-nsfw-tag":"")} style={{flex:1}} onClick={async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id,memberCount:c.members})});showToast("Joined "+c.name+"!")}catch{showToast("Failed to join")}}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
-                             <button className="conn-btn conn-btn-ghost" style={{flex:1}} onClick={()=>showToast(c.name+" community opened!")}>Learn</button>
-                             <button className="conn-btn conn-btn-ghost" style={{flex:1}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/community/"+c.id);showToast("Link copied!")}}>Share</button>
-                           </div>
+                            <div className="conn-actions" style={{marginTop:8,display:"flex",gap:8,flexDirection:"column"}}>
+                               <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id,memberCount:c.members})});showToast("Joined "+c.name+"!")}catch{showToast("Failed to join")}}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
+                              <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>showToast(c.name+" community opened!")}>Learn</button>
+                              <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/community/"+c.id);showToast("Link copied!")}}>Share</button>
+                            </div>
                         </div>
                       </div>
                     ))}
@@ -1183,10 +1225,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <div className="conn-name">{ev.title}</div>
                         <div className="conn-meta">{ev.date} · {ev.loc}</div>
                         <div style={{fontSize:13,color:"var(--text2)",margin:"4px 0 8px",lineHeight:1.5}}>{ev.desc}</div>
-                        <div style={{display:"flex",gap:6,width:"100%"}}>
-                          <button className={"conn-btn "+(rsvpdEvents.includes(ev.id)?"conn-btn-ghost":"conn-btn-primary")} style={{flex:1}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter(x=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
-                          <button className="conn-btn conn-btn-ghost" style={{flex:1}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/"+ev.id);showToast("Event link copied!")}}>Share</button>
-                        </div>
+                         <div style={{display:"flex",gap:8,width:"100%",flexDirection:"column"}}>
+                           <button className={"btn "+(rsvpdEvents.includes(ev.id)?"btn-outline":"btn-gold")} style={{width:"100%",padding:"14px 0",fontSize:14,fontWeight:700,borderRadius:12}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter(x=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
+                           <button className="btn btn-outline" style={{width:"100%",padding:"14px 0",fontSize:14,fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/"+ev.id);showToast("Event link copied!")}}>Share</button>
+                         </div>
                       </div>
                     ))}
                   </div>
@@ -1204,10 +1246,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                           <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6}}>
                             {s.skills.map(sk=><span key={sk} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{sk}</span>)}
                           </div>
-                           <div className="conn-actions" style={{marginTop:8,display:"flex",gap:6}}>
-                             <button className="conn-btn conn-btn-primary" style={{flex:1}} onClick={()=>{showToast("Session request sent to "+s.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})})}}>{s.available?"Book Session":"Waitlist"}</button>
-                             <button className="conn-btn conn-btn-ghost" style={{flex:1}} onClick={()=>showToast(s.name+"'s full profile coming soon!")}>View Profile</button>
-                           </div>
+                            <div className="conn-actions" style={{marginTop:8,display:"flex",gap:8,flexDirection:"column"}}>
+                              <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={()=>{showToast("Session request sent to "+s.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})})}}>{s.available?"Book Session":"Waitlist"}</button>
+                              <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>showToast(s.name+"'s full profile coming soon!")}>View Profile</button>
+                            </div>
                         </div>
                       </div>
                     ))}
@@ -1224,10 +1266,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                           <div className="conn-content">
                             <div className="conn-name">{m.name}</div>
                             <div className="conn-meta">{m.type} · Booked Session</div>
-                             <div className="conn-actions" style={{marginTop:8,display:"flex",gap:6}}>
-                               <button className="conn-btn conn-btn-primary" style={{flex:1}} onClick={() => { setHamburgerScreen(""); setShowHamburger(false); openChat(m); }}>Message</button>
-                               <button className="conn-btn conn-btn-ghost" style={{flex:1}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
-                             </div>
+                              <div className="conn-actions" style={{marginTop:8,display:"flex",gap:8,flexDirection:"column"}}>
+                                <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={() => { setHamburgerScreen(""); setShowHamburger(false); openChat(m); }}>Message</button>
+                                <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
+                              </div>
                           </div>
                         </div>
                       ))
@@ -1248,11 +1290,11 @@ const isMatch=matchScore>55||Math.random()>0.5;
                             {p.skills.slice(0,3).map(s=><span key={s} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{s}</span>)}
                             {p.skills.length>3 && <span className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>+{p.skills.length-3}</span>}
                           </div>
-                          <div className="conn-actions" style={{marginTop:8,justifyContent:"center",width:"100%"}}>
-                            <button className="conn-btn conn-btn-primary" style={{flex:1,textAlign:"center"}} onClick={()=>{showToast("Connection request sent to "+p.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})})}}>Connect</button>
-                            <button className="conn-btn conn-btn-ghost" style={{flex:1,textAlign:"center"}} onClick={()=>showToast(p.openings+" open positions!")}>View ({p.openings})</button>
-                            <button className="conn-btn conn-btn-ghost" style={{flex:1,textAlign:"center"}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/pro/"+p.id);showToast("Profile link copied!")}}>Share</button>
-                          </div>
+                           <div className="conn-actions" style={{marginTop:8,display:"flex",gap:8,flexDirection:"column"}}>
+                             <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={()=>{showToast("Connection request sent to "+p.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})})}}>Connect</button>
+                             <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{setViewProfile(p);showToast("Viewing "+p.name+"'s profile")}}>View Profile</button>
+                             <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/pro/"+p.id+"?ref="+currentUser.name.replace(/\s+/g,"-").toLowerCase());showToast("Shared "+p.name+"'s profile!")}}>Share Your Profile</button>
+                           </div>
                         </div>
                       </div>
                     ))}
@@ -1264,10 +1306,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div className="conn-card" style={{flexDirection:"column",margin:"0 0 14px"}}>
                         <input className="inp" placeholder="Title" value={newPostTitle} onChange={e=>setNewPostTitle(e.target.value)} style={{marginBottom:8}} />
                         <textarea className="inp" placeholder="What's on your mind?" rows={3} value={newPostBody} onChange={e=>setNewPostBody(e.target.value)} style={{marginBottom:10,resize:"none"}} />
-                        <div style={{display:"flex",gap:8}}>
-                           <button className="conn-btn conn-btn-primary" onClick={async()=>{if(newPostTitle.trim()){const title=newPostTitle.trim();const body=newPostBody.trim();setForumPosts(prev=>[{id:Date.now(),title,body,author:currentUser.name,avatar:currentUser.avatar,votes:1,comments:[],cat:"General",time:"Just now",pinned:false},...prev]);setNewPostTitle("");setNewPostBody("");setShowNewPost(false);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",title,body,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
-                          <button className="conn-btn conn-btn-ghost" onClick={()=>setShowNewPost(false)}>Cancel</button>
-                        </div>
+                         <div style={{display:"flex",gap:8,flexDirection:"column"}}>
+                            <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(newPostTitle.trim()){const title=newPostTitle.trim();const body=newPostBody.trim();setForumPosts(prev=>[{id:Date.now(),title,body,author:currentUser.name,avatar:currentUser.avatar,votes:1,comments:[],cat:"General",time:"Just now",pinned:false},...prev]);setNewPostTitle("");setNewPostBody("");setShowNewPost(false);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",title,body,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
+                           <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>setShowNewPost(false)}>Cancel</button>
+                         </div>
                       </div>
                     )}
                     <div style={{display:"flex",gap:6,marginBottom:12}}>{(["hot","new","top"] as const).map(s=>(<div key={s} className={"conn-tab-sub"+(forumSort===s?" active":"")} onClick={()=>setForumSort(s)}>{s.charAt(0).toUpperCase()+s.slice(1)}</div>))}</div>
@@ -1292,8 +1334,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                 {post.comments.map((c: {author: string; text: string}, i: number)=><div key={i} style={{fontSize:13,color:"var(--text2)",padding:"6px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}><strong style={{color:"var(--text)"}}>{c.author}</strong>: {c.text}</div>)}
                                 <div style={{display:"flex",gap:8,marginTop:8}}>
                                   <input className="inp" placeholder="Reply..." value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={async e=>{if(e.key==="Enter"&&commentText.trim()){const txt=commentText.trim();setForumPosts(prev=>prev.map(p=>p.id===post.id?{...p,comments:[...p.comments,{author:currentUser.name,text:txt}]}:p));setCommentText("");await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",type:"reply",postId:post.id,text:txt,userId:currentUser.id})});showToast("Reply posted!")}}} style={{flex:1,fontSize:12,padding:"8px 12px"}} />
-                                </div>
-                              </div>
+                          </div>
+                               </div>
                             )}
                             {post.comments.length>0 && expandedPost!==post.id && <button className="conn-btn conn-btn-ghost" style={{fontSize:11,padding:"4px 8px",marginTop:6}} onClick={()=>{setExpandedPost(post.id===expandedPost?null:post.id)}}>{post.comments.length} replies</button>}
                           </div>
@@ -1311,7 +1353,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{fontSize:13,color:"var(--muted)"}}>{currentUser.type} · {currentUser.exp}</div>
                     </div>
                     <button className="hamburger-item" style={{width:"100%",marginBottom:6}} onClick={() => { setHamburgerScreen(""); setShowHamburger(false); setScreen("profile"); }}>
-                      <div className="hamburger-item-icon" style={{background:"linear-gradient(135deg,#FFD700,#FFBF00,#FF8A80)"}}>Ep</div>
+                      <div className="hamburger-item-icon" style={{background:"linear-gradient(135deg,#FFD700,#FFBF00,#FF8A80)"}}><FiUser size={20} /></div>
                       <div><div className="hamburger-item-label">Edit Profile</div><div className="hamburger-item-desc">Update your bio, skills, portfolio</div></div>
                     </button>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"20px 0 10px"}}>Muse Premium</div>
@@ -1833,60 +1875,83 @@ const isMatch=matchScore>55||Math.random()>0.5;
 </div>
                 </div>
                 {mapView && <MuseMap filteredProfiles={filteredProfiles} myGeo={myGeo ? {lat:myGeo.lat, lng:myGeo.long} : undefined} containerRef={mapContainerRef} />}
-                {boostActive && <div className="boost-badge" style={{display:"flex",justifyContent:"center",gap:8}}>BOOST ACTIVE {(()=>{const mins=Math.max(0,Math.ceil((boostEnd-Date.now())/60000));if(mins<=0){setBoostActive(false);try{localStorage.removeItem("muse_boost");}catch{}return"";}return <span style={{fontWeight:400}}>({mins}m left)</span>;})()}</div>}
                 {!mapView && (<><div className="card-stack">
                   {filteredProfiles.slice(currentIdx, currentIdx+3).map((profile, idx) => {
                     const isTop = idx === 0;
                     return (
-                       <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")+(expandedProfile===profile.id?" expanded":"")} style={{zIndex:3-idx,transform:"translate("+(isTop?dragOffset:0)+"px, "+(isTop?dragOffsetY:0)+"px) scale("+(Math.max(0.92, 1 - idx * 0.04))+")",opacity:isTop?1-dragOpacity*0.3:1}}
-                         onPointerDown={(e)=>{if(isTop){const t=Date.now();dragRef.current={startX:e.clientX,startY:e.clientY,active:true,relY:e.clientY-(e.currentTarget as HTMLElement).getBoundingClientRect().top,startTime:t};(e.target as HTMLElement).setPointerCapture?.(e.pointerId)}}}
-                         onPointerMove={(e)=>{if(!isTop||!dragRef.current.active)return;const dx=e.clientX-dragRef.current.startX;const dy=e.clientY-dragRef.current.startY;const absDx=Math.abs(dx);const absDy=Math.abs(dy);if(absDx>absDy){if(absDx>5){setDragOffset(dx);setDragOffsetY(0);setDragOpacity(Math.min(absDx/100,1))}}else{if(absDy>5){setDragOffsetY(dy);setDragOffset(0);setDragOpacity(Math.min(absDy/80,1))}}}}
-                         onPointerUp={(e)=>{if(!isTop||!dragRef.current.active)return;dragRef.current.active=false;const dx=e.clientX-dragRef.current.startX;const dy=e.clientY-dragRef.current.startY;const dt=Date.now()-dragRef.current.startTime;const speed=Math.sqrt(dx*dx+dy*dy)/(dt||1);if(speed>0.35&&Math.abs(dy)>Math.abs(dx)&&dy<-40){doSwipe("super")}else if(speed>0.2&&Math.abs(dx)>50){doSwipe(dx>0?"right":"left")}setDragOffset(0);setDragOffsetY(0);setDragOpacity(0)}}
-                         onPointerCancel={(e)=>{if(!isTop||!dragRef.current.active)return;dragRef.current.active=false;setDragOffset(0);setDragOffsetY(0);setDragOpacity(0)}}
+                       <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")} style={{zIndex:3-idx,transform:"scale("+(Math.max(0.92, 1 - idx * 0.04))+")"}}
+                         onPointerDown={isTop ? onPointerDown : undefined}
+                         onPointerMove={isTop ? onPointerMove : undefined}
+                         onPointerUp={isTop ? onPointerUp : undefined}
+                         onPointerCancel={isTop ? onPointerCancel : undefined}
                        >
-                        <div style={{position:"relative",width:"100%",height:"100%",display:"flex",flexDirection:"column",overflowY:"auto"}} onClick={(e)=>{if(isTop&&e.currentTarget.scrollTop>20){e.stopPropagation()}}}>
-                          <div style={{position:"relative",width:"100%",minHeight:"85%",flexShrink:0,overflow:"hidden"}}>
-                            <img src={((profile as any).photos?.length ? (profile as any).photos[currentPhotoIdx] : profile.img) || profile.img} alt={profile.name} draggable="false" onError={handleImgError} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top",position:"absolute",top:0,left:0}} />
-                            {isTop && (
-                              <>
-                                <div style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:5}} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
-                                <div style={{position:"absolute",right:0,top:0,bottom:0,width:"35%",zIndex:5}} onClick={(e)=>{e.stopPropagation();const max=(profile as any).photos?.length||1;setCurrentPhotoIdx(prev=>Math.min(max-1,prev+1))}} />
-                              </>
-                            )}
-                            <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"50px 20px 20px",background:"linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.5) 50%,transparent 100%)",zIndex:4}}>
-                              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
-                                <span style={{fontSize:24,fontWeight:800,color:"#fff",fontFamily:"'Playfair Display',serif",fontStyle:"italic"}}>{profile.name}</span>
-                                {profile.verified && <span style={{fontSize:18,color:"var(--gold)"}}>✓</span>}
-                                {profile.online && <div style={{width:8,height:8,borderRadius:"50%",background:"#4ade80"}} />}
-                              </div>
-                              <div style={{fontSize:15,fontWeight:600,color:"var(--gold)",marginBottom:4}}>{profile.type} · {profile.loc?.split(",")[0]}</div>
-                              <div style={{fontSize:13,color:"rgba(255,255,255,0.8)",lineHeight:1.4}}>{profile.bio?.slice(0,100)}{(profile.bio?.length||0)>100?"...":""}</div>
-                              <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:6}}>{profile.styles.slice(0,4).map(s=><span key={s} style={{fontSize:10,padding:"3px 8px",borderRadius:99,background:"rgba(255,255,255,0.12)",color:"rgba(255,255,255,0.85)"}}>{s}</span>)}</div>
-                            </div>
-                            <div style={{position:"absolute",bottom:100,left:"50%",transform:"translateX(-50%)",display:"flex",gap:6,zIndex:6}}>
-                              {((profile as any).photos?.length > 0 ? (profile as any).photos : [profile.img]).map((_:any,i:number)=><div key={i} style={{width:i===currentPhotoIdx?18:6,height:6,borderRadius:3,background:i===currentPhotoIdx?"var(--gold)":"rgba(255,255,255,0.35)",transition:"all .2s"}} />)}
-                            </div>
-                            <div className="card-shine" />
-                            <div className="card-gradient" />
-                            <div className="card-border" />
-                          </div>
-                          <div style={{padding:"20px 20px 80px",flexShrink:0}}>
-                            {profile.bio && <div style={{marginBottom:16}}><div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:6}}>About</div><div style={{fontSize:13,color:"var(--text2)",lineHeight:1.6}}>{profile.bio}</div></div>}
-                            {profile.looking.length>0 && <div style={{marginBottom:16}}><div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:6}}>Looking for</div><div style={{fontSize:13,color:"var(--text2)"}}>{profile.looking.join(", ")}</div></div>}
-                            <div style={{marginBottom:16}}><div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:8}}>Creative Style</div><div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div></div>
-                            <div className="match-score" style={{marginBottom:16}}><div className="score-bar"><div className="score-fill" style={{width:profile.score+"%"}} /></div><span className="score-text">{profile.score}%</span></div>
-                            {(profile as any).photos?.length > 1 && <div style={{marginBottom:16}}><div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:8}}>Photos</div><div style={{display:"flex",gap:6,overflowX:"auto"}}>{((profile as any).photos||[]).map((p:any,i:number)=><div key={i} className="card-photo-thumb" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}} style={{opacity:i===currentPhotoIdx?1:0.6,border:i===currentPhotoIdx?"2px solid var(--gold)":"2px solid transparent"}}><img src={p} alt="" /></div>)}</div></div>}
-                            {(profile as any).badges?.length > 0 && <div style={{marginBottom:16}}><div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:8}}>Badges</div><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{(profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>)}</div></div>}
-                            <div style={{fontSize:12,color:"var(--muted)"}}>📍 {profile.loc}</div>
-                            <AlbumGallery profileId={profile.id} authToken={getAccessToken()} />
-                          </div>
-                        </div>
-                        {isTop && dragOffset > 25 && <div style={{position:"absolute",top:40,left:20,fontSize:28,fontWeight:900,color:"#4ade80",border:"4px solid #4ade80",borderRadius:12,padding:"6px 16px",transform:"rotate(-15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>LIKE</div>}
-                        {isTop && dragOffset < -25 && <div style={{position:"absolute",top:40,right:20,fontSize:28,fontWeight:900,color:"#ef4444",border:"4px solid #ef4444",borderRadius:12,padding:"6px 16px",transform:"rotate(15deg)",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:3}}>NOPE</div>}
-                        {isTop && Math.abs(dragOffsetY) > 25 && <div style={{position:"absolute",top:"40%",left:"50%",transform:"translate(-50%,-50%) rotate(-5deg)",fontSize:26,fontWeight:900,color:"#818cf8",border:"4px solid #818cf8",borderRadius:12,padding:"6px 16px",zIndex:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",letterSpacing:2,background:"rgba(129,140,248,0.15)"}}>SUPER</div>}
-                      </div>
-                    );
-                  })}
+                           {(() => {
+                             const photos: string[] = (profile as any).photos?.length ? (profile as any).photos : [profile.img];
+                             const heroSrc = photos[currentPhotoIdx] || profile.img;
+                             const heroPortrait = !!PORTRAIT_IMG[heroSrc];
+                             return (
+                               <div className="card-hero" ref={heroRef}>
+                                 <img src={heroSrc} alt={profile.name} draggable="false" onError={handleImgError}
+                                   style={{width:"100%",height:"100%",objectFit:heroPortrait?"cover":"contain",objectPosition:heroPortrait?"center top":"center",background:"linear-gradient(160deg,#1a0a2e,#0a0612)",position:"absolute",top:0,left:0}} />
+                                 {isTop && (
+                                   <>
+                                     <div className="card-photo-zone card-photo-zone-left" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
+                                     <div className="card-photo-zone card-photo-zone-right" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.min(photos.length-1,prev+1))}} />
+                                   </>
+                                 )}
+                                 <div className={"card-hero-info"+(cardScrolled?" hidden":"")}>
+                                   <div className="card-hero-name">
+                                     {profile.name}
+                                     {profile.verified && <span className="card-verified-mark">✓</span>}
+                                     {profile.online && <span className="card-online-dot" />}
+                                   </div>
+                                   <div className="card-hero-type">{profile.type} · {profile.loc?.split(",")[0]}</div>
+                                   <div className="card-hero-bio">{profile.bio?.slice(0,100)}{(profile.bio?.length||0)>100?"...":""}</div>
+                                   <div className="card-hero-tags">{profile.styles.slice(0,4).map(s=><span key={s} className="card-hero-tag">{s}</span>)}</div>
+                                 </div>
+                                 <div className="card-photo-dots">
+                                   {photos.map((_:string,i:number)=><div key={i} className={"card-photo-dot"+(i===currentPhotoIdx?" active":"")} />)}
+                                 </div>
+                                 <div className={"card-actions-overlay"+(cardScrolled?" hidden":"")}>
+                                   <button className="action-btn btn-rewind" onClick={doRewind} aria-label="Rewind">↺</button>
+                                   <button className="action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
+                                   <button className="action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
+                                   <button className="action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
+                                   <button className="action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎♥</button>
+                                 </div>
+                                 <div className="card-shine" />
+                                 <div className="card-gradient" />
+                                 <div className="card-border" />
+                                 {isTop && (
+                                   <>
+                                     <div ref={likeLabelRef} className="label label-like">LIKE</div>
+                                     <div ref={nopeLabelRef} className="label label-nope">NOPE</div>
+                                     <div ref={superLabelRef} className="label label-super">SUPER</div>
+                                   </>
+                                 )}
+                               </div>
+                             );
+                           })()}
+                           <div className="card-info-scroll" ref={cardScrollRef} onScroll={()=>{if(isTop){const scrollY=cardScrollRef.current?.scrollTop||0;setCardScrolled(scrollY>60);}}}>
+                             {profile.bio && <div className="card-section"><div className="card-section-title">About</div><div className="card-section-text">{profile.bio}</div></div>}
+                             {profile.looking.length>0 && <div className="card-section"><div className="card-section-title">Looking for</div><div className="card-section-text">{profile.looking.join(", ")}</div></div>}
+                             <div className="card-section"><div className="card-section-title">Creative Style</div>
+                               <div className="card-section-tags">{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div>
+                             </div>
+                             <div className="card-section">
+                               <div className="card-section-title">Photos</div>
+                               <div className="card-photo-grid">
+                                 {((profile as any).photos?.length ? (profile as any).photos : [profile.img]).map((p:string,i:number)=><div key={i} className={"card-photo-thumb"+(i===currentPhotoIdx?" active":"")} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}}><img src={p} alt="" onError={handleImgError} /></div>)}
+                               </div>
+                               <button className="card-portfolio-btn" onClick={(e)=>{e.stopPropagation();openGallery(profile);}}>View Full Portfolio</button>
+                             </div>
+                             <div className="match-score" style={{marginBottom:16}}><div className="score-bar"><div className="score-fill" style={{width:profile.score+"%"}} /></div><span className="score-text">{profile.score}%</span></div>
+                             {(profile as any).badges?.length > 0 && <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>)}</div></div>}
+                             <div className="card-section" style={{fontSize:12,color:"var(--muted)"}}>📍 {profile.loc}</div>
+                           </div>
+                       </div>
+                     );
+                   })}
                   {currentIdx >= filteredProfiles.length && (
                     <div className="empty-state">
                       <div className="empty-icon"><FiCompass size={48} /></div>
@@ -1895,20 +1960,31 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <button className="btn btn-gold" onClick={()=>{setCurrentIdx(0);setDailyLikes(10);setSuperLikes(3)}}>Reset</button>
                     </div>
                   )}
-                </div>
-                <div className="actions">
-                  <button className="action-btn btn-rewind" onClick={doRewind} aria-label="Rewind">↺</button>
-                  <button className="action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
-                  <button className="action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
-                  <button className="action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
-                  <button className="action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎♥</button>
-                </div>
-                {!isUnlimited && dailyLikes < 10 && <div className="limit-bar"><div className="limit-dots">{Array.from({length:10},(_,i)=><div key={i} className={"limit-dot"+(i<dailyLikes?" filled":"")} />)}</div><div className="limit-text">{dailyLikes} likes left</div></div>}
-                {!isUnlimited && superLikes < 3 && <div className="limit-bar"><div className="limit-dots">{Array.from({length:3},(_,i)=><div key={i} className={"limit-dot"+(i<superLikes?" super-filled":"")} />)}</div><div className="limit-text">{superLikes} super likes left</div></div>}
-                {isUnlimited && <div className="limit-bar" style={{background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",borderRadius:99,padding:"6px 16px",marginTop:8}}><div style={{fontSize:12,fontWeight:700,color:"var(--gold)"}}>∞ Unlimited Likes & Super Likes</div></div>}
-                </>)}
-              </div>
-              <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+                 </div>
+                 {!isUnlimited && dailyLikes < 10 && <div className="limit-bar"><div className="limit-dots">{Array.from({length:10},(_,i)=><div key={i} className={"limit-dot"+(i<dailyLikes?" filled":"")} />)}</div><div className="limit-text">{dailyLikes} likes left</div></div>}
+                 {!isUnlimited && superLikes < 3 && <div className="limit-bar"><div className="limit-dots">{Array.from({length:3},(_,i)=><div key={i} className={"limit-dot"+(i<superLikes?" super-filled":"")} />)}</div><div className="limit-text">{superLikes} super likes left</div></div>}
+                  {isUnlimited && <div className="limit-bar" style={{background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",borderRadius:99,padding:"6px 16px",marginTop:8}}><div style={{fontSize:12,fontWeight:700,color:"var(--gold)"}}>∞ Unlimited Likes & Super Likes</div></div>}
+                 </>)}
+               </div>
+               {galleryView && (
+                 <div className="gallery-view" onClick={()=>setGalleryView(null)}>
+                   <button className="gallery-view-close" onClick={(e)=>{e.stopPropagation();setGalleryView(null)}} aria-label="Close"><FiX size={22} /></button>
+                   {galleryView.photos.length > 1 && (
+                     <>
+                       <button className="gallery-view-nav gallery-view-prev" onClick={(e)=>{e.stopPropagation();setGalleryView(v=>v?{...v,idx:(v.idx-1+v.photos.length)%v.photos.length}:v)}} aria-label="Previous"><FiChevronRight size={26} style={{transform:"rotate(180deg)"}} /></button>
+                       <button className="gallery-view-nav gallery-view-next" onClick={(e)=>{e.stopPropagation();setGalleryView(v=>v?{...v,idx:(v.idx+1)%v.photos.length}:v)}} aria-label="Next"><FiChevronRight size={26} /></button>
+                     </>
+                   )}
+                   <div className="gallery-view-img-wrap" onClick={(e)=>{e.stopPropagation()}}>
+                     <img src={galleryView.photos[galleryView.idx]} alt={galleryView.name} onError={handleImgError} />
+                   </div>
+                   <div className="gallery-view-meta">
+                     <div className="gallery-view-name">{galleryView.name}</div>
+                     <div className="gallery-view-count">{galleryView.idx+1} / {galleryView.photos.length}</div>
+                   </div>
+                 </div>
+               )}
+               <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
             <div className={"screen-el"+(screen==="connections"?" active":"")}>
               <div className="hdr">
@@ -1932,8 +2008,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <button style={{width:32,height:32,borderRadius:8,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14,color:"var(--text2)"}} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
                       {feedMedia.slice(0,4).map((url,i)=><div key={i} style={{position:"relative",width:32,height:32}}>{url.endsWith(".mp4")||url.includes("video")?<video src={url} style={{width:32,height:32,borderRadius:8,objectFit:"cover"}} />:<img src={url} alt="" style={{width:32,height:32,borderRadius:8,objectFit:"cover"}} />}<button onClick={()=>setFeedMedia(prev=>prev.filter((_,j)=>j!==i))} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"var(--coral)",border:"none",color:"#fff",fontSize:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><FiX size={10} /></button></div>)}
                       {feedMedia.length>4&&<span style={{fontSize:11,color:"var(--muted)"}}>+{feedMedia.length-4}</span>}
-                       <button className="conn-btn conn-btn-primary" style={{marginLeft:"auto",fontSize:12,padding:"7px 18px"}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();const hasVideo=feedMedia.some(u=>u.endsWith(".mp4")||u.includes("video"));const type=feedMedia.length?hasVideo?"video":"photo":"text";setFeedText("");setFeedMedia([]);setFeedPosts(prev=>[{id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,type,text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedMedia[0]||undefined,media:feedMedia,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,media:feedMedia,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
-                      <button className="conn-btn conn-btn-ghost" style={{fontSize:11,padding:"6px 12px"}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();setFeedText("");setFeedMedia([]);const moment={id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,type:feedMedia.length?"photo":"text",text:txt,img:feedMedia[0]||undefined,media:[...feedMedia],time:"Just now"};setStories(prev=>[moment,...prev]);showToast("Moment posted!");}}}>⚡ Moment</button>
+                        <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();const hasVideo=feedMedia.some(u=>u.endsWith(".mp4")||u.includes("video"));const type=feedMedia.length?hasVideo?"video":"photo":"text";setFeedText("");setFeedMedia([]);setFeedPosts(prev=>[{id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,type,text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedMedia[0]||undefined,media:feedMedia,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,media:feedMedia,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
+                       <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();setFeedText("");setFeedMedia([]);const moment={id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,type:feedMedia.length?"photo":"text",text:txt,img:feedMedia[0]||undefined,media:[...feedMedia],time:"Just now"};setStories(prev=>[moment,...prev]);showToast("Moment posted!");}}}>⚡ Moment</button>
                     </div>
                     {showEmojiPicker && <div style={{display:"flex",gap:6,flexWrap:"wrap",padding:"8px 0"}}>{["😍","🔥","❤️","😂","😢","😡","👍","🎉","✨","💯","👏","🙌"].map(e=><span key={e} style={{fontSize:22,cursor:"pointer",transition:"transform .15s"}} onClick={()=>{setFeedText(prev=>prev+" "+e);setShowEmojiPicker(false)}} onMouseEnter={e=>e.currentTarget.style.transform="scale(1.3)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>{e}</span>)}</div>}
                   </div>
@@ -1986,7 +2062,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       {replyingTo === post.id && (
                         <div style={{display:"flex",gap:8,padding:"10px 18px",borderTop:"1px solid rgba(255,255,255,0.04)"}}>
                           <input className="inp" placeholder="Write a reply..." value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&commentText.trim()){const txt=commentText.trim();setFeedPosts(prev=>prev.map(p=>p.id===post.id?{...p,comments:p.comments+1}:p));setCommentText("");setReplyingTo(null);(async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",type:"reply",postId:post.id,text:txt})})}catch{}})();showToast("Reply posted!")}}} style={{flex:1,fontSize:13,padding:"8px 12px",borderRadius:10,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",color:"var(--text)"}} />
-                          <button className="conn-btn conn-btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>{if(commentText.trim()){const txt=commentText.trim();setFeedPosts(prev=>prev.map(p=>p.id===post.id?{...p,comments:p.comments+1}:p));setCommentText("");setReplyingTo(null);(async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",type:"reply",postId:post.id,text:txt})})}catch{}})();showToast("Reply posted!")}}}>Send</button>
+                           <button className="btn btn-gold" style={{width:"100%",padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={()=>{if(commentText.trim()){const txt=commentText.trim();setFeedPosts(prev=>prev.map(p=>p.id===post.id?{...p,comments:p.comments+1}:p));setCommentText("");setReplyingTo(null);(async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",type:"reply",postId:post.id,text:txt})})}catch{}})();showToast("Reply posted!")}}}>Send</button>
                         </div>
                       )}
                     </div>
@@ -2022,13 +2098,14 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   ) : (
                     <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12}}>
                       {likedBy.map(p => (
-                        <div key={p.id} style={{position:"relative",borderRadius:16,overflow:"hidden",aspectRatio:"3/4",cursor:"pointer"}} onClick={()=>setViewProfile(p)}>
-                          <img src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover"}} />
+                        <div key={p.id} style={{position:"relative",borderRadius:16,overflow:"hidden",aspectRatio:"3/4",cursor:"pointer"}} onClick={()=>{if(currentUser.tier!=="muse_pro"){showToast("Upgrade to Muse Pro to view profiles");setShowPremiumPopup(true);}else{setViewProfile(p);}}}>
+                          <img src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover",filter:currentUser.tier!=="muse_pro"?"blur(3px)":undefined}} />
                           <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"12px",background:"linear-gradient(to top,rgba(10,6,18,0.9),transparent)"}}>
                             <div style={{fontSize:15,fontWeight:700}}>{p.name}</div>
                             <div style={{fontSize:12,background:"linear-gradient(90deg,var(--gold),var(--amber))",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:600}}>{p.type}</div>
                           </div>
                           <div style={{position:"absolute",top:8,right:8,padding:"4px 10px",borderRadius:99,background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:10,fontWeight:700,color:"#fff"}}>♥ Liked You</div>
+                          {currentUser.tier!=="muse_pro" && (<div style={{position:"absolute",top:8,left:8,padding:"2px 8px",borderRadius:99,background:"rgba(0,0,0,0.6)",fontSize:10,fontWeight:600,color:"#fff"}}>PRO</div>)}
                         </div>
                       ))}
                     </div>
@@ -2047,35 +2124,38 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 {matches.filter(m => searchQuery === "" || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(m => {
                   const expanded = expandedMatchId === String(m.id);
                   return (
-                  <div key={m.id} data-mid={String(m.id)} data-exp={expanded?"1":"0"} className={"match-card"+(expanded?" match-card-expanded":"")} onClick={()=>{ if(expanded){ setExpandedMatchId(null); return; } setChatTarget(m); showScreen("chat"); }}>
-                    <div className="match-avatar-wrap">
-                      <img src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} />
-                      {m.online && <div className="online-dot" />}
-                    </div>
-                    <div className="match-info">
-                      <div className="match-name">{m.name}</div>
-                      <div className="match-type">{m.type}</div>
-                      <div className="match-msg">{m.messages?.[m.messages.length-1]?.text || getIcebreaker(m.type)}</div>
-                      {expanded && (
-                        <div className="match-expand">
-                          <div className="match-expand-bio">{m.bio || "Creative soul looking for their next collaboration."}</div>
-                          <div className="match-expand-meta">
-                            {m.location && <span>{m.location}</span>}
-                            {typeof m.distanceMi === "number" && <span>{m.distanceMi} mi</span>}
-                            {m.zodiac && <span>{m.zodiac}</span>}
+                   <div key={m.id} data-mid={String(m.id)} data-exp={expanded?"1":"0"} className={"match-card"+(expanded?" match-card-expanded":"")}
+                     style={{transform: matchSwiping?.id === String(m.id) ? `translateX(${matchSwiping.offset}px)` : undefined, opacity: matchSwiping?.id === String(m.id) && Math.abs(matchSwiping.offset) > 20 ? 0.7 : undefined, transition: matchSwiping ? 'none' : 'all .25s'}}
+                     onClick={()=>{ if(expanded){ setExpandedMatchId(null); return; } setChatTarget(m); showScreen("chat"); }}
+                     onMouseDown={(e)=>{ const startX=e.clientX; const startY=e.clientY; const handleMove=(ev: MouseEvent)=>{ const dx=ev.clientX-startX; const dy=ev.clientY-startY; if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){ e.preventDefault(); setMatchSwiping({id:String(m.id),offset:dx}); return false; } }; const handleUp=(ev: MouseEvent)=>{ if(matchSwiping?.id===String(m.id)){ const offset=matchSwiping.offset; setMatchSwiping(null); if(Math.abs(offset)>80){ if(offset>0){ setReportTarget({id:m.id,type:"match",name:m.name}); setShowReport(true); } else { setUnmatchTarget(m.name); } } } document.removeEventListener('mousemove',handleMove); document.removeEventListener('mouseup',handleUp); }; document.addEventListener('mousemove',handleMove,{passive:false}); document.addEventListener('mouseup',handleUp); }}
+                     onTouchStart={(e)=>{ const startX=e.touches[0].clientX; const startY=e.touches[0].clientY; const handleMove=(ev: TouchEvent)=>{ const dx=ev.touches[0].clientX-startX; const dy=ev.touches[0].clientY-startY; if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){ setMatchSwiping({id:String(m.id),offset:dx}); } }; const handleEnd=()=>{ if(matchSwiping?.id===String(m.id)){ const offset=matchSwiping.offset; setMatchSwiping(null); if(Math.abs(offset)>80){ if(offset>0){ setReportTarget({id:m.id,type:"match",name:m.name}); setShowReport(true); } else { setUnmatchTarget(m.name); } } } document.removeEventListener('touchmove',handleMove); document.removeEventListener('touchend',handleEnd); }; document.addEventListener('touchmove',handleMove,{passive:false}); document.addEventListener('touchend',handleEnd); }}
+                   >
+                     <div className="match-avatar-wrap">
+                       <img src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} />
+                       {m.online && <div className="online-dot" />}
+                     </div>
+                     <div className="match-info">
+                       <div className="match-name">{m.name}</div>
+                       <div className="match-type">{m.type}</div>
+                       <div className="match-msg">{m.messages?.[m.messages.length-1]?.text || getIcebreaker(m.type)}</div>
+                        {expanded && (
+                          <div className="match-expand">
+                            <div className="match-expand-bio">{m.bio || "Creative soul looking for their next collaboration."}</div>
+                            <div className="match-expand-meta">
+                              {m.location && <span>{m.location}</span>}
+                              {typeof m.distanceMi === "number" && <span>{m.distanceMi} mi</span>}
+                              {m.zodiac && <span>{m.zodiac}</span>}
+                            </div>
+                            <button className="match-expand-btn" onClick={(e)=>{ e.stopPropagation(); setExpandedMatchId(null); setChatTarget(m); showScreen("chat"); }}>Open Chat</button>
                           </div>
-                          <button className="match-expand-btn" onClick={(e)=>{ e.stopPropagation(); setExpandedMatchId(null); setChatTarget(m); showScreen("chat"); }}>Open Chat</button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="match-time">{m.messages?.[m.messages.length-1]?.time || ""}</div>
+                        )}
+                     </div>
+                     <div className="match-time">{m.messages?.[m.messages.length-1]?.time || ""}</div>
 
-                    {/* Match Action Buttons Overlay - 80% opacity, outside swipe area */}
-                    <div className="match-card-actions" style={{position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",display:"flex",flexDirection:"column",gap:8,zIndex:10,pointerEvents:"auto",opacity:0.8}}>
-                      <button className="match-card-btn" onClick={(e)=>{e.stopPropagation();setChatTarget(m);showScreen("chat");}} style={{padding:"8px 14px",borderRadius:99,background:"linear-gradient(135deg,var(--gold),var(--amber))",color:"#0a0612",fontSize:12,fontWeight:700,boxShadow:"0 4px 16px rgba(255,215,0,0.2)",whiteSpace:"nowrap"}}>Message</button>
-                      <button className="match-card-btn" onClick={(e)=>{e.stopPropagation();setUnmatchTarget(m.name);}} style={{padding:"8px 14px",borderRadius:99,background:"rgba(255,138,128,0.15)",border:"1px solid rgba(255,138,128,0.3)",color:"var(--coral)",fontSize:12,fontWeight:600,whiteSpace:"nowrap"}}>Unmatch</button>
-                    </div>
-                  </div>
+                     {/* Swipe hint indicators - only show on hover/tap highlight */}
+                     <div style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",fontSize:11,color:"var(--coral)",opacity:matchSwiping?.id===String(m.id)&&matchSwiping.offset<0?0.8:0.3,transition:"opacity .2s",pointerEvents:"none"}}><FiHeart size={14} /> Report</div>
+                     <div style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",fontSize:11,color:"var(--coral)",opacity:matchSwiping?.id===String(m.id)&&matchSwiping.offset>0?0.8:0.3,transition:"opacity .2s",pointerEvents:"none"}}>Unmatch <FiHeart size={14} /></div>
+                   </div>
                   );
                 })}
               </div>
@@ -2228,10 +2308,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div className="conn-content" style={{flex:1}}>
                       <div className="conn-name" style={{fontSize:15}}>{c.name}</div>
                       <div className="conn-meta" style={{fontSize:12}}>{c.members} members · {c.desc}</div>
-                      <div style={{display:"flex",gap:6,marginTop:8}}>
-                        <button className={"conn-btn conn-btn-primary"+(c.cat==="nsfw"?" conn-nsfw-tag":"")} style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id,memberCount:c.members})});showToast("Joined "+c.name+"!")}catch{showToast("Failed to join")}}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
-                        <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={()=>showToast(c.name+" community info opened!")}>Learn</button>
-                        <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/community/"+c.id);showToast("Link copied!")}}>Share</button>
+                      <div style={{display:"flex",gap:8,marginTop:8}}>
+                        <button className={"btn "+(c.cat==="nsfw"?"btn-gold":"btn-primary")} style={{flex:1,fontSize:12,padding:"12px 0",fontWeight:700,borderRadius:12}} onClick={async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id,memberCount:c.members})});showToast("Joined "+c.name+"!")}catch{showToast("Failed to join")}}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
+                        <button className="btn btn-outline" style={{flex:1,fontSize:12,padding:"12px 0",fontWeight:600,borderRadius:12}} onClick={()=>showToast(c.name+" community info opened!")}>Learn</button>
+                        <button className="btn btn-outline" style={{flex:1,fontSize:12,padding:"12px 0",fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/community/"+c.id);showToast("Link copied!")}}>Share</button>
                       </div>
                     </div>
                   </div>
@@ -2241,16 +2321,17 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div className="conn-name" style={{fontSize:15}}>{ev.title}</div>
                       <div className="conn-meta" style={{fontSize:12,marginBottom:6}}>{ev.date} · {ev.loc}</div>
                       <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.5,marginBottom:10}}>{ev.desc}</div>
-                      <div style={{display:"flex",gap:6}}>
-                        <button className={"conn-btn "+(rsvpdEvents.includes(ev.id)?"conn-btn-ghost":"conn-btn-primary")} style={{flex:1,padding:"10px 0",fontSize:13}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter(x=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
-                        <button className="conn-btn conn-btn-ghost" style={{flex:1,padding:"10px 0",fontSize:13}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/"+ev.id);showToast("Event link copied!")}}>Share</button>
-                      </div>
+                       <div style={{display:"flex",gap:8,padding:"12px 0"}}>
+                         <button className={"btn "+(rsvpdEvents.includes(ev.id)?"btn-outline":"btn-gold")} style={{flex:1,padding:"14px 0",fontSize:14,fontWeight:700,borderRadius:12}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter(x=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
+                         <button className="btn btn-outline" style={{flex:1,padding:"14px 0",fontSize:14,fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/"+ev.id);showToast("Event link copied!")}}>Share</button>
+                       </div>
                     </div>
                   ))}
                 {commTab === "events" && EVENTS.length===0 && (
                   <div style={{textAlign:"center",padding:40,color:"var(--muted)",fontSize:13}}>No upcoming events</div>
                 )}
               </div>
+              <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
 
             <div className={"screen-el"+(screen==="sessions"?" active":"")}>
@@ -2274,10 +2355,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6}}>
                         {s.skills.map(sk=><span key={sk} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{sk}</span>)}
                       </div>
-                      <div style={{display:"flex",gap:6,marginTop:8}}>
-                        <button className="conn-btn conn-btn-primary" style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={()=>{showToast("Session request sent to "+s.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})})}}>{s.available?"Book":"Waitlist"}</button>
-                        <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={()=>{setViewProfile(s);showToast(s.name+"'s profile")}}>Profile</button>
-                      </div>
+                       <div style={{display:"flex",gap:8,marginTop:8,flexDirection:"column"}}>
+                         <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={()=>{showToast("Session request sent to "+s.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})})}}>{s.available?"Book Session":"Waitlist"}</button>
+                         <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{setViewProfile(s);showToast(s.name+"'s profile")}}>View Profile</button>
+                       </div>
                     </div>
                   </div>
                 ))}
@@ -2293,15 +2374,16 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div className="conn-content" style={{flex:1,padding:14,display:"flex",flexDirection:"column",justifyContent:"center"}}>
                         <div className="conn-name" style={{fontSize:15}}>{m.name}</div>
                         <div className="conn-meta" style={{fontSize:12}}>{m.type} · Booked Session</div>
-                        <div style={{display:"flex",gap:6,marginTop:8}}>
-                          <button className="conn-btn conn-btn-primary" style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={()=>{openChat(m)}}>Message</button>
-                          <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"8px 12px"}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
-                        </div>
+                         <div style={{display:"flex",gap:8,marginTop:8,flexDirection:"column"}}>
+                           <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={()=>{openChat(m)}}>Message</button>
+                           <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
+                         </div>
                       </div>
                     </div>
                   ))
                 )}
               </div>
+              <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
 
             <div className={"screen-el"+(screen==="network"?" active":"")}>
@@ -2325,10 +2407,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
                         {p.skills.map(s=><span key={s} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{s}</span>)}
                       </div>
-                      <div style={{display:"flex",gap:6}}>
-                        <button className="conn-btn conn-btn-primary" style={{flex:1,fontSize:12,padding:"10px 12px"}} onClick={()=>{showToast("Connection request sent to "+p.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})})}}>Connect</button>
-                        <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"10px 12px"}} onClick={()=>showToast(p.openings+" open positions!")}>{p.openings} openings</button>
-                        <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:12,padding:"10px 12px"}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/pro/"+p.id);showToast("Profile link copied!")}}>Share</button>
+                      <div style={{display:"flex",gap:8,flexDirection:"column"}}>
+                        <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:14,fontWeight:700,borderRadius:12}} onClick={()=>{showToast("Connection request sent to "+p.name+"!");apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})})}}>Connect</button>
+                        <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:14,fontWeight:600,borderRadius:12}} onClick={()=>{setViewProfile(p);showToast("Viewing "+p.name+"'s profile")}}>View Profile</button>
+                        <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:14,fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/pro/"+p.id+"?ref="+currentUser.name.replace(/\s+/g,"-").toLowerCase());showToast("Shared "+p.name+"'s profile!")}}>Share Your Profile</button>
                       </div>
                     </div>
                   </div>
@@ -2340,8 +2422,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <input className="inp" placeholder="Title" value={newPostTitle} onChange={e=>setNewPostTitle(e.target.value)} style={{marginBottom:8}} />
                         <textarea className="inp" placeholder="What's on your mind?" rows={3} value={newPostBody} onChange={e=>setNewPostBody(e.target.value)} style={{marginBottom:10,resize:"none"}} />
                         <div style={{display:"flex",gap:8}}>
-                          <button className="conn-btn conn-btn-primary" style={{flex:1,fontSize:13,padding:"10px 0"}} onClick={async()=>{if(newPostTitle.trim()){const title=newPostTitle.trim();const body=newPostBody.trim();setForumPosts(prev=>[{id:Date.now(),title,body,author:currentUser.name,avatar:currentUser.avatar,votes:1,comments:[],cat:"General",time:"Just now",pinned:false},...prev]);setNewPostTitle("");setNewPostBody("");setShowNewPost(false);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",title,body,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
-                          <button className="conn-btn conn-btn-ghost" style={{flex:1,fontSize:13,padding:"10px 0"}} onClick={()=>setShowNewPost(false)}>Cancel</button>
+                        <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(newPostTitle.trim()){const title=newPostTitle.trim();const body=newPostBody.trim();setForumPosts(prev=>[{id:Date.now(),title,body,author:currentUser.name,avatar:currentUser.avatar,votes:1,comments:[],cat:"General",time:"Just now",pinned:false},...prev]);setNewPostTitle("");setNewPostBody("");setShowNewPost(false);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",title,body,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
+                        <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>setShowNewPost(false)}>Cancel</button>
                         </div>
                       </div>
                     )}
@@ -2369,6 +2451,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   </>
                 )}
               </div>
+              <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
             <div className={"screen-el"+(screen==="portfolio"?" active":"")}>
               <div className="hdr">
@@ -2467,6 +2550,11 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 </div>
               </div>
               <div className="profile-scroll">
+                {isUnlimited && (
+                  <div style={{position:"fixed",top:80,right:20,zIndex:9998,padding:"8px 14px",borderRadius:12,background:"linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,191,0,0.1))",border:"1px solid rgba(255,215,0,0.2)",fontSize:11,fontWeight:700,color:"var(--gold)",boxShadow:"0 4px 16px rgba(255,215,0,0.2)",display:"flex",alignItems:"center",gap:6,cursor:"default"}}>
+                    <span>⚡</span>∞ Unlimited Likes & Super Likes
+                  </div>
+                )}
                 <div className="completeness">
                   <div className="completeness-text">
                     <span>Profile Completeness</span>
@@ -3321,6 +3409,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
       {/* ══════ PAYMENT HISTORY ══════ */}
       {showPaymentHistory && (
         <PaymentHistory userId={authUser?.id || ""} onClose={() => setShowPaymentHistory(false)} />
+      )}
+      {boostActive && (
+        <div style={{position:"fixed",top:80,right:20,zIndex:9999,padding:"8px 14px",borderRadius:99,background:"linear-gradient(135deg,var(--gold),var(--amber))",fontSize:11,fontWeight:700,color:"#0a0612",boxShadow:"0 4px 16px rgba(255,215,0,0.4)",display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setBoostActive(false);setBoostEnd(0);try{localStorage.removeItem("muse_boost");}catch{}showToast("Boost off")}}>
+          <span>⚡ BOOST ACTIVE</span>
+          <span style={{fontWeight:400}}>({Math.max(0,Math.ceil((boostEnd-Date.now())/60000))}m)</span>
+        </div>
       )}
     </div>
   );

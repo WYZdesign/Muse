@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const { action } = await req.json();
 
     if (action === "create-verification-session") {
-      // Create Stripe Identity verification session
+      // Create Stripe Identity verification session (hosted redirect flow)
       const session = await stripe.identity.verificationSessions.create({
         type: "document",
         options: {
@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
           },
         },
         metadata: { muse_profile_id: profile.id, muse_user_id: user.id },
+        return_url: `${req.nextUrl.origin}/muse/verify`,
       });
 
       // Store session ID for later retrieval
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
         created_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
 
-      return NextResponse.json({ clientSecret: session.client_secret, sessionId: session.id });
+      return NextResponse.json({ clientSecret: session.client_secret, sessionId: session.id, url: session.url });
     }
 
     if (action === "get-verification-status") {
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
           },
         },
         metadata: { muse_profile_id: profile.id, muse_user_id: user.id, purpose: "age_gate_booking" },
+        return_url: `${req.nextUrl.origin}/muse/verify`,
       });
 
       await sb.from("muse_verification_sessions").upsert({
@@ -97,7 +99,7 @@ export async function POST(req: NextRequest) {
         created_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
 
-      return NextResponse.json({ required: true, clientSecret: session.client_secret, sessionId: session.id });
+      return NextResponse.json({ required: true, clientSecret: session.client_secret, sessionId: session.id, url: session.url });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
