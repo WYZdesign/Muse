@@ -2091,7 +2091,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
               <div className={"screen-el"+(screen==="matches"?" active":"")}>
               <div className="hdr">
-                <div className="logo-link">muse</div>
+                <img className="logo-img" src="/muse-icon.png" alt="Muse" />
 <div style={{display:"flex",gap:10}}>
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
 {!searchOpen ? (<button className="hdr-btn" style={{width:34,height:34}} onClick={()=>setSearchOpen(true)}><FiSearch size={16} /></button>) : (
@@ -2247,7 +2247,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <div className={"screen-el"+(screen==="briefs"?" active":"")}>
               <div className="hdr">
-                <div className="logo-link">muse</div>
+                <img className="logo-img" src="/muse-icon.png" alt="Muse" />
                 <button className="hdr-btn" onClick={()=>setShowPostBrief(true)}><FiPlus size={18} /></button>
               </div>
               <div className="conn-tabs" style={{padding:"0 12px"}}>
@@ -2473,7 +2473,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <div className={"screen-el"+(screen==="portfolio"?" active":"")}>
               <div className="hdr">
-                <div className="logo-link">muse</div>
+                <img className="logo-img" src="/muse-icon.png" alt="Muse" />
               </div>
               <div className="portfolio-scroll">
                 <MyAlbumsManager
@@ -2487,7 +2487,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <div className={"screen-el"+(screen==="moments"?" active":"")}>
               <div className="hdr">
-                <div className="logo-link">muse</div>
+                <img className="logo-img" src="/muse-icon.png" alt="Muse" />
                 <div style={{width:40}} />
               </div>
               <div className="moments-page">
@@ -2839,7 +2839,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="phone" id="muse-app">
             <div className="notch" />
             <div className="hdr">
-              <div className="logo-link">muse</div>
+              <img className="logo-img" src="/muse-icon.png" alt="Muse" />
               <button className="hdr-btn" onClick={()=>showScreen("profile")}><FiArrowLeft size={18} /></button>
             </div>
             <div className="sub-scroll">
@@ -2885,7 +2885,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="phone" id="muse-app">
             <div className="notch" />
             <div className="hdr">
-              <div className="logo-link">muse</div>
+              <img className="logo-img" src="/muse-icon.png" alt="Muse" />
               <button className="hdr-btn" onClick={()=>showScreen("profile")}><FiArrowLeft size={18} /></button>
             </div>
             <div className="settings-scroll">
