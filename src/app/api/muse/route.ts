@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 
 function getAuthUser() {
   return supabase.auth.getUser();
@@ -40,16 +41,7 @@ function bearerTokenFromReq(req: NextRequest, body?: Record<string, unknown>): s
   return "";
 }
 
-const RATE_LIMIT = new Map<string, number[]>();
-function checkRate(ip: string, action: string, maxPerMin: number): boolean {
-  const key = `${ip}:${action}`;
-  const now = Date.now();
-  const timestamps = (RATE_LIMIT.get(key) || []).filter(t => now - t < 60000);
-  if (timestamps.length >= maxPerMin) return false;
-  timestamps.push(now);
-  RATE_LIMIT.set(key, timestamps);
-  return true;
-}
+
 
 const MAX_LENGTHS: Record<string, number> = { title: 200, body: 5000, text: 2000, bio: 500, name: 50, desc: 2000 };
 function validateInput(data: Record<string, unknown>): string | null {
@@ -370,7 +362,14 @@ export async function POST(req: NextRequest) {
     const { type: rawType, action: rawAction, ...rest } = body;
     const actionType = rawType || rawAction;
 
-    const ip = req.headers.get("x-forwarded-for") || "unknown";
+    const ip = clientIp(req);
+
+    // Blanket write-rate ceiling per IP. Per-action limits below are tighter;
+    // this catches any action that doesn't have its own check (and throttles
+    // brute-force / scripted abuse across the whole write surface).
+    if (actionType !== "track-event" && !checkRate(ip, "write", 120)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
 
     // track-event intentionally allows unauthenticated callers (e.g. an
     // anonymous visitor viewing the auth screen before signing up) — product
@@ -400,9 +399,17 @@ export async function POST(req: NextRequest) {
 
     if (actionType === "match") {
       if (!checkRate(ip, "match", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { error } = await sb.from("muse_matches").insert({ user_id: profile.id, target_id: rest.target_id });
+      const { target_id } = rest;
+      if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
+      if (target_id === profile.id) return NextResponse.json({ error: "Cannot match yourself" }, { status: 400 });
+      const { data: target } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
+      if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
+      const { error } = await sb.from("muse_matches").upsert(
+        { user_id: profile.id, target_id },
+        { onConflict: "user_id,target_id", ignoreDuplicates: true }
+      );
       if (error) return safeServerError(error, "db op");
-      await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id: rest.target_id } });
+      await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id } });
       return NextResponse.json({ success: true });
     }
 
@@ -490,7 +497,13 @@ export async function POST(req: NextRequest) {
     if (actionType === "block") {
       const { target_id } = rest;
       if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
-      await sb.from("muse_blocks").upsert({ user_id: profile.id, target_id }).select();
+      if (target_id === profile.id) return NextResponse.json({ error: "Cannot block yourself" }, { status: 400 });
+      const { data: target } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
+      if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
+      await sb.from("muse_blocks").upsert(
+        { user_id: profile.id, target_id },
+        { onConflict: "user_id,target_id", ignoreDuplicates: true }
+      );
       return NextResponse.json({ success: true });
     }
 
@@ -509,7 +522,12 @@ export async function POST(req: NextRequest) {
     if (actionType === "join-community") {
       const { communityId } = rest;
       if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
-      await sb.from("muse_community_members").upsert({ community_id: communityId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar }).select();
+      const { data: community } = await sb.from("muse_communities").select("id").eq("id", communityId).maybeSingle();
+      if (!community) return NextResponse.json({ error: "Community not found" }, { status: 400 });
+      await sb.from("muse_community_members").upsert(
+        { community_id: communityId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar },
+        { onConflict: "community_id,user_id", ignoreDuplicates: true }
+      );
       // Count server-side — never trust a client-supplied member count.
       const { count } = await sb.from("muse_community_members").select("*", { count: "exact", head: true }).eq("community_id", communityId);
       await sb.from("muse_communities").update({ member_count: (count ?? 0) }).eq("id", communityId);

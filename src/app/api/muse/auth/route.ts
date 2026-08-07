@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import crypto from "crypto";
 import { safeServerError } from "@/lib/http";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 
 function validatePassword(pw: string): string | null {
   if (pw.length < 6) return "Password must be at least 6 characters";
@@ -21,6 +22,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action } = body;
+    const ip = clientIp(req);
+
+    // Brute-force protection: cap auth attempts per IP.
+    if (action === "register" && !checkRate(ip, "register", 5)) {
+      return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
+    }
+    if (action === "login" && !checkRate(ip, "login", 10)) {
+      return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
+    }
 
     if (action === "register") {
       const { email, password, name, data } = body;
@@ -101,6 +111,9 @@ export async function POST(req: NextRequest) {
     if (action === "forgot-password") {
       const { email } = body;
       if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
+      if (!checkRate(ip, "forgot-password", 5)) {
+        return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
+      }
       // Always return success to avoid revealing whether the email exists.
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${req.nextUrl.origin}/muse/reset-password`,

@@ -13,6 +13,8 @@ import { PORTRAIT_IMG } from "./components/photoOrientation";
 import MyAlbumsManager from "./components/MyAlbumsManager";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
+import { safeSetItem, safeGetItem, safeRemoveItem, QUOTA_MSG } from "./lib/safe-storage";
+import { uid } from "./lib/uid";
 import DisclosureModal from "./components/DisclosureModal";
 import AgeVerificationModal from "./components/AgeVerificationModal";
 import SafetyCheckinModal from "./components/SafetyCheckinModal";
@@ -24,7 +26,7 @@ import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PR
 
 function getAccessToken(): string {
   if (typeof window === "undefined") return "";
-  try { return JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
+  try { return JSON.parse(safeGetItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
 }
 
 async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
@@ -206,13 +208,13 @@ function MusePage() {
   const [showHamburger, setShowHamburger] = useState(false);
   const [showPremiumPopup, setShowPremiumPopup] = useState(() => {
     try {
-      const hidden = localStorage.getItem("muse_hide_premium");
+      const hidden = safeGetItem("muse_hide_premium");
       if (hidden) return false;
       const seen = sessionStorage.getItem("muse_premium_seen");
       if (seen) return false;
-      const c = localStorage.getItem("muse_open_count");
+      const c = safeGetItem("muse_open_count");
       const count = c ? parseInt(c) + 1 : 1;
-      localStorage.setItem("muse_open_count", String(count));
+      safeSetItem("muse_open_count", String(count));
       if (count % 3 === 0) {
         sessionStorage.setItem("muse_premium_seen", "1");
         return true;
@@ -221,7 +223,7 @@ function MusePage() {
     } catch { return false; }
   });
   const [premiumDismissed, setPremiumDismissed] = useState<boolean>(() => {
-    try { return !!localStorage.getItem("muse_hide_premium"); } catch { return false; }
+    try { return !!safeGetItem("muse_hide_premium"); } catch { return false; }
   });
 
   // ═══ TRUST & SAFETY STATE ═══
@@ -245,9 +247,9 @@ function MusePage() {
 
   useEffect(() => {
     try {
-      const c = localStorage.getItem("muse_open_count");
+      const c = safeGetItem("muse_open_count");
       const count = c ? parseInt(c) + 1 : 1;
-      localStorage.setItem("muse_open_count", String(count));
+      safeSetItem("muse_open_count", String(count));
     } catch {}
   }, []);
 
@@ -292,7 +294,7 @@ function MusePage() {
   // fetch for GET/other endpoints and for /api/muse/auth (which manages its own auth).
   const apiFetch = useCallback(async (url: string, opts: RequestInit = {}) => {
     try {
-      const raw = localStorage.getItem("muse_user");
+      const raw = safeGetItem("muse_user");
       const token = raw ? (JSON.parse(raw).access_token || "") : "";
       if (token) {
         opts.headers = { ...(opts.headers || {}), "Authorization": `Bearer ${token}` };
@@ -357,14 +359,14 @@ function MusePage() {
         discoveryPrefs, chatImages, screen, filterStyles, filterScore,
         searchQuery, connTab, museCat, connFilter, authUser, chatTarget
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      safeSetItem(STORAGE_KEY, JSON.stringify(data));
       try { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs }) }); } catch {}
     } catch(e) {}
   }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,connFilter,authUser,chatTarget]);
 
   const loadState = useCallback(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = safeGetItem(STORAGE_KEY);
       if (!raw) return;
       const d = JSON.parse(raw);
       if (d.currentUser) setCurrentUser(prev => ({ ...prev, ...d.currentUser, stats: { ...prev.stats, ...(d.currentUser.stats || {}) }, portfolios: Array.isArray(d.currentUser.portfolios) ? d.currentUser.portfolios : (prev.portfolios || []) }));
@@ -405,10 +407,10 @@ function MusePage() {
       if (d.authUser) setAuthUser(d.authUser);
       if (d.authUser && !["onboard","discover","connections","matches","chat","briefs","portfolio","moments","profile","settings","subscription"].includes(d.screen||"")) setScreen("discover");
     } catch(e) {}
-    try { const b=localStorage.getItem("muse_boost"); if(b){const e=parseInt(b);if(e>Date.now()){setBoostActive(true);setBoostEnd(e);}else{localStorage.removeItem("muse_boost");}} } catch(e) {}
+    try { const b=safeGetItem("muse_boost"); if(b){const e=parseInt(b);if(e>Date.now()){setBoostActive(true);setBoostEnd(e);}else{safeRemoveItem("muse_boost");}} } catch(e) {}
   }, []);
 
-  useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{localStorage.removeItem("muse_boost");}catch{}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd]);
+  useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{safeRemoveItem("muse_boost");}catch{}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd]);
 
   const applySession = useCallback((accessToken: string, refreshToken?: string) => {
     // Attach the session to the browser supabase client so realtime channels
@@ -422,7 +424,7 @@ function MusePage() {
         if (d.success && d.user) {
           const userObj = { id: d.user.id, email: d.user.email, profile: d.profile };
           setAuthUser(userObj);
-          localStorage.setItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken || "", user: userObj }));
+          safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken || "", user: userObj }));
           ensureMusePushRegistered();
           if (d.profile) {
             setCurrentUser(prev => ({ ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, type: d.profile.type || prev.type, foundingTier: d.profile.founding_tier || "", proExpiresAt: d.profile.pro_expires_at || "", tier: d.profile.tier || "free" }));
@@ -433,7 +435,7 @@ function MusePage() {
             setScreen("onboard");
           }
         } else {
-          ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium"].forEach(k => { try { localStorage.removeItem(k); } catch {} });
+          ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium"].forEach(k => { try { safeRemoveItem(k); } catch {} });
           setAuthUser(null);
           setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free" }));
           setScreen("auth");
@@ -447,7 +449,7 @@ function MusePage() {
     setHydrated(true);
 
     // Capture geolocation for distance matching (best-effort, silent on denial).
-    getGeolocation().then(g => { if (g) { setMyGeo(g); try { localStorage.setItem("muse_geo", JSON.stringify(g)); } catch {} } })
+    getGeolocation().then(g => { if (g) { setMyGeo(g); try { safeSetItem("muse_geo", JSON.stringify(g)); } catch {} } })
       .catch(() => { /* silently handled */ });
 
     // Handle post-checkout return: refresh tier from server
@@ -463,11 +465,11 @@ function MusePage() {
     const refCode = params.get("ref");
     if (refCode) {
       setObData(prev => ({ ...prev, referralCode: refCode.toUpperCase() }));
-      localStorage.setItem("muse_referral_code", refCode.toUpperCase());
+      safeSetItem("muse_referral_code", refCode.toUpperCase());
     } else {
       // Load stored referral code from localStorage
       try {
-        const stored = localStorage.getItem("muse_referral_code");
+        const stored = safeGetItem("muse_referral_code");
         if (stored) setObData(prev => ({ ...prev, referralCode: stored }));
       } catch {}
     }
@@ -486,7 +488,7 @@ function MusePage() {
         }
       } catch {}
 
-      const savedUser = localStorage.getItem("muse_user");
+      const savedUser = safeGetItem("muse_user");
       if (savedUser) {
         try {
           const parsed = JSON.parse(savedUser);
@@ -510,15 +512,22 @@ function MusePage() {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    try { const raw = localStorage.getItem("muse_v1"); const d = raw ? JSON.parse(raw) : {}; d.theme = theme; localStorage.setItem("muse_v1", JSON.stringify(d)); } catch {}
+    try { const raw = safeGetItem("muse_v1"); const d = raw ? JSON.parse(raw) : {}; d.theme = theme; safeSetItem("muse_v1", JSON.stringify(d)); } catch {}
   }, [theme]);
 
   const showToast = useCallback((msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); }, []);
 
+  // Surface storage quota failures to the user instead of failing silently.
+  useEffect(() => {
+    const onQuota = () => showToast(QUOTA_MSG);
+    window.addEventListener("muse:storage-quota", onQuota);
+    return () => window.removeEventListener("muse:storage-quota", onQuota);
+  }, [showToast]);
+
   const doLogout = useCallback(async () => {
     try { await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "logout" }) }); } catch(e) {}
     const keys = ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium"];
-    keys.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+    keys.forEach(k => { try { safeRemoveItem(k); } catch {} });
     setAuthUser(null); setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free" })); setScreen("auth"); showToast("Logged out");
   }, [showToast]);
 
@@ -623,12 +632,12 @@ function MusePage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const lastReset = localStorage.getItem("muse_last_reset");
+      const lastReset = safeGetItem("muse_last_reset");
       const now = Date.now();
       if (!lastReset || now - parseInt(lastReset) > 86400000) {
         setDailyLikes(10);
         setSuperLikes(3);
-        localStorage.setItem("muse_last_reset", String(now));
+        safeSetItem("muse_last_reset", String(now));
       }
     }
   }, []);
@@ -680,7 +689,7 @@ function MusePage() {
       const refreshToken = j.session?.refresh_token || "";
       const userObj = { id: j.user.id, email: j.user.email, profile: j.profile || null };
       setAuthUser(userObj);
-      localStorage.setItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken, user: userObj }));
+      safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken, user: userObj }));
       // Attach session to browser supabase client so realtime works under RLS.
       if (accessToken) {
         supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).catch(() => {});
@@ -730,14 +739,14 @@ function MusePage() {
           setTimeout(() => setShowConfetti(false), 3000);
           setExpandedMatchId(String(newMatch.id));
           trackEvent("muse_match", { name: p.name, type: p.type });
-          setActivityFeed(prev => [{id:Date.now(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
+          setActivityFeed(prev => [{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
           flash("#FFD700");
         }, 450);
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id, intent }) }).catch(() => { /* silently handled */ });
       }
       if (Math.random() > 0.4 && !likedBy.find(l => l.id === p.id)) {
         setLikedBy(prev => [...prev, p]);
-        setActivityFeed(prev => [{id:Date.now(),type:"like",from:p.name,avatar:p.img,text:p.name+" liked your profile!",time:"Just now",read:false},...prev]);
+        setActivityFeed(prev => [{id:uid(),type:"like",from:p.name,avatar:p.img,text:p.name+" liked your profile!",time:"Just now",read:false},...prev]);
       }
       if (dir === "super") { if (!isUnlimited) { setSuperLikes(prev => Math.max(0, prev - 1)); } setCurrentUser(prev => ({ ...prev, stats: { ...prev.stats, superLikes: prev.stats.superLikes + 1 } })); flash("#D4A5FF"); }
       else { if (!isUnlimited) { setDailyLikes(prev => Math.max(0, prev - 1)); } }
@@ -1138,14 +1147,14 @@ const isMatch=matchScore>55||Math.random()>0.5;
                        setTimeout(()=>setShowConfetti(false),3000);
                        setExpandedMatchId(String(newMatch.id));
                        trackEvent("muse_match",{name:p.name,type:p.type,intent});
-                       setActivityFeed(prev=>[{id:Date.now(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"! · "+icon+" "+label,time:"Just now",read:false},...prev]);
+                       setActivityFeed(prev=>[{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"! · "+icon+" "+label,time:"Just now",read:false},...prev]);
                        flash("#FFD700");
                      }, 450);
                      apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"match",target_id:p.id,intent})}).catch(()=>{});
                    }
                   if(Math.random()>0.4&&!likedBy.find(l=>l.id===p.id)){
                     setLikedBy(prev=>[...prev,p]);
-                    setActivityFeed(prev=>[{id:Date.now(),type:"like",from:p.name,avatar:p.img,text:p.name+" liked your profile!",time:"Just now",read:false},...prev]);
+                    setActivityFeed(prev=>[{id:uid(),type:"like",from:p.name,avatar:p.img,text:p.name+" liked your profile!",time:"Just now",read:false},...prev]);
                   }
                   setDailyLikes(prev=>Math.max(0,prev-1));
                   setCurrentUser(prev=>({...prev,stats:{...prev.stats,likes:prev.stats.likes+1}}));
@@ -1316,13 +1325,13 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <input className="inp" placeholder="Title" value={newPostTitle} onChange={e=>setNewPostTitle(e.target.value)} style={{marginBottom:8}} />
                         <textarea className="inp" placeholder="What's on your mind?" rows={3} value={newPostBody} onChange={e=>setNewPostBody(e.target.value)} style={{marginBottom:10,resize:"none"}} />
                          <div style={{display:"flex",gap:8,flexDirection:"column"}}>
-                            <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(newPostTitle.trim()){const title=newPostTitle.trim();const body=newPostBody.trim();setForumPosts(prev=>[{id:Date.now(),title,body,author:currentUser.name,avatar:currentUser.avatar,votes:1,comments:[],cat:"General",time:"Just now",pinned:false},...prev]);setNewPostTitle("");setNewPostBody("");setShowNewPost(false);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",title,body,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
+                            <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(newPostTitle.trim()){const title=newPostTitle.trim();const body=newPostBody.trim();setForumPosts(prev=>[{id:uid(),title,body,author:currentUser.name,avatar:currentUser.avatar,votes:1,comments:[],cat:"General",time:"Just now",pinned:false},...prev]);setNewPostTitle("");setNewPostBody("");setShowNewPost(false);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",title,body,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
                            <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>setShowNewPost(false)}>Cancel</button>
                          </div>
                       </div>
                     )}
                     <div style={{display:"flex",gap:6,marginBottom:12}}>{(["hot","new","top"] as const).map(s=>(<div key={s} className={"conn-tab-sub"+(forumSort===s?" active":"")} onClick={()=>setForumSort(s)}>{s.charAt(0).toUpperCase()+s.slice(1)}</div>))}</div>
-                    {(liveForum || FORUM_POSTS).sort((a,b)=>forumSort==="top"?(b.votes+b.comments.length*2)-(a.votes+a.comments.length*2):forumSort==="new"?(b.id-a.id):(b.votes*2+b.comments.length)-(a.votes*2+a.comments.length)).map(post=>(
+                     {[...(liveForum || FORUM_POSTS)].sort((a,b)=>forumSort==="top"?(b.votes+b.comments.length*2)-(a.votes+a.comments.length*2):forumSort==="new"?(b.id-a.id):(b.votes*2+b.comments.length)-(a.votes*2+a.comments.length)).map(post=>(
                       <div key={post.id} className="conn-card" style={{flexDirection:"column",margin:"0 0 10px",padding:"14px 18px"}}>
                         {post.pinned && <div style={{fontSize:10,color:"var(--gold)",fontWeight:700,marginBottom:4}}>📌 Pinned</div>}
                         <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
@@ -1879,7 +1888,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 <button className="hdr-btn" onClick={()=>setShowDiscoveryPrefs(true)} style={{width:34,height:34}}><FiSettings size={16} /></button>
 <button className="hdr-btn" onClick={()=>setShowFilterModal(true)} style={{width:34,height:34}}><FiFilter size={16} /></button>
 <button className="hdr-btn" onClick={()=>setMapView(v=>!v)} title="Map View" style={{width:34,height:34}}><FiCompass size={16} /></button>
-<button className={"hdr-btn"+(boostActive?" hdr-btn-glow":"")} onClick={()=>{if(!boostActive){const end=Date.now()+1800000;setBoostActive(true);setBoostEnd(end);try{localStorage.setItem("muse_boost",""+end);}catch{}showToast("Boost on for 30 min!");}else{setBoostActive(false);setBoostEnd(0);try{localStorage.removeItem("muse_boost");}catch{}showToast("Boost off");}}} style={{width:34,height:34}}><FiZap size={16} /></button>
+<button className={"hdr-btn"+(boostActive?" hdr-btn-glow":"")} onClick={()=>{if(!boostActive){const end=Date.now()+1800000;setBoostActive(true);setBoostEnd(end);try{safeSetItem("muse_boost",""+end);}catch{}showToast("Boost on for 30 min!");}else{setBoostActive(false);setBoostEnd(0);try{safeRemoveItem("muse_boost");}catch{}showToast("Boost off");}}} style={{width:34,height:34}}><FiZap size={16} /></button>
 </>)}
 </div>
                 </div>
@@ -2017,8 +2026,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <button style={{width:32,height:32,borderRadius:8,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14,color:"var(--text2)"}} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
                       {feedMedia.slice(0,4).map((url,i)=><div key={i} style={{position:"relative",width:32,height:32}}>{url.endsWith(".mp4")||url.includes("video")?<video src={url} style={{width:32,height:32,borderRadius:8,objectFit:"cover"}} />:<img src={url} alt="" style={{width:32,height:32,borderRadius:8,objectFit:"cover"}} />}<button onClick={()=>setFeedMedia(prev=>prev.filter((_,j)=>j!==i))} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"var(--coral)",border:"none",color:"#fff",fontSize:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><FiX size={10} /></button></div>)}
                       {feedMedia.length>4&&<span style={{fontSize:11,color:"var(--muted)"}}>+{feedMedia.length-4}</span>}
-                        <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();const hasVideo=feedMedia.some(u=>u.endsWith(".mp4")||u.includes("video"));const type=feedMedia.length?hasVideo?"video":"photo":"text";setFeedText("");setFeedMedia([]);setFeedPosts(prev=>[{id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,type,text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedMedia[0]||undefined,media:feedMedia,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,media:feedMedia,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
-                       <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();setFeedText("");setFeedMedia([]);const moment={id:Date.now(),author:currentUser.name,avatar:currentUser.avatar,type:feedMedia.length?"photo":"text",text:txt,img:feedMedia[0]||undefined,media:[...feedMedia],time:"Just now"};setStories(prev=>[moment,...prev]);showToast("Moment posted!");}}}>⚡ Moment</button>
+                        <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();const hasVideo=feedMedia.some(u=>u.endsWith(".mp4")||u.includes("video"));const type=feedMedia.length?hasVideo?"video":"photo":"text";setFeedText("");setFeedMedia([]);setFeedPosts(prev=>[{id:uid(),author:currentUser.name,avatar:currentUser.avatar,type,text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedMedia[0]||undefined,media:feedMedia,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,media:feedMedia,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
+                       <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();setFeedText("");setFeedMedia([]);const moment={id:uid(),author:currentUser.name,avatar:currentUser.avatar,type:feedMedia.length?"photo":"text",text:txt,img:feedMedia[0]||undefined,media:[...feedMedia],time:"Just now"};setStories(prev=>[moment,...prev]);showToast("Moment posted!");}}}>⚡ Moment</button>
                     </div>
                     {showEmojiPicker && <div style={{display:"flex",gap:6,flexWrap:"wrap",padding:"8px 0"}}>{["😍","🔥","❤️","😂","😢","😡","👍","🎉","✨","💯","👏","🙌"].map(e=><span key={e} style={{fontSize:22,cursor:"pointer",transition:"transform .15s"}} onClick={()=>{setFeedText(prev=>prev+" "+e);setShowEmojiPicker(false)}} onMouseEnter={e=>e.currentTarget.style.transform="scale(1.3)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>{e}</span>)}</div>}
                   </div>
@@ -2431,7 +2440,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <input className="inp" placeholder="Title" value={newPostTitle} onChange={e=>setNewPostTitle(e.target.value)} style={{marginBottom:8}} />
                         <textarea className="inp" placeholder="What's on your mind?" rows={3} value={newPostBody} onChange={e=>setNewPostBody(e.target.value)} style={{marginBottom:10,resize:"none"}} />
                         <div style={{display:"flex",gap:8}}>
-                        <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(newPostTitle.trim()){const title=newPostTitle.trim();const body=newPostBody.trim();setForumPosts(prev=>[{id:Date.now(),title,body,author:currentUser.name,avatar:currentUser.avatar,votes:1,comments:[],cat:"General",time:"Just now",pinned:false},...prev]);setNewPostTitle("");setNewPostBody("");setShowNewPost(false);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",title,body,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
+                        <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(newPostTitle.trim()){const title=newPostTitle.trim();const body=newPostBody.trim();setForumPosts(prev=>[{id:uid(),title,body,author:currentUser.name,avatar:currentUser.avatar,votes:1,comments:[],cat:"General",time:"Just now",pinned:false},...prev]);setNewPostTitle("");setNewPostBody("");setShowNewPost(false);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"forum",title,body,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
                         <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>setShowNewPost(false)}>Cancel</button>
                         </div>
                       </div>
@@ -2440,7 +2449,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{display:"flex",gap:6}}>{(["hot","new","top"] as const).map(s=>(<div key={s} className={"conn-tab-sub"+(forumSort===s?" active":"")} onClick={()=>setForumSort(s)}>{s.charAt(0).toUpperCase()+s.slice(1)}</div>))}</div>
                       <button className="conn-btn conn-btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setShowNewPost(!showNewPost)}>+ Post</button>
                     </div>
-                    {(liveForum || FORUM_POSTS).filter(p => forumCategory==="all"||p.cat===forumCategory).sort((a,b)=>forumSort==="top"?(b.votes+b.comments.length*2)-(a.votes+a.comments.length*2):forumSort==="new"?(b.id-a.id):(b.votes*2+b.comments.length)-(a.votes*2+a.comments.length)).map(post=>(
+                     {[...(liveForum || FORUM_POSTS)].filter(p => forumCategory==="all"||p.cat===forumCategory).sort((a,b)=>forumSort==="top"?(b.votes+b.comments.length*2)-(a.votes+a.comments.length*2):forumSort==="new"?(b.id-a.id):(b.votes*2+b.comments.length)-(a.votes*2+a.comments.length)).map(post=>(
                       <div key={post.id} className="conn-card" style={{flexDirection:"column",marginBottom:8,padding:14}}>
                         {post.pinned && <div style={{fontSize:10,color:"var(--gold)",fontWeight:700,marginBottom:4}}>📌 Pinned</div>}
                         <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
@@ -2777,7 +2786,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <input className="inp" placeholder="Title" value={briefTitle} onChange={e=>setBriefTitle(e.target.value)} />
             <textarea className="inp" placeholder={briefCat==="concept"?"Share your idea...":briefCat==="tfp"?"Describe the TFP collaboration...":briefCat==="paid"?"Describe the project and deliverables...":"Describe the opportunity..."} rows={4} value={briefDesc} onChange={e=>setBriefDesc(e.target.value)} />
             {briefCat!=="concept" && <input className="inp" placeholder={briefCat==="tfp"?"Budget: TFP / Trade / Expenses covered":briefCat==="paid"?"Budget range (e.g. $1,000-$3,000)":"Budget / Stipend / Volunteer"} value={briefBudget} onChange={e=>setBriefBudget(e.target.value)} />}
-            <button className="btn btn-gold" onClick={()=>{if(briefTitle.trim()){setUserBriefs(prev=>[...prev,{id:Date.now(),title:briefTitle,desc:briefDesc,budget:briefCat==="concept"?"—":briefBudget||"Negotiable",tags:["New",briefCat],cat:briefCat}]);showToast("Posted!");setShowPostBrief(false);setBriefTitle("");setBriefDesc("");setBriefBudget("");setBriefCat("concept")}else{showToast("Title required")}}}>Post</button>
+            <button className="btn btn-gold" onClick={()=>{if(briefTitle.trim()){setUserBriefs(prev=>[...prev,{id:uid(),title:briefTitle,desc:briefDesc,budget:briefCat==="concept"?"—":briefBudget||"Negotiable",tags:["New",briefCat],cat:briefCat}]);showToast("Posted!");setShowPostBrief(false);setBriefTitle("");setBriefDesc("");setBriefBudget("");setBriefCat("concept")}else{showToast("Title required")}}}>Post</button>
           </div>
         </div>
       )}
@@ -3013,7 +3022,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               {icon:"💼",label:"Scam or Fraud",desc:"Selling, soliciting, or phishing"},
               {icon:"📋",label:"Other",desc:"Something else not listed above"},
             ].map(r=>(
-              <div key={r.label} className="report-option" onClick={async()=>{if(reportTarget){try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"report",target_id:reportTarget.id,target_type:reportTarget.type,reason:r.label})});}catch{showToast("Failed to report")}}showToast("Reported: "+r.label);setShowReport(false);setReportTarget(null)}}>
+               <div key={r.label} className="report-option" onClick={async()=>{if(reportTarget){let ok=false;try{const res=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"report",target_id:reportTarget.id,target_type:reportTarget.type,reason:r.label})});ok=res.ok}catch{}showToast(ok?"Reported: "+r.label:"Failed to report")}setShowReport(false);setReportTarget(null)}}>
                 <div className="report-option-icon">{r.icon}</div>
                 <div>
                   <div className="report-option-text">{r.label}</div>
@@ -3147,7 +3156,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Are you sure?</div>
             <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>This action is permanent and cannot be undone. All your data, matches, messages, and portfolio will be permanently deleted.</div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <button className="btn btn-gold" style={{width:"100%",borderColor:"var(--coral)",background:"linear-gradient(135deg,var(--coral),#ff4444)"}} onClick={async()=>{try{await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"delete-account"})});}catch(e){}localStorage.removeItem("muse_user");localStorage.removeItem("muse_v1");setAuthUser(null);setShowDeleteConfirm(false);setScreen("auth");showToast("Account deleted. We're sorry to see you go.")}}>Yes, Delete My Account</button>
+               <button className="btn btn-gold" style={{width:"100%",borderColor:"var(--coral)",background:"linear-gradient(135deg,var(--coral),#ff4444)"}} onClick={async()=>{try{const res=await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"delete-account"})});if(!res.ok) throw new Error("failed");safeRemoveItem("muse_user");safeRemoveItem("muse_v1");setAuthUser(null);setShowDeleteConfirm(false);setScreen("auth");showToast("Account deleted. We're sorry to see you go.");return}catch{showToast("Delete failed — try again")}}}>Yes, Delete My Account</button>
               <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setShowDeleteConfirm(false)}>Cancel</button>
             </div>
           </div>
@@ -3255,11 +3264,11 @@ const isMatch=matchScore>55||Math.random()>0.5;
         <div className="premium-wrap">
           {showPremiumPopup ? (
             <div className="premium-popup">
-              <button className="premium-popup-close" onClick={() => { try{localStorage.setItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }} aria-label="Dismiss premium" title="Dismiss premium">✕</button>
+              <button className="premium-popup-close" onClick={() => { try{safeSetItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }} aria-label="Dismiss premium" title="Dismiss premium">✕</button>
               <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
               <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
               <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
-              <div style={{marginTop:8,fontSize:10,color:"var(--muted)",textAlign:"center"}} onClick={() => { try{localStorage.setItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }}>Don&apos;t show again</div>
+              <div style={{marginTop:8,fontSize:10,color:"var(--muted)",textAlign:"center"}} onClick={() => { try{safeSetItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }}>Don&apos;t show again</div>
             </div>
           ) : (
             <button
@@ -3420,7 +3429,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
         <PaymentHistory userId={authUser?.id || ""} onClose={() => setShowPaymentHistory(false)} />
       )}
       {boostActive && (
-        <div style={{position:"fixed",top:80,right:20,zIndex:9999,padding:"8px 14px",borderRadius:99,background:"linear-gradient(135deg,var(--gold),var(--amber))",fontSize:11,fontWeight:700,color:"#0a0612",boxShadow:"0 4px 16px rgba(255,215,0,0.4)",display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setBoostActive(false);setBoostEnd(0);try{localStorage.removeItem("muse_boost");}catch{}showToast("Boost off")}}>
+        <div style={{position:"fixed",top:80,right:20,zIndex:9999,padding:"8px 14px",borderRadius:99,background:"linear-gradient(135deg,var(--gold),var(--amber))",fontSize:11,fontWeight:700,color:"#0a0612",boxShadow:"0 4px 16px rgba(255,215,0,0.4)",display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setBoostActive(false);setBoostEnd(0);try{safeRemoveItem("muse_boost");}catch{}showToast("Boost off")}}>
           <span>⚡ BOOST ACTIVE</span>
           <span style={{fontWeight:400}}>({Math.max(0,Math.ceil((boostEnd-Date.now())/60000))}m)</span>
         </div>
