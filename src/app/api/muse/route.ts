@@ -488,6 +488,9 @@ export async function POST(req: NextRequest) {
       if (!checkRate(ip, "report", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { target_id, target_type, reason, details } = rest;
       if (!target_id || !reason) return NextResponse.json({ error: "target_id and reason required" }, { status: 400 });
+      if (target_id === profile.id) return NextResponse.json({ error: "Cannot report yourself" }, { status: 400 });
+      const { data: targetProfile } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
+      if (!targetProfile) return NextResponse.json({ error: "Target not found" }, { status: 400 });
       const { error } = await sb.from("muse_reports").insert({ reporter_id: profile.id, target_id, target_type: target_type || "user", reason, details: details || "" });
       if (error) return safeServerError(error, "db op");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "report", details: { target_id, reason } });
@@ -537,6 +540,8 @@ export async function POST(req: NextRequest) {
     if (actionType === "leave-community") {
       const { communityId } = rest;
       if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
+      const { data: community } = await sb.from("muse_communities").select("id").eq("id", communityId).maybeSingle();
+      if (!community) return NextResponse.json({ error: "Community not found" }, { status: 400 });
       await sb.from("muse_community_members").delete().eq("community_id", communityId).eq("user_id", profile.id);
       return NextResponse.json({ success: true });
     }
@@ -544,7 +549,16 @@ export async function POST(req: NextRequest) {
     if (actionType === "book-session") {
       const { sessionId, hostId } = rest;
       if (!sessionId) return NextResponse.json({ error: "sessionId required" }, { status: 400 });
-      await sb.from("muse_bookings").insert({ session_id: sessionId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, host_id: hostId || null, status: "pending" });
+      const { data: session } = await sb.from("muse_sessions").select("id").eq("id", sessionId).maybeSingle();
+      if (!session) return NextResponse.json({ error: "Session not found" }, { status: 400 });
+      if (hostId) {
+        const { data: host } = await sb.from("muse_profiles").select("id").eq("id", hostId).maybeSingle();
+        if (!host) return NextResponse.json({ error: "Host not found" }, { status: 400 });
+      }
+      await sb.from("muse_bookings").upsert(
+        { session_id: sessionId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, host_id: hostId || null, status: "pending" },
+        { onConflict: "session_id,user_id", ignoreDuplicates: true }
+      );
       await sb.from("muse_notifications").insert({ user_id: hostId || profile.id, from_id: profile.id, type: "booking", body: `${profile.name} requested to book a session`, read: false });
       return NextResponse.json({ success: true });
     }
@@ -553,7 +567,10 @@ export async function POST(req: NextRequest) {
       if (!checkRate(ip, "connect", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { targetId } = rest;
       if (!targetId) return NextResponse.json({ error: "targetId required" }, { status: 400 });
-      await sb.from("muse_connections").upsert({ user_id: profile.id, target_id: targetId, status: "pending" }).select();
+      if (targetId === profile.id) return NextResponse.json({ error: "Cannot connect with yourself" }, { status: 400 });
+      const { data: target } = await sb.from("muse_profiles").select("id").eq("id", targetId).maybeSingle();
+      if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
+      await sb.from("muse_connections").upsert({ user_id: profile.id, target_id: targetId, status: "pending" }, { onConflict: "user_id,target_id", ignoreDuplicates: true }).select();
       await sb.from("muse_notifications").insert({ user_id: targetId, from_id: profile.id, type: "connection", body: `${profile.name} wants to connect`, read: false });
       return NextResponse.json({ success: true });
     }
