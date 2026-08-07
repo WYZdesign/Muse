@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     for (const table of tables) {
       try {
         const { count, error } = await sb.from(table).select("*", { count: "exact", head: true });
-        snapshots[table] = error ? { error: error.message } : { count: count ?? 0 };
+        snapshots[table] = error ? { error: "query failed" } : { count: count ?? 0 };
       } catch {
         snapshots[table] = { count: "query failed" };
       }
@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, timestamp: new Date().toISOString(), ...snapshots });
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    console.error("[backup] failed:", e);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

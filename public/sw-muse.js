@@ -1,7 +1,7 @@
 /* Muse PWA Service Worker — scoped push notifications */
 
 const CACHE = "muse-shell-v1";
-const SHELL = ["/muse", "/muse-manifest.json", "/favicon-192x192.png"];
+const SHELL = ["/muse", "/manifest.webmanifest", "/favicon-192x192.png"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

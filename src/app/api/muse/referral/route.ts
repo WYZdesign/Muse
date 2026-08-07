@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
+import { safeServerError } from "@/lib/http";
 import Stripe from "stripe";
 
 /**
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
 
       const code = generateReferralCode(profile.name || profile.id);
       const { error } = await sb.from("muse_profiles").update({ referral_code: code }).eq("id", profile.id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "referral code");
 
       return NextResponse.json({ code, existing: false });
     }
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
         referred_email: profile.email,
         status: "signed_up",
       });
-      if (refErr) return NextResponse.json({ error: refErr.message }, { status: 500 });
+      if (refErr) return safeServerError(refErr, "referral insert");
 
       // Update referee's profile
       await sb.from("muse_profiles").update({ referred_by: referrer.id }).eq("id", profile.id);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import crypto from "crypto";
+import { safeServerError } from "@/lib/http";
 
 function validatePassword(pw: string): string | null {
   if (pw.length < 6) return "Password must be at least 6 characters";
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
         email_confirm: true,
         user_metadata: { name: name || email.split("@")[0] },
       });
-      if (authErr) return NextResponse.json({ error: authErr.message }, { status: 400 });
+      if (authErr) return safeServerError(authErr, "register auth");
 
       const { error: profileErr } = await sb.from("muse_profiles").insert({
         auth_id: authUser.user!.id,
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
         name: name || email.split("@")[0],
         ...(data || {}),
       });
-      if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 });
+      if (profileErr) return safeServerError(profileErr, "register profile");
 
       return NextResponse.json({ success: true, user: authUser.user });
     }
@@ -100,10 +101,11 @@ export async function POST(req: NextRequest) {
     if (action === "forgot-password") {
       const { email } = body;
       if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
+      // Always return success to avoid revealing whether the email exists.
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${req.nextUrl.origin}/muse/reset-password`,
       });
-      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      if (error) console.error("[auth] resetPasswordForEmail failed:", error);
       return NextResponse.json({ success: true, message: "Check your email for reset link" });
     }
 
@@ -117,7 +119,7 @@ export async function POST(req: NextRequest) {
       if (verifyErr || !tokenUser.user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
       const sb = getServiceClient();
       const { error } = await sb.auth.admin.updateUserById(tokenUser.user.id, { password: new_password });
-      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      if (error) return safeServerError(error, "update-password");
       return NextResponse.json({ success: true, message: "Password updated" });
     }
 
@@ -140,10 +142,10 @@ export async function POST(req: NextRequest) {
           name: typeof updates.name === "string" ? updates.name : name,
           avatar: typeof updates.avatar === "string" ? updates.avatar : avatar,
         });
-        if (createErr) return NextResponse.json({ error: createErr.message }, { status: 500 });
+        if (createErr) return safeServerError(createErr, "update-profile create");
       }
       const { data, error } = await sb.from("muse_profiles").update(updates).eq("auth_id", user.id).select("*").maybeSingle();
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "update-profile update");
       return NextResponse.json({ success: true, profile: data });
     }
 

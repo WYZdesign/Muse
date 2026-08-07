@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, checkinsCreated: created });
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : "Cron failed";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error("[cron] checkins failed:", error);
+    return NextResponse.json({ error: "Cron failed" }, { status: 500 });
   }
 }

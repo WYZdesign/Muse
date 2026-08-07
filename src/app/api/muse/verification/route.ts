@@ -104,8 +104,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : "Verification failed";
     console.error("Age verification error:", error);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: "Verification failed" }, { status: 500 });
   }
 }

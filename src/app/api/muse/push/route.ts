@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
+import { safeServerError } from "@/lib/http";
 
 export const runtime = "nodejs";
 
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
       if (error) {
         // 409 unique-violation on endpoint is benign — record already exists.
         if ((error as { code?: string }).code === "23505") return NextResponse.json({ success: true });
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        return safeServerError(error, "push subscribe");
       }
       return NextResponse.json({ success: true, data });
     }
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
         .delete()
         .eq("endpoint", endpoint);
       if (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        return safeServerError(error, "push unsubscribe");
       }
       return NextResponse.json({ success: true });
     }

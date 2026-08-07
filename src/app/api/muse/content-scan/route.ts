@@ -187,9 +187,8 @@ export async function POST(req: NextRequest) {
       flaggedCategories: result.flaggedCategories.length > 0 ? result.flaggedCategories : undefined,
     });
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : "Scan failed";
     console.error("Content scan error:", error);
     // Fail open - allow on error
-    return NextResponse.json({ allowed: true, scanError: msg });
+    return NextResponse.json({ allowed: true, scanError: "Scan failed" });
   }
 }

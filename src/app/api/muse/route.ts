@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
+import { safeServerError } from "@/lib/http";
 
 function getAuthUser() {
   return supabase.auth.getUser();
@@ -235,7 +236,7 @@ export async function GET(req: NextRequest) {
       const isOwner = !!profileId && String(profileId) === String(targetProfileId);
       let query = sb.from("muse_albums").select("id, profile_id, title, description, cover_url, access_level, tags, position, view_count, like_count, created_at").eq("profile_id", targetProfileId).order("position");
       const { data: albums, error } = await query;
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       let visible = albums || [];
       if (!isOwner) {
         const inviteAlbumIds = (albums || []).filter((a: any) => a.access_level === "invite").map((a: any) => a.id);
@@ -270,7 +271,7 @@ export async function GET(req: NextRequest) {
         if (!hasGrant) return NextResponse.json({ error: "You don't have access to this album" }, { status: 403 });
       }
       const { data: photos, error } = await sb.from("muse_album_photos").select("id, img_url, caption, position, created_at").eq("album_id", albumId).order("position");
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ photos: photos || [] });
     }
 
@@ -393,14 +394,14 @@ export async function POST(req: NextRequest) {
 
     if (actionType === "profile") {
       const { error } = await sb.from("muse_profiles").update(rest).eq("id", profile.id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 
     if (actionType === "match") {
       if (!checkRate(ip, "match", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { error } = await sb.from("muse_matches").insert({ user_id: profile.id, target_id: rest.target_id });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id: rest.target_id } });
       return NextResponse.json({ success: true });
     }
@@ -424,7 +425,7 @@ export async function POST(req: NextRequest) {
         client_msg_id: typeof client_msg_id === "string" ? client_msg_id.slice(0, 120) : undefined,
       });
       // Treat duplicate client_msg_id as success (already persisted by retry).
-      if (error && (error as { code?: string }).code !== "23505") return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error && (error as { code?: string }).code !== "23505") return safeServerError(error, "message insert");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message", details: { to: toId } });
       return NextResponse.json({ success: true, match_id: matchId });
     }
@@ -436,7 +437,7 @@ export async function POST(req: NextRequest) {
       const { text, image_url, image, img } = rest;
       if (!text?.trim()) return NextResponse.json({ error: "text required" }, { status: 400 });
       const { error } = await sb.from("muse_feed_posts").insert({ author_id: profile.id, text: text.trim(), img: img || image_url || image || "", type: (img || image_url || image) ? "photo" : "text" });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 
@@ -447,7 +448,7 @@ export async function POST(req: NextRequest) {
       const { title, desc, budget, cat, tags, paid, rate } = rest;
       if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
       const { error } = await sb.from("muse_briefs").insert({ author_id: profile.id, title: title.trim(), description: desc || "", budget: budget || "Negotiable", category: cat || "concept", tags: tags || [], paid: paid || false, rate: rate || "" });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 
@@ -455,7 +456,7 @@ export async function POST(req: NextRequest) {
       const { briefId } = rest;
       if (!briefId) return NextResponse.json({ error: "briefId required" }, { status: 400 });
       const { error } = await sb.from("muse_brief_applications").insert({ brief_id: briefId, user_id: profile.id });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "brief_apply", details: { brief_id: briefId } });
       return NextResponse.json({ success: true });
     }
@@ -467,12 +468,12 @@ export async function POST(req: NextRequest) {
       const { title, body: forumBody, text, cat, type: forumType, postId } = rest;
       if (forumType === "reply") {
         const { error } = await sb.from("muse_forum_replies").insert({ post_id: postId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, text: text || "" });
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        if (error) return safeServerError(error, "db op");
         return NextResponse.json({ success: true });
       }
       if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
       const { error } = await sb.from("muse_forum_posts").insert({ author_id: profile.id, title: title.trim(), body: forumBody || "", category: cat || "General" });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 
@@ -481,7 +482,7 @@ export async function POST(req: NextRequest) {
       const { target_id, target_type, reason, details } = rest;
       if (!target_id || !reason) return NextResponse.json({ error: "target_id and reason required" }, { status: 400 });
       const { error } = await sb.from("muse_reports").insert({ reporter_id: profile.id, target_id, target_type: target_type || "user", reason, details: details || "" });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "report", details: { target_id, reason } });
       return NextResponse.json({ success: true });
     }
@@ -542,7 +543,7 @@ export async function POST(req: NextRequest) {
     if (actionType === "save-preferences") {
       const prefs = rest;
       const { error } = await sb.from("muse_profiles").update({ preferences: prefs }).eq("id", profile.id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 
@@ -574,7 +575,7 @@ export async function POST(req: NextRequest) {
         profile_id: profile.id, title: title.trim(), description: description || "",
         cover_url: cover_url || "", access_level: level, tags: Array.isArray(tags) ? tags.slice(0, 20) : [],
       }).select().single();
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true, album: data });
     }
 
@@ -590,7 +591,7 @@ export async function POST(req: NextRequest) {
       if (access_level !== undefined && ["public", "private", "invite"].includes(access_level)) updates.access_level = access_level;
       if (tags !== undefined && Array.isArray(tags)) updates.tags = tags.slice(0, 20);
       const { error } = await sb.from("muse_albums").update(updates).eq("id", albumId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 
@@ -600,7 +601,7 @@ export async function POST(req: NextRequest) {
       const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
       if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       const { error } = await sb.from("muse_albums").delete().eq("id", albumId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 
@@ -612,7 +613,7 @@ export async function POST(req: NextRequest) {
       if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       const { count } = await sb.from("muse_album_photos").select("*", { count: "exact", head: true }).eq("album_id", albumId);
       const { data, error } = await sb.from("muse_album_photos").insert({ album_id: albumId, img_url, caption: String(caption || "").slice(0, 500), position: count ?? 0 }).select().single();
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true, photo: data });
     }
 
@@ -624,7 +625,7 @@ export async function POST(req: NextRequest) {
       const { data: album } = await sb.from("muse_albums").select("profile_id").eq("id", photo.album_id).maybeSingle();
       if (!album || String(album.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       const { error } = await sb.from("muse_album_photos").delete().eq("id", photoId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 
@@ -634,7 +635,7 @@ export async function POST(req: NextRequest) {
       const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
       if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       const { error } = await sb.from("muse_album_access").upsert({ album_id: albumId, viewer_profile_id: viewerProfileId }, { onConflict: "album_id,viewer_profile_id", ignoreDuplicates: true });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 
@@ -671,7 +672,7 @@ export async function POST(req: NextRequest) {
       const { data: album } = await sb.from("muse_albums").select("like_count").eq("id", albumId).maybeSingle();
       if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
       const { error } = await sb.from("muse_albums").update({ like_count: (album.like_count || 0) + 1 }).eq("id", albumId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 
@@ -760,7 +761,7 @@ export async function POST(req: NextRequest) {
         status: "pending_responder",
       }).select().single();
 
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       // Notify responder
       await sb.from("muse_notifications").insert({
         user_id: responderId, from_id: profile.id, type: "disclosure",
@@ -790,7 +791,7 @@ export async function POST(req: NextRequest) {
       }
 
       const { error } = await sb.from("muse_disclosures").update(updates).eq("id", disclosureId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
 
       if (updates.status === "confirmed") {
         const otherUserId = isProposer ? disc.responder_id : disc.proposer_id;
@@ -824,7 +825,7 @@ export async function POST(req: NextRequest) {
       const { error } = await sb.from("muse_strikes").update({
         appeal_status: "pending", appeal_text: String(appealText).slice(0, 2000)
       }).eq("id", strikeId).eq("user_id", profile.id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 
@@ -847,7 +848,7 @@ export async function POST(req: NextRequest) {
         updates.severity = "warning"; // downgrade on overturn
       }
       const { error } = await sb.from("muse_strikes").update(updates).eq("id", strikeId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 
@@ -883,7 +884,7 @@ export async function POST(req: NextRequest) {
       }
 
       const { error } = await sb.from("muse_bookings").update(updates).eq("id", bookingId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
 
       await sb.from("muse_notifications").insert({
         user_id: booking.user_id, from_id: profile.id, type: "booking_update",
@@ -905,7 +906,7 @@ export async function POST(req: NextRequest) {
         cancel_reason: String(reason || "Cancelled by user"),
         updated_at: new Date().toISOString()
       }).eq("id", bookingId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
 
       const otherUserId = String(booking.user_id) === String(profile.id) ? booking.host_id : booking.user_id;
       if (otherUserId) {
@@ -937,7 +938,7 @@ export async function POST(req: NextRequest) {
         updates.cancel_reason = rest.reason || "Cancelled during check-in";
       }
       const { error } = await sb.from("muse_safety_checkins").update(updates).eq("id", checkinId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
 
       if (response === "cancelled" && checkin.booking_id) {
         await sb.from("muse_bookings").update({
@@ -963,7 +964,7 @@ export async function POST(req: NextRequest) {
         recipient_email: String(recipientEmail || ""),
         share_method: String(shareMethod || "sms"),
       });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 
@@ -985,7 +986,7 @@ export async function POST(req: NextRequest) {
         auto_share_enabled: !!autoShareEnabled,
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       // Mark profile as having emergency contact
       await sb.from("muse_profiles").update({ emergency_contact_added: true }).eq("id", profile.id);
       return NextResponse.json({ success: true });
@@ -1016,7 +1017,7 @@ export async function POST(req: NextRequest) {
         response_text: String(responseText || ""),
         response_choices: Array.isArray(responseChoices) ? responseChoices : [],
       }, { onConflict: "user_id,prompt_id" });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       // Update completion percentage
       const { count } = await sb.from("muse_prompt_responses").select("*", { count: "exact", head: true }).eq("user_id", profile.id);
       const { count: total } = await sb.from("muse_prompt_bank").select("*", { count: "exact", head: true }).eq("active", true);
@@ -1196,7 +1197,7 @@ export async function POST(req: NextRequest) {
         severity: suspensionEnd ? "suspension" : "permanent_ban",
         suspension_ends_at: suspensionEnd,
       });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return safeServerError(error, "db op");
       await sb.from("muse_notifications").insert({
         user_id: targetUserId, from_id: profile.id, type: "suspension",
         body: suspensionEnd ? `Your account has been suspended until ${new Date(suspensionEnd).toLocaleDateString()}` : "Your account has been permanently banned",
@@ -1207,7 +1208,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Unknown action type" }, { status: 400 });
   } catch (e: unknown) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Server error" }, { status: 500 });
+    return safeServerError(e, "muse route");
   }
 }
 

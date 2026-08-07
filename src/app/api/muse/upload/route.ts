@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
+import { safeServerError } from "@/lib/http";
 
 const ALLOWED_SIGNATURES: Record<string, { bytes: number[]; ext: string }> = {
   "89504e47": { bytes: [0x89,0x50,0x4E,0x47], ext: "png" },
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
       upsert: false,
     });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return safeServerError(error, "upload POST");
 
     const { data: urlData } = sb.storage.from("muse-uploads").getPublicUrl(data.path);
     return NextResponse.json({ success: true, url: urlData.publicUrl, path: data.path });
@@ -91,9 +92,9 @@ export async function DELETE(req: NextRequest) {
     if (!path.startsWith(`${profileId}/`)) return NextResponse.json({ error: "Not your file" }, { status: 403 });
     const sb = getServiceClient();
     const { error } = await sb.storage.from("muse-uploads").remove([path]);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return safeServerError(error, "upload delete");
     return NextResponse.json({ success: true });
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return safeServerError(e, "upload");
   }
 }
