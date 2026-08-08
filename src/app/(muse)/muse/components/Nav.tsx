@@ -32,8 +32,8 @@ export default function Nav({ active, onNavigate, onHamburgerToggle, unreadCount
           animation: "gradientShift 4s ease-in-out infinite",
         } as React.CSSProperties : undefined;
         return (
-          <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs" as Screen); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined}>
-            <span className={"nav-icon" + (isActive ? " nav-icon-grad grad-" + tab.key : "")} style={isActive ? { ...gradientStyle, display:"inline-flex", alignItems:"center", justifyContent:"center", filter:"drop-shadow(0 0 6px " + color + "80)" } : undefined}>{tab.icon}</span>
+          <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs" as Screen); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined} style={{ "--line-color": color } as React.CSSProperties}>
+            <span className={"nav-icon" + (isActive ? " nav-icon-grad grad-" + tab.key : "")} style={isActive ? { display:"inline-flex", alignItems:"center", justifyContent:"center", filter:"drop-shadow(0 0 6px " + color + "80)" } : undefined}>{tab.icon}</span>
             <span className={"nav-label" + (isActive ? " nav-label-grad grad-" + tab.key : "")} style={isActive ? gradientStyle : { color:"var(--muted)", fontWeight: 600 }}>{" " + tab.label}</span>
           </button>
         );

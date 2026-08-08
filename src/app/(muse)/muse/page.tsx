@@ -427,8 +427,10 @@ function MusePage() {
           safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken || "", user: userObj }));
           ensureMusePushRegistered();
           if (d.profile) {
-            setCurrentUser(prev => ({ ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, type: d.profile.type || prev.type, foundingTier: d.profile.founding_tier || "", proExpiresAt: d.profile.pro_expires_at || "", tier: d.profile.tier || "free" }));
-            if (d.profile.tier) setUserTier(d.profile.tier);
+            const isOwner = d.user.email === "torree.marcel@gmail.com";
+            const effTier = isOwner ? "muse_pro" : (d.profile.tier || "free");
+            setCurrentUser(prev => ({ ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, type: d.profile.type || prev.type, foundingTier: isOwner ? "founding" : (d.profile.founding_tier || ""), proExpiresAt: isOwner ? "" : (d.profile.pro_expires_at || ""), tier: effTier }));
+            if (effTier) setUserTier(effTier);
             if (d.profile.age_verified) setAgeVerified(true);
             setScreen(d.profile.name && d.profile.type ? "discover" : "onboard");
           } else {
@@ -1907,66 +1909,70 @@ const isMatch=matchScore>55||Math.random()>0.5;
                              const photos: string[] = (profile as any).photos?.length ? (profile as any).photos : [profile.img];
                              const heroSrc = photos[currentPhotoIdx] || profile.img;
                              const heroPortrait = !!PORTRAIT_IMG[heroSrc];
-                             return (
-                               <div className="card-hero" ref={heroRef}>
-                                 <img src={heroSrc} alt={profile.name} draggable="false" onError={handleImgError}
-                                   style={{width:"100%",height:"100%",objectFit:heroPortrait?"cover":"contain",objectPosition:heroPortrait?"center top":"center",background:"linear-gradient(160deg,#1a0a2e,#0a0612)",position:"absolute",top:0,left:0}} />
-                                 {isTop && (
-                                   <>
-                                     <div className="card-photo-zone card-photo-zone-left" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
-                                     <div className="card-photo-zone card-photo-zone-right" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.min(photos.length-1,prev+1))}} />
-                                   </>
-                                 )}
-                                 <div className={"card-hero-info"+(cardScrolled?" hidden":"")}>
-                                   <div className="card-hero-name">
-                                     {profile.name}
-                                     {profile.verified && <span className="card-verified-mark">✓</span>}
-                                     {profile.online && <span className="card-online-dot" />}
-                                   </div>
-                                   <div className="card-hero-type">{profile.type} · {profile.loc?.split(",")[0]}</div>
-                                   <div className="card-hero-bio">{profile.bio?.slice(0,100)}{(profile.bio?.length||0)>100?"...":""}</div>
-                                   <div className="card-hero-tags">{profile.styles.slice(0,4).map(s=><span key={s} className="card-hero-tag">{s}</span>)}</div>
+                              return (
+                                <>
+                                <div className="card-hero" ref={heroRef}>
+                                  <img src={heroSrc} alt={profile.name} draggable="false" onError={handleImgError}
+                                    style={{width:"100%",height:"100%",objectFit:heroPortrait?"cover":"contain",objectPosition:heroPortrait?"center top":"center",background:"linear-gradient(160deg,#1a0a2e,#0a0612)",position:"absolute",top:0,left:0}} />
+                                  <div className="card-shine" />
+                                  <div className="card-gradient" />
+                                  <div className="card-border" />
+                                </div>
+                                {isTop && (
+                                  <>
+                                    <div className="card-photo-zone card-photo-zone-left" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
+                                    <div className="card-photo-zone card-photo-zone-right" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.min(photos.length-1,prev+1))}} />
+                                  </>
+                                )}
+                                <div className={"card-hero-info"+(cardScrolled?" hidden":"")}>
+                                  <div className="card-hero-name">
+                                    {profile.name}
+                                    {profile.verified && <span className="card-verified-mark">✓</span>}
+                                    {profile.online && <span className="card-online-dot" />}
+                                  </div>
+                                  <div className="card-hero-type">{profile.type} · {profile.loc?.split(",")[0]}</div>
+                                  <div className="card-hero-bio">{profile.bio?.slice(0,100)}{(profile.bio?.length||0)>100?"...":""}</div>
+                                  <div className="card-hero-tags">{profile.styles.slice(0,4).map(s=><span key={s} className="card-hero-tag">{s}</span>)}</div>
+                                </div>
+                                <div className="card-photo-dots">
+                                  {photos.map((_:string,i:number)=><div key={i} className={"card-photo-dot"+(i===currentPhotoIdx?" active":"")} />)}
+                                </div>
+                                <div className={"card-actions-overlay"+(cardScrolled?" hidden":"")}>
+                                  <button className="action-btn btn-rewind" onClick={doRewind} aria-label="Rewind">↺</button>
+                                  <button className="action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
+                                  <button className="action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
+                                  <button className="action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
+                                  <button className="action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎♥</button>
+                                </div>
+                                {isTop && (
+                                  <>
+                                    <div ref={likeLabelRef} className="label label-like">LIKE</div>
+                                    <div ref={nopeLabelRef} className="label label-nope">NOPE</div>
+                                    <div ref={superLabelRef} className="label label-super">SUPER</div>
+                                  </>
+                                )}
+                                <div className="card-info-scroll" ref={cardScrollRef} onScroll={()=>{if(isTop){const scrollY=cardScrollRef.current?.scrollTop||0;setCardScrolled(scrollY>60);}}}>
+                                  <div className="card-details">
+                                    {profile.bio && <div className="card-section"><div className="card-section-title">About</div><div className="card-section-text">{profile.bio}</div></div>}
+                                    {profile.looking.length>0 && <div className="card-section"><div className="card-section-title">Looking for</div><div className="card-section-text">{profile.looking.join(", ")}</div></div>}
+                                    <div className="card-section"><div className="card-section-title">Creative Style</div>
+                                      <div className="card-section-tags">{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div>
+                                    </div>
+                                    <div className="card-section">
+                                      <div className="card-section-title">Photos</div>
+                                      <div className="card-photo-grid">
+                                        {((profile as any).photos?.length ? (profile as any).photos : [profile.img]).map((p:string,i:number)=><div key={i} className={"card-photo-thumb"+(i===currentPhotoIdx?" active":"")} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}}><img src={p} alt="" onError={handleImgError} /></div>)}
+                                      </div>
+                                      <button className="card-portfolio-btn" onClick={(e)=>{e.stopPropagation();openGallery(profile);}}>View Full Portfolio</button>
+                                    </div>
+                                    <div className="match-score" style={{marginBottom:16}}><div className="score-bar"><div className="score-fill" style={{width:profile.score+"%"}} /></div><span className="score-text">{profile.score}%</span></div>
+                                    {(profile as any).badges?.length > 0 && <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>)}</div></div>}
+                                    <div className="card-section" style={{fontSize:12,color:"var(--muted)"}}>📍 {profile.loc}</div>
                                  </div>
-                                 <div className="card-photo-dots">
-                                   {photos.map((_:string,i:number)=><div key={i} className={"card-photo-dot"+(i===currentPhotoIdx?" active":"")} />)}
                                  </div>
-                                 <div className={"card-actions-overlay"+(cardScrolled?" hidden":"")}>
-                                   <button className="action-btn btn-rewind" onClick={doRewind} aria-label="Rewind">↺</button>
-                                   <button className="action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
-                                   <button className="action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
-                                   <button className="action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
-                                   <button className="action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎♥</button>
-                                 </div>
-                                 <div className="card-shine" />
-                                 <div className="card-gradient" />
-                                 <div className="card-border" />
-                                 {isTop && (
-                                   <>
-                                     <div ref={likeLabelRef} className="label label-like">LIKE</div>
-                                     <div ref={nopeLabelRef} className="label label-nope">NOPE</div>
-                                     <div ref={superLabelRef} className="label label-super">SUPER</div>
-                                   </>
-                                 )}
-                               </div>
-                             );
-                           })()}
-                           <div className="card-info-scroll" ref={cardScrollRef} onScroll={()=>{if(isTop){const scrollY=cardScrollRef.current?.scrollTop||0;setCardScrolled(scrollY>60);}}}>
-                             {profile.bio && <div className="card-section"><div className="card-section-title">About</div><div className="card-section-text">{profile.bio}</div></div>}
-                             {profile.looking.length>0 && <div className="card-section"><div className="card-section-title">Looking for</div><div className="card-section-text">{profile.looking.join(", ")}</div></div>}
-                             <div className="card-section"><div className="card-section-title">Creative Style</div>
-                               <div className="card-section-tags">{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div>
-                             </div>
-                             <div className="card-section">
-                               <div className="card-section-title">Photos</div>
-                               <div className="card-photo-grid">
-                                 {((profile as any).photos?.length ? (profile as any).photos : [profile.img]).map((p:string,i:number)=><div key={i} className={"card-photo-thumb"+(i===currentPhotoIdx?" active":"")} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}}><img src={p} alt="" onError={handleImgError} /></div>)}
-                               </div>
-                               <button className="card-portfolio-btn" onClick={(e)=>{e.stopPropagation();openGallery(profile);}}>View Full Portfolio</button>
-                             </div>
-                             <div className="match-score" style={{marginBottom:16}}><div className="score-bar"><div className="score-fill" style={{width:profile.score+"%"}} /></div><span className="score-text">{profile.score}%</span></div>
-                             {(profile as any).badges?.length > 0 && <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>)}</div></div>}
-                             <div className="card-section" style={{fontSize:12,color:"var(--muted)"}}>📍 {profile.loc}</div>
-                           </div>
+                                 </>
+                              );
+                            })()}
                        </div>
                      );
                    })}
@@ -2091,7 +2097,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
               <div className={"screen-el"+(screen==="matches"?" active":"")}>
               <div className="hdr">
-                <img className="logo-img" src="/muse-icon.png" alt="Muse" />
+                <div className="logo-link" style={{fontSize:28}}>muse</div>
 <div style={{display:"flex",gap:10}}>
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
 {!searchOpen ? (<button className="hdr-btn" style={{width:34,height:34}} onClick={()=>setSearchOpen(true)}><FiSearch size={16} /></button>) : (
@@ -2133,7 +2139,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <>
               <div className="match-list" style={{flex:1,display:"flex",flexDirection:"column",justifyContent:matches.length===0?"center":"flex-start",padding:matches.length===0?"20vh 10vw":"0"}}>
                 {matches.length === 0 && (
-                  <div className="empty-state" style={{padding:60}}>
+                  <div className="empty-state" style={{padding:60,textAlign:"center"}}>
                     <div className="empty-icon" style={{fontSize:64}}><FiHeart size={72} /></div>
                     <div className="empty-title" style={{fontSize:22,marginTop:20}}>No sparks yet</div>
                     <div className="empty-sub" style={{fontSize:14,maxWidth:240,margin:"12px auto 0"}}>Start swiping to find your creative connections</div>
@@ -2247,7 +2253,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <div className={"screen-el"+(screen==="briefs"?" active":"")}>
               <div className="hdr">
-                <img className="logo-img" src="/muse-icon.png" alt="Muse" />
+                <div className="logo-link" style={{fontSize:28}}>muse</div>
                 <button className="hdr-btn" onClick={()=>setShowPostBrief(true)}><FiPlus size={18} /></button>
               </div>
               <div className="conn-tabs" style={{padding:"0 12px"}}>
@@ -2473,7 +2479,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <div className={"screen-el"+(screen==="portfolio"?" active":"")}>
               <div className="hdr">
-                <img className="logo-img" src="/muse-icon.png" alt="Muse" />
+                <div className="logo-link" style={{fontSize:28}}>muse</div>
               </div>
               <div className="portfolio-scroll">
                 <MyAlbumsManager
@@ -2487,7 +2493,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <div className={"screen-el"+(screen==="moments"?" active":"")}>
               <div className="hdr">
-                <img className="logo-img" src="/muse-icon.png" alt="Muse" />
+                <div className="logo-link" style={{fontSize:28}}>muse</div>
                 <div style={{width:40}} />
               </div>
               <div className="moments-page">
@@ -2839,7 +2845,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="phone" id="muse-app">
             <div className="notch" />
             <div className="hdr">
-              <img className="logo-img" src="/muse-icon.png" alt="Muse" />
+              <div className="logo-link" style={{fontSize:28}}>muse</div>
               <button className="hdr-btn" onClick={()=>showScreen("profile")}><FiArrowLeft size={18} /></button>
             </div>
             <div className="sub-scroll">
@@ -2885,7 +2891,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="phone" id="muse-app">
             <div className="notch" />
             <div className="hdr">
-              <img className="logo-img" src="/muse-icon.png" alt="Muse" />
+              <div className="logo-link" style={{fontSize:28}}>muse</div>
               <button className="hdr-btn" onClick={()=>showScreen("profile")}><FiArrowLeft size={18} /></button>
             </div>
             <div className="settings-scroll">
@@ -2897,6 +2903,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   {icon:<FiLink size={18}/>,label:"Connected Accounts",desc:"Instagram, Spotify, etc.",action:()=>setShowConnectedAccounts(!showConnectedAccounts)},
                   {icon:<FiStar size={18}/>,label:"Personality Profile",desc:"Zodiac, MBTI, Life Path",action:()=>{setScreen("onboard");setObStep(7)}},
                   {icon:<FiUsers size={18}/>,label:"Creative Profile",desc:"Type, styles, looking for",action:()=>{setScreen("onboard");setObStep(4)}},
+                  ...(isUnlimited ? [{icon:<FiShield size={18}/>,label:"Admin Dashboard",desc:"Analytics & moderation",action:()=>{window.open("/muse/admin","_self")}}] : []),
                 ].map(item=>(
                   <div key={item.label} className="settings-item" onClick={item.action}>
                     <div className="settings-item-left"><div className="settings-icon">{item.icon}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>

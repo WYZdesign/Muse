@@ -137,6 +137,12 @@ a{color:inherit;text-decoration:none}
 @keyframes navGlow{0%,100%{box-shadow:0 0 8px var(--line-color,#FFD700)}50%{box-shadow:0 0 16px var(--line-color,#FFD700)}}
 .nav-icon{font-size:22px;transition:all .3s cubic-bezier(.4,0,.2,1);filter:brightness(0.85)}
 .nav-item.active .nav-icon{transform:scale(1.12);filter:drop-shadow(0 2px 6px rgba(255,215,0,0.25));color:var(--line-color,#FFD700)}
+.nav-icon-grad.grad-discover svg{fill:transparent;background:linear-gradient(90deg,#FFD700,rgba(255,255,255,0.95),#FFD700,#FFD700);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-connections svg{fill:transparent;background:linear-gradient(90deg,#4169E1,rgba(255,255,255,0.95),#4169E1,#4169E1);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-briefs svg{fill:transparent;background:linear-gradient(90deg,#20B2AA,rgba(255,255,255,0.95),#20B2AA,#20B2AA);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-matches svg{fill:transparent;background:linear-gradient(90deg,#FF8C00,rgba(255,255,255,0.95),#FF8C00,#FF8C00);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-moments svg{fill:transparent;background:linear-gradient(90deg,#FF69B4,rgba(255,255,255,0.95),#FF69B4,#FF69B4);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad svg{width:22px;height:22px;display:block}
 .nav-muse-btn{position:relative;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--pink),var(--lavender));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;margin-top:-18px;border:3px solid rgba(10,6,18,0.95);box-shadow:0 0 20px rgba(255,215,0,0.2),0 4px 15px rgba(0,0,0,0.3);transition:all .3s cubic-bezier(.4,0,.2,1)}
 .nav-muse-btn:hover{transform:scale(1.08);box-shadow:0 0 30px rgba(255,215,0,0.4)}
 .nav-muse-btn.active{transform:scale(1.12);box-shadow:0 0 35px rgba(255,215,0,0.5)}
@@ -616,7 +622,7 @@ img{background-color:#1a0a2e}
 .ob-portfolio-plus{font-size:28px;color:var(--muted)}
 
 /* ═══ SWIPE CARD FIX ═══ */
-@media(min-width:768px){.swipe-card{height:75%}.card-stack{padding:20px 0}}
+@media(min-width:768px){.swipe-card{height:100%}.card-stack{padding:0}}
 
 /* ═══ CONFETTI ═══ */
 .confetti-piece{position:absolute;top:-10px;border-radius:2px;animation:confettiFall linear forwards}
@@ -734,12 +740,13 @@ img{background-color:#1a0a2e}
 .nav-icon-glow{filter:drop-shadow(0 2px 5px rgba(255,255,255,0.24))}
 
 /* ═══ SWIPE CARD FULL-IMAGE HERO ═══ */
-.swipe-card{height:100%;display:flex;flex-direction:column;position:absolute;inset:2px;overflow:hidden;border-radius:24px}
+.swipe-card{height:100%;display:flex;flex-direction:column;position:absolute;inset:0;overflow:hidden;border-radius:24px}
 .swipe-card.top-card{z-index:3}
-.swipe-card .card-hero{flex:0 0 65%;min-height:0;overflow:hidden;position:relative;z-index:1}
+.swipe-card .card-hero{position:absolute;inset:0;height:100%;min-height:0;overflow:hidden;z-index:1}
 .swipe-card .card-hero img{width:100%;height:100%;object-fit:cover;display:block;position:absolute;top:0;left:0}
-.swipe-card .card-info-scroll{flex:1;overflow-y:auto;padding:0;scrollbar-width:none;background:var(--bg)}
+.swipe-card .card-info-scroll{position:absolute;inset:0;overflow-y:auto;padding:0;scrollbar-width:none;background:transparent;z-index:2}
 .swipe-card .card-info-scroll::-webkit-scrollbar{width:0}
+.swipe-card .card-details{margin-top:62vh;background:var(--bg);padding:24px 20px 40px;border-radius:24px 24px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,0.4);z-index:2}
 
 /* ═══ ALL IMAGES FILL CONTAINERS ═══ */
 /* Scoped to swipe cards only — this was previously a global img[src^="/models/"] selector
@@ -826,7 +833,7 @@ img{background-color:#1a0a2e}
 .card-photo-dots{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:6;pointer-events:none}
 .card-photo-dot{width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,0.35);transition:all .2s}
 .card-photo-dot.active{width:18px;background:var(--gold)}
-.card-photo-zone{position:absolute;top:0;bottom:0;width:35%;z-index:5}
+.card-photo-zone{position:absolute;top:0;height:62vh;width:35%;z-index:5}
 .card-photo-zone-left{left:0}
 .card-photo-zone-right{right:0}
 .card-photo-thumb.active{border:2px solid var(--gold)}
