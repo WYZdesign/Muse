@@ -101,7 +101,6 @@ function MusePage() {
   const [cardScrolled, setCardScrolled] = useState(false);
   const cardScrollRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
-  const hasLoadedState = useRef(false);
   const [galleryView, setGalleryView] = useState<{ profileId: string | number; name: string; photos: string[]; idx: number } | null>(null);
   const [discoverSearchOpen, setDiscoverSearchOpen] = useState(false);
   const [savedBriefs, setSavedBriefs] = useState<number[]>([]);
@@ -448,8 +447,6 @@ function MusePage() {
   }, []);
 
   useEffect(() => {
-    if (hasLoadedState.current) return;
-    hasLoadedState.current = true;
     loadState();
     setHydrated(true);
 
@@ -650,14 +647,7 @@ function MusePage() {
   const flash = useCallback((color: string) => { setScreenFlash(color); setTimeout(() => setScreenFlash(null), 300); }, []);
   const showScreen = useCallback((s: typeof screen) => { setScreen(s); trackEvent("screen_view", { screen: s }); }, []);
 
-  // Guard: ensure screen stays synced with the rendered ternary.
-  // Prevents reverting to discover when state updates arrive from effects.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!screen) return;
-    const valid = ["onboard","discover","connections","matches","chat","briefs","portfolio","moments","profile","settings","subscription","admin"];
-    if (!valid.includes(screen)) setScreen("discover");
-  }, [screen]);
+
   const openHamburger = useCallback(() => { setHamburgerScreen(""); setShowHamburger(true); }, []);
 
   const handleOAuth = useCallback(async (provider: "google" | "facebook") => {
