@@ -4,10 +4,18 @@ import type { Screen } from "./types";
 
 const lineColor: Record<string,string> = {
   discover: "#FFD700",
-  connections: "#4169E1",
+  connections: "#1E90FF",
   briefs: "#20B2AA",
-  matches: "#FF8C00",
-  moments: "#FF69B4",
+  matches: "#FF4500",
+  moments: "#FF1493",
+};
+
+const lavaGradients: Record<string, string> = {
+  discover: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)",
+  connections: "linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF)",
+  briefs: "linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA)",
+  matches: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",
+  moments: "linear-gradient(90deg,#FF1493,#FF0000,#DDA0DD,#FF1493,#FF69B4,#FF1493)",
 };
 
 const tabs: { key: string; label: string; icon: React.ReactNode; hasScreen: boolean }[] = [
@@ -24,23 +32,35 @@ export default function Nav({ active, onNavigate, onHamburgerToggle, unreadCount
       {tabs.map(tab => {
         const isActive = active === tab.key;
         const color = lineColor[tab.key] || "#FFD700";
+        const lava = lavaGradients[tab.key] || lavaGradients.discover;
         const gradientStyle = isActive ? {
-          background: "linear-gradient(90deg," + color + ",rgba(255,255,255,0.95)," + color + "," + color + ")",
-          backgroundSize: "200% 100%",
+          background: lava,
+          backgroundSize: "300% 100%",
           WebkitBackgroundClip: "text",
+          backgroundClip: "text",
           WebkitTextFillColor: "transparent",
-          animation: "gradientShift 4s ease-in-out infinite",
+          color: "transparent",
+          animation: "lavaFlow 4s ease-in-out infinite",
+        } as React.CSSProperties : undefined;
+        const iconGradient = isActive ? {
+          background: lava,
+          backgroundSize: "300% 100%",
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          animation: "lavaFlow 4s ease-in-out infinite",
+          filter: "none",
         } as React.CSSProperties : undefined;
         return (
           <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs" as Screen); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined} style={{ "--line-color": color } as React.CSSProperties}>
-            <span className={"nav-icon" + (isActive ? " nav-icon-grad grad-" + tab.key : "")} style={isActive ? { display:"inline-flex", alignItems:"center", justifyContent:"center", filter:"drop-shadow(0 0 6px " + color + "80)" } : undefined}>{tab.icon}</span>
-            <span className={"nav-label" + (isActive ? " nav-label-grad grad-" + tab.key : "")} style={isActive ? gradientStyle : { color:"var(--muted)", fontWeight: 600 }}>{" " + tab.label}</span>
+            <span className="nav-icon" style={isActive ? { ...iconGradient, display:"inline-flex", alignItems:"center", justifyContent:"center" } : undefined}>{tab.icon}</span>
+            <span className="nav-label" style={isActive ? gradientStyle : { color:"var(--muted)", fontWeight: 600 }}>{" " + tab.label}</span>
           </button>
         );
       })}
       <button className="nav-item" onClick={() => onHamburgerToggle?.()} aria-label="Menu" style={{ position: "relative" }}>
         <span className="nav-icon"><FiMenu size={22} /></span>
-        {unreadCount && unreadCount > 0 ? <span style={{ position: "absolute", top: 2, right: 6, width: 16, height: 16, borderRadius: 8, background: "#ff6b6b", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
+        {unreadCount && unreadCount > 0 ? <span className="nav-badge">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
         <span>Menu</span>
       </button>
     </div>

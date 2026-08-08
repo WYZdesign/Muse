@@ -1874,7 +1874,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 )}
               </div>
             </div>
-            <div className={"screen-el"+(screen==="discover"?" active":"")}>
+            <div key={"scr-"+screen} className={"screen-el"+(screen==="discover"?" active":"")}>
               <div className="discover-wrap">
                 <div className="hdr">
                   <div className="logo-link" style={{fontSize:28}}>Discover</div>
@@ -1908,7 +1908,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                          onPointerCancel={isTop ? onPointerCancel : undefined}
                        >
                            {(() => {
-                             const photos: string[] = (profile as any).photos?.length ? (profile as any).photos : [profile.img];
+                             const allPhotos: string[] = (profile as any).photos?.length ? (profile as any).photos : [profile.img];
+                             const photos: string[] = allPhotos.filter((p:string) => !!PORTRAIT_IMG[p]);
+                             if (photos.length === 0) photos.push(...allPhotos.slice(0,1));
                              const heroSrc = photos[currentPhotoIdx] || profile.img;
                              const heroPortrait = !!PORTRAIT_IMG[heroSrc];
                               return (
@@ -1942,7 +1944,6 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                 <div className={"card-actions-overlay"+(cardScrolled?" hidden":"")}>
                                   <button className="action-btn btn-rewind" onClick={doRewind} aria-label="Rewind">↺</button>
                                   <button className="action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
-                                  <button className="action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
                                   <button className="action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
                                   <button className="action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎♥</button>
                                 </div>
@@ -1950,7 +1951,6 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                   <>
                                     <div ref={likeLabelRef} className="label label-like">LIKE</div>
                                     <div ref={nopeLabelRef} className="label label-nope">NOPE</div>
-                                    <div ref={superLabelRef} className="label label-super">SUPER</div>
                                   </>
                                 )}
                                 <div className="card-info-scroll" ref={cardScrollRef} onScroll={()=>{if(isTop){const scrollY=cardScrollRef.current?.scrollTop||0;setCardScrolled(scrollY>60);}}}>
@@ -1963,7 +1963,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                     <div className="card-section">
                                       <div className="card-section-title">Photos</div>
                                       <div className="card-photo-grid">
-                                        {((profile as any).photos?.length ? (profile as any).photos : [profile.img]).map((p:string,i:number)=><div key={i} className={"card-photo-thumb"+(i===currentPhotoIdx?" active":"")} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}}><img src={p} alt="" onError={handleImgError} /></div>)}
+                                        {allPhotos.map((p:string,i:number)=><div key={i} className={"card-photo-thumb"+(i===currentPhotoIdx?" active":"")} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}}><img src={p} alt="" onError={handleImgError} /></div>)}
                                       </div>
                                       <button className="card-portfolio-btn" onClick={(e)=>{e.stopPropagation();openGallery(profile);}}>View Full Portfolio</button>
                                     </div>
