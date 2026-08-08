@@ -109,7 +109,7 @@ a{color:inherit;text-decoration:none}
 @keyframes emberRise{0%{opacity:0;transform:translateY(100vh) translateX(0) scale(0.3)}6%{opacity:0.7}35%{opacity:0.5;transform:translateY(65vh) translateX(20px) scale(0.7)}65%{opacity:0.2}100%{opacity:0;transform:translateY(-5vh) translateX(-10px) scale(0.08)}}
 
 .app-wrap.app-wrap{display:flex;min-height:100vh;min-height:100dvh;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
-.phone{width:100%;max-width:430px;height:844px;margin:24px auto;border-radius:48px;border:2.5px solid rgba(255,255,255,0.08);overflow:hidden;position:relative;z-index:10;background:rgba(10,6,18,0.73);backdrop-filter:blur(50px);box-shadow:0 0 100px rgba(255,215,0,0.08),0 0 200px rgba(255,181,194,0.04),inset 0 0 80px rgba(255,255,255,0.015),0 25px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column}
+.phone{width:100%;max-width:430px;height:844px;margin:24px auto;border-radius:48px;border:2.5px solid rgba(255,255,255,0.08);overflow:hidden;position:relative;z-index:10;background:rgba(10,6,18,0.35);backdrop-filter:blur(30px);box-shadow:0 0 100px rgba(255,215,0,0.08),0 0 200px rgba(255,181,194,0.04),inset 0 0 80px rgba(255,255,255,0.015),0 25px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column}
 .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:130px;height:36px;background:#000;border-radius:0 0 22px 22px;z-index:200}
 .notch::after{content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);width:60px;height:6px;border-radius:3px;background:rgba(255,255,255,0.08)}
 .screen-el{display:none!important;width:100%;flex:1;flex-direction:column;position:relative;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;min-height:0;max-height:calc(100vh - 72px)}
@@ -137,11 +137,11 @@ a{color:inherit;text-decoration:none}
 @keyframes navGlow{0%,100%{box-shadow:0 0 8px var(--line-color,#FFD700)}50%{box-shadow:0 0 16px var(--line-color,#FFD700)}}
 .nav-icon{font-size:22px;transition:all .3s cubic-bezier(.4,0,.2,1);filter:brightness(0.85)}
 .nav-item.active .nav-icon{transform:scale(1.12);filter:drop-shadow(0 2px 6px rgba(255,215,0,0.25));color:var(--line-color,#FFD700)}
-.nav-icon-grad.grad-discover svg{fill:transparent;background:linear-gradient(90deg,#FFD700,rgba(255,255,255,0.95),#FFD700,#FFD700);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
-.nav-icon-grad.grad-connections svg{fill:transparent;background:linear-gradient(90deg,#4169E1,rgba(255,255,255,0.95),#4169E1,#4169E1);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
-.nav-icon-grad.grad-briefs svg{fill:transparent;background:linear-gradient(90deg,#20B2AA,rgba(255,255,255,0.95),#20B2AA,#20B2AA);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
-.nav-icon-grad.grad-matches svg{fill:transparent;background:linear-gradient(90deg,#FF8C00,rgba(255,255,255,0.95),#FF8C00,#FF8C00);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
-.nav-icon-grad.grad-moments svg{fill:transparent;background:linear-gradient(90deg,#FF69B4,rgba(255,255,255,0.95),#FF69B4,#FF69B4);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-discover svg{fill:transparent;background:linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-connections svg{fill:transparent;background:linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-briefs svg{fill:transparent;background:linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-matches svg{fill:transparent;background:linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-moments svg{fill:transparent;background:linear-gradient(90deg,#FF1493,#FF0000,#DDA0DD,#FF1493,#FF69B4,#FF1493);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
 .nav-icon-grad svg{width:22px;height:22px;display:block}
 .nav-muse-btn{position:relative;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--pink),var(--lavender));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;margin-top:-18px;border:3px solid rgba(10,6,18,0.95);box-shadow:0 0 20px rgba(255,215,0,0.2),0 4px 15px rgba(0,0,0,0.3);transition:all .3s cubic-bezier(.4,0,.2,1)}
 .nav-muse-btn:hover{transform:scale(1.08);box-shadow:0 0 30px rgba(255,215,0,0.4)}
@@ -196,7 +196,9 @@ textarea.inp{resize:none}
 .chip.sel::before{opacity:1}
 .chip.sel span{position:relative;z-index:1}
 .chip-emoji{font-size:16px;margin-right:4px}
-.btn{width:100%;padding:17px;border-radius:16px;font-size:16px;font-weight:700;text-align:center;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
+.btn{width:100%;padding:16px;border-radius:16px;font-size:15px;font-weight:700;text-align:center;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-row{display:flex;gap:12px;width:100%;margin-top:12px}
+.btn-row .btn{flex:1;width:auto}
 .btn-gold{background:linear-gradient(120deg,var(--gold),var(--amber),var(--sunset-orange),var(--pink),var(--gold));background-size:300% 300%;color:#0a0612;box-shadow:0 6px 36px rgba(255,215,0,0.2);animation:lavaFlow 6s ease-in-out infinite}
 .btn-gold::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);animation:btnShine 3s ease-in-out infinite}
 @keyframes btnShine{0%,100%{left:-100%}50%{left:100%}}
@@ -272,8 +274,6 @@ img{background-color:#1a0a2e}
 .action-btn:hover{transform:scale(1.08)}
 .btn-nope{background:rgba(255,138,128,0.3);border:2.5px solid rgba(255,138,128,0.7);color:var(--coral)}
 .btn-nope:hover{background:rgba(255,138,128,0.2);box-shadow:0 0 28px rgba(255,138,128,0.2)}
-.btn-super{background:rgba(255,215,0,0.3);border:2.5px solid rgba(255,215,0,0.7);color:var(--gold)}
-.btn-super:hover{background:rgba(255,215,0,0.2);box-shadow:0 0 28px rgba(255,215,0,0.2)}
 .btn-like{background:rgba(152,251,152,0.3);border:2.5px solid rgba(152,251,152,0.7);color:var(--mint)}
 .btn-like:hover{background:rgba(152,251,152,0.2);box-shadow:0 0 28px rgba(152,251,152,0.2)}
 .btn-rewind{background:rgba(212,165,255,0.3);border:2.5px solid rgba(212,165,255,0.7);color:var(--lavender)}

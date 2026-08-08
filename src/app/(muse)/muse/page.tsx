@@ -267,6 +267,7 @@ function MusePage() {
   const [typingTarget, setTypingTarget] = useState<number|null>(null);
   const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const loadStateRef = useRef(false);
   const [matchSwiping, setMatchSwiping] = useState<{id:string;offset:number} | null>(null);
   const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number;startTime:number;el:HTMLElement|null;axis:"x"|"y"|null}>({startX:0,startY:0,active:false,relY:0,startTime:0,el:null,axis:null});
   const likeLabelRef = useRef<HTMLDivElement>(null);
@@ -426,16 +427,16 @@ function MusePage() {
           setAuthUser(userObj);
           safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken || "", user: userObj }));
           ensureMusePushRegistered();
-          if (d.profile) {
-            const isOwner = d.user.email === "torree.marcel@gmail.com";
-            const effTier = isOwner ? "muse_pro" : (d.profile.tier || "free");
-            setCurrentUser(prev => ({ ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, type: d.profile.type || prev.type, foundingTier: isOwner ? "founding" : (d.profile.founding_tier || ""), proExpiresAt: isOwner ? "" : (d.profile.pro_expires_at || ""), tier: effTier }));
-            if (effTier) setUserTier(effTier);
-            if (d.profile.age_verified) setAgeVerified(true);
-            setScreen(d.profile.name && d.profile.type ? "discover" : "onboard");
-          } else {
-            setScreen("onboard");
-          }
+            if (d.profile) {
+              const isOwner = d.user.email === "torree.marcel@gmail.com";
+              const effTier = isOwner ? "muse_pro" : (d.profile.tier || "free");
+              setCurrentUser(prev => ({ ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, type: d.profile.type || prev.type, foundingTier: isOwner ? "founding" : (d.profile.founding_tier || ""), proExpiresAt: isOwner ? "" : (d.profile.pro_expires_at || ""), tier: effTier }));
+              if (effTier) setUserTier(effTier);
+              if (d.profile.age_verified) setAgeVerified(true);
+              setScreen(prev => (prev === "auth" || prev === "onboard") ? (d.profile.name && d.profile.type ? "discover" : "onboard") : prev);
+            } else {
+              setScreen(prev => (prev === "auth") ? "onboard" : prev);
+            }
         } else {
           ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium"].forEach(k => { try { safeRemoveItem(k); } catch {} });
           setAuthUser(null);
@@ -447,6 +448,8 @@ function MusePage() {
   }, []);
 
   useEffect(() => {
+    if (loadStateRef.current) return;
+    loadStateRef.current = true;
     loadState();
     setHydrated(true);
 
@@ -1370,7 +1373,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <div className="conn-scroll">
                     <div className="hamburger-title">Your Profile</div>
                     <div style={{textAlign:"center",marginBottom:20}}>
-                      <img src={currentUser.avatar} alt="You" style={{width:80,height:80,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--gold)",marginBottom:10}} />
+                      <img src={currentUser.avatar} alt="You" style={{width:80,height:80,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--gold)",marginBottom:10}} onError={handleImgError} />
                       <div style={{fontSize:18,fontWeight:700,color:"var(--text)"}}>{currentUser.name}</div>
                       <div style={{fontSize:13,color:"var(--muted)"}}>{currentUser.type} · {currentUser.exp}</div>
                     </div>
@@ -2026,16 +2029,15 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <img src={currentUser.avatar} alt="" style={{width:40,height:40,borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                   <div style={{flex:1,display:"flex",flexDirection:"column",gap:8}}>
                     <textarea className="inp" placeholder="Share your work, ideas, or find collaborators..." rows={2} value={feedText} onChange={e=>setFeedText(e.target.value)} style={{resize:"none",fontSize:13,padding:"10px 14px",borderRadius:14,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)"}} />
-                    <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                      <label style={{width:32,height:32,borderRadius:8,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14,color:"var(--text2)"}}>
-                        <FiImage size={14} />
+                    <div style={{display:"flex",gap:8,alignItems:"center",width:"100%"}}>
+                      <label style={{width:36,height:36,borderRadius:10,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,color:"var(--text2)",flexShrink:0}}>
+                        <FiImage size={16} />
                         <input type="file" accept="image/*,video/*" multiple style={{display:"none"}} onChange={async e=>{const files=Array.from(e.target.files||[]);if(!files.length)return;showToast("Uploading "+files.length+" file(s)...");const urls:string[]=[];for(const f of files){const url=await uploadImage(f,"feed");if(url)urls.push(url)}setFeedMedia(prev=>[...prev,...urls]);}} />
                       </label>
-                      <button style={{width:32,height:32,borderRadius:8,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14,color:"var(--text2)"}} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
-                      {feedMedia.slice(0,4).map((url,i)=><div key={i} style={{position:"relative",width:32,height:32}}>{url.endsWith(".mp4")||url.includes("video")?<video src={url} style={{width:32,height:32,borderRadius:8,objectFit:"cover"}} />:<img src={url} alt="" style={{width:32,height:32,borderRadius:8,objectFit:"cover"}} />}<button onClick={()=>setFeedMedia(prev=>prev.filter((_,j)=>j!==i))} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"var(--coral)",border:"none",color:"#fff",fontSize:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><FiX size={10} /></button></div>)}
-                      {feedMedia.length>4&&<span style={{fontSize:11,color:"var(--muted)"}}>+{feedMedia.length-4}</span>}
-                        <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();const hasVideo=feedMedia.some(u=>u.endsWith(".mp4")||u.includes("video"));const type=feedMedia.length?hasVideo?"video":"photo":"text";setFeedText("");setFeedMedia([]);setFeedPosts(prev=>[{id:uid(),author:currentUser.name,avatar:currentUser.avatar,type,text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedMedia[0]||undefined,media:feedMedia,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,media:feedMedia,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
-                       <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();setFeedText("");setFeedMedia([]);const moment={id:uid(),author:currentUser.name,avatar:currentUser.avatar,type:feedMedia.length?"photo":"text",text:txt,img:feedMedia[0]||undefined,media:[...feedMedia],time:"Just now"};setStories(prev=>[moment,...prev]);showToast("Moment posted!");}}}>⚡ Moment</button>
+                      <button style={{width:36,height:36,borderRadius:10,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,color:"var(--text2)",flexShrink:0}} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
+                      {feedMedia.slice(0,2).map((url,i)=><div key={i} style={{position:"relative",width:36,height:36}}>{url.endsWith(".mp4")||url.includes("video")?<video src={url} style={{width:36,height:36,borderRadius:8,objectFit:"cover"}} />:<img src={url} alt="" style={{width:36,height:36,borderRadius:8,objectFit:"cover"}} />}<button onClick={()=>setFeedMedia(prev=>prev.filter((_,j)=>j!==i))} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"var(--coral)",border:"none",color:"#fff",fontSize:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><FiX size={10} /></button></div>)}
+                      <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();const hasVideo=feedMedia.some(u=>u.endsWith(".mp4")||u.includes("video"));const type=feedMedia.length?hasVideo?"video":"photo":"text";setFeedText("");setFeedMedia([]);setFeedPosts(prev=>[{id:uid(),author:currentUser.name,avatar:currentUser.avatar,type,text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedMedia[0]||undefined,media:feedMedia,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,media:feedMedia,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
+                      <button className="btn btn-outline" style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();setFeedText("");setFeedMedia([]);const moment={id:uid(),author:currentUser.name,avatar:currentUser.avatar,type:feedMedia.length?"photo":"text",text:txt,img:feedMedia[0]||undefined,media:[...feedMedia],time:"Just now"};setStories(prev=>[moment,...prev]);showToast("Moment posted!");}}}>⚡ Moment</button>
                     </div>
                     {showEmojiPicker && <div style={{display:"flex",gap:6,flexWrap:"wrap",padding:"8px 0"}}>{["😍","🔥","❤️","😂","😢","😡","👍","🎉","✨","💯","👏","🙌"].map(e=><span key={e} style={{fontSize:22,cursor:"pointer",transition:"transform .15s"}} onClick={()=>{setFeedText(prev=>prev+" "+e);setShowEmojiPicker(false)}} onMouseEnter={e=>e.currentTarget.style.transform="scale(1.3)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>{e}</span>)}</div>}
                   </div>

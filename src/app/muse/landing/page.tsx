@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiCamera, FiUsers, FiZap, FiShield, FiHeart, FiStar, FiArrowRight, FiMessageSquare, FiMapPin, FiClock, FiLock, FiGlobe } from "react-icons/fi";
-import { TbQrcode } from "react-icons/tb";
+import { FiCamera, FiUsers, FiZap, FiShield, FiHeart, FiStar, FiArrowRight, FiMessageSquare, FiMapPin, FiClock, FiLock, FiGlobe, FiLink } from "react-icons/fi";
 import "./landing.css";
 
 const QR_SOURCES = {
@@ -175,7 +174,7 @@ export default function MuseLandingPage() {
                 className="landing-qr-btn"
                 onClick={() => generateQrCode(selectedSource)}
               >
-                <TbQrcode size={18} />
+                <FiLink size={18} />
                 <span>Get Your Personal QR Code</span>
               </button>
               <div className="landing-qr-sources">
