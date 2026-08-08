@@ -6,7 +6,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
 import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles } from "@/app/muse-realtime";
-import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiCheck, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2, FiShield, FiGift, FiDollarSign } from "react-icons/fi";
+import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiShare2, FiShield, FiGift, FiDollarSign } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import Nav from "./components/Nav";
 import { PORTRAIT_IMG } from "./components/photoOrientation";
@@ -22,7 +22,7 @@ import PromptBankModal from "./components/PromptBankModal";
 import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
-import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, CONNECTIONS, PC, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CONN_TYPES, ICEBREAKERS, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Brief, type Match, type Screen } from "./components/types";
+import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, ICEBREAKERS, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
 
 function getAccessToken(): string {
   if (typeof window === "undefined") return "";
@@ -101,6 +101,7 @@ function MusePage() {
   const [cardScrolled, setCardScrolled] = useState(false);
   const cardScrollRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
+  const hasLoadedState = useRef(false);
   const [galleryView, setGalleryView] = useState<{ profileId: string | number; name: string; photos: string[]; idx: number } | null>(null);
   const [discoverSearchOpen, setDiscoverSearchOpen] = useState(false);
   const [savedBriefs, setSavedBriefs] = useState<number[]>([]);
@@ -447,6 +448,8 @@ function MusePage() {
   }, []);
 
   useEffect(() => {
+    if (hasLoadedState.current) return;
+    hasLoadedState.current = true;
     loadState();
     setHydrated(true);
 
@@ -509,7 +512,7 @@ function MusePage() {
       }
     });
     return () => { authListener?.subscription?.unsubscribe(); };
-  }, [loadState, applySession]);
+  }, []);
   useEffect(() => { const t = setTimeout(saveState, 300); return () => clearTimeout(t); }, [saveState]);
 
   useEffect(() => {
@@ -1273,7 +1276,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                           <div className="conn-name">{s.name}</div>
                           <div className="conn-meta">{s.type} · {s.rate} · ★ {s.rating}</div>
                           <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6}}>
-                            {s.skills.map(sk=><span key={sk} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{sk}</span>)}
+                            {(s.skills||[]).map(sk=><span key={sk} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{sk}</span>)}
                           </div>
                             <div className="conn-actions" style={{marginTop:8,display:"flex",gap:8,flexDirection:"column"}}>
                               <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})});if(!r.ok)throw new Error("failed");showToast("Session request sent to "+s.name+"!")}catch{showToast("Failed to book session")}}}>{s.available?"Book Session":"Waitlist"}</button>
@@ -1316,8 +1319,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                           <div className="conn-name">{p.name}</div>
                           <div className="conn-meta">{p.type} · {p.loc} · {p.exp}</div>
                           <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6,justifyContent:"center"}}>
-                            {p.skills.slice(0,3).map(s=><span key={s} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{s}</span>)}
-                            {p.skills.length>3 && <span className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>+{p.skills.length-3}</span>}
+                            {(p.skills||[]).slice(0,3).map(s=><span key={s} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{s}</span>)}
+                            {(p.skills||[]).length>3 && <span className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>+{(p.skills||[]).length-3}</span>}
                           </div>
                            <div className="conn-actions" style={{marginTop:8,display:"flex",gap:8,flexDirection:"column"}}>
                              <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})});if(!r.ok)throw new Error("failed");showToast("Connection request sent to "+p.name+"!")}catch{showToast("Failed to send connection")}}}>Connect</button>
@@ -2386,7 +2389,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div className="conn-name" style={{fontSize:15}}>{s.name}</div>
                       <div className="conn-meta" style={{fontSize:12}}>{s.type} · {s.rate} · ★ {s.rating}</div>
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6}}>
-                        {s.skills.map(sk=><span key={sk} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{sk}</span>)}
+                        {(s.skills||[]).map(sk=><span key={sk} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{sk}</span>)}
                       </div>
                        <div style={{display:"flex",gap:8,marginTop:8,flexDirection:"column"}}>
                          <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})});if(!r.ok)throw new Error("failed");showToast("Session request sent to "+s.name+"!")}catch{showToast("Failed to book session")}}}>{s.available?"Book Session":"Waitlist"}</button>
@@ -2438,7 +2441,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div className="conn-name" style={{fontSize:15}}>{p.name}</div>
                       <div className="conn-meta" style={{fontSize:12,marginBottom:6}}>{p.type} · {p.loc} · {p.exp}</div>
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
-                        {p.skills.map(s=><span key={s} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{s}</span>)}
+                        {(p.skills||[]).map(s=><span key={s} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{s}</span>)}
                       </div>
                       <div style={{display:"flex",gap:8,flexDirection:"column"}}>
                          <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:14,fontWeight:700,borderRadius:12}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})});if(!r.ok)throw new Error("failed");showToast("Connection request sent to "+p.name+"!")}catch{showToast("Failed to send connection")}}}>Connect</button>
