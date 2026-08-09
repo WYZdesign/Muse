@@ -78,12 +78,25 @@ a{color:inherit;text-decoration:none}
 .nf-8{width:340px;height:260px;top:55%;right:5%;background:radial-gradient(ellipse,rgba(255,107,107,0.11),rgba(255,138,128,0.04) 50%,transparent 70%);animation-duration:27s;animation-delay:2s}
 @keyframes nebulaDrift{0%,100%{transform:translate(0,0) scale(1);opacity:0.6}25%{transform:translate(30px,-20px) scale(1.08);opacity:0.8}50%{transform:translate(-20px,25px) scale(0.95);opacity:0.5}75%{transform:translate(15px,10px) scale(1.04);opacity:0.7}}
 
-/* ═══ AURORA LIGHTS ═══ */
-.aurora-strip{position:absolute;width:100%;height:120px;pointer-events:none;z-index:1;animation:auroraFlow 12s ease-in-out infinite;filter:blur(60px);mix-blend-mode:screen;opacity:0.35}
-.aurora-s1{top:5%;left:-10%;background:linear-gradient(120deg,transparent 0%,rgba(0,200,180,0.5) 20%,rgba(120,220,120,0.4) 45%,rgba(0,180,220,0.35) 65%,rgba(212,165,255,0.25) 85%,transparent 100%)}
-.aurora-s2{top:15%;right:-10%;width:110%;background:linear-gradient(100deg,transparent 0%,rgba(255,138,128,0.4) 25%,rgba(212,165,255,0.7) 50%,rgba(100,200,255,0.3) 75%,transparent 100%);animation-delay:-6s;height:100px}
-.aurora-s3{top:10%;left:0;background:linear-gradient(140deg,transparent 0%,rgba(212,165,255,0.7) 30%,rgba(255,181,194,0.3) 55%,rgba(80,220,180,0.25) 80%,transparent 100%);animation-delay:-3s;height:90px;opacity:0.25}
-@keyframes auroraFlow{0%,100%{transform:translateX(0) skewY(-3deg) scaleY(1)}25%{transform:translateX(8%) skewY(2deg) scaleY(1.3)}50%{transform:translateX(-5%) skewY(-1deg) scaleY(0.8)}75%{transform:translateX(4%) skewY(4deg) scaleY(1.2)}}
+/* ═══ AURORA BOREALIS — top of every page (realistic northern lights) ═══ */
+.aurora-strip{position:absolute;width:120%;height:160px;left:-10%;pointer-events:none;z-index:2;filter:blur(45px);mix-blend-mode:screen;opacity:0.55;will-change:transform,opacity}
+.aurora-s1{top:-20px;background:linear-gradient(90deg,transparent 0%,rgba(0,255,180,0.45) 20%,rgba(100,255,210,0.6) 40%,rgba(50,180,255,0.5) 60%,rgba(180,120,255,0.3) 80%,transparent 100%);animation:auroraDrift1 14s ease-in-out infinite}
+.aurora-s2{top:5px;background:linear-gradient(110deg,transparent 0%,rgba(150,100,255,0.5) 25%,rgba(0,240,255,0.65) 50%,rgba(100,255,150,0.4) 75%,transparent 100%);animation:auroraDrift2 18s ease-in-out infinite;animation-delay:-5s}
+.aurora-s3{top:-10px;background:linear-gradient(70deg,transparent 0%,rgba(255,120,200,0.35) 30%,rgba(120,220,255,0.55) 60%,rgba(0,255,200,0.4) 85%,transparent 100%);animation:auroraDrift3 12s ease-in-out infinite;animation-delay:-2s}
+
+@keyframes auroraDrift1{
+  0%,100%{transform:translateX(0) translateY(0) scaleY(1) skewX(-2deg)}
+  33%{transform:translateX(4%) translateY(6px) scaleY(1.3) skewX(2deg)}
+  66%{transform:translateX(-3%) translateY(-4px) scaleY(0.85) skewX(-1deg)}
+}
+@keyframes auroraDrift2{
+  0%,100%{transform:translateX(0) translateY(0) scaleY(1) skewX(2deg)}
+  50%{transform:translateX(-5%) translateY(8px) scaleY(1.4) skewX(-3deg)}
+}
+@keyframes auroraDrift3{
+  0%,100%{transform:translateX(0) translateY(0) scaleY(1) skewX(0deg)}
+  50%{transform:translateX(6%) translateY(-6px) scaleY(1.2) skewX(3deg)}
+}
 
 /* ═══ OCEAN WAVES — bottom of every page ═══ */
 .ocean-waves{position:fixed;bottom:0;left:0;width:100%;height:80px;z-index:1;pointer-events:none;overflow:hidden;opacity:0.3}
