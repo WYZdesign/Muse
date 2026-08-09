@@ -1944,11 +1944,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                 <div className="card-photo-dots">
                                   {photos.map((_:string,i:number)=><div key={i} className={"card-photo-dot"+(i===currentPhotoIdx?" active":"")} />)}
                                 </div>
-                                <div className={"card-actions-overlay"+(cardScrolled?" hidden":"")}>
-                                  <button className="action-btn btn-rewind" onClick={doRewind} aria-label="Rewind">↺</button>
-                                  <button className="action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
-                                  <button className="action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
-                                  <button className="action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎♥</button>
+                                <div className={"card-actions-row"+(cardScrolled?" hidden":"")}>
+                                  <button className="card-action-btn btn-rewind" onClick={doRewind} aria-label="Rewind">↺ Rewind</button>
+                                  <button className="card-action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕ Pass</button>
+                                  <button className="card-action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like">★ Super</button>
+                                  <button className="card-action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥ Like</button>
+                                  <button className="card-action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎ Note</button>
                                 </div>
                                 {isTop && (
                                   <>
