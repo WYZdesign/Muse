@@ -268,7 +268,7 @@ function MusePage() {
   const [typingTarget, setTypingTarget] = useState<number|null>(null);
   const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const loadStateRef = useRef(typeof window !== "undefined" && sessionStorage.getItem("muse_loaded") === "1");
+  const loadStateRef = useRef(false);
   const [matchSwiping, setMatchSwiping] = useState<{id:string;offset:number} | null>(null);
   const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number;startTime:number;el:HTMLElement|null;axis:"x"|"y"|null}>({startX:0,startY:0,active:false,relY:0,startTime:0,el:null,axis:null});
   const likeLabelRef = useRef<HTMLDivElement>(null);
@@ -440,9 +440,7 @@ function MusePage() {
               setScreen(prev => (prev === "auth") ? "onboard" : prev);
             }
         } else {
-          ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium"].forEach(k => { try { safeRemoveItem(k); } catch {} });
           setAuthUser(null);
-          setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free" }));
           setScreen("auth");
         }
       })
@@ -793,6 +791,12 @@ function MusePage() {
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest && target.closest('.card-info-scroll')) {
+      const scroller = target.closest('.card-info-scroll') as HTMLElement;
+      if (scroller && scroller.scrollTop > 5) return;
+    }
+    if (target.closest && (target.closest('.card-action-btn') || target.closest('.card-portfolio-btn') || target.closest('.card-photo-thumb') || target.closest('button') || target.closest('a'))) return;
     const card = e.currentTarget as HTMLElement;
     const cardTop = card.getBoundingClientRect().top;
     dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY: e.clientY - cardTop, startTime: Date.now(), el: card, axis: null };
@@ -807,6 +811,13 @@ function MusePage() {
     const absDy = Math.abs(dy);
     if (dragRef.current.axis === null) {
       if (absDx < 5 && absDy < 5) return;
+      if (absDy > absDx) {
+        const scroller = dragRef.current.el?.querySelector('.card-info-scroll') as HTMLElement;
+        if (scroller && scroller.scrollTop > 5) {
+          dragRef.current.active = false;
+          return;
+        }
+      }
       dragRef.current.axis = absDx > absDy ? "x" : "y";
     }
     dragValuesRef.current = { x: 0, y: 0, opacity: 0 };
@@ -1881,7 +1892,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 )}
               </div>
             </div>
-            <div key={"scr-"+screen} className={"screen-el"+(screen==="discover"?" active":"")}>
+            <div className={"screen-el"+(screen==="discover"?" active":"")}>
               <div className="discover-wrap">
                 <div className="hdr">
                   <div className="logo-link" style={{fontSize:28}}>Discover</div>
