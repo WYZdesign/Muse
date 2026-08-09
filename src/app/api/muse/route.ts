@@ -338,6 +338,14 @@ export async function GET(req: NextRequest) {
         connectedAccounts = count || 0;
       } catch { /* tables may not exist yet */ }
 
+      // Audit log: recent 50 admin queries
+      let auditLog: any[] = [];
+      try {
+        const { data: auditEntries } = await sb.from("muse_admin_audit_log")
+          .select("*").order("created_at", { ascending: false }).limit(50);
+        auditLog = auditEntries || [];
+      } catch { /* table may not exist yet */ }
+
       return NextResponse.json({
         totals: { users: totalUsers || 0, matches: totalMatches || 0, albums: totalAlbums || 0 },
         signupsByDay,
@@ -347,6 +355,7 @@ export async function GET(req: NextRequest) {
         referrals,
         payments,
         connectedAccounts,
+        auditLog,
       });
     }
 

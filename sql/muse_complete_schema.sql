@@ -14,6 +14,10 @@ ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS long DOUBLE PRECISION;
 ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS city TEXT DEFAULT '';
 ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS photos TEXT[] DEFAULT '{}';
 
+-- Briefs: payment columns (was missing from base schema, present in MUSE_APPLY_ALL.sql)
+ALTER TABLE muse_briefs ADD COLUMN IF NOT EXISTS paid BOOLEAN DEFAULT false;
+ALTER TABLE muse_briefs ADD COLUMN IF NOT EXISTS rate TEXT DEFAULT '';
+
 -- ============================================================
 -- 2. NEW TABLES
 -- ============================================================

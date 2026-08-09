@@ -576,12 +576,6 @@ function MusePage() {
 
   const getReferralTier = (c:number) => c>=50?{tier:"Platinum",discount:20}:c>=20?{tier:"Gold",discount:20}:c>=5?{tier:"Silver",discount:10}:c>=1?{tier:"Bronze",discount:0}:{tier:"None",discount:0};
   const trackEvent = (event: string, data?: Record<string, unknown>) => {
-    // Real analytics sink: writes to muse_events_log via the server (RLS on
-    // that table blocks direct client writes by design). Fire-and-forget —
-    // never blocks the UI or throws on failure.
-    try {
-      if (typeof window !== "undefined" && (window as any).gtag) { (window as any).gtag("event", event, data); }
-    } catch {}
     try {
       authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "track-event", name: event, props: data || {} }), keepalive: true }).catch(() => {});
     } catch {}
@@ -767,7 +761,7 @@ function MusePage() {
     setCurrentIdx(prev => prev + 1);
     setCurrentPhotoIdx(0);
     setCardScrolled(false);
-  }, [currentIdx, dailyLikes, superLikes, filteredProfiles, flash, obData, userDefaultIntent]);
+  }, [currentIdx, dailyLikes, superLikes, filteredProfiles, isUnlimited, calcMatch, likedBy, flash, obData, userDefaultIntent]);
 
   useEffect(() => { if(screen!=="discover")return;const onKey=(e:KeyboardEvent)=>{if(e.key==="ArrowLeft"){e.preventDefault();doSwipe("left")}if(e.key==="ArrowRight"){e.preventDefault();doSwipe("right")}};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey)},[screen,doSwipe]);
 

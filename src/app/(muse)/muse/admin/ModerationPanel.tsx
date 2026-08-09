@@ -58,7 +58,7 @@ export default function AdminModerationPanel() {
     }
     if (t === "audit") {
       const r = await authFetch("/api/muse?type=admin-analytics");
-      if (r.ok) { const d = await r.json(); /* audit comes from brain queries */ }
+      if (r.ok) { const d = await r.json(); setAuditLog(d.auditLog || []); }
     }
   };
 
