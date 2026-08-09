@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 import { safeServerError } from "@/lib/http";
 
 export const runtime = "nodejs";
@@ -38,7 +39,12 @@ export async function POST(req: NextRequest) {
     const p256dh = subscription.p256dh;
     const auth = subscription.auth;
 
+    const ip = clientIp(req);
+
     if (action === "subscribe") {
+      if (!checkRate(ip, "push-subscribe", 10)) {
+        return NextResponse.json({ success: false, error: "Rate limited" }, { status: 429 });
+      }
       if (!endpoint || !p256dh || !auth) {
         return NextResponse.json({ success: false, error: "Incomplete subscription payload" }, { status: 400 });
       }
@@ -56,6 +62,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "unsubscribe") {
+      if (!checkRate(ip, "push-unsubscribe", 10)) {
+        return NextResponse.json({ success: false, error: "Rate limited" }, { status: 429 });
+      }
       if (!endpoint) {
         return NextResponse.json({ success: false, error: "Missing endpoint" }, { status: 400 });
       }

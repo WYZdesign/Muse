@@ -78,6 +78,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "session") {
+      if (!checkRate(ip, "session", 30)) {
+        return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
+      }
       const { access_token } = body;
       if (!access_token) return NextResponse.json({ error: "No token" }, { status: 401 });
 
@@ -104,6 +107,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "logout") {
+      if (!checkRate(ip, "logout", 10)) {
+        return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
+      }
       await supabase.auth.signOut();
       return NextResponse.json({ success: true });
     }
@@ -123,6 +129,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "update-password") {
+      if (!checkRate(ip, "update-password", 5)) {
+        return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
+      }
       const { access_token, new_password } = body;
       if (!access_token || !new_password) return NextResponse.json({ error: "Token and new password required" }, { status: 400 });
       const pwErr = validatePassword(new_password);
@@ -137,6 +146,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "update-profile") {
+      if (!checkRate(ip, "update-profile", 20)) {
+        return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
+      }
       const accessToken = bearerOrBodyToken(req, body);
       const { data: { user }, error: authErr } = await supabase.auth.getUser(accessToken);
       if (authErr || !user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -163,6 +175,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "delete-account") {
+      if (!checkRate(ip, "delete-account", 3)) {
+        return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
+      }
       const accessToken = bearerOrBodyToken(req, body);
       const { data: { user }, error: authErr } = await supabase.auth.getUser(accessToken);
       if (authErr || !user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -185,6 +200,7 @@ export async function POST(req: NextRequest) {
         await sb.from("muse_activity_log").delete().eq("user_id", pid);
         await sb.from("muse_reports").delete().eq("reporter_id", pid);
         await sb.from("muse_blocks").delete().eq("user_id", pid);
+        await sb.from("muse_verification_sessions").delete().eq("user_id", pid);
         await sb.from("muse_profiles").delete().eq("id", pid);
       }
       await sb.auth.admin.deleteUser(user.id);

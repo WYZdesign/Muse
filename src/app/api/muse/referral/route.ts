@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 import { safeServerError } from "@/lib/http";
 import Stripe from "stripe";
 
@@ -24,6 +25,18 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { action } = body;
+
+    // Rate limit referral operations to prevent abuse
+    const ip = clientIp(req);
+    if (action === "generate" && !checkRate(ip, "referral-generate", 5)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
+    if (action === "apply" && !checkRate(ip, "referral-apply", 5)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
+    if (action === "redeem-reward" && !checkRate(ip, "referral-redeem", 5)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
 
     // ═══ GENERATE: Create a unique referral code for this user ═══
     if (action === "generate") {

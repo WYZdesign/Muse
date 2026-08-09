@@ -771,6 +771,13 @@ function MusePage() {
 
   useEffect(() => { if(screen!=="discover")return;const onKey=(e:KeyboardEvent)=>{if(e.key==="ArrowLeft"){e.preventDefault();doSwipe("left")}if(e.key==="ArrowRight"){e.preventDefault();doSwipe("right")}};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey)},[screen,doSwipe]);
 
+  // Pause ambient animations when tab hidden (battery/thermal/cpu savings)
+  useEffect(() => {
+    const onVis = () => { document.body.classList.toggle("animations-paused", document.hidden); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+
   const doRewind = useCallback(() => {
     if (rewindStack.length === 0) { showToast("Nothing to rewind!"); return; }
     const prev = rewindStack[rewindStack.length - 1];
@@ -1108,12 +1115,13 @@ function MusePage() {
     </div>
   ) : (
     <div style={{"display":"contents"}}>
+      <a href="#muse-main" className="sr-only" style={{position:"absolute",top:0,left:0,zIndex:99999,padding:"8px 16px",background:"var(--gold)",color:"#0a0612",fontWeight:700,borderRadius:"0 0 8px 0"}} onFocus={(e)=>e.currentTarget.style.position="fixed"} onBlur={(e)=>e.currentTarget.style.position="absolute"}>Skip to main content</a>
       <Confetti active={showConfetti} />
       {swipeDir && <SwipeParticles active dir={swipeDir} />}
       <BackgroundScene flash={screenFlash} />
       {showMatchOverlay && (
-        <div className="match-overlay" onClick={() => setShowMatchOverlay(null)}>
-          <button className="match-overlay-close" onClick={(e)=>{e.stopPropagation();setShowMatchOverlay(null)}} aria-label="Close"><FiX size={22} /></button>
+        <div className="match-overlay" role="dialog" aria-modal="true" aria-label="It's a Match!" onClick={() => setShowMatchOverlay(null)}>
+          <button className="match-overlay-close" onClick={(e)=>{e.stopPropagation();setShowMatchOverlay(null)}} aria-label="Close match overlay"><FiX size={22} /></button>
           {Array.from({length:40}).map((_,i)=><div key={i} className="confetti-piece" style={{
             left:Math.random()*100+"%",
             width:(Math.random()*6+4)+"px",
@@ -1127,8 +1135,8 @@ function MusePage() {
           <div className="match-title">Its a Match!</div>
           <div className="match-subtitle">You and <strong style={{color:"var(--gold)"}}>{showMatchOverlay.name}</strong> both felt the spark.</div>
           <div className="match-avatars">
-            <img className="match-av" src={currentUser.avatar} alt="You" />
-            <img className="match-av" src={showMatchOverlay.img} alt={showMatchOverlay.name} onError={handleImgError} />
+            <img loading="lazy" className="match-av" src={currentUser.avatar} alt="You" />
+            <img loading="lazy" className="match-av" src={showMatchOverlay.img} alt={showMatchOverlay.name} onError={handleImgError} />
           </div>
           <button className="match-btn" onClick={() => { setShowMatchOverlay(null); openChat(showMatchOverlay); }}>Send a Message</button>
         </div>
@@ -1137,7 +1145,7 @@ function MusePage() {
         <div className="intent-overlay" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null)}}>
           <div className="intent-modal" onClick={e=>e.stopPropagation()}>
             <div style={{textAlign:"center",marginBottom:16}}>
-              <img src={intentProfile.img} alt="" style={{width:60,height:60,borderRadius:"50%",objectFit:"cover",marginBottom:8}} onError={handleImgError} />
+              <img loading="lazy" src={intentProfile.img} alt="" style={{width:60,height:60,borderRadius:"50%",objectFit:"cover",marginBottom:8}} onError={handleImgError} />
               <div style={{fontSize:16,fontWeight:700,color:"var(--text)"}}>{intentProfile.name}</div>
               <div style={{fontSize:12,color:"var(--muted)"}}>{intentProfile.type}</div>
             </div>
@@ -1211,10 +1219,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
         </div>
       )}
       {showHamburger && (
-        <div className="hamburger-overlay">
+        <div className="hamburger-overlay" role="dialog" aria-modal="true" aria-label="Menu">
           <div className="hamburger-backdrop" onClick={() => setShowHamburger(false)} />
           <div className="hamburger-panel">
-            <div className="hamburger-close" onClick={() => setShowHamburger(false)}><FiX size={18} /></div>
+            <div className="hamburger-close" onClick={() => setShowHamburger(false)} role="button" aria-label="Close menu" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setShowHamburger(false); }}><FiX size={18} /></div>
             {!hamburgerScreen ? (
               <>
                 <div className="hamburger-title">Menu</div>
@@ -1247,12 +1255,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Channels & Groups</div>
                     {(liveCommunities || COMMUNITIES).filter(c => showNsfw || !c.nsfw).map(c => (
                       <div key={c.id} className="conn-card" style={{margin:"0 0 10px"}}>
-                        <img src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
+                        <img loading="lazy" src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
                         <div className="conn-content">
                           <div className="conn-name">{c.name}</div>
                           <div className="conn-meta">{c.members} members · {c.desc}</div>
                             <div className="conn-actions" style={{marginTop:8,display:"flex",gap:8,flexDirection:"column"}}>
-                               <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id,memberCount:c.members})});showToast("Joined "+c.name+"!")}catch{showToast("Failed to join")}}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
+                               <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id})});if(!r.ok)throw new Error("failed");showToast("Joined "+c.name+"!")}catch{showToast("Failed to join")}}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
                               <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>showToast(c.name+" community opened!")}>Learn</button>
                               <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/community/"+c.id);showToast("Link copied!")}}>Share</button>
                             </div>
@@ -1279,7 +1287,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>One-on-One Sessions</div>
                     {SESSIONS.map(s => (
                       <div key={s.id} className="conn-card" style={{margin:"0 0 10px"}}>
-                        <img src={s.img} alt={s.name} className="conn-avatar" style={{borderRadius:"50%"}} onError={handleImgError} />
+                        <img loading="lazy" src={s.img} alt={s.name} className="conn-avatar" style={{borderRadius:"50%"}} onError={handleImgError} />
                         <div className="conn-content">
                           <div className="conn-name">{s.name}</div>
                           <div className="conn-meta">{s.type} · {s.rate} · ★ {s.rating}</div>
@@ -1302,7 +1310,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     ) : (
                       matches.filter(m => m.booked).map(m => (
                         <div key={m.id} className="conn-card" style={{margin:"0 0 10px"}}>
-                          <img src={m.img} alt={m.name} className="conn-avatar" onError={handleImgError} />
+                          <img loading="lazy" src={m.img} alt={m.name} className="conn-avatar" onError={handleImgError} />
                           <div className="conn-content">
                             <div className="conn-name">{m.name}</div>
                             <div className="conn-meta">{m.type} · Booked Session</div>
@@ -1322,7 +1330,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Creative Professionals</div>
                     {PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
                       <div key={p.id} className="conn-card" style={{margin:"0 0 10px",flexDirection:"column",alignItems:"center",textAlign:"center",padding:"0 0 16px 0",gap:0}}>
-                        <img src={p.img} alt={p.name} style={{width:"100%",height:150,objectFit:"fill",borderRadius:"16px 16px 0 0"}} onError={handleImgError} />
+                        <img loading="lazy" src={p.img} alt={p.name} style={{width:"100%",height:150,objectFit:"fill",borderRadius:"16px 16px 0 0"}} onError={handleImgError} />
                         <div className="conn-content" style={{padding:"12px 16px 0",display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center",width:"100%"}}>
                           <div className="conn-name">{p.name}</div>
                           <div className="conn-meta">{p.type} · {p.loc} · {p.exp}</div>
@@ -1366,7 +1374,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                             <div style={{fontSize:15,fontWeight:700,color:"var(--text)",marginBottom:4}}>{post.title}</div>
                             <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.5,marginBottom:8}}>{post.body}</div>
                             <div style={{display:"flex",alignItems:"center",gap:8,fontSize:11,color:"var(--muted)",flexWrap:"wrap"}}>
-                              <img src={post.avatar} alt="" style={{width:18,height:18,borderRadius:"50%",objectFit:"cover"}} /> <span style={{fontWeight:600,color:"var(--text)"}}>{post.author}</span>
+                              <img loading="lazy" src={post.avatar} alt="" style={{width:18,height:18,borderRadius:"50%",objectFit:"cover"}} /> <span style={{fontWeight:600,color:"var(--text)"}}>{post.author}</span>
                               <span>·</span><span>{post.time}</span><span>·</span><span>{post.cat}</span><span>·</span><span>{post.comments.length} replies</span>
                             </div>
                             {expandedPost===post.id && (
@@ -1388,7 +1396,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <div className="conn-scroll">
                     <div className="hamburger-title">Your Profile</div>
                     <div style={{textAlign:"center",marginBottom:20}}>
-                      <img src={currentUser.avatar} alt="You" style={{width:80,height:80,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--gold)",marginBottom:10}} onError={handleImgError} />
+                      <img loading="lazy" src={currentUser.avatar} alt="You" style={{width:80,height:80,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--gold)",marginBottom:10}} onError={handleImgError} />
                       <div style={{fontSize:18,fontWeight:700,color:"var(--text)"}}>{currentUser.name}</div>
                       <div style={{fontSize:13,color:"var(--muted)"}}>{currentUser.type} · {currentUser.exp}</div>
                     </div>
@@ -1485,7 +1493,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     </div>
                     <div style={{marginTop:20}}>
                       <div style={{fontSize:15,fontWeight:700,color:"var(--coral)",marginBottom:12}}>Danger Zone</div>
-                      <button className="btn" style={{width:"100%",background:"rgba(255,107,107,0.1)",border:"1px solid rgba(255,107,107,0.3)",color:"var(--coral)",fontSize:13}} onClick={()=>{if(confirm("Delete your account? This cannot be undone.")){authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"delete-account"})});showToast("Account deleted");setTimeout(()=>window.location.reload(),1500)}}}>Delete Account</button>
+                       <button className="btn" style={{width:"100%",background:"rgba(255,107,107,0.1)",border:"1px solid rgba(255,107,107,0.3)",color:"var(--coral)",fontSize:13}} onClick={async()=>{if(confirm("Delete your account? This cannot be undone.")){try{const r=await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"delete-account"})});if(!r.ok){showToast("Failed to delete account");return}showToast("Account deleted");setTimeout(()=>window.location.reload(),1500)}catch{showToast("Failed to delete account")}}}}>Delete Account</button>
                     </div>
                     <button className="btn btn-gold" style={{width:"100%",marginTop:16,fontSize:12,padding:"12px 0"}} onClick={doLogoutFull}>Log Out</button>
                   </div>
@@ -1795,7 +1803,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div className="step-sub">Add a profile picture so people can see the real you</div>
                     <input ref={photoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setObProfilePic(url);showToast("Photo added!")}}}} />
                     <div className="ob-upload-zone" onClick={() => photoInputRef.current?.click()}>
-                      {obProfilePic ? <img src={obProfilePic} alt="Profile" /> : (
+                      {obProfilePic ? <img loading="lazy" src={obProfilePic} alt="Profile" /> : (
                         <>
                           <div className="ob-upload-icon">📸</div>
                           <div className="ob-upload-text">Tap to add photo</div>
@@ -1820,7 +1828,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                             showToast("Work added!");
                           }
                         }}>
-                          {obPortfolioItems[i] ? <img src={obPortfolioItems[i].img} alt="Work" /> : <div className="ob-portfolio-plus">+</div>}
+                          {obPortfolioItems[i] ? <img loading="lazy" src={obPortfolioItems[i].img} alt="Work" /> : <div className="ob-portfolio-plus">+</div>}
                         </div>
                       ))}
                     </div>
@@ -1915,7 +1923,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 </div>
                 </div>
                 {mapView && <MuseMap filteredProfiles={filteredProfiles} myGeo={myGeo ? {lat:myGeo.lat, lng:myGeo.long} : undefined} containerRef={mapContainerRef} />}
-                {!mapView && (<><div className="card-stack">
+                {!mapView && (<><div className="card-stack" role="application" aria-label="Swipe cards to discover creatives" aria-roledescription="card carousel">
                   {filteredProfiles.slice(currentIdx, currentIdx+3).map((profile, idx) => {
                     const isTop = idx === 0;
                     return (
@@ -1934,7 +1942,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                               return (
                                 <>
                                 <div className="card-hero" ref={heroRef}>
-                                  <img src={heroSrc} alt={profile.name} draggable="false" onError={handleImgError}
+                                  <img loading="lazy" src={heroSrc} alt={profile.name} draggable="false" onError={handleImgError}
                                     style={{width:"100%",height:"100%",objectFit:heroPortrait?"cover":"contain",objectPosition:heroPortrait?"center top":"center",background:"linear-gradient(160deg,#1a0a2e,#0a0612)",position:"absolute",top:0,left:0}} />
                                   <div className="card-shine" />
                                   <div className="card-gradient" />
@@ -1982,7 +1990,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                     <div className="card-section">
                                       <div className="card-section-title">Photos</div>
                                       <div className="card-photo-grid">
-                                        {allPhotos.map((p:string,i:number)=><div key={i} className={"card-photo-thumb"+(i===currentPhotoIdx?" active":"")} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}}><img src={p} alt="" onError={handleImgError} /></div>)}
+                                        {allPhotos.map((p:string,i:number)=><div key={i} className={"card-photo-thumb"+(i===currentPhotoIdx?" active":"")} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(i)}}><img loading="lazy" src={p} alt="" onError={handleImgError} /></div>)}
                                       </div>
                                       <button className="card-portfolio-btn" onClick={(e)=>{e.stopPropagation();openGallery(profile);}}>View Full Portfolio</button>
                                     </div>
@@ -2021,7 +2029,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                      </>
                    )}
                    <div className="gallery-view-img-wrap" onClick={(e)=>{e.stopPropagation()}}>
-                     <img src={galleryView.photos[galleryView.idx]} alt={galleryView.name} onError={handleImgError} />
+                     <img loading="lazy" src={galleryView.photos[galleryView.idx]} alt={galleryView.name} onError={handleImgError} />
                    </div>
                    <div className="gallery-view-meta">
                      <div className="gallery-view-name">{galleryView.name}</div>
@@ -2042,7 +2050,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
               <div className="conn-scroll" style={{padding:"0 0 80px"}}>
                 <div style={{padding:"12px 20px",display:"flex",gap:10,alignItems:"flex-start"}}>
-                  <img src={currentUser.avatar} alt="" style={{width:40,height:40,borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                  <img loading="lazy" src={currentUser.avatar} alt="" style={{width:40,height:40,borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                   <div style={{flex:1,display:"flex",flexDirection:"column",gap:8}}>
                     <textarea className="inp" placeholder="Share your work, ideas, or find collaborators..." rows={2} value={feedText} onChange={e=>setFeedText(e.target.value)} style={{resize:"none",fontSize:13,padding:"10px 14px",borderRadius:14,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)"}} />
                     <div style={{display:"flex",gap:8,alignItems:"center",width:"100%"}}>
@@ -2051,7 +2059,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <input type="file" accept="image/*,video/*" multiple style={{display:"none"}} onChange={async e=>{const files=Array.from(e.target.files||[]);if(!files.length)return;showToast("Uploading "+files.length+" file(s)...");const urls:string[]=[];for(const f of files){const url=await uploadImage(f,"feed");if(url)urls.push(url)}setFeedMedia(prev=>[...prev,...urls]);}} />
                       </label>
                       <button style={{width:36,height:36,borderRadius:10,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,color:"var(--text2)",flexShrink:0}} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
-                      {feedMedia.slice(0,2).map((url,i)=><div key={i} style={{position:"relative",width:36,height:36}}>{url.endsWith(".mp4")||url.includes("video")?<video src={url} style={{width:36,height:36,borderRadius:8,objectFit:"cover"}} />:<img src={url} alt="" style={{width:36,height:36,borderRadius:8,objectFit:"cover"}} />}<button onClick={()=>setFeedMedia(prev=>prev.filter((_,j)=>j!==i))} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"var(--coral)",border:"none",color:"#fff",fontSize:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><FiX size={10} /></button></div>)}
+                      {feedMedia.slice(0,2).map((url,i)=><div key={i} style={{position:"relative",width:36,height:36}}>{url.endsWith(".mp4")||url.includes("video")?<video src={url} style={{width:36,height:36,borderRadius:8,objectFit:"cover"}} />:<img loading="lazy" src={url} alt="" style={{width:36,height:36,borderRadius:8,objectFit:"cover"}} />}<button onClick={()=>setFeedMedia(prev=>prev.filter((_,j)=>j!==i))} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"var(--coral)",border:"none",color:"#fff",fontSize:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><FiX size={10} /></button></div>)}
                       <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();const hasVideo=feedMedia.some(u=>u.endsWith(".mp4")||u.includes("video"));const type=feedMedia.length?hasVideo?"video":"photo":"text";setFeedText("");setFeedMedia([]);setFeedPosts(prev=>[{id:uid(),author:currentUser.name,avatar:currentUser.avatar,type,text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedMedia[0]||undefined,media:feedMedia,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,media:feedMedia,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
                       <button className="btn btn-outline" style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();setFeedText("");setFeedMedia([]);const moment={id:uid(),author:currentUser.name,avatar:currentUser.avatar,type:feedMedia.length?"photo":"text",text:txt,img:feedMedia[0]||undefined,media:[...feedMedia],time:"Just now"};setStories(prev=>[moment,...prev]);showToast("Moment posted!");}}}>⚡ Moment</button>
                     </div>
@@ -2071,7 +2079,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   return (
                     <div key={post.id} className="conn-card" style={{flexDirection:"column",margin:"0 20px 14px",padding:0,overflow:"hidden"}}>
                       <div style={{padding:"14px 18px 0",display:"flex",alignItems:"center",gap:10}}>
-                        <img src={post.avatar} alt="" style={{width:40,height:40,borderRadius:"50%",objectFit:"cover"}} onError={handleImgError} />
+                        <img loading="lazy" src={post.avatar} alt="" style={{width:40,height:40,borderRadius:"50%",objectFit:"cover"}} onError={handleImgError} />
                         <div>
                           <div style={{fontSize:15,fontWeight:700}}>{post.author}</div>
                           <div style={{fontSize:11,color:"var(--muted)"}}>{post.time}</div>
@@ -2081,7 +2089,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{padding:"10px 18px",fontSize:14,color:"var(--text)",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{post.text}</div>
                       {post.img && (
                         <div style={{position:"relative"}}>
-                          <img src={post.img} alt="" style={{width:"100%",maxHeight:360,objectFit:"cover",display:"block"}} onError={handleImgError} />
+                          <img loading="lazy" src={post.img} alt="" style={{width:"100%",maxHeight:360,objectFit:"cover",display:"block"}} onError={handleImgError} />
                         </div>
                       )}
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 18px",borderTop:"1px solid rgba(255,255,255,0.04)"}}>
@@ -2143,7 +2151,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12}}>
                       {likedBy.map(p => (
                         <div key={p.id} style={{position:"relative",borderRadius:16,overflow:"hidden",aspectRatio:"3/4",cursor:"pointer"}} onClick={()=>{if(currentUser.tier!=="muse_pro"){showToast("Upgrade to Muse Pro to view profiles");setShowPremiumPopup(true);}else{setViewProfile(p);}}}>
-                          <img src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover",filter:currentUser.tier!=="muse_pro"?"blur(3px)":undefined}} />
+                          <img loading="lazy" src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover",filter:currentUser.tier!=="muse_pro"?"blur(3px)":undefined}} />
                           <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"12px",background:"linear-gradient(to top,rgba(10,6,18,0.9),transparent)"}}>
                             <div style={{fontSize:15,fontWeight:700}}>{p.name}</div>
                             <div style={{fontSize:12,background:"linear-gradient(90deg,var(--gold),var(--amber))",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:600}}>{p.type}</div>
@@ -2175,7 +2183,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                      onTouchStart={(e)=>{ const startX=e.touches[0].clientX; const startY=e.touches[0].clientY; const handleMove=(ev: TouchEvent)=>{ const dx=ev.touches[0].clientX-startX; const dy=ev.touches[0].clientY-startY; if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){ setMatchSwiping({id:String(m.id),offset:dx}); } }; const handleEnd=()=>{ if(matchSwiping?.id===String(m.id)){ const offset=matchSwiping.offset; setMatchSwiping(null); if(Math.abs(offset)>80){ if(offset>0){ setReportTarget({id:m.id,type:"match",name:m.name}); setShowReport(true); } else { setUnmatchTarget(m.name); } } } document.removeEventListener('touchmove',handleMove); document.removeEventListener('touchend',handleEnd); }; document.addEventListener('touchmove',handleMove,{passive:false}); document.addEventListener('touchend',handleEnd); }}
                    >
                      <div className="match-avatar-wrap">
-                       <img src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} />
+                       <img loading="lazy" src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} />
                        {m.online && <div className="online-dot" />}
                      </div>
                      <div className="match-info">
@@ -2212,7 +2220,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 <div className="chat-wrap">
                   <div className="chat-header">
                     <button className="chat-back" onClick={()=>showScreen("matches")}><FiArrowLeft size={20} /></button>
-                     <img src={chatTarget.img} alt={chatTarget.name} className="chat-avatar" onError={handleImgError} onClick={()=>setViewProfile(chatTarget)} style={{cursor:"pointer"}} />
+                     <img loading="lazy" src={chatTarget.img} alt={chatTarget.name} className="chat-avatar" onError={handleImgError} onClick={()=>setViewProfile(chatTarget)} style={{cursor:"pointer"}} />
                     <div className="chat-info">
                       <div className="chat-name">{chatTarget.name}</div>
                       <div className="chat-type">{chatTarget.type}</div>
@@ -2221,7 +2229,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <div className="messages" ref={messagesEndRef}>
                     {(chatTarget.messages || []).map((msg, i) => (
                       <div key={i} className={"msg "+(msg.from==="me"?"msg-me":"msg-them")}>
-                        {msg.img && <img src={msg.img} alt="" style={{maxWidth:200,borderRadius:12,marginBottom:6,display:"block"}} />}
+                        {msg.img && <img loading="lazy" src={msg.img} alt="" style={{maxWidth:200,borderRadius:12,marginBottom:6,display:"block"}} />}
                         {msg.text && <div>{msg.text}</div>}
                         <div className="msg-time" style={{textAlign:msg.from==="me"?"right":"left",marginTop:4,fontSize:10,color:msg.from==="me"?"rgba(10,6,18,0.4)":"var(--muted)"}}>
                           {msg.time}{msg.from==="me" && <span style={{marginLeft:4}}>{i===(chatTarget.messages||[]).length-1?"✓✓":"✓"}</span>}
@@ -2295,7 +2303,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   return filtered.map(brief => (
                     <div key={brief.id} className="brief-card">
                       <div className="brief-header" style={{flexWrap:"wrap",gap:6}}>
-                        <img src={brief.authorImg} alt={brief.author} className="brief-avatar" />
+                        <img loading="lazy" src={brief.authorImg} alt={brief.author} className="brief-avatar" />
                         <div className="brief-info" style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center"}}>
                           <div className="brief-author"><strong>{brief.author}</strong></div>
                           <div className="brief-meta">{brief.budget} · {brief.deadline}</div>
@@ -2348,12 +2356,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
                 {commTab === "groups" && (liveCommunities || COMMUNITIES).filter(c => showNsfw || !c.nsfw).map(c => (
                   <div key={c.id} className="conn-card" style={{marginBottom:10,padding:14}}>
-                    <img src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
+                    <img loading="lazy" src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
                     <div className="conn-content" style={{flex:1}}>
                       <div className="conn-name" style={{fontSize:15}}>{c.name}</div>
                       <div className="conn-meta" style={{fontSize:12}}>{c.members} members · {c.desc}</div>
                       <div style={{display:"flex",gap:8,marginTop:8}}>
-                        <button className={"btn "+(c.cat==="nsfw"?"btn-gold":"btn-primary")} style={{flex:1,fontSize:12,padding:"12px 0",fontWeight:700,borderRadius:12}} onClick={async()=>{try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id,memberCount:c.members})});showToast("Joined "+c.name+"!")}catch{showToast("Failed to join")}}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
+                        <button className={"btn "+(c.cat==="nsfw"?"btn-gold":"btn-primary")} style={{flex:1,fontSize:12,padding:"12px 0",fontWeight:700,borderRadius:12}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"join-community",communityId:c.id})});if(!r.ok)throw new Error("failed");showToast("Joined "+c.name+"!")}catch{showToast("Failed to join")}}}>{c.cat==="nsfw"?"Join (18+)":"Join"}</button>
                         <button className="btn btn-outline" style={{flex:1,fontSize:12,padding:"12px 0",fontWeight:600,borderRadius:12}} onClick={()=>showToast(c.name+" community info opened!")}>Learn</button>
                         <button className="btn btn-outline" style={{flex:1,fontSize:12,padding:"12px 0",fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/community/"+c.id);showToast("Link copied!")}}>Share</button>
                       </div>
@@ -2392,7 +2400,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
                 {sessTab === "sessions" && (liveSessions || SESSIONS).map(s => (
                   <div key={s.id} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
-                    <img src={s.img} alt={s.name} style={{width:"25%",alignSelf:"stretch",minHeight:120,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                    <img loading="lazy" src={s.img} alt={s.name} style={{width:"25%",alignSelf:"stretch",minHeight:120,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                     <div className="conn-content" style={{flex:1,padding:14,display:"flex",flexDirection:"column",justifyContent:"center"}}>
                       <div className="conn-name" style={{fontSize:15}}>{s.name}</div>
                       <div className="conn-meta" style={{fontSize:12}}>{s.type} · {s.rate} · ★ {s.rating}</div>
@@ -2414,7 +2422,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 ) : (
                   matches.filter(m => m.booked).map(m => (
                     <div key={m.id} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
-                      <img src={m.img} alt={m.name} style={{width:"25%",alignSelf:"stretch",minHeight:120,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                      <img loading="lazy" src={m.img} alt={m.name} style={{width:"25%",alignSelf:"stretch",minHeight:120,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                       <div className="conn-content" style={{flex:1,padding:14,display:"flex",flexDirection:"column",justifyContent:"center"}}>
                         <div className="conn-name" style={{fontSize:15}}>{m.name}</div>
                         <div className="conn-meta" style={{fontSize:12}}>{m.type} · Booked Session</div>
@@ -2444,7 +2452,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
                 {netTab === "pros" && PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
                   <div key={p.id} className="conn-card" style={{flexDirection:"column",marginBottom:14,padding:0,overflow:"hidden",borderRadius:16}}>
-                    <img src={p.img} alt={p.name} style={{width:"100%",height:"auto",minHeight:160,objectFit:"fill"}} onError={handleImgError} />
+                    <img loading="lazy" src={p.img} alt={p.name} style={{width:"100%",height:"auto",minHeight:160,objectFit:"fill"}} onError={handleImgError} />
                     <div style={{padding:"14px 16px"}}>
                       <div className="conn-name" style={{fontSize:15}}>{p.name}</div>
                       <div className="conn-meta" style={{fontSize:12,marginBottom:6}}>{p.type} · {p.loc} · {p.exp}</div>
@@ -2529,7 +2537,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   {stories.slice(0, 8).map((s,i)=>(
                     <div key={s.id} className="moments-story-item" onClick={()=>setShowStory(i)}>
                       <div className="moments-story-ring">
-                        <img src={s.img||s.avatar} alt="" onError={handleImgError} />
+                        <img loading="lazy" src={s.img||s.avatar} alt="" onError={handleImgError} />
                       </div>
                       <span className="moments-story-name">{s.author.split(" ")[0]}</span>
                     </div>
@@ -2550,10 +2558,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 </div>
                 {stories.map(s=>(
                   <div key={s.id} className="moments-card">
-                    <img src={s.img||s.avatar} alt="" className="moments-card-img" onError={handleImgError} />
+                    <img loading="lazy" src={s.img||s.avatar} alt="" className="moments-card-img" onError={handleImgError} />
                     <div className="moments-card-body">
                       <div className="moments-card-user">
-                        <img src={s.avatar} alt="" className="moments-card-avatar" onError={handleImgError} />
+                        <img loading="lazy" src={s.avatar} alt="" className="moments-card-avatar" onError={handleImgError} />
                         <div>
                           <div className="moments-card-username">{s.author}</div>
                           <div className="moments-card-loc">📍 {s.time}</div>
@@ -2608,7 +2616,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 </div>
                 <div className="profile-top">
                   <div className="profile-avatar-wrap">
-                     <img src={currentUser.avatar} alt={currentUser.name} className="profile-avatar" onError={handleImgError} />
+                     <img loading="lazy" src={currentUser.avatar} alt={currentUser.name} className="profile-avatar" onError={handleImgError} />
                     <div className="profile-ring" />
                   </div>
                   <div className="profile-name">{currentUser.name}</div>
@@ -2728,7 +2736,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       });
                       if (filtered.length > 0) return filtered.slice(0,9).map((p,i) => (
                         <div key={i} style={{aspectRatio:"3/4",borderRadius:12,overflow:"hidden",background:"#1a0a2e",position:"relative",cursor:"pointer"}} onClick={()=>setSelectedPortfolio(p)}>
-                          <img src={p.img} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
+                          <img loading="lazy" src={p.img} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
                           <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px",background:"linear-gradient(to top,rgba(10,6,18,0.9),transparent)"}}>
                             <div style={{fontSize:11,fontWeight:600,color:"var(--text)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.title}</div>
                             <div style={{fontSize:9,color:"var(--muted)"}}>{p.type}</div>
@@ -2748,7 +2756,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:8,scrollbarWidth:"none"}}>
                     {matches.length > 0 ? matches.slice(0,5).map(m=>(
                       <div key={m.id} style={{flexShrink:0,width:60,height:60,borderRadius:"50%",overflow:"hidden",background:"#1a0a2e",border:"2px solid rgba(255,215,0,0.2)"}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>
-                        <img src={m.img} alt={m.name} style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
+                        <img loading="lazy" src={m.img} alt={m.name} style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
                       </div>
                     )) : (
                       <div style={{flexShrink:0,width:60,height:60,borderRadius:"50%",background:"rgba(255,255,255,0.03)",border:"2px dashed rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--muted)",fontSize:11}}>No matches yet</div>
@@ -2761,7 +2769,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <div style={{display:"flex",flexDirection:"column",gap:8}}>
                     {activityFeed.length > 0 ? activityFeed.slice(0,4).map(a=>(
                       <div key={a.id} style={{display:"flex",gap:10,padding:"10px",background:"rgba(255,255,255,0.02)",borderRadius:12,border:"1px solid rgba(255,255,255,0.04)"}}>
-                        <img src={a.avatar} alt="" style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",background:"#1a0a2e"}} onError={handleImgError} />
+                        <img loading="lazy" src={a.avatar} alt="" style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",background:"#1a0a2e"}} onError={handleImgError} />
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontSize:13,fontWeight:600,color:"var(--text)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}><strong>{a.from}</strong> {a.text}</div>
                           <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{a.time}</div>
@@ -2841,7 +2849,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="modal-body">
             <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
               <div style={{position:"relative"}}>
-                <img src={editAvatar || currentUser.avatar} alt="" style={{width:88,height:88,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--gold)",background:"#1a0a2e"}} onError={handleImgError} />
+                <img loading="lazy" src={editAvatar || currentUser.avatar} alt="" style={{width:88,height:88,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--gold)",background:"#1a0a2e"}} onError={handleImgError} />
                 <button type="button" onClick={()=>editAvatarInputRef.current?.click()} style={{position:"absolute",bottom:0,right:0,width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,var(--gold),var(--amber))",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#0a0612"}} title="Upload profile photo" aria-label="Upload profile photo">+</button>
                 <input ref={editAvatarInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setEditAvatar(url);showToast("Photo added!")}}}} />
               </div>
@@ -3084,7 +3092,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           </div>
           <div className="modal-body" style={{display:"flex",flexDirection:"column",gap:16,paddingTop:20}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <img src={noteTargetProfile.img} alt={noteTargetProfile.name} style={{width:48,height:48,borderRadius:"50%",objectFit:"cover"}} onError={handleImgError} />
+              <img loading="lazy" src={noteTargetProfile.img} alt={noteTargetProfile.name} style={{width:48,height:48,borderRadius:"50%",objectFit:"cover"}} onError={handleImgError} />
               <div>
                 <div style={{fontWeight:700,fontSize:16,color:"var(--text)"}}>{noteTargetProfile.name}</div>
                 <div style={{fontSize:13,color:"var(--muted)"}}>{noteTargetProfile.type}</div>
@@ -3269,7 +3277,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div style={{textAlign:"center",padding:30,color:"var(--muted)",fontSize:14}}>No activity yet. Start swiping!</div>
             ) : activityFeed.map(a=>(
               <div key={a.id} style={{display:"flex",gap:12,padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",opacity:a.read?0.6:1}}>
-                <img src={a.avatar} alt="" style={{width:40,height:40,borderRadius:"50%",objectFit:"cover",backgroundColor:"#1a0a2e"}} />
+                <img loading="lazy" src={a.avatar} alt="" style={{width:40,height:40,borderRadius:"50%",objectFit:"cover",backgroundColor:"#1a0a2e"}} />
                 <div style={{flex:1}}>
                   <div style={{fontSize:14,color:"var(--text)"}}><strong>{a.from}</strong> {a.text}</div>
                   <div style={{fontSize:11,color:"var(--muted)",marginTop:4}}>{a.time}</div>
@@ -3288,9 +3296,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
           </div>
           {stories[showStory] && (
             <div style={{textAlign:"center"}}>
-              <img src={stories[showStory].img} alt="" style={{maxWidth:"90%",maxHeight:"70vh",borderRadius:16,objectFit:"contain",backgroundColor:"#1a0a2e"}} />
+              <img loading="lazy" src={stories[showStory].img} alt="" style={{maxWidth:"90%",maxHeight:"70vh",borderRadius:16,objectFit:"contain",backgroundColor:"#1a0a2e"}} />
               <div style={{display:"flex",alignItems:"center",gap:10,justifyContent:"center",marginTop:16}}>
-                <img src={stories[showStory].avatar} alt="" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",backgroundColor:"#1a0a2e"}} />
+                <img loading="lazy" src={stories[showStory].avatar} alt="" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",backgroundColor:"#1a0a2e"}} />
                 <span style={{color:"#fff",fontWeight:700}}>{stories[showStory].author}</span>
                 <span style={{color:"rgba(255,255,255,0.5)",fontSize:12}}>{stories[showStory].time}</span>
               </div>
@@ -3326,7 +3334,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
         <div className="modal-overlay" onClick={()=>setViewProfile(null)}>
           <div className="modal-panel" onClick={e=>e.stopPropagation()} style={{maxWidth:400,width:"90%",maxHeight:"85vh",overflowY:"auto",borderRadius:24,padding:0,background:"linear-gradient(180deg,#0f081e,#0a0612)"}}>
             <div style={{position:"relative",width:"100%",aspectRatio:"3/4",overflow:"hidden"}}>
-              <img src={viewProfile.img} alt={viewProfile.name} style={{width:"100%",height:"100%",objectFit:"cover"}} />
+              <img loading="lazy" src={viewProfile.img} alt={viewProfile.name} style={{width:"100%",height:"100%",objectFit:"cover"}} />
               <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px",background:"linear-gradient(to top,rgba(10,6,18,0.95),transparent)"}}>
                 <div style={{fontSize:24,fontWeight:800,fontFamily:"'Playfair Display',serif",fontStyle:"italic"}}>{viewProfile.name}</div>
                 <div style={{fontSize:14,color:"var(--gold)",fontWeight:600}}>{viewProfile.type}</div>

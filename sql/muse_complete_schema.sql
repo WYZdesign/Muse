@@ -147,30 +147,41 @@ ALTER TABLE muse_push_subscriptions ENABLE ROW LEVEL SECURITY;
 -- 5. RLS POLICIES
 -- ============================================================
 
--- Forum replies: public read, authenticated insert
+-- Forum replies: public read, authenticated insert (scoped to own user_id)
 CREATE POLICY "Forum replies are public" ON muse_forum_replies FOR SELECT USING (true);
-CREATE POLICY "Users can post replies" ON muse_forum_replies FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can post replies" ON muse_forum_replies FOR INSERT WITH CHECK (
+  user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+);
 
--- Communities: public read, service can manage
+-- Communities: public read, service role can manage (prevents client-side tampering)
 CREATE POLICY "Communities are public" ON muse_communities FOR SELECT USING (true);
-CREATE POLICY "Service can manage communities" ON muse_communities FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Service can manage communities" ON muse_communities FOR ALL
+  USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
--- Community members: users see memberships, can join/leave
+-- Community members: users see memberships, can join/leave (scoped to own user_id)
 CREATE POLICY "Community members are public" ON muse_community_members FOR SELECT USING (true);
-CREATE POLICY "Users can join communities" ON muse_community_members FOR INSERT WITH CHECK (true);
-CREATE POLICY "Users can leave communities" ON muse_community_members FOR DELETE USING (true);
+CREATE POLICY "Users can join communities" ON muse_community_members FOR INSERT WITH CHECK (
+  user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+);
+CREATE POLICY "Users can leave communities" ON muse_community_members FOR DELETE USING (
+  user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+);
 
--- Sessions: public read, hosts manage
+-- Sessions: public read, service role manages lifecycle (hosts create via API)
 CREATE POLICY "Sessions are public" ON muse_sessions FOR SELECT USING (true);
-CREATE POLICY "Service can manage sessions" ON muse_sessions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Service can manage sessions" ON muse_sessions FOR ALL
+  USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
--- Bookings: users manage their own, hosts can view
+-- Bookings: users view own, create own; service role manages lifecycle
 CREATE POLICY "Users can view own bookings" ON muse_bookings FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
   OR host_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
-CREATE POLICY "Users can create bookings" ON muse_bookings FOR INSERT WITH CHECK (true);
-CREATE POLICY "Service can manage bookings" ON muse_bookings FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Users can create own bookings" ON muse_bookings FOR INSERT WITH CHECK (
+  user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+);
+CREATE POLICY "Service can manage bookings" ON muse_bookings FOR ALL
+  USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
 -- Connections: users see their own, can create
 CREATE POLICY "Users can view own connections" ON muse_connections FOR SELECT USING (
@@ -182,17 +193,20 @@ CREATE POLICY "Users can delete own connections" ON muse_connections FOR DELETE 
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
 
--- Notifications: users see their own
+-- Notifications: users see their own; service role manages
 CREATE POLICY "Users can view own notifications" ON muse_notifications FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
-CREATE POLICY "Service can manage notifications" ON muse_notifications FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Service can manage notifications" ON muse_notifications FOR ALL
+  USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
--- Push subscriptions: users manage their own
+-- Push subscriptions: users manage their own (INSERT scoped to own user_id)
 CREATE POLICY "Users can view own push subs" ON muse_push_subscriptions FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
-CREATE POLICY "Users can save push subs" ON muse_push_subscriptions FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can save own push subs" ON muse_push_subscriptions FOR INSERT WITH CHECK (
+  user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+);
 CREATE POLICY "Users can delete own push subs" ON muse_push_subscriptions FOR DELETE USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );

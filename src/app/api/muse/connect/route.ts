@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
@@ -31,6 +32,21 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { action } = body;
+
+    // Rate limit financial operations
+    const ip = clientIp(req);
+    if (action === "create-account" && !checkRate(ip, "connect-create-account", 5)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
+    if (action === "create-payment" && !checkRate(ip, "connect-create-payment", 10)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
+    if (action === "account-status" && !checkRate(ip, "connect-account-status", 30)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
+    if (action === "transfer" && !checkRate(ip, "connect-transfer", 5)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
 
     // ═══ CREATE-ACCOUNT: Onboard user as Stripe Connect account ═══
     if (action === "create-account") {

@@ -872,4 +872,7 @@ img{background-color:#1a0a2e}
 @keyframes lavaFlow{0%{background-position:0 0}50%{background-position:100% 0}100%{background-position:0 0}}
 
 
-@media(max-width:767px){.scene-wash{opacity:0.3!important}.aurora-strip{opacity:0.3!important}.sparkle-field{opacity:0.3!important}.star-field{opacity:0.3!important}.nebula-fog{opacity:0.15!important}}}
+@media(max-width:767px){.scene-wash{opacity:0.3!important}.aurora-strip{opacity:0.3!important}.sparkle-field{opacity:0.3!important}.star-field{opacity:0.3!important}.nebula-fog{opacity:0.15!important}}
+
+/* Pause ambient animations when tab is hidden (battery/thermal savings) */
+.animations-paused .star-field,.animations-paused .aurora-strip,.animations-paused .nebula-fog,.animations-paused .sparkle-field,.animations-paused .ember-field,.animations-paused .scene-orb{animation-play-state:paused!important}}

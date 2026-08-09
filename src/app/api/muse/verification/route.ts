@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 import Stripe from "stripe";
 
 const sb = createClient(
@@ -22,6 +23,15 @@ export async function POST(req: NextRequest) {
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
     const { action } = await req.json();
+
+    // Rate limit verification sessions to prevent Stripe API abuse
+    const ip = clientIp(req);
+    if (action === "create-verification-session" && !checkRate(ip, "verify-create", 5)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
+    if (action === "create-age-gate-session" && !checkRate(ip, "verify-age-gate", 5)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
 
     if (action === "create-verification-session") {
       // Create Stripe Identity verification session (hosted redirect flow)
