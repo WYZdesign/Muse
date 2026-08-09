@@ -839,10 +839,10 @@ img{background-color:#1a0a2e}
 /* ═══ SWIPE CARD HERO (v2 rework) ═══ */
 .card-hero-info{position:absolute;bottom:0;left:0;right:0;padding:40px 20px 20px;background:linear-gradient(to top,rgba(10,6,18,0.98) 0%,rgba(10,6,18,0.55) 45%,transparent 100%);z-index:4;transition:opacity .3s ease,transform .3s ease}
 .card-hero-info.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
-.card-hero-name{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:800;color:#fff;font-family:"Playfair Display",serif;font-style:italic;text-shadow:0 2px 12px rgba(0,0,0,0.5)}
+.card-hero-name{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:800;color:#fff;font-family:"Playfair Display",serif;font-style:italic;text-shadow:0 2px 8px rgba(0,0,0,0.7),0 4px 20px rgba(0,0,0,0.5),0 0 40px rgba(10,6,18,0.8)}
 .card-verified-mark{font-size:18px;color:var(--gold)}
-.card-hero-type{font-size:15px;font-weight:600;color:var(--gold);margin:4px 0 4px}
-.card-hero-bio{font-size:13px;color:rgba(255,255,255,0.8);line-height:1.4}
+.card-hero-type{font-size:15px;font-weight:600;color:var(--gold);margin:4px 0 4px;text-shadow:0 1px 6px rgba(0,0,0,0.6),0 2px 12px rgba(0,0,0,0.4)}
+.card-hero-bio{font-size:13px;color:rgba(255,255,255,0.85);line-height:1.4;text-shadow:0 1px 4px rgba(0,0,0,0.5)}
 .card-hero-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .card-hero-tag{font-size:10px;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85)}
 .card-photo-dots{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:6;pointer-events:none}

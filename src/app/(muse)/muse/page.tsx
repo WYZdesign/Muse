@@ -1210,10 +1210,11 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   {key:"network",icon:<FiShare2 size={20} />,label:"Network",desc:"Professionals & forum",grad:"linear-gradient(135deg,#B3E5FC,#64B5F6,#00BCD4)"},
                   {key:"profile",icon:<FiUser size={20} />,label:"Profile",desc:"Edit profile & premium",grad:"linear-gradient(135deg,#FFD700,#FFB5C2,#B388FF)"},
                   {key:"settings",icon:<FiSettings size={20} />,label:"Settings",desc:"Preferences, safety & help",grad:"linear-gradient(135deg,#CE93D8,#B388FF,#A5D6A7)"},
+                  {key:"musepro",icon:<FiStar size={20} />,label:"Muse Pro",desc:"Subscription & premium features",grad:"linear-gradient(135deg,#FFD700,#FFA000,#FF6F00)"},
                 ].map(item => (
                   <div key={item.key} className="hamburger-item" onClick={() => {
-                    if (item.key === "community" || item.key === "sessions" || item.key === "network") {
-                      setShowHamburger(false); showScreen(item.key as any);
+                    if (item.key === "community" || item.key === "sessions" || item.key === "network" || item.key === "musepro") {
+                      setShowHamburger(false); showScreen(item.key === "musepro" ? "subscription" : item.key as any);
                     } else {
                       setHamburgerScreen(item.key);
                     }
