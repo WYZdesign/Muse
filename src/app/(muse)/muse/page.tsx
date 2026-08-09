@@ -144,6 +144,7 @@ function MusePage() {
   const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>({match:true,message:true,brief:true,like:true});
   const [pushEnabled, setPushEnabled] = useState<boolean>(false);
   const [connTab, setConnTab] = useState<"community"|"events"|"sessions"|"forum"|"feed"|"professional">("community");
+  const [portfolioTab, setPortfolioTab] = useState<"all"|"portrait"|"landscape"|"sets">("all");
   const [forumPosts, setForumPosts] = useState<{id:number;title:string;body:string;author:string;avatar:string;votes:number;comments:{author:string;text:string}[];cat:string;time:string;pinned:boolean}[]>([]);
   const [commTab, setCommTab] = useState<"groups"|"events">("groups");
   const [sessTab, setSessTab] = useState<"sessions"|"bookings">("sessions");
@@ -267,7 +268,7 @@ function MusePage() {
   const [typingTarget, setTypingTarget] = useState<number|null>(null);
   const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const loadStateRef = useRef(false);
+  const loadStateRef = useRef(typeof window !== "undefined" && sessionStorage.getItem("muse_loaded") === "1");
   const [matchSwiping, setMatchSwiping] = useState<{id:string;offset:number} | null>(null);
   const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number;startTime:number;el:HTMLElement|null;axis:"x"|"y"|null}>({startX:0,startY:0,active:false,relY:0,startTime:0,el:null,axis:null});
   const likeLabelRef = useRef<HTMLDivElement>(null);
@@ -400,13 +401,14 @@ function MusePage() {
       if (d.discoveryPrefs) setDiscoveryPrefs(d.discoveryPrefs);
       if (d.chatImages) setChatImages(d.chatImages);
       if (d.chatTarget) setChatTarget(d.chatTarget);
-      if (d.screen && ["onboard","discover","connections","matches","chat","briefs","portfolio","moments","profile","settings","subscription"].includes(d.screen)) {
+      const VALID_SCREENS = ["onboard","discover","connections","matches","chat","briefs","community","sessions","network","portfolio","moments","profile","settings","subscription"];
+      if (d.screen && VALID_SCREENS.includes(d.screen)) {
         // Chat requires a chatTarget to render (screen-el guards on chatTarget);
         // chatTarget is now persisted, but fallback to matches if somehow missing.
         setScreen(d.screen === "chat" && !d.chatTarget ? "matches" : d.screen);
       }
       if (d.authUser) setAuthUser(d.authUser);
-      if (d.authUser && !["onboard","discover","connections","matches","chat","briefs","portfolio","moments","profile","settings","subscription"].includes(d.screen||"")) setScreen("discover");
+      if (d.authUser && !VALID_SCREENS.includes(d.screen||"")) setScreen("discover");
     } catch(e) {}
     try { const b=safeGetItem("muse_boost"); if(b){const e=parseInt(b);if(e>Date.now()){setBoostActive(true);setBoostEnd(e);}else{safeRemoveItem("muse_boost");}} } catch(e) {}
   }, []);
@@ -450,6 +452,7 @@ function MusePage() {
   useEffect(() => {
     if (loadStateRef.current) return;
     loadStateRef.current = true;
+    try { sessionStorage.setItem("muse_loaded", "1"); } catch {}
     loadState();
     setHydrated(true);
 
@@ -2697,23 +2700,36 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   </div>
                 </div>
                 <div className="section">
-                  <div className="section-title">Portfolio Preview</div>
-                  <div className="section-text" style={{marginBottom:10}}>Your showcased work</div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-                    {currentUser.portfolios.length > 0 ? currentUser.portfolios.slice(0,6).map((p,i)=>(
-                      <div key={i} style={{aspectRatio:"3/4",borderRadius:12,overflow:"hidden",background:"#1a0a2e",position:"relative"}} onClick={()=>setSelectedPortfolio(p)}>
-                        <img src={p.img} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
-                        <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px",background:"linear-gradient(to top,rgba(10,6,18,0.9),transparent)"}}>
-                          <div style={{fontSize:11,fontWeight:600,color:"var(--text)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.title}</div>
-                          <div style={{fontSize:9,color:"var(--muted)"}}>{p.type}</div>
-                        </div>
-                      </div>
-                    )) : (
-                      [1,2,3].map(i=>(
-                        <div key={i} style={{aspectRatio:"3/4",borderRadius:12,background:"rgba(255,255,255,0.03)",border:"2px dashed rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--muted)",fontSize:11}}>Add Portfolio</div>
-                      ))
-                    )}
+                  <div className="section-title">Portfolio</div>
+                  <div className="section-text" style={{marginBottom:10}}>Your albums & showcased work</div>
+                  <div style={{display:"flex",gap:8,marginBottom:12,overflowX:"auto",scrollbarWidth:"none"}}>
+                    {(["all","portrait","landscape","sets"] as const).map(tab => (
+                      <span key={tab} className={"conn-tab"+(portfolioTab===tab?" active":"")} onClick={()=>setPortfolioTab(tab)} style={{flexShrink:0,fontSize:12,padding:"6px 14px"}}>{tab==="all"?"All":tab==="portrait"?"Portrait":tab==="landscape"?"Landscape":"Sets"}</span>
+                    ))}
                   </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                    {(() => {
+                      const filtered = currentUser.portfolios.filter(p => {
+                        if (portfolioTab === "all") return true;
+                        if (portfolioTab === "portrait") return p.type === "portrait";
+                        if (portfolioTab === "landscape") return p.type === "landscape";
+                        return true;
+                      });
+                      if (filtered.length > 0) return filtered.slice(0,9).map((p,i) => (
+                        <div key={i} style={{aspectRatio:"3/4",borderRadius:12,overflow:"hidden",background:"#1a0a2e",position:"relative",cursor:"pointer"}} onClick={()=>setSelectedPortfolio(p)}>
+                          <img src={p.img} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
+                          <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px",background:"linear-gradient(to top,rgba(10,6,18,0.9),transparent)"}}>
+                            <div style={{fontSize:11,fontWeight:600,color:"var(--text)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.title}</div>
+                            <div style={{fontSize:9,color:"var(--muted)"}}>{p.type}</div>
+                          </div>
+                        </div>
+                      ));
+                      return [1,2,3,4,5,6].map(i => (
+                        <div key={i} style={{aspectRatio:"3/4",borderRadius:12,background:"rgba(255,255,255,0.03)",border:"2px dashed rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--muted)",fontSize:11,cursor:"pointer"}} onClick={()=>setScreen("portfolio")}>Add</div>
+                      ));
+                    })()}
+                  </div>
+                  <button className="btn btn-outline" style={{width:"100%",marginTop:12,fontSize:13,padding:"10px 0"}} onClick={()=>setScreen("portfolio")}>Manage Albums</button>
                 </div>
                 <div className="section">
                   <div className="section-title">Recent Matches</div>
