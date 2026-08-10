@@ -155,21 +155,24 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
           ctx!.fill();
         }
       }
-      // Bottom waves — spread out, taller, matching splash page
-      for (let w = 0; w < 3; w++) {
+      // Bottom waves — tall, spread out, teal/cyan/seafoam matching splash
+      const waveColors = [
+        { y: h * 0.72, alpha: 0.12, color: "20,200,210" },
+        { y: h * 0.78, alpha: 0.09, color: "10,160,180" },
+        { y: h * 0.84, alpha: 0.06, color: "0,120,150" },
+      ];
+      for (const w of waveColors) {
         ctx!.save();
         ctx!.beginPath();
-        const waveY = h * 0.65 + w * 24;
         ctx!.moveTo(-10, h);
         for (let x = -10; x <= w + 10; x += 4) {
-          const y = waveY + Math.sin(x * 0.006 + t * 0.03 + w) * 16
-            + Math.cos(x * 0.012 + t * 0.05 + w * 1.5) * 10;
+          const y = w.y + Math.sin(x * 0.006 + t * 0.04) * 18
+            + Math.cos(x * 0.013 + t * 0.06) * 12;
           ctx!.lineTo(x, y);
         }
         ctx!.lineTo(w + 10, h);
         ctx!.closePath();
-        const waveAlpha = 0.06 - w * 0.015;
-        ctx!.fillStyle = `rgba(244,200,115,${waveAlpha})`;
+        ctx!.fillStyle = `rgba(${w.color},${w.alpha})`;
         ctx!.fill();
         ctx!.restore();
       }

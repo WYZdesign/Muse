@@ -89,32 +89,31 @@ export default function SplashScreen() {
         ctx.fillRect(0, 0, W, H * 0.6);
       }
 
-      // Aurora borealis — ribbon effect with curling bands
+      // Aurora borealis — drifting nebula clouds at top
       for (let band = 0; band < 3; band++) {
         ctx.save();
-        const baseY = H * 0.04 + band * H * 0.06;
-        const ribbonGrad = ctx.createLinearGradient(0, baseY - 20, 0, baseY + 40);
+        const baseY = H * 0.03 + band * H * 0.07;
+        const cloudGrad = ctx.createLinearGradient(0, baseY - 30, 0, baseY + 50);
         const colors = band === 0
-          ? ["rgba(138,43,226,0)", "rgba(72,209,204,0.15)", "rgba(138,43,226,0.1)", "transparent"]
+          ? ["rgba(138,43,226,0)", "rgba(72,209,204,0.15)", "rgba(138,43,226,0.08)", "transparent"]
           : band === 1
-            ? ["rgba(255,105,180,0)", "rgba(147,112,219,0.12)", "rgba(0,191,255,0.08)", "transparent"]
-            : ["rgba(72,61,139,0)", "rgba(0,255,127,0.1)", "rgba(138,43,226,0.08)", "transparent"];
-        ribbonGrad.addColorStop(0, colors[0]);
-        ribbonGrad.addColorStop(0.3, colors[1]);
-        ribbonGrad.addColorStop(0.7, colors[2]);
-        ribbonGrad.addColorStop(1, colors[3]);
-        ctx.fillStyle = ribbonGrad;
-        ctx.beginPath();
-        ctx.moveTo(-20, baseY - 10);
-        for (let x = -20; x <= W + 20; x += 4) {
-          const y = baseY + Math.sin(x * 0.006 + frame * 0.015 + band) * 30
-            + Math.cos(x * 0.012 + frame * 0.02 + band * 2) * 18;
-          ctx.lineTo(x, y);
+            ? ["rgba(255,105,180,0)", "rgba(0,191,255,0.12)", "rgba(147,112,219,0.06)", "transparent"]
+            : ["rgba(72,61,139,0)", "rgba(138,43,226,0.1)", "rgba(0,255,127,0.06)", "transparent"];
+        cloudGrad.addColorStop(0, colors[0]);
+        cloudGrad.addColorStop(0.3, colors[1]);
+        cloudGrad.addColorStop(0.7, colors[2]);
+        cloudGrad.addColorStop(1, colors[3]);
+        ctx.fillStyle = cloudGrad;
+        // Draw cloud-like blobs instead of sine waves
+        for (let x = -30; x <= W + 30; x += 60) {
+          const cx = x + Math.sin(frame * 0.008 + band + x * 0.002) * 40;
+          const cy = baseY + Math.cos(frame * 0.006 + band * 1.5 + x * 0.003) * 15;
+          const rx = 50 + Math.sin(frame * 0.01 + x * 0.005) * 20;
+          const ry = 15 + Math.cos(frame * 0.012 + x * 0.004) * 8;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+          ctx.fill();
         }
-        ctx.lineTo(W + 20, baseY + 50);
-        ctx.lineTo(-20, baseY + 50);
-        ctx.closePath();
-        ctx.fill();
         ctx.restore();
       }
 
@@ -186,29 +185,32 @@ export default function SplashScreen() {
         ctx.fill();
       }
 
-      // Waves at bottom — animated sine waves
-      for (let w = 0; w < 3; w++) {
+      // Ocean waves at bottom — tall, separated, teal/cyan/seafoam
+      const waveColors = [
+        { y: H * 0.72, alpha: 0.12, color: "20,200,210" },
+        { y: H * 0.78, alpha: 0.09, color: "10,160,180" },
+        { y: H * 0.84, alpha: 0.06, color: "0,120,150" },
+      ];
+      for (const w of waveColors) {
         ctx.save();
         ctx.beginPath();
-        const waveY = H * 0.68 + w * 22;
         ctx.moveTo(-10, H);
         for (let x = -10; x <= W + 10; x += 4) {
-          const y = waveY + Math.sin(x * 0.008 + frame * 0.03 + w) * 14
-            + Math.cos(x * 0.015 + frame * 0.05 + w * 1.5) * 8;
+          const y = w.y + Math.sin(x * 0.006 + frame * 0.04) * 18
+            + Math.cos(x * 0.013 + frame * 0.06) * 12;
           ctx.lineTo(x, y);
         }
         ctx.lineTo(W + 10, H);
         ctx.closePath();
-        const waveAlpha = 0.08 - w * 0.02;
-        ctx.fillStyle = `rgba(244,200,115,${waveAlpha})`;
+        ctx.fillStyle = `rgba(${w.color},${w.alpha})`;
         ctx.fill();
         ctx.restore();
       }
 
-      // Horizon glow
-      const hGlow = ctx.createLinearGradient(0, H*0.5, 0, H);
+      // Horizon glow — warm sand meeting ocean
+      const hGlow = ctx.createLinearGradient(0, H*0.62, 0, H);
       hGlow.addColorStop(0, "transparent");
-      hGlow.addColorStop(0.3, "rgba(244,200,115,0.08)");
+      hGlow.addColorStop(0.3, "rgba(20,180,200,0.08)");
       hGlow.addColorStop(0.6, "rgba(193,68,14,0.12)");
       hGlow.addColorStop(1, "rgba(244,200,115,0.3)");
       ctx.fillStyle = hGlow;
@@ -251,10 +253,10 @@ export default function SplashScreen() {
       transition: "opacity .7s cubic-bezier(.4,0,.2,1)",
       opacity: fade ? 0 : 1, pointerEvents: fade ? "none" : "auto", overflow: "hidden",
     }}>
-      {/* Sunset gradient */}
+      {/* Beach scene: sand → ocean → horizon → galaxy */}
       <div style={{
         position: "absolute", inset: 0, zIndex: 0,
-        background: "linear-gradient(180deg, #0a0612 0%, #1a0f2e 15%, #2d1b4e 30%, #4a1942 45%, #8b2252 55%, #c1440e 70%, #e8a040 85%, #f4c873 100%)",
+        background: "linear-gradient(180deg, #0a0612 0%, #1a0f2e 12%, #2d1b4e 25%, #1a3a5c 38%, #0d7377 50%, #14a3a8 58%, #0d7377 65%, #1a8a9e 72%, #d4a76a 88%, #c4956a 94%, #a67c52 100%)",
       }} />
 
       {/* Canvas */}
