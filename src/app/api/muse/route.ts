@@ -103,7 +103,11 @@ export async function GET(req: NextRequest) {
       if (!isConvoParticipant(matchId, profileId)) {
         return NextResponse.json({ error: "Not a conversation participant" }, { status: 403 });
       }
-      const { data } = await sb.from("muse_messages").select("*").eq("match_id", matchId).order("created_at");
+      const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") || "200", 10) || 200, 500);
+      const before = req.nextUrl.searchParams.get("before") || undefined;
+      let query = sb.from("muse_messages").select("*").eq("match_id", matchId).order("created_at", { ascending: false }).limit(limit);
+      if (before) query = query.lt("created_at", before);
+      const { data } = await query;
       return NextResponse.json({ messages: data || [] });
     }
 
@@ -171,13 +175,13 @@ export async function GET(req: NextRequest) {
       const pid = profile.id;
 
       const [messages, matches, feed, briefs, forum, connections, communityMembers, bookings, notifications] = await Promise.all([
-        sb.from("muse_messages").select("*").or(`sender_id.eq.${pid},receiver_id.eq.${pid}`),
-        sb.from("muse_matches").select("*").or(`user_id.eq.${pid},target_id.eq.${pid}`),
-        sb.from("muse_feed_posts").select("*").eq("author_id", pid),
-        sb.from("muse_briefs").select("*").eq("author_id", pid),
-        sb.from("muse_forum_posts").select("*").eq("author_id", pid),
-        sb.from("muse_connections").select("*").or(`user_id.eq.${pid},target_id.eq.${pid}`),
-        sb.from("muse_community_members").select("*").eq("user_id", pid),
+        sb.from("muse_messages").select("*").or(`sender_id.eq.${pid},receiver_id.eq.${pid}`).limit(5000),
+        sb.from("muse_matches").select("*").or(`user_id.eq.${pid},target_id.eq.${pid}`).limit(5000),
+        sb.from("muse_feed_posts").select("*").eq("author_id", pid).limit(2000),
+        sb.from("muse_briefs").select("*").eq("author_id", pid).limit(2000),
+        sb.from("muse_forum_posts").select("*").eq("author_id", pid).limit(2000),
+        sb.from("muse_connections").select("*").or(`user_id.eq.${pid},target_id.eq.${pid}`).limit(5000),
+        sb.from("muse_community_members").select("*").eq("user_id", pid).limit(2000),
         sb.from("muse_bookings").select("*").eq("user_id", pid),
         sb.from("muse_notifications").select("*").or(`user_id.eq.${pid},from_id.eq.${pid}`),
       ]);
@@ -657,6 +661,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "delete-album") {
+      if (!checkRate(ip, "delete-album", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { albumId } = rest;
       if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
       const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
@@ -679,6 +684,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "remove-album-photo") {
+      if (!checkRate(ip, "remove-album-photo", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { photoId } = rest;
       if (!photoId) return NextResponse.json({ error: "photoId required" }, { status: 400 });
       const { data: photo } = await sb.from("muse_album_photos").select("album_id").eq("id", photoId).maybeSingle();
@@ -1071,6 +1077,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "save-prompt-response") {
+      if (!checkRate(ip, "save-prompt-response", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { promptId, responseText, responseChoices } = rest;
       if (!promptId) return NextResponse.json({ error: "promptId required" }, { status: 400 });
       const { error } = await sb.from("muse_prompt_responses").upsert({
@@ -1118,6 +1125,7 @@ export async function POST(req: NextRequest) {
     // ════════════════════════════════════════════════════════════════
 
     if (actionType === "admin-brain") {
+      if (!checkRate(ip, "admin-brain", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
       if (!admins.includes((profile as any).email?.toLowerCase() || "")) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -1244,6 +1252,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "admin-suspend-user") {
+      if (!checkRate(ip, "admin-suspend-user", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
       if (!admins.includes((profile as any).email?.toLowerCase() || "")) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });

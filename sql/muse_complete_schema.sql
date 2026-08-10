@@ -192,7 +192,9 @@ CREATE POLICY "Users can view own connections" ON muse_connections FOR SELECT US
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
   OR target_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
-CREATE POLICY "Users can create connections" ON muse_connections FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can create connections" ON muse_connections FOR INSERT WITH CHECK (
+  user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+);
 CREATE POLICY "Users can delete own connections" ON muse_connections FOR DELETE USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
@@ -330,6 +332,7 @@ CREATE POLICY "muse_messages_insert" ON muse_messages FOR INSERT
   );
 
 -- ============================================================
+-- ============================================================
 -- 9. PRODUCT ANALYTICS SINK (muse_events_log for trackEvent beacons)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS muse_events_log (
@@ -368,6 +371,14 @@ DROP POLICY IF EXISTS "muse_verification_sessions_owner" ON muse_verification_se
 CREATE POLICY "muse_verification_sessions_owner" ON muse_verification_sessions
   FOR SELECT USING (user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()));
 -- Service role manages insert/update via API
+
+-- muse_events: was missing RLS entirely (defined in muse_schema.sql but never protected)
+ALTER TABLE IF EXISTS muse_events ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Events are public" ON muse_events;
+CREATE POLICY "Events are public" ON muse_events FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service can manage events" ON muse_events;
+CREATE POLICY "Service can manage events" ON muse_events FOR ALL
+  USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
 -- Add age_verified columns to profiles if not exists
 ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS age_verified boolean default false;
