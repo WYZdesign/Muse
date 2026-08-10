@@ -1950,7 +1950,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
 </>)}
 </div>
                 </div>
-                {mapView && <MuseMap filteredProfiles={filteredProfiles} myGeo={myGeo ? {lat:myGeo.lat, lng:myGeo.long} : undefined} containerRef={mapContainerRef} />}
+                {mapView && <div ref={mapContainerRef} style={{position:"absolute",inset:0,zIndex:50,background:"#0a0612",borderRadius:0}} />}
+                {mapView && <MuseMap filteredProfiles={filteredProfiles} myGeo={myGeo ? {lat:myGeo.lat, lng:myGeo.long} : undefined} containerRef={mapContainerRef} show={mapView} />}
                 {!mapView && (<><div className="card-stack" role="application" aria-label="Swipe cards to discover creatives" aria-roledescription="card carousel">
                   {filteredProfiles.slice(currentIdx, currentIdx+3).map((profile, idx) => {
                     const isTop = idx === 0;
@@ -3582,10 +3583,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
   );
 }
 
-const MuseMap = ({ filteredProfiles, myGeo, containerRef }: { filteredProfiles: any[], myGeo?: {lat:number,lng:number}, containerRef: React.RefObject<HTMLDivElement|null> }) => {
+const MuseMap = ({ filteredProfiles, myGeo, containerRef, show }: { filteredProfiles: any[], myGeo?: {lat:number,lng:number}, containerRef: React.RefObject<HTMLDivElement|null>, show: boolean }) => {
+  const initialized = useRef(false);
   const mapEl = useRef<any>(null);
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!show || !containerRef.current || initialized.current) return;
+    initialized.current = true;
     const w = window as any;
     if (!w.mapboxgl) {
       const s = document.createElement("script");
@@ -3609,8 +3612,8 @@ const MuseMap = ({ filteredProfiles, myGeo, containerRef }: { filteredProfiles: 
         }
       });
     }
-    return () => { if (mapEl.current) mapEl.current.remove(); };
-  }, [filteredProfiles, myGeo, containerRef]);
+    return () => { if (mapEl.current) { mapEl.current.remove(); mapEl.current = null; initialized.current = false; } };
+  }, [show, myGeo]);
   return <div ref={containerRef} style={{ width: "100%", height: "60vh", borderRadius: 16, overflow: "hidden", marginTop: 8 }} />;
 };
 
