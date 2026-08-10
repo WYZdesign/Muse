@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const CONTACT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@wyzdesign.com";
+
 export async function GET(req: NextRequest) {
   const lat = req.nextUrl.searchParams.get("lat");
   const lon = req.nextUrl.searchParams.get("lon");
@@ -8,7 +10,7 @@ export async function GET(req: NextRequest) {
   try {
     const r = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`,
-      { headers: { "User-Agent": "MuseApp/1.0 (contact: info@wyzdesign.com)" } }
+      { headers: { "User-Agent": `MuseApp/1.0 (contact: ${CONTACT_EMAIL})` } }
     );
     const j = await r.json();
     const city = j?.address?.city || j?.address?.town || j?.address?.state || j?.address?.country || "";

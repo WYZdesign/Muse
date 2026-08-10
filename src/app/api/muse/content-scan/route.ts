@@ -3,8 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 
 // Initialize Supabase service client
 const sb = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 );
 
 // AWS Rekognition client (requires AWS SDK v3)
@@ -20,8 +20,8 @@ try {
 const rekognition = RekognitionClient ? new RekognitionClient({ 
   region: process.env.AWS_REGION || "us-east-1",
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
   }
 }) : null;
 
