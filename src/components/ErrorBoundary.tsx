@@ -2,6 +2,8 @@
 
 import React from "react";
 
+const SUPPORT = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@wyzdesign.com";
+
 interface Props { children: React.ReactNode; fallback?: React.ReactNode; }
 interface State { hasError: boolean; error: Error | null; }
 
@@ -35,7 +37,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           <div style={{ fontSize: 48, marginBottom: 16 }}>⚠</div>
           <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Something went wrong</h1>
           <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 400, marginBottom: 24 }}>
-            Please refresh the page. If this keeps happening, contact support@wyzdesign.com.
+            Please refresh the page. If this keeps happening, contact {SUPPORT}.
           </p>
           <button
             onClick={() => window.location.reload()}

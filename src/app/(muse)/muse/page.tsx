@@ -39,6 +39,7 @@ async function authFetch(url: string, options: RequestInit = {}): Promise<Respon
 }
 
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@wyzdesign.com";
+const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL || "torree.marcel@gmail.com";
 
 const DEMO_MOMENTS: any[] = [
   { id: 9001, author: "Maya Chen", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800", time: "12m ago", text: "Golden hour setup for tonight's shoot. The light is unreal right now 🌅", likes: 87, comments: 12 },
@@ -437,7 +438,7 @@ function MusePage() {
           safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken || "", user: userObj }));
           ensureMusePushRegistered();
             if (d.profile) {
-              const isOwner = d.user.email === "torree.marcel@gmail.com";
+              const isOwner = d.user.email === OWNER_EMAIL;
               const effTier = isOwner ? "muse_pro" : (d.profile.tier || "free");
               setCurrentUser(prev => ({ ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, type: d.profile.type || prev.type, foundingTier: isOwner ? "founding" : (d.profile.founding_tier || ""), proExpiresAt: isOwner ? "" : (d.profile.pro_expires_at || ""), tier: effTier }));
               if (effTier) setUserTier(effTier);
@@ -747,7 +748,7 @@ function MusePage() {
   const [userDefaultIntent, setUserDefaultIntent] = useState<string>("");
   const [showNoteTooltip, setShowNoteTooltip] = useState(() => !safeGetItem("muse_note_seen"));
 
-  const isUnlimited = authUser?.email === "torree.marcel@gmail.com";
+  const isUnlimited = authUser?.email === OWNER_EMAIL;
 
   const doSwipe = useCallback((dir: "left" | "right" | "super") => {
     if (swipeLocked.current) return;

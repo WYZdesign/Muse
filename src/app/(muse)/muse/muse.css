@@ -408,7 +408,6 @@ img{background-color:#1a0a2e}
 @keyframes matchIn{from{opacity:0;transform:scale(1.3)}to{opacity:1;transform:scale(1)}}
 @keyframes matchPulse{0%,100%{opacity:0;transform:scale(0.8)}50%{opacity:1;transform:scale(1.15)}}
 .match-title{font-size:48px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(120deg,var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:300% 300%;animation:matchPulse 1.5s ease-in-out infinite,lavaFlow 6s ease-in-out infinite;margin-bottom:10px}
-@keyframes matchPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 .match-subtitle{font-size:16px;color:var(--text2);margin-bottom:32px;text-align:center;line-height:1.6}
 .match-avatars{display:flex;margin-bottom:36px}
 .match-av{width:80px;height:80px;border-radius:50%;border:3px solid var(--gold);object-fit:cover;animation:matchBounce .7s cubic-bezier(.4,0,.2,1);box-shadow:0 4px 20px rgba(255,215,0,0.15)}
@@ -868,8 +867,6 @@ img{background-color:#1a0a2e}
 .gallery-view-meta{position:absolute;bottom:0;left:0;right:0;padding:20px;text-align:center;background:linear-gradient(to top,rgba(5,3,10,0.9),transparent)}
 .gallery-view-name{font-size:18px;font-weight:800;color:#fff;font-family:"Playfair Display",serif;font-style:italic}
 .gallery-view-count{font-size:12px;color:var(--muted);margin-top:4px}
-
-@keyframes lavaFlow{0%{background-position:0 0}50%{background-position:100% 0}100%{background-position:0 0}}
 
 @keyframes tooltipIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
