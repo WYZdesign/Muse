@@ -96,6 +96,7 @@ function MusePage() {
   const [dailyLikes, setDailyLikes] = useState(999);
   const [superLikes, setSuperLikes] = useState(999);
   const [screenFlash, setScreenFlash] = useState<string | null>(null);
+  const [showUnlimitedBadge, setShowUnlimitedBadge] = useState(true);
   const [matchStreak, setMatchStreak] = useState(0);
   const [rewindStack, setRewindStack] = useState<number[]>([]);
   const [showLikeNote, setShowLikeNote] = useState(false);
@@ -765,7 +766,7 @@ function MusePage() {
       if (!userDefaultIntent) { setIntentProfile(p); setShowIntentPicker(true); swipeLocked.current = false; return; }
       const intent = dir === "super" ? "super" : userDefaultIntent;
       const matchScore = (p as any).matchScore ?? calcMatch({ styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath }, p);
-        const isMatch = matchScore > 55;
+        const isMatch = matchScore > 55 || Math.random() < 0.3;
       if (isMatch) {
         const newMatch: Match = { ...p, messages: [] };
         setMatches(prev => [...prev, newMatch]);
@@ -1972,8 +1973,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                 </div>
                                 {isTop && (
                                   <>
-                                    <div className="card-photo-zone card-photo-zone-left" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}} />
-                                    <div className="card-photo-zone card-photo-zone-right" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.min(photos.length-1,prev+1))}} />
+                                    <div className="card-photo-zone card-photo-zone-left" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}}><span style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",color:"rgba(255,255,255,0.3)",fontSize:24,pointerEvents:"none"}}>‹</span></div>
+                                    <div className="card-photo-zone card-photo-zone-right" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.min(photos.length-1,prev+1))}}><span style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",color:"rgba(255,255,255,0.3)",fontSize:24,pointerEvents:"none"}}>›</span></div>
                                   </>
                                 )}
                                 <div className={"card-hero-info"+(cardScrolled?" hidden":"")}>
@@ -2695,7 +2696,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 </div>
               </div>
               <div className="profile-scroll">
-                {isUnlimited && (
+                {isUnlimited && showUnlimitedBadge && (
                   <div style={{position:"fixed",top:80,right:20,zIndex:9998,padding:"8px 14px",borderRadius:12,background:"linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,191,0,0.1))",border:"1px solid rgba(255,215,0,0.2)",fontSize:11,fontWeight:700,color:"var(--gold)",boxShadow:"0 4px 16px rgba(255,215,0,0.2)",display:"flex",alignItems:"center",gap:6}}>
                     <span>⚡</span>∞ Unlimited Likes & Super Likes
                     <button onClick={()=>setShowUnlimitedBadge(false)} style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:14,padding:0,lineHeight:1}}>✕</button>
