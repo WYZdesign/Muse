@@ -2264,11 +2264,20 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   const expanded = expandedMatchId === String(m.id);
                   return (
                    <div key={m.id} data-mid={String(m.id)} data-exp={expanded?"1":"0"} className={"match-card"+(expanded?" match-card-expanded":"")}
-                     style={{transform: matchSwiping?.id === String(m.id) ? `translateX(${matchSwiping.offset}px)` : undefined, opacity: matchSwiping?.id === String(m.id) && Math.abs(matchSwiping.offset) > 20 ? 0.7 : undefined, transition: matchSwiping ? 'none' : 'all .25s'}}
+                     style={{transform: matchSwiping?.id === String(m.id) ? `translateX(${matchSwiping.offset}px)` : undefined, transition: matchSwiping ? 'none' : 'all .25s', position:"relative",overflow:"hidden"}}
                      onClick={()=>{ if(expanded){ setExpandedMatchId(null); return; } setChatTarget(m); showScreen("chat"); }}
                      onMouseDown={(e)=>{ const startX=e.clientX; const startY=e.clientY; const handleMove=(ev: MouseEvent)=>{ const dx=ev.clientX-startX; const dy=ev.clientY-startY; if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){ e.preventDefault(); setMatchSwiping({id:String(m.id),offset:dx}); return false; } }; const handleUp=(ev: MouseEvent)=>{ if(matchSwiping?.id===String(m.id)){ const offset=matchSwiping.offset; setMatchSwiping(null); if(Math.abs(offset)>80){ if(offset>0){ setReportTarget({id:m.id,type:"match",name:m.name}); setShowReport(true); } else { setUnmatchTarget(m.name); } } } document.removeEventListener('mousemove',handleMove); document.removeEventListener('mouseup',handleUp); }; document.addEventListener('mousemove',handleMove,{passive:false}); document.addEventListener('mouseup',handleUp); }}
                      onTouchStart={(e)=>{ const startX=e.touches[0].clientX; const startY=e.touches[0].clientY; const handleMove=(ev: TouchEvent)=>{ const dx=ev.touches[0].clientX-startX; const dy=ev.touches[0].clientY-startY; if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){ setMatchSwiping({id:String(m.id),offset:dx}); } }; const handleEnd=()=>{ if(matchSwiping?.id===String(m.id)){ const offset=matchSwiping.offset; setMatchSwiping(null); if(Math.abs(offset)>80){ if(offset>0){ setReportTarget({id:m.id,type:"match",name:m.name}); setShowReport(true); } else { setUnmatchTarget(m.name); } } } document.removeEventListener('touchmove',handleMove); document.removeEventListener('touchend',handleEnd); }; document.addEventListener('touchmove',handleMove,{passive:false}); document.addEventListener('touchend',handleEnd); }}
                    >
+                     {/* Red gradient bar — shows on left swipe, snaps full-width to unmatch */}
+                     {(() => {
+                       const swiping = matchSwiping?.id === String(m.id) ? matchSwiping! : null;
+                       const leftOffset = swiping ? Math.max(0, -swiping.offset) : 0;
+                       const barPct = swiping && leftOffset > 20 ? Math.min(100, (leftOffset / 80) * 100) : 0;
+                       return barPct > 0 ? (
+                         <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${barPct}%`,background:"linear-gradient(90deg,#ff4444,#FFD700)",opacity:0.3,transition:matchSwiping?"none":"all .3s",zIndex:0,borderRadius:"inherit"}} />
+                       ) : null;
+                     })()}
                      <div className="match-avatar-wrap">
                        <img loading="lazy" src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} />
                        {m.online && <div className="online-dot" />}
