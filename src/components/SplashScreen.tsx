@@ -174,19 +174,21 @@ export default function SplashScreen() {
         ctx.fill();
       }
 
-      // Ocean waves at bottom — tall, separated, teal/cyan/seafoam
-      const waveColors = [
-        { y: H * 0.72, alpha: 0.12, color: "20,200,210" },
-        { y: H * 0.78, alpha: 0.09, color: "10,160,180" },
-        { y: H * 0.84, alpha: 0.06, color: "0,120,150" },
+      // Ocean waves — multiple layers with varied sizes
+      const waves = [
+        { y: H * 0.68, amp: 10, freq: 0.004, speed: 0.03, alpha: 0.14, color: "20,220,230" },
+        { y: H * 0.73, amp: 16, freq: 0.006, speed: 0.04, alpha: 0.11, color: "10,190,200" },
+        { y: H * 0.78, amp: 20, freq: 0.005, speed: 0.035, alpha: 0.09, color: "0,160,180" },
+        { y: H * 0.83, amp: 14, freq: 0.007, speed: 0.05, alpha: 0.07, color: "0,130,155" },
+        { y: H * 0.88, amp: 8, freq: 0.009, speed: 0.06, alpha: 0.05, color: "0,100,130" },
       ];
-      for (const w of waveColors) {
+      for (const w of waves) {
         ctx.save();
         ctx.beginPath();
         ctx.moveTo(-10, H);
         for (let x = -10; x <= W + 10; x += 4) {
-          const y = w.y + Math.sin(x * 0.006 + frame * 0.04) * 18
-            + Math.cos(x * 0.013 + frame * 0.06) * 12;
+          const y = w.y + Math.sin(x * w.freq + frame * w.speed) * w.amp
+            + Math.cos(x * w.freq * 2 + frame * w.speed * 1.5) * w.amp * 0.6;
           ctx.lineTo(x, y);
         }
         ctx.lineTo(W + 10, H);

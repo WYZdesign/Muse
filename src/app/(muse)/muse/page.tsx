@@ -1293,7 +1293,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       </div>
                     ))}
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"20px 0 10px"}}>Events</div>
-                    {(liveEvents || EVENTS).filter(e => showNsfw || !e.nsfw).map(ev => (
+                    {((liveEvents?.length ? liveEvents : EVENTS)).filter(e => showNsfw || !e.nsfw).map(ev => (
                       <div key={ev.id} className="conn-card" style={{flexDirection:"column",margin:"0 0 10px"}}>
                         <div className="conn-name">{ev.title}</div>
                         <div className="conn-meta">{ev.date} · {ev.loc}</div>
@@ -2410,7 +2410,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
               <div className="briefs-scroll">
                 {(() => {
-                  const allBriefs = [...userBriefs.map(b=>({...b,author:currentUser.name,authorImg:currentUser.avatar,deadline:"Flexible",urgent:false,nsfw:false,cat:b.cat||"vision"})),...(liveBriefs || BRIEFS)];
+                  const allBriefs = [...userBriefs.map(b=>({...b,author:currentUser.name,authorImg:currentUser.avatar,deadline:"Flexible",urgent:false,nsfw:false,cat:b.cat||"vision"})),...((liveBriefs?.length ? liveBriefs : BRIEFS))];
                   const filtered = museCat==="all"?allBriefs:allBriefs.filter(b=>b.cat===museCat);
                   if(filtered.length===0) return (
                     <div className="empty-state">
@@ -2487,15 +2487,18 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     </div>
                   </div>
                 ))}
-{commTab === "events" && EVENTS.filter(e => showNsfw || !e.nsfw).map(ev => (
-                    <div key={ev.id} className="conn-card" style={{flexDirection:"column",marginBottom:10,padding:16}}>
-                      <div className="conn-name" style={{fontSize:15}}>{ev.title}</div>
-                      <div className="conn-meta" style={{fontSize:12,marginBottom:6}}>{ev.date} · {ev.loc}</div>
-                      <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.5,marginBottom:10}}>{ev.desc}</div>
-                       <div style={{display:"flex",gap:8,padding:"12px 0"}}>
-                         <button className={"btn "+(rsvpdEvents.includes(ev.id)?"btn-outline":"btn-gold")} style={{flex:1,padding:"14px 0",fontSize:14,fontWeight:700,borderRadius:12}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter(x=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
-                         <button className="btn btn-outline" style={{flex:1,padding:"14px 0",fontSize:14,fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/"+ev.id);showToast("Event link copied!")}}>Share</button>
-                       </div>
+ {commTab === "events" && (liveEvents?.length ? liveEvents : EVENTS).filter((e:any) => showNsfw || !e.nsfw).map((ev:any) => (
+                    <div key={ev.id} className="conn-card" style={{flexDirection:"column",marginBottom:10,padding:0,overflow:"hidden",borderRadius:16}}>
+                      {ev.img && <img loading="lazy" src={ev.img} alt={ev.title} style={{width:"100%",height:160,objectFit:"cover",display:"block"}} onError={handleImgError} />}
+                      <div style={{padding:16}}>
+                        <div className="conn-name" style={{fontSize:15}}>{ev.title}</div>
+                        <div className="conn-meta" style={{fontSize:12,marginBottom:6}}>{ev.date} · {ev.loc}</div>
+                        <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.5,marginBottom:10}}>{ev.desc}</div>
+                      </div>
+                      <div style={{display:"flex",gap:8,padding:"0 16px 16px"}}>
+                        <button className={"btn "+(rsvpdEvents.includes(ev.id)?"btn-outline":"btn-gold")} style={{flex:1,padding:"14px 0",fontSize:14,fontWeight:700,borderRadius:12}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter((x:number)=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
+                        <button className="btn btn-outline" style={{flex:1,padding:"14px 0",fontSize:14,fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/"+ev.id);showToast("Event link copied!")}}>Share</button>
+                      </div>
                     </div>
                   ))}
                 {commTab === "events" && EVENTS.length===0 && (
