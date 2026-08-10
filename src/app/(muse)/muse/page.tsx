@@ -2056,6 +2056,13 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                               onClick={()=>{setLightboxPhotos(tabPhotos);setLightboxIdx(portIdx)}}
                                             >
                                               <img loading="lazy" src={tabPhotos[portIdx]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
+                                              {/* Tap zones */}
+                                              {tabPhotos.length > 1 && (
+                                                <>
+                                                  <div onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.max(0,p-1))}} style={{position:"absolute",left:0,top:0,width:"30%",height:"100%",zIndex:2}} />
+                                                  <div onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.min(tabPhotos.length-1,p+1))}} style={{position:"absolute",right:0,top:0,width:"30%",height:"100%",zIndex:2}} />
+                                                </>
+                                              )}
                                               {/* Left/Right arrows */}
                                               {tabPhotos.length > 1 && (
                                                 <>
