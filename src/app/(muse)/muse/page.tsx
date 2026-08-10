@@ -276,6 +276,8 @@ function MusePage() {
   const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const loadStateRef = useRef(false);
+  const sessionAppliedRef = useRef(false);
+  const shuffleSeed = useRef(Math.floor(Math.random() * 100000));
   const [matchSwiping, setMatchSwiping] = useState<{id:string;offset:number} | null>(null);
   const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number;startTime:number;el:HTMLElement|null;axis:"x"|"y"|null}>({startX:0,startY:0,active:false,relY:0,startTime:0,el:null,axis:null});
   const likeLabelRef = useRef<HTMLDivElement>(null);
@@ -506,7 +508,7 @@ function MusePage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.access_token) {
-          applySession(session.access_token, session.refresh_token);
+          if (!sessionAppliedRef.current) { sessionAppliedRef.current = true; applySession(session.access_token, session.refresh_token); }
           // Clean OAuth params from URL
           if (window.location.hash.includes("access_token") || window.location.search.includes("code=")) {
             window.history.replaceState({}, document.title, "/muse");
@@ -519,7 +521,7 @@ function MusePage() {
       if (savedUser) {
         try {
           const parsed = JSON.parse(savedUser);
-          if (parsed?.access_token) applySession(parsed.access_token, parsed.refresh_token);
+          if (parsed?.access_token && !sessionAppliedRef.current) { sessionAppliedRef.current = true; applySession(parsed.access_token, parsed.refresh_token); }
         } catch(e) {}
       } else {
         // No session and no saved user — new visitor, show auth after brief splash
@@ -533,6 +535,8 @@ function MusePage() {
     // Listen for auth state changes (OAuth completion)
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.access_token) {
+        if (sessionAppliedRef.current) return;
+        sessionAppliedRef.current = true;
         applySession(session.access_token, session.refresh_token);
       }
     });
@@ -652,8 +656,9 @@ function MusePage() {
       return da - db;
     });
     // Shuffle: randomize order per session so cards aren't the same every time
+    const seed = shuffleSeed.current;
     for (let i = enriched.length - 1; i > 0; i--) {
-      const j = Math.floor((Date.now() % 10000 / 10000 + Math.random()) * (i + 1)) % (i + 1);
+      const j = (seed * (i + 1) + i * 7) % (i + 1);
       [enriched[i], enriched[j]] = [enriched[j], enriched[i]];
     }
     return enriched;
