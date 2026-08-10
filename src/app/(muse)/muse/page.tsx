@@ -822,7 +822,12 @@ function MusePage() {
     if (target.closest && (target.closest('.card-action-btn') || target.closest('.card-portfolio-btn') || target.closest('.card-photo-thumb') || target.closest('button') || target.closest('a'))) return;
     const card = e.currentTarget as HTMLElement;
     const cardTop = card.getBoundingClientRect().top;
-    dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY: e.clientY - cardTop, startTime: Date.now(), el: card, axis: null };
+    const cardHeight = card.getBoundingClientRect().height;
+    // Only bottom half of card scrolls — top half is swipe zone
+    const relY = e.clientY - cardTop;
+    dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY, startTime: Date.now(), el: card, axis: null, scrollZone: relY > cardHeight * 0.5 };
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+  }, []);
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   }, []);
 
@@ -832,11 +837,12 @@ function MusePage() {
     const dy = e.clientY - dragRef.current.startY;
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
-    if (dragRef.current.axis === null) {
+      if (dragRef.current.axis === null) {
       if (absDx < 5 && absDy < 5) return;
       if (absDy > absDx) {
+        // Bottom half = scroll zone; top half = swipe-only, not scroll
         const scroller = dragRef.current.el?.querySelector('.card-info-scroll') as HTMLElement;
-        if (scroller && scroller.scrollTop > 5) {
+        if (scroller && scroller.scrollTop > 5 && dragRef.current.scrollZone) {
           dragRef.current.active = false;
           return;
         }
@@ -865,7 +871,6 @@ function MusePage() {
       el.style.transform = `translate(${v.x}px, ${v.y}px) rotate(${rot}deg)`;
       if (likeLabelRef.current) likeLabelRef.current.style.opacity = (dragRef.current.axis === "x" && v.x > 25) ? String(v.opacity) : "0";
       if (nopeLabelRef.current) nopeLabelRef.current.style.opacity = (dragRef.current.axis === "x" && v.x < -25) ? String(v.opacity) : "0";
-      if (superLabelRef.current) superLabelRef.current.style.opacity = (dragRef.current.axis === "y" && v.y < -25) ? String(v.opacity) : "0";
     });
   }, []);
 
@@ -876,11 +881,7 @@ function MusePage() {
     const dy = e.clientY - dragRef.current.startY;
     const dt = Date.now() - dragRef.current.startTime;
     const speed = Math.sqrt(dx * dx + dy * dy) / (dt || 1);
-    const cardHeight = (e.currentTarget as HTMLElement).getBoundingClientRect().height;
-    const startedInTopThird = dragRef.current.relY < cardHeight * 0.3;
-    if (dragRef.current.axis === "y" && speed > 0.35 && Math.abs(dy) > Math.abs(dx) && dy < -40 && startedInTopThird) {
-      doSwipe("super");
-    } else if (dragRef.current.axis === "x" && speed > 0.2 && Math.abs(dx) > 50) {
+    if (dragRef.current.axis === "x" && speed > 0.2 && Math.abs(dx) > 50) {
       doSwipe(dx > 0 ? "right" : "left");
     }
     const el = dragRef.current.el;
