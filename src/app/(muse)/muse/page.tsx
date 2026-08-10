@@ -2623,12 +2623,13 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
               <Nav active="portfolio" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
-            <div className={"screen-el"+(screen==="moments"?" active":"")}>
-              <div className="hdr">
-                <div className="logo-link" style={{fontSize:28}}>muse</div>
-                <div style={{width:40}} />
-              </div>
-              <div className="moments-page">
+             <div className={"screen-el"+(screen==="moments"?" active":"")}>
+               <div className="hdr">
+                 <div className="logo-link" style={{fontSize:28}}>muse</div>
+                 <div style={{width:40}} />
+               </div>
+               <div style={{flex:1,overflowY:"auto",padding:"0 0 80px"}}>
+               <div className="moments-page">
                 <div className="moments-hero">
                   <h2>Behind The Scenes</h2>
                   <p>Raw creative process. BTS, WIP, unpolished gold.</p>
@@ -2693,8 +2694,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     </div>
                   </div>
                 ))}
-              </div>
-              <Nav active="moments" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+               </div>
+               </div>
+               <Nav active="moments" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
             <div className={"screen-el"+(screen==="profile"?" active":"")}>
               <div className="hdr" style={{justifyContent:"space-between"}}>

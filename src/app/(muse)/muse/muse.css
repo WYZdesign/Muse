@@ -770,7 +770,7 @@ img{background-color:#1a0a2e}
 .swipe-card img[src^="/models/"]{object-fit:cover;width:100%;height:100%}
 
 /* ═══ MOMENTS PAGE ═══ */
-.moments-page{padding:16px 16px 80px;display:flex;flex-direction:column;gap:16px}
+.moments-page{padding:0 16px 0;display:flex;flex-direction:column;gap:12px}
 .moments-hero{text-align:center;padding:10px 0}
 .moments-hero h2{font-size:22px;font-weight:800;background:linear-gradient(90deg,#FF6B6B,#FFD93D,#6BCB77);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0 0 4px}
 .moments-hero p{font-size:13px;color:var(--text2);margin:0}
