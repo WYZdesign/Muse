@@ -880,4 +880,12 @@ img{background-color:#1a0a2e}
 .animations-paused .star-field,.animations-paused .aurora-strip,.animations-paused .nebula-fog,.animations-paused .sparkle-field,.animations-paused .ember-field,.animations-paused .scene-orb{animation-play-state:paused!important}
 
 /* Respect OS reduced-motion preference */
-@media(prefers-reduced-motion:reduce){.star-field,.aurora-strip,.nebula-fog,.sparkle-field,.ember-field,.scene-orb,.comet-field,.skeleton-pulse,.skeleton-block,[style*=animation]{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important}}}
+@media(prefers-reduced-motion:reduce){.star-field,.aurora-strip,.nebula-fog,.sparkle-field,.ember-field,.scene-orb,.comet-field,.skeleton-pulse,.skeleton-block,[style*=animation]{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important}}
+
+/* GPU acceleration for card swipe transforms */
+.card-stack>div[style*="transform"]{will-change:transform}
+
+/* Screen transitions */
+.screen-el{opacity:0;transform:translateY(8px);transition:opacity .25s ease,transform .25s ease;pointer-events:none}
+.screen-el.active{opacity:1;transform:translateY(0);pointer-events:auto}
+.screen-el.active *{pointer-events:auto}}

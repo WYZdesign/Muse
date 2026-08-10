@@ -538,7 +538,7 @@ function MusePage() {
     });
     return () => { authListener?.subscription?.unsubscribe(); };
   }, []);
-  useEffect(() => { const t = setTimeout(saveState, 300); return () => clearTimeout(t); }, [saveState]);
+  useEffect(() => { const t = setTimeout(saveState, 2000); return () => clearTimeout(t); }, [saveState]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -837,8 +837,6 @@ function MusePage() {
     // Only bottom half of card scrolls — top half is swipe zone
     const relY = e.clientY - cardTop;
     dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY, startTime: Date.now(), el: card, axis: null, scrollZone: relY > cardHeight * 0.5 };
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-  }, []);
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   }, []);
 
