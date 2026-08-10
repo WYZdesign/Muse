@@ -1383,7 +1383,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       </div>
                     )}
                     <div style={{display:"flex",gap:6,marginBottom:12}}>{(["hot","new","top"] as const).map(s=>(<div key={s} className={"conn-tab-sub"+(forumSort===s?" active":"")} onClick={()=>setForumSort(s)}>{s.charAt(0).toUpperCase()+s.slice(1)}</div>))}</div>
-                     {[...(liveForum || FORUM_POSTS)].sort((a,b)=>forumSort==="top"?(b.votes+b.comments.length*2)-(a.votes+a.comments.length*2):forumSort==="new"?(b.id-a.id):(b.votes*2+b.comments.length)-(a.votes*2+a.comments.length)).map(post=>(
+                     {[...(liveForum?.length ? liveForum : FORUM_POSTS)].sort((a,b)=>forumSort==="top"?(b.votes+b.comments.length*2)-(a.votes+a.comments.length*2):forumSort==="new"?(b.id-a.id):(b.votes*2+b.comments.length)-(a.votes*2+a.comments.length)).map(post=>(
                       <div key={post.id} className="conn-card" style={{flexDirection:"column",margin:"0 0 10px",padding:"14px 18px"}}>
                         {post.pinned && <div style={{fontSize:10,color:"var(--gold)",fontWeight:700,marginBottom:4}}>📌 Pinned</div>}
                         <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
@@ -2250,7 +2250,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div className="match-list" style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
                 {matches.length === 0 && (
                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",padding:40}}>
-                    <div style={{fontSize:56,marginBottom:12}}><FiHeart size={64} /></div>
+                    <div className="empty-icon"><FiHeart size={64} /></div>
                     <div style={{fontSize:20,fontWeight:800,color:"var(--text)",whiteSpace:"nowrap"}}>No sparks yet</div>
                     <div style={{fontSize:13,color:"var(--text2)",maxWidth:240,marginTop:6}}>Start swiping to find your creative connections</div>
                   </div>
@@ -2575,7 +2575,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{display:"flex",gap:6}}>{(["hot","new","top"] as const).map(s=>(<div key={s} className={"conn-tab-sub"+(forumSort===s?" active":"")} onClick={()=>setForumSort(s)}>{s.charAt(0).toUpperCase()+s.slice(1)}</div>))}</div>
                       <button className="conn-btn conn-btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setShowNewPost(!showNewPost)}>+ Post</button>
                     </div>
-                     {[...(liveForum || FORUM_POSTS)].filter(p => forumCategory==="all"||p.cat===forumCategory).sort((a,b)=>forumSort==="top"?(b.votes+b.comments.length*2)-(a.votes+a.comments.length*2):forumSort==="new"?(b.id-a.id):(b.votes*2+b.comments.length)-(a.votes*2+a.comments.length)).map(post=>(
+                     {[...(liveForum?.length ? liveForum : FORUM_POSTS)].filter(p => forumCategory==="all"||p.cat===forumCategory).sort((a,b)=>forumSort==="top"?(b.votes+b.comments.length*2)-(a.votes+a.comments.length*2):forumSort==="new"?(b.id-a.id):(b.votes*2+b.comments.length)-(a.votes*2+a.comments.length)).map(post=>(
                       <div key={post.id} className="conn-card" style={{flexDirection:"column",marginBottom:8,padding:14}}>
                         {post.pinned && <div style={{fontSize:10,color:"var(--gold)",fontWeight:700,marginBottom:4}}>📌 Pinned</div>}
                         <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
