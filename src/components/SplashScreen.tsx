@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 
-const DURATION = 3800;
+const DURATION = 3000;
 
 export default function SplashScreen() {
   const [visible, setVisible] = useState(true);
@@ -89,7 +89,7 @@ export default function SplashScreen() {
         ctx.fillRect(0, 0, W, H * 0.6);
       }
 
-      // Aurora borealis — drifting nebula clouds at top
+      // Aurora borealis — fluffy nebula clouds drifting at top
       for (let band = 0; band < 3; band++) {
         ctx.save();
         const baseY = H * 0.03 + band * H * 0.07;
@@ -104,14 +104,18 @@ export default function SplashScreen() {
         cloudGrad.addColorStop(0.7, colors[2]);
         cloudGrad.addColorStop(1, colors[3]);
         ctx.fillStyle = cloudGrad;
-        // Draw cloud-like blobs instead of sine waves
-        for (let x = -30; x <= W + 30; x += 60) {
-          const cx = x + Math.sin(frame * 0.008 + band + x * 0.002) * 40;
-          const cy = baseY + Math.cos(frame * 0.006 + band * 1.5 + x * 0.003) * 15;
-          const rx = 50 + Math.sin(frame * 0.01 + x * 0.005) * 20;
-          const ry = 15 + Math.cos(frame * 0.012 + x * 0.004) * 8;
+        // Fluffy cloud shapes — built from overlapping circles
+        for (let x = -30; x <= W + 30; x += 80) {
+          const cx = x + Math.sin(frame * 0.006 + band + x * 0.002) * 35;
+          const cy = baseY + Math.cos(frame * 0.005 + band * 1.5 + x * 0.003) * 12;
+          const r = 28 + Math.sin(frame * 0.008 + x * 0.004) * 10;
           ctx.beginPath();
-          ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+          // Fluffy cloud: center + 4 overlapping circles
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.arc(cx - r * 0.7, cy - r * 0.15, r * 0.7, 0, Math.PI * 2);
+          ctx.arc(cx + r * 0.7, cy - r * 0.1, r * 0.75, 0, Math.PI * 2);
+          ctx.arc(cx - r * 0.35, cy - r * 0.5, r * 0.6, 0, Math.PI * 2);
+          ctx.arc(cx + r * 0.4, cy - r * 0.45, r * 0.55, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.restore();
