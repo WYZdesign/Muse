@@ -72,7 +72,7 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
     window.addEventListener("resize", resize);
     const COLORS = ["#FFD700","#FF8A80","#D4A5FF","#FFBF00","#FFDAB9","#87CEEB","#98FB98","#FF69B4","#FFB5C2","#E6E6FA"];
     const comets: any[] = [];
-    let animId = 0, spawnTimer = 0;
+    let animId = 0, spawnTimer = 0, t = 0;
 
     function spawnComet() {
       if (comets.filter((c: any) => c.active).length >= 6) return;
@@ -155,6 +155,25 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
           ctx!.fill();
         }
       }
+      // Bottom waves — spread out, taller, matching splash page
+      for (let w = 0; w < 3; w++) {
+        ctx!.save();
+        ctx!.beginPath();
+        const waveY = h * 0.65 + w * 24;
+        ctx!.moveTo(-10, h);
+        for (let x = -10; x <= w + 10; x += 4) {
+          const y = waveY + Math.sin(x * 0.006 + t * 0.03 + w) * 16
+            + Math.cos(x * 0.012 + t * 0.05 + w * 1.5) * 10;
+          ctx!.lineTo(x, y);
+        }
+        ctx!.lineTo(w + 10, h);
+        ctx!.closePath();
+        const waveAlpha = 0.06 - w * 0.015;
+        ctx!.fillStyle = `rgba(244,200,115,${waveAlpha})`;
+        ctx!.fill();
+        ctx!.restore();
+      }
+      t++;
       animId = requestAnimationFrame(animate);
     }
 
