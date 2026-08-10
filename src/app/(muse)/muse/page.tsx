@@ -23,7 +23,7 @@ import PromptBankModal from "./components/PromptBankModal";
 import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
-import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, ICEBREAKERS, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
+import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
 
 function getAccessToken(): string {
   if (typeof window === "undefined") return "";
@@ -3507,7 +3507,7 @@ const MuseMap = ({ filteredProfiles, myGeo, containerRef }: { filteredProfiles: 
       document.head.appendChild(s);
     } else { initMap(); }
     function initMap() {
-      w.mapboxgl.accessToken = "pk.eyJ1Ijoid3l6ZGVzaWduIiwiYSI6ImNtczE0N2xmdjEzZ3gzYXEwc2k2YXRlYnkifQ.BYsuhyxxEykDXBKw4XNW6Q";
+      w.mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
       const center = myGeo ? [myGeo.lng, myGeo.lat] : [-118.2437, 34.0522];
       const map = new w.mapboxgl.Map({ container: containerRef.current!, style: "mapbox://styles/mapbox/dark-v11", center, zoom: 12 });
       mapEl.current = map;

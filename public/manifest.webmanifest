@@ -24,5 +24,22 @@
   ],
   "categories": ["social", "lifestyle", "productivity"],
   "lang": "en",
-  "dir": "ltr"
+  "dir": "ltr",
+  "id": "/muse",
+  "screenshots": [
+    {
+      "src": "/screenshots/discover.png",
+      "sizes": "414x896",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Discover creative professionals"
+    },
+    {
+      "src": "/screenshots/feed.png",
+      "sizes": "414x896",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Feed — share your work"
+    }
+  ]
 }
