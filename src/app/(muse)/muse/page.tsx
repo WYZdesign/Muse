@@ -2548,18 +2548,19 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
                 {netTab === "pros" && PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
-                  <div key={p.id} className="conn-card" style={{flexDirection:"column",marginBottom:14,padding:0,overflow:"hidden",borderRadius:16}}>
-                    <img loading="lazy" src={p.img} alt={p.name} style={{width:"100%",height:"auto",minHeight:160,objectFit:"fill"}} onError={handleImgError} />
-                    <div style={{padding:"14px 16px"}}>
-                      <div className="conn-name" style={{fontSize:15}}>{p.name}</div>
-                      <div className="conn-meta" style={{fontSize:12,marginBottom:6}}>{p.type} · {p.loc} · {p.exp}</div>
+                  <div key={p.id} className="conn-card" style={{position:"relative",flexDirection:"column",marginBottom:14,padding:0,overflow:"hidden",borderRadius:16,minHeight:200}}>
+                    <img loading="lazy" src={p.img} alt={p.name} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
+                    <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,rgba(10,6,18,0.85) 0%,rgba(10,6,18,0.2) 60%,rgba(10,6,18,0.1) 100%)"}} />
+                    <div style={{position:"relative",zIndex:1,padding:"120px 20px 20px",display:"flex",flexDirection:"column",justifyContent:"flex-end",minHeight:200}}>
+                      <div style={{fontSize:20,fontWeight:800,color:"#fff",textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>{p.name}</div>
+                      <div style={{fontSize:14,fontWeight:600,color:"var(--gold)",marginBottom:4,textShadow:"0 1px 4px rgba(0,0,0,0.8)"}}>{p.type} · {p.loc}</div>
+                      <div style={{fontSize:13,color:"rgba(255,255,255,0.7)",marginBottom:6}}>{p.exp}</div>
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
-                        {(p.skills||[]).map(s=><span key={s} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{s}</span>)}
+                        {(p.skills||[]).map(s=><span key={s} style={{fontSize:10,padding:"3px 8px",borderRadius:6,background:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.8)"}}>{s}</span>)}
                       </div>
-                      <div style={{display:"flex",gap:8,flexDirection:"column"}}>
-                         <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:14,fontWeight:700,borderRadius:12}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})});if(!r.ok)throw new Error("failed");showToast("Connection request sent to "+p.name+"!")}catch{showToast("Failed to send connection")}}}>Connect</button>
-                        <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:14,fontWeight:600,borderRadius:12}} onClick={()=>{setViewProfile(p);showToast("Viewing "+p.name+"'s profile")}}>View Profile</button>
-                        <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:14,fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/pro/"+p.id+"?ref="+currentUser.name.replace(/\s+/g,"-").toLowerCase());showToast("Shared "+p.name+"'s profile!")}}>Share Your Profile</button>
+                      <div style={{display:"flex",gap:8}}>
+                        <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:10}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})});if(!r.ok)throw new Error("failed");showToast("Connection request sent to "+p.name+"!")}catch{showToast("Failed to send connection")}}}>Connect</button>
+                        <button style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:600,borderRadius:10,border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.05)",color:"#fff",cursor:"pointer"}} onClick={()=>{setViewProfile(p);showToast("Viewing "+p.name+"'s profile")}}>View Profile</button>
                       </div>
                     </div>
                   </div>
