@@ -845,7 +845,7 @@ function MusePage() {
     const cardHeight = card.getBoundingClientRect().height;
     // Only bottom half of card scrolls — top half is swipe zone
     const relY = e.clientY - cardTop;
-    dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY, startTime: Date.now(), el: card, axis: null, scrollZone: relY > cardHeight * 0.5 };
+    dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY, startTime: Date.now(), el: card, axis: null };
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   }, []);
 
@@ -1976,8 +1976,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                 </div>
                                 {isTop && (
                                   <>
-                                    <div className="card-photo-zone card-photo-zone-left" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}}><span style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",color:"rgba(255,255,255,0.3)",fontSize:24,pointerEvents:"none"}}>‹</span></div>
-                                    <div className="card-photo-zone card-photo-zone-right" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.min(photos.length-1,prev+1))}}><span style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",color:"rgba(255,255,255,0.3)",fontSize:24,pointerEvents:"none"}}>›</span></div>
+                                    <div className="card-photo-zone card-photo-zone-left" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}}><span style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>‹</span></div>
+                                    <div className="card-photo-zone card-photo-zone-right" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.min(photos.length-1,prev+1))}}><span style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>›</span></div>
                                   </>
                                 )}
                                 <div className={"card-hero-info"+(cardScrolled?" hidden":"")}>
@@ -1990,6 +1990,13 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                   <div className="card-hero-bio">{profile.bio?.slice(0,100)}{(profile.bio?.length||0)>100?"...":""}</div>
                   <div className="card-hero-tags">{profile.styles.slice(0,4).map(s=><span key={s} className="card-hero-tag">{s}</span>)}</div>
                 </div>
+                {/* Compact pinned overlay — visible when scrolling past hero */}
+                {cardScrolled && (
+                  <div className="card-hero-pinned" style={{position:"absolute",top:0,left:0,right:0,zIndex:7,padding:"8px 16px",background:"linear-gradient(to bottom,rgba(0,0,0,0.7),transparent)"}}>
+                    <div style={{fontSize:16,fontWeight:800,color:"#fff",textShadow:"0 1px 4px rgba(0,0,0,0.8)"}}>{profile.name}{profile.verified&&<span style={{color:"var(--gold)",marginLeft:4,fontSize:12}}>✓</span>}</div>
+                    <div style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.7)"}}>{profile.type} · {profile.loc?.split(",")[0]}</div>
+                  </div>
+                )}
                 {/* Prompts: Hinge-style Q&A, toggle with arrows */}
                 {(profile as any).prompts?.length > 0 && (
                   <div className="card-prompts" onClick={(e)=>e.stopPropagation()}>
