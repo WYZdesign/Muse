@@ -32,11 +32,15 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
     const orbs = document.querySelectorAll('.scene-orb');
     if (!orbs.length) return;
     let frame: number;
+    let skip = 0;
     const animate = () => {
+      skip = (skip + 1) % 2;
+      if (skip === 0) {
       orbs.forEach((orb, i) => {
         const f = (i + 1) * 10;
         (orb as HTMLElement).style.transform = `translate(${(Math.sin(Date.now()/6000 + i) - 0.5) * f}px,${(Math.cos(Date.now()/7000 + i*2) - 0.5) * f}px)`;
       });
+      }
       frame = requestAnimationFrame(animate);
     };
     animate();

@@ -1459,12 +1459,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Discovery Preferences</div>
                     <div style={{marginBottom:16}}>
                       <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Age Range</div>
-                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                        <span style={{fontSize:12,color:"var(--muted)"}}>{discoveryPrefs.ageMin}</span>
-                        <input type="range" min={18} max={65} value={discoveryPrefs.ageMin} onChange={e=>setDiscoveryPrefs(p=>({...p,ageMin:Number(e.target.value)}))} style={{flex:1,accentColor:"var(--gold)"}} />
-                        <span style={{fontSize:12,color:"var(--muted)"}}>to</span>
-                        <input type="range" min={18} max={65} value={discoveryPrefs.ageMax} onChange={e=>setDiscoveryPrefs(p=>({...p,ageMax:Number(e.target.value)}))} style={{flex:1,accentColor:"var(--gold)"}} />
-                        <span style={{fontSize:12,color:"var(--muted)"}}>{discoveryPrefs.ageMax}</span>
+                      <div style={{display:"flex",gap:6,alignItems:"center",overflow:"hidden"}}>
+                        <span style={{fontSize:11,color:"var(--muted)",flexShrink:0}}>{discoveryPrefs.ageMin}</span>
+                        <input type="range" min={18} max={65} value={discoveryPrefs.ageMin} onChange={e=>setDiscoveryPrefs(p=>({...p,ageMin:Number(e.target.value)}))} style={{flex:1,minWidth:0,accentColor:"var(--gold)"}} />
+                        <span style={{fontSize:11,color:"var(--muted)",flexShrink:0}}>to</span>
+                        <input type="range" min={18} max={65} value={discoveryPrefs.ageMax} onChange={e=>setDiscoveryPrefs(p=>({...p,ageMax:Number(e.target.value)}))} style={{flex:1,minWidth:0,accentColor:"var(--gold)"}} />
+                        <span style={{fontSize:11,color:"var(--muted)",flexShrink:0}}>{discoveryPrefs.ageMax}</span>
                       </div>
                     </div>
                     <div style={{marginBottom:16}}>
@@ -2258,12 +2258,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 </div>
               ) : (
               <>
-              <div className="match-list" style={{flex:1,display:"flex",flexDirection:"column",justifyContent:matches.length===0?"center":"flex-start",padding:matches.length===0?"20vh 10vw":"0"}}>
+              <div className="match-list" style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
                 {matches.length === 0 && (
-                  <div className="empty-state" style={{padding:60,textAlign:"center"}}>
-                    <div className="empty-icon" style={{fontSize:64}}><FiHeart size={72} /></div>
-                    <div className="empty-title" style={{fontSize:22,marginTop:20}}>No sparks yet</div>
-                    <div className="empty-sub" style={{fontSize:14,maxWidth:240,margin:"12px auto 0"}}>Start swiping to find your creative connections</div>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",padding:40}}>
+                    <div style={{fontSize:56,marginBottom:12}}><FiHeart size={64} /></div>
+                    <div style={{fontSize:20,fontWeight:800,color:"var(--text)",whiteSpace:"nowrap"}}>No sparks yet</div>
+                    <div style={{fontSize:13,color:"var(--text2)",maxWidth:240,marginTop:6}}>Start swiping to find your creative connections</div>
                   </div>
                 )}
                 {matches.filter(m => searchQuery === "" || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(m => {
