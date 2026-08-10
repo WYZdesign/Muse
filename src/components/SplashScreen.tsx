@@ -89,36 +89,21 @@ export default function SplashScreen() {
         ctx.fillRect(0, 0, W, H * 0.6);
       }
 
-      // Aurora borealis — fluffy nebula clouds drifting at top
-      for (let band = 0; band < 3; band++) {
-        ctx.save();
-        const baseY = H * 0.03 + band * H * 0.07;
-        const cloudGrad = ctx.createLinearGradient(0, baseY - 30, 0, baseY + 50);
-        const colors = band === 0
-          ? ["rgba(138,43,226,0)", "rgba(72,209,204,0.15)", "rgba(138,43,226,0.08)", "transparent"]
-          : band === 1
-            ? ["rgba(255,105,180,0)", "rgba(0,191,255,0.12)", "rgba(147,112,219,0.06)", "transparent"]
-            : ["rgba(72,61,139,0)", "rgba(138,43,226,0.1)", "rgba(0,255,127,0.06)", "transparent"];
-        cloudGrad.addColorStop(0, colors[0]);
-        cloudGrad.addColorStop(0.3, colors[1]);
-        cloudGrad.addColorStop(0.7, colors[2]);
-        cloudGrad.addColorStop(1, colors[3]);
-        ctx.fillStyle = cloudGrad;
-        // Fluffy cloud shapes — built from overlapping circles
-        for (let x = -30; x <= W + 30; x += 80) {
-          const cx = x + Math.sin(frame * 0.006 + band + x * 0.002) * 35;
-          const cy = baseY + Math.cos(frame * 0.005 + band * 1.5 + x * 0.003) * 12;
-          const r = 28 + Math.sin(frame * 0.008 + x * 0.004) * 10;
-          ctx.beginPath();
-          // Fluffy cloud: center + 4 overlapping circles
-          ctx.arc(cx, cy, r, 0, Math.PI * 2);
-          ctx.arc(cx - r * 0.7, cy - r * 0.15, r * 0.7, 0, Math.PI * 2);
-          ctx.arc(cx + r * 0.7, cy - r * 0.1, r * 0.75, 0, Math.PI * 2);
-          ctx.arc(cx - r * 0.35, cy - r * 0.5, r * 0.6, 0, Math.PI * 2);
-          ctx.arc(cx + r * 0.4, cy - r * 0.45, r * 0.55, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.restore();
+      // Soft haze clouds — wide radial gradients drifting slowly at top
+      const hazeLayers = [
+        { x: W * 0.25, y: H * 0.06, r: W * 0.45, c1: "rgba(72,209,204,0.06)", c2: "transparent", vx: 0.15 },
+        { x: W * 0.65, y: H * 0.04, r: W * 0.4, c1: "rgba(138,43,226,0.05)", c2: "transparent", vx: -0.12 },
+        { x: W * 0.45, y: H * 0.09, r: W * 0.5, c1: "rgba(255,105,180,0.04)", c2: "transparent", vx: 0.1 },
+        { x: W * 0.8, y: H * 0.03, r: W * 0.35, c1: "rgba(0,191,255,0.05)", c2: "transparent", vx: -0.18 },
+        { x: W * 0.1, y: H * 0.07, r: W * 0.38, c1: "rgba(147,112,219,0.04)", c2: "transparent", vx: 0.13 },
+      ];
+      for (const hz of hazeLayers) {
+        const cx = (hz.x + frame * hz.vx + W) % W;
+        const grad = ctx.createRadialGradient(cx, hz.y, 0, cx, hz.y, hz.r);
+        grad.addColorStop(0, hz.c1);
+        grad.addColorStop(1, hz.c2);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H * 0.35);
       }
 
       // Stars (unchanged)
