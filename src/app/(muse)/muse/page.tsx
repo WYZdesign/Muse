@@ -517,6 +517,9 @@ function MusePage() {
           const parsed = JSON.parse(savedUser);
           if (parsed?.access_token) applySession(parsed.access_token, parsed.refresh_token);
         } catch(e) {}
+      } else {
+        // No session and no saved user — new visitor, show auth after brief splash
+        setTimeout(() => { try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {} }, 1500);
       }
     })();
 
