@@ -2045,11 +2045,6 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                             <div
                                               style={{position:"relative",borderRadius:14,overflow:"hidden",aspectRatio:"3/4",background:"rgba(255,255,255,0.03)",cursor:"pointer"}}
                                               onClick={()=>{setLightboxPhotos(tabPhotos);setLightboxIdx(portIdx)}}
-                                              onTouchStart={(e)=>{(e.currentTarget as any)._tx = e.touches[0].clientX}}
-                                              onTouchEnd={(e)=>{
-                                                const dx = (e.changedTouches[0].clientX - ((e.currentTarget as any)._tx || 0));
-                                                if (Math.abs(dx) > 50) setPortfolioPhotoIdx(p => (dx>0?Math.max(0,p-1):Math.min(tabPhotos.length-1,p+1)));
-                                              }}
                                             >
                                               <img loading="lazy" src={tabPhotos[portIdx]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
                                               {/* Left/Right arrows */}

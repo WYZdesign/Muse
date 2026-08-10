@@ -14,16 +14,16 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
   const cometRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
 
-  const starPos = useMemo(() => Array.from({length:130}, (_,i) => ({
+  const starPos = useMemo(() => Array.from({length:80}, (_,i) => ({
     l:`${(i*7.3+3.1)%100}%`, t:`${(i*11.7+5.8)%100}%`, d:`${2+(i*3.7)%6}s`, dl:`${(i*1.9)%10}s`
   })), []);
 
-  const spPos = useMemo(() => Array.from({length:35}, (_,i) => ({
+  const spPos = useMemo(() => Array.from({length:20}, (_,i) => ({
     l:`${(i*13.7+2.1)%100}%`, t:`${(i*9.3+4.5)%100}%`, d:`${5+(i*5.3)%8}s`, dl:`${(i*2.3)%10}s`,
     c:['#FFD700','#FFB5C2','#D4A5FF','#FFDAB9','#98FB98','#87CEEB','#FF6B6B'][i%7]
   })), []);
 
-  const emPos = useMemo(() => Array.from({length:16}, (_,i) => ({
+  const emPos = useMemo(() => Array.from({length:10}, (_,i) => ({
     l:`${10+(i*6.7)%80}%`, d:`${12+(i*3.1)%15}s`, dl:`${(i*4.3)%20}s`,
     w:`${2+(i*0.7)%2}px`, h:`${2+(i*1.1)%2}px`
   })), []);

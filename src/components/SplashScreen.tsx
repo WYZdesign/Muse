@@ -26,8 +26,8 @@ export default function SplashScreen() {
     const W = canvas.width;
     const H = canvas.height;
 
-    // 130 stars — evenly spaced grid across FULL canvas
-    const cols = 13, rows = 10;
+    // 60 stars (was 130) — less heat
+    const cols = 10, rows = 6;
     const stars: { x: number; y: number; r: number; a: number; da: number; hue: number }[] = [];
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
@@ -57,13 +57,12 @@ export default function SplashScreen() {
 
     // Comets — 3 dynamic shooting stars with trails
     const comets = [
-      { x: W*0.2, y: H*0.05, vx: 1.8 + Math.random() * 1.5, vy: 1.2 + Math.random() * 0.8, life: 0, maxLife: 80 + Math.random() * 60 },
-      { x: W*0.7, y: H*0.02, vx: 2.0 + Math.random() * 1.5, vy: 0.8 + Math.random() * 0.6, life: 0, maxLife: 70 + Math.random() * 50, delay: 200 },
-      { x: W*0.5, y: H*0.01, vx: 2.5 + Math.random() * 1.5, vy: 1.5 + Math.random() * 0.7, life: 0, maxLife: 60 + Math.random() * 40, delay: 350 },
+      { x: W*0.2, y: H*0.05, vx: 1.8, vy: 1.2, life: 0, maxLife: 80 },
+      { x: W*0.7, y: H*0.02, vx: 2.0, vy: 0.8, life: 0, maxLife: 70, delay: 250 },
     ];
 
     // 16 embers
-    const embers = Array.from({ length: 16 }, () => ({
+    const embers = Array.from({ length: 8 }, () => ({
       x: Math.random() * W,
       y: H * 0.55 + Math.random() * H * 0.35,
       r: Math.random() * 2.5 + 0.5,
