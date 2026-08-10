@@ -908,4 +908,17 @@ img{background-color:#1a0a2e}
 .card-prompt-arrow{background:none;border:none;color:rgba(255,255,255,0.4);font-size:24px;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0}
 .card-prompt-text{flex:1;text-align:center}
 .card-prompt-q{font-size:12px;font-weight:700;color:var(--gold);margin-bottom:2px}
-.card-prompt-a{font-size:13px;color:var(--text2);line-height:1.4}}
+.card-prompt-a{font-size:13px;color:var(--text2);line-height:1.4}
+
+/* ═══ DESKTOP ═══ */
+@media(min-width:768px){
+  /* Restore scrollbar visibility for mouse/trackpad users */
+  .screen-el,.card-info-scroll,.match-list,.messages,.profile-scroll,.briefs-scroll,.portfolio-scroll,.settings-scroll,.modal-body,.sub-scroll,.conn-scroll,.chips{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent}
+  .screen-el::-webkit-scrollbar,.card-info-scroll::-webkit-scrollbar,.match-list::-webkit-scrollbar,.messages::-webkit-scrollbar,.profile-scroll::-webkit-scrollbar,.briefs-scroll::-webkit-scrollbar,.portfolio-scroll::-webkit-scrollbar,.settings-scroll::-webkit-scrollbar,.modal-body::-webkit-scrollbar,.sub-scroll::-webkit-scrollbar,.conn-scroll::-webkit-scrollbar,.chips::-webkit-scrollbar{width:5px}
+  .screen-el::-webkit-scrollbar-thumb,.card-info-scroll::-webkit-scrollbar-thumb,.match-list::-webkit-scrollbar-thumb,.messages::-webkit-scrollbar-thumb,.profile-scroll::-webkit-scrollbar-thumb,.briefs-scroll::-webkit-scrollbar-thumb,.portfolio-scroll::-webkit-scrollbar-thumb,.settings-scroll::-webkit-scrollbar-thumb,.modal-body::-webkit-scrollbar-thumb,.sub-scroll::-webkit-scrollbar-thumb,.conn-scroll::-webkit-scrollbar-thumb,.chips::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:4px}
+  .screen-el::-webkit-scrollbar-track,.card-info-scroll::-webkit-scrollbar-track,.match-list::-webkit-scrollbar-track,.messages::-webkit-scrollbar-track,.profile-scroll::-webkit-scrollbar-track,.briefs-scroll::-webkit-scrollbar-track,.portfolio-scroll::-webkit-scrollbar-track,.settings-scroll::-webkit-scrollbar-track,.modal-body::-webkit-scrollbar-track,.sub-scroll::-webkit-scrollbar-track,.conn-scroll::-webkit-scrollbar-track,.chips::-webkit-scrollbar-track{background:transparent}
+  /* Larger nav labels */
+  .nav-item{font-size:11px}
+  /* Card details space fix for shorter screens */
+  .swipe-card .card-details{margin-top:min(62vh,520px)}
+}}
