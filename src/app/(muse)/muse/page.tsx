@@ -768,7 +768,7 @@ function MusePage() {
         setTimeout(() => {
           setShowMatchOverlay(newMatch);
           setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 3000);
+          setTimeout(() => setShowConfetti(false), 1500);
           setExpandedMatchId(String(newMatch.id));
           trackEvent("muse_match", { name: p.name, type: p.type });
           setActivityFeed(prev => [{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
@@ -1200,7 +1200,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                      setTimeout(() => {
                        setShowMatchOverlay(newMatch);
                        setShowConfetti(true);
-                       setTimeout(()=>setShowConfetti(false),3000);
+                       setTimeout(()=>setShowConfetti(false),1500);
                        setExpandedMatchId(String(newMatch.id));
                        trackEvent("muse_match",{name:p.name,type:p.type,intent});
                        setActivityFeed(prev=>[{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"! · "+icon+" "+label,time:"Just now",read:false},...prev]);

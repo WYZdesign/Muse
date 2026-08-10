@@ -885,6 +885,19 @@ img{background-color:#1a0a2e}
 /* GPU acceleration for card swipe transforms */
 .card-stack>div[style*="transform"]{will-change:transform}
 
+/* Match action buttons — circles with 90% opacity + subtle bob */
+.card-action-btn{flex:1;height:44px;border-radius:50%;width:44px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;letter-spacing:0.3px;transition:all .25s cubic-bezier(.4,0,.2,1);line-height:1;cursor:pointer;border:none;opacity:0.9;animation:btnBob 3s ease-in-out infinite}
+.card-action-btn:nth-child(1){animation-delay:0s}
+.card-action-btn:nth-child(2){animation-delay:0.3s}
+.card-action-btn:nth-child(3){animation-delay:0.6s}
+.card-action-btn:nth-child(4){animation-delay:0.9s}
+.card-action-btn:nth-child(5){animation-delay:1.2s}
+.card-action-btn:active{transform:scale(0.85)!important}
+.card-action-btn:hover{transform:scale(1.08);opacity:1}
+@keyframes btnBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.card-actions-row{display:flex;gap:10px;justify-content:center;padding:8px 12px 14px}
+@media(min-width:768px){.card-actions-row{gap:12px;padding:12px 16px 16px}.card-action-btn{height:48px;width:48px;font-size:14px}}
+
 /* Screen transitions */
 .screen-el{opacity:0;transform:translateY(8px);transition:opacity .25s ease,transform .25s ease;pointer-events:none}
 .screen-el.active{opacity:1;transform:translateY(0);pointer-events:auto}
