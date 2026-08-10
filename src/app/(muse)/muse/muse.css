@@ -897,4 +897,10 @@ img{background-color:#1a0a2e}
 /* Screen transitions */
 .screen-el{opacity:0;transform:translateY(8px);transition:opacity .25s ease,transform .25s ease;pointer-events:none}
 .screen-el.active{opacity:1;transform:translateY(0);pointer-events:auto}
-.screen-el.active *{pointer-events:auto}}
+.screen-el.active *{pointer-events:auto}
+
+.card-prompts{display:flex;align-items:center;gap:8px;padding:10px 16px;margin:4px 16px 10px;background:rgba(255,255,255,0.03);border-radius:14px;border:1px solid rgba(255,255,255,0.06)}
+.card-prompt-arrow{background:none;border:none;color:rgba(255,255,255,0.4);font-size:24px;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0}
+.card-prompt-text{flex:1;text-align:center}
+.card-prompt-q{font-size:12px;font-weight:700;color:var(--gold);margin-bottom:2px}
+.card-prompt-a{font-size:13px;color:var(--text2);line-height:1.4}}

@@ -111,6 +111,7 @@ function MusePage() {
   const [lightboxIdx, setLightboxIdx] = useState<number>(0);
   const [albumTab, setAlbumTab] = useState(0);
   const [portfolioPhotoIdx, setPortfolioPhotoIdx] = useState(0);
+  const [promptIdx, setPromptIdx] = useState(0);
   const [discoverSearchOpen, setDiscoverSearchOpen] = useState(false);
   const [savedBriefs, setSavedBriefs] = useState<number[]>([]);
   const [appliedBriefs, setAppliedBriefs] = useState<number[]>([]);
@@ -817,6 +818,7 @@ function MusePage() {
     setCurrentIdx(prev);
     setCurrentPhotoIdx(0);
     setPortfolioPhotoIdx(0);
+    setPromptIdx(0);
     setCardScrolled(false);
     flash("#D4A5FF");
   }, [rewindStack, flash]);
@@ -1211,7 +1213,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   setRewindStack(prev=>[...prev,currentIdx]);
                    setCurrentIdx(prev=>prev+1);
                    setCurrentPhotoIdx(0);
-                   setPortfolioPhotoIdx(0);
+    setPortfolioPhotoIdx(0);
+    setPromptIdx(0);
                   setCardScrolled(false);
                 }} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,background:"var(--glass)",cursor:"pointer",width:"100%",textAlign:"left",transition:"all .15s"}}
                 onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.borderColor="var(--gold)"}}
@@ -1985,8 +1988,19 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                   </div>
                                   <div className="card-hero-type">{profile.type} · {profile.loc?.split(",")[0]}</div>
                                   <div className="card-hero-bio">{profile.bio?.slice(0,100)}{(profile.bio?.length||0)>100?"...":""}</div>
-                                  <div className="card-hero-tags">{profile.styles.slice(0,4).map(s=><span key={s} className="card-hero-tag">{s}</span>)}</div>
-                                </div>
+                  <div className="card-hero-tags">{profile.styles.slice(0,4).map(s=><span key={s} className="card-hero-tag">{s}</span>)}</div>
+                </div>
+                {/* Prompts: Hinge-style Q&A, toggle with arrows */}
+                {(profile as any).prompts?.length > 0 && (
+                  <div className="card-prompts" onClick={(e)=>e.stopPropagation()}>
+                    <button className="card-prompt-arrow" onClick={(e)=>{e.stopPropagation();setPromptIdx(prev=>Math.max(0,prev-1))}} style={{opacity:promptIdx>0?1:0.3}}>‹</button>
+                    <div className="card-prompt-text">
+                      <div className="card-prompt-q">{(profile as any).prompts[promptIdx]?.q||""}</div>
+                      <div className="card-prompt-a">{(profile as any).prompts[promptIdx]?.a||""}</div>
+                    </div>
+                    <button className="card-prompt-arrow" onClick={(e)=>{e.stopPropagation();setPromptIdx(prev=>Math.min(((profile as any).prompts.length-1),prev+1))}} style={{opacity:promptIdx<((profile as any).prompts.length-1)?1:0.3}}>›</button>
+                  </div>
+                )}
                                 <div className="card-photo-dots">
                                   {photos.map((_:string,i:number)=><div key={i} className={"card-photo-dot"+(i===currentPhotoIdx?" active":"")} />)}
                                 </div>
@@ -3004,7 +3018,6 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 const isCurrent = tierKey===userTier || (tierKey==="muse_pro" && currentUser.tier==="muse_pro");
                 return (
                 <div key={tier.name} className={"tier-card"+(isCurrent?" current":"")} style={{position:"relative"}}>
-                  {isCurrent && <div className="tier-current-badge" style={{position:"absolute",top:"-8px",right:"12px"}}>Current</div>}
                   <div className="tier-header">
                     <div className="tier-name">{tier.name}</div>
                     <div><span className="tier-price">{tier.price}</span><span className="tier-period">{tier.period}</span></div>
