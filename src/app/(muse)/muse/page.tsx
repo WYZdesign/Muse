@@ -418,9 +418,7 @@ function MusePage() {
 
   useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{safeRemoveItem("muse_boost");}catch{}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd]);
 
-  const applySession = useCallback((accessToken: string, refreshToken?: string) => {
-    // Attach the session to the browser supabase client so realtime channels
-    // authenticate as the user (required once RLS policies are live).
+  const applySession = useCallback((accessToken: string, refreshToken?: string, attempt = 0) => {
     if (accessToken) {
       supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || "" }).catch(() => {});
     }
@@ -443,11 +441,26 @@ function MusePage() {
               setScreen(prev => (prev === "auth") ? "onboard" : prev);
             }
         } else {
+          // Retry once before giving up — network hiccup, not invalid token
+          if (attempt < 1) {
+            setTimeout(() => { try { applySession(accessToken, refreshToken, attempt + 1); } catch {} }, 1000);
+            return;
+          }
           setAuthUser(null);
-          setScreen("auth");
+          setScreen(prev => (prev === "discover" || prev === "matches" || prev === "connections") ? prev : "auth");
         }
+        // Session resolved — splash can hide regardless of outcome
+        try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {        }
+        // Session resolved — splash can hide regardless of outcome
+        try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
       })
-      .catch(() => { /* silently handled */ });
+      .catch(() => {
+        if (attempt < 1) {
+          setTimeout(() => { try { applySession(accessToken, refreshToken, attempt + 1); } catch {} }, 1000);
+        } else {
+          try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
+        }
+      });
   }, []);
 
   useEffect(() => {
@@ -456,6 +469,7 @@ function MusePage() {
     try { sessionStorage.setItem("muse_loaded", "1"); } catch {}
     loadState();
     setHydrated(true);
+    try { window.dispatchEvent(new CustomEvent("muse:hydrated")); } catch {}
 
     // Capture geolocation for distance matching (best-effort, silent on denial).
     getGeolocation().then(g => { if (g) { setMyGeo(g); try { safeSetItem("muse_geo", JSON.stringify(g)); } catch {} } })
@@ -1114,7 +1128,7 @@ function MusePage() {
     </div>
   ) : (
     <div style={{"display":"contents"}}>
-      <a href="#muse-main" className="sr-only" style={{position:"absolute",top:0,left:0,zIndex:99999,padding:"8px 16px",background:"var(--gold)",color:"#0a0612",fontWeight:700,borderRadius:"0 0 8px 0"}} onFocus={(e)=>e.currentTarget.style.position="fixed"} onBlur={(e)=>e.currentTarget.style.position="absolute"}>Skip to main content</a>
+      <a href="#muse-main" className="sr-only" style={{zIndex:99999}} onFocus={(e)=>{e.currentTarget.style.cssText="position:fixed;top:0;left:0;padding:8px 16px;background:var(--gold);color:#0a0612;fontWeight:700;borderRadius:0 0 8px 0;width:auto;height:auto;clip:auto;overflow:visible;margin:0"}} onBlur={(e)=>{e.currentTarget.removeAttribute("style")}}>Skip to main content</a>
       <CardPreloader currentIdx={currentIdx} profiles={filteredProfiles} />
       <Confetti active={showConfetti} />
       {swipeDir && <SwipeParticles active dir={swipeDir} />}

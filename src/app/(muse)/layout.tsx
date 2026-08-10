@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import SplashScreen from "@/components/SplashScreen";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
 export default function MuseLayout({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary>
+      <SplashScreen />
       {children}
     </ErrorBoundary>
   );
