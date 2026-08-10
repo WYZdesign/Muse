@@ -108,6 +108,7 @@ function MusePage() {
   const [lightboxPhotos, setLightboxPhotos] = useState<string[]>([]);
   const [lightboxIdx, setLightboxIdx] = useState<number>(0);
   const [albumTab, setAlbumTab] = useState(0);
+  const [portfolioPhotoIdx, setPortfolioPhotoIdx] = useState(0);
   const [discoverSearchOpen, setDiscoverSearchOpen] = useState(false);
   const [savedBriefs, setSavedBriefs] = useState<number[]>([]);
   const [appliedBriefs, setAppliedBriefs] = useState<number[]>([]);
@@ -789,6 +790,7 @@ function MusePage() {
     setRewindStack(prev => [...prev, currentIdx]);
     setCurrentIdx(prev => prev + 1);
     setCurrentPhotoIdx(0);
+    setPortfolioPhotoIdx(0);
     setCardScrolled(false);
   }, [currentIdx, dailyLikes, superLikes, filteredProfiles, isUnlimited, calcMatch, likedBy, flash, obData, userDefaultIntent]);
 
@@ -807,6 +809,7 @@ function MusePage() {
     setRewindStack(stack => stack.slice(0, -1));
     setCurrentIdx(prev);
     setCurrentPhotoIdx(0);
+    setPortfolioPhotoIdx(0);
     setCardScrolled(false);
     flash("#D4A5FF");
   }, [rewindStack, flash]);
@@ -1214,8 +1217,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   setDailyLikes(prev=>Math.max(0,prev-1));
                   setCurrentUser(prev=>({...prev,stats:{...prev.stats,likes:prev.stats.likes+1}}));
                   setRewindStack(prev=>[...prev,currentIdx]);
-                  setCurrentIdx(prev=>prev+1);
-                  setCurrentPhotoIdx(0);
+                   setCurrentIdx(prev=>prev+1);
+                   setCurrentPhotoIdx(0);
+                   setPortfolioPhotoIdx(0);
                   setCardScrolled(false);
                 }} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,background:"var(--glass)",cursor:"pointer",width:"100%",textAlign:"left",transition:"all .15s"}}
                 onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.borderColor="var(--gold)"}}
@@ -2023,42 +2027,52 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                     </div>
                                     <div className="card-section">
                                       <div className="card-section-title">Portfolio</div>
-                                      {/* Album tabs */}
-                                      {(profile as any).albums?.length > 0 ? (
-                                        <>
-                                          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:8}}>
-                                            {["All",...(profile as any).albums.map((a:any)=>a.title)].map((t:string,i:number)=>(
-                                              <button key={i} onClick={()=>setAlbumTab(i)} style={{flexShrink:0,padding:"4px 12px",borderRadius:99,border:"1px solid",borderColor:albumTab===i?"var(--gold)":"rgba(255,255,255,0.1)",background:albumTab===i?"rgba(255,215,0,0.12)":"transparent",color:albumTab===i?"var(--gold)":"var(--text2)",fontSize:11,fontWeight:600,cursor:"pointer"}}>{t}</button>
-                                            ))}
+                                      {/* Compute photos for current album tab */}
+                                      {(() => {
+                                        const albums = (profile as any).albums as {title:string;photos:string[]}[] | undefined;
+                                        const tabPhotos = (!albums?.length || albumTab === 0) ? allPhotos : (albums[albumTab-1]?.photos || []);
+                                        const portIdx = Math.min(portfolioPhotoIdx, tabPhotos.length - 1);
+                                        if (!tabPhotos.length) return <div style={{fontSize:12,color:"var(--muted)"}}>No portfolio photos</div>;
+                                        return (
+                                          <div>
+                                            {/* Album tabs */}
+                                            {albums?.length ? (
+                                              <div style={{display:"flex",gap:4,overflowX:"auto",paddingBottom:6,marginBottom:8,scrollbarWidth:"none"}}>
+                                                {["All",...albums.map(a=>a.title)].map((t,i)=>(
+                                                  <button key={i} onClick={(e)=>{e.stopPropagation();setAlbumTab(i);setPortfolioPhotoIdx(0)}} style={{flexShrink:0,padding:"5px 12px",borderRadius:99,border:"1px solid",borderColor:albumTab===i?"var(--gold)":"rgba(255,255,255,0.08)",background:albumTab===i?"rgba(255,215,0,0.12)":"transparent",color:albumTab===i?"var(--gold)":"var(--text2)",fontSize:11,fontWeight:600,cursor:"pointer"}}>{t}</button>
+                                                ))}
+                                              </div>
+                                            ) : null}
+                                            {/* Swipeable image */}
+                                            <div
+                                              style={{position:"relative",borderRadius:14,overflow:"hidden",aspectRatio:"3/4",background:"rgba(255,255,255,0.03)",cursor:"pointer"}}
+                                              onClick={()=>{setLightboxPhotos(tabPhotos);setLightboxIdx(portIdx)}}
+                                              onTouchStart={(e)=>{(e.currentTarget as any)._tx = e.touches[0].clientX}}
+                                              onTouchEnd={(e)=>{
+                                                const dx = (e.changedTouches[0].clientX - ((e.currentTarget as any)._tx || 0));
+                                                if (Math.abs(dx) > 50) setPortfolioPhotoIdx(p => (dx>0?Math.max(0,p-1):Math.min(tabPhotos.length-1,p+1)));
+                                              }}
+                                            >
+                                              <img loading="lazy" src={tabPhotos[portIdx]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
+                                              {/* Left/Right arrows */}
+                                              {tabPhotos.length > 1 && (
+                                                <>
+                                                  <button onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.max(0,p-1))}} style={{position:"absolute",left:4,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,cursor:"pointer"}}>‹</button>
+                                                  <button onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.min(tabPhotos.length-1,p+1))}} style={{position:"absolute",right:4,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,cursor:"pointer"}}>›</button>
+                                                </>
+                                              )}
+                                            </div>
+                                            {/* Dot indicators */}
+                                            {tabPhotos.length > 1 && (
+                                              <div style={{display:"flex",justifyContent:"center",gap:5,marginTop:8}}>
+                                                {tabPhotos.map((_:string,i:number)=>(
+                                                  <div key={i} onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(i)}} style={{width:6,height:6,borderRadius:"50%",background:i===portIdx?"var(--gold)":"rgba(255,255,255,0.15)",cursor:"pointer",transition:"all .2s"}} />
+                                                ))}
+                                              </div>
+                                            )}
                                           </div>
-                                          {albumTab === 0 ? (
-                                            <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,scrollSnapType:"x mandatory",WebkitOverflowScrolling:"touch"}}>
-                                              {allPhotos.map((p:string,i:number)=>(
-                                                <div key={i} onClick={()=>{setLightboxPhotos(allPhotos);setLightboxIdx(i)}} style={{flex:"0 0 140px",height:200,borderRadius:12,overflow:"hidden",cursor:"pointer",scrollSnapAlign:"start",border:"1px solid rgba(255,255,255,0.06)"}}>
-                                                  <img loading="lazy" src={p} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
-                                                </div>
-                                              ))}
-                                            </div>
-                                          ) : (
-                                            <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,scrollSnapType:"x mandatory",WebkitOverflowScrolling:"touch"}}>
-                                              {((profile as any).albums[albumTab-1]?.photos||[]).map((p:string,i:number)=>(
-                                                <div key={i} onClick={()=>{setLightboxPhotos((profile as any).albums[albumTab-1].photos);setLightboxIdx(i)}} style={{flex:"0 0 140px",height:200,borderRadius:12,overflow:"hidden",cursor:"pointer",scrollSnapAlign:"start",border:"1px solid rgba(255,255,255,0.06)"}}>
-                                                  <img loading="lazy" src={p} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </>
-                                      ) : (
-                                        /* Fallback: horizontal slider of all photos */
-                                        <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,scrollSnapType:"x mandatory",WebkitOverflowScrolling:"touch"}}>
-                                          {allPhotos.map((p:string,i:number)=>(
-                                            <div key={i} onClick={()=>{setLightboxPhotos(allPhotos);setLightboxIdx(i)}} style={{flex:"0 0 140px",height:200,borderRadius:12,overflow:"hidden",cursor:"pointer",scrollSnapAlign:"start",border:"1px solid rgba(255,255,255,0.06)"}}>
-                                              <img loading="lazy" src={p} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
+                                        );
+                                      })()}
                                     </div>
                                     <div className="match-score" style={{marginBottom:16}}><div className="score-bar"><div className="score-fill" style={{width:profile.score+"%"}} /></div><span className="score-text">{profile.score}%</span></div>
                                     {(profile as any).badges?.length > 0 && <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges.map((b:any,i:number)=><span key={i} className="tag" style={{background:`${b.color}20`,border:`1px solid ${b.color}40`,color:b.color}}>{b.icon} {b.name}</span>)}</div></div>}
