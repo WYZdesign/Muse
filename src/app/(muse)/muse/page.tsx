@@ -854,26 +854,13 @@ function MusePage() {
     const absDy = Math.abs(dy);
       if (dragRef.current.axis === null) {
       if (absDx < 5 && absDy < 5) return;
-      if (absDy > absDx) {
-        // Bottom half = scroll zone; top half = swipe-only, not scroll
-        const scroller = dragRef.current.el?.querySelector('.card-info-scroll') as HTMLElement;
-        if (scroller && scroller.scrollTop > 5 && dragRef.current.scrollZone) {
-          dragRef.current.active = false;
-          return;
-        }
-      }
-      dragRef.current.axis = absDx > absDy ? "x" : "y";
+      dragRef.current.axis = absDx > absDy ? "x" : "scroll";
     }
     dragValuesRef.current = { x: 0, y: 0, opacity: 0 };
     if (dragRef.current.axis === "x") {
       if (absDx > 5) {
         dragValuesRef.current.x = dx;
         dragValuesRef.current.opacity = Math.min(absDx / 100, 1);
-      }
-    } else {
-      if (absDy > 5) {
-        dragValuesRef.current.y = dy;
-        dragValuesRef.current.opacity = Math.min(absDy / 80, 1);
       }
     }
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -2003,11 +1990,11 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                   {photos.map((_:string,i:number)=><div key={i} className={"card-photo-dot"+(i===currentPhotoIdx?" active":"")} />)}
                                 </div>
                                 <div className={"card-actions-row"+(cardScrolled?" hidden":"")}>
-                                  <button className="card-action-btn btn-rewind" onClick={doRewind} aria-label="Rewind">↺ Rewind</button>
-                                  <button className="card-action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕ Pass</button>
-                                  <button className="card-action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like">★ Super</button>
-                                  <button className="card-action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥ Like</button>
-                                   <button className="card-action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎ Note</button>
+                                   <button className="card-action-btn btn-rewind" onClick={doRewind} aria-label="Rewind">↺</button>
+                                   <button className="card-action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
+                                   <button className="card-action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
+                                   <button className="card-action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
+                                    <button className="card-action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
                                  </div>
                                  {showNoteTooltip && (
                                    <div style={{textAlign:"center",padding:"4px 16px 0",animation:"tooltipIn .4s ease"}}>
@@ -2709,8 +2696,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
               <div className="profile-scroll">
                 {isUnlimited && (
-                  <div style={{position:"fixed",top:80,right:20,zIndex:9998,padding:"8px 14px",borderRadius:12,background:"linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,191,0,0.1))",border:"1px solid rgba(255,215,0,0.2)",fontSize:11,fontWeight:700,color:"var(--gold)",boxShadow:"0 4px 16px rgba(255,215,0,0.2)",display:"flex",alignItems:"center",gap:6,cursor:"default"}}>
+                  <div style={{position:"fixed",top:80,right:20,zIndex:9998,padding:"8px 14px",borderRadius:12,background:"linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,191,0,0.1))",border:"1px solid rgba(255,215,0,0.2)",fontSize:11,fontWeight:700,color:"var(--gold)",boxShadow:"0 4px 16px rgba(255,215,0,0.2)",display:"flex",alignItems:"center",gap:6}}>
                     <span>⚡</span>∞ Unlimited Likes & Super Likes
+                    <button onClick={()=>setShowUnlimitedBadge(false)} style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:14,padding:0,lineHeight:1}}>✕</button>
                   </div>
                 )}
                 <div className="completeness">

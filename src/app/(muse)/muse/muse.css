@@ -882,7 +882,7 @@ img{background-color:#1a0a2e}
 .card-stack>div[style*="transform"]{will-change:transform}
 
 /* Match action buttons — circles with 90% opacity + subtle bob */
-.card-action-btn{flex:1;height:44px;border-radius:50%;width:44px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;letter-spacing:0.3px;transition:all .25s cubic-bezier(.4,0,.2,1);line-height:1;cursor:pointer;border:none;opacity:0.9;animation:btnBob 3s ease-in-out infinite}
+.card-action-btn{flex:0 0 auto;width:57px;height:57px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;transition:all .25s cubic-bezier(.4,0,.2,1);line-height:1;cursor:pointer;border:none;opacity:0.9;animation:btnBob 3s ease-in-out infinite}
 .card-action-btn:nth-child(1){animation-delay:0s}
 .card-action-btn:nth-child(2){animation-delay:0.3s}
 .card-action-btn:nth-child(3){animation-delay:0.6s}
