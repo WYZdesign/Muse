@@ -17,6 +17,7 @@ import { safeSetItem, safeGetItem, safeRemoveItem, QUOTA_MSG } from "./lib/safe-
 import { uid } from "./lib/uid";
 import DisclosureModal from "./components/DisclosureModal";
 import AgeVerificationModal from "./components/AgeVerificationModal";
+import { CardPreloader } from "@/components/CardPreloader";
 import SafetyCheckinModal from "./components/SafetyCheckinModal";
 import PromptBankModal from "./components/PromptBankModal";
 import ReferralPanel from "./components/ReferralPanel";
@@ -36,6 +37,8 @@ async function authFetch(url: string, options: RequestInit = {}): Promise<Respon
   if (!headers.has("Content-Type") && options.body) headers.set("Content-Type", "application/json");
   return fetch(url, { ...options, headers });
 }
+
+const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@wyzdesign.com";
 
 const DEMO_MOMENTS: any[] = [
   { id: 9001, author: "Maya Chen", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800", time: "12m ago", text: "Golden hour setup for tonight's shoot. The light is unreal right now 🌅", likes: 87, comments: 12 },
@@ -532,7 +535,7 @@ function MusePage() {
 
   const doLogout = useCallback(async () => {
     try { await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "logout" }) }); } catch(e) {}
-    const keys = ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium"];
+    const keys = ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium","muse_referral_code","muse_open_count","muse_hide_premium"];
     keys.forEach(k => { try { safeRemoveItem(k); } catch {} });
     setAuthUser(null); setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free" })); setScreen("auth"); showToast("Logged out");
   }, [showToast]);
@@ -711,6 +714,7 @@ function MusePage() {
   const [showIntentPicker, setShowIntentPicker] = useState(false);
   const [intentProfile, setIntentProfile] = useState<Profile|null>(null);
   const [userDefaultIntent, setUserDefaultIntent] = useState<string>("");
+  const [showNoteTooltip, setShowNoteTooltip] = useState(() => !safeGetItem("muse_note_seen"));
 
   const isUnlimited = authUser?.email === "torree.marcel@gmail.com";
 
@@ -729,7 +733,7 @@ function MusePage() {
       if (!userDefaultIntent) { setIntentProfile(p); setShowIntentPicker(true); swipeLocked.current = false; return; }
       const intent = dir === "super" ? "super" : userDefaultIntent;
       const matchScore = (p as any).matchScore ?? calcMatch({ styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath }, p);
-        const isMatch = matchScore > 55 || Math.random() > 0.5;
+        const isMatch = matchScore > 55;
       if (isMatch) {
         const newMatch: Match = { ...p, messages: [] };
         setMatches(prev => [...prev, newMatch]);
@@ -783,6 +787,7 @@ function MusePage() {
   }, [rewindStack, flash]);
 
   const doLikeWithNote = useCallback(() => {
+    setShowNoteTooltip(false); safeSetItem("muse_note_seen","1");
     const p = filteredProfiles[currentIdx];
     if (!p || (!isUnlimited && dailyLikes <= 0)) { showToast("No likes left today!"); return; }
     setNoteTargetProfile(p);
@@ -1110,6 +1115,7 @@ function MusePage() {
   ) : (
     <div style={{"display":"contents"}}>
       <a href="#muse-main" className="sr-only" style={{position:"absolute",top:0,left:0,zIndex:99999,padding:"8px 16px",background:"var(--gold)",color:"#0a0612",fontWeight:700,borderRadius:"0 0 8px 0"}} onFocus={(e)=>e.currentTarget.style.position="fixed"} onBlur={(e)=>e.currentTarget.style.position="absolute"}>Skip to main content</a>
+      <CardPreloader currentIdx={currentIdx} profiles={filteredProfiles} />
       <Confetti active={showConfetti} />
       {swipeDir && <SwipeParticles active dir={swipeDir} />}
       <BackgroundScene flash={screenFlash} />
@@ -1483,7 +1489,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       </div>
                     ))}
                     <div style={{marginTop:12}}>
-                      <button className="btn btn-outline" style={{width:"100%",fontSize:13}} onClick={()=>window.open("mailto:support@wyzdesign.com?subject=Muse%20Support%20Request")}>Email Support</button>
+                       <button className="btn btn-outline" style={{width:"100%",fontSize:13}} onClick={()=>window.open("mailto:"+SUPPORT_EMAIL+"?subject=Muse%20Support%20Request")}>Email Support</button>
                     </div>
                     <div style={{marginTop:20}}>
                       <div style={{fontSize:15,fontWeight:700,color:"var(--coral)",marginBottom:12}}>Danger Zone</div>
@@ -1966,9 +1972,17 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                   <button className="card-action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕ Pass</button>
                                   <button className="card-action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like">★ Super</button>
                                   <button className="card-action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥ Like</button>
-                                  <button className="card-action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎ Note</button>
-                                </div>
-                                {isTop && (
+                                   <button className="card-action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎ Note</button>
+                                 </div>
+                                 {showNoteTooltip && (
+                                   <div style={{textAlign:"center",padding:"4px 16px 0",animation:"tooltipIn .4s ease"}}>
+                                     <div style={{display:"inline-block",background:"rgba(255,215,0,0.12)",border:"1px solid rgba(255,215,0,0.25)",borderRadius:10,padding:"8px 14px",fontSize:12,color:"var(--text2)",maxWidth:280}}>
+                                       💬 <b>Send a note</b> with your like to stand out — introduce yourself or mention why you want to connect.
+                                       <button onClick={()=>{setShowNoteTooltip(false);safeSetItem("muse_note_seen","1");}} style={{display:"block",width:"100%",marginTop:6,background:"none",border:"none",color:"var(--gold)",fontSize:11,cursor:"pointer",fontWeight:600}}>Got it</button>
+                                     </div>
+                                   </div>
+                                 )}
+                                 {isTop && (
                                   <>
                                     <div ref={likeLabelRef} className="label label-like">LIKE</div>
                                     <div ref={nopeLabelRef} className="label label-nope">NOPE</div>
@@ -3151,7 +3165,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <p><strong>2. How We Use Your Information</strong>{"\n"}To provide and improve the Muse service, to match you with compatible creatives, to communicate with you about your account and the service, to detect and prevent fraud or abuse, and to comply with legal obligations.</p>
             <p><strong>3. Information Sharing</strong>{"\n"}We do not sell your personal information. We may share information with service providers who assist in operating the platform (hosting, analytics), when required by law, or with your explicit consent. Your profile is visible to other Muse users based on your privacy settings.</p>
             <p><strong>4. Data Storage & Security</strong>{"\n"}Your data is stored on secure servers provided by Supabase. We use industry-standard encryption for data in transit (TLS) and at rest. However, no method of transmission over the Internet is 100% secure.</p>
-            <p><strong>5. Your Rights</strong>{"\n"}You can access, update, or delete your account data at any time through the app settings. You may request a copy of all data we hold about you by contacting support@wyzdesign.com. You may also request deletion of your account and all associated data.</p>
+             <p><strong>5. Your Rights</strong>{"\n"}You can access, update, or delete your account data at any time through the app settings. You may request a copy of all data we hold about you by contacting {SUPPORT_EMAIL}. You may also request deletion of your account and all associated data.</p>
             <p><strong>6. Cookies & Tracking</strong>{"\n"}We use essential cookies for authentication and session management. We do not use third-party advertising cookies. Analytics data is collected anonymously to improve the service.</p>
             <p><strong>7. Children's Privacy</strong>{"\n"}Muse is not intended for users under 18. We do not knowingly collect information from children. If we become aware of such collection, we will delete the information immediately.</p>
             <p><strong>8. Changes to This Policy</strong>{"\n"}We may update this Privacy Policy from time to time. We will notify you of material changes through the app or by email.</p>
@@ -3198,7 +3212,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Are you sure?</div>
             <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>This action is permanent and cannot be undone. All your data, matches, messages, and portfolio will be permanently deleted.</div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-               <button className="btn btn-gold" style={{width:"100%",borderColor:"var(--coral)",background:"linear-gradient(135deg,var(--coral),#ff4444)"}} onClick={async()=>{try{const res=await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"delete-account"})});if(!res.ok) throw new Error("failed");safeRemoveItem("muse_user");safeRemoveItem("muse_v1");setAuthUser(null);setShowDeleteConfirm(false);setScreen("auth");showToast("Account deleted. We're sorry to see you go.");return}catch{showToast("Delete failed — try again")}}}>Yes, Delete My Account</button>
+               <button className="btn btn-gold" style={{width:"100%",borderColor:"var(--coral)",background:"linear-gradient(135deg,var(--coral),#ff4444)"}} onClick={async()=>{try{const res=await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"delete-account"})});if(!res.ok) throw new Error("failed");safeRemoveItem("muse_user");safeRemoveItem("muse_v1");safeRemoveItem("muse_geo");safeRemoveItem("muse_boost");safeRemoveItem("muse_last_reset");safeRemoveItem("muse_local");safeRemoveItem("muse_premium");safeRemoveItem("muse_referral_code");safeRemoveItem("muse_open_count");safeRemoveItem("muse_hide_premium");setAuthUser(null);setShowDeleteConfirm(false);setScreen("auth");showToast("Account deleted. We're sorry to see you go.");return}catch{showToast("Delete failed — try again")}}}>Yes, Delete My Account</button>
               <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setShowDeleteConfirm(false)}>Cancel</button>
             </div>
           </div>

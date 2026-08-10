@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 
 const ALLOWED_SIGNATURES: Record<string, { bytes: number[]; ext: string }> = {
   "89504e47": { bytes: [0x89,0x50,0x4E,0x47], ext: "png" },
@@ -46,6 +47,12 @@ export async function POST(req: NextRequest) {
   try {
     const profileId = await authedProfileId(req);
     if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+    // Rate limit uploads per user (generous: 60/min for normal photo workflow)
+    const ip = clientIp(req);
+    if (!checkRate(ip, "upload", 60)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;

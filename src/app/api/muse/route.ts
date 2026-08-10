@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
 import { checkRate, clientIp } from "@/lib/rate-limit";
+import { enforceRequestSafety, sanitizeText } from "@/lib/request-safety";
 
 function getAuthUser() {
   return supabase.auth.getUser();
@@ -367,6 +368,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const safetyErr = await enforceRequestSafety(req);
+    if (safetyErr) return safetyErr;
+
     const body = await req.json();
     const { type: rawType, action: rawAction, ...rest } = body;
     const actionType = rawType || rawAction;
@@ -401,7 +405,11 @@ export async function POST(req: NextRequest) {
     const sb = getServiceClient();
 
     if (actionType === "profile") {
-      const { error } = await sb.from("muse_profiles").update(rest).eq("id", profile.id);
+      const updates: Record<string, unknown> = { ...rest };
+      if (typeof updates.name === "string") updates.name = sanitizeText(updates.name as string, 80);
+      if (typeof updates.bio === "string") updates.bio = sanitizeText(updates.bio as string, 500);
+      if (typeof updates.styles === "string") updates.styles = sanitizeText(updates.styles as string, 200);
+      const { error } = await sb.from("muse_profiles").update(updates).eq("id", profile.id);
       if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
@@ -429,6 +437,8 @@ export async function POST(req: NextRequest) {
       const { toId, text, image_url, img, client_msg_id } = rest;
       if (!text?.trim()) return NextResponse.json({ error: "text required" }, { status: 400 });
       if (!toId) return NextResponse.json({ error: "toId required" }, { status: 400 });
+      const cleanText = sanitizeText(String(text).trim());
+      if (!cleanText) return NextResponse.json({ error: "text required" }, { status: 400 });
       // Canonical convo key derived server-side so the sender is always a
       // participant — a client-supplied match_id can't target another pair.
       const matchId = [profile.id, String(toId)].sort().join("__");
@@ -436,7 +446,7 @@ export async function POST(req: NextRequest) {
         match_id: matchId,
         sender_id: profile.id,
         receiver_id: String(toId),
-        text: text.trim(),
+        text: cleanText,
         img: img || image_url || "",
         client_msg_id: typeof client_msg_id === "string" ? client_msg_id.slice(0, 120) : undefined,
       });
@@ -452,7 +462,9 @@ export async function POST(req: NextRequest) {
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
       const { text, image_url, image, img } = rest;
       if (!text?.trim()) return NextResponse.json({ error: "text required" }, { status: 400 });
-      const { error } = await sb.from("muse_feed_posts").insert({ author_id: profile.id, text: text.trim(), img: img || image_url || image || "", type: (img || image_url || image) ? "photo" : "text" });
+      const cleanText = sanitizeText(String(text).trim());
+      if (!cleanText) return NextResponse.json({ error: "text required" }, { status: 400 });
+      const { error } = await sb.from("muse_feed_posts").insert({ author_id: profile.id, text: cleanText, img: img || image_url || image || "", type: (img || image_url || image) ? "photo" : "text" });
       if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
@@ -463,7 +475,9 @@ export async function POST(req: NextRequest) {
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
       const { title, desc, budget, cat, tags, paid, rate } = rest;
       if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
-      const { error } = await sb.from("muse_briefs").insert({ author_id: profile.id, title: title.trim(), description: desc || "", budget: budget || "Negotiable", category: cat || "concept", tags: tags || [], paid: paid || false, rate: rate || "" });
+      const cleanTitle = sanitizeText(String(title).trim(), 200);
+      if (!cleanTitle) return NextResponse.json({ error: "title required" }, { status: 400 });
+      const { error } = await sb.from("muse_briefs").insert({ author_id: profile.id, title: cleanTitle, description: sanitizeText(String(desc || ""), 2000), budget: budget || "Negotiable", category: cat || "concept", tags: tags || [], paid: paid || false, rate: rate || "" });
       if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
@@ -483,12 +497,15 @@ export async function POST(req: NextRequest) {
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
       const { title, body: forumBody, text, cat, type: forumType, postId } = rest;
       if (forumType === "reply") {
-        const { error } = await sb.from("muse_forum_replies").insert({ post_id: postId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, text: text || "" });
+        const cleanText = sanitizeText(String(text || ""), 2000);
+        const { error } = await sb.from("muse_forum_replies").insert({ post_id: postId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, text: cleanText });
         if (error) return safeServerError(error, "db op");
         return NextResponse.json({ success: true });
       }
       if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
-      const { error } = await sb.from("muse_forum_posts").insert({ author_id: profile.id, title: title.trim(), body: forumBody || "", category: cat || "General" });
+      const cleanTitle = sanitizeText(String(title).trim(), 200);
+      if (!cleanTitle) return NextResponse.json({ error: "title required" }, { status: 400 });
+      const { error } = await sb.from("muse_forum_posts").insert({ author_id: profile.id, title: cleanTitle, body: sanitizeText(String(forumBody || ""), 5000), category: cat || "General" });
       if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }

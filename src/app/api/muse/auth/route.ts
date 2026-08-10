@@ -3,6 +3,7 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import crypto from "crypto";
 import { safeServerError } from "@/lib/http";
 import { checkRate, clientIp } from "@/lib/rate-limit";
+import { enforceRequestSafety, sanitizeText } from "@/lib/request-safety";
 
 function validatePassword(pw: string): string | null {
   if (pw.length < 6) return "Password must be at least 6 characters";
@@ -20,6 +21,9 @@ function bearerOrBodyToken(req: NextRequest, body: Record<string, unknown>): str
 
 export async function POST(req: NextRequest) {
   try {
+    const safetyErr = await enforceRequestSafety(req);
+    if (safetyErr) return safetyErr;
+
     const body = await req.json();
     const { action } = body;
     const ip = clientIp(req);
@@ -28,7 +32,7 @@ export async function POST(req: NextRequest) {
     if (action === "register" && !checkRate(ip, "register", 5)) {
       return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
     }
-    if (action === "login" && !checkRate(ip, "login", 10)) {
+    if (action === "login" && !checkRate(ip, "login", 20)) {
       return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
     }
 
