@@ -144,6 +144,7 @@ a{color:inherit;text-decoration:none}
 @keyframes boostFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
 @keyframes boostBlink{0%,100%{opacity:1}50%{opacity:0.5}}
 .nav{flex-shrink:0;height:calc(72px + env(safe-area-inset-bottom,0px));background:rgba(10,6,18,0.95);backdrop-filter:blur(40px);border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-around;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));z-index:100;position:sticky;bottom:0;overflow:hidden}
+.screen-el .nav{display:none!important}
 .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;font-weight:600;padding:8px 6px;transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;min-width:0;flex:1;letter-spacing:0.02em}
 .nav-item.active{color:var(--gold);font-weight:700}
 .nav-item.active::after{content:'';position:absolute;top:-1px;width:24px;height:2px;border-radius:2px;background:var(--line-color,#FFD700);animation:navGlow 2s ease-in-out infinite}
@@ -483,7 +484,21 @@ img{background-color:#1a0a2e}
 .phone-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;width:100%;box-sizing:border-box}
 @media(min-width:768px){.phone-wrap{width:100vw}}
 @media(max-width:767px){.phone-wrap{min-height:100dvh}}
-@media(min-width:768px){.phone{margin:24px auto;border-width:3px;box-shadow:0 0 120px rgba(255,215,0,0.3),0 0 240px rgba(255,181,194,0.05)}body{overflow-y:auto;overflow-x:hidden}}
+@media(min-width:768px){
+  .phone{margin:24px auto;border-width:3px;box-shadow:0 0 120px rgba(255,215,0,0.3),0 0 240px rgba(255,181,194,0.05)}
+  body{overflow-y:auto;overflow-x:hidden}
+  /* Scrollbar visibility for all scroll containers */
+  .screen-el,.match-list,.messages,.profile-scroll,.portfolio-scroll,.settings-scroll,.briefs-scroll,.conn-scroll,.sub-scroll,.modal-body,.hamburger-panel,.onboard-content,.card-info,.swipe-card.expanded,.swipe-card .card-info-scroll,.card-info-scroll{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.12) transparent}
+  .screen-el::-webkit-scrollbar,.match-list::-webkit-scrollbar,.messages::-webkit-scrollbar,.profile-scroll::-webkit-scrollbar,.portfolio-scroll::-webkit-scrollbar,.settings-scroll::-webkit-scrollbar,.briefs-scroll::-webkit-scrollbar,.conn-scroll::-webkit-scrollbar,.sub-scroll::-webkit-scrollbar,.modal-body::-webkit-scrollbar,.hamburger-panel::-webkit-scrollbar,.onboard-content::-webkit-scrollbar,.card-info::-webkit-scrollbar,.swipe-card.expanded::-webkit-scrollbar,.swipe-card .card-info-scroll::-webkit-scrollbar,.card-info-scroll::-webkit-scrollbar{width:6px}
+  .screen-el::-webkit-scrollbar-thumb,.match-list::-webkit-scrollbar-thumb,.messages::-webkit-scrollbar-thumb,.profile-scroll::-webkit-scrollbar-thumb,.portfolio-scroll::-webkit-scrollbar-thumb,.settings-scroll::-webkit-scrollbar-thumb,.briefs-scroll::-webkit-scrollbar-thumb,.conn-scroll::-webkit-scrollbar-thumb,.sub-scroll::-webkit-scrollbar-thumb,.modal-body::-webkit-scrollbar-thumb,.hamburger-panel::-webkit-scrollbar-thumb,.onboard-content::-webkit-scrollbar-thumb,.card-info::-webkit-scrollbar-thumb,.swipe-card.expanded::-webkit-scrollbar-thumb,.swipe-card .card-info-scroll::-webkit-scrollbar-thumb,.card-info-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
+  .screen-el::-webkit-scrollbar-track,.match-list::-webkit-scrollbar-track,.messages::-webkit-scrollbar-track,.profile-scroll::-webkit-scrollbar-track,.portfolio-scroll::-webkit-scrollbar-track,.settings-scroll::-webkit-scrollbar-track,.briefs-scroll::-webkit-scrollbar-track,.conn-scroll::-webkit-scrollbar-track,.sub-scroll::-webkit-scrollbar-track,.modal-body::-webkit-scrollbar-track,.hamburger-panel::-webkit-scrollbar-track,.onboard-content::-webkit-scrollbar-track,.card-info::-webkit-scrollbar-track,.swipe-card.expanded::-webkit-scrollbar-track,.swipe-card .card-info-scroll::-webkit-scrollbar-track,.card-info-scroll::-webkit-scrollbar-track{background:transparent}
+  /* Nav font-size increase on desktop */
+  .nav-item{font-size:12px;gap:4px}
+  .nav-icon{font-size:24px}
+  .nav-item.active::after{width:28px;height:3px}
+  /* Card details: dynamic margin for shorter screens */
+  .swipe-card .card-details{margin-top:min(62vh,520px)}
+}
 /* ═══ MODAL ═══ */
 .modal-overlay{position:absolute;inset:0;z-index:400;background:rgba(10,6,18,0.92);backdrop-filter:blur(20px);display:flex;flex-direction:column;animation:modalIn .35s cubic-bezier(.4,0,.2,1)}
 @keyframes modalIn{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}

@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import { FiCompass, FiUsers, FiZap, FiCamera, FiEye, FiMenu } from "react-icons/fi";
 import type { Screen } from "./types";
 
@@ -26,7 +27,7 @@ const tabs: { key: string; label: string; icon: React.ReactNode; hasScreen: bool
   { key:"moments", label:"BTS", icon:<FiEye size={22} />, hasScreen:true },
 ];
 
-export default function Nav({ active, onNavigate, onHamburgerToggle, unreadCount }: { active: string; onNavigate: (s: Screen) => void; onHamburgerToggle?: () => void; unreadCount?: number }) {
+export default React.memo(function Nav({ active, onNavigate, onHamburgerToggle, unreadCount }: { active: string; onNavigate: (s: Screen) => void; onHamburgerToggle?: () => void; unreadCount?: number }) {
   return (
     <div className="nav" role="navigation" aria-label="Main navigation">
       {tabs.map(tab => {
@@ -65,4 +66,4 @@ export default function Nav({ active, onNavigate, onHamburgerToggle, unreadCount
       </button>
     </div>
   );
-}
+});

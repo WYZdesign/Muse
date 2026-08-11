@@ -87,7 +87,7 @@ function MusePage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [swipeDir, setSwipeDir] = useState<"left"|"right"|null>(null);
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
-  if (typeof window !== "undefined") { (window as any).__exp = expandedMatchId; }
+  useEffect(() => { if (typeof window !== "undefined") (window as any).__exp = expandedMatchId; }, [expandedMatchId]);
   const [boostActive, setBoostActive] = useState(false);
   const [boostEnd, setBoostEnd] = useState(0);
   const [discoverSearch, setDiscoverSearch] = useState("");
@@ -364,13 +364,14 @@ function MusePage() {
   const STORAGE_KEY = "muse_v1";
   const saveState = useCallback(() => {
     try {
+      const MAX_ITEMS = 50;
       const data = {
-        currentUser, obData, obStep, matches, dailyLikes, superLikes,
-        savedBriefs, appliedBriefs, userBriefs, blockedUsers, notifPrefs,
-        obConnectedSocials, showNsfw, rsvpdEvents, forumPosts, feedPosts,
-        testLevels, obSelects, obProfilePic, obPortfolioItems, likedBy,
-        profileViews, profileViewers, stories, theme, activityFeed,
-        discoveryPrefs, chatImages, screen, filterStyles, filterScore,
+        currentUser, obData, obStep, matches: matches.slice(-MAX_ITEMS), dailyLikes, superLikes,
+        savedBriefs, appliedBriefs, userBriefs: userBriefs.slice(-MAX_ITEMS), blockedUsers, notifPrefs,
+        obConnectedSocials, showNsfw, rsvpdEvents, forumPosts: forumPosts.slice(-MAX_ITEMS), feedPosts: feedPosts.slice(-MAX_ITEMS),
+        testLevels, obSelects, obProfilePic, obPortfolioItems, likedBy: likedBy.slice(-MAX_ITEMS),
+        profileViews, profileViewers: profileViewers.slice(-20), stories: stories.slice(-20), theme, activityFeed: activityFeed.slice(-MAX_ITEMS),
+        discoveryPrefs, chatImages: Object.fromEntries(Object.entries(chatImages).slice(-20).map(([k,v]) => [k, v.slice(-20)])), screen, filterStyles, filterScore,
         searchQuery, connTab, museCat, connFilter, authUser, chatTarget
       };
       safeSetItem(STORAGE_KEY, JSON.stringify(data));
@@ -554,6 +555,18 @@ function MusePage() {
 
   const showToast = useCallback((msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); }, []);
 
+  const optimisticAction = useCallback(async (action: () => Promise<any>, rollback: () => void, successMsg?: string) => {
+    try {
+      const result = await action();
+      if (successMsg) showToast(successMsg);
+      return result;
+    } catch {
+      rollback();
+      showToast("Action failed — please try again");
+      return null;
+    }
+  }, [showToast]);
+
   // Surface storage quota failures to the user instead of failing silently.
   useEffect(() => {
     const onQuota = () => showToast(QUOTA_MSG);
@@ -681,6 +694,11 @@ function MusePage() {
 
   const flash = useCallback((color: string) => { setScreenFlash(color); setTimeout(() => setScreenFlash(null), 300); }, []);
   const showScreen = useCallback((s: typeof screen) => { setScreen(s); trackEvent("screen_view", { screen: s }); }, []);
+
+  const navActive = useMemo(() => {
+    const m: Record<string, string> = { discover: "discover", connections: "connections", matches: "matches", chat: "matches", briefs: "briefs", moments: "moments", profile: "profile", settings: "profile", subscription: "profile", portfolio: "profile" };
+    return m[screen as string] || "discover";
+  }, [screen]);
 
 
   const openHamburger = useCallback(() => { setHamburgerScreen(""); setShowHamburger(true); }, []);
@@ -3600,6 +3618,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
       {/* ══════ PAYMENT HISTORY ══════ */}
       {showPaymentHistory && (
         <PaymentHistory userId={authUser?.id || ""} onClose={() => setShowPaymentHistory(false)} />
+      )}
+      {screen !== "auth" && screen !== "onboard" && (
+        <Nav active={navActive} onNavigate={showScreen} onHamburgerToggle={openHamburger} />
       )}
       {boostActive && (
         <div style={{position:"fixed",top:80,right:20,zIndex:9999,padding:"8px 14px",borderRadius:99,background:"linear-gradient(135deg,var(--gold),var(--amber))",fontSize:11,fontWeight:700,color:"#0a0612",boxShadow:"0 4px 16px rgba(255,215,0,0.4)",display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setBoostActive(false);setBoostEnd(0);try{safeRemoveItem("muse_boost");}catch{}showToast("Boost off")}}>
