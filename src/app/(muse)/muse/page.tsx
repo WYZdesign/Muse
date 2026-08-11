@@ -2,7 +2,7 @@
 
 import "./muse.css";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import ErrorBoundary from "./ErrorBoundary";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
 import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles } from "@/app/muse-realtime";
@@ -112,7 +112,6 @@ function MusePage() {
   const [galleryView, setGalleryView] = useState<{ profileId: string | number; name: string; photos: string[]; idx: number } | null>(null);
   const [lightboxPhotos, setLightboxPhotos] = useState<string[]>([]);
   const [lightboxIdx, setLightboxIdx] = useState<number>(0);
-  const [albumTab, setAlbumTab] = useState(0);
   const [portfolioPhotoIdx, setPortfolioPhotoIdx] = useState(0);
   const [promptIdx, setPromptIdx] = useState(0);
   const [discoverSearchOpen, setDiscoverSearchOpen] = useState(false);
@@ -304,6 +303,24 @@ function MusePage() {
     el.style.fontSize = "2em";
     el.alt = el.alt?.charAt(0) || "👤";
     el.removeAttribute("src");
+  }, []);
+
+  useEffect(() => {
+    const onImgError = (e: Event) => {
+      const img = e.target as HTMLImageElement;
+      if (img.tagName !== "IMG" || img.dataset.fallback) return;
+      img.dataset.fallback = "1";
+      img.style.background = "linear-gradient(135deg, #FF6B9D 0%, #C86BFF 50%, #FFB366 100%)";
+      img.style.display = "flex";
+      img.style.alignItems = "center";
+      img.style.justifyContent = "center";
+      img.style.color = "#fff";
+      img.style.fontSize = "2em";
+      img.alt = img.alt?.charAt(0) || "👤";
+      img.removeAttribute("src");
+    };
+    document.addEventListener("error", onImgError, true);
+    return () => document.removeEventListener("error", onImgError, true);
   }, []);
 
   // Attaches the verified session token (from localStorage) to /api/muse
@@ -588,18 +605,6 @@ function MusePage() {
   }, [theme]);
 
   const showToast = useCallback((msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); }, []);
-
-  const optimisticAction = useCallback(async (action: () => Promise<any>, rollback: () => void, successMsg?: string) => {
-    try {
-      const result = await action();
-      if (successMsg) showToast(successMsg);
-      return result;
-    } catch {
-      rollback();
-      showToast("Action failed — please try again");
-      return null;
-    }
-  }, [showToast]);
 
   // Surface storage quota failures to the user instead of failing silently.
   useEffect(() => {
