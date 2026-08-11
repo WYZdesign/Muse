@@ -13,6 +13,7 @@ import { PORTRAIT_IMG } from "./components/photoOrientation";
 import MyAlbumsManager from "./components/MyAlbumsManager";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
+import ScreenSkeleton from "@/components/ScreenSkeleton";
 import { safeSetItem, safeGetItem, safeRemoveItem, QUOTA_MSG } from "./lib/safe-storage";
 import { uid } from "./lib/uid";
 import DisclosureModal from "./components/DisclosureModal";
@@ -95,6 +96,7 @@ function MusePage() {
   const [boostEnd, setBoostEnd] = useState(0);
   const [discoverSearch, setDiscoverSearch] = useState("");
   const [mapView, setMapView] = useState(false);
+  const [bootstrapped, setBootstrapped] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [dailyLikes, setDailyLikes] = useState(999);
   const [superLikes, setSuperLikes] = useState(999);
@@ -378,6 +380,7 @@ function MusePage() {
       }
       if (events?.events?.length) setLiveEvents(events.events);
     } catch {}
+    setBootstrapped(true);
   }, [apiFetch]);
 
   useEffect(() => {
@@ -2228,7 +2231,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     {showEmojiPicker && <div style={{display:"flex",gap:6,flexWrap:"wrap",padding:"8px 0"}}>{["😍","🔥","❤️","😂","😢","😡","👍","🎉","✨","💯","👏","🙌"].map(e=><span key={e} style={{fontSize:22,cursor:"pointer",transition:"transform .15s"}} onClick={()=>{setFeedText(prev=>prev+" "+e);setShowEmojiPicker(false)}} onMouseEnter={e=>e.currentTarget.style.transform="scale(1.3)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>{e}</span>)}</div>}
                   </div>
                 </div>
-                {feedPosts.length === 0 && feedPostsStatic.length === 0 && (
+                {!bootstrapped ? (
+                  <ScreenSkeleton rows={4} image />
+                ) : feedPosts.length === 0 && feedPostsStatic.length === 0 ? (
                   <div className="empty-state" style={{paddingTop:60}}>
                     <div className="empty-icon" style={{fontSize:48}}>📝</div>
                     <div className="empty-title">No posts yet</div>
