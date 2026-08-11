@@ -76,8 +76,11 @@ function MusePage() {
    const [portfolioAccess, setPortfolioAccess] = useState<{[key: string]: "public" | "private" | "invite"}>({});
    const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
    const [showPortfolioModal, setShowPortfolioModal] = useState(false);
-   const [portfolioStats, setPortfolioStats] = useState<any>({});
-   const [currentIdx, setCurrentIdx] = useState(0);
+  const [portfolioStats, setPortfolioStats] = useState<any>({});
+  const [cardAlbums, setCardAlbums] = useState<{id:string;title:string;cover_url:string;access_level:string;photo_count:number}[]>([]);
+  const [cardAlbumIdx, setCardAlbumIdx] = useState(0);
+  const [cardAlbumPhotos, setCardAlbumPhotos] = useState<string[]>([]);
+  const [currentIdx, setCurrentIdx] = useState(0);
    const [matches, setMatches] = useState<Match[]>([]);
    const [chatTarget, setChatTarget] = useState<Match | null>(null);
    const [chatInput, setChatInput] = useState("");
@@ -359,6 +362,37 @@ function MusePage() {
       if (events?.events?.length) setLiveEvents(events.events);
     } catch {}
   }, [apiFetch]);
+
+  useEffect(() => {
+    const profile = filteredProfiles[currentIdx];
+    if (!profile?.id) { setCardAlbums([]); setCardAlbumPhotos([]); return; }
+    let cancelled = false;
+    apiFetch(`/api/muse?type=albums&profile_id=${encodeURIComponent(profile.id)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled) return;
+        const albums = d.albums || [];
+        setCardAlbums(albums);
+        if (albums.length > 0) setCardAlbumIdx(0);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [currentIdx, filteredProfiles, apiFetch]);
+
+  useEffect(() => {
+    if (cardAlbumIdx === 0) { setCardAlbumPhotos([]); return; }
+    const album = cardAlbums[cardAlbumIdx - 1];
+    if (!album?.id) { setCardAlbumPhotos([]); return; }
+    let cancelled = false;
+    apiFetch(`/api/muse?type=album-photos&album_id=${encodeURIComponent(album.id)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled) return;
+        setCardAlbumPhotos((d.photos || []).map((p: any) => p.img_url));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [cardAlbumIdx, cardAlbums, apiFetch]);
 
   // ─── PERSISTENCE ───
   const STORAGE_KEY = "muse_v1";
@@ -2059,47 +2093,42 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                     </div>
                                     <div className="card-section">
                                       <div className="card-section-title">Portfolio</div>
-                                      {/* Compute photos for current album tab */}
                                       {(() => {
-                                        const albums = (profile as any).albums as {title:string;photos:string[]}[] | undefined;
-                                        const tabPhotos = (!albums?.length || albumTab === 0) ? allPhotos : (albums[albumTab-1]?.photos || []);
-                                        const portIdx = Math.min(portfolioPhotoIdx, tabPhotos.length - 1);
-                                        if (!tabPhotos.length) return <div style={{fontSize:12,color:"var(--muted)"}}>No portfolio photos</div>;
+                                        const albumPhotos = cardAlbumIdx > 0 ? cardAlbumPhotos : allPhotos;
+                                        const portIdx = Math.min(portfolioPhotoIdx, albumPhotos.length - 1);
+                                        if (!albumPhotos.length) return <div style={{fontSize:12,color:"var(--muted)"}}>No portfolio photos</div>;
                                         return (
                                           <div>
-                                            {/* Album tabs */}
-                                            {albums?.length ? (
+                                            {cardAlbums.length > 0 && (
                                               <div style={{display:"flex",gap:4,overflowX:"auto",paddingBottom:6,marginBottom:8,scrollbarWidth:"none"}}>
-                                                {["All",...albums.map(a=>a.title)].map((t,i)=>(
-                                                  <button key={i} onClick={(e)=>{e.stopPropagation();setAlbumTab(i);setPortfolioPhotoIdx(0)}} style={{flexShrink:0,padding:"5px 12px",borderRadius:99,border:"1px solid",borderColor:albumTab===i?"var(--gold)":"rgba(255,255,255,0.08)",background:albumTab===i?"rgba(255,215,0,0.12)":"transparent",color:albumTab===i?"var(--gold)":"var(--text2)",fontSize:11,fontWeight:600,cursor:"pointer"}}>{t}</button>
-                                                ))}
+                                                <button onClick={(e)=>{e.stopPropagation();setCardAlbumIdx(0);setPortfolioPhotoIdx(0)}} style={{flexShrink:0,padding:"5px 12px",borderRadius:99,border:"1px solid",borderColor:cardAlbumIdx===0?"var(--gold)":"rgba(255,255,255,0.08)",background:cardAlbumIdx===0?"rgba(255,215,0,0.12)":"transparent",color:cardAlbumIdx===0?"var(--gold)":"var(--text2)",fontSize:11,fontWeight:600,cursor:"pointer"}}>All</button>
+                                                {cardAlbums.map((a,i)=><button key={a.id} onClick={(e)=>{e.stopPropagation();setCardAlbumIdx(i+1);setPortfolioPhotoIdx(0)}} style={{flexShrink:0,padding:"5px 12px",borderRadius:99,border:"1px solid",borderColor:cardAlbumIdx===i+1?"var(--gold)":"rgba(255,255,255,0.08)",background:cardAlbumIdx===i+1?"rgba(255,215,0,0.12)":"transparent",color:cardAlbumIdx===i+1?"var(--gold)":"var(--text2)",fontSize:11,fontWeight:600,cursor:"pointer"}}>{a.title}</button>)}
                                               </div>
-                                            ) : null}
-                                            {/* Swipeable image */}
+                                            )}
                                             <div
                                               style={{position:"relative",borderRadius:14,overflow:"hidden",aspectRatio:"3/4",background:"rgba(255,255,255,0.03)",cursor:"pointer"}}
-                                              onClick={()=>{setLightboxPhotos(tabPhotos);setLightboxIdx(portIdx)}}
+                                              onClick={()=>{setLightboxPhotos(albumPhotos);setLightboxIdx(portIdx)}}
                                             >
-                                              <img loading="lazy" src={tabPhotos[portIdx]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
+                                              <img loading="lazy" src={albumPhotos[portIdx]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
                                               {/* Tap zones */}
-                                              {tabPhotos.length > 1 && (
+                                              {albumPhotos.length > 1 && (
                                                 <>
                                                   <div onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.max(0,p-1))}} style={{position:"absolute",left:0,top:0,width:"30%",height:"100%",zIndex:2}} />
-                                                  <div onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.min(tabPhotos.length-1,p+1))}} style={{position:"absolute",right:0,top:0,width:"30%",height:"100%",zIndex:2}} />
+                                                  <div onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.min(albumPhotos.length-1,p+1))}} style={{position:"absolute",right:0,top:0,width:"30%",height:"100%",zIndex:2}} />
                                                 </>
                                               )}
                                               {/* Left/Right arrows */}
-                                              {tabPhotos.length > 1 && (
+                                              {albumPhotos.length > 1 && (
                                                 <>
                                                   <button onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.max(0,p-1))}} style={{position:"absolute",left:4,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,cursor:"pointer"}}>‹</button>
-                                                  <button onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.min(tabPhotos.length-1,p+1))}} style={{position:"absolute",right:4,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,cursor:"pointer"}}>›</button>
+                                                  <button onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.min(albumPhotos.length-1,p+1))}} style={{position:"absolute",right:4,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,cursor:"pointer"}}>›</button>
                                                 </>
                                               )}
                                             </div>
                                             {/* Dot indicators */}
-                                            {tabPhotos.length > 1 && (
+                                            {albumPhotos.length > 1 && (
                                               <div style={{display:"flex",justifyContent:"center",gap:5,marginTop:8}}>
-                                                {tabPhotos.map((_:string,i:number)=>(
+                                                {albumPhotos.map((_:string,i:number)=>(
                                                   <div key={i} onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(i)}} style={{width:6,height:6,borderRadius:"50%",background:i===portIdx?"var(--gold)":"rgba(255,255,255,0.15)",cursor:"pointer",transition:"all .2s"}} />
                                                 ))}
                                               </div>
