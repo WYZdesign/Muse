@@ -205,6 +205,7 @@ function MusePage() {
   const [obPortfolioItems, setObPortfolioItems] = useState<{img:string;title:string}[]>([]);
   const [likedBy, setLikedBy] = useState<Profile[]>([]);
   const [showLikesYou, setShowLikesYou] = useState(false);
+  const [matchesView, setMatchesView] = useState<"list"|"grid">("list");
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
   const [stories, setStories] = useState<any[]>([
@@ -2244,6 +2245,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       </label>
                       <button style={{width:36,height:36,borderRadius:10,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,color:"var(--text2)",flexShrink:0}} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
                       {feedMedia.slice(0,2).map((url,i)=><div key={i} style={{position:"relative",width:36,height:36}}>{url.endsWith(".mp4")||url.includes("video")?<video src={url} style={{width:36,height:36,borderRadius:8,objectFit:"cover"}} />:<img loading="lazy" src={url} alt="" style={{width:36,height:36,borderRadius:8,objectFit:"cover"}} />}<button onClick={()=>setFeedMedia(prev=>prev.filter((_,j)=>j!==i))} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"var(--coral)",border:"none",color:"#fff",fontSize:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><FiX size={10} /></button></div>)}
+                    </div>
+                    <div style={{display:"flex",gap:8,width:"100%"}}>
                       <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();const hasVideo=feedMedia.some(u=>u.endsWith(".mp4")||u.includes("video"));const type=feedMedia.length?hasVideo?"video":"photo":"text";setFeedText("");setFeedMedia([]);setFeedPosts(prev=>[{id:uid(),author:currentUser.name,avatar:currentUser.avatar,type,text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedMedia[0]||undefined,media:feedMedia,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,media:feedMedia,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
                       <button className="btn btn-outline" style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();setFeedText("");setFeedMedia([]);const moment={id:uid(),author:currentUser.name,avatar:currentUser.avatar,type:feedMedia.length?"photo":"text",text:txt,img:feedMedia[0]||undefined,media:[...feedMedia],time:"Just now"};setStories(prev=>[moment,...prev]);showToast("Moment posted!");}}}>⚡ Moment</button>
                     </div>
@@ -2314,6 +2317,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 <div className="logo-link" style={{fontSize:28}}>muse</div>
 <div style={{display:"flex",gap:10}}>
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
+{!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{width:34,height:34,fontSize:16}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")} title={matchesView==="list"?"Grid view":"List view"}>{matchesView==="list"?"▦":"☰"}</button>)}
 {!searchOpen ? (<button className="hdr-btn" style={{width:34,height:34}} onClick={()=>setSearchOpen(true)}><FiSearch size={16} /></button>) : (
                     <div style={{display:"flex",alignItems:"center",gap:6,animation:"fadeIn .2s ease"}}>
                       <input className="inp" placeholder="Search..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} autoFocus style={{margin:0,padding:"6px 10px",fontSize:12,width:120,borderRadius:99}} />
@@ -2325,6 +2329,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               {!showLikesYou && searchOpen && <div className="overlay-bg" onClick={()=>{setSearchOpen(false);setSearchQuery("")}} style={{position:"absolute",inset:0,zIndex:5}} />}
               {showLikesYou ? (
                 <div style={{flex:1,overflowY:"auto",padding:"0 20px 80px"}}>
+                  <button className="chat-back" onClick={()=>setShowLikesYou(false)} style={{marginLeft:-8,marginBottom:8}}><FiArrowLeft size={20} /></button>
                   <div style={{fontSize:18,fontWeight:800,marginBottom:4}}>Likes You</div>
                   <div style={{fontSize:13,color:"var(--text2)",marginBottom:16}}>People who swiped right on you</div>
                   {likedBy.length === 0 ? (
@@ -2351,7 +2356,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 </div>
               ) : (
               <>
-              <div className="match-list" style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <div className="match-list" style={matchesView==="grid" ? {flex:1,display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12,alignContent:"flex-start",overflowY:"auto",padding:"12px 16px 80px"} : {flex:1,display:"flex",flexDirection:"column",alignItems:"stretch",justifyContent:"flex-start",overflowY:"auto",padding:"0 0 80px"}}>
                 {matches.length === 0 && (
                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",padding:40}}>
                     <div className="empty-icon"><FiHeart size={64} /></div>
@@ -2571,9 +2576,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <div className="conn-meta" style={{fontSize:12,marginBottom:6}}>{ev.date} · {ev.loc}</div>
                         <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.5,marginBottom:10}}>{ev.desc}</div>
                       </div>
-                      <div style={{display:"flex",gap:8,padding:"0 16px 16px"}}>
-                        <button className={"btn "+(rsvpdEvents.includes(ev.id)?"btn-outline":"btn-gold")} style={{flex:1,padding:"14px 0",fontSize:14,fontWeight:700,borderRadius:12}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter((x:number)=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
-                        <button className="btn btn-outline" style={{flex:1,padding:"14px 0",fontSize:14,fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/"+ev.id);showToast("Event link copied!")}}>Share</button>
+                      <div style={{display:"flex",flexDirection:"column",gap:8,padding:"0 16px 16px",width:"100%"}}>
+                        <button className={"btn "+(rsvpdEvents.includes(ev.id)?"btn-outline":"btn-gold")} style={{width:"100%",padding:"14px 0",fontSize:14,fontWeight:700,borderRadius:12}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter((x:number)=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
+                        <button className="btn btn-outline" style={{width:"100%",padding:"14px 0",fontSize:14,fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/"+ev.id);showToast("Event link copied!")}}>Share</button>
                       </div>
                     </div>
                   ))}
@@ -2659,9 +2664,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
                         {(p.skills||[]).map(s=><span key={s} style={{fontSize:10,padding:"3px 8px",borderRadius:6,background:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.8)"}}>{s}</span>)}
                       </div>
-                      <div style={{display:"flex",gap:8}}>
-                        <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:10}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})});if(!r.ok)throw new Error("failed");showToast("Connection request sent to "+p.name+"!")}catch{showToast("Failed to send connection")}}}>Connect</button>
-                        <button style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:600,borderRadius:10,border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.05)",color:"#fff",cursor:"pointer"}} onClick={()=>{setViewProfile(p);showToast("Viewing "+p.name+"'s profile")}}>View Profile</button>
+                      <div style={{display:"flex",flexDirection:"column",gap:8,width:"100%"}}>
+                        <button className="btn btn-gold" style={{width:"100%",padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:10}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})});if(!r.ok)throw new Error("failed");showToast("Connection request sent to "+p.name+"!")}catch{showToast("Failed to send connection")}}}>Connect</button>
+                        <button style={{width:"100%",padding:"10px 0",fontSize:13,fontWeight:600,borderRadius:10,border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.05)",color:"#fff",cursor:"pointer"}} onClick={()=>{setViewProfile(p);showToast("Viewing "+p.name+"'s profile")}}>View Profile</button>
                       </div>
                     </div>
                   </div>

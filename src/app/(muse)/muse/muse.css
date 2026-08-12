@@ -846,7 +846,7 @@ img{background-color:#1a0a2e}
 .album-thumb-remove{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.7);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 
 /* ═══ SWIPE CARD HERO (v2 rework) ═══ */
-.card-hero-info{position:absolute;bottom:80px;left:0;right:0;padding:40px 20px 20px;background:linear-gradient(to top,rgba(10,6,18,0.98) 0%,rgba(10,6,18,0.55) 45%,transparent 100%);z-index:4;transition:opacity .3s ease,transform .3s ease}
+.card-hero-info{position:absolute;bottom:80px;left:0;right:0;padding:40px 20px 20px;background:linear-gradient(to top,rgba(10,6,18,0.98) 0%,rgba(10,6,18,0.55) 45%,transparent 100%);z-index:4;transition:opacity .3s ease,transform .3s ease;pointer-events:none}
 .card-hero-info.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
 .card-hero-name{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:800;color:#fff;font-family:"Playfair Display",serif;font-style:italic;text-shadow:0 2px 8px rgba(0,0,0,0.7),0 4px 20px rgba(0,0,0,0.5),0 0 40px rgba(10,6,18,0.8)}
 .card-verified-mark{font-size:18px;color:var(--gold)}
