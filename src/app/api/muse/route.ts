@@ -899,7 +899,7 @@ export async function POST(req: NextRequest) {
     if (actionType === "admin-resolve-appeal") {
       // Admin only — resolve an appeal
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (!admins.includes((profile as any).email?.toLowerCase() || "")) {
+      if (!user.email || !admins.includes(user.email.toLowerCase())) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       const { strikeId, resolution } = rest; // resolution: 'upheld' | 'overturned'
@@ -1127,7 +1127,7 @@ export async function POST(req: NextRequest) {
     if (actionType === "admin-brain") {
       if (!checkRate(ip, "admin-brain", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (!admins.includes((profile as any).email?.toLowerCase() || "")) {
+      if (!user.email || !admins.includes(user.email.toLowerCase())) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       const { query: userQuery } = rest;
@@ -1233,7 +1233,7 @@ export async function POST(req: NextRequest) {
 
     if (actionType === "admin-reports") {
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (!admins.includes((profile as any).email?.toLowerCase() || "")) {
+      if (!user.email || !admins.includes(user.email.toLowerCase())) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       const { data: reports } = await sb.from("muse_reports").select("*, reporter_id(id, name, avatar), target_id(id, name, avatar)")
@@ -1243,7 +1243,7 @@ export async function POST(req: NextRequest) {
 
     if (actionType === "admin-strikes") {
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (!admins.includes((profile as any).email?.toLowerCase() || "")) {
+      if (!user.email || !admins.includes(user.email.toLowerCase())) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       const { data: strikes } = await sb.from("muse_strikes").select("*, user_id(id, name, avatar)")
@@ -1254,7 +1254,7 @@ export async function POST(req: NextRequest) {
     if (actionType === "admin-suspend-user") {
       if (!checkRate(ip, "admin-suspend-user", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (!admins.includes((profile as any).email?.toLowerCase() || "")) {
+      if (!user.email || !admins.includes(user.email.toLowerCase())) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       const { targetUserId, reason, durationDays } = rest;
