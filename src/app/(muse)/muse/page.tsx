@@ -110,6 +110,7 @@ function MusePage() {
   const [noteTargetProfile, setNoteTargetProfile] = useState<any>(null);
   const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
   const [cardScrolled, setCardScrolled] = useState(false);
+  const [showMatchMenu, setShowMatchMenu] = useState(false);
   const cardScrollRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const [galleryView, setGalleryView] = useState<{ profileId: string | number; name: string; photos: string[]; idx: number } | null>(null);
@@ -900,7 +901,7 @@ function MusePage() {
       const scroller = target.closest('.card-info-scroll') as HTMLElement;
       if (scroller && scroller.scrollTop > 5) return;
     }
-    if (target.closest && (target.closest('.card-action-btn') || target.closest('.card-portfolio-btn') || target.closest('.card-photo-thumb') || target.closest('button') || target.closest('a'))) return;
+    if (target.closest && (target.closest('.card-action-btn') || target.closest('.card-portfolio-btn') || target.closest('.card-photo-thumb') || target.closest('.card-photo-zone') || target.closest('button') || target.closest('a'))) return;
     const card = e.currentTarget as HTMLElement;
     const cardTop = card.getBoundingClientRect().top;
     const cardHeight = card.getBoundingClientRect().height;
@@ -2054,13 +2055,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                   <div className="card-gradient" />
                                   <div className="card-border" />
                                 </div>
-                                {isTop && (
-                                  <>
-                                    <div className={"card-photo-zone card-photo-zone-left"+(cardScrolled?" hidden":"")} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}}><span style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>‹</span></div>
-                                    <div className={"card-photo-zone card-photo-zone-right"+(cardScrolled?" hidden":"")} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.min(photos.length-1,prev+1))}}><span style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>›</span></div>
-                                  </>
-                                )}
-                                <div className={"card-hero-info"+(cardScrolled?" hidden":"")}>
+                                <div className="card-hero-info">
                                   <div className="card-hero-name">
                                     {profile.name}
                                     {profile.verified && <span className="card-verified-mark">✓</span>}
@@ -2068,24 +2063,6 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                   </div>
                                   <div className="card-hero-type">{profile.type} · {profile.loc?.split(",")[0]}</div>
                                 </div>
-                {/* Compact pinned overlay — visible when scrolling past hero */}
-                {cardScrolled && (
-                  <div className="card-hero-pinned" style={{position:"absolute",top:0,left:0,right:0,zIndex:7,padding:"8px 16px",background:"linear-gradient(to bottom,rgba(0,0,0,0.7),transparent)"}}>
-                    <div style={{fontSize:16,fontWeight:800,color:"#fff",textShadow:"0 1px 4px rgba(0,0,0,0.8)"}}>{profile.name}{profile.verified&&<span style={{color:"var(--gold)",marginLeft:4,fontSize:12}}>✓</span>}</div>
-                    <div style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.7)"}}>{profile.type} · {profile.loc?.split(",")[0]}</div>
-                  </div>
-                )}
-                {/* Prompts now render inside the scroll details section */}
-                                <div className="card-photo-dots">
-                                  {photos.map((_:string,i:number)=><div key={i} className={"card-photo-dot"+(i===currentPhotoIdx?" active":"")} />)}
-                                </div>
-                                <div className={"card-actions-row"+(cardScrolled?" hidden":"")}>
-                                    <button className="card-action-btn btn-rewind" onClick={doRewind} aria-label="Rewind">↺</button>
-                                    <button className="card-action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
-                                    <button className="card-action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
-                                    <button className="card-action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
-                                    <button className="card-action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
-                                 </div>
                                  {showNoteTooltip && (
                                    <div style={{textAlign:"center",padding:"4px 16px 0",animation:"tooltipIn .4s ease"}}>
                                      <div style={{display:"inline-block",background:"rgba(255,215,0,0.12)",border:"1px solid rgba(255,215,0,0.25)",borderRadius:10,padding:"8px 14px",fontSize:12,color:"var(--text2)",maxWidth:280}}>
@@ -2101,6 +2078,17 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                   </>
                                 )}
                                 <div className="card-info-scroll" ref={cardScrollRef} onScroll={()=>{if(isTop){const scrollY=cardScrollRef.current?.scrollTop||0;setCardScrolled(scrollY>60);}}}>
+                                  <div className="card-viewport">
+                                    {isTop && (
+                                      <>
+                                        <div className="card-photo-zone card-photo-zone-left" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}}><span style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>‹</span></div>
+                                        <div className="card-photo-zone card-photo-zone-right" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.min(photos.length-1,prev+1))}}><span style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>›</span></div>
+                                      </>
+                                    )}
+                                    <div className="card-photo-dots">
+                                      {photos.map((_:string,i:number)=><div key={i} className={"card-photo-dot"+(i===currentPhotoIdx?" active":"")} />)}
+                                    </div>
+                                  </div>
                                   <div className="card-details">
                                     {(profile as any).prompts?.length > 0 && (
                                       <div className="card-section">
@@ -2171,6 +2159,18 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                     <div className="card-section" style={{fontSize:12,color:"var(--muted)"}}>📍 {profile.loc}</div>
                                  </div>
                                  </div>
+                                 {isTop && (
+                                  <div className="match-fab">
+                                    <button className={"match-fab-btn"+(showMatchMenu?" open":"")} onClick={()=>setShowMatchMenu(v=>!v)} aria-label="Match actions">✦</button>
+                                    <div className={"match-radial"+(showMatchMenu?" open":"")}>
+                                      <button className="match-radial-btn btn-rewind" style={{left:0,top:-140}} onClick={doRewind} aria-label="Rewind">↺</button>
+                                      <button className="match-radial-btn btn-nope" style={{left:35,top:-175}} onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
+                                      <button className="match-radial-btn btn-super" style={{left:82,top:-165}} onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
+                                      <button className="match-radial-btn btn-like" style={{left:118,top:-118}} onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
+                                      <button className="match-radial-btn btn-note" style={{left:135,top:-55}} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
+                                    </div>
+                                  </div>
+                                 )}
                                  </>
                               );
                             })()}

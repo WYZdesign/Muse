@@ -496,8 +496,9 @@ img{background-color:#1a0a2e}
   .nav-item{font-size:12px;gap:4px}
   .nav-icon{font-size:24px}
   .nav-item.active::after{width:28px;height:3px}
-  /* Card details: dynamic margin for shorter screens */
-  .swipe-card .card-details{margin-top:min(62vh,520px)}
+  /* Card viewport: dynamic height for shorter screens */
+  .swipe-card .card-viewport{height:min(62vh,520px)}
+  .swipe-card .card-photo-zone{height:min(62vh,520px)}
 }
 /* ═══ MODAL ═══ */
 .modal-overlay{position:absolute;inset:0;z-index:400;background:rgba(10,6,18,0.92);backdrop-filter:blur(20px);display:flex;flex-direction:column;animation:modalIn .35s cubic-bezier(.4,0,.2,1)}
@@ -764,13 +765,14 @@ img{background-color:#1a0a2e}
 .nav-icon-glow{filter:drop-shadow(0 2px 5px rgba(255,255,255,0.24))}
 
 /* ═══ SWIPE CARD FULL-IMAGE HERO ═══ */
-.swipe-card{height:100%;display:flex;flex-direction:column;position:absolute;inset:0;overflow:hidden;border-radius:24px}
+.swipe-card{height:100%;display:flex;flex-direction:column;position:absolute;inset:0;overflow:hidden;border-radius:24px;touch-action:pan-y}
 .swipe-card.top-card{z-index:3}
 .swipe-card .card-hero{position:absolute;inset:0;height:100%;min-height:0;overflow:hidden;z-index:1}
 .swipe-card .card-hero img{width:100%;height:100%;object-fit:cover;display:block;position:absolute;top:0;left:0}
-.swipe-card .card-info-scroll{position:absolute;inset:0;overflow-y:auto;padding:0;scrollbar-width:none;background:transparent;z-index:2}
+.swipe-card .card-info-scroll{position:absolute;inset:0;overflow-y:auto;padding:0;scrollbar-width:none;background:transparent;z-index:10}
 .swipe-card .card-info-scroll::-webkit-scrollbar{width:0}
-.swipe-card .card-details{margin-top:62vh;background:var(--bg);padding:24px 20px 40px;border-radius:24px 24px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,0.4);z-index:2}
+.swipe-card .card-viewport{position:relative;height:62vh;min-height:0;flex-shrink:0}
+.swipe-card .card-details{margin-top:0;background:var(--bg);padding:24px 20px 40px;border-radius:24px 24px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,0.4);z-index:2}
 
 /* ═══ ALL IMAGES FILL CONTAINERS ═══ */
 /* Scoped to swipe cards only — this was previously a global img[src^="/models/"] selector
@@ -846,7 +848,7 @@ img{background-color:#1a0a2e}
 .album-thumb-remove{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.7);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 
 /* ═══ SWIPE CARD HERO (v2 rework) ═══ */
-.card-hero-info{position:absolute;bottom:80px;left:0;right:0;padding:40px 20px 20px;background:linear-gradient(to top,rgba(10,6,18,0.98) 0%,rgba(10,6,18,0.55) 45%,transparent 100%);z-index:4;transition:opacity .3s ease,transform .3s ease;pointer-events:none}
+.card-hero-info{position:absolute;bottom:16px;left:84px;right:16px;padding:0;background:none;z-index:3;pointer-events:none}
 .card-hero-info.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
 .card-hero-name{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:800;color:#fff;font-family:"Playfair Display",serif;font-style:italic;text-shadow:0 2px 8px rgba(0,0,0,0.7),0 4px 20px rgba(0,0,0,0.5),0 0 40px rgba(10,6,18,0.8)}
 .card-verified-mark{font-size:18px;color:var(--gold)}
@@ -858,7 +860,7 @@ img{background-color:#1a0a2e}
 .card-photo-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.4);box-shadow:0 0 4px rgba(0,0,0,0.5);transition:all .25s}
 .card-photo-dot.active{width:20px;border-radius:4px;background:linear-gradient(120deg,var(--gold),var(--pink),var(--lavender),var(--gold));background-size:300% 300%;animation:dotLava 3s ease-in-out infinite}
 @keyframes dotLava{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-.card-photo-zone{position:absolute;top:0;height:62vh;width:35%;z-index:5;transition:opacity .3s ease}
+.card-photo-zone{position:absolute;top:0;height:62vh;width:35%;z-index:3}
 .card-photo-zone.hidden{opacity:0;pointer-events:none}
 .card-photo-zone-left{left:0}
 .card-photo-zone-right{right:0}
@@ -905,6 +907,21 @@ img{background-color:#1a0a2e}
 .card-action-btn:hover{transform:scale(1.08);opacity:1}
 @keyframes btnBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @media(min-width:768px){.card-action-btn{height:57px;width:57px;font-size:26px}}
+
+/* ═══ Match FAB — single expand button (bottom-left) + radial menu ═══ */
+.match-fab{position:absolute;bottom:18px;left:16px;z-index:30}
+.match-fab-btn{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;cursor:pointer;border:2px solid rgba(255,255,255,0.25);color:#0a0612;background:linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700);background-size:300% 300%;animation:lavaFlow 4s ease-in-out infinite;box-shadow:0 4px 16px rgba(0,0,0,0.5);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.match-fab-btn.open{transform:rotate(45deg)}
+.match-fab-btn:active{transform:scale(0.9)}
+.match-radial{position:absolute;bottom:22px;left:20px;z-index:29;pointer-events:none}
+.match-radial.open{pointer-events:auto}
+.match-radial-btn{position:absolute;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;cursor:pointer;border:none;color:#fff;background:rgba(10,6,18,0.85);border:1.5px solid rgba(255,255,255,0.2);box-shadow:0 3px 12px rgba(0,0,0,0.5);opacity:0;transform:scale(0);transition:opacity .22s cubic-bezier(.4,0,.2,1),transform .22s cubic-bezier(.34,1.56,.64,1)}
+.match-radial.open .match-radial-btn{opacity:1;transform:scale(1)}
+.match-radial-btn:active{transform:scale(0.85)!important}
+.match-radial-btn.btn-super{background:linear-gradient(135deg,#533483,#e94560)}
+.match-radial-btn.btn-like{background:linear-gradient(135deg,#e94560,#ffa07a)}
+.match-radial-btn.btn-nope{background:rgba(10,6,18,0.85)}
+.match-radial-btn.btn-note{background:linear-gradient(135deg,#1a0a2e,#533483)}
 
 /* Screen transitions */
 .screen-el{opacity:0;transform:translateY(8px);transition:opacity .25s ease,transform .25s ease;pointer-events:none}
