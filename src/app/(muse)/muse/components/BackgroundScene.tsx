@@ -161,18 +161,18 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
         { y: h * 0.78, alpha: 0.09, color: "10,160,180" },
         { y: h * 0.84, alpha: 0.06, color: "0,120,150" },
       ];
-      for (const w of waveColors) {
+      for (const wave of waveColors) {
         ctx!.save();
         ctx!.beginPath();
         ctx!.moveTo(-10, h);
         for (let x = -10; x <= w + 10; x += 4) {
-          const y = w.y + Math.sin(x * 0.006 + t * 0.04) * 18
+          const y = wave.y + Math.sin(x * 0.006 + t * 0.04) * 18
             + Math.cos(x * 0.013 + t * 0.06) * 12;
           ctx!.lineTo(x, y);
         }
         ctx!.lineTo(w + 10, h);
         ctx!.closePath();
-        ctx!.fillStyle = `rgba(${w.color},${w.alpha})`;
+        ctx!.fillStyle = `rgba(${wave.color},${wave.alpha})`;
         ctx!.fill();
         ctx!.restore();
       }

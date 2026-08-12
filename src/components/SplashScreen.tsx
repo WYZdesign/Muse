@@ -125,7 +125,7 @@ export default function SplashScreen() {
 
       // Dynamic comets with trails
       for (const c of comets) {
-        if (c.delay > 0) { c.delay--; continue; }
+        if ((c.delay || 0) > 0) { c.delay!--; continue; }
         c.life++;
         if (c.life > c.maxLife) {
           c.x = Math.random() * W * 0.9;

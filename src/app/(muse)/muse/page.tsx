@@ -918,7 +918,7 @@ function MusePage() {
     const absDy = Math.abs(dy);
       if (dragRef.current.axis === null) {
       if (absDx < 5 && absDy < 5) return;
-      dragRef.current.axis = absDx > absDy ? "x" : "scroll";
+      dragRef.current.axis = absDx > absDy ? "x" : "y";
     }
     dragValuesRef.current = { x: 0, y: 0, opacity: 0 };
     if (dragRef.current.axis === "x") {
