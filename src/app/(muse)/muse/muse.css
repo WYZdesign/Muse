@@ -846,7 +846,7 @@ img{background-color:#1a0a2e}
 .album-thumb-remove{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.7);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 
 /* ═══ SWIPE CARD HERO (v2 rework) ═══ */
-.card-hero-info{position:absolute;bottom:0;left:0;right:0;padding:40px 20px 20px;background:linear-gradient(to top,rgba(10,6,18,0.98) 0%,rgba(10,6,18,0.55) 45%,transparent 100%);z-index:4;transition:opacity .3s ease,transform .3s ease}
+.card-hero-info{position:absolute;bottom:80px;left:0;right:0;padding:40px 20px 20px;background:linear-gradient(to top,rgba(10,6,18,0.98) 0%,rgba(10,6,18,0.55) 45%,transparent 100%);z-index:4;transition:opacity .3s ease,transform .3s ease}
 .card-hero-info.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
 .card-hero-name{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:800;color:#fff;font-family:"Playfair Display",serif;font-style:italic;text-shadow:0 2px 8px rgba(0,0,0,0.7),0 4px 20px rgba(0,0,0,0.5),0 0 40px rgba(10,6,18,0.8)}
 .card-verified-mark{font-size:18px;color:var(--gold)}
@@ -858,13 +858,10 @@ img{background-color:#1a0a2e}
 .card-photo-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.4);box-shadow:0 0 4px rgba(0,0,0,0.5);transition:all .25s}
 .card-photo-dot.active{width:20px;border-radius:4px;background:linear-gradient(120deg,var(--gold),var(--pink),var(--lavender),var(--gold));background-size:300% 300%;animation:dotLava 3s ease-in-out infinite}
 @keyframes dotLava{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-.card-photo-zone{position:absolute;top:0;height:62vh;width:35%;z-index:5}
+.card-photo-zone{position:absolute;top:0;height:62vh;width:35%;z-index:5;transition:opacity .3s ease}
+.card-photo-zone.hidden{opacity:0;pointer-events:none}
 .card-photo-zone-left{left:0}
 .card-photo-zone-right{right:0}
-/* Keep photo zones visible even when card scrolls */
-.card-scrolled .card-photo-zone{position:sticky;top:0;height:40px;width:40px;pointer-events:auto}
-.card-scrolled .card-photo-zone-left{left:6px}
-.card-scrolled .card-photo-zone-right{left:auto;right:6px}
 .card-photo-thumb.active{border:2px solid var(--gold)}
 .card-portfolio-btn{width:100%;margin-top:12px;padding:10px 16px;border-radius:99px;border:1px solid rgba(255,215,0,0.25);background:rgba(255,215,0,0.08);color:var(--gold);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
 .card-portfolio-btn:hover{background:rgba(255,215,0,0.15);border-color:rgba(255,215,0,0.4)}

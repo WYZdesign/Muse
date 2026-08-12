@@ -683,10 +683,9 @@ function MusePage() {
       const db = b.distanceMi ?? 99999;
       return da - db;
     });
-    // Shuffle: randomize order per session so cards aren't the same every time
-    const seed = shuffleSeed.current;
+    // Shuffle: true Fisher-Yates so order is random on every refresh/load
     for (let i = enriched.length - 1; i > 0; i--) {
-      const j = (seed * (i + 1) + i * 7) % (i + 1);
+      const j = Math.floor(Math.random() * (i + 1));
       [enriched[i], enriched[j]] = [enriched[j], enriched[i]];
     }
     return enriched;
@@ -2036,17 +2035,19 @@ const isMatch=matchScore>55||Math.random()>0.5;
                          onPointerCancel={isTop ? onPointerCancel : undefined}
                        >
                            {(() => {
-                             const allPhotos: string[] = (profile as any).photos?.length ? (profile as any).photos : [profile.img];
-                             const photos: string[] = allPhotos.filter((p:string) => !!PORTRAIT_IMG[p]);
-                             if (photos.length === 0) photos.push(...allPhotos.slice(0,1));
-                             const heroSrc = photos[currentPhotoIdx] || profile.img;
-                             const heroPortrait = !!PORTRAIT_IMG[heroSrc];
-                              return (
-                                <>
-                                <div className="card-hero" ref={heroRef}>
+                              const allPhotos: string[] = (profile as any).photos?.length ? (profile as any).photos : [profile.img];
+                              const portraitPics = allPhotos.filter((p:string) => !!PORTRAIT_IMG[p]);
+                              const landscapePics = allPhotos.filter((p:string) => !PORTRAIT_IMG[p]);
+                              const photos: string[] = [...portraitPics, ...landscapePics].slice(0, 6);
+                              if (photos.length < 4) photos.push(...allPhotos.slice(0, Math.max(0, 4 - photos.length)));
+                              const heroSrc = photos[currentPhotoIdx] || profile.img;
+                              const heroPortrait = !!PORTRAIT_IMG[heroSrc];
+                               return (
+                                 <>
+                                 <div className="card-hero" ref={heroRef}>
                                   <img
                                     loading="lazy" src={heroSrc} alt={profile.name} draggable="false" onError={handleImgError}
-                                    style={{width:"100%",height:"100%",objectFit:heroPortrait?"cover":"contain",objectPosition:heroPortrait?"center top":"center",background:"linear-gradient(160deg,#1a0a2e,#0a0612)",position:"absolute",top:0,left:0}}
+                                    style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:heroPortrait?"center top":"center",background:"linear-gradient(160deg,#1a0a2e,#0a0612)",position:"absolute",top:0,left:0}}
                                   />
                                   <div className="card-shine" />
                                   <div className="card-gradient" />
@@ -2054,8 +2055,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                 </div>
                                 {isTop && (
                                   <>
-                                    <div className="card-photo-zone card-photo-zone-left" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}}><span style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>‹</span></div>
-                                    <div className="card-photo-zone card-photo-zone-right" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.min(photos.length-1,prev+1))}}><span style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>›</span></div>
+                                    <div className={"card-photo-zone card-photo-zone-left"+(cardScrolled?" hidden":"")} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}}><span style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>‹</span></div>
+                                    <div className={"card-photo-zone card-photo-zone-right"+(cardScrolled?" hidden":"")} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.min(photos.length-1,prev+1))}}><span style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>›</span></div>
                                   </>
                                 )}
                                 <div className={"card-hero-info"+(cardScrolled?" hidden":"")}>
@@ -2146,8 +2147,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                               {/* Left/Right arrows */}
                                               {albumPhotos.length > 1 && (
                                                 <>
-                                                  <button onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.max(0,p-1))}} style={{position:"absolute",left:4,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,cursor:"pointer"}}>‹</button>
-                                                  <button onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.min(albumPhotos.length-1,p+1))}} style={{position:"absolute",right:4,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,cursor:"pointer"}}>›</button>
+                                                  <button onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.max(0,p-1))}} style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:800,cursor:"pointer",zIndex:3,backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:"34px",filter:"drop-shadow(0 1px 3px rgba(0,0,0,0.8))"}}>‹</button>
+                                                  <button onClick={(e)=>{e.stopPropagation();setPortfolioPhotoIdx(p=>Math.min(albumPhotos.length-1,p+1))}} style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:800,cursor:"pointer",zIndex:3,backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:"34px",filter:"drop-shadow(0 1px 3px rgba(0,0,0,0.8))"}}>›</button>
                                                 </>
                                               )}
                                             </div>
