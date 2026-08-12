@@ -384,37 +384,6 @@ function MusePage() {
     setBootstrapped(true);
   }, [apiFetch]);
 
-  useEffect(() => {
-    const profile = filteredProfiles[currentIdx];
-    if (!profile?.id) { setCardAlbums([]); setCardAlbumPhotos([]); return; }
-    let cancelled = false;
-    apiFetch(`/api/muse?type=albums&profile_id=${encodeURIComponent(profile.id)}`)
-      .then(r => r.json())
-      .then(d => {
-        if (cancelled) return;
-        const albums = d.albums || [];
-        setCardAlbums(albums);
-        if (albums.length > 0) setCardAlbumIdx(0);
-      })
-      .catch((err) => { trackError("fetch_albums", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [currentIdx, filteredProfiles, apiFetch]);
-
-  useEffect(() => {
-    if (cardAlbumIdx === 0) { setCardAlbumPhotos([]); return; }
-    const album = cardAlbums[cardAlbumIdx - 1];
-    if (!album?.id) return;
-    let cancelled = false;
-    apiFetch(`/api/muse?type=album-photos&album_id=${encodeURIComponent(album.id)}`)
-      .then(r => r.json())
-      .then(d => {
-        if (cancelled) return;
-        setCardAlbumPhotos((d.photos || []).map((p: any) => p.img_url));
-      })
-      .catch((err) => { trackError("fetch_album_photos", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [cardAlbumIdx, cardAlbums, apiFetch]);
-
   // ─── PERSISTENCE ───
   const STORAGE_KEY = "muse_v1";
   const saveState = useCallback(() => {
@@ -722,6 +691,37 @@ function MusePage() {
     }
     return enriched;
   }, [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoveryPrefs.distance, discoverSearch]);
+
+  useEffect(() => {
+    const profile = filteredProfiles[currentIdx];
+    if (!profile?.id) { setCardAlbums([]); setCardAlbumPhotos([]); return; }
+    let cancelled = false;
+    apiFetch(`/api/muse?type=albums&profile_id=${encodeURIComponent(profile.id)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled) return;
+        const albums = d.albums || [];
+        setCardAlbums(albums);
+        if (albums.length > 0) setCardAlbumIdx(0);
+      })
+      .catch((err) => { trackError("fetch_albums", { err: String(err) }); });
+    return () => { cancelled = true; };
+  }, [currentIdx, filteredProfiles, apiFetch]);
+
+  useEffect(() => {
+    if (cardAlbumIdx === 0) { setCardAlbumPhotos([]); return; }
+    const album = cardAlbums[cardAlbumIdx - 1];
+    if (!album?.id) return;
+    let cancelled = false;
+    apiFetch(`/api/muse?type=album-photos&album_id=${encodeURIComponent(album.id)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled) return;
+        setCardAlbumPhotos((d.photos || []).map((p: any) => p.img_url));
+      })
+      .catch((err) => { trackError("fetch_album_photos", { err: String(err) }); });
+    return () => { cancelled = true; };
+  }, [cardAlbumIdx, cardAlbums, apiFetch]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -3689,7 +3689,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
   );
 }
 
-const MuseMap = ({ filteredProfiles, myGeo, containerRef, show }: { filteredProfiles: any[], myGeo?: {lat:number,lng:number}, containerRef: React.RefObject<HTMLDivElement|null>, show: boolean }) => {
+function MuseMap({ filteredProfiles, myGeo, containerRef, show }: { filteredProfiles: any[], myGeo?: {lat:number,lng:number}, containerRef: React.RefObject<HTMLDivElement|null>, show: boolean }) {
   const initialized = useRef(false);
   const mapEl = useRef<any>(null);
   useEffect(() => {
@@ -3721,6 +3721,6 @@ const MuseMap = ({ filteredProfiles, myGeo, containerRef, show }: { filteredProf
     return () => { if (mapEl.current) { mapEl.current.remove(); mapEl.current = null; initialized.current = false; } };
   }, [show, myGeo]);
   return <div ref={containerRef} style={{ width: "100%", height: "60vh", borderRadius: 16, overflow: "hidden", marginTop: 8 }} />;
-};
+}
 
 
