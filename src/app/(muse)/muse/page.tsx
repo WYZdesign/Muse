@@ -2,8 +2,8 @@
 
 import "./muse.css";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import { motion } from "framer-motion";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
 import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles } from "@/app/muse-realtime";
