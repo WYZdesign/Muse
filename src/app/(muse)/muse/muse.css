@@ -231,7 +231,7 @@ textarea.inp{resize:none}
 .auth-social-btn:hover{border-color:rgba(255,215,0,0.2);background:rgba(255,255,255,0.08)}
 .discover-wrap{flex:1;display:flex;flex-direction:column;height:100%;overflow:hidden}
 .card-stack{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0;padding:0}
-.swipe-card{position:absolute;width:calc(100% - 24px);height:calc(100% - 12px);border-radius:24px;overflow:hidden;transition:transform .4s cubic-bezier(.4,0,.2,1);user-select:none;cursor:grab;will-change:transform;background:#0a0612}
+.swipe-card{transition:transform .4s cubic-bezier(.4,0,.2,1);user-select:none;cursor:grab;will-change:transform;background:#0a0612}
 .swipe-card:active{cursor:grabbing}
 .swipe-card img{width:100%;height:100%;object-fit:contain;object-position:center;transition:transform .4s;position:relative;z-index:1;background:#0a0612}
 img{background-color:#1a0a2e}
@@ -926,6 +926,4 @@ img{background-color:#1a0a2e}
   .screen-el::-webkit-scrollbar-track,.card-info-scroll::-webkit-scrollbar-track,.match-list::-webkit-scrollbar-track,.messages::-webkit-scrollbar-track,.profile-scroll::-webkit-scrollbar-track,.briefs-scroll::-webkit-scrollbar-track,.portfolio-scroll::-webkit-scrollbar-track,.settings-scroll::-webkit-scrollbar-track,.modal-body::-webkit-scrollbar-track,.sub-scroll::-webkit-scrollbar-track,.conn-scroll::-webkit-scrollbar-track,.chips::-webkit-scrollbar-track{background:transparent}
   /* Larger nav labels */
   .nav-item{font-size:11px}
-  /* Card details space fix for shorter screens */
-  .swipe-card .card-details{margin-top:min(62vh,520px)}
 }}
