@@ -280,7 +280,7 @@ img{background-color:#1a0a2e}
 .label-nope{left:20;border:3px solid var(--coral);color:var(--coral);transform:rotate(-14deg);text-shadow:0 0 24px rgba(255,138,128,0.6)}
 .label-super{top:42%;left:50%;transform:translateX(-50%);border:3px solid var(--gold);color:var(--gold);background:rgba(0,0,0,0.6);font-size:32px;text-shadow:0 0 24px rgba(255,215,0,0.6);backdrop-filter:blur(8px)}
 .actions{display:flex;justify-content:center;align-items:center;gap:10px;padding:10px 0 14px;flex-shrink:0}
-.card-actions-row{position:absolute;bottom:0;left:0;right:0;display:flex;gap:10px;justify-content:center;padding:10px 12px 18px;z-index:20;background:linear-gradient(to top,rgba(10,6,18,0.98) 0%,rgba(10,6,18,0.85) 60%,transparent 100%);transition:all .35s ease;pointer-events:auto}
+.card-actions-row{position:absolute;bottom:0;left:0;right:0;display:flex;gap:9px;justify-content:center;padding:8px 12px 14px;z-index:20;background:linear-gradient(to top,rgba(10,6,18,0.98) 0%,rgba(10,6,18,0.85) 60%,transparent 100%);transition:all .35s ease;pointer-events:auto}
 .card-actions-row.hidden{opacity:0;transform:translateY(16px);pointer-events:none}
 .btn-rewind{background:rgba(212,165,255,0.25);border:1.5px solid rgba(212,165,255,0.6);color:var(--lavender)}
 .btn-rewind:hover{background:rgba(212,165,255,0.35);box-shadow:0 0 20px rgba(212,165,255,0.15)}
@@ -895,7 +895,7 @@ img{background-color:#1a0a2e}
 .card-stack>div[style*="transform"]{will-change:transform}
 
 /* Match action buttons — circles with 90% opacity + subtle bob */
-.card-action-btn{flex:0 0 auto;width:57px;height:57px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:700;transition:all .25s cubic-bezier(.4,0,.2,1);line-height:1;cursor:pointer;border:none;opacity:0.9;animation:btnBob 3s ease-in-out infinite}
+.card-action-btn{flex:0 0 auto;width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700;transition:all .25s cubic-bezier(.4,0,.2,1);line-height:1;cursor:pointer;border:none;opacity:0.9;animation:btnBob 3s ease-in-out infinite}
 .card-action-btn:nth-child(1){animation-delay:0s}
 .card-action-btn:nth-child(2){animation-delay:0.3s}
 .card-action-btn:nth-child(3){animation-delay:0.6s}

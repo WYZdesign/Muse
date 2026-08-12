@@ -2067,9 +2067,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                     {profile.online && <span className="card-online-dot" />}
                                   </div>
                                   <div className="card-hero-type">{profile.type} · {profile.loc?.split(",")[0]}</div>
-                                  <div className="card-hero-bio">{profile.bio?.slice(0,100)}{(profile.bio?.length||0)>100?"...":""}</div>
-                  <div className="card-hero-tags">{profile.styles.slice(0,4).map(s=><span key={s} className="card-hero-tag">{s}</span>)}</div>
-                </div>
+                                </div>
                 {/* Compact pinned overlay — visible when scrolling past hero */}
                 {cardScrolled && (
                   <div className="card-hero-pinned" style={{position:"absolute",top:0,left:0,right:0,zIndex:7,padding:"8px 16px",background:"linear-gradient(to bottom,rgba(0,0,0,0.7),transparent)"}}>
@@ -2077,17 +2075,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.7)"}}>{profile.type} · {profile.loc?.split(",")[0]}</div>
                   </div>
                 )}
-                {/* Prompts: Hinge-style Q&A, toggle with arrows */}
-                {(profile as any).prompts?.length > 0 && (
-                  <div className="card-prompts" onClick={(e)=>e.stopPropagation()}>
-                    <button className="card-prompt-arrow" onClick={(e)=>{e.stopPropagation();setPromptIdx(prev=>Math.max(0,prev-1))}} style={{opacity:promptIdx>0?1:0.3}}>‹</button>
-                    <div className="card-prompt-text">
-                      <div className="card-prompt-q">{(profile as any).prompts[promptIdx]?.q||""}</div>
-                      <div className="card-prompt-a">{(profile as any).prompts[promptIdx]?.a||""}</div>
-                    </div>
-                    <button className="card-prompt-arrow" onClick={(e)=>{e.stopPropagation();setPromptIdx(prev=>Math.min(((profile as any).prompts.length-1),prev+1))}} style={{opacity:promptIdx<((profile as any).prompts.length-1)?1:0.3}}>›</button>
-                  </div>
-                )}
+                {/* Prompts now render inside the scroll details section */}
                                 <div className="card-photo-dots">
                                   {photos.map((_:string,i:number)=><div key={i} className={"card-photo-dot"+(i===currentPhotoIdx?" active":"")} />)}
                                 </div>
@@ -2114,6 +2102,19 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                 )}
                                 <div className="card-info-scroll" ref={cardScrollRef} onScroll={()=>{if(isTop){const scrollY=cardScrollRef.current?.scrollTop||0;setCardScrolled(scrollY>60);}}}>
                                   <div className="card-details">
+                                    {(profile as any).prompts?.length > 0 && (
+                                      <div className="card-section">
+                                        <div className="card-section-title">Prompts</div>
+                                        <div className="card-prompts" onClick={(e)=>e.stopPropagation()}>
+                                          <button className="card-prompt-arrow" onClick={(e)=>{e.stopPropagation();setPromptIdx(prev=>Math.max(0,prev-1))}} style={{opacity:promptIdx>0?1:0.3}}>‹</button>
+                                          <div className="card-prompt-text">
+                                            <div className="card-prompt-q">{(profile as any).prompts[promptIdx]?.q||""}</div>
+                                            <div className="card-prompt-a">{(profile as any).prompts[promptIdx]?.a||""}</div>
+                                          </div>
+                                          <button className="card-prompt-arrow" onClick={(e)=>{e.stopPropagation();setPromptIdx(prev=>Math.min(((profile as any).prompts.length-1),prev+1))}} style={{opacity:promptIdx<((profile as any).prompts.length-1)?1:0.3}}>›</button>
+                                        </div>
+                                      </div>
+                                    )}
                                     {profile.bio && <div className="card-section"><div className="card-section-title">About</div><div className="card-section-text">{profile.bio}</div></div>}
                                     {profile.looking.length>0 && <div className="card-section"><div className="card-section-title">Looking for</div><div className="card-section-text">{profile.looking.join(", ")}</div></div>}
                                     <div className="card-section"><div className="card-section-title">Creative Style</div>
