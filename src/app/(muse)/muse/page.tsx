@@ -2279,8 +2279,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div className="empty-title">No posts yet</div>
                     <div className="empty-sub">Be the first to share your creative work!</div>
                   </div>
-                )}
-                {[...feedPostsStatic,...feedPosts].sort((a,b)=>b.id-a.id).filter(p=>feedFilter==="all"||p.type===feedFilter).map(post=>{
+                ) : (
+                [...feedPostsStatic,...feedPosts].sort((a,b)=>b.id-a.id).filter(p=>feedFilter==="all"||p.type===feedFilter).map(post=>{
                   const feedReactionArr = feedReactions[post.id]||[];
                   const totalReactions = ["❤️","🔥","😍","😂","😢","😡"].reduce((s,r)=>s+(feedReactionArr.filter(x=>x===r).length||0),(post.liked?1:0));
                   return (
@@ -2326,7 +2326,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       )}
                     </div>
                   );
-                })}
+                }))}
               </div>
               <Nav active="connections" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
