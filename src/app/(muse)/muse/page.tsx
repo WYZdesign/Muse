@@ -3024,7 +3024,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
       {/* FILTER MODAL */}
       {showFilterModal && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}
+        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowFilterModal(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Filters</div>
@@ -3046,7 +3046,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
       {/* POST BRIEF MODAL */}
       {showPostBrief && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}
+        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowPostBrief(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">New Post</div>
@@ -3071,7 +3071,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
       {/* EDIT PROFILE MODAL */}
       {showEditProfile && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}
+        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowEditProfile(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Edit Profile</div>
@@ -3285,7 +3285,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
       {/* REPORT MODAL */}
       {showReport && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}
+        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowReport(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Report</div>
@@ -3350,7 +3350,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
       {/* TERMS OF SERVICE MODAL */}
       {showTerms && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}
+        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowTerms(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Terms of Service</div>
@@ -3375,7 +3375,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
       )}
 
       {showPrivacy && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}
+        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowPrivacy(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Privacy Policy</div>
@@ -3399,7 +3399,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
       )}
 
       {showGuidelines && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}
+        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowGuidelines(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Community Guidelines</div>
@@ -3423,7 +3423,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
       {/* DELETE ACCOUNT CONFIRMATION */}
       {showDeleteConfirm && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}
+        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowDeleteConfirm(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Delete Account</div>
@@ -3443,7 +3443,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
       {/* DISCOVERY PREFERENCES MODAL */}
       {showDiscoveryPrefs && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}
+        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowDiscoveryPrefs(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Discovery Preferences</div>
@@ -3476,7 +3476,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
       {/* UNMATCH CONFIRMATION */}
       {unmatchTarget && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}
+        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setUnmatchTarget(null)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Unmatch</div>
@@ -3496,7 +3496,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
       {/* ACTIVITY FEED */}
       {showActivityFeed && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}
+        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowActivityFeed(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Activity</div>
