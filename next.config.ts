@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
   },
   compress: true,
   experimental: {
-    optimizePackageImports: ["react-icons", "framer-motion"],
+    optimizePackageImports: ["react-icons"],
   },
   turbopack: {
     root: __dirname,
