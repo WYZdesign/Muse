@@ -2,7 +2,6 @@
 
 import "./muse.css";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { motion } from "framer-motion";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
@@ -1205,14 +1204,10 @@ function MusePage() {
       {swipeDir && <SwipeParticles active dir={swipeDir} />}
       <BackgroundScene flash={screenFlash} />
       {showMatchOverlay && (
-        <motion.div
+        <div
           className="match-overlay"
           role="dialog" aria-modal="true" aria-label="It's a Match!"
           onClick={() => setShowMatchOverlay(null)}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
         >
           <button className="match-overlay-close" onClick={(e)=>{e.stopPropagation();setShowMatchOverlay(null)}} aria-label="Close match overlay"><FiX size={22} /></button>
           {Array.from({length:40}).map((_,i)=><div key={i} className="confetti-piece" style={{
@@ -1225,33 +1220,22 @@ function MusePage() {
             "--drift":(Math.random()*120-60)+"px",
             "--rot":(Math.random()*720)+"deg"
           } as React.CSSProperties} />)}
-          <motion.div
+          <div
             className="match-title"
-            initial={{ scale: 0.5, opacity: 0, y: 30 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.2 }}
           >
             Its a Match!
-          </motion.div>
+          </div>
           <div className="match-subtitle">You and <strong style={{color:"var(--gold)"}}>{showMatchOverlay.name}</strong> both felt the spark.</div>
-          <motion.div className="match-avatars"
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.5 }}
+          <div className="match-avatars"
           >
             <img loading="lazy" className="match-av" src={currentUser.avatar} alt="You" />
             <img loading="lazy" className="match-av" src={showMatchOverlay.img} alt={showMatchOverlay.name} onError={handleImgError} />
-          </motion.div>
-          <motion.button className="match-btn" onClick={() => { setShowMatchOverlay(null); openChat(showMatchOverlay); }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          </div>
+          <button className="match-btn" onClick={() => { setShowMatchOverlay(null); openChat(showMatchOverlay); }}
           >
             Send a Message
-          </motion.button>
-        </motion.div>
+          </button>
+        </div>
       )}
       {showIntentPicker && intentProfile && (
         <div className="intent-overlay" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null)}}>
@@ -2042,13 +2026,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   {filteredProfiles.slice(currentIdx, currentIdx+3).map((profile, idx) => {
                     const isTop = idx === 0;
                     return (
-                       <motion.div
+                       <div
                          key={profile.id}
                          className={"swipe-card"+(isTop?" top-card":"")}
-                         style={{zIndex:3-idx}}
-                         animate={{ scale: Math.max(0.92, 1 - idx * 0.04) }}
-                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                         whileHover={isTop ? { scale: 1.01 } : undefined}
+                         style={{zIndex:3-idx,transform:"scale("+(Math.max(0.92, 1 - idx * 0.04))+")"}}
                          onPointerDown={isTop ? onPointerDown : undefined}
                          onPointerMove={isTop ? onPointerMove : undefined}
                          onPointerUp={isTop ? onPointerUp : undefined}
@@ -2063,11 +2044,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                               return (
                                 <>
                                 <div className="card-hero" ref={heroRef}>
-                                  <motion.img
+                                  <img
                                     loading="lazy" src={heroSrc} alt={profile.name} draggable="false" onError={handleImgError}
-                                    initial={{ scale: 1.08 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }}
                                     style={{width:"100%",height:"100%",objectFit:heroPortrait?"cover":"contain",objectPosition:heroPortrait?"center top":"center",background:"linear-gradient(160deg,#1a0a2e,#0a0612)",position:"absolute",top:0,left:0}}
                                   />
                                   <div className="card-shine" />
@@ -2114,8 +2092,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                 <div className={"card-actions-row"+(cardScrolled?" hidden":"")}>
                                     <button className="card-action-btn btn-rewind" onClick={doRewind} aria-label="Rewind">↺</button>
                                     <button className="card-action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
-                                    <motion.button className="card-action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like" whileTap={{scale:1.3}} transition={{type:"spring",stiffness:500,damping:15}}>★</motion.button>
-                                    <motion.button className="card-action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like" whileTap={{scale:1.4}} transition={{type:"spring",stiffness:500,damping:15}}>♥</motion.button>
+                                    <button className="card-action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
+                                    <button className="card-action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
                                     <button className="card-action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
                                  </div>
                                  {showNoteTooltip && (
@@ -2193,7 +2171,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                  </>
                               );
                             })()}
-                       </motion.div>
+                       </div>
                       );
                     })}
                    {currentIdx >= filteredProfiles.length && (
@@ -2442,23 +2420,15 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div className="chat-type">{chatTarget.type}</div>
                     </div>
                   </div>
-                  <motion.div className="messages" ref={messagesEndRef}
-                    initial="hidden" animate="visible"
-                    variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
-                  >
+                  <div className="messages" ref={messagesEndRef}>
                     {(chatTarget.messages || []).map((msg, i) => (
-                      <motion.div key={i}
-                        className={"msg "+(msg.from==="me"?"msg-me":"msg-them")}
-                        initial={{ opacity: 0, y: 12, scale: 0.93 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                      >
+                      <div key={i} className={"msg "+(msg.from==="me"?"msg-me":"msg-them")}>
                         {msg.img && <img loading="lazy" src={msg.img} alt="" style={{maxWidth:200,borderRadius:12,marginBottom:6,display:"block"}} />}
                         {msg.text && <div>{msg.text}</div>}
                         <div className="msg-time" style={{textAlign:msg.from==="me"?"right":"left",marginTop:4,fontSize:10,color:msg.from==="me"?"rgba(10,6,18,0.4)":"var(--muted)"}}>
                           {msg.time}{msg.from==="me" && <span style={{marginLeft:4}}>{i===(chatTarget.messages||[]).length-1?"✓✓":"✓"}</span>}
                         </div>
-                      </motion.div>
+                      </div>
                     ))}
                     {typingTarget===chatTarget.id && (
                       <div className="msg msg-them" style={{padding:"10px 16px"}}>
@@ -2470,10 +2440,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       </div>
                     )}
                     <div ref={messagesEndRef} />
-                  </motion.div>
+                  </div>
                   <div className="quick-replies">
                     {[getIcebreaker(chatTarget.type),"Hey! Love your work","Let's collab","What's your vision?","Love your portfolio"].map(q => (
-                      <motion.button key={q} className="quick-reply" onClick={()=>setChatInput(q)} whileTap={{scale:0.92}} transition={{type:"spring",stiffness:500,damping:20}}>{q}</motion.button>
+                      <button key={q} className="quick-reply" onClick={()=>setChatInput(q)}>{q}</button>
                     ))}
                   </div>
                   <div className="chat-input-wrap">
@@ -3024,7 +2994,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
       {/* FILTER MODAL */}
       {showFilterModal && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowFilterModal(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Filters</div>
@@ -3041,12 +3011,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <button className="btn btn-gold" onClick={()=>setShowFilterModal(false)}>Apply Filters</button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* POST BRIEF MODAL */}
       {showPostBrief && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowPostBrief(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">New Post</div>
@@ -3066,12 +3036,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
             {briefCat!=="concept" && <input className="inp" placeholder={briefCat==="tfp"?"Budget: TFP / Trade / Expenses covered":briefCat==="paid"?"Budget range (e.g. $1,000-$3,000)":"Budget / Stipend / Volunteer"} value={briefBudget} onChange={e=>setBriefBudget(e.target.value)} />}
             <button className="btn btn-gold" onClick={async()=>{if(briefTitle.trim()){setUserBriefs(prev=>[...prev,{id:uid(),title:briefTitle,desc:briefDesc,budget:briefCat==="concept"?"—":briefBudget||"Negotiable",tags:["New",briefCat],cat:briefCat}]);setShowPostBrief(false);setBriefTitle("");setBriefDesc("");setBriefBudget("");setBriefCat("concept");try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"brief",title:briefTitle,desc:briefDesc,budget:briefCat==="concept"?"—":briefBudget||"Negotiable",cat:briefCat})});showToast("Posted!")}catch{showToast("Failed to post")}}else{showToast("Title required")}}}>Post</button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* EDIT PROFILE MODAL */}
       {showEditProfile && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowEditProfile(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Edit Profile</div>
@@ -3090,12 +3060,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <input className="inp" placeholder="Location" value={editLoc} onChange={e=>setEditLoc(e.target.value)} />
             <button className="btn btn-gold" onClick={saveProfileEdits}>Save</button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* SHARE PROFILE SHEET */}
       {showShareProfile && (
-        <motion.div className="modal-overlay" onClick={()=>setShowShareProfile(false)} initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay" onClick={()=>setShowShareProfile(false)}>
           <div className="share-sheet" onClick={e=>e.stopPropagation()}>
             <div className="share-title">Share Profile</div>
             <div className="share-options">
@@ -3106,7 +3076,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className="share-link"><span className="share-link-text">{"wyzdesign.com/muse/profile/"+(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())}</span><button className="share-link-copy" onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/profile/"+(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"))}}>Copy</button></div>
             <button className="btn btn-outline" style={{marginTop:16}} onClick={()=>setShowShareProfile(false)}>Close</button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       
@@ -3285,7 +3255,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
       {/* REPORT MODAL */}
       {showReport && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowReport(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Report</div>
@@ -3309,12 +3279,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* LIKE + NOTE MODAL */}
       {showLikeNote && noteTargetProfile && (
-        <motion.div className="modal-overlay" style={{zIndex:500}} initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay" style={{zIndex:500}}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowLikeNote(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Like + Note</div>
@@ -3345,12 +3315,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
               ♥ Send Like & Note
             </button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* TERMS OF SERVICE MODAL */}
       {showTerms && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowTerms(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Terms of Service</div>
@@ -3371,11 +3341,11 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div style={{textAlign:"center",padding:"16px 0",fontSize:11,color:"var(--muted)"}}>Last updated: July 2026 · WYZ Design LLC</div>
             <button className="btn btn-gold" style={{width:"100%",marginTop:8}} onClick={()=>setShowTerms(false)}>I Understand</button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {showPrivacy && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowPrivacy(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Privacy Policy</div>
@@ -3395,11 +3365,11 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div style={{textAlign:"center",padding:"16px 0",fontSize:11,color:"var(--muted)"}}>Last updated: July 2026 · WYZ Design LLC</div>
             <button className="btn btn-gold" style={{width:"100%",marginTop:8}} onClick={()=>setShowPrivacy(false)}>I Understand</button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {showGuidelines && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowGuidelines(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Community Guidelines</div>
@@ -3418,12 +3388,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div style={{textAlign:"center",padding:"16px 0",fontSize:11,color:"var(--muted)"}}>Last updated: July 2026 · WYZ Design LLC</div>
             <button className="btn btn-gold" style={{width:"100%",marginTop:8}} onClick={()=>setShowGuidelines(false)}>I Understand</button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* DELETE ACCOUNT CONFIRMATION */}
       {showDeleteConfirm && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowDeleteConfirm(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Delete Account</div>
@@ -3438,12 +3408,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setShowDeleteConfirm(false)}>Cancel</button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* DISCOVERY PREFERENCES MODAL */}
       {showDiscoveryPrefs && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowDiscoveryPrefs(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Discovery Preferences</div>
@@ -3471,12 +3441,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <button className="btn btn-gold" style={{width:"100%"}} onClick={()=>{setShowDiscoveryPrefs(false);showToast("Preferences saved!")}}>Save</button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* UNMATCH CONFIRMATION */}
       {unmatchTarget && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setUnmatchTarget(null)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Unmatch</div>
@@ -3491,12 +3461,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setUnmatchTarget(null)}>Cancel</button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* ACTIVITY FEED */}
       {showActivityFeed && (
-        <motion.div className="modal-overlay" initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowActivityFeed(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Activity</div>
@@ -3515,7 +3485,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* STORIES VIEWER */}
@@ -3541,13 +3511,13 @@ const isMatch=matchScore>55||Math.random()>0.5;
       {!premiumDismissed && (
         <div className="premium-wrap">
           {showPremiumPopup ? (
-            <motion.div className="premium-popup" initial={{opacity:0,scale:0.85,y:20}} animate={{opacity:1,scale:1,y:0}} transition={{type:"spring",stiffness:380,damping:22}}>
+            <div className="premium-popup">
               <button className="premium-popup-close" onClick={() => { try{safeSetItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }} aria-label="Dismiss premium" title="Dismiss premium">✕</button>
               <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
               <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
               <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
               <div style={{marginTop:8,fontSize:10,color:"var(--muted)",textAlign:"center"}} onClick={() => { try{safeSetItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }}>Don&apos;t show again</div>
-            </motion.div>
+            </div>
           ) : (
             <button
               onClick={() => setShowPremiumPopup(true)}
@@ -3561,7 +3531,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
         </div>
       )}
       {viewProfile && (
-        <motion.div className="modal-overlay" onClick={()=>setViewProfile(null)} initial={{opacity:0,scale:0.96,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{type:"spring",stiffness:400,damping:30}}>
+        <div className="modal-overlay" onClick={()=>setViewProfile(null)}>
           <div className="modal-panel" onClick={e=>e.stopPropagation()} style={{maxWidth:400,width:"90%",maxHeight:"85vh",overflowY:"auto",borderRadius:24,padding:0,background:"linear-gradient(180deg,#0f081e,#0a0612)"}}>
             <div style={{position:"relative",width:"100%",aspectRatio:"3/4",overflow:"hidden"}}>
               <img loading="lazy" src={viewProfile.img} alt={viewProfile.name} style={{width:"100%",height:"100%",objectFit:"cover"}} />
@@ -3583,7 +3553,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               }}>Message</button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
       {/* ══════ DISCLOSURE MODAL ══════ */}
       {showDisclosureModal && disclosureTarget && (

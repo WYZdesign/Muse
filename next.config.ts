@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
-  transpilePackages: ["framer-motion"],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
