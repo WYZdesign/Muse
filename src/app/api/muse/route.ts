@@ -403,6 +403,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    if (actionType === "track-error") {
+      if (!checkRate(ip, "track-error", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const { name, params, time } = rest;
+      const sbErr = getServiceClient();
+      await sbErr.from("muse_events_log").insert({
+        name: `error:${name || "unknown"}`,
+        props: { params: params || {}, time: time || new Date().toISOString(), ua: (req.headers.get("user-agent") || "").slice(0, 300) },
+      });
+      return NextResponse.json({ success: true });
+    }
+
     const { user, profile } = await getAuthedProfile(req, body);
     if (!user || !profile) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 

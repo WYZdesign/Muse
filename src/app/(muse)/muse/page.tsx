@@ -2,6 +2,7 @@
 
 import "./muse.css";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
@@ -1204,7 +1205,15 @@ function MusePage() {
       {swipeDir && <SwipeParticles active dir={swipeDir} />}
       <BackgroundScene flash={screenFlash} />
       {showMatchOverlay && (
-        <div className="match-overlay" role="dialog" aria-modal="true" aria-label="It's a Match!" onClick={() => setShowMatchOverlay(null)}>
+        <motion.div
+          className="match-overlay"
+          role="dialog" aria-modal="true" aria-label="It's a Match!"
+          onClick={() => setShowMatchOverlay(null)}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
           <button className="match-overlay-close" onClick={(e)=>{e.stopPropagation();setShowMatchOverlay(null)}} aria-label="Close match overlay"><FiX size={22} /></button>
           {Array.from({length:40}).map((_,i)=><div key={i} className="confetti-piece" style={{
             left:Math.random()*100+"%",
@@ -1216,14 +1225,33 @@ function MusePage() {
             "--drift":(Math.random()*120-60)+"px",
             "--rot":(Math.random()*720)+"deg"
           } as React.CSSProperties} />)}
-          <div className="match-title">Its a Match!</div>
+          <motion.div
+            className="match-title"
+            initial={{ scale: 0.5, opacity: 0, y: 30 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.2 }}
+          >
+            Its a Match!
+          </motion.div>
           <div className="match-subtitle">You and <strong style={{color:"var(--gold)"}}>{showMatchOverlay.name}</strong> both felt the spark.</div>
-          <div className="match-avatars">
+          <motion.div className="match-avatars"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.5 }}
+          >
             <img loading="lazy" className="match-av" src={currentUser.avatar} alt="You" />
             <img loading="lazy" className="match-av" src={showMatchOverlay.img} alt={showMatchOverlay.name} onError={handleImgError} />
-          </div>
-          <button className="match-btn" onClick={() => { setShowMatchOverlay(null); openChat(showMatchOverlay); }}>Send a Message</button>
-        </div>
+          </motion.div>
+          <motion.button className="match-btn" onClick={() => { setShowMatchOverlay(null); openChat(showMatchOverlay); }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Send a Message
+          </motion.button>
+        </motion.div>
       )}
       {showIntentPicker && intentProfile && (
         <div className="intent-overlay" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null)}}>
@@ -2014,7 +2042,13 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   {filteredProfiles.slice(currentIdx, currentIdx+3).map((profile, idx) => {
                     const isTop = idx === 0;
                     return (
-                       <div key={profile.id} className={"swipe-card"+(isTop?" top-card":"")} style={{zIndex:3-idx,transform:"scale("+(Math.max(0.92, 1 - idx * 0.04))+")"}}
+                       <motion.div
+                         key={profile.id}
+                         className={"swipe-card"+(isTop?" top-card":"")}
+                         style={{zIndex:3-idx}}
+                         animate={{ scale: Math.max(0.92, 1 - idx * 0.04) }}
+                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                         whileHover={isTop ? { scale: 1.01 } : undefined}
                          onPointerDown={isTop ? onPointerDown : undefined}
                          onPointerMove={isTop ? onPointerMove : undefined}
                          onPointerUp={isTop ? onPointerUp : undefined}
@@ -2073,10 +2107,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                   {photos.map((_:string,i:number)=><div key={i} className={"card-photo-dot"+(i===currentPhotoIdx?" active":"")} />)}
                                 </div>
                                 <div className={"card-actions-row"+(cardScrolled?" hidden":"")}>
-                                   <button className="card-action-btn btn-rewind" onClick={doRewind} aria-label="Rewind">↺</button>
-                                   <button className="card-action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
-                                   <button className="card-action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
-                                   <button className="card-action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
+                                    <button className="card-action-btn btn-rewind" onClick={doRewind} aria-label="Rewind">↺</button>
+                                    <button className="card-action-btn btn-nope" onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
+                                    <motion.button className="card-action-btn btn-super" onClick={()=>doSwipe("super")} aria-label="Super Like" whileTap={{scale:1.3}} transition={{type:"spring",stiffness:500,damping:15}}>★</motion.button>
+                                    <motion.button className="card-action-btn btn-like" onClick={()=>doSwipe("right")} aria-label="Like" whileTap={{scale:1.4}} transition={{type:"spring",stiffness:500,damping:15}}>♥</motion.button>
                                     <button className="card-action-btn btn-note" onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
                                  </div>
                                  {showNoteTooltip && (
@@ -2154,10 +2188,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                  </>
                               );
                             })()}
-                       </div>
-                     );
-                   })}
-                  {currentIdx >= filteredProfiles.length && (
+                       </motion.div>
+                      );
+                    })}
+                   {currentIdx >= filteredProfiles.length && (
                     <div className="empty-state">
                       <div className="empty-icon"><FiCompass size={48} /></div>
                       <div className="empty-title">All caught up!</div>
@@ -2403,15 +2437,23 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div className="chat-type">{chatTarget.type}</div>
                     </div>
                   </div>
-                  <div className="messages" ref={messagesEndRef}>
+                  <motion.div className="messages" ref={messagesEndRef}
+                    initial="hidden" animate="visible"
+                    variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+                  >
                     {(chatTarget.messages || []).map((msg, i) => (
-                      <div key={i} className={"msg "+(msg.from==="me"?"msg-me":"msg-them")}>
+                      <motion.div key={i}
+                        className={"msg "+(msg.from==="me"?"msg-me":"msg-them")}
+                        initial={{ opacity: 0, y: 12, scale: 0.93 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                      >
                         {msg.img && <img loading="lazy" src={msg.img} alt="" style={{maxWidth:200,borderRadius:12,marginBottom:6,display:"block"}} />}
                         {msg.text && <div>{msg.text}</div>}
                         <div className="msg-time" style={{textAlign:msg.from==="me"?"right":"left",marginTop:4,fontSize:10,color:msg.from==="me"?"rgba(10,6,18,0.4)":"var(--muted)"}}>
                           {msg.time}{msg.from==="me" && <span style={{marginLeft:4}}>{i===(chatTarget.messages||[]).length-1?"✓✓":"✓"}</span>}
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                     {typingTarget===chatTarget.id && (
                       <div className="msg msg-them" style={{padding:"10px 16px"}}>
@@ -2423,7 +2465,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       </div>
                     )}
                     <div ref={messagesEndRef} />
-                  </div>
+                  </motion.div>
                   <div className="quick-replies">
                     {[getIcebreaker(chatTarget.type),"Hey! Love your work","Let's collab","What's your vision?","Love your portfolio"].map(q => (
                       <button key={q} className="quick-reply" onClick={()=>setChatInput(q)}>{q}</button>
