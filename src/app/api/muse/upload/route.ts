@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
 import { checkRate, clientIp } from "@/lib/rate-limit";
+import { scanWithRekognition, logScan, reportIncident } from "@/lib/contentScan";
 
 const ALLOWED_SIGNATURES: Record<string, { bytes: number[]; ext: string }> = {
   "89504e47": { bytes: [0x89,0x50,0x4E,0x47], ext: "png" },
@@ -68,6 +69,16 @@ export async function POST(req: NextRequest) {
     const blocklistedExts = ["svg","html","xml","js","php","exe","sh"];
     if (blocklistedExts.includes(file.name.toLowerCase().split(".").pop() || "")) {
       return NextResponse.json({ error: "Invalid file extension" }, { status: 400 });
+    }
+
+    // Content moderation — scan every upload with AWS Rekognition before storing
+    const scanResult = await scanWithRekognition(buffer);
+    await logScan({ userId: profileId, fileName: file.name, fileType: file.type || `image/${ext}`, fileSize: file.size, context: folder, result: scanResult });
+    if (scanResult.shouldBlock) {
+      if (scanResult.shouldReport) {
+        await reportIncident({ userId: profileId, context: folder, result: scanResult });
+      }
+      return NextResponse.json({ error: "Content violates safety policies", flaggedCategories: scanResult.flaggedCategories }, { status: 403 });
     }
 
     const safeFolder = folder.replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "avatars";
