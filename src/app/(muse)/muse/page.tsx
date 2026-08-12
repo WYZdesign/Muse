@@ -2063,8 +2063,13 @@ const isMatch=matchScore>55||Math.random()>0.5;
                               return (
                                 <>
                                 <div className="card-hero" ref={heroRef}>
-                                  <img loading="lazy" src={heroSrc} alt={profile.name} draggable="false" onError={handleImgError}
-                                    style={{width:"100%",height:"100%",objectFit:heroPortrait?"cover":"contain",objectPosition:heroPortrait?"center top":"center",background:"linear-gradient(160deg,#1a0a2e,#0a0612)",position:"absolute",top:0,left:0}} />
+                                  <motion.img
+                                    loading="lazy" src={heroSrc} alt={profile.name} draggable="false" onError={handleImgError}
+                                    initial={{ scale: 1.08 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }}
+                                    style={{width:"100%",height:"100%",objectFit:heroPortrait?"cover":"contain",objectPosition:heroPortrait?"center top":"center",background:"linear-gradient(160deg,#1a0a2e,#0a0612)",position:"absolute",top:0,left:0}}
+                                  />
                                   <div className="card-shine" />
                                   <div className="card-gradient" />
                                   <div className="card-border" />
@@ -2468,7 +2473,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   </motion.div>
                   <div className="quick-replies">
                     {[getIcebreaker(chatTarget.type),"Hey! Love your work","Let's collab","What's your vision?","Love your portfolio"].map(q => (
-                      <button key={q} className="quick-reply" onClick={()=>setChatInput(q)}>{q}</button>
+                      <motion.button key={q} className="quick-reply" onClick={()=>setChatInput(q)} whileTap={{scale:0.92}} transition={{type:"spring",stiffness:500,damping:20}}>{q}</motion.button>
                     ))}
                   </div>
                   <div className="chat-input-wrap">
@@ -3536,13 +3541,13 @@ const isMatch=matchScore>55||Math.random()>0.5;
       {!premiumDismissed && (
         <div className="premium-wrap">
           {showPremiumPopup ? (
-            <div className="premium-popup">
+            <motion.div className="premium-popup" initial={{opacity:0,scale:0.85,y:20}} animate={{opacity:1,scale:1,y:0}} transition={{type:"spring",stiffness:380,damping:22}}>
               <button className="premium-popup-close" onClick={() => { try{safeSetItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }} aria-label="Dismiss premium" title="Dismiss premium">✕</button>
               <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
               <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
               <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
               <div style={{marginTop:8,fontSize:10,color:"var(--muted)",textAlign:"center"}} onClick={() => { try{safeSetItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }}>Don&apos;t show again</div>
-            </div>
+            </motion.div>
           ) : (
             <button
               onClick={() => setShowPremiumPopup(true)}
