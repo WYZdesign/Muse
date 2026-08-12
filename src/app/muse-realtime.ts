@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { authFetch } from "@/app/(muse)/muse/lib/auth-client";
+import { trackError } from "@/lib/errorTracker";
 
 export type RealtimeMessage = {
   id?: string;
@@ -44,7 +45,8 @@ export async function persistMessage(opts: {
       }),
     });
     return res.ok;
-  } catch {
+  } catch (err) {
+    trackError("persistMessage_failed", { convo, err: String(err) });
     return false;
   }
 }
@@ -81,7 +83,9 @@ export function subscribeToConversation(opts: {
     )
     .subscribe();
   return () => {
-    try { supabase.removeChannel(channel); } catch {}
+    try { supabase.removeChannel(channel); } catch (err) {
+      trackError("realtime_unsubscribe_failed", { convo, err: String(err) });
+    }
   };
 }
 
@@ -110,7 +114,9 @@ export function getGeolocation(): Promise<GeoResult> {
             const j = await r.json();
             city = j.city || "";
           }
-        } catch {}
+        } catch (err) {
+          trackError("reverse_geocode_failed", { err: String(err) });
+        }
         resolve({ lat, long, city });
       },
       () => resolve(null),

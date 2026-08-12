@@ -6,6 +6,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
 import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles } from "@/app/muse-realtime";
+import { trackError } from "@/lib/errorTracker";
 import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiShare2, FiShield, FiGift, FiDollarSign } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import Nav from "./components/Nav";
@@ -395,14 +396,14 @@ function MusePage() {
         setCardAlbums(albums);
         if (albums.length > 0) setCardAlbumIdx(0);
       })
-      .catch(() => {});
+      .catch((err) => { trackError("fetch_albums", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [currentIdx, filteredProfiles, apiFetch]);
 
   useEffect(() => {
     if (cardAlbumIdx === 0) { setCardAlbumPhotos([]); return; }
     const album = cardAlbums[cardAlbumIdx - 1];
-    if (!album?.id) { setCardAlbumPhotos([]); return; }
+    if (!album?.id) return;
     let cancelled = false;
     apiFetch(`/api/muse?type=album-photos&album_id=${encodeURIComponent(album.id)}`)
       .then(r => r.json())
@@ -410,7 +411,7 @@ function MusePage() {
         if (cancelled) return;
         setCardAlbumPhotos((d.photos || []).map((p: any) => p.img_url));
       })
-      .catch(() => {});
+      .catch((err) => { trackError("fetch_album_photos", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [cardAlbumIdx, cardAlbums, apiFetch]);
 
@@ -637,7 +638,7 @@ function MusePage() {
       if (j.success && j.url) return j.url;
       showToast("Upload failed: " + (j.error || "Unknown"));
       return null;
-    } catch { showToast("Upload failed"); return null; }
+    } catch { trackError("upload_image_failed", { folder }); showToast("Upload failed"); return null; }
   }, [showToast]);
 
   const ICEBREAKERS: Record<string, string[]> = {
@@ -1063,7 +1064,7 @@ function MusePage() {
     authFetch("/api/muse?type=profiles")
       .then(r => r.json())
       .then(d => { if (!cancelled && d.profiles) setLiveProfiles(d.profiles); })
-      .catch(() => {});
+      .catch((err) => { trackError("fetch_profiles", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
 
@@ -1074,7 +1075,7 @@ function MusePage() {
     authFetch("/api/muse?type=feed")
       .then(r => r.json())
       .then(d => { if (!cancelled && d.posts) setLiveFeed(d.posts); })
-      .catch(() => {});
+      .catch((err) => { trackError("fetch_feed", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
 
@@ -1085,7 +1086,7 @@ function MusePage() {
     authFetch("/api/muse?type=briefs")
       .then(r => r.json())
       .then(d => { if (!cancelled && d.briefs) setLiveBriefs(d.briefs); })
-      .catch(() => {});
+      .catch((err) => { trackError("fetch_briefs", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
 
@@ -1096,7 +1097,7 @@ function MusePage() {
     authFetch("/api/muse?type=forum")
       .then(r => r.json())
       .then(d => { if (!cancelled && d.posts) setLiveForum(d.posts); })
-      .catch(() => {});
+      .catch((err) => { trackError("fetch_forum", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
 
@@ -1107,7 +1108,7 @@ function MusePage() {
     authFetch("/api/muse?type=events")
       .then(r => r.json())
       .then(d => { if (!cancelled && d.events) setLiveEvents(d.events); })
-      .catch(() => {});
+      .catch((err) => { trackError("fetch_events", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
 
@@ -1118,7 +1119,7 @@ function MusePage() {
     authFetch("/api/muse?type=communities")
       .then(r => r.json())
       .then(d => { if (!cancelled && d.communities) setLiveCommunities(d.communities); })
-      .catch(() => {});
+      .catch((err) => { trackError("fetch_communities", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
 
@@ -1129,7 +1130,7 @@ function MusePage() {
     authFetch("/api/muse?type=sessions")
       .then(r => r.json())
       .then(d => { if (!cancelled && d.sessions) setLiveSessions(d.sessions); })
-      .catch(() => {});
+      .catch((err) => { trackError("fetch_sessions", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
 
