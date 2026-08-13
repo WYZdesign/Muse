@@ -855,7 +855,7 @@ img{background-color:#1a0a2e}
 .album-thumb-remove{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.7);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 
 /* ═══ SWIPE CARD HERO (v2 rework) ═══ */
-.card-hero-info{position:absolute;bottom:72px;left:0;right:0;padding:24px 20px 12px;background:linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.6) 60%,transparent 100%);z-index:4;pointer-events:none;transition:opacity .3s ease,transform .3s ease}
+.card-hero-info{position:absolute;bottom:18px;left:0;right:80px;padding:24px 20px 16px;background:linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.7) 50%,transparent 100%);z-index:4;pointer-events:none;transition:opacity .3s ease,transform .3s ease}
 .card-hero-info.hidden{opacity:0;transform:translateY(12px)}
 .card-hero-info.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
 .card-hero-name{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:800;color:#fff;font-family:"Playfair Display",serif;font-style:italic;text-shadow:0 2px 8px rgba(0,0,0,0.7),0 4px 20px rgba(0,0,0,0.5),0 0 40px rgba(10,6,18,0.8)}

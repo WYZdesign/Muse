@@ -2629,12 +2629,61 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 <div style={{width:36}} />
               </div>
               <div className="conn-tabs" style={{padding:"0 16px"}}>
-                {(["sessions","bookings"] as const).map(t => (
-                  <div key={t} className={"conn-tab"+(sessTab===t?" active":"")} onClick={()=>setSessTab(t)}>{t==="sessions"?"Discover":"My Bookings"}</div>
-                ))}
+                <div className="conn-tab active">Sessions</div>
               </div>
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
-                {sessTab === "sessions" && (liveSessions || SESSIONS).map(s => (
+                {/* My Bookings */}
+                {matches.filter(m => m.booked).length > 0 && (
+                  <>
+                    <div style={{fontSize:13,fontWeight:700,color:"var(--gold)",margin:"4px 0 10px"}}>My Bookings</div>
+                    {matches.filter(m => m.booked).map(m => (
+                      <div key={m.id} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
+                        <img loading="lazy" src={m.img} alt={m.name} style={{width:"25%",alignSelf:"stretch",minHeight:120,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                        <div className="conn-content" style={{flex:1,padding:14,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                          <div className="conn-name" style={{fontSize:15}}>{m.name}</div>
+                          <div className="conn-meta" style={{fontSize:12}}>{m.type} · Booked Session</div>
+                          <div style={{display:"flex",gap:8,marginTop:8,flexDirection:"column"}}>
+                            <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={()=>{openChat(m)}}>Message</button>
+                            <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{height:16}} />
+                  </>
+                )}
+                {/* Sample bookings placeholder */}
+                {matches.filter(m => m.booked).length === 0 && (
+                  <>
+                    <div style={{fontSize:13,fontWeight:700,color:"var(--gold)",margin:"4px 0 10px"}}>My Bookings</div>
+                    <div style={{fontSize:12,color:"var(--text2)",marginBottom:16}}>No bookings yet — book a session below to get started</div>
+                    {[
+                      {name:"ARCANA",type:"Photographer",date:"Fri · 2:00 PM",status:"Confirmed",img:"/models/ARCANA/Bodypaint-2.webp"},
+                      {name:"MITRI",type:"Producer",date:"Sat · 11:30 AM",status:"Pending",img:"/models/MITRI/Mitri-10.webp"},
+                      {name:"NAKIA",type:"Videographer",date:"Mon · 4:00 PM",status:"Confirmed",img:"/models/NAKIA/Nakia-10.webp"}
+                    ].map((b,i)=>(
+                      <div key={i} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
+                        <img loading="lazy" src={b.img} alt={b.name} style={{width:"28%",alignSelf:"stretch",minHeight:110,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                        <div className="conn-content" style={{flex:1,padding:12,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                            <div className="conn-name" style={{fontSize:15}}>{b.name}</div>
+                            <span style={{fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:99,background:b.status==="Confirmed"?"rgba(0,230,118,0.15)":"rgba(255,215,0,0.15)",color:b.status==="Confirmed"?"var(--mint)":"var(--gold)"}}>{b.status}</span>
+                          </div>
+                          <div className="conn-meta" style={{fontSize:12}}>{b.type}</div>
+                          <div className="conn-meta" style={{fontSize:12,color:"var(--gold)",fontWeight:600}}>{b.date}</div>
+                          <div style={{display:"flex",gap:8,marginTop:8}}>
+                            <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:12,fontWeight:700,borderRadius:10}} onClick={()=>showToast("Messaging "+b.name+"…")}>Message</button>
+                            <button className="btn btn-outline" style={{flex:1,padding:"10px 0",fontSize:12,fontWeight:600,borderRadius:10}} onClick={()=>showToast("Session details coming soon")}>Details</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{height:16}} />
+                  </>
+                )}
+                {/* Available Sessions */}
+                <div style={{fontSize:13,fontWeight:700,color:"var(--text)",margin:"4px 0 10px"}}>Available Sessions</div>
+                {(liveSessions || SESSIONS).map(s => (
                   <div key={s.id} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
                     <img loading="lazy" src={s.img} alt={s.name} style={{width:"25%",alignSelf:"stretch",minHeight:120,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                     <div className="conn-content" style={{flex:1,padding:14,display:"flex",flexDirection:"column",justifyContent:"center"}}>
