@@ -2122,6 +2122,25 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                       <div className="card-section-tags">{profile.styles.map(s=><span key={s} className="tag">{s}</span>)}</div>
                                     </div>
                                     <div className="card-section">
+                                      <div className="card-section-title">Personality</div>
+                                      <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                                        {(profile as any).zodiac && <span className="tag" style={{background:"rgba(212,165,255,0.12)",border:"1px solid rgba(212,165,255,0.25)",color:"var(--lavender)"}}>{({Aries:"♈ Aries",Taurus:"♉ Taurus",Gemini:"♊ Gemini",Cancer:"♋ Cancer",Leo:"♌ Leo",Virgo:"♍ Virgo",Libra:"♎ Libra",Scorpio:"♏ Scorpio",Sagittarius:"♐ Sagittarius",Capricorn:"♑ Capricorn",Aquarius:"♒ Aquarius",Pisces:"♓ Pisces"})[(profile as any).zodiac]||(profile as any).zodiac}</span>}
+                                        {(profile as any).mbti && <span className="tag" style={{background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",color:"var(--gold)"}}>{({INTJ:"Architect",INTP:"Logician",ENTJ:"Commander",ENTP:"Debater",INFJ:"Advocate",INFP:"Mediator",ENFJ:"Protagonist",ENFP:"Campaigner",ISTJ:"Logistician",ISFJ:"Defender",ESTJ:"Executive",ESFJ:"Consul",ISTP:"Virtuoso",ISFP:"Adventurer",ESTP:"Entrepreneur",ESFP:"Entertainer"})[(profile as any).mbti]||(profile as any).mbti} · {(profile as any).mbti}</span>}
+                                        {(profile as any).chinese && <span className="tag" style={{background:"rgba(255,138,128,0.1)",border:"1px solid rgba(255,138,128,0.2)",color:"var(--coral)"}}>🐉 {(profile as any).chinese}</span>}
+                                        {(profile as any).lifePath && <span className="tag" style={{background:"rgba(152,251,152,0.1)",border:"1px solid rgba(152,251,152,0.2)",color:"var(--mint)"}}>🔢 Life Path {(profile as any).lifePath}</span>}
+                                        {(profile as any).connection && <span className="tag" style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",color:"var(--text2)"}}>{({collab:"🤝 Collab",partner:"💼 Partner",friend:"👋 Friend",mentor:"🎓 Mentor"})[(profile as any).connection]||(profile as any).connection}</span>}
+                                      </div>
+                                    </div>
+                                    {(profile as any).zodiac && (
+                                      <div className="card-section">
+                                        <div className="card-section-title">Astrology</div>
+                                        <div className="card-section-text" style={{lineHeight:1.6}}>
+                                          <div style={{marginBottom:6}}><strong style={{color:"var(--lavender)"}}>{({Aries:"♈ Aries — The Pioneer",Taurus:"♉ Taurus — The Builder",Gemini:"♊ Gemini — The Communicator",Cancer:"♋ Cancer — The Nurturer",Leo:"♌ Leo — The Performer",Virgo:"♍ Virgo — The Analyst",Libra:"♎ Libra — The Diplomat",Scorpio:"♏ Scorpio — The Strategist",Sagittarius:"♐ Sagittarius — The Explorer",Capricorn:"♑ Capricorn — The Achiever",Aquarius:"♒ Aquarius — The Visionary",Pisces:"♓ Pisces — The Dreamer"})[(profile as any).zodiac]||(profile as any).zodiac}</strong></div>
+                                          <div style={{fontSize:12,color:"var(--text2)"}}>{({Aries:"Bold, ambitious, and always first to try something new. Natural leader energy.",Taurus:"Reliable, patient, and deeply creative. Values quality over quantity.",Gemini:"Versatile, expressive, and quick-witted. Thrives on variety.",Cancer:"Intuitive, emotional, and protective. Creates safe spaces for others.",Leo:"Creative, passionate, and generous. Natural performer and collaborator.",Virgo:"Analytical, practical, and detail-oriented. Brings precision to every project.",Libra:"Balanced, social, and artistic. Sees beauty in everything.",Scorpio:"Resourceful, brave, and passionate. Deep focus and intensity.",Sagittarius:"Generous, idealistic, and adventurous. Always exploring new horizons.",Capricorn:"Responsible, disciplined, and ambitious. Builds lasting things.",Aquarius:"Progressive, original, and independent. Thinks outside the box.",Pisces:"Compassionate, artistic, and intuitive. Feels deeply and creates freely."})[(profile as any).zodiac]||""}</div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    <div className="card-section">
                                       <div className="card-section-title">Portfolio</div>
                                       {(() => {
                                         const albumPhotos = cardAlbumIdx > 0 ? cardAlbumPhotos : allPhotos;
