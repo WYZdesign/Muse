@@ -2197,11 +2197,11 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                    <div className={"match-fab"+(cardScrolled?" hidden":"")}>
                                     <button className={"match-fab-btn"+(showMatchMenu?" open":"")} onClick={()=>setShowMatchMenu(v=>!v)} aria-label="Match actions">✦</button>
                                     <div className={"match-radial"+(showMatchMenu?" open":"")}>
-                                      <button className="match-radial-btn btn-rewind" style={{left:-100,top:0}} onClick={doRewind} aria-label="Rewind">↺</button>
-                                      <button className="match-radial-btn btn-nope" style={{left:-120,top:-50}} onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
-                                      <button className="match-radial-btn btn-super" style={{left:-71,top:-71}} onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
-                                      <button className="match-radial-btn btn-like" style={{left:-50,top:-120}} onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
-                                      <button className="match-radial-btn btn-note" style={{left:0,top:-100}} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
+                                      <button className="match-radial-btn btn-rewind" style={{left:-85,top:-10}} onClick={doRewind} aria-label="Rewind">↺</button>
+                                      <button className="match-radial-btn btn-nope" style={{left:-95,top:-45}} onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
+                                      <button className="match-radial-btn btn-super" style={{left:-60,top:-70}} onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
+                                      <button className="match-radial-btn btn-like" style={{left:-30,top:-90}} onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
+                                      <button className="match-radial-btn btn-note" style={{left:5,top:-95}} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
                                     </div>
                                   </div>
                                  )}
@@ -2634,9 +2634,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 <div style={{width:36}} />
               </div>
               <div className="conn-tabs" style={{padding:"0 16px"}}>
-                <div className="conn-tab active">Sessions</div>
+                {(["sessions","requests"] as const).map(t => (
+                  <div key={t} className={"conn-tab"+(sessTab===t?" active":"")} onClick={()=>setSessTab(t)}>{t==="sessions"?"My Bookings":"Requests"}</div>
+                ))}
               </div>
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
+                {sessTab === "sessions" && (<>
                 {/* My Bookings */}
                 {matches.filter(m => m.booked).length > 0 && (
                   <>
@@ -2704,45 +2707,50 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     </div>
                   </div>
                 ))}
-                {sessTab === "bookings" && matches.filter(m => m.booked).length === 0 ? (
+                </>)}
+                {sessTab === "requests" && (
                   <div style={{padding:"0 20px 20px"}}>
-                    <div style={{fontSize:13,color:"var(--text2)",margin:"4px 0 12px"}}>Sample bookings — real ones appear once you book a session</div>
+                    <div style={{fontSize:13,fontWeight:700,color:"var(--gold)",margin:"4px 0 10px"}}>Incoming Requests</div>
                     {[
-                      {name:"ARCANA",type:"Photographer",date:"Fri · 2:00 PM",status:"Confirmed",img:"/models/ARCANA/Bodypaint-2.webp"},
-                      {name:"MITRI",type:"Producer",date:"Sat · 11:30 AM",status:"Pending",img:"/models/MITRI/Mitri-10.webp"},
-                      {name:"NAKIA",type:"Videographer",date:"Mon · 4:00 PM",status:"Confirmed",img:"/models/NAKIA/Nakia-10.webp"}
-                    ].map((b,i)=>(
+                      {name:"SABLE",type:"Model",type2:"Photography Session",img:"/models/SABLE/IMG_5112.webp",note:"Would love to do a golden hour editorial shoot"},
+                      {name:"KAYLA",type:"Stylist",type2:"Styling Consultation",img:"/models/KAYLA/Kayla-1.webp",note:"Need help with wardrobe for my next campaign"},
+                      {name:"JERMAINE",type:"Director",type2:"Creative Direction",img:"/models/JERMAINE/Jermaine-1.webp",note:"Looking for a creative director for a music video"},
+                    ].map((r,i)=>(
                       <div key={i} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
-                        <img loading="lazy" src={b.img} alt={b.name} style={{width:"28%",alignSelf:"stretch",minHeight:110,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                        <img loading="lazy" src={r.img} alt={r.name} style={{width:"25%",alignSelf:"stretch",minHeight:110,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                         <div className="conn-content" style={{flex:1,padding:12,display:"flex",flexDirection:"column",justifyContent:"center"}}>
                           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                            <div className="conn-name" style={{fontSize:15}}>{b.name}</div>
-                            <span style={{fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:99,background:b.status==="Confirmed"?"rgba(0,230,118,0.15)":"rgba(255,215,0,0.15)",color:b.status==="Confirmed"?"var(--mint)":"var(--gold)"}}>{b.status}</span>
+                            <div className="conn-name" style={{fontSize:15}}>{r.name}</div>
+                            <span style={{fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:99,background:"rgba(212,165,255,0.15)",color:"var(--lavender)"}}>{r.type2}</span>
                           </div>
-                          <div className="conn-meta" style={{fontSize:12}}>{b.type}</div>
-                          <div className="conn-meta" style={{fontSize:12,color:"var(--gold)",fontWeight:600}}>{b.date}</div>
+                          <div className="conn-meta" style={{fontSize:12}}>{r.type}</div>
+                          <div style={{fontSize:12,color:"var(--text2)",marginTop:4,lineHeight:1.4}}>{r.note}</div>
                           <div style={{display:"flex",gap:8,marginTop:8}}>
-                            <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:12,fontWeight:700,borderRadius:10}} onClick={()=>showToast("Messaging "+b.name+"…")}>Message</button>
-                            <button className="btn btn-outline" style={{flex:1,padding:"10px 0",fontSize:12,fontWeight:600,borderRadius:10}} onClick={()=>showToast("Session details coming soon")}>Details</button>
+                            <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:12,fontWeight:700,borderRadius:10}} onClick={()=>showToast("Request accepted!")}>Accept</button>
+                            <button className="btn btn-outline" style={{flex:1,padding:"10px 0",fontSize:12,fontWeight:600,borderRadius:10}} onClick={()=>showToast("Request declined")}>Decline</button>
                           </div>
                         </div>
                       </div>
                     ))}
-                  </div>
-                ) : (
-                  matches.filter(m => m.booked).map(m => (
-                    <div key={m.id} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
-                      <img loading="lazy" src={m.img} alt={m.name} style={{width:"25%",alignSelf:"stretch",minHeight:120,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
-                      <div className="conn-content" style={{flex:1,padding:14,display:"flex",flexDirection:"column",justifyContent:"center"}}>
-                        <div className="conn-name" style={{fontSize:15}}>{m.name}</div>
-                        <div className="conn-meta" style={{fontSize:12}}>{m.type} · Booked Session</div>
-                         <div style={{display:"flex",gap:8,marginTop:8,flexDirection:"column"}}>
-                           <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={()=>{openChat(m)}}>Message</button>
-                           <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
-                         </div>
+                    <div style={{height:16}} />
+                    <div style={{fontSize:13,fontWeight:700,color:"var(--text)",margin:"4px 0 10px"}}>Sent Requests</div>
+                    {[
+                      {name:"DARRYL",type:"Videographer",status:"Pending",img:"/models/DARRYL/Darryl-1.webp",note:"Music video production"},
+                      {name:"ANGEL",type:"Makeup Artist",status:"Accepted",img:"/models/ANGEL/Angel-1.webp",note:"Editorial makeup session"},
+                    ].map((r,i)=>(
+                      <div key={i} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
+                        <img loading="lazy" src={r.img} alt={r.name} style={{width:"25%",alignSelf:"stretch",minHeight:110,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                        <div className="conn-content" style={{flex:1,padding:12,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                            <div className="conn-name" style={{fontSize:15}}>{r.name}</div>
+                            <span style={{fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:99,background:r.status==="Accepted"?"rgba(0,230,118,0.15)":"rgba(255,215,0,0.15)",color:r.status==="Accepted"?"var(--mint)":"var(--gold)"}}>{r.status}</span>
+                          </div>
+                          <div className="conn-meta" style={{fontSize:12}}>{r.type}</div>
+                          <div style={{fontSize:12,color:"var(--text2)",marginTop:4}}>{r.note}</div>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 )}
               </div>
               <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
