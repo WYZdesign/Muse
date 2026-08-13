@@ -2095,7 +2095,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                     <div ref={nopeLabelRef} className="label label-nope">NOPE</div>
                                   </>
                                 )}
-                                <div className="card-info-scroll" ref={cardScrollRef} onScroll={()=>{if(isTop){const scrollY=cardScrollRef.current?.scrollTop||0;setCardScrolled(scrollY>60);}}}>
+                                <div className="card-info-scroll" ref={cardScrollRef} onScroll={(e)=>{if(isTop){const scrollY=(e.target as HTMLElement)?.scrollTop||0;setCardScrolled(scrollY>60);}}}>
                                   <div className="card-details">
                                     {(profile as any).prompts?.length > 0 && (
                                       <div className="card-section">
