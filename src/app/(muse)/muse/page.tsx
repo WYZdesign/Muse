@@ -1,7 +1,7 @@
 "use client";
 
 import "./muse.css";
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, memo } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
@@ -55,6 +55,74 @@ const DEMO_MOMENTS: any[] = [
 
 
 
+
+// ═══ Memoized MatchCard — prevents all cards re-rendering on every state change ═══
+const MatchCard = memo(function MatchCard({ m, expanded, swiping, view, actions }: {
+  m: any;
+  expanded: boolean;
+  swiping: { id: string; offset: number } | null;
+  view: "list" | "grid";
+  actions: {
+    setExpandedMatchId: (v: string | null) => void;
+    setChatTarget: (v: any) => void;
+    showScreen: (s: any) => void;
+    setMatchSwiping: (v: { id: string; offset: number } | null) => void;
+    setReportTarget: (v: any) => void;
+    setShowReport: (v: boolean) => void;
+    setUnmatchTarget: (v: string) => void;
+    handleImgError: (e: any) => void;
+    getIcebreaker: (type: string, seed?: string) => string;
+  };
+}) {
+  const { setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping, setReportTarget, setShowReport, setUnmatchTarget, handleImgError, getIcebreaker } = actions;
+  const mid = String(m.id);
+  const swipingMe = swiping?.id === mid;
+  const barPct = swipingMe && swiping!.offset < -20 ? Math.min(100, (Math.abs(swiping!.offset) / 80) * 100) : 0;
+
+  const finishSwipe = useCallback((offset: number) => {
+    setMatchSwiping(null);
+    if (Math.abs(offset) > 80) {
+      if (offset > 0) { setReportTarget({ id: m.id, type: "match", name: m.name }); setShowReport(true); }
+      else { setUnmatchTarget(m.name); }
+    }
+  }, [m.id, m.name, setMatchSwiping, setReportTarget, setShowReport, setUnmatchTarget]);
+
+  return (
+    <div data-mid={mid} data-exp={expanded ? "1" : "0"} className={"match-card" + (expanded ? " match-card-expanded" : "") + (view === "grid" ? " match-card-grid" : "")}
+      style={{ transform: swipingMe ? `translateX(${swiping!.offset}px)` : undefined, transition: swiping ? "none" : "transform .25s ease", position: "relative", overflow: "hidden" }}
+      onClick={() => { if (expanded) { setExpandedMatchId(null); return; } setChatTarget(m); showScreen("chat"); }}
+      onMouseDown={(e) => { const startX = e.clientX; const startY = e.clientY; const handleMove = (ev: MouseEvent) => { const dx = ev.clientX - startX; const dy = ev.clientY - startY; if (Math.abs(dx) > 15 && Math.abs(dx) > Math.abs(dy)) { ev.preventDefault(); setMatchSwiping({ id: mid, offset: dx }); return false; } }; const handleUp = (ev: MouseEvent) => { const dx = ev.clientX - startX; finishSwipe(dx); document.removeEventListener("mousemove", handleMove); document.removeEventListener("mouseup", handleUp); }; document.addEventListener("mousemove", handleMove, { passive: false }); document.addEventListener("mouseup", handleUp); }}
+      onTouchStart={(e) => { const startX = e.touches[0].clientX; const startY = e.touches[0].clientY; const handleMove = (ev: TouchEvent) => { const dx = ev.touches[0].clientX - startX; const dy = ev.touches[0].clientY - startY; if (Math.abs(dx) > 15 && Math.abs(dx) > Math.abs(dy)) { setMatchSwiping({ id: mid, offset: dx }); } }; const handleEnd = (ev: TouchEvent) => { const dx = ev.touches[0].clientX - startX; finishSwipe(dx); document.removeEventListener("touchmove", handleMove); document.removeEventListener("touchend", handleEnd); }; document.addEventListener("touchmove", handleMove, { passive: false }); document.addEventListener("touchend", handleEnd); }}
+    >
+      {barPct > 0 && (
+        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${barPct}%`, background: "linear-gradient(90deg,#ff4444,#FFD700)", opacity: 0.3, transition: swiping ? "none" : "all .3s", zIndex: 0, borderRadius: "inherit" }} />
+      )}
+      <div className="match-avatar-wrap">
+        <img loading="lazy" src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} />
+        {m.online && <div className="online-dot" />}
+      </div>
+      <div className="match-info">
+        <div className="match-name">{m.name}</div>
+        <div className="match-type">{m.type}</div>
+        <div className="match-msg">{m.messages?.[m.messages.length - 1]?.text || getIcebreaker(m.type, mid)}</div>
+        {expanded && (
+          <div className="match-expand">
+            <div className="match-expand-bio">{m.bio || "Creative soul looking for their next collaboration."}</div>
+            <div className="match-expand-meta">
+              {m.location && <span>{m.location}</span>}
+              {typeof m.distanceMi === "number" && <span>{m.distanceMi} mi</span>}
+              {m.zodiac && <span>{m.zodiac}</span>}
+            </div>
+            <button className="match-expand-btn" onClick={(e) => { e.stopPropagation(); setExpandedMatchId(null); setChatTarget(m); showScreen("chat"); }}>Open Chat</button>
+          </div>
+        )}
+      </div>
+      <div className="match-time">{m.messages?.[m.messages.length - 1]?.time || ""}</div>
+      <div style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "var(--coral)", opacity: swipingMe && swiping!.offset < 0 ? 0.8 : 0.3, transition: "opacity .2s", pointerEvents: "none" }}><FiHeart size={14} /> Report</div>
+      <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "var(--coral)", opacity: swipingMe && swiping!.offset > 0 ? 0.8 : 0.3, transition: "opacity .2s", pointerEvents: "none" }}>Unmatch <FiHeart size={14} /></div>
+    </div>
+  );
+});
 
 /* ═══ COMPONENT ═══ */
 
@@ -163,7 +231,7 @@ function MusePage() {
   const [portfolioTab, setPortfolioTab] = useState<"all"|"portrait"|"landscape"|"sets">("all");
   const [forumPosts, setForumPosts] = useState<{id:number;title:string;body:string;author:string;avatar:string;votes:number;comments:{author:string;text:string}[];cat:string;time:string;pinned:boolean}[]>([]);
   const [commTab, setCommTab] = useState<"groups"|"events">("groups");
-  const [sessTab, setSessTab] = useState<"sessions"|"bookings">("sessions");
+  const [sessTab, setSessTab] = useState<"sessions"|"bookings"|"requests">("sessions");
   const [netTab, setNetTab] = useState<"pros"|"forum">("pros");
   const [forumSort, setForumSort] = useState<"hot"|"new"|"top">("hot");
   const [forumCategory, setForumCategory] = useState<string>("all");
@@ -748,6 +816,11 @@ function MusePage() {
 
   const flash = useCallback((color: string) => { setScreenFlash(color); setTimeout(() => setScreenFlash(null), 300); }, []);
   const showScreen = useCallback((s: typeof screen) => { setScreen(s); trackEvent("screen_view", { screen: s }); }, []);
+
+  const matchActions = useMemo(() => ({
+    setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping,
+    setReportTarget, setShowReport, setUnmatchTarget, handleImgError, getIcebreaker
+  }), [setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping, setReportTarget, setShowReport, setUnmatchTarget, handleImgError, getIcebreaker]);
 
   const navActive = useMemo(() => {
     const m: Record<string, string> = { discover: "discover", connections: "connections", matches: "matches", chat: "matches", briefs: "briefs", moments: "moments", profile: "profile", settings: "profile", subscription: "profile", portfolio: "profile" };
@@ -2126,19 +2199,19 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                     <div className="card-section">
                                       <div className="card-section-title">Personality</div>
                                       <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                                        {(profile as any).zodiac && <span className="tag" style={{background:"rgba(212,165,255,0.12)",border:"1px solid rgba(212,165,255,0.25)",color:"var(--lavender)"}}>{({Aries:"♈ Aries",Taurus:"♉ Taurus",Gemini:"♊ Gemini",Cancer:"♋ Cancer",Leo:"♌ Leo",Virgo:"♍ Virgo",Libra:"♎ Libra",Scorpio:"♏ Scorpio",Sagittarius:"♐ Sagittarius",Capricorn:"♑ Capricorn",Aquarius:"♒ Aquarius",Pisces:"♓ Pisces"})[(profile as any).zodiac]||(profile as any).zodiac}</span>}
-                                        {(profile as any).mbti && <span className="tag" style={{background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",color:"var(--gold)"}}>{({INTJ:"Architect",INTP:"Logician",ENTJ:"Commander",ENTP:"Debater",INFJ:"Advocate",INFP:"Mediator",ENFJ:"Protagonist",ENFP:"Campaigner",ISTJ:"Logistician",ISFJ:"Defender",ESTJ:"Executive",ESFJ:"Consul",ISTP:"Virtuoso",ISFP:"Adventurer",ESTP:"Entrepreneur",ESFP:"Entertainer"})[(profile as any).mbti]||(profile as any).mbti} · {(profile as any).mbti}</span>}
+                                        {(profile as any).zodiac && <span className="tag" style={{background:"rgba(212,165,255,0.12)",border:"1px solid rgba(212,165,255,0.25)",color:"var(--lavender)"}}>{({Aries:"♈ Aries",Taurus:"♉ Taurus",Gemini:"♊ Gemini",Cancer:"♋ Cancer",Leo:"♌ Leo",Virgo:"♍ Virgo",Libra:"♎ Libra",Scorpio:"♏ Scorpio",Sagittarius:"♐ Sagittarius",Capricorn:"♑ Capricorn",Aquarius:"♒ Aquarius",Pisces:"♓ Pisces"} as any)[(profile as any).zodiac]||(profile as any).zodiac}</span>}
+                                        {(profile as any).mbti && <span className="tag" style={{background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",color:"var(--gold)"}}>{({INTJ:"Architect",INTP:"Logician",ENTJ:"Commander",ENTP:"Debater",INFJ:"Advocate",INFP:"Mediator",ENFJ:"Protagonist",ENFP:"Campaigner",ISTJ:"Logistician",ISFJ:"Defender",ESTJ:"Executive",ESFJ:"Consul",ISTP:"Virtuoso",ISFP:"Adventurer",ESTP:"Entrepreneur",ESFP:"Entertainer"} as any)[(profile as any).mbti]||(profile as any).mbti} · {(profile as any).mbti}</span>}
                                         {(profile as any).chinese && <span className="tag" style={{background:"rgba(255,138,128,0.1)",border:"1px solid rgba(255,138,128,0.2)",color:"var(--coral)"}}>🐉 {(profile as any).chinese}</span>}
                                         {(profile as any).lifePath && <span className="tag" style={{background:"rgba(152,251,152,0.1)",border:"1px solid rgba(152,251,152,0.2)",color:"var(--mint)"}}>🔢 Life Path {(profile as any).lifePath}</span>}
-                                        {(profile as any).connection && <span className="tag" style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",color:"var(--text2)"}}>{({collab:"🤝 Collab",partner:"💼 Partner",friend:"👋 Friend",mentor:"🎓 Mentor"})[(profile as any).connection]||(profile as any).connection}</span>}
+                                        {(profile as any).connection && <span className="tag" style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",color:"var(--text2)"}}>{({collab:"🤝 Collab",partner:"💼 Partner",friend:"👋 Friend",mentor:"🎓 Mentor"} as any)[(profile as any).connection]||(profile as any).connection}</span>}
                                       </div>
                                     </div>
                                     {(profile as any).zodiac && (
                                       <div className="card-section">
                                         <div className="card-section-title">Astrology</div>
                                         <div className="card-section-text" style={{lineHeight:1.6}}>
-                                          <div style={{marginBottom:6}}><strong style={{color:"var(--lavender)"}}>{({Aries:"♈ Aries — The Pioneer",Taurus:"♉ Taurus — The Builder",Gemini:"♊ Gemini — The Communicator",Cancer:"♋ Cancer — The Nurturer",Leo:"♌ Leo — The Performer",Virgo:"♍ Virgo — The Analyst",Libra:"♎ Libra — The Diplomat",Scorpio:"♏ Scorpio — The Strategist",Sagittarius:"♐ Sagittarius — The Explorer",Capricorn:"♑ Capricorn — The Achiever",Aquarius:"♒ Aquarius — The Visionary",Pisces:"♓ Pisces — The Dreamer"})[(profile as any).zodiac]||(profile as any).zodiac}</strong></div>
-                                          <div style={{fontSize:12,color:"var(--text2)"}}>{({Aries:"Bold, ambitious, and always first to try something new. Natural leader energy.",Taurus:"Reliable, patient, and deeply creative. Values quality over quantity.",Gemini:"Versatile, expressive, and quick-witted. Thrives on variety.",Cancer:"Intuitive, emotional, and protective. Creates safe spaces for others.",Leo:"Creative, passionate, and generous. Natural performer and collaborator.",Virgo:"Analytical, practical, and detail-oriented. Brings precision to every project.",Libra:"Balanced, social, and artistic. Sees beauty in everything.",Scorpio:"Resourceful, brave, and passionate. Deep focus and intensity.",Sagittarius:"Generous, idealistic, and adventurous. Always exploring new horizons.",Capricorn:"Responsible, disciplined, and ambitious. Builds lasting things.",Aquarius:"Progressive, original, and independent. Thinks outside the box.",Pisces:"Compassionate, artistic, and intuitive. Feels deeply and creates freely."})[(profile as any).zodiac]||""}</div>
+                                          <div style={{marginBottom:6}}><strong style={{color:"var(--lavender)"}}>{({Aries:"♈ Aries — The Pioneer",Taurus:"♉ Taurus — The Builder",Gemini:"♊ Gemini — The Communicator",Cancer:"♋ Cancer — The Nurturer",Leo:"♌ Leo — The Performer",Virgo:"♍ Virgo — The Analyst",Libra:"♎ Libra — The Diplomat",Scorpio:"♏ Scorpio — The Strategist",Sagittarius:"♐ Sagittarius — The Explorer",Capricorn:"♑ Capricorn — The Achiever",Aquarius:"♒ Aquarius — The Visionary",Pisces:"♓ Pisces — The Dreamer"} as any)[(profile as any).zodiac]||(profile as any).zodiac}</strong></div>
+                                          <div style={{fontSize:12,color:"var(--text2)"}}>{({Aries:"Bold, ambitious, and always first to try something new. Natural leader energy.",Taurus:"Reliable, patient, and deeply creative. Values quality over quantity.",Gemini:"Versatile, expressive, and quick-witted. Thrives on variety.",Cancer:"Intuitive, emotional, and protective. Creates safe spaces for others.",Leo:"Creative, passionate, and generous. Natural performer and collaborator.",Virgo:"Analytical, practical, and detail-oriented. Brings precision to every project.",Libra:"Balanced, social, and artistic. Sees beauty in everything.",Scorpio:"Resourceful, brave, and passionate. Deep focus and intensity.",Sagittarius:"Generous, idealistic, and adventurous. Always exploring new horizons.",Capricorn:"Responsible, disciplined, and ambitious. Builds lasting things.",Aquarius:"Progressive, original, and independent. Thinks outside the box.",Pisces:"Compassionate, artistic, and intuitive. Feels deeply and creates freely."} as any)[(profile as any).zodiac]||""}</div>
                                         </div>
                                       </div>
                                     )}
@@ -2401,52 +2474,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div style={{fontSize:13,color:"var(--text2)",maxWidth:240,marginTop:6}}>Start swiping to find your creative connections</div>
                   </div>
                 )}
-                {matches.filter(m => searchQuery === "" || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(m => {
-                  const expanded = expandedMatchId === String(m.id);
-                  return (
-                    <div key={m.id} data-mid={String(m.id)} data-exp={expanded?"1":"0"} className={"match-card"+(expanded?" match-card-expanded":"")+(matchesView==="grid"?" match-card-grid":"")}
-                     style={{transform: matchSwiping?.id === String(m.id) ? `translateX(${matchSwiping.offset}px)` : undefined, transition: matchSwiping ? 'none' : 'transform .25s ease', position:"relative",overflow:"hidden"}}
-                     onClick={()=>{ if(expanded){ setExpandedMatchId(null); return; } setChatTarget(m); showScreen("chat"); }}
-                     onMouseDown={(e)=>{ const startX=e.clientX; const startY=e.clientY; const mid=String(m.id); const handleMove=(ev: MouseEvent)=>{ const dx=ev.clientX-startX; const dy=ev.clientY-startY; if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){ ev.preventDefault(); setMatchSwiping(prev=>prev?.id===mid?{...prev,offset:dx}:{id:mid,offset:dx}); return false; } }; const handleUp=(ev: MouseEvent)=>{ const sw=matchSwiping; setMatchSwiping(null); if(sw&&sw.id===mid&&Math.abs(sw.offset)>80){ if(sw.offset>0){ setReportTarget({id:m.id,type:"match",name:m.name}); setShowReport(true); } else { setUnmatchTarget(m.name); } } document.removeEventListener('mousemove',handleMove); document.removeEventListener('mouseup',handleUp); }; document.addEventListener('mousemove',handleMove,{passive:false}); document.addEventListener('mouseup',handleUp); }}
-                     onTouchStart={(e)=>{ const startX=e.touches[0].clientX; const startY=e.touches[0].clientY; const mid=String(m.id); const handleMove=(ev: TouchEvent)=>{ const dx=ev.touches[0].clientX-startX; const dy=ev.touches[0].clientY-startY; if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){ setMatchSwiping(prev=>prev?.id===mid?{...prev,offset:dx}:{id:mid,offset:dx}); } }; const handleEnd=()=>{ const sw=matchSwiping; setMatchSwiping(null); if(sw&&sw.id===mid&&Math.abs(sw.offset)>80){ if(sw.offset>0){ setReportTarget({id:m.id,type:"match",name:m.name}); setShowReport(true); } else { setUnmatchTarget(m.name); } } document.removeEventListener('touchmove',handleMove); document.removeEventListener('touchend',handleEnd); }; document.addEventListener('touchmove',handleMove,{passive:false}); document.addEventListener('touchend',handleEnd); }}
-                   >
-                     {/* Red gradient bar — shows on left swipe, snaps full-width to unmatch */}
-                     {(() => {
-                       const swiping = matchSwiping?.id === String(m.id) ? matchSwiping! : null;
-                       const leftOffset = swiping ? Math.max(0, -swiping.offset) : 0;
-                       const barPct = swiping && leftOffset > 20 ? Math.min(100, (leftOffset / 80) * 100) : 0;
-                       return barPct > 0 ? (
-                         <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${barPct}%`,background:"linear-gradient(90deg,#ff4444,#FFD700)",opacity:0.3,transition:matchSwiping?"none":"all .3s",zIndex:0,borderRadius:"inherit"}} />
-                       ) : null;
-                     })()}
-                     <div className="match-avatar-wrap">
-                       <img loading="lazy" src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} />
-                       {m.online && <div className="online-dot" />}
-                     </div>
-                     <div className="match-info">
-                       <div className="match-name">{m.name}</div>
-                       <div className="match-type">{m.type}</div>
-                        <div className="match-msg">{m.messages?.[m.messages.length-1]?.text || getIcebreaker(m.type, String(m.id))}</div>
-                        {expanded && (
-                          <div className="match-expand">
-                            <div className="match-expand-bio">{m.bio || "Creative soul looking for their next collaboration."}</div>
-                            <div className="match-expand-meta">
-                              {m.location && <span>{m.location}</span>}
-                              {typeof m.distanceMi === "number" && <span>{m.distanceMi} mi</span>}
-                              {m.zodiac && <span>{m.zodiac}</span>}
-                            </div>
-                            <button className="match-expand-btn" onClick={(e)=>{ e.stopPropagation(); setExpandedMatchId(null); setChatTarget(m); showScreen("chat"); }}>Open Chat</button>
-                          </div>
-                        )}
-                     </div>
-                     <div className="match-time">{m.messages?.[m.messages.length-1]?.time || ""}</div>
-
-                     {/* Swipe hint indicators - only show on hover/tap highlight */}
-                     <div style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",fontSize:11,color:"var(--coral)",opacity:matchSwiping?.id===String(m.id)&&matchSwiping.offset<0?0.8:0.3,transition:"opacity .2s",pointerEvents:"none"}}><FiHeart size={14} /> Report</div>
-                     <div style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",fontSize:11,color:"var(--coral)",opacity:matchSwiping?.id===String(m.id)&&matchSwiping.offset>0?0.8:0.3,transition:"opacity .2s",pointerEvents:"none"}}>Unmatch <FiHeart size={14} /></div>
-                   </div>
-                  );
-                })}
+                {matches.filter(m => searchQuery === "" || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(m => (
+                  <MatchCard key={m.id} m={m} expanded={expandedMatchId === String(m.id)} swiping={matchSwiping?.id === String(m.id) ? matchSwiping : null} view={matchesView} actions={matchActions} />
+                ))}
               </div>
               </>
               )}
