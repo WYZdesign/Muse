@@ -2055,11 +2055,17 @@ const isMatch=matchScore>55||Math.random()>0.5;
                               const heroPortrait = !!PORTRAIT_IMG[heroSrc];
                                return (
                                  <>
-                                 <div className="card-hero" ref={heroRef}>
-                                  <img
-                                    loading="lazy" src={heroSrc} alt={profile.name} draggable="false" onError={handleImgError}
-                                    style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:heroPortrait?"center top":"center",background:"linear-gradient(160deg,#1a0a2e,#0a0612)",position:"absolute",top:0,left:0}}
-                                  />
+                                  <div className="card-hero" ref={heroRef} onMouseMove={(e)=>{
+                                    const rect=e.currentTarget.getBoundingClientRect();
+                                    const x=(e.clientX-rect.left)/rect.width-0.5;
+                                    const y=(e.clientY-rect.top)/rect.height-0.5;
+                                    const img=e.currentTarget.querySelector('img') as HTMLImageElement;
+                                    if(img) img.style.transform=`perspective(800px) rotateY(${x*8}deg) rotateX(${-y*8}deg) scale(1.02)`;
+                                  }} onMouseLeave={(e)=>{const img=e.currentTarget.querySelector('img') as HTMLImageElement;if(img)img.style.transform='perspective(800px) rotateY(0deg) rotateX(0deg) scale(1)';}}>
+                                   <img
+                                     loading="lazy" src={heroSrc} alt={profile.name} draggable="false" onError={handleImgError}
+                                     style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:heroPortrait?"center top":"center",background:"linear-gradient(160deg,#1a0a2e,#0a0612)",position:"absolute",top:0,left:0,transition:"transform 0.15s ease-out",transformStyle:"preserve-3d"}}
+                                   />
                                   <div className="card-shine" />
                                   <div className="card-gradient" />
                                   <div className="card-border" />
