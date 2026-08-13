@@ -2176,11 +2176,11 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                    <div className={"match-fab"+(cardScrolled?" hidden":"")}>
                                     <button className={"match-fab-btn"+(showMatchMenu?" open":"")} onClick={()=>setShowMatchMenu(v=>!v)} aria-label="Match actions">✦</button>
                                     <div className={"match-radial"+(showMatchMenu?" open":"")}>
-                                      <button className="match-radial-btn btn-rewind" style={{left:-120,top:0}} onClick={doRewind} aria-label="Rewind">↺</button>
-                                      <button className="match-radial-btn btn-nope" style={{left:-110,top:-46}} onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
-                                      <button className="match-radial-btn btn-super" style={{left:-85,top:-85}} onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
-                                      <button className="match-radial-btn btn-like" style={{left:-46,top:-110}} onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
-                                      <button className="match-radial-btn btn-note" style={{left:0,top:-120}} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
+                                      <button className="match-radial-btn btn-rewind" style={{left:-100,top:0}} onClick={doRewind} aria-label="Rewind">↺</button>
+                                      <button className="match-radial-btn btn-nope" style={{left:-120,top:-50}} onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
+                                      <button className="match-radial-btn btn-super" style={{left:-71,top:-71}} onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
+                                      <button className="match-radial-btn btn-like" style={{left:-50,top:-120}} onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
+                                      <button className="match-radial-btn btn-note" style={{left:0,top:-100}} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
                                     </div>
                                   </div>
                                  )}
