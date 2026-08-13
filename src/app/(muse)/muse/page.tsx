@@ -288,6 +288,7 @@ function MusePage() {
   const loadStateRef = useRef(false);
   const sessionAppliedRef = useRef(false);
   const shuffleSeed = useRef(Math.floor(Math.random() * 100000));
+  const matchSwipeRef = useRef<{id:string;startX:number;el:HTMLElement|null}>({id:"",startX:0,el:null});
   const [matchSwiping, setMatchSwiping] = useState<{id:string;offset:number} | null>(null);
   const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number;startTime:number;el:HTMLElement|null;axis:"x"|"y"|null}>({startX:0,startY:0,active:false,relY:0,startTime:0,el:null,axis:null});
   const likeLabelRef = useRef<HTMLDivElement>(null);
@@ -635,9 +636,10 @@ function MusePage() {
     Designer: ["What's your design philosophy?", "Typography or illustration, which do you love more?", "What tools define your workflow?"],
     default: ["What's inspiring you right now?", "What are you working on?", "What's your creative dream project?"],
   };
-  const getIcebreaker = useCallback((type: string) => {
+  const getIcebreaker = useCallback((type: string, seed?: string) => {
     const pool = ICEBREAKERS[type] || ICEBREAKERS.default;
-    return pool[~~(Math.random() * pool.length)];
+    const hash = seed ? seed.split('').reduce((a, c) => a + c.charCodeAt(0), 0) : 0;
+    return pool[hash % pool.length];
   }, []);
 
   const getReferralTier = (c:number) => c>=50?{tier:"Platinum",discount:20}:c>=20?{tier:"Gold",discount:20}:c>=5?{tier:"Silver",discount:10}:c>=1?{tier:"Bronze",discount:0}:{tier:"None",discount:0};
@@ -2401,10 +2403,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   const expanded = expandedMatchId === String(m.id);
                   return (
                     <div key={m.id} data-mid={String(m.id)} data-exp={expanded?"1":"0"} className={"match-card"+(expanded?" match-card-expanded":"")+(matchesView==="grid"?" match-card-grid":"")}
-                     style={{transform: matchSwiping?.id === String(m.id) ? `translateX(${matchSwiping.offset}px)` : undefined, transition: matchSwiping ? 'none' : 'all .25s', position:"relative",overflow:"hidden"}}
+                     style={{transform: matchSwiping?.id === String(m.id) ? `translateX(${matchSwiping.offset}px)` : undefined, transition: matchSwiping ? 'none' : 'transform .25s ease', position:"relative",overflow:"hidden"}}
                      onClick={()=>{ if(expanded){ setExpandedMatchId(null); return; } setChatTarget(m); showScreen("chat"); }}
-                     onMouseDown={(e)=>{ const startX=e.clientX; const startY=e.clientY; const handleMove=(ev: MouseEvent)=>{ const dx=ev.clientX-startX; const dy=ev.clientY-startY; if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){ e.preventDefault(); setMatchSwiping({id:String(m.id),offset:dx}); return false; } }; const handleUp=(ev: MouseEvent)=>{ if(matchSwiping?.id===String(m.id)){ const offset=matchSwiping.offset; setMatchSwiping(null); if(Math.abs(offset)>80){ if(offset>0){ setReportTarget({id:m.id,type:"match",name:m.name}); setShowReport(true); } else { setUnmatchTarget(m.name); } } } document.removeEventListener('mousemove',handleMove); document.removeEventListener('mouseup',handleUp); }; document.addEventListener('mousemove',handleMove,{passive:false}); document.addEventListener('mouseup',handleUp); }}
-                     onTouchStart={(e)=>{ const startX=e.touches[0].clientX; const startY=e.touches[0].clientY; const handleMove=(ev: TouchEvent)=>{ const dx=ev.touches[0].clientX-startX; const dy=ev.touches[0].clientY-startY; if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){ setMatchSwiping({id:String(m.id),offset:dx}); } }; const handleEnd=()=>{ if(matchSwiping?.id===String(m.id)){ const offset=matchSwiping.offset; setMatchSwiping(null); if(Math.abs(offset)>80){ if(offset>0){ setReportTarget({id:m.id,type:"match",name:m.name}); setShowReport(true); } else { setUnmatchTarget(m.name); } } } document.removeEventListener('touchmove',handleMove); document.removeEventListener('touchend',handleEnd); }; document.addEventListener('touchmove',handleMove,{passive:false}); document.addEventListener('touchend',handleEnd); }}
+                     onMouseDown={(e)=>{ const startX=e.clientX; const startY=e.clientY; const mid=String(m.id); const handleMove=(ev: MouseEvent)=>{ const dx=ev.clientX-startX; const dy=ev.clientY-startY; if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){ ev.preventDefault(); setMatchSwiping(prev=>prev?.id===mid?{...prev,offset:dx}:{id:mid,offset:dx}); return false; } }; const handleUp=(ev: MouseEvent)=>{ const sw=matchSwiping; setMatchSwiping(null); if(sw&&sw.id===mid&&Math.abs(sw.offset)>80){ if(sw.offset>0){ setReportTarget({id:m.id,type:"match",name:m.name}); setShowReport(true); } else { setUnmatchTarget(m.name); } } document.removeEventListener('mousemove',handleMove); document.removeEventListener('mouseup',handleUp); }; document.addEventListener('mousemove',handleMove,{passive:false}); document.addEventListener('mouseup',handleUp); }}
+                     onTouchStart={(e)=>{ const startX=e.touches[0].clientX; const startY=e.touches[0].clientY; const mid=String(m.id); const handleMove=(ev: TouchEvent)=>{ const dx=ev.touches[0].clientX-startX; const dy=ev.touches[0].clientY-startY; if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){ setMatchSwiping(prev=>prev?.id===mid?{...prev,offset:dx}:{id:mid,offset:dx}); } }; const handleEnd=()=>{ const sw=matchSwiping; setMatchSwiping(null); if(sw&&sw.id===mid&&Math.abs(sw.offset)>80){ if(sw.offset>0){ setReportTarget({id:m.id,type:"match",name:m.name}); setShowReport(true); } else { setUnmatchTarget(m.name); } } document.removeEventListener('touchmove',handleMove); document.removeEventListener('touchend',handleEnd); }; document.addEventListener('touchmove',handleMove,{passive:false}); document.addEventListener('touchend',handleEnd); }}
                    >
                      {/* Red gradient bar — shows on left swipe, snaps full-width to unmatch */}
                      {(() => {
@@ -2422,7 +2424,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                      <div className="match-info">
                        <div className="match-name">{m.name}</div>
                        <div className="match-type">{m.type}</div>
-                       <div className="match-msg">{m.messages?.[m.messages.length-1]?.text || getIcebreaker(m.type)}</div>
+                        <div className="match-msg">{m.messages?.[m.messages.length-1]?.text || getIcebreaker(m.type, String(m.id))}</div>
                         {expanded && (
                           <div className="match-expand">
                             <div className="match-expand-bio">{m.bio || "Creative soul looking for their next collaboration."}</div>
