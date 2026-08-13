@@ -414,6 +414,14 @@ function MusePage() {
       if (d.obData) setObData(d.obData);
       if (d.obStep) setObStep(d.obStep);
       if (d.matches) setMatches(d.matches);
+      if (!d.matches || d.matches.length === 0) {
+        const demoMatches = PROFILES.slice(0, 6).map((p: any) => ({
+          id: p.id, name: p.name, img: p.img, type: p.type,
+          bio: p.bio, location: p.loc, booked: false, online: Math.random() > 0.5,
+          messages: []
+        }));
+        setMatches(demoMatches);
+      }
       if (d.dailyLikes!=null) setDailyLikes(d.dailyLikes);
       if (d.superLikes!=null) setSuperLikes(d.superLikes);
       if (d.savedBriefs) setSavedBriefs(d.savedBriefs);

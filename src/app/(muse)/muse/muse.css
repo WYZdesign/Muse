@@ -779,7 +779,7 @@ img{background-color:#1a0a2e}
 .swipe-card .card-hero img{width:100%;height:100%;object-fit:cover;display:block;position:absolute;top:0;left:0}
 .swipe-card .card-info-scroll{position:absolute;inset:0;overflow-y:auto;padding:0;scrollbar-width:none;background:transparent;z-index:2}
 .swipe-card .card-info-scroll::-webkit-scrollbar{width:0}
-.swipe-card .card-details{margin-top:62vh;background:var(--bg);padding:24px 20px 40px;border-radius:24px 24px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,0.4);z-index:2}
+.swipe-card .card-details{margin-top:62vh;background:var(--bg);padding:24px 20px 40px;border-radius:24px 24px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,0.4);z-index:2;min-height:60vh}
 
 /* ═══ ALL IMAGES FILL CONTAINERS ═══ */
 /* Scoped to swipe cards only — this was previously a global img[src^="/models/"] selector
