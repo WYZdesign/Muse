@@ -590,6 +590,11 @@ export async function POST(req: NextRequest) {
     if (actionType === "book-session") {
       const { sessionId, hostId } = rest;
       if (!sessionId) return NextResponse.json({ error: "sessionId required" }, { status: 400 });
+      // Stripe Identity enforcement — paid bookings require verified 18+ identity
+      const { data: booker } = await sb.from("muse_profiles").select("age_verified").eq("id", profile.id).maybeSingle();
+      if (!booker?.age_verified) {
+        return NextResponse.json({ error: "Identity verification required", code: "VERIFICATION_REQUIRED" }, { status: 403 });
+      }
       const { data: session } = await sb.from("muse_sessions").select("id").eq("id", sessionId).maybeSingle();
       if (!session) return NextResponse.json({ error: "Session not found" }, { status: 400 });
       if (hostId) {

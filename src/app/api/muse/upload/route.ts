@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
 import { checkRate, clientIp } from "@/lib/rate-limit";
-import { scanWithRekognition, logScan, reportIncident } from "@/lib/contentScan";
+import { scanWithRekognition, logScan, reportIncident, escalateToNcmec } from "@/lib/contentScan";
 
 const ALLOWED_SIGNATURES: Record<string, { bytes: number[]; ext: string }> = {
   "89504e47": { bytes: [0x89,0x50,0x4E,0x47], ext: "png" },
@@ -75,7 +75,10 @@ export async function POST(req: NextRequest) {
     const scanResult = await scanWithRekognition(buffer);
     await logScan({ userId: profileId, fileName: file.name, fileType: file.type || `image/${ext}`, fileSize: file.size, context: folder, result: scanResult });
     if (scanResult.shouldBlock) {
-      if (scanResult.shouldReport) {
+      if (scanResult.isCSAM) {
+        // CSAM: suspend account, quarantine content, queue CyberTipline report
+        await escalateToNcmec({ userId: profileId, context: folder, fileName: file.name, result: scanResult });
+      } else if (scanResult.shouldReport) {
         await reportIncident({ userId: profileId, context: folder, result: scanResult });
       }
       return NextResponse.json({ error: "Content violates safety policies", flaggedCategories: scanResult.flaggedCategories }, { status: 403 });
