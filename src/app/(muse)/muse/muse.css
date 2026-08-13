@@ -313,6 +313,15 @@ img{background-color:#1a0a2e}
 .match-type{font-size:12px;background:linear-gradient(90deg,var(--gold),var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:600}
 .match-msg{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
 .match-time{font-size:11px;color:var(--muted);flex-shrink:0}
+.match-card-grid{display:block;position:relative;aspect-ratio:1/1;overflow:hidden;border-radius:16px;padding:0;border:none;background:#1a0a2e}
+.match-card-grid .match-avatar-wrap{position:absolute;inset:0;width:100%;height:100%}
+.match-card-grid .match-avatar{width:100%;height:100%;border-radius:0;border:none}
+.match-card-grid .match-info{position:absolute;bottom:0;left:0;right:0;padding:12px 10px;background:linear-gradient(to top,rgba(10,6,18,0.9),transparent)}
+.match-card-grid .match-name{color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.8)}
+.match-card-grid .match-type{-webkit-text-fill-color:#FFD700}
+.match-card-grid .match-msg{display:none}
+.match-card-grid .match-time{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);padding:2px 8px;border-radius:99px;font-size:10px}
+.match-card-grid .online-dot{display:none}
 .match-new{width:10px;height:10px;border-radius:50%;background:var(--gold);flex-shrink:0;animation:newPulse 2s ease-in-out infinite}
 .match-card-expanded{flex-wrap:wrap;align-items:flex-start;background:rgba(255,215,0,0.05);border-left:3px solid var(--gold);z-index:2}
 .match-expand{width:100%;margin-top:10px;animation:matchExpandIn .3s ease}
@@ -496,9 +505,8 @@ img{background-color:#1a0a2e}
   .nav-item{font-size:12px;gap:4px}
   .nav-icon{font-size:24px}
   .nav-item.active::after{width:28px;height:3px}
-  /* Card viewport: dynamic height for shorter screens */
-  .swipe-card .card-viewport{height:min(62vh,520px)}
-  .swipe-card .card-photo-zone{height:min(62vh,520px)}
+  /* Card details: dynamic margin for shorter screens */
+  .swipe-card .card-details{margin-top:min(62vh,520px)}
 }
 /* ═══ MODAL ═══ */
 .modal-overlay{position:absolute;inset:0;z-index:400;background:rgba(10,6,18,0.92);backdrop-filter:blur(20px);display:flex;flex-direction:column;animation:modalIn .35s cubic-bezier(.4,0,.2,1)}
@@ -769,10 +777,9 @@ img{background-color:#1a0a2e}
 .swipe-card.top-card{z-index:3}
 .swipe-card .card-hero{position:absolute;inset:0;height:100%;min-height:0;overflow:hidden;z-index:1}
 .swipe-card .card-hero img{width:100%;height:100%;object-fit:cover;display:block;position:absolute;top:0;left:0}
-.swipe-card .card-info-scroll{position:absolute;inset:0;overflow-y:auto;padding:0;scrollbar-width:none;background:transparent;z-index:10}
+.swipe-card .card-info-scroll{position:absolute;inset:0;overflow-y:auto;padding:0;scrollbar-width:none;background:transparent;z-index:2}
 .swipe-card .card-info-scroll::-webkit-scrollbar{width:0}
-.swipe-card .card-viewport{position:relative;height:62vh;min-height:0;flex-shrink:0}
-.swipe-card .card-details{margin-top:0;background:var(--bg);padding:24px 20px 40px;border-radius:24px 24px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,0.4);z-index:2}
+.swipe-card .card-details{margin-top:62vh;background:var(--bg);padding:24px 20px 40px;border-radius:24px 24px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,0.4);z-index:2}
 
 /* ═══ ALL IMAGES FILL CONTAINERS ═══ */
 /* Scoped to swipe cards only — this was previously a global img[src^="/models/"] selector
@@ -848,7 +855,8 @@ img{background-color:#1a0a2e}
 .album-thumb-remove{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.7);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 
 /* ═══ SWIPE CARD HERO (v2 rework) ═══ */
-.card-hero-info{position:absolute;bottom:16px;left:84px;right:16px;padding:0;background:none;z-index:3;pointer-events:none}
+.card-hero-info{position:absolute;bottom:80px;left:0;right:0;padding:40px 20px 20px;background:linear-gradient(to top,rgba(10,6,18,0.98) 0%,rgba(10,6,18,0.55) 45%,transparent 100%);z-index:4;pointer-events:none;transition:opacity .3s ease,transform .3s ease}
+.card-hero-info.hidden{opacity:0;transform:translateY(12px)}
 .card-hero-info.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
 .card-hero-name{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:800;color:#fff;font-family:"Playfair Display",serif;font-style:italic;text-shadow:0 2px 8px rgba(0,0,0,0.7),0 4px 20px rgba(0,0,0,0.5),0 0 40px rgba(10,6,18,0.8)}
 .card-verified-mark{font-size:18px;color:var(--gold)}
@@ -856,11 +864,12 @@ img{background-color:#1a0a2e}
 .card-hero-bio{font-size:13px;color:rgba(255,255,255,0.85);line-height:1.4;text-shadow:0 1px 4px rgba(0,0,0,0.5)}
 .card-hero-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .card-hero-tag{font-size:10px;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85)}
-.card-photo-dots{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:6;pointer-events:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6))}
+.card-photo-dots{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:6;pointer-events:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));transition:opacity .3s ease}
+.card-photo-dots.hidden{opacity:0}
 .card-photo-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.4);box-shadow:0 0 4px rgba(0,0,0,0.5);transition:all .25s}
 .card-photo-dot.active{width:20px;border-radius:4px;background:linear-gradient(120deg,var(--gold),var(--pink),var(--lavender),var(--gold));background-size:300% 300%;animation:dotLava 3s ease-in-out infinite}
 @keyframes dotLava{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-.card-photo-zone{position:absolute;top:0;height:62vh;width:35%;z-index:3}
+.card-photo-zone{position:absolute;top:0;height:62vh;width:35%;z-index:5;transition:opacity .3s ease}
 .card-photo-zone.hidden{opacity:0;pointer-events:none}
 .card-photo-zone-left{left:0}
 .card-photo-zone-right{right:0}
@@ -909,7 +918,8 @@ img{background-color:#1a0a2e}
 @media(min-width:768px){.card-action-btn{height:57px;width:57px;font-size:26px}}
 
 /* ═══ Match FAB — single expand button (bottom-left) + radial menu ═══ */
-.match-fab{position:absolute;bottom:18px;left:16px;z-index:30}
+.match-fab{position:absolute;bottom:18px;left:16px;z-index:30;transition:opacity .3s ease,transform .3s ease}
+.match-fab.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
 .match-fab-btn{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;cursor:pointer;border:2px solid rgba(255,255,255,0.25);color:#0a0612;background:linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700);background-size:300% 300%;animation:lavaFlow 4s ease-in-out infinite;box-shadow:0 4px 16px rgba(0,0,0,0.5);transition:transform .25s cubic-bezier(.4,0,.2,1)}
 .match-fab-btn.open{transform:rotate(45deg)}
 .match-fab-btn:active{transform:scale(0.9)}
@@ -944,3 +954,42 @@ img{background-color:#1a0a2e}
   /* Larger nav labels */
   .nav-item{font-size:11px}
 }}
+
+/* ═══ AWWWARDS-STYLE MOTION ENHANCEMENTS ═══ */
+/* Card entrance — dramatic spring pop with overshoot */
+@keyframes cardPopIn{0%{opacity:0;transform:scale(0.86) translateY(36px)}60%{opacity:1;transform:scale(1.02) translateY(-4px)}80%{transform:scale(0.99) translateY(1px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+.swipe-card.top-card{animation:cardPopIn .65s cubic-bezier(.22,1.4,.36,1)}
+
+/* Hero photo — slow cinematic ken-burns zoom */
+@keyframes kenBurns{0%{transform:scale(1) translate(0,0)}50%{transform:scale(1.08) translate(-1%,-1.5%)}100%{transform:scale(1) translate(0,0)}}
+.swipe-card .card-hero img{animation:kenBurns 14s ease-in-out infinite}
+
+/* Name/type reveal — slide up with fade */
+@keyframes infoReveal{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.card-hero-name,.card-hero-type{animation:infoReveal .5s cubic-bezier(.22,1.4,.36,1) both}
+.card-hero-type{animation-delay:.08s}
+
+/* Match celebration — letter stagger on the title */
+@keyframes matchZoom{0%{opacity:0;transform:scale(.4) rotate(-8deg)}55%{opacity:1;transform:scale(1.12) rotate(2deg)}80%{transform:scale(.97)}100%{opacity:1;transform:scale(1)}}
+.match-title{animation:matchZoom .7s cubic-bezier(.22,1.4,.36,1) both}
+
+/* Chat bubbles — springy slide-up per message */
+@keyframes msgPop{0%{opacity:0;transform:translateY(22px) scale(.9)}60%{opacity:1;transform:translateY(-2px) scale(1.02)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.messages .msg{animation:msgPop .4s cubic-bezier(.22,1.4,.36,1) both}
+
+/* Micro-interactions — hover lift + active squish on all buttons */
+.hdr-btn,.nav-item,.card-action-btn,.quick-reply,.send-btn,.btn,.conn-tab,.match-fab-btn{transition:transform .18s cubic-bezier(.22,1.4,.36,1),opacity .18s ease}
+.hdr-btn:active,.nav-item:active,.quick-reply:active,.send-btn:active,.btn:active,.conn-tab:active{transform:scale(.92)}
+@media(hover:hover){.hdr-btn:hover,.nav-item:hover,.quick-reply:hover,.send-btn:hover,.btn:hover{transform:translateY(-2px) scale(1.03)}}
+
+/* Radial menu — bouncier spring for the expand */
+@keyframes radialPop{0%{opacity:0;transform:scale(0)}70%{opacity:1;transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
+.match-radial.open .match-radial-btn{animation:radialPop .45s cubic-bezier(.22,1.4,.36,1) both}
+.match-radial.open .match-radial-btn:nth-child(1){animation-delay:0s}
+.match-radial.open .match-radial-btn:nth-child(2){animation-delay:.05s}
+.match-radial.open .match-radial-btn:nth-child(3){animation-delay:.1s}
+.match-radial.open .match-radial-btn:nth-child(4){animation-delay:.15s}
+.match-radial.open .match-radial-btn:nth-child(5){animation-delay:.2s}
+
+/* Reduce motion preference */
+@media(prefers-reduced-motion:reduce){.swipe-card.top-card,.swipe-card .card-hero img,.messages .msg,.match-title,.card-hero-name,.card-hero-type{animation:none!important}}

@@ -984,10 +984,11 @@ function MusePage() {
   const sanitizeInput = (text: string) => text.replace(/[<>]/g, '').slice(0, 500);
   const toggleSocial = (key: string) => { setObConnectedSocials(prev => { const nv = !prev[key]; showToast(nv ? "Connected!" : "Disconnected"); return {...prev, [key]: nv}; }); };
 
-  const sendMsg = useCallback(async () => {
-    if (!chatInput.trim() || !chatTarget) return;
+  const sendMsg = useCallback(async (overrideText?: string) => {
+    const inputText = overrideText !== undefined ? overrideText : chatInput;
+    if (!inputText.trim() || !chatTarget) return;
     const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    const clean = sanitizeInput(chatInput.trim());
+    const clean = sanitizeInput(inputText.trim());
     if (!clean) return;
 
     // ═══ DISCLOSURE TRIGGER ═══
@@ -1352,7 +1353,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <div className="conn-scroll">
                     <div className="hamburger-title">Community</div>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Channels & Groups</div>
-                    {(liveCommunities || COMMUNITIES).filter(c => showNsfw || !c.nsfw).map(c => (
+                    {(liveCommunities?.length ? liveCommunities : COMMUNITIES).filter(c => showNsfw || !c.nsfw).map(c => (
                       <div key={c.id} className="conn-card" style={{margin:"0 0 10px"}}>
                         <img loading="lazy" src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
                         <div className="conn-content">
@@ -2055,13 +2056,22 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                   <div className="card-gradient" />
                                   <div className="card-border" />
                                 </div>
-                                <div className="card-hero-info">
+                                <div className={"card-hero-info"+(cardScrolled?" hidden":"")}>
                                   <div className="card-hero-name">
                                     {profile.name}
                                     {profile.verified && <span className="card-verified-mark">✓</span>}
                                     {profile.online && <span className="card-online-dot" />}
                                   </div>
                                   <div className="card-hero-type">{profile.type} · {profile.loc?.split(",")[0]}</div>
+                                </div>
+                                {isTop && (
+                                  <>
+                                    <div className={"card-photo-zone card-photo-zone-left"+(cardScrolled?" hidden":"")} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}}><span style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>‹</span></div>
+                                    <div className={"card-photo-zone card-photo-zone-right"+(cardScrolled?" hidden":"")} onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.min(photos.length-1,prev+1))}}><span style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>›</span></div>
+                                  </>
+                                )}
+                                <div className={"card-photo-dots"+(cardScrolled?" hidden":"")}>
+                                  {photos.map((_:string,i:number)=><div key={i} className={"card-photo-dot"+(i===currentPhotoIdx?" active":"")} />)}
                                 </div>
                                  {showNoteTooltip && (
                                    <div style={{textAlign:"center",padding:"4px 16px 0",animation:"tooltipIn .4s ease"}}>
@@ -2078,17 +2088,6 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                   </>
                                 )}
                                 <div className="card-info-scroll" ref={cardScrollRef} onScroll={()=>{if(isTop){const scrollY=cardScrollRef.current?.scrollTop||0;setCardScrolled(scrollY>60);}}}>
-                                  <div className="card-viewport">
-                                    {isTop && (
-                                      <>
-                                        <div className="card-photo-zone card-photo-zone-left" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.max(0,prev-1))}}><span style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>‹</span></div>
-                                        <div className="card-photo-zone card-photo-zone-right" onClick={(e)=>{e.stopPropagation();setCurrentPhotoIdx(prev=>Math.min(photos.length-1,prev+1))}}><span style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundImage:"linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)",backgroundSize:"300% 300%",animation:"dotLava 3s ease-in-out infinite",pointerEvents:"none",lineHeight:"28px"}}>›</span></div>
-                                      </>
-                                    )}
-                                    <div className="card-photo-dots">
-                                      {photos.map((_:string,i:number)=><div key={i} className={"card-photo-dot"+(i===currentPhotoIdx?" active":"")} />)}
-                                    </div>
-                                  </div>
                                   <div className="card-details">
                                     {(profile as any).prompts?.length > 0 && (
                                       <div className="card-section">
@@ -2160,7 +2159,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                  </div>
                                  </div>
                                  {isTop && (
-                                  <div className="match-fab">
+                                   <div className={"match-fab"+(cardScrolled?" hidden":"")}>
                                     <button className={"match-fab-btn"+(showMatchMenu?" open":"")} onClick={()=>setShowMatchMenu(v=>!v)} aria-label="Match actions">✦</button>
                                     <div className={"match-radial"+(showMatchMenu?" open":"")}>
                                       <button className="match-radial-btn btn-rewind" style={{left:0,top:-140}} onClick={doRewind} aria-label="Rewind">↺</button>
@@ -2318,7 +2317,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 <div className="logo-link" style={{fontSize:28}}>muse</div>
 <div style={{display:"flex",gap:10}}>
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
-{!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{width:34,height:34,fontSize:16}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")} title={matchesView==="list"?"Grid view":"List view"}>{matchesView==="list"?"▦":"☰"}</button>)}
+{!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{width:"auto",padding:"0 12px",fontSize:12,fontWeight:700}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")}>{matchesView==="list"?"Grid":"List"}</button>)}
 {!searchOpen ? (<button className="hdr-btn" style={{width:34,height:34}} onClick={()=>setSearchOpen(true)}><FiSearch size={16} /></button>) : (
                     <div style={{display:"flex",alignItems:"center",gap:6,animation:"fadeIn .2s ease"}}>
                       <input className="inp" placeholder="Search..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} autoFocus style={{margin:0,padding:"6px 10px",fontSize:12,width:120,borderRadius:99}} />
@@ -2368,7 +2367,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 {matches.filter(m => searchQuery === "" || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(m => {
                   const expanded = expandedMatchId === String(m.id);
                   return (
-                   <div key={m.id} data-mid={String(m.id)} data-exp={expanded?"1":"0"} className={"match-card"+(expanded?" match-card-expanded":"")}
+                    <div key={m.id} data-mid={String(m.id)} data-exp={expanded?"1":"0"} className={"match-card"+(expanded?" match-card-expanded":"")+(matchesView==="grid"?" match-card-grid":"")}
                      style={{transform: matchSwiping?.id === String(m.id) ? `translateX(${matchSwiping.offset}px)` : undefined, transition: matchSwiping ? 'none' : 'all .25s', position:"relative",overflow:"hidden"}}
                      onClick={()=>{ if(expanded){ setExpandedMatchId(null); return; } setChatTarget(m); showScreen("chat"); }}
                      onMouseDown={(e)=>{ const startX=e.clientX; const startY=e.clientY; const handleMove=(ev: MouseEvent)=>{ const dx=ev.clientX-startX; const dy=ev.clientY-startY; if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){ e.preventDefault(); setMatchSwiping({id:String(m.id),offset:dx}); return false; } }; const handleUp=(ev: MouseEvent)=>{ if(matchSwiping?.id===String(m.id)){ const offset=matchSwiping.offset; setMatchSwiping(null); if(Math.abs(offset)>80){ if(offset>0){ setReportTarget({id:m.id,type:"match",name:m.name}); setShowReport(true); } else { setUnmatchTarget(m.name); } } } document.removeEventListener('mousemove',handleMove); document.removeEventListener('mouseup',handleUp); }; document.addEventListener('mousemove',handleMove,{passive:false}); document.addEventListener('mouseup',handleUp); }}
@@ -2450,7 +2449,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   </div>
                   <div className="quick-replies">
                     {[getIcebreaker(chatTarget.type),"Hey! Love your work","Let's collab","What's your vision?","Love your portfolio"].map(q => (
-                      <button key={q} className="quick-reply" onClick={()=>setChatInput(q)}>{q}</button>
+                      <button key={q} className="quick-reply" onClick={()=>sendMsg(q)}>{q}</button>
                     ))}
                   </div>
                   <div className="chat-input-wrap">
@@ -2474,7 +2473,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       }} />
                     </label>
                     <input className="chat-inp" placeholder="Type a message..." value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&chatInput.trim()){sendMsg()}}} />
-                    <button className="send-btn" onClick={sendMsg}><FiSend size={18} /></button>
+                    <button className="send-btn" onClick={()=>sendMsg()}><FiSend size={18} /></button>
                   </div>
                 </div>
               )}
@@ -2555,7 +2554,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 ))}
               </div>
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
-                {commTab === "groups" && (liveCommunities || COMMUNITIES).filter(c => showNsfw || !c.nsfw).map(c => (
+                {commTab === "groups" && (liveCommunities?.length ? liveCommunities : COMMUNITIES).filter(c => showNsfw || !c.nsfw).map(c => (
                   <div key={c.id} className="conn-card" style={{marginBottom:10,padding:14}}>
                     <img loading="lazy" src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
                     <div className="conn-content" style={{flex:1}}>
@@ -2577,9 +2576,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <div className="conn-meta" style={{fontSize:12,marginBottom:6}}>{ev.date} · {ev.loc}</div>
                         <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.5,marginBottom:10}}>{ev.desc}</div>
                       </div>
-                      <div style={{display:"flex",flexDirection:"column",gap:8,padding:"0 16px 16px",width:"100%"}}>
-                        <button className={"btn "+(rsvpdEvents.includes(ev.id)?"btn-outline":"btn-gold")} style={{width:"100%",padding:"14px 0",fontSize:14,fontWeight:700,borderRadius:12}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter((x:number)=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
-                        <button className="btn btn-outline" style={{width:"100%",padding:"14px 0",fontSize:14,fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/"+ev.id);showToast("Event link copied!")}}>Share</button>
+                      <div style={{display:"flex",gap:8,padding:"0 16px 16px",width:"100%"}}>
+                        <button className={"btn "+(rsvpdEvents.includes(ev.id)?"btn-outline":"btn-gold")} style={{flex:1,padding:"14px 0",fontSize:14,fontWeight:700,borderRadius:12}} onClick={()=>{setRsvpdEvents(prev=>prev.includes(ev.id)?prev.filter((x:number)=>x!==ev.id):[...prev,ev.id]);showToast(rsvpdEvents.includes(ev.id)?"RSVP cancelled":"RSVP confirmed!")}}>{rsvpdEvents.includes(ev.id)?"Going":"RSVP"}</button>
+                        <button className="btn btn-outline" style={{flex:1,padding:"14px 0",fontSize:14,fontWeight:600,borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/"+ev.id);showToast("Event link copied!")}}>Share</button>
                       </div>
                     </div>
                   ))}
@@ -2619,9 +2618,29 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   </div>
                 ))}
                 {sessTab === "bookings" && matches.filter(m => m.booked).length === 0 ? (
-                  <div style={{textAlign:"center",padding:40,color:"var(--muted)",fontSize:13}}>
-                    <div style={{fontSize:32,marginBottom:10}}>📋</div>
-                    No bookings yet.<br/>Book sessions with your matches!
+                  <div style={{padding:"0 20px 20px"}}>
+                    <div style={{fontSize:13,color:"var(--text2)",margin:"4px 0 12px"}}>Sample bookings — real ones appear once you book a session</div>
+                    {[
+                      {name:"ARCANA",type:"Photographer",date:"Fri · 2:00 PM",status:"Confirmed",img:"/models/ARCANA/Bodypaint-2.webp"},
+                      {name:"MITRI",type:"Producer",date:"Sat · 11:30 AM",status:"Pending",img:"/models/MITRI/Mitri-10.webp"},
+                      {name:"NAKIA",type:"Videographer",date:"Mon · 4:00 PM",status:"Confirmed",img:"/models/NAKIA/Nakia-10.webp"}
+                    ].map((b,i)=>(
+                      <div key={i} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
+                        <img loading="lazy" src={b.img} alt={b.name} style={{width:"28%",alignSelf:"stretch",minHeight:110,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                        <div className="conn-content" style={{flex:1,padding:12,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                            <div className="conn-name" style={{fontSize:15}}>{b.name}</div>
+                            <span style={{fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:99,background:b.status==="Confirmed"?"rgba(0,230,118,0.15)":"rgba(255,215,0,0.15)",color:b.status==="Confirmed"?"var(--mint)":"var(--gold)"}}>{b.status}</span>
+                          </div>
+                          <div className="conn-meta" style={{fontSize:12}}>{b.type}</div>
+                          <div className="conn-meta" style={{fontSize:12,color:"var(--gold)",fontWeight:600}}>{b.date}</div>
+                          <div style={{display:"flex",gap:8,marginTop:8}}>
+                            <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:12,fontWeight:700,borderRadius:10}} onClick={()=>showToast("Messaging "+b.name+"…")}>Message</button>
+                            <button className="btn btn-outline" style={{flex:1,padding:"10px 0",fontSize:12,fontWeight:600,borderRadius:10}} onClick={()=>showToast("Session details coming soon")}>Details</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   matches.filter(m => m.booked).map(m => (
@@ -2665,9 +2684,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
                         {(p.skills||[]).map(s=><span key={s} style={{fontSize:10,padding:"3px 8px",borderRadius:6,background:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.8)"}}>{s}</span>)}
                       </div>
-                      <div style={{display:"flex",flexDirection:"column",gap:8,width:"100%"}}>
-                        <button className="btn btn-gold" style={{width:"100%",padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:10}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})});if(!r.ok)throw new Error("failed");showToast("Connection request sent to "+p.name+"!")}catch{showToast("Failed to send connection")}}}>Connect</button>
-                        <button style={{width:"100%",padding:"10px 0",fontSize:13,fontWeight:600,borderRadius:10,border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.05)",color:"#fff",cursor:"pointer"}} onClick={()=>{setViewProfile(p);showToast("Viewing "+p.name+"'s profile")}}>View Profile</button>
+                      <div style={{display:"flex",gap:8,width:"100%"}}>
+                        <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:10}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})});if(!r.ok)throw new Error("failed");showToast("Connection request sent to "+p.name+"!")}catch{showToast("Failed to send connection")}}}>Connect</button>
+                        <button style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:600,borderRadius:10,border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.05)",color:"#fff",cursor:"pointer"}} onClick={()=>{setViewProfile(p);showToast("Viewing "+p.name+"'s profile")}}>View Profile</button>
                       </div>
                     </div>
                   </div>
