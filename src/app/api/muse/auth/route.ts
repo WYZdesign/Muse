@@ -107,6 +107,11 @@ export async function POST(req: NextRequest) {
         if (!createErr && created) profile = created;
       }
 
+      // Enforcement: suspended accounts cannot establish a session.
+      if (profile?.suspended) {
+        return NextResponse.json({ error: "Account suspended", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
+      }
+
       return NextResponse.json({ success: true, user, profile });
     }
 

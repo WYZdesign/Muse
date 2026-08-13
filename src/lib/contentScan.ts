@@ -41,6 +41,7 @@ const CSAM_CATEGORIES = ["Child Sexual Abuse", "Sexual Exploitation of Minors"];
 
 export interface ModerationResult {
   safe: boolean;
+  scanned: boolean;
   flaggedCategories: string[];
   confidence: number;
   shouldBlock: boolean;
@@ -52,7 +53,9 @@ export interface ModerationResult {
 export async function scanWithRekognition(imageBuffer: Buffer): Promise<ModerationResult> {
   const client = await getRekognition();
   if (!client || !DetectModerationLabelsCommand) {
-    return { safe: true, flaggedCategories: [], confidence: 0, shouldBlock: false, shouldReport: false, isCSAM: false, details: [] };
+    // Fails-open but LOUD: content is not scanned when credentials are missing.
+    console.error("[muse:safety] AWS Rekognition unavailable — upload not scanned. Set AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION.");
+    return { safe: true, scanned: false, flaggedCategories: [], confidence: 0, shouldBlock: false, shouldReport: false, isCSAM: false, details: [] };
   }
   try {
     const command = new DetectModerationLabelsCommand({
@@ -88,10 +91,10 @@ export async function scanWithRekognition(imageBuffer: Buffer): Promise<Moderati
       }
     }
 
-    return { safe: flaggedCategories.length === 0, flaggedCategories, confidence: maxConfidence, shouldBlock, shouldReport, isCSAM, details };
+    return { safe: flaggedCategories.length === 0, scanned: true, flaggedCategories, confidence: maxConfidence, shouldBlock, shouldReport, isCSAM, details };
   } catch (error) {
     console.error("Rekognition scan failed:", error);
-    return { safe: true, flaggedCategories: [], confidence: 0, shouldBlock: false, shouldReport: false, isCSAM: false, details: [] };
+    return { safe: true, scanned: false, flaggedCategories: [], confidence: 0, shouldBlock: false, shouldReport: false, isCSAM: false, details: [] };
   }
 }
 
@@ -116,6 +119,7 @@ export async function logScan(meta: {
       should_block: meta.result.shouldBlock,
       should_report: meta.result.shouldReport,
       is_csam: meta.result.isCSAM,
+      scanned: meta.result.scanned,
       details: meta.result.details,
       scanned_at: new Date().toISOString(),
     });

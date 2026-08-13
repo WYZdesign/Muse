@@ -28,7 +28,7 @@ async function getAuthedProfile(req: NextRequest, body?: Record<string, unknown>
   const sb = getServiceClient();
   const { data: profile } = await sb
     .from("muse_profiles")
-    .select("id, name, avatar, email, tier")
+    .select("id, name, avatar, email, tier, suspended")
     .eq("auth_id", authId)
     .maybeSingle();
   return { user: data.user, profile };
@@ -416,6 +416,11 @@ export async function POST(req: NextRequest) {
 
     const { user, profile } = await getAuthedProfile(req, body);
     if (!user || !profile) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+    // Enforcement: suspended accounts are locked out of all mutating actions.
+    if ((profile as any).suspended) {
+      return NextResponse.json({ error: "Account suspended", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
+    }
 
     const sb = getServiceClient();
 

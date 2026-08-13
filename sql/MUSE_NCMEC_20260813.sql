@@ -23,9 +23,10 @@ CREATE TABLE IF NOT EXISTS muse_ncmec_reports (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 3. Add is_csam column to content scan log
+-- 3. Add is_csam + scanned columns to content scan log
 ALTER TABLE muse_content_scans
-  ADD COLUMN IF NOT EXISTS is_csam BOOLEAN DEFAULT FALSE;
+  ADD COLUMN IF NOT EXISTS is_csam BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS scanned BOOLEAN DEFAULT TRUE;
 
 -- 4. RLS: NCMEC reports are admin/service-role only (never readable by users)
 ALTER TABLE muse_ncmec_reports ENABLE ROW LEVEL SECURITY;

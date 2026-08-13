@@ -40,13 +40,16 @@ async function authedProfileId(req: NextRequest): Promise<string | null> {
   if (!bearer) return null;
   const { data, error } = await supabase.auth.getUser(bearer);
   if (error || !data.user) return null;
-  const { data: profile } = await getServiceClient().from("muse_profiles").select("id").eq("auth_id", data.user.id).maybeSingle();
+  const { data: profile } = await getServiceClient().from("muse_profiles").select("id, suspended").eq("auth_id", data.user.id).maybeSingle();
+  if (!profile) return null;
+  if ((profile as any).suspended) return "__SUSPENDED__";
   return profile?.id ?? null;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const profileId = await authedProfileId(req);
+    if (profileId === "__SUSPENDED__") return NextResponse.json({ error: "Account suspended", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
     if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     // Rate limit uploads per user (generous: 60/min for normal photo workflow)
@@ -104,6 +107,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const profileId = await authedProfileId(req);
+    if (profileId === "__SUSPENDED__") return NextResponse.json({ error: "Account suspended", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
     if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     const { path } = await req.json();
