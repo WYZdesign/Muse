@@ -2261,6 +2261,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <div className={"screen-el"+(screen==="connections"?" active":"")}>
               <div className="hdr">
+                <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
                 <div className="logo-link">Feed</div>
                 <div style={{display:"flex",gap:4,marginRight:44}}>
                   {(["all","photos","text"] as const).map(f=>(
@@ -2349,6 +2350,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
               <div className={"screen-el"+(screen==="matches"?" active":"")}>
               <div className="hdr">
+                <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
                 <div className="logo-link" style={{fontSize:28}}>muse</div>
 <div style={{display:"flex",gap:10}}>
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
@@ -2516,6 +2518,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <div className={"screen-el"+(screen==="briefs"?" active":"")}>
               <div className="hdr">
+                <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
                 <div className="logo-link" style={{fontSize:28}}>muse</div>
                 <button className="hdr-btn" onClick={()=>setShowPostBrief(true)}><FiPlus size={18} /></button>
               </div>
@@ -2815,6 +2818,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <div className={"screen-el"+(screen==="portfolio"?" active":"")}>
               <div className="hdr">
+                <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
                 <div className="logo-link" style={{fontSize:28}}>muse</div>
               </div>
               <div className="portfolio-scroll">
@@ -2829,6 +2833,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
              <div className={"screen-el"+(screen==="moments"?" active":"")}>
                <div className="hdr">
+                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
                  <div className="logo-link" style={{fontSize:28}}>muse</div>
                  <div style={{width:40}} />
                </div>
@@ -2904,7 +2909,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <div className={"screen-el"+(screen==="profile"?" active":"")}>
               <div className="hdr" style={{justifyContent:"space-between"}}>
-                <button className="hdr-btn" onClick={openHamburger}><FiMenu size={18} /></button>
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                  <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
+                  <button className="hdr-btn" onClick={openHamburger}><FiMenu size={18} /></button>
+                </div>
                 <div style={{position:"absolute",left:"50%",transform:"translateX(-50%)",fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:18,fontWeight:800,color:"var(--gold)"}}>Your Profile</div>
                 <div style={{display:"flex",gap:10}}>
                   <button className="hdr-btn" onClick={()=>{setEditName(currentUser.name);setEditBio(obData.bio||"");setEditLoc(obData.loc||"");setEditAvatar(currentUser.avatar||"");setShowEditProfile(true)}}><FiEdit2 size={18} /></button>
