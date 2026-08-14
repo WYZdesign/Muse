@@ -182,3 +182,122 @@ export async function escalateToNcmec(meta: {
     console.error("NCMEC escalation failed:", e);
   }
 }
+
+// ═══ NCMEC CyberTipline LIVE submission ═══
+// Transmits a report to NCMEC's CyberTipline API once ESP credentials are
+// provisioned. Register at https://report.cybertip.org → Electronic Service
+// Provider (ESP) program, then set:
+//   NCMEC_ENDPOINT       — the CyberTipline API base URL (from ESP onboarding docs)
+//   NCMEC_CLIENT_ID      — ESP OAuth client id
+//   NCMEC_CLIENT_SECRET  — ESP OAuth client secret
+// Without credentials, submission is skipped and reports stay "pending_submission"
+// for manual filing (or legal review).
+
+const NCMEC_ENDPOINT = process.env.NCMEC_ENDPOINT || "";
+const NCMEC_CLIENT_ID = process.env.NCMEC_CLIENT_ID || "";
+const NCMEC_CLIENT_SECRET = process.env.NCMEC_CLIENT_SECRET || "";
+
+export function ncmecConfigured(): boolean {
+  return Boolean(NCMEC_ENDPOINT && NCMEC_CLIENT_ID && NCMEC_CLIENT_SECRET);
+}
+
+async function ncmecAccessToken(): Promise<string | null> {
+  try {
+    const resp = await fetch(`${NCMEC_ENDPOINT}/oauth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: NCMEC_CLIENT_ID,
+        client_secret: NCMEC_CLIENT_SECRET,
+      }),
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data.access_token || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Transmit a single CSAM report to the CyberTipline. Returns success/failure. */
+export async function submitToCyberTipline(report: {
+  report_id: string;
+  user_id: string;
+  file_name: string;
+  context: string;
+  flagged_categories: string[];
+  confidence: number;
+  reported_at: string;
+}): Promise<{ submitted: boolean; error?: string }> {
+  if (!ncmecConfigured()) {
+    return { submitted: false, error: "NCMEC credentials not configured" };
+  }
+  try {
+    const token = await ncmecAccessToken();
+    if (!token) return { submitted: false, error: "NCMEC auth failed" };
+
+    // CyberTipline report payload — field names per the NCMEC ESP API spec
+    // provided at onboarding. Adjust keys to the exact schema if they differ.
+    const payload = {
+      reportType: "Child Sexual Abuse Material",
+      incidentDateTime: report.reported_at,
+      reportingParty: {
+        espName: "Muse (WYZ Design)",
+        espContact: "legal@wyzdesign.com",
+      },
+      contentDetails: {
+        fileName: report.file_name,
+        storageLocation: "muse-uploads (Supabase storage)",
+        reportedUserId: report.user_id,
+      },
+      automatedDetection: {
+        provider: "AWS Rekognition",
+        categories: report.flagged_categories,
+        confidence: report.confidence,
+      },
+      notes: report.context || "",
+    };
+
+    const resp = await fetch(`${NCMEC_ENDPOINT}/reports`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!resp.ok) return { submitted: false, error: `NCMEC HTTP ${resp.status}` };
+    return { submitted: true };
+  } catch (e) {
+    return { submitted: false, error: e instanceof Error ? e.message : "NCMEC submission failed" };
+  }
+}
+
+/** Submit all queued (pending_submission) reports. Use from an admin action or cron. */
+export async function transmitPendingNcmecReports(): Promise<{ submitted: number; failed: number }> {
+  if (!ncmecConfigured()) return { submitted: 0, failed: 0 };
+  const sb = getServiceClient();
+  const { data: pending } = await sb.from("muse_ncmec_reports").select("*").eq("status", "pending_submission").limit(50);
+  let submitted = 0;
+  let failed = 0;
+  for (const report of pending || []) {
+    const r = await submitToCyberTipline({
+      report_id: report.id,
+      user_id: report.user_id,
+      file_name: report.file_name,
+      context: report.context,
+      flagged_categories: report.flagged_categories || [],
+      confidence: report.confidence || 0,
+      reported_at: report.created_at || report.incident_details?.reported_at || new Date().toISOString(),
+    });
+    if (r.submitted) {
+      await sb.from("muse_ncmec_reports").update({ status: "submitted", submitted_at: new Date().toISOString() }).eq("id", report.id);
+      submitted++;
+    } else {
+      failed++;
+    }
+  }
+  return { submitted, failed };
+}
