@@ -16,6 +16,7 @@ import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
 import { safeSetItem, safeGetItem, safeRemoveItem, QUOTA_MSG } from "./lib/safe-storage";
+import { getAccessToken, authFetch } from "./lib/api";
 import { uid } from "./lib/uid";
 import DisclosureModal from "./components/DisclosureModal";
 import AgeVerificationModal from "./components/AgeVerificationModal";
@@ -29,19 +30,6 @@ import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
 import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
-
-function getAccessToken(): string {
-  if (typeof window === "undefined") return "";
-  try { return JSON.parse(safeGetItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
-}
-
-async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const token = getAccessToken();
-  const headers = new Headers(options.headers);
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  if (!headers.has("Content-Type") && options.body) headers.set("Content-Type", "application/json");
-  return fetch(url, { ...options, headers });
-}
 
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@wyzdesign.com";
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL || "torree.marcel@gmail.com";
