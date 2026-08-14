@@ -1,140 +1,79 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
-
-const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
-const QDRANT_URL = process.env.QDRANT_URL || "http://localhost:6333";
-const COLLECTION = "muse_embeddings";
+import { embedText, cosineSimilarity, aiEnabled } from "@/lib/ai";
 
 /**
- * Muse Embeddings API — nomic-embed-text via Ollama, stored in Qdrant.
- * Handles: embed (text → vector), store, search (cosine similarity), batch embed.
- * Collection: muse_embeddings (768-dim, Cosine distance)
+ * Muse Embeddings API — OpenRouter + Supabase (replaces Ollama + Qdrant).
+ * Actions: embed, search, batch-embed, info.
+ * Vectors are cached on muse_profiles.embedding; search is free (JS cosine).
  */
 export async function POST(req: NextRequest) {
   try {
-    // Rate limit — Ollama embedding is CPU/GPU compute cost.
-    const ip = clientIp(req);
-    if (!checkRate(ip, "embeddings", 30)) {
+    if (!checkRate(clientIp(req), "embeddings", 30)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { action } = body;
 
-    // ── EMBED: text → 768-dim vector via nomic-embed-text ──
+    // ── EMBED: text → vector via OpenRouter ──
     if (action === "embed") {
       const { text } = body;
       if (!text || typeof text !== "string") return NextResponse.json({ error: "text required" }, { status: 400 });
-      const resp = await fetch(`${OLLAMA_URL}/api/embeddings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "nomic-embed-text", prompt: text }),
-      });
-      if (!resp.ok) return NextResponse.json({ error: "Embedding failed" }, { status: 502 });
-      const data = await resp.json();
-      const vector = data.embedding as number[];
-      if (!vector || vector.length !== 768) return NextResponse.json({ error: `Expected 768-dim, got ${vector?.length}` }, { status: 500 });
-      return NextResponse.json({ vector });
+      if (!aiEnabled()) return NextResponse.json({ error: "AI not enabled" }, { status: 503 });
+      const vector = await embedText(text);
+      if (!vector) return NextResponse.json({ error: "Embedding failed" }, { status: 502 });
+      return NextResponse.json({ vector, dims: vector.length });
     }
 
-    // ── STORE: save a user's profile/bio/prompt embedding ──
-    if (action === "store") {
-      const { userId, embeddingType, textSource, vector, metadata } = body;
-      if (!userId || !vector || !Array.isArray(vector)) return NextResponse.json({ error: "userId and vector required" }, { status: 400 });
-      if (vector.length !== 768) return NextResponse.json({ error: `Expected 768-dim, got ${vector.length}` }, { status: 400 });
-
-      const pointId = hashToUint64(`${userId}:${embeddingType || "profile"}`);
-      const resp = await fetch(`${QDRANT_URL}/collections/${COLLECTION}/points`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          points: [{
-            id: pointId,
-            vector,
-            payload: {
-              user_id: userId,
-              embedding_type: embeddingType || "profile",
-              text_source: (textSource || "").slice(0, 2000),
-              ...metadata,
-            },
-          }],
-        }),
-      });
-      if (!resp.ok) return NextResponse.json({ error: "Qdrant store failed" }, { status: 502 });
-      return NextResponse.json({ success: true });
-    }
-
-    // ── SEARCH: find similar profiles by cosine similarity ──
+    // ── SEARCH: cosine similarity against cached profile embeddings ──
     if (action === "search") {
       const { vector, excludeUserId, limit, minScore } = body;
       if (!vector || !Array.isArray(vector)) return NextResponse.json({ error: "vector required" }, { status: 400 });
-      const resp = await fetch(`${QDRANT_URL}/collections/${COLLECTION}/points/search`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vector,
-          limit: Math.min(limit || 10, 20),
-          score_threshold: minScore || 0.5,
-          with_payload: true,
-          filter: excludeUserId ? {
-            must: [{ key: "user_id", match: { value: excludeUserId, except: true } }],
-          } : undefined,
-        }),
-      });
-      if (!resp.ok) return NextResponse.json({ error: "Qdrant search failed" }, { status: 502 });
-      const data = await resp.json();
-      const results = (data.result || []).map((r: any) => ({
-        userId: r.payload?.user_id,
-        score: r.score,
-        embeddingType: r.payload?.embedding_type,
-        textSource: r.payload?.text_source?.slice(0, 200),
-      }));
+
+      const sb = getServiceClient();
+      const { data: profiles } = await sb.from("muse_profiles")
+        .select("id, name, type, embedding")
+        .not("embedding", "is", null)
+        .limit(500);
+
+      const results = (profiles || [])
+        .filter((p: any) => String(p.id) !== String(excludeUserId) && Array.isArray(p.embedding) && p.embedding.length === vector.length)
+        .map((p: any) => ({ userId: p.id, name: p.name, type: p.type, score: cosineSimilarity(vector, p.embedding) }))
+        .filter((r) => r.score >= (minScore || 0.3))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, Math.min(limit || 10, 50));
+
       return NextResponse.json({ results });
     }
 
-    // ── BATCH-EMBED: embed multiple texts at once ──
+    // ── BATCH-EMBED: multiple texts at once ──
     if (action === "batch-embed") {
       const { texts } = body;
       if (!Array.isArray(texts) || texts.length === 0) return NextResponse.json({ error: "texts array required" }, { status: 400 });
       if (texts.length > 20) return NextResponse.json({ error: "Max 20 texts per batch" }, { status: 400 });
+      if (!aiEnabled()) return NextResponse.json({ error: "AI not enabled" }, { status: 503 });
 
       const vectors: number[][] = [];
-      for (const text of texts) {
-        const resp = await fetch(`${OLLAMA_URL}/api/embeddings`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "nomic-embed-text", prompt: text }),
-        });
-        if (!resp.ok) return NextResponse.json({ error: `Embedding failed for text index ${vectors.length}` }, { status: 502 });
-        const data = await resp.json();
-        vectors.push(data.embedding);
+      for (const t of texts) {
+        const v = await embedText(t);
+        if (!v) return NextResponse.json({ error: `Embedding failed at index ${vectors.length}` }, { status: 502 });
+        vectors.push(v);
       }
       return NextResponse.json({ vectors });
     }
 
-    // ── COLLECTION INFO ──
+    // ── INFO: embedding coverage stats ──
     if (action === "info") {
-      const resp = await fetch(`${QDRANT_URL}/collections/${COLLECTION}`);
-      if (!resp.ok) return NextResponse.json({ error: "Collection not found" }, { status: 404 });
-      const data = await resp.json();
-      return NextResponse.json({ collection: data.result });
+      const sb = getServiceClient();
+      const { count: total } = await sb.from("muse_profiles").select("*", { count: "exact", head: true });
+      const { count: embedded } = await sb.from("muse_profiles").select("*", { count: "exact", head: true }).not("embedded_at", "is", null);
+      return NextResponse.json({ aiEnabled: aiEnabled(), totalProfiles: total || 0, embeddedProfiles: embedded || 0 });
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Server error" }, { status: 500 });
   }
-}
-
-/** Deterministic uint64 hash from a string — safe for Qdrant point IDs */
-function hashToUint64(str: string): number {
-  let hash = BigInt("0xcbf29ce484222325");
-  const prime = BigInt("0x100000001b3");
-  const mask = BigInt("0xffffffffffffffff");
-  const positiveMask = BigInt("0x7fffffffffffffff");
-  for (let i = 0; i < str.length; i++) {
-    hash ^= BigInt(str.charCodeAt(i));
-    hash = (hash * prime) & mask;
-  }
-  return Number(hash & positiveMask);
 }

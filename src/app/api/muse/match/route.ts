@@ -1,17 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
-
-const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
-const QDRANT_URL = process.env.QDRANT_URL || "http://localhost:6333";
-const COLLECTION = "muse_embeddings";
+import { embedText, cosineSimilarity, aiEnabled } from "@/lib/ai";
 
 /**
  * Muse Recommendations API — AI-powered matching.
- * Combines Qdrant cosine similarity with rules-based scoring.
+ * Cost model: reads STORED embeddings (no per-request embedding) and computes
+ * cosine similarity in JS (free). A profile is embedded once (lazily, on first
+ * match request) and cached in muse_profiles.embedding.
+ *
  * GET /api/muse/match?limit=20&offset=0
- * POST /api/muse/match { action: "recommend", limit: 20 }
  */
+
+function profileEmbedText(p: Record<string, unknown>): string {
+  const parts: string[] = [];
+  if (p.name) parts.push(`Name: ${p.name}`);
+  if (p.type) parts.push(`Creative type: ${p.type}`);
+  if (p.bio) parts.push(`Bio: ${p.bio}`);
+  if (Array.isArray(p.styles) && p.styles.length) parts.push(`Styles: ${p.styles.join(", ")}`);
+  if (Array.isArray(p.looking) && p.looking.length) parts.push(`Looking for: ${p.looking.join(", ")}`);
+  if (p.loc) parts.push(`Location: ${p.loc}`);
+  return parts.join("\n").trim();
+}
+
 export async function GET(req: NextRequest) {
   try {
     if (!checkRate(clientIp(req), "match", 30)) {
@@ -25,16 +36,16 @@ export async function GET(req: NextRequest) {
 
     const sb = getServiceClient();
     const { data: profile } = await sb.from("muse_profiles")
-      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, tier")
+      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, tier, embedding")
       .eq("auth_id", authData.user.id).maybeSingle();
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
     const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") || "20"), 50);
     const offset = parseInt(req.nextUrl.searchParams.get("offset") || "0");
 
-    // Fetch all profiles (visible to this user)
+    // Fetch candidates WITH their stored embeddings (single read, no token cost).
     const { data: allProfiles } = await sb.from("muse_profiles")
-      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, photos, collabs, verified, tier, profile_completion_pct")
+      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, photos, collabs, verified, tier, profile_completion_pct, embedding")
       .limit(200);
 
     const candidates = (allProfiles || []).filter((p: any) => {
@@ -44,39 +55,32 @@ export async function GET(req: NextRequest) {
       return hasAvatar || hasPhotos;
     });
 
-    // ── Step 1: Try Qdrant cosine similarity ──
-    let qdrantScores: Record<string, number> = {};
-    try {
-      // Get user's embedding
-      const pointId = hashToUint64(`profile:${profile.id}`);
-      const embResp = await fetch(`${QDRANT_URL}/collections/${COLLECTION}/points/${pointId}`);
-      if (embResp.ok) {
-        const embData = await embResp.json();
-        const userVector = embData.result?.vector;
-        if (userVector?.length === 768) {
-          // Search for similar profiles
-          const searchResp = await fetch(`${QDRANT_URL}/collections/${COLLECTION}/points/search`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              vector: userVector,
-              limit: 50,
-              score_threshold: 0.3,
-              with_payload: { include: ["user_id"] },
-            }),
-          });
-          if (searchResp.ok) {
-            const searchData = await searchResp.json();
-            for (const hit of searchData.result || []) {
-              const uid = hit.payload?.user_id;
-              if (uid) qdrantScores[uid] = hit.score;
-            }
-          }
+    // ── User embedding: use cached, else lazily embed once and persist ──
+    let userVector: number[] | null = Array.isArray(profile.embedding) && (profile.embedding as number[]).length > 0
+      ? (profile.embedding as number[])
+      : null;
+
+    if (!userVector && aiEnabled()) {
+      const text = profileEmbedText(profile as Record<string, unknown>);
+      userVector = await embedText(text);
+      if (userVector) {
+        // Persist so future requests are free (read-only).
+        await sb.from("muse_profiles").update({ embedding: userVector, embedding_model: "openrouter", embedded_at: new Date().toISOString() }).eq("id", profile.id);
+      }
+    }
+
+    // ── Cosine similarity against cached candidate vectors (free) ──
+    const cosineScores: Record<string, number> = {};
+    if (userVector) {
+      for (const c of candidates) {
+        const cv: number[] | null = Array.isArray(c.embedding) ? (c.embedding as number[]) : null;
+        if (cv && cv.length === userVector.length) {
+          cosineScores[c.id] = cosineSimilarity(userVector, cv);
         }
       }
-    } catch { /* Qdrant may be down — fallback to rules only */ }
+    }
 
-    // ── Step 2: Rules-based scoring (matching calcMatch logic) ──
+    // ── Rules-based scoring (zodiac/MBTI/life-path compatibility) ──
     const zCompat: Record<string, string[]> = {
       "Aries":["Leo","Sagittarius","Gemini","Aquarius"],"Taurus":["Virgo","Capricorn","Cancer","Pisces"],
       "Gemini":["Libra","Aquarius","Aries","Leo"],"Cancer":["Scorpio","Pisces","Taurus","Virgo"],
@@ -106,25 +110,21 @@ export async function GET(req: NextRequest) {
       if (c.collabs > 50) rules += 2;
       rules = Math.min(rules, 99);
 
-      // ── Step 3: Combine scores ──
-      const qdrantScore = qdrantScores[c.id] || 0;
-      // Weight: 60% rules + 40% cosine similarity (normalized to 0-100)
-      const cosineNorm = Math.round(qdrantScore * 100);
+      const cosineRaw = cosineScores[c.id] || 0;
+      const cosineNorm = Math.round(cosineRaw * 100);
       const combined = Math.round(rules * 0.6 + cosineNorm * 0.4);
 
       return {
         ...c,
+        embedding: undefined,
         rulesScore: rules,
         cosineScore: cosineNorm,
         matchScore: Math.min(combined, 99),
-        hasEmbedding: qdrantScore > 0,
+        hasEmbedding: cosineRaw > 0,
       };
     });
 
-    // Sort by combined score descending
     scored.sort((a: any, b: any) => b.matchScore - a.matchScore);
-
-    // Paginate
     const paginated = scored.slice(offset, offset + limit);
 
     return NextResponse.json({
@@ -132,21 +132,10 @@ export async function GET(req: NextRequest) {
       total: scored.length,
       offset,
       limit,
-      qdrantHits: Object.keys(qdrantScores).length,
+      aiEnabled: aiEnabled(),
+      vectorMatches: Object.keys(cosineScores).length,
     });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Server error" }, { status: 500 });
   }
-}
-
-function hashToUint64(str: string): number {
-  let hash = BigInt("0xcbf29ce484222325");
-  const prime = BigInt("0x100000001b3");
-  const mask = BigInt("0xffffffffffffffff");
-  const positiveMask = BigInt("0x7fffffffffffffff");
-  for (let i = 0; i < str.length; i++) {
-    hash ^= BigInt(str.charCodeAt(i));
-    hash = (hash * prime) & mask;
-  }
-  return Number(hash & positiveMask);
 }

@@ -22,7 +22,7 @@ self.addEventListener("push", (event) => {
   let payload = { title: "Muse", body: "You have a new notification" };
   try {
     if (event.data) payload = Object.assign(payload, event.data.json());
-  } catch (e) {
+  } catch {
     if (event.data) payload.body = event.data.text();
   }
 

@@ -3,6 +3,8 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { enforceRequestSafety, sanitizeText } from "@/lib/request-safety";
+import { askMuseAI } from "@/lib/aiDocs";
+import { screenText } from "@/lib/aiModeration";
 
 function getAuthUser() {
   return supabase.auth.getUser();
@@ -459,6 +461,11 @@ export async function POST(req: NextRequest) {
       if (!toId) return NextResponse.json({ error: "toId required" }, { status: 400 });
       const cleanText = sanitizeText(String(text).trim());
       if (!cleanText) return NextResponse.json({ error: "text required" }, { status: 400 });
+      const screen = screenText(cleanText);
+      if (screen.block) {
+        await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message_blocked", details: { categories: screen.categories } });
+        return NextResponse.json({ error: "Message blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
+      }
       // Canonical convo key derived server-side so the sender is always a
       // participant — a client-supplied match_id can't target another pair.
       const matchId = [profile.id, String(toId)].sort().join("__");
@@ -484,6 +491,8 @@ export async function POST(req: NextRequest) {
       if (!text?.trim()) return NextResponse.json({ error: "text required" }, { status: 400 });
       const cleanText = sanitizeText(String(text).trim());
       if (!cleanText) return NextResponse.json({ error: "text required" }, { status: 400 });
+      const screen = screenText(cleanText);
+      if (screen.block) return NextResponse.json({ error: "Post blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
       const { error } = await sb.from("muse_feed_posts").insert({ author_id: profile.id, text: cleanText, img: img || image_url || image || "", type: (img || image_url || image) ? "photo" : "text" });
       if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
@@ -1219,14 +1228,31 @@ export async function POST(req: NextRequest) {
           };
         }
 
+        // ── AI enhancement: synthesize a richer natural-language answer ──
+        // The rule-based result above already gathered live DB metrics; if AI
+        // is available, ground the LLM in those metrics + Muse docs for a
+        // better answer. Falls back to the rule-based answer when AI is off.
+        let answer = String(result.answer || "");
+        let aiSources: string[] = [];
+        try {
+          const enriched = await askMuseAI(
+            `Question: ${userQuery}\n\nLive metrics (from database): ${JSON.stringify((result as any).data || {})}`,
+            { forAdmin: true }
+          );
+          if (enriched) {
+            answer = enriched.answer;
+            aiSources = enriched.sources;
+          }
+        } catch { /* AI is best-effort; keep rule-based answer */ }
+
         // Log the admin query for audit trail
         await sb.from("muse_admin_audit_log").insert({
           admin_user_id: profile.id, query_text: userQuery.slice(0, 1000),
-          query_result_summary: String(result.answer || "").slice(0, 500),
+          query_result_summary: answer.slice(0, 500),
           result_row_count: Array.isArray((result as any).data?.users) ? (result as any).data.users.length : 0,
         });
 
-        return NextResponse.json(result);
+        return NextResponse.json({ answer, data: (result as any).data, sources: aiSources, ai: aiSources.length > 0 });
       } catch (err: unknown) {
         return NextResponse.json({ error: "Query failed: " + (err instanceof Error ? err.message : "unknown") }, { status: 500 });
       }
