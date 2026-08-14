@@ -2277,14 +2277,15 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
                 <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF)",backgroundSize:"300% 100%"}}>Feed</div>
-                <div style={{display:"flex",gap:4,marginRight:44}}>
-                  {(["all","photos","text"] as const).map(f=>(
-                    <div key={f} className={"conn-tab-sub"+(feedFilter===f?" active":"")} onClick={()=>setFeedFilter(f)} style={{fontSize:11,padding:"5px 10px",borderRadius:99}}>{f==="all"?"All":f==="photos"?"Photos":"Text"}</div>
-                  ))}
-                </div>
+                <div style={{width:36}} />
               </div>
               <div className="conn-scroll" style={{padding:"0 0 80px"}}>
-                <div style={{padding:"12px 20px",display:"flex",gap:10,alignItems:"flex-start"}}>
+                <div style={{display:"flex",gap:6,margin:"0 20px 10px"}}>
+                  {(["all","photos","text"] as const).map(f=>(
+                    <div key={f} className={"conn-tab-sub"+(feedFilter===f?" active":"")} onClick={()=>setFeedFilter(f)} style={{fontSize:11,padding:"5px 12px",borderRadius:99}}>{f==="all"?"All":f==="photos"?"Photos":"Text"}</div>
+                  ))}
+                </div>
+                <div style={{margin:"0 20px 12px",padding:"12px 0",display:"flex",gap:10,alignItems:"flex-start"}}>
                   <img loading="lazy" src={currentUser.avatar} alt="" style={{width:40,height:40,borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                   <div style={{flex:1,display:"flex",flexDirection:"column",gap:8}}>
                     <textarea className="inp" placeholder="Share your work, ideas, or find collaborators..." rows={2} value={feedText} onChange={e=>setFeedText(e.target.value)} style={{resize:"none",fontSize:13,padding:"10px 14px",borderRadius:14,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)"}} />
@@ -2564,9 +2565,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
                 {commTab === "groups" && (liveCommunities?.length ? liveCommunities : COMMUNITIES).filter(c => showNsfw || !c.nsfw).map(c => (
-                  <div key={c.id} className="conn-card" style={{marginBottom:10,padding:14}}>
-                    <img loading="lazy" src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
-                    <div className="conn-content" style={{flex:1}}>
+                  <div key={c.id} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
+                    <img loading="lazy" src={c.img} alt={c.name} style={{width:"30%",alignSelf:"stretch",minHeight:120,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                    <div className="conn-content" style={{flex:1,padding:14,display:"flex",flexDirection:"column",justifyContent:"center"}}>
                       <div className="conn-name" style={{fontSize:15}}>{c.name}</div>
                       <div className="conn-meta" style={{fontSize:12}}>{c.members} members · {c.desc}</div>
                       <div style={{display:"flex",gap:8,marginTop:8}}>
@@ -2680,14 +2681,14 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 ))}
                 </>)}
                 {sessTab === "requests" && (
-                  <div style={{padding:"0 20px 20px"}}>
+                  <div style={{padding:"0 0 20px"}}>
                     <div style={{fontSize:13,fontWeight:700,color:"var(--gold)",margin:"4px 0 10px"}}>Incoming Requests</div>
                     {[
                       {name:"SIMONE",type:"Model",type2:"Photography Session",img:"/models/SIMONE/Simone-107.webp",note:"Would love to do a golden hour editorial shoot"},
                       {name:"KAYLEN",type:"Stylist",type2:"Styling Consultation",img:"/models/KAYLEN/kaylen (retouched)-10.webp",note:"Need help with wardrobe for my next campaign"},
                       {name:"JERMAINE",type:"Director",type2:"Creative Direction",img:"/models/JERMAINE/Jermaine-20.webp",note:"Looking for a creative director for a music video"},
                     ].map((r,i)=>(
-                      <div key={i} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
+                      <div key={i} className="conn-card" style={{margin:"0 0 10px",padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
                         <img loading="lazy" src={r.img} alt={r.name} style={{width:"25%",alignSelf:"stretch",minHeight:110,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                         <div className="conn-content" style={{flex:1,padding:12,display:"flex",flexDirection:"column",justifyContent:"center"}}>
                           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -2709,7 +2710,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       {name:"DARRYL",type:"Videographer",status:"Pending",img:"/models/DARRYL/Darryl-2.webp",note:"Music video production"},
                       {name:"ANGEL",type:"Makeup Artist",status:"Accepted",img:"/models/ANGEL/Angel-2.webp",note:"Editorial makeup session"},
                     ].map((r,i)=>(
-                      <div key={i} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
+                      <div key={i} className="conn-card" style={{margin:"0 0 10px",padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
                         <img loading="lazy" src={r.img} alt={r.name} style={{width:"25%",alignSelf:"stretch",minHeight:110,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                         <div className="conn-content" style={{flex:1,padding:12,display:"flex",flexDirection:"column",justifyContent:"center"}}>
                           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -2740,10 +2741,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
                 {netTab === "pros" && PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
-                  <div key={p.id} className="conn-card" style={{position:"relative",flexDirection:"column",marginBottom:14,padding:0,overflow:"hidden",borderRadius:16,minHeight:260}}>
+                  <div key={p.id} className="conn-card" style={{position:"relative",flexDirection:"column",marginBottom:14,padding:0,overflow:"hidden",borderRadius:16,minHeight:300}}>
                     <img loading="lazy" src={p.img} alt={p.name} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
                     <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,rgba(10,6,18,0.85) 0%,rgba(10,6,18,0.2) 60%,rgba(10,6,18,0.1) 100%)"}} />
-                    <div style={{position:"relative",zIndex:1,padding:"120px 20px 20px",display:"flex",flexDirection:"column",justifyContent:"flex-end",minHeight:260}}>
+                    <div style={{position:"relative",zIndex:1,padding:"120px 20px 20px",display:"flex",flexDirection:"column",justifyContent:"flex-end",minHeight:300}}>
                       <div style={{fontSize:20,fontWeight:800,color:"#fff",textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>{p.name}</div>
                       <div style={{fontSize:14,fontWeight:600,color:"var(--gold)",marginBottom:4,textShadow:"0 1px 4px rgba(0,0,0,0.8)"}}>{p.type} · {p.loc}</div>
                       <div style={{fontSize:13,color:"rgba(255,255,255,0.7)",marginBottom:6}}>{p.exp}</div>
@@ -2769,7 +2770,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         </div>
                       </div>
                     )}
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",margin:"0 20px 10px"}}>
                       <div style={{display:"flex",gap:6}}>{(["hot","new","top"] as const).map(s=>(<div key={s} className={"conn-tab-sub"+(forumSort===s?" active":"")} onClick={()=>setForumSort(s)}>{s.charAt(0).toUpperCase()+s.slice(1)}</div>))}</div>
                       <button className="conn-btn conn-btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setShowNewPost(!showNewPost)}>+ Post</button>
                     </div>
