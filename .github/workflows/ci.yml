@@ -28,6 +28,12 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      - name: Unit tests
+        run: npm test
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
       - name: Build
         run: npm run build
         env:
