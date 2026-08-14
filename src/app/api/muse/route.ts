@@ -4,7 +4,7 @@ import { safeServerError } from "@/lib/http";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { enforceRequestSafety, sanitizeText } from "@/lib/request-safety";
 import { askMuseAI } from "@/lib/aiDocs";
-import { screenText } from "@/lib/aiModeration";
+import { screenText, moderateText } from "@/lib/aiModeration";
 
 function getAuthUser() {
   return supabase.auth.getUser();
@@ -546,7 +546,13 @@ export async function POST(req: NextRequest) {
       if (target_id === profile.id) return NextResponse.json({ error: "Cannot report yourself" }, { status: 400 });
       const { data: targetProfile } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
       if (!targetProfile) return NextResponse.json({ error: "Target not found" }, { status: 400 });
-      const { error } = await sb.from("muse_reports").insert({ reporter_id: profile.id, target_id, target_type: target_type || "user", reason, details: details || "" });
+      // AI triage: classify the report text to help moderators prioritize.
+      let aiClassification: unknown = null;
+      try {
+        const verdict = await moderateText(`${reason} ${details || ""}`.trim());
+        aiClassification = verdict;
+      } catch { /* best-effort; never block report creation on AI */ }
+      const { error } = await sb.from("muse_reports").insert({ reporter_id: profile.id, target_id, target_type: target_type || "user", reason, details: details || "", ai_classification: aiClassification });
       if (error) return safeServerError(error, "db op");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "report", details: { target_id, reason } });
       return NextResponse.json({ success: true });
