@@ -2995,7 +2995,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <div className="section-text" style={{marginBottom:8}}>Invite creatives. Earn rewards.</div>
                   <div style={{fontSize:13,color:"var(--text2)",marginBottom:6}}>Tier: <span style={{color:"var(--gold)",fontWeight:700}}>{getReferralTier(currentUser.referrals||0).tier}</span> · {currentUser.referrals||0} joined</div>
                   <div style={{display:"flex",gap:8}}>
-                    <button className="btn btn-gold" style={{flex:1,fontSize:12,padding:"10px 0"}} onClick={async()=>{try{const res=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"generate-referral"})});const j=await res.json();if(j.success){showToast("Code: "+j.referral_code);try{navigator.clipboard?.writeText(j.referral_link);showToast("Link copied!");}catch{}}}catch(e){showToast("Try again later")}}}>Copy Referral Link</button>
+                    <button className="btn btn-gold" style={{flex:1,fontSize:12,padding:"10px 0"}} onClick={async()=>{try{const res=await apiFetch("/api/muse/referral",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"generate"})});const j=await res.json();if(j.code){const link="https://muse.wyzdesign.com/muse?ref="+j.code;try{navigator.clipboard?.writeText(link);showToast("Link copied: "+link);}catch{showToast("Your code: "+j.code);}}}catch{showToast("Try again later")}}}>Copy Referral Link</button>
                   </div>
                   <div style={{marginTop:8,fontSize:11,color:"var(--muted)",lineHeight:1.5}}>Bronze: 5 free swipes · Silver: 1mo Spark free · Gold: 20% fee discount · Platinum: Pro tier</div>
                 </div>
