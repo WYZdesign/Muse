@@ -867,6 +867,7 @@ function MusePage() {
     setCurrentIdx(prev => prev + 1);
     setCurrentPhotoIdx(0);
     setPortfolioPhotoIdx(0);
+    setPromptIdx(0);
     setCardScrolled(false);
   }, [currentIdx, dailyLikes, superLikes, filteredProfiles, isUnlimited, calcMatch, likedBy, flash, obData, userDefaultIntent]);
 
@@ -954,7 +955,7 @@ function MusePage() {
     const dy = e.clientY - dragRef.current.startY;
     const dt = Date.now() - dragRef.current.startTime;
     const speed = Math.sqrt(dx * dx + dy * dy) / (dt || 1);
-    if (dragRef.current.axis === "x" && speed > 0.2 && Math.abs(dx) > 50) {
+    if (dragRef.current.axis === "x" && (Math.abs(dx) > 100 || (speed > 0.35 && Math.abs(dx) > 35))) {
       doSwipe(dx > 0 ? "right" : "left");
     }
     const el = dragRef.current.el;
@@ -2110,7 +2111,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                     {(profile as any).prompts?.length > 0 && (
                                       <div className="card-section">
                                         <div className="card-section-title">Prompts</div>
-                                        <div className="card-prompts" onClick={(e)=>e.stopPropagation()}>
+                                        <div className="card-prompts" onClick={(e)=>e.stopPropagation()} onPointerDown={(e)=>e.stopPropagation()}>
                                           <button className="card-prompt-arrow" onClick={(e)=>{e.stopPropagation();setPromptIdx(prev=>Math.max(0,prev-1))}} style={{opacity:promptIdx>0?1:0.3}}>‹</button>
                                           <div className="card-prompt-text">
                                             <div className="card-prompt-q">{(profile as any).prompts[promptIdx]?.q||""}</div>
@@ -3767,7 +3768,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <span style={{fontWeight:400}}>({Math.max(0,Math.ceil((boostEnd-Date.now())/60000))}m)</span>
         </div>
       )}
-      <SupportChat />
+      <SupportChat visible={screen === "profile"} />
     </div>
   );
 }

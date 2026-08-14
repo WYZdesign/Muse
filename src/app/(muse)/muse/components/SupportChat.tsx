@@ -43,7 +43,7 @@ const FAB = {
   boxShadow: "0 8px 24px rgba(255,180,0,0.35)",
 } as const;
 
-export default function SupportChat() {
+export default function SupportChat({ visible = true }: { visible?: boolean }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMsg[]>([
     { role: "assistant", text: "Hi! I'm the Muse assistant. Ask me anything about bookings, safety, albums, verification, or your account." },
@@ -80,7 +80,7 @@ export default function SupportChat() {
 
   return (
     <>
-      {open && (
+      {visible && open && (
         <div style={PANEL}>
           <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ fontWeight: 800, fontSize: 15, color: "#f5f0ff" }}>Muse Assistant</div>
@@ -131,9 +131,11 @@ export default function SupportChat() {
         </div>
       )}
 
-      <button style={FAB} onClick={() => setOpen((o) => !o)} aria-label="Help">
-        {open ? "✕" : "?"}
-      </button>
+      {visible && (
+        <button style={FAB} onClick={() => setOpen((o) => !o)} aria-label="Help">
+          {open ? "✕" : "?"}
+        </button>
+      )}
     </>
   );
 }
