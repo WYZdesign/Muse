@@ -89,7 +89,6 @@ function MusePage() {
   const [discoverSearch, setDiscoverSearch] = useState("");
   const [mapView, setMapView] = useState(false);
   const [bootstrapped, setBootstrapped] = useState(false);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
   const [dailyLikes, setDailyLikes] = useState(999);
   const [superLikes, setSuperLikes] = useState(999);
   const [screenFlash, setScreenFlash] = useState<string | null>(null);
@@ -1416,7 +1415,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                           </div>
                             <div className="conn-actions" style={{marginTop:8,display:"flex",gap:8,flexDirection:"column"}}>
                               <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})});if(r.status===403){const d=await r.json().catch(()=>({}));if(d.code==="VERIFICATION_REQUIRED"){setShowAgeVerification(true);showToast("Verify your identity to book paid sessions");return;}}if(!r.ok)throw new Error("failed");showToast("Session request sent to "+s.name+"!")}catch{showToast("Failed to book session")}}}>{s.available?"Book Session":"Waitlist"}</button>
-                              <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>showToast(s.name+"'s full profile coming soon!")}>View Profile</button>
+                              <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{setViewProfile(s);showToast("Viewing "+s.name+"'s profile")}}>View Profile</button>
                             </div>
                         </div>
                       </div>
@@ -1529,7 +1528,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{fontSize:24,marginBottom:6}}>✨</div>
                       <div style={{fontSize:16,fontWeight:700,color:"var(--gold)"}}>$9.99/month</div>
                       <div style={{fontSize:12,color:"var(--text2)",marginBottom:10}}>Unlimited likes, superlikes, boosts & more</div>
-                      <button className="btn btn-gold" style={{fontSize:12,padding:"8px 20px"}} onClick={()=>{showToast("Coming soon! Premium features are being built.")}}>Upgrade</button>
+                      <button className="btn btn-gold" style={{fontSize:12,padding:"8px 20px"}} onClick={async()=>{try{const r=await fetch("/api/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"subscription",plan:"muse_pro",email:authUser?.email,userId:authUser?.id})});const d=await r.json();if(d.url){window.location.href=d.url}else{showToast(d.error||"Checkout unavailable, try again later")}}catch{showToast("Checkout unavailable, try again later")}}}>Upgrade</button>
                     </div>
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"20px 0 10px"}}>Statistics</div>
                     <div className="stats-row" style={{marginTop:8}}>
@@ -2027,7 +2026,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="discover"?" active":"")}>
               <div className="discover-wrap">
                 <div className="hdr">
-                  <div className="logo-link" style={{fontSize:28}}>Discover</div>
+                  <div className="logo-link" style={{fontSize:28,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Discover</div>
                   <div style={{flex:1}} />
                   <div style={{display:"flex",gap:4}}>
                     {!discoverSearchOpen ? (
@@ -2046,8 +2045,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 </>)}
 </div>
                 </div>
-                {mapView && <div ref={mapContainerRef} style={{position:"absolute",inset:0,zIndex:50,background:"#0a0612",borderRadius:0}} />}
-                {mapView && <MuseMap filteredProfiles={filteredProfiles} myGeo={myGeo ? {lat:myGeo.lat, lng:myGeo.long} : undefined} containerRef={mapContainerRef} show={mapView} />}
+                {mapView && <MuseMap filteredProfiles={filteredProfiles} myGeo={myGeo ? {lat:myGeo.lat, lng:myGeo.long} : undefined} onClose={()=>setMapView(false)} />}
                 {!mapView && (<><div className="card-stack" role="application" aria-label="Swipe cards to discover creatives" aria-roledescription="card carousel">
                   {filteredProfiles.slice(currentIdx, currentIdx+3).map((profile, idx) => {
                     const isTop = idx === 0;
@@ -2276,7 +2274,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="connections"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF)",backgroundSize:"300% 100%"}}>Feed</div>
+                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Feed</div>
                 <div style={{width:36}} />
               </div>
               <div className="conn-scroll" style={{padding:"0 0 80px"}}>
@@ -2366,7 +2364,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div className={"screen-el"+(screen==="matches"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",backgroundSize:"300% 100%"}}>Matches</div>
+                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Matches</div>
 <div style={{display:"flex",gap:10}}>
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{width:"auto",padding:"0 12px",fontSize:12,fontWeight:700}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")}>{matchesView==="list"?"Grid":"List"}</button>)}
@@ -2491,7 +2489,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="briefs"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA)",backgroundSize:"300% 100%"}}>Collab</div>
+                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Collab</div>
                 <button className="hdr-btn" onClick={()=>setShowPostBrief(true)}><FiPlus size={18} /></button>
               </div>
               <div className="conn-tabs" style={{padding:"0 12px"}}>
@@ -2652,8 +2650,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                           <div className="conn-meta" style={{fontSize:12}}>{b.type}</div>
                           <div className="conn-meta" style={{fontSize:12,color:"var(--gold)",fontWeight:600}}>{b.date}</div>
                           <div style={{display:"flex",gap:8,marginTop:8}}>
-                            <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:12,fontWeight:700,borderRadius:10}} onClick={()=>showToast("Messaging "+b.name+"…")}>Message</button>
-                            <button className="btn btn-outline" style={{flex:1,padding:"10px 0",fontSize:12,fontWeight:600,borderRadius:10}} onClick={()=>showToast("Session details coming soon")}>Details</button>
+                            <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:12,fontWeight:700,borderRadius:10}} onClick={()=>openChat({id:i+1000,name:b.name,img:b.img,type:b.type,messages:[]})}>Message</button>
+                            <button className="btn btn-outline" style={{flex:1,padding:"10px 0",fontSize:12,fontWeight:600,borderRadius:10}} onClick={()=>{setDisclosureTarget({id:String(i),name:b.name});setDisclosureBookingId(String(i));setShowDisclosureModal(true);}}>Details</button>
                           </div>
                         </div>
                       </div>
@@ -2799,7 +2797,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="portfolio"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28}}>Portfolio</div>
+                <div className="logo-link" style={{fontSize:28,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Portfolio</div>
               </div>
               <div className="portfolio-scroll">
                 <MyAlbumsManager
@@ -2814,7 +2812,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
              <div className={"screen-el"+(screen==="moments"?" active":"")}>
                <div className="hdr">
                  <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                  <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#FF1493,#FF0000,#DDA0DD,#FF1493,#FF69B4,#FF1493)",backgroundSize:"300% 100%"}}>BTS</div>
+                  <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#FF1493,#FF0000,#DDA0DD,#FF1493,#FF69B4,#FF1493)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>BTS</div>
                   <div style={{width:40}} />
                </div>
                <div style={{flex:1,overflowY:"auto",padding:"0 0 80px"}}>
@@ -2823,7 +2821,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <h2>Behind The Scenes</h2>
                   <p>Raw creative process. BTS, WIP, unpolished gold.</p>
                 </div>
-                <div className="moments-quick-capture" onClick={()=>{showToast("Capture a moment! Feature coming soon.")}}>
+                <div className="moments-quick-capture" onClick={()=>{showScreen("connections");showToast("Share your moment from the Feed composer!")}}>
                   <div className="moments-quick-capture-icon">📸</div>
                   <span>What's happening? Snap a moment...</span>
                 </div>
@@ -2875,8 +2873,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                         <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}} />
                         <div>
-                          <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>Coming Soon</div>
-                          <div style={{fontSize:11,color:"var(--muted)"}}>Moments are being created...</div>
+                          <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>No moments yet</div>
+                          <div style={{fontSize:11,color:"var(--muted)"}}>Moments disappear after 24 hours</div>
                         </div>
                       </div>
                       <div style={{fontSize:13,color:"var(--text2)"}}>Be the first to post a Moment and light up this feed!</div>
@@ -3185,7 +3183,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="phone" id="muse-app">
             <div className="notch" />
             <div className="hdr">
-              <div className="logo-link" style={{fontSize:28}}>Profile</div>
+              <div className="logo-link" style={{fontSize:28,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Profile</div>
               <button className="hdr-btn" onClick={()=>showScreen("profile")}><FiArrowLeft size={18} /></button>
             </div>
             <div className="sub-scroll">
@@ -3230,7 +3228,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="phone" id="muse-app">
             <div className="notch" />
             <div className="hdr">
-              <div className="logo-link" style={{fontSize:28}}>Profile</div>
+              <div className="logo-link" style={{fontSize:28,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Profile</div>
               <button className="hdr-btn" onClick={()=>showScreen("profile")}><FiArrowLeft size={18} /></button>
             </div>
             <div className="settings-scroll">
