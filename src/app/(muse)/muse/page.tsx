@@ -1189,7 +1189,7 @@ function MusePage() {
 
   return !hydrated ? (
     <div style={{"display":"contents"}}>
-      <div className="scene"><div className="scene-wash" /><div className="scene-glow" /></div>
+      <div className="scene"><div className="scene-wash" /><div className="scene-glow" /><div className="splash-sun" /><div className="splash-sun-glow" /></div>
       <div className="app" data-theme={theme}>
         <div className="skeleton-container">
           {[1,2,3].map(i => (
@@ -1201,7 +1201,7 @@ function MusePage() {
           ))}
             </div>
             <div className="hamburger-waves">
-              <div className="wave wave-1" /><div className="wave wave-2" /><div className="wave wave-3" />
+              <div className="wave wave-1" /><div className="wave wave-2" /><div className="wave wave-3" /><div className="wave wave-4" /><div className="wave wave-5" />
             </div>
           </div>
     </div>
@@ -2354,7 +2354,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div className={"screen-el"+(screen==="matches"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28}}>muse</div>
+                <div className="logo-link" style={{fontSize:28}}>Matches</div>
 <div style={{display:"flex",gap:10}}>
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{width:"auto",padding:"0 12px",fontSize:12,fontWeight:700}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")}>{matchesView==="list"?"Grid":"List"}</button>)}
@@ -2479,7 +2479,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="briefs"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28}}>muse</div>
+                <div className="logo-link" style={{fontSize:28}}>Collab</div>
                 <button className="hdr-btn" onClick={()=>setShowPostBrief(true)}><FiPlus size={18} /></button>
               </div>
               <div className="conn-tabs" style={{padding:"0 12px"}}>
@@ -2610,9 +2610,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <div className="conn-content" style={{flex:1,padding:14,display:"flex",flexDirection:"column",justifyContent:"center"}}>
                           <div className="conn-name" style={{fontSize:15}}>{m.name}</div>
                           <div className="conn-meta" style={{fontSize:12}}>{m.type} · Booked Session</div>
-                          <div style={{display:"flex",gap:8,marginTop:8,flexDirection:"column"}}>
-                            <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={()=>{openChat(m)}}>Message</button>
-                            <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
+                          <div style={{display:"flex",gap:8,marginTop:8}}>
+                            <button className="btn btn-gold" style={{flex:1,padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={()=>{openChat(m)}}>Message</button>
+                            <button className="btn btn-outline" style={{flex:1,padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
                           </div>
                         </div>
                       </div>
@@ -2660,9 +2660,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:6}}>
                         {(s.skills||[]).map(sk=><span key={sk} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{sk}</span>)}
                       </div>
-                       <div style={{display:"flex",gap:8,marginTop:8,flexDirection:"column"}}>
-                         <button className="btn btn-gold" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})});if(r.status===403){const d=await r.json().catch(()=>({}));if(d.code==="VERIFICATION_REQUIRED"){setShowAgeVerification(true);showToast("Verify your identity to book paid sessions");return;}}if(!r.ok)throw new Error("failed");showToast("Session request sent to "+s.name+"!")}catch{showToast("Failed to book session")}}}>{s.available?"Book Session":"Waitlist"}</button>
-                         <button className="btn btn-outline" style={{width:"100%",padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{setViewProfile(s);showToast(s.name+"'s profile")}}>View Profile</button>
+                       <div style={{display:"flex",gap:8,marginTop:8}}>
+                         <button className="btn btn-gold" style={{flex:1,padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})});if(r.status===403){const d=await r.json().catch(()=>({}));if(d.code==="VERIFICATION_REQUIRED"){setShowAgeVerification(true);showToast("Verify your identity to book paid sessions");return;}}if(!r.ok)throw new Error("failed");showToast("Session request sent to "+s.name+"!")}catch{showToast("Failed to book session")}}}>{s.available?"Book Session":"Waitlist"}</button>
+                         <button className="btn btn-outline" style={{flex:1,padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{setViewProfile(s);showToast(s.name+"'s profile")}}>View Profile</button>
                        </div>
                     </div>
                   </div>
@@ -2787,7 +2787,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="portfolio"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28}}>muse</div>
+                <div className="logo-link" style={{fontSize:28}}>Portfolio</div>
               </div>
               <div className="portfolio-scroll">
                 <MyAlbumsManager
@@ -2802,8 +2802,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
              <div className={"screen-el"+(screen==="moments"?" active":"")}>
                <div className="hdr">
                  <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                 <div className="logo-link" style={{fontSize:28}}>muse</div>
-                 <div style={{width:40}} />
+                  <div className="logo-link" style={{fontSize:28}}>BTS</div>
+                  <div style={{width:40}} />
                </div>
                <div style={{flex:1,overflowY:"auto",padding:"0 0 80px"}}>
                <div className="moments-page">

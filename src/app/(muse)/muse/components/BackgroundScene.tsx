@@ -219,7 +219,7 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
       </div>
       <div className="particles" ref={particlesRef} />
       <div className="ocean-waves">
-        <div className="wave wave-1" /><div className="wave wave-2" /><div className="wave wave-3" />
+        <div className="wave wave-1" /><div className="wave wave-2" /><div className="wave wave-3" /><div className="wave wave-4" /><div className="wave wave-5" />
       </div>
       {flash && <div className="screen-flash" style={{background:flash}} />}
     </>

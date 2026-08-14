@@ -8,6 +8,7 @@ export const viewport: Viewport = {
   userScalable: false,
   themeColor: "#0a0612",
   viewportFit: "cover",
+  interactiveWidget: "overlays-content",
 };
 
 export const metadata: Metadata = {
