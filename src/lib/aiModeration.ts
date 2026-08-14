@@ -23,8 +23,10 @@ const BLOCK_PATTERNS: { re: RegExp; category: string }[] = [
   { re: /\b(venmo|cashapp|paypal)\b/i, category: "off_platform_payment" },
   { re: /(send|pay) (me|you|u) (money|cash|\$)/i, category: "solicitation" },
   { re: /\b(escort|prostitut|hooker|happy ending)\b/i, category: "sex_work" },
-  { re: /\b(underage|minor|teen|jailbait|under 18|under18)\b/i, category: "minor_risk" },
-  { re: /\b(meet(ing)? (up|tonight) at (my|your) (house|place|apartment))\b/i, category: "unsafe_meetup" },
+  { re: /\b(underage|minor|teen|jailbait|under\s*18|under18)\b/i, category: "minor_risk" },
+  { re: /\b(are you|r u|how old|u\b)[^.!?]{0,20}\b(1[3-7]|eighteen|18)\b/i, category: "minor_risk" },
+  { re: /\b(1[3-7])\s*(?:years?\s*old|y\/?o)\b/i, category: "minor_risk" },
+  { re: /\bmeet(?:ing)?\b[^.!?]{0,40}\b(my|your)\s+(house|place|apartment|room|hotel)\b/i, category: "unsafe_meetup" },
   { re: /(whatsapp|snapchat|kik|telegram)\b.*\b(add me|dm me|hit me up)\b/i, category: "off_platform_solicitation" },
   { re: /\b(nigga|faggot|retard|slut|whore|cunt)\b/i, category: "hate_speech" },
   { re: /(buy|sell) (drugs|weed|coke|meth|pills)\b/i, category: "drugs" },
@@ -42,7 +44,7 @@ export function heuristicScreen(text: string): { flagged: boolean; categories: s
 }
 
 // Categories that warrant an immediate block (vs. a softer flag for review).
-const CRITICAL_CATEGORIES = new Set(["minor_risk", "sex_work", "hate_speech", "drugs", "weapons"]);
+const CRITICAL_CATEGORIES = new Set(["minor_risk", "sex_work", "hate_speech", "drugs", "weapons", "unsafe_meetup", "off_platform_solicitation"]);
 
 /** Free, synchronous screen for user-generated text (messages/posts/bios).
  *  Returns whether to block. Zero AI cost — pure regex. */
