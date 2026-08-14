@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@wyzdesign.com";
 
 export async function GET(req: NextRequest) {
+  // Nominatim requires ≤1 req/sec — rate limit to avoid IP ban.
+  const ip = clientIp(req);
+  if (!checkRate(ip, "geocode", 45)) {
+    return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  }
+
   const lat = req.nextUrl.searchParams.get("lat");
   const lon = req.nextUrl.searchParams.get("lon");
   if (!lat || !lon) return NextResponse.json({ city: "" }, { status: 400 });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,12 @@ const PRICE_MAP: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit Stripe session creation to prevent API abuse / cost spikes.
+    const ip = clientIp(req);
+    if (!checkRate(ip, "checkout", 10)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
+
     const secret = process.env.STRIPE_SECRET_KEY;
     if (!secret) return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
@@ -8,6 +9,12 @@ const sb = createClient(
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit signups to prevent waitlist spam / DB abuse.
+    const ip = clientIp(req);
+    if (!checkRate(ip, "waitlist", 10)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
+
     const { email, phone, source } = await req.json();
     
     if (!email || !email.includes("@")) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
@@ -30,6 +31,10 @@ async function generateQrSvg(url: string): Promise<string> {
 }
 
 export async function GET(req: NextRequest) {
+  const ip = clientIp(req);
+  if (!checkRate(ip, "qr", 120)) {
+    return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  }
   const url = req.nextUrl.searchParams.get("url");
   const source = req.nextUrl.searchParams.get("source") || "default";
   
