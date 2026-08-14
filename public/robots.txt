@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /muse/admin
+Disallow: /muse/admin/moderation
+Disallow: /muse/profile/
+Disallow: /muse/post/
+Disallow: /muse/reset-password
+
+Sitemap: https://muse.wyzdesign.com/sitemap.xml
