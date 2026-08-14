@@ -881,6 +881,15 @@ function MusePage() {
     return () => document.removeEventListener("visibilitychange", onVis);
   }, []);
 
+  // Story auto-advance: 5s per story, then next (or close at the end)
+  useEffect(() => {
+    if (showStory === null) return;
+    const timer = setTimeout(() => {
+      setShowStory(prev => (prev !== null && prev < stories.length - 1) ? prev + 1 : null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [showStory, stories.length]);
+
   const doRewind = useCallback(() => {
     if (rewindStack.length === 0) { showToast("Nothing to rewind!"); return; }
     const prev = rewindStack[rewindStack.length - 1];
@@ -1366,7 +1375,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div style={{fontSize:14,fontWeight:700,color:"var(--text)",margin:"0 0 10px"}}>Channels & Groups</div>
                     {(liveCommunities?.length ? liveCommunities : COMMUNITIES).filter(c => showNsfw || !c.nsfw).map(c => (
                       <div key={c.id} className="conn-card" style={{margin:"0 0 10px"}}>
-                        <img loading="lazy" src={c.img} alt={c.name} className="conn-avatar" onError={handleImgError} />
+                    <img loading="lazy" src={c.img} alt={c.name} className="conn-avatar" style={{width:102,height:102}} onError={handleImgError} />
                         <div className="conn-content">
                           <div className="conn-name">{c.name}</div>
                           <div className="conn-meta">{c.members} members · {c.desc}</div>
@@ -2731,19 +2740,19 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
               <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
                 {netTab === "pros" && PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
-                  <div key={p.id} className="conn-card" style={{position:"relative",flexDirection:"column",marginBottom:14,padding:0,overflow:"hidden",borderRadius:16,minHeight:200}}>
+                  <div key={p.id} className="conn-card" style={{position:"relative",flexDirection:"column",marginBottom:14,padding:0,overflow:"hidden",borderRadius:16,minHeight:260}}>
                     <img loading="lazy" src={p.img} alt={p.name} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}} onError={handleImgError} />
                     <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,rgba(10,6,18,0.85) 0%,rgba(10,6,18,0.2) 60%,rgba(10,6,18,0.1) 100%)"}} />
-                    <div style={{position:"relative",zIndex:1,padding:"120px 20px 20px",display:"flex",flexDirection:"column",justifyContent:"flex-end",minHeight:200}}>
+                    <div style={{position:"relative",zIndex:1,padding:"120px 20px 20px",display:"flex",flexDirection:"column",justifyContent:"flex-end",minHeight:260}}>
                       <div style={{fontSize:20,fontWeight:800,color:"#fff",textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>{p.name}</div>
                       <div style={{fontSize:14,fontWeight:600,color:"var(--gold)",marginBottom:4,textShadow:"0 1px 4px rgba(0,0,0,0.8)"}}>{p.type} · {p.loc}</div>
                       <div style={{fontSize:13,color:"rgba(255,255,255,0.7)",marginBottom:6}}>{p.exp}</div>
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
                         {(p.skills||[]).map(s=><span key={s} style={{fontSize:10,padding:"3px 8px",borderRadius:6,background:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.8)"}}>{s}</span>)}
                       </div>
-                      <div style={{display:"flex",gap:8,width:"100%"}}>
-                        <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:10}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})});if(!r.ok)throw new Error("failed");showToast("Connection request sent to "+p.name+"!")}catch{showToast("Failed to send connection")}}}>Connect</button>
-                        <button style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:600,borderRadius:10,border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.05)",color:"#fff",cursor:"pointer"}} onClick={()=>{setViewProfile(p);showToast("Viewing "+p.name+"'s profile")}}>View Profile</button>
+                      <div style={{display:"flex",gap:8,width:"100%",flexDirection:"column"}}>
+                        <button className="btn btn-gold" style={{width:"100%",padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:10}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})});if(!r.ok)throw new Error("failed");showToast("Connection request sent to "+p.name+"!")}catch{showToast("Failed to send connection")}}}>Connect</button>
+                        <button style={{width:"100%",padding:"10px 0",fontSize:13,fontWeight:600,borderRadius:10,border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.05)",color:"#fff",cursor:"pointer"}} onClick={()=>{setViewProfile(p);showToast("Viewing "+p.name+"'s profile")}}>View Profile</button>
                       </div>
                     </div>
                   </div>
@@ -3578,12 +3587,17 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
       {/* STORIES VIEWER */}
       {showStory!==null && (
-        <div style={{position:"absolute",inset:0,zIndex:600,background:"rgba(0,0,0,0.95)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}} onClick={()=>setShowStory(null)}>
-          <div style={{position:"absolute",top:20,left:20,right:20,display:"flex",gap:4}}>
-            {stories.map((s,i)=>(<div key={s.id} style={{flex:1,height:3,borderRadius:2,background:i===showStory?"var(--gold)":"rgba(255,255,255,0.2)"}} />))}
+        <div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.96)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+          <div style={{position:"absolute",top:18,left:16,right:16,display:"flex",gap:5,zIndex:4}}>
+            {stories.map((s,i)=>(
+              <div key={s.id} style={{flex:1,height:3,borderRadius:2,background:"rgba(255,255,255,0.25)",overflow:"hidden"}}>
+                <div key={showStory} style={{height:"100%",width:"100%",background:"var(--gold)",transformOrigin:"left",transform:i<showStory?"scaleX(1)":"scaleX(0)",animation:i===showStory?"storyProgress 5s linear forwards":"none"}} />
+              </div>
+            ))}
           </div>
+          <button style={{position:"absolute",top:14,right:14,zIndex:5,background:"none",border:"none",color:"#fff",fontSize:26,cursor:"pointer",padding:6}} onClick={()=>setShowStory(null)} aria-label="Close story">✕</button>
           {stories[showStory] && (
-            <div style={{textAlign:"center"}}>
+            <div style={{textAlign:"center",pointerEvents:"none"}}>
               <img loading="lazy" src={stories[showStory].img} alt="" style={{maxWidth:"90%",maxHeight:"70vh",borderRadius:16,objectFit:"contain",backgroundColor:"#1a0a2e"}} />
               <div style={{display:"flex",alignItems:"center",gap:10,justifyContent:"center",marginTop:16}}>
                 <img loading="lazy" src={stories[showStory].avatar} alt="" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",backgroundColor:"#1a0a2e"}} />
@@ -3592,7 +3606,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
             </div>
           )}
-          <div style={{position:"absolute",bottom:30,color:"rgba(255,255,255,0.5)",fontSize:12}}>Tap anywhere to close</div>
+          <div style={{position:"absolute",left:0,top:0,bottom:0,width:"30%",zIndex:2}} onClick={(e)=>{e.stopPropagation();setShowStory(prev=>prev!==null&&prev>0?prev-1:prev)}} />
+          <div style={{position:"absolute",right:0,top:0,bottom:0,width:"30%",zIndex:2}} onClick={(e)=>{e.stopPropagation();setShowStory(prev=>prev!==null&&prev<stories.length-1?prev+1:null)}} />
+          <div style={{position:"absolute",bottom:24,color:"rgba(255,255,255,0.5)",fontSize:12,zIndex:3,pointerEvents:"none"}}>Tap sides to navigate · tap ✕ to close</div>
         </div>
       )}
       {/* GLOBAL PREMIUM — popup centered in viewport, star tab pinned to right edge */}
