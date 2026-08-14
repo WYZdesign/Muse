@@ -1433,6 +1433,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div><div className="hamburger-item-label">{item.label}</div><div className="hamburger-item-desc">{item.desc}</div></div>
                   </div>
                 ))}
+                <div style={{borderTop:"1px solid rgba(255,255,255,0.06)",margin:"12px 0 8px",paddingTop:8}}>
+                  <div style={{fontSize:11,fontWeight:600,color:"var(--muted)",marginBottom:8}}>Legal</div>
+                  {[{label:"Terms of Service",href:"/terms"},{label:"Privacy Policy",href:"/privacy"},{label:"DMCA / Copyright",href:"/dmca"},{label:"Community Guidelines",href:"/safety"}].map(l => (
+                    <a key={l.href} href={l.href} onClick={()=>setShowHamburger(false)} style={{display:"block",padding:"8px 0",fontSize:13,color:"var(--text2)",textDecoration:"none",transition:"color .15s"}} onMouseEnter={e=>e.currentTarget.style.color="#FFD700"} onMouseLeave={e=>e.currentTarget.style.color="var(--text2)"}>{l.label}</a>
+                  ))}
+                </div>
               </>
             ) : (
               <>
