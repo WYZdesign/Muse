@@ -2027,7 +2027,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="discover"?" active":"")}>
               <div className="discover-wrap">
                 <div className="hdr">
-                  <div className="logo-link" style={{fontSize:28,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Discover</div>
+                  <div className="logo-link" style={{fontSize:32,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Discover</div>
                   <div style={{flex:1}} />
                   <div style={{display:"flex",gap:4}}>
                     {!discoverSearchOpen ? (
@@ -2275,7 +2275,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="connections"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Feed</div>
+                <div className="logo-link" style={{fontSize:32,backgroundImage:"linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Feed</div>
                 <div style={{width:36}} />
               </div>
               <div className="conn-scroll" style={{padding:"0 0 80px"}}>
@@ -2366,7 +2366,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
                   {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
                 </div>
-                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent",position:"absolute",left:"50%",transform:"translateX(-50%)",whiteSpace:"nowrap"}}>Muses</div>
+                <div className="logo-link" style={{fontSize:32,backgroundImage:"linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent",position:"absolute",left:"50%",transform:"translateX(-50%)",whiteSpace:"nowrap"}}>Muses</div>
 <div style={{display:"flex",gap:10}}>
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{width:"auto",height:34,padding:"0 12px",fontSize:12,fontWeight:700}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")}>{matchesView==="list"?"Grid":"List"}</button>)}
 {!searchOpen ? (<button className="hdr-btn" style={{width:34,height:34}} onClick={()=>setSearchOpen(true)}><FiSearch size={16} /></button>) : (
@@ -2490,7 +2490,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="briefs"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Collab</div>
+                <div className="logo-link" style={{fontSize:32,backgroundImage:"linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Collab</div>
                 <button className="hdr-btn" onClick={()=>setShowPostBrief(true)}><FiPlus size={18} /></button>
               </div>
               <div className="conn-tabs" style={{padding:"0 12px"}}>
@@ -2798,7 +2798,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="portfolio"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Portfolio</div>
+                <div className="logo-link" style={{fontSize:32,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Portfolio</div>
               </div>
               <div className="portfolio-scroll">
                 <MyAlbumsManager
@@ -2813,7 +2813,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
              <div className={"screen-el"+(screen==="moments"?" active":"")}>
                <div className="hdr">
                  <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                  <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#FF1493,#FF0000,#DDA0DD,#FF1493,#FF69B4,#FF1493)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>BTS</div>
+                  <div className="logo-link" style={{fontSize:32,backgroundImage:"linear-gradient(90deg,#FF1493,#FF0000,#DDA0DD,#FF1493,#FF69B4,#FF1493)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>BTS</div>
                   <div style={{width:40}} />
                </div>
                <div style={{flex:1,overflowY:"auto",padding:"0 0 80px"}}>
@@ -3184,7 +3184,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="phone" id="muse-app">
             <div className="notch" />
             <div className="hdr">
-              <div className="logo-link" style={{fontSize:28,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Profile</div>
+              <div className="logo-link" style={{fontSize:32,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Profile</div>
               <button className="hdr-btn" onClick={()=>showScreen("profile")}><FiArrowLeft size={18} /></button>
             </div>
             <div className="sub-scroll">
@@ -3229,7 +3229,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="phone" id="muse-app">
             <div className="notch" />
             <div className="hdr">
-              <div className="logo-link" style={{fontSize:28,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Profile</div>
+              <div className="logo-link" style={{fontSize:32,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Profile</div>
               <button className="hdr-btn" onClick={()=>showScreen("profile")}><FiArrowLeft size={18} /></button>
             </div>
             <div className="settings-scroll">

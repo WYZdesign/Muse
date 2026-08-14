@@ -137,7 +137,7 @@ a{color:inherit;text-decoration:none}
 .screen-el.active{display:flex!important;animation:screenIn .3s ease}
 @keyframes screenIn{from{opacity:0}to{opacity:1}}
 .glass{background:rgba(255,255,255,0.05);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.08);border-radius:18px}
-.hdr{padding:calc(54px + env(safe-area-inset-top,0px)) 16px 14px;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:10;overflow-x:hidden;max-width:100vw;flex-shrink:0}
+.hdr{padding:calc(68px + env(safe-area-inset-top,0px)) 16px 16px;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:10;overflow-x:hidden;max-width:100vw;flex-shrink:0}
 .logo-link{font-size:40px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(120deg,var(--gold),var(--amber),var(--pink),var(--lavender),var(--sunset-orange),var(--gold));background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite;text-decoration:none;cursor:pointer;line-height:1;padding:0 0.18em;display:inline-block}
 .logo-img{height:34px;width:auto;object-fit:contain;flex-shrink:0}
 @keyframes logoShimmer{0%,100%{filter:brightness(1) hue-rotate(0deg)}50%{filter:brightness(1.2) hue-rotate(5deg)}}
