@@ -77,7 +77,9 @@ const MatchCard = memo(function MatchCard({ m, expanded, swiping, view, actions 
   const { setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping, setReportTarget, setShowReport, setUnmatchTarget, handleImgError, getIcebreaker } = actions;
   const mid = String(m.id);
   const swipingMe = swiping?.id === mid;
-  const barPct = swipingMe && swiping!.offset < -20 ? Math.min(100, (Math.abs(swiping!.offset) / 80) * 100) : 0;
+  const swipeOffset = swipingMe ? swiping!.offset : 0;
+  const leftPct = swipeOffset < -20 ? Math.min(100, (Math.abs(swipeOffset) / 80) * 100) : 0;
+  const rightPct = swipeOffset > 20 ? Math.min(100, (swipeOffset / 80) * 100) : 0;
 
   const finishSwipe = useCallback((offset: number) => {
     setMatchSwiping(null);
@@ -94,8 +96,11 @@ const MatchCard = memo(function MatchCard({ m, expanded, swiping, view, actions 
       onMouseDown={(e) => { const startX = e.clientX; const startY = e.clientY; const handleMove = (ev: MouseEvent) => { const dx = ev.clientX - startX; const dy = ev.clientY - startY; if (Math.abs(dx) > 15 && Math.abs(dx) > Math.abs(dy)) { ev.preventDefault(); setMatchSwiping({ id: mid, offset: dx }); return false; } }; const handleUp = (ev: MouseEvent) => { const dx = ev.clientX - startX; finishSwipe(dx); document.removeEventListener("mousemove", handleMove); document.removeEventListener("mouseup", handleUp); }; document.addEventListener("mousemove", handleMove, { passive: false }); document.addEventListener("mouseup", handleUp); }}
       onTouchStart={(e) => { const startX = e.touches[0].clientX; const startY = e.touches[0].clientY; const handleMove = (ev: TouchEvent) => { const dx = ev.touches[0].clientX - startX; const dy = ev.touches[0].clientY - startY; if (Math.abs(dx) > 15 && Math.abs(dx) > Math.abs(dy)) { setMatchSwiping({ id: mid, offset: dx }); } }; const handleEnd = (ev: TouchEvent) => { const dx = ev.touches[0].clientX - startX; finishSwipe(dx); document.removeEventListener("touchmove", handleMove); document.removeEventListener("touchend", handleEnd); }; document.addEventListener("touchmove", handleMove, { passive: false }); document.addEventListener("touchend", handleEnd); }}
     >
-      {barPct > 0 && (
-        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${barPct}%`, background: "linear-gradient(90deg,#ff4444,#FFD700)", opacity: 0.3, transition: swiping ? "none" : "all .3s", zIndex: 0, borderRadius: "inherit" }} />
+      {leftPct > 0 && (
+        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${leftPct}%`, background: "linear-gradient(90deg,#ff4444,#FFD700)", opacity: 0.3, transition: swiping ? "none" : "all .3s", zIndex: 0, borderRadius: "inherit" }} />
+      )}
+      {rightPct > 0 && (
+        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: `${rightPct}%`, background: "linear-gradient(270deg,#FFD700,#ff8c00)", opacity: 0.3, transition: swiping ? "none" : "all .3s", zIndex: 0, borderRadius: "inherit" }} />
       )}
       <div className="match-avatar-wrap">
         <img loading="lazy" src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} />
@@ -2270,11 +2275,11 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                    <div className={"match-fab"+(cardScrolled?" hidden":"")}>
                                     <button className={"match-fab-btn"+(showMatchMenu?" open":"")} onClick={()=>setShowMatchMenu(v=>!v)} aria-label="Match actions">✦</button>
                                     <div className={"match-radial"+(showMatchMenu?" open":"")}>
-                                      <button className="match-radial-btn btn-rewind" style={{left:-85,top:-10}} onClick={doRewind} aria-label="Rewind">↺</button>
-                                      <button className="match-radial-btn btn-nope" style={{left:-95,top:-45}} onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
-                                      <button className="match-radial-btn btn-super" style={{left:-60,top:-70}} onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
-                                      <button className="match-radial-btn btn-like" style={{left:-30,top:-90}} onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
-                                      <button className="match-radial-btn btn-note" style={{left:5,top:-95}} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
+                                      <button className="match-radial-btn btn-rewind" style={{left:-100,top:0}} onClick={doRewind} aria-label="Rewind">↺</button>
+                                      <button className="match-radial-btn btn-nope" style={{left:-92,top:-38}} onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
+                                      <button className="match-radial-btn btn-super" style={{left:-71,top:-71}} onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
+                                      <button className="match-radial-btn btn-like" style={{left:-38,top:-92}} onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
+                                      <button className="match-radial-btn btn-note" style={{left:0,top:-100}} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
                                     </div>
                                   </div>
                                  )}
@@ -3831,9 +3836,6 @@ const isMatch=matchScore>55||Math.random()>0.5;
       {/* ══════ PAYMENT HISTORY ══════ */}
       {showPaymentHistory && (
         <PaymentHistory userId={authUser?.id || ""} onClose={() => setShowPaymentHistory(false)} />
-      )}
-      {screen !== "auth" && screen !== "onboard" && (
-        <Nav active={navActive} onNavigate={showScreen} onHamburgerToggle={openHamburger} />
       )}
       {boostActive && (
         <div style={{position:"fixed",top:80,right:20,zIndex:9999,padding:"8px 14px",borderRadius:99,background:"linear-gradient(135deg,var(--gold),var(--amber))",fontSize:11,fontWeight:700,color:"#0a0612",boxShadow:"0 4px 16px rgba(255,215,0,0.4)",display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setBoostActive(false);setBoostEnd(0);try{safeRemoveItem("muse_boost");}catch{}showToast("Boost off")}}>
