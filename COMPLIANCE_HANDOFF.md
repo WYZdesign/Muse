@@ -38,11 +38,7 @@ A professional creative-networking platform (photographers, models, filmmakers, 
 2. Stages a CyberTipline report (`muse_ncmec_reports`, status `pending_submission`),
 3. **Auto-transmits** once ESP credentials are set (`submitToCyberTipline` / `transmitPendingNcmecReports` in `src/lib/contentScan.ts`).
 
-**What counsel/operator must do (external, cannot be done in code):**
-1. Go to `report.cybertip.org`.
-2. Apply for an **Electronic Service Provider (ESP)** account.
-3. On approval, set these env vars in Vercel: `NCMEC_ENDPOINT`, `NCMEC_CLIENT_ID`, `NCMEC_CLIENT_SECRET`.
-4. Confirm the report payload field names in `contentScan.ts` against the ESP API spec (a one-line review — the module is deliberately field-mapped and commented).
+**Registration status:** ESP application **submitted to NCMEC** (2026-08-13) and awaiting approval. On approval, set the following env vars in Vercel: `NCMEC_ENDPOINT`, `NCMEC_CLIENT_ID`, `NCMEC_CLIENT_SECRET`.
 
 **Note for counsel:** This is the single highest-risk open item. Until ESP credentials are provisioned, CSAM is detected and accounts are suspended, but reports are **staged, not transmitted**. 18 U.S.C. § 2258A requires reporting; the technical mechanism is ready and the operator must complete registration.
 
@@ -50,11 +46,12 @@ A professional creative-networking platform (photographers, models, filmmakers, 
 
 ## 4. DMCA — page live, needs designated-agent filing
 
-**Status:** `/dmca` page is live with the full takedown + counter-notice procedure. The Terms (§10) reference `dmca@wyzdesign.com`.
+**Status:** `/dmca` page is live with the full takedown + counter-notice procedure, including the **registered designated agent**:
+- Agent: Torree Harris, WYZ Design™, 7723 Hollywood Boulevard, Los Angeles, CA 90046
+- **Copyright Office Registration No: DMCA-1078382**
+- Contact: `dmca@wyzdesign.com`
 
-**What must be done (external):**
-1. File the **Designated Agent** with the U.S. Copyright Office at `dmca.copyright.gov` ($6, valid 3 years).
-2. Put the agent registration number + agent name/address on the `/dmca` page (currently a placeholder for the number).
+The filing is complete (registration number issued). Only the $6 fee payment finalizes it if not already paid.
 
 ---
 
@@ -89,8 +86,8 @@ Four pages are live and drafted to be near-final:
 
 | # | Action | Owner | Blocker? |
 |---|--------|-------|----------|
-| 1 | NCMEC ESP registration | Operator | **Yes — CSAM transmission** |
-| 2 | DMCA designated-agent filing | Operator | No |
+| 1 | NCMEC ESP registration | ✅ Submitted (awaiting approval) | Until approved, CSAM is staged not transmitted |
+| 2 | DMCA designated-agent filing | ✅ Registered (DMCA-1078382) | No |
 | 3 | Set NCMEC env vars after approval | Operator | No |
 | 4 | Counsel review of §3–§5 above | Counsel | Recommended |
 
