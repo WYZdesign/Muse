@@ -405,6 +405,7 @@ img{background-color:#1a0a2e}
 .conn-tag{display:inline-block;padding:4px 10px;border-radius:99px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.08);font-size:11px;font-weight:600;color:var(--gold)}
 .conn-card{margin:0 20px 14px;padding:18px;border-radius:20px;background:var(--glass);border:1px solid rgba(255,255,255,0.05);display:flex;gap:14px;align-items:flex-start;transition:all .3s;cursor:pointer;animation:cardIn .5s cubic-bezier(.22,1.2,.36,1) both}
 @keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@supports (animation-timeline: view()){.conn-card{animation-timeline:view();animation-range:entry 0% entry 70%}}
 .conn-card:nth-child(2){animation-delay:.07s}.conn-card:nth-child(3){animation-delay:.14s}.conn-card:nth-child(4){animation-delay:.21s}.conn-card:nth-child(5){animation-delay:.28s}.conn-card:nth-child(6){animation-delay:.35s}.conn-card:nth-child(7){animation-delay:.42s}
 .conn-card:hover{border-color:rgba(255,215,0,0.15);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.2)}
 .conn-avatar{width:68px;height:68px;border-radius:16px;object-fit:cover;flex-shrink:0;background-color:#1a0a2e;background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(135deg,#533483,#e94560,#ffa07a);background-origin:border-box;background-clip:padding-box,border-box}
@@ -998,6 +999,10 @@ img{background-color:#1a0a2e}
 @keyframes feedLikePop{0%{transform:scale(1)}40%{transform:scale(1.35)}70%{transform:scale(0.9)}100%{transform:scale(1)}}
 .feed-action-btn.liked-pop{animation:feedLikePop .4s ease}
 @media(hover:hover){.hdr-btn:hover,.nav-item:hover,.quick-reply:hover,.send-btn:hover,.btn:hover{transform:translateY(-2px) scale(1.03)}}
+.btn,.hdr-btn,.conn-btn,.feed-action-btn,.match-fab-btn,.quick-reply,.send-btn{position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.btn::after,.hdr-btn::after,.conn-btn::after,.feed-action-btn::after,.match-fab-btn::after,.quick-reply::after,.send-btn::after{content:'';position:absolute;top:50%;left:50%;width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.32);transform:translate(-50%,-50%) scale(0);opacity:0;pointer-events:none}
+.btn:active::after,.hdr-btn:active::after,.conn-btn:active::after,.feed-action-btn:active::after,.match-fab-btn:active::after,.quick-reply:active::after,.send-btn:active::after{animation:ripple .55s ease-out}
+@keyframes ripple{from{transform:translate(-50%,-50%) scale(0);opacity:.55}to{transform:translate(-50%,-50%) scale(15);opacity:0}}
 
 /* Radial menu — bouncier spring for the expand */
 @keyframes radialPop{0%{opacity:0;transform:scale(0)}70%{opacity:1;transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
