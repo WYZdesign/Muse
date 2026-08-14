@@ -2270,7 +2270,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="connections"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link">Feed</div>
+                <div className="logo-link" style={{fontSize:28,background:"linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF)",backgroundSize:"300% 100%"}}>Feed</div>
                 <div style={{display:"flex",gap:4,marginRight:44}}>
                   {(["all","photos","text"] as const).map(f=>(
                     <div key={f} className={"conn-tab-sub"+(feedFilter===f?" active":"")} onClick={()=>setFeedFilter(f)} style={{fontSize:11,padding:"5px 10px",borderRadius:99}}>{f==="all"?"All":f==="photos"?"Photos":"Text"}</div>
@@ -2359,7 +2359,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div className={"screen-el"+(screen==="matches"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28}}>Matches</div>
+                <div className="logo-link" style={{fontSize:28,background:"linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",backgroundSize:"300% 100%"}}>Matches</div>
 <div style={{display:"flex",gap:10}}>
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{width:"auto",padding:"0 12px",fontSize:12,fontWeight:700}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")}>{matchesView==="list"?"Grid":"List"}</button>)}
@@ -2484,7 +2484,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="briefs"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28}}>Collab</div>
+                <div className="logo-link" style={{fontSize:28,background:"linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA)",backgroundSize:"300% 100%"}}>Collab</div>
                 <button className="hdr-btn" onClick={()=>setShowPostBrief(true)}><FiPlus size={18} /></button>
               </div>
               <div className="conn-tabs" style={{padding:"0 12px"}}>
@@ -2677,9 +2677,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <div style={{padding:"0 20px 20px"}}>
                     <div style={{fontSize:13,fontWeight:700,color:"var(--gold)",margin:"4px 0 10px"}}>Incoming Requests</div>
                     {[
-                      {name:"SABLE",type:"Model",type2:"Photography Session",img:"/models/SABLE/IMG_5112.webp",note:"Would love to do a golden hour editorial shoot"},
-                      {name:"KAYLA",type:"Stylist",type2:"Styling Consultation",img:"/models/KAYLA/Kayla-1.webp",note:"Need help with wardrobe for my next campaign"},
-                      {name:"JERMAINE",type:"Director",type2:"Creative Direction",img:"/models/JERMAINE/Jermaine-1.webp",note:"Looking for a creative director for a music video"},
+                      {name:"SIMONE",type:"Model",type2:"Photography Session",img:"/models/SIMONE/Simone-107.webp",note:"Would love to do a golden hour editorial shoot"},
+                      {name:"KAYLEN",type:"Stylist",type2:"Styling Consultation",img:"/models/KAYLEN/kaylen (retouched)-10.webp",note:"Need help with wardrobe for my next campaign"},
+                      {name:"JERMAINE",type:"Director",type2:"Creative Direction",img:"/models/JERMAINE/Jermaine-20.webp",note:"Looking for a creative director for a music video"},
                     ].map((r,i)=>(
                       <div key={i} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
                         <img loading="lazy" src={r.img} alt={r.name} style={{width:"25%",alignSelf:"stretch",minHeight:110,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
@@ -2700,8 +2700,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div style={{height:16}} />
                     <div style={{fontSize:13,fontWeight:700,color:"var(--text)",margin:"4px 0 10px"}}>Sent Requests</div>
                     {[
-                      {name:"DARRYL",type:"Videographer",status:"Pending",img:"/models/DARRYL/Darryl-1.webp",note:"Music video production"},
-                      {name:"ANGEL",type:"Makeup Artist",status:"Accepted",img:"/models/ANGEL/Angel-1.webp",note:"Editorial makeup session"},
+                      {name:"DARRYL",type:"Videographer",status:"Pending",img:"/models/DARRYL/Darryl-2.webp",note:"Music video production"},
+                      {name:"ANGEL",type:"Makeup Artist",status:"Accepted",img:"/models/ANGEL/Angel-2.webp",note:"Editorial makeup session"},
                     ].map((r,i)=>(
                       <div key={i} className="conn-card" style={{marginBottom:10,padding:0,overflow:"hidden",flexDirection:"row",alignItems:"stretch"}}>
                         <img loading="lazy" src={r.img} alt={r.name} style={{width:"25%",alignSelf:"stretch",minHeight:110,objectFit:"cover",flexShrink:0}} onError={handleImgError} />
@@ -2807,7 +2807,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
              <div className={"screen-el"+(screen==="moments"?" active":"")}>
                <div className="hdr">
                  <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                  <div className="logo-link" style={{fontSize:28}}>BTS</div>
+                  <div className="logo-link" style={{fontSize:28,background:"linear-gradient(90deg,#FF1493,#FF0000,#DDA0DD,#FF1493,#FF69B4,#FF1493)",backgroundSize:"300% 100%"}}>BTS</div>
                   <div style={{width:40}} />
                </div>
                <div style={{flex:1,overflowY:"auto",padding:"0 0 80px"}}>
