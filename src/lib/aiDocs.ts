@@ -69,14 +69,39 @@ export async function seedKnowledgeBase(): Promise<{ embedded: number; skipped: 
   return { embedded, skipped };
 }
 
+/** Free keyword retrieval over the in-memory KB (no embeddings, no DB). */
+function keywordRetrieve(query: string, limit = 5): { context: string; sources: string[] } {
+  const q = query.toLowerCase();
+  const terms = q.split(/[^a-z0-9]+/).filter((t) => t.length > 3);
+  const scored = MUSE_KNOWLEDGE_BASE.map((doc) => {
+    const hay = `${doc.section} ${doc.title} ${doc.content}`.toLowerCase();
+    let score = 0;
+    for (const t of terms) {
+      if (hay.includes(t)) score += 1;
+    }
+    if (doc.title.toLowerCase().includes(q) || q.includes(doc.title.toLowerCase())) score += 2;
+    return { doc, score };
+  })
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+
+  // If nothing matches, return a sensible default (about + support).
+  const picked = scored.length ? scored.map((s) => s.doc) : MUSE_KNOWLEDGE_BASE.filter((d) => d.section === "about" || d.section === "support");
+  return {
+    context: picked.map((d) => `${d.title}: ${d.content}`).join("\n\n"),
+    sources: picked.map((d) => d.title),
+  };
+}
+
 /** Retrieve the most relevant KB chunks for a query as a single context string. */
 export async function retrieveContext(query: string, limit = 5): Promise<{ context: string; sources: string[] }> {
   const sb = getServiceClient();
   const { data: docs } = await sb.from("muse_ai_docs").select("section, title, content, embedding");
 
   if (!docs || docs.length === 0) {
-    // Knowledge base not seeded — fall back to full KB in-memory (unembedded).
-    return { context: "", sources: [] };
+    // Knowledge base not seeded — keyword retrieval over the in-memory KB.
+    return keywordRetrieve(query, limit);
   }
 
   const qv = await embedText(query);
@@ -118,7 +143,7 @@ export async function askMuseAI(question: string, opts?: { forAdmin?: boolean })
   }
   messages.push({ role: "user", content: question });
 
-  const answer = await chatComplete(messages, { maxTokens: 400, temperature: 0.3 });
+  const answer = await chatComplete(messages, { maxTokens: 900, temperature: 0.3 });
   if (!answer) return null;
   return { answer, sources };
 }
