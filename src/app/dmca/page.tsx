@@ -29,8 +29,10 @@ export default function DMCAPage() {
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>Designated Agent</h2>
           <div style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)", background: "rgba(255,255,255,0.03)", padding: "16px 20px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)" }}>
-            <p style={{ margin: 0 }}><strong>Torre Marcel</strong></p>
-            <p style={{ margin: "4px 0 0" }}>WYZ Design LLC</p>
+            <p style={{ margin: 0 }}><strong>Torree Harris</strong> — Designated Agent</p>
+            <p style={{ margin: "4px 0 0" }}>WYZ Design™</p>
+            <p style={{ margin: "4px 0 0" }}>7723 Hollywood Boulevard, Los Angeles, CA 90046</p>
+            <p style={{ margin: "4px 0 0" }}>Copyright Office Registration No: <strong>DMCA-1078382</strong></p>
             <p style={{ margin: "4px 0 0" }}>Email: <a href="mailto:dmca@wyzdesign.com" style={{ color: "#FFD700" }}>dmca@wyzdesign.com</a></p>
           </div>
         </section>
