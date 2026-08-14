@@ -215,6 +215,7 @@ function MusePage() {
   const [showDiscoveryPrefs, setShowDiscoveryPrefs] = useState(false);
   const [showActivityFeed, setShowActivityFeed] = useState(false);
   const [showHamburger, setShowHamburger] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const [showPremiumPopup, setShowPremiumPopup] = useState(() => {
     try {
       const hidden = safeGetItem("muse_hide_premium");
@@ -1201,7 +1202,7 @@ function MusePage() {
           ))}
             </div>
             <div className="hamburger-waves">
-              <div className="wave wave-1" /><div className="wave wave-2" /><div className="wave wave-3" /><div className="wave wave-4" /><div className="wave wave-5" />
+              <div className="wave wave-1" /><div className="wave wave-2" /><div className="wave wave-3" /><div className="wave wave-4" /><div className="wave wave-5" /><div className="wave wave-6" /><div className="wave wave-7" /><div className="wave wave-8" />
             </div>
           </div>
     </div>
@@ -1507,7 +1508,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 )}
                 {hamburgerScreen === "profile" && (
                   <div className="conn-scroll">
-                    <div className="hamburger-title">Your Profile</div>
+                    <div className="hamburger-title" style={{textAlign:"center"}}>Your Profile</div>
                     <div style={{textAlign:"center",marginBottom:20}}>
                       <img loading="lazy" src={currentUser.avatar} alt="You" style={{width:80,height:80,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--gold)",marginBottom:10}} onError={handleImgError} />
                       <div style={{fontSize:18,fontWeight:700,color:"var(--text)"}}>{currentUser.name}</div>
@@ -1530,6 +1531,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div className="stat"><div className="stat-num">{currentUser.stats?.likes||0}</div><div className="stat-label">Likes</div></div>
                       <div className="stat"><div className="stat-num">{currentUser.stats?.bookingsCompleted||0}</div><div className="stat-label">Bookings</div></div>
                     </div>
+                    <button className="hamburger-item" style={{width:"100%",marginBottom:6,marginTop:20}} onClick={() => { setShowHamburger(false); setSupportOpen(true); }}>
+                      <div className="hamburger-item-icon" style={{background:"linear-gradient(135deg,#FFD700,#FFBF00,#FF8A80)"}}><FiHeadphones size={20} /></div>
+                      <div><div className="hamburger-item-label">Help & Support</div><div className="hamburger-item-desc">Chat with the Muse assistant</div></div>
+                    </button>
                     <button className="btn btn-gold" style={{width:"100%",marginTop:24,fontSize:12,padding:"12px 0"}} onClick={doLogoutFull}>Log Out</button>
                   </div>
                 )}
@@ -3768,7 +3773,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <span style={{fontWeight:400}}>({Math.max(0,Math.ceil((boostEnd-Date.now())/60000))}m)</span>
         </div>
       )}
-      <SupportChat visible={screen === "profile"} />
+      <SupportChat open={supportOpen} onClose={()=>setSupportOpen(false)} />
     </div>
   );
 }
