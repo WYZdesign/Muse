@@ -711,6 +711,13 @@ export async function POST(req: NextRequest) {
       if (!checkRate(ip, "add-album-photo", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { albumId, img_url, caption } = rest;
       if (!albumId || !img_url) return NextResponse.json({ error: "albumId and img_url required" }, { status: 400 });
+      // Reject any URL not on Muse's own storage. Every uploaded image is
+      // scanned by Rekognition; an arbitrary external URL would bypass that
+      // check and land an unscanned image in an album.
+      const storageHost = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/^https?:\/\//, "").split("/")[0];
+      if (storageHost && !String(img_url).includes(storageHost)) {
+        return NextResponse.json({ error: "Images must be uploaded through Muse" }, { status: 400 });
+      }
       const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
       if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       const { count } = await sb.from("muse_album_photos").select("*", { count: "exact", head: true }).eq("album_id", albumId);
@@ -1305,7 +1312,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "admin-suspend-user") {
-      if (!checkRate(ip, "admin-suspend-user", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      // Admin-only (email-gated); higher limit so a moderation sweep doesn't bottleneck.
+      if (!checkRate(ip, "admin-suspend-user", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
       if (!user.email || !admins.includes(user.email.toLowerCase())) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
