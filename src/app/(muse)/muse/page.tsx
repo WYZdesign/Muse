@@ -19,6 +19,7 @@ import { safeSetItem, safeGetItem, safeRemoveItem, QUOTA_MSG } from "./lib/safe-
 import { uid } from "./lib/uid";
 import DisclosureModal from "./components/DisclosureModal";
 import AgeVerificationModal from "./components/AgeVerificationModal";
+import SupportChat from "./components/SupportChat";
 import { CardPreloader } from "@/components/CardPreloader";
 import SafetyCheckinModal from "./components/SafetyCheckinModal";
 import PromptBankModal from "./components/PromptBankModal";
@@ -3849,6 +3850,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <span style={{fontWeight:400}}>({Math.max(0,Math.ceil((boostEnd-Date.now())/60000))}m)</span>
         </div>
       )}
+      <SupportChat />
     </div>
   );
 }
