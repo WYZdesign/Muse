@@ -2611,8 +2611,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                           <div className="conn-name" style={{fontSize:15}}>{m.name}</div>
                           <div className="conn-meta" style={{fontSize:12}}>{m.type} · Booked Session</div>
                           <div style={{display:"flex",gap:8,marginTop:8}}>
-                            <button className="btn btn-gold" style={{flex:1,padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={()=>{openChat(m)}}>Message</button>
-                            <button className="btn btn-outline" style={{flex:1,padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
+                            <button className="btn btn-gold" style={{flex:1,padding:"12px 0",fontSize:12,fontWeight:700,borderRadius:12,whiteSpace:"nowrap"}} onClick={()=>{openChat(m)}}>Message</button>
+                            <button className="btn btn-outline" style={{flex:1,padding:"12px 0",fontSize:12,fontWeight:600,borderRadius:12,whiteSpace:"nowrap"}} onClick={()=>{setChatTarget(m);showScreen("chat")}}>Details</button>
                           </div>
                         </div>
                       </div>
@@ -2661,8 +2661,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         {(s.skills||[]).map(sk=><span key={sk} className="conn-tag" style={{fontSize:10,padding:"3px 8px"}}>{sk}</span>)}
                       </div>
                        <div style={{display:"flex",gap:8,marginTop:8}}>
-                         <button className="btn btn-gold" style={{flex:1,padding:"12px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})});if(r.status===403){const d=await r.json().catch(()=>({}));if(d.code==="VERIFICATION_REQUIRED"){setShowAgeVerification(true);showToast("Verify your identity to book paid sessions");return;}}if(!r.ok)throw new Error("failed");showToast("Session request sent to "+s.name+"!")}catch{showToast("Failed to book session")}}}>{s.available?"Book Session":"Waitlist"}</button>
-                         <button className="btn btn-outline" style={{flex:1,padding:"12px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={()=>{setViewProfile(s);showToast(s.name+"'s profile")}}>View Profile</button>
+                         <button className="btn btn-gold" style={{flex:1,padding:"12px 0",fontSize:12,fontWeight:700,borderRadius:12,whiteSpace:"nowrap"}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"book-session",sessionId:s.id,hostId:s.id})});if(r.status===403){const d=await r.json().catch(()=>({}));if(d.code==="VERIFICATION_REQUIRED"){setShowAgeVerification(true);showToast("Verify your identity to book paid sessions");return;}}if(!r.ok)throw new Error("failed");showToast("Session request sent to "+s.name+"!")}catch{showToast("Failed to book session")}}}>{s.available?"Book Session":"Waitlist"}</button>
+                         <button className="btn btn-outline" style={{flex:1,padding:"12px 0",fontSize:12,fontWeight:600,borderRadius:12,whiteSpace:"nowrap"}} onClick={()=>{setViewProfile(s);showToast(s.name+"'s profile")}}>View Profile</button>
                        </div>
                     </div>
                   </div>
@@ -3173,7 +3173,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="phone" id="muse-app">
             <div className="notch" />
             <div className="hdr">
-              <div className="logo-link" style={{fontSize:28}}>muse</div>
+              <div className="logo-link" style={{fontSize:28}}>Profile</div>
               <button className="hdr-btn" onClick={()=>showScreen("profile")}><FiArrowLeft size={18} /></button>
             </div>
             <div className="sub-scroll">
@@ -3218,7 +3218,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="phone" id="muse-app">
             <div className="notch" />
             <div className="hdr">
-              <div className="logo-link" style={{fontSize:28}}>muse</div>
+              <div className="logo-link" style={{fontSize:28}}>Profile</div>
               <button className="hdr-btn" onClick={()=>showScreen("profile")}><FiArrowLeft size={18} /></button>
             </div>
             <div className="settings-scroll">

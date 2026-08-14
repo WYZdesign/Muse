@@ -130,7 +130,7 @@ a{color:inherit;text-decoration:none}
 .phone{width:100%;max-width:430px;height:844px;margin:24px auto;border-radius:48px;border:2.5px solid rgba(255,255,255,0.08);overflow:hidden;position:relative;z-index:10;background:rgba(10,6,18,0.35);backdrop-filter:blur(30px);box-shadow:0 0 100px rgba(255,215,0,0.08),0 0 200px rgba(255,181,194,0.04),inset 0 0 80px rgba(255,255,255,0.015),0 25px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column}
 .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:130px;height:36px;background:#000;border-radius:0 0 22px 22px;z-index:200}
 .notch::after{content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);width:60px;height:6px;border-radius:3px;background:rgba(255,255,255,0.08)}
-.screen-el{display:none!important;width:100%;flex:1;flex-direction:column;position:relative;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;min-height:0;max-height:calc(100vh - 72px);max-height:calc(100dvh - 72px)}
+.screen-el{display:none!important;width:100%;flex:1;flex-direction:column;position:relative;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;min-height:0;max-height:calc(100vh - 72px)}
 .screen-el.active{display:flex!important;animation:screenIn .3s ease}
 @keyframes screenIn{from{opacity:0}to{opacity:1}}
 .glass{background:rgba(255,255,255,0.05);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.08);border-radius:18px}
