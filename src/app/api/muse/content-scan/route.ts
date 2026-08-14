@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { scanWithRekognition, logScan, reportIncident, escalateToNcmec } from "@/lib/contentScan";
 
@@ -12,6 +13,16 @@ import { scanWithRekognition, logScan, reportIncident, escalateToNcmec } from "@
 const MAX_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/heic", "video/mp4", "video/quicktime"];
 
+async function authedProfileId(req: NextRequest): Promise<string | null> {
+  const header = req.headers.get("authorization") || "";
+  const bearer = header.replace(/^Bearer\s+/i, "").trim();
+  if (!bearer) return null;
+  const { data, error } = await supabase.auth.getUser(bearer);
+  if (error || !data.user) return null;
+  const { data: profile } = await getServiceClient().from("muse_profiles").select("id").eq("auth_id", data.user.id).maybeSingle();
+  return profile?.id ?? null;
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Rate limit — Rekognition is a paid API; prevent cost abuse.
@@ -20,10 +31,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 
+    // Authenticate — the userId must come from the token, never from form data
+    // (a forged userId could attribute a scan/incident to an innocent account).
+    const userId = await authedProfileId(req);
+    if (!userId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const context = (formData.get("context") as string) || "upload";
-    const userId = (formData.get("userId") as string) || "";
 
     if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
     if (file.size > MAX_SIZE) return NextResponse.json({ allowed: false, reason: "File too large (max 50MB)" }, { status: 400 });

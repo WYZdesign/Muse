@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
 const QDRANT_URL = process.env.QDRANT_URL || "http://localhost:6333";
@@ -11,6 +12,9 @@ const COLLECTION = "muse_embeddings";
  */
 export async function POST(req: NextRequest) {
   try {
+    if (!checkRate(clientIp(req), "embed", 30)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
     const header = req.headers.get("authorization") || "";
     const bearer = header.replace(/^Bearer\s+/i, "").trim();
     if (!bearer) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

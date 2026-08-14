@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
 const QDRANT_URL = process.env.QDRANT_URL || "http://localhost:6333";
@@ -11,6 +12,12 @@ const COLLECTION = "muse_embeddings";
  */
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit — Ollama embedding is CPU/GPU compute cost.
+    const ip = clientIp(req);
+    if (!checkRate(ip, "embeddings", 30)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
+
     const body = await req.json();
     const { action } = body;
 
