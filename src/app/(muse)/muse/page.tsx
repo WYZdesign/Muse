@@ -953,10 +953,7 @@ function MusePage() {
     if (!dragRef.current.active) return;
     dragRef.current.active = false;
     const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
-    const dt = Date.now() - dragRef.current.startTime;
-    const speed = Math.sqrt(dx * dx + dy * dy) / (dt || 1);
-    if (dragRef.current.axis === "x" && (Math.abs(dx) > 100 || (speed > 0.35 && Math.abs(dx) > 35))) {
+    if (dragRef.current.axis === "x" && Math.abs(dx) > 80) {
       doSwipe(dx > 0 ? "right" : "left");
     }
     const el = dragRef.current.el;
@@ -2203,14 +2200,14 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                  </div>
                                  {isTop && (
                                    <div className={"match-fab"+(cardScrolled?" hidden":"")}>
-                                    <button className={"match-fab-btn"+(showMatchMenu?" open":"")} onClick={()=>setShowMatchMenu(v=>!v)} aria-label="Match actions">✦</button>
-                                    <div className={"match-radial"+(showMatchMenu?" open":"")}>
-                                      <button className="match-radial-btn btn-rewind" style={{left:-100,top:0}} onClick={doRewind} aria-label="Rewind">↺</button>
-                                      <button className="match-radial-btn btn-nope" style={{left:-92,top:-38}} onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
-                                      <button className="match-radial-btn btn-super" style={{left:-71,top:-71}} onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
-                                      <button className="match-radial-btn btn-like" style={{left:-38,top:-92}} onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
-                                      <button className="match-radial-btn btn-note" style={{left:0,top:-100}} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
-                                    </div>
+                                     <button className={"match-fab-btn"+(showMatchMenu?" open":"")} onClick={()=>setShowMatchMenu(v=>!v)} aria-label="Match actions" style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",lineHeight:1}}>M</button>
+                                     <div className={"match-radial"+(showMatchMenu?" open":"")}>
+                                       <button className="match-radial-btn btn-rewind" style={{left:-138,top:-14}} onClick={doRewind} aria-label="Rewind">↺</button>
+                                       <button className="match-radial-btn btn-nope" style={{left:-88,top:-46}} onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
+                                       <button className="match-radial-btn btn-super" style={{left:-138,top:-78}} onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
+                                       <button className="match-radial-btn btn-like" style={{left:-88,top:-110}} onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
+                                       <button className="match-radial-btn btn-note" style={{left:-138,top:-142}} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
+                                     </div>
                                   </div>
                                  )}
                                  </>
