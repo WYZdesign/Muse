@@ -293,7 +293,7 @@ function MusePage() {
   const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"villa"|"deepsea">("lasunset");
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
   const [discoveryPrefs, setDiscoveryPrefs] = useState<{ageMin:number;ageMax:number;distance:number;gender:string}>({ageMin:18,ageMax:50,distance:50,gender:"all"});
-  const [myGeo, setMyGeo] = useState<{lat:number;long:number;city:string}|null>(null);
+  const [myGeo, setMyGeo] = useState<{lat:number;long:number;city:string;state:string;requiresIdVerification:boolean}|null>(null);
   const [showDiscoveryPrefs, setShowDiscoveryPrefs] = useState(false);
   const [showActivityFeed, setShowActivityFeed] = useState(false);
   const [showHamburger, setShowHamburger] = useState(false);
@@ -3370,7 +3370,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div className="settings-group">
                 <div className="settings-group-title">Privacy</div>
                 {[
-                  {icon:<FiEye size={18}/>,label:"NSFW Content",desc:"Show or hide 18+ content",action:()=>{if(!showNsfw){setShowAgeGate(true);setPendingNsfw(true)}else{setShowNsfw(false)}}},
+                  {icon:<FiEye size={18}/>,label:"NSFW Content",desc:myGeo?.requiresIdVerification?"ID verification required in your state":"Show or hide 18+ content",action:()=>{if(!showNsfw){if(myGeo?.requiresIdVerification){setShowAgeVerification(true)}else{setShowAgeGate(true);setPendingNsfw(true)}}else{setShowNsfw(false)}}},
                   {icon:<FiMoreHorizontal size={18}/>,label:"Blocked Users",desc:"Manage blocked profiles",action:()=>setShowBlockedUsers(!showBlockedUsers)},
                 ].map(item=>(
                   <div key={item.label} className="settings-item" onClick={item.action}>

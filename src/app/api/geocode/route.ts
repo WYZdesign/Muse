@@ -3,6 +3,12 @@ import { checkRate, clientIp } from "@/lib/rate-limit";
 
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@wyzdesign.com";
 
+// U.S. states that legally require government-issued ID verification for
+// adult/NSFW content (not just a self-reported age checkbox).
+const AGE_VERIFICATION_STATES = new Set([
+  "Texas", "Louisiana", "Arkansas", "Utah",
+]);
+
 export async function GET(req: NextRequest) {
   // Nominatim requires ≤1 req/sec — rate limit to avoid IP ban.
   const ip = clientIp(req);
@@ -12,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   const lat = req.nextUrl.searchParams.get("lat");
   const lon = req.nextUrl.searchParams.get("lon");
-  if (!lat || !lon) return NextResponse.json({ city: "" }, { status: 400 });
+  if (!lat || !lon) return NextResponse.json({ city: "", state: "", requiresIdVerification: false }, { status: 400 });
 
   try {
     const r = await fetch(
@@ -20,9 +26,12 @@ export async function GET(req: NextRequest) {
       { headers: { "User-Agent": `MuseApp/1.0 (contact: ${CONTACT_EMAIL})` } }
     );
     const j = await r.json();
-    const city = j?.address?.city || j?.address?.town || j?.address?.state || j?.address?.country || "";
-    return NextResponse.json({ city });
+    const city = j?.address?.city || j?.address?.town || "";
+    const state = j?.address?.state || "";
+    const requiresIdVerification = AGE_VERIFICATION_STATES.has(state);
+
+    return NextResponse.json({ city, state, requiresIdVerification });
   } catch {
-    return NextResponse.json({ city: "" });
+    return NextResponse.json({ city: "", state: "", requiresIdVerification: false });
   }
 }

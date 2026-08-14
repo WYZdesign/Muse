@@ -89,7 +89,7 @@ export function subscribeToConversation(opts: {
   };
 }
 
-export type GeoResult = { lat: number; long: number; city: string } | null;
+export type GeoResult = { lat: number; long: number; city: string; state: string; requiresIdVerification: boolean } | null;
 
 /**
  * Request the browser's geolocation. Returns null on denial/timeout.
@@ -106,6 +106,8 @@ export function getGeolocation(): Promise<GeoResult> {
         const lat = pos.coords.latitude;
         const long = pos.coords.longitude;
         let city = "";
+        let state = "";
+        let requiresIdVerification = false;
         try {
           // Route geocoding through our own server endpoint (no direct
           // third-party browser calls — avoids CORS/rate-limit/privacy issues).
@@ -113,11 +115,13 @@ export function getGeolocation(): Promise<GeoResult> {
           if (r.ok) {
             const j = await r.json();
             city = j.city || "";
+            state = j.state || "";
+            requiresIdVerification = j.requiresIdVerification || false;
           }
         } catch (err) {
           trackError("reverse_geocode_failed", { err: String(err) });
         }
-        resolve({ lat, long, city });
+        resolve({ lat, long, city, state, requiresIdVerification });
       },
       () => resolve(null),
       { timeout: 8000, maximumAge: 600000 }
