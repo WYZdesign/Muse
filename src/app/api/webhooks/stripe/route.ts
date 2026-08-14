@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", { apiVersion: "2025-06-30.acacia" as any });
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
     const rawBody = await req.text();
     const event = stripe.webhooks.constructEvent(rawBody, sig, secret);
     const sb = getServiceClient();

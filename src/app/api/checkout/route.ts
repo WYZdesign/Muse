@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     if (!plan || !PRICE_MAP[plan]) return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
 
-    const stripe = new Stripe(secret, { apiVersion: "2025-06-30.acacia" as any });
+    const stripe = new Stripe(secret);
 
     // Look up an existing price for this plan, or create one on the fly.
     let priceId: string | null = null;

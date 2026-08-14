@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     const secret = process.env.STRIPE_SECRET_KEY;
     if (!secret) return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
-    const stripe = new Stripe(secret, { apiVersion: "2025-06-30.acacia" as any });
+    const stripe = new Stripe(secret);
 
     const body = await req.json();
     const { action } = body;

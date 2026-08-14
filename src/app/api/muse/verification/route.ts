@@ -8,7 +8,7 @@ const sb = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 );
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", { apiVersion: "2026-07-29.dahlia" });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 export async function POST(req: NextRequest) {
   try {
