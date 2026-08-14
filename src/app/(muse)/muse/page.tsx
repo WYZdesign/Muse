@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
 import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles } from "@/app/muse-realtime";
 import { trackError } from "@/lib/errorTracker";
-import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiShare2, FiShield, FiGift, FiDollarSign } from "react-icons/fi";
+import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2, FiShield, FiGift, FiDollarSign } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import Nav from "./components/Nav";
 import { PORTRAIT_IMG } from "./components/photoOrientation";
@@ -2209,13 +2209,13 @@ const isMatch=matchScore>55||Math.random()>0.5;
                                  </div>
                                  {isTop && (
                                    <div className={"match-fab"+(cardScrolled?" hidden":"")}>
-                                     <button className={"match-fab-btn"+(showMatchMenu?" open":"")} onClick={()=>setShowMatchMenu(v=>!v)} aria-label="Match actions" style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",lineHeight:1}}>M</button>
+                                     <button className={"match-fab-btn"+(showMatchMenu?" open":"")} onClick={()=>setShowMatchMenu(v=>!v)} aria-label="Match actions" style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center"}}>{showMatchMenu ? <FiCamera size={28} /> : "M"}</button>
                                      <div className={"match-radial"+(showMatchMenu?" open":"")}>
-                                       <button className="match-radial-btn btn-rewind" style={{left:-138,top:-14}} onClick={doRewind} aria-label="Rewind">↺</button>
-                                       <button className="match-radial-btn btn-nope" style={{left:-88,top:-46}} onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
-                                       <button className="match-radial-btn btn-super" style={{left:-138,top:-78}} onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
-                                       <button className="match-radial-btn btn-like" style={{left:-88,top:-110}} onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
-                                       <button className="match-radial-btn btn-note" style={{left:-138,top:-142}} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
+                                       <button className="match-radial-btn btn-rewind" style={{left:-144,top:-10}} onClick={doRewind} aria-label="Rewind">↺</button>
+                                       <button className="match-radial-btn btn-nope" style={{left:-80,top:-60}} onClick={()=>doSwipe("left")} aria-label="Pass">✕</button>
+                                       <button className="match-radial-btn btn-super" style={{left:-144,top:-110}} onClick={()=>doSwipe("super")} aria-label="Super Like">★</button>
+                                       <button className="match-radial-btn btn-like" style={{left:-80,top:-160}} onClick={()=>doSwipe("right")} aria-label="Like">♥</button>
+                                       <button className="match-radial-btn btn-note" style={{left:-144,top:-210}} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
                                      </div>
                                   </div>
                                  )}
@@ -2276,7 +2276,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="connections"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28,background:"linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF)",backgroundSize:"300% 100%"}}>Feed</div>
+                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF)",backgroundSize:"300% 100%"}}>Feed</div>
                 <div style={{display:"flex",gap:4,marginRight:44}}>
                   {(["all","photos","text"] as const).map(f=>(
                     <div key={f} className={"conn-tab-sub"+(feedFilter===f?" active":"")} onClick={()=>setFeedFilter(f)} style={{fontSize:11,padding:"5px 10px",borderRadius:99}}>{f==="all"?"All":f==="photos"?"Photos":"Text"}</div>
@@ -2365,7 +2365,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div className={"screen-el"+(screen==="matches"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28,background:"linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",backgroundSize:"300% 100%"}}>Matches</div>
+                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",backgroundSize:"300% 100%"}}>Matches</div>
 <div style={{display:"flex",gap:10}}>
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{width:"auto",padding:"0 12px",fontSize:12,fontWeight:700}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")}>{matchesView==="list"?"Grid":"List"}</button>)}
@@ -2490,7 +2490,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div className={"screen-el"+(screen==="briefs"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28,background:"linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA)",backgroundSize:"300% 100%"}}>Collab</div>
+                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA)",backgroundSize:"300% 100%"}}>Collab</div>
                 <button className="hdr-btn" onClick={()=>setShowPostBrief(true)}><FiPlus size={18} /></button>
               </div>
               <div className="conn-tabs" style={{padding:"0 12px"}}>
@@ -2813,7 +2813,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
              <div className={"screen-el"+(screen==="moments"?" active":"")}>
                <div className="hdr">
                  <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                  <div className="logo-link" style={{fontSize:28,background:"linear-gradient(90deg,#FF1493,#FF0000,#DDA0DD,#FF1493,#FF69B4,#FF1493)",backgroundSize:"300% 100%"}}>BTS</div>
+                  <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#FF1493,#FF0000,#DDA0DD,#FF1493,#FF69B4,#FF1493)",backgroundSize:"300% 100%"}}>BTS</div>
                   <div style={{width:40}} />
                </div>
                <div style={{flex:1,overflowY:"auto",padding:"0 0 80px"}}>

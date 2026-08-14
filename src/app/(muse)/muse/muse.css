@@ -930,7 +930,7 @@ img{background-color:#1a0a2e}
 .match-fab{position:absolute;bottom:28px;right:28px;z-index:30;transition:opacity .3s ease,transform .3s ease}
 .match-fab.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
 .match-fab-btn{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;cursor:pointer;border:2px solid rgba(255,255,255,0.25);color:#0a0612;background:linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700);background-size:300% 300%;animation:lavaFlow 4s ease-in-out infinite;box-shadow:0 4px 16px rgba(0,0,0,0.5);transition:transform .25s cubic-bezier(.4,0,.2,1)}
-.match-fab-btn.open{transform:rotate(90deg) scale(1.2)}
+.match-fab-btn.open{transform:scale(1.15)}
 .match-fab-btn:active{transform:scale(0.9)}
 .match-radial{position:absolute;bottom:32px;right:32px;z-index:29;pointer-events:none}
 .match-radial.open{pointer-events:auto}
