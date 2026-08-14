@@ -4,6 +4,9 @@ import { memo, useCallback } from "react";
 import { FiHeart } from "react-icons/fi";
 
 // ═══ Memoized MatchCard — prevents all cards re-rendering on every state change ═══
+// Swipe LEFT  → Unmatch (red)
+// Swipe RIGHT → Report  (orange)
+// Expanded card also exposes Unmatch / Block / Report buttons.
 const MatchCard = memo(function MatchCard({ m, expanded, swiping, view, actions }: {
   m: any;
   expanded: boolean;
@@ -17,11 +20,12 @@ const MatchCard = memo(function MatchCard({ m, expanded, swiping, view, actions 
     setReportTarget: (v: any) => void;
     setShowReport: (v: boolean) => void;
     setUnmatchTarget: (v: string) => void;
+    setBlockTarget: (v: string) => void;
     handleImgError: (e: any) => void;
     getIcebreaker: (type: string, seed?: string) => string;
   };
 }) {
-  const { setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping, setReportTarget, setShowReport, setUnmatchTarget, handleImgError, getIcebreaker } = actions;
+  const { setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping, setReportTarget, setShowReport, setUnmatchTarget, setBlockTarget, handleImgError, getIcebreaker } = actions;
   const mid = String(m.id);
   const swipingMe = swiping?.id === mid;
   const swipeOffset = swipingMe ? swiping!.offset : 0;
@@ -31,8 +35,8 @@ const MatchCard = memo(function MatchCard({ m, expanded, swiping, view, actions 
   const finishSwipe = useCallback((offset: number) => {
     setMatchSwiping(null);
     if (Math.abs(offset) > 80) {
-      if (offset > 0) { setReportTarget({ id: m.id, type: "match", name: m.name }); setShowReport(true); }
-      else { setUnmatchTarget(m.name); }
+      if (offset < 0) { setUnmatchTarget(m.name); } // left = unmatch
+      else { setReportTarget({ id: m.id, type: "match", name: m.name }); setShowReport(true); } // right = report
     }
   }, [m.id, m.name, setMatchSwiping, setReportTarget, setShowReport, setUnmatchTarget]);
 
@@ -44,10 +48,10 @@ const MatchCard = memo(function MatchCard({ m, expanded, swiping, view, actions 
       onTouchStart={(e) => { const startX = e.touches[0].clientX; const startY = e.touches[0].clientY; const handleMove = (ev: TouchEvent) => { const dx = ev.touches[0].clientX - startX; const dy = ev.touches[0].clientY - startY; if (Math.abs(dx) > 15 && Math.abs(dx) > Math.abs(dy)) { setMatchSwiping({ id: mid, offset: dx }); } }; const handleEnd = (ev: TouchEvent) => { const dx = ev.touches[0].clientX - startX; finishSwipe(dx); document.removeEventListener("touchmove", handleMove); document.removeEventListener("touchend", handleEnd); }; document.addEventListener("touchmove", handleMove, { passive: false }); document.addEventListener("touchend", handleEnd); }}
     >
       {leftPct > 0 && (
-        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${leftPct}%`, background: "linear-gradient(90deg,#ff4444,#FFD700)", opacity: 0.3, transition: swiping ? "none" : "all .3s", zIndex: 0, borderRadius: "inherit" }} />
+        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${leftPct}%`, background: "linear-gradient(90deg,#ff4444,#ff8888)", opacity: 0.35, transition: swiping ? "none" : "all .3s", zIndex: 0, borderRadius: "inherit" }} />
       )}
       {rightPct > 0 && (
-        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: `${rightPct}%`, background: "linear-gradient(270deg,#FFD700,#ff8c00)", opacity: 0.3, transition: swiping ? "none" : "all .3s", zIndex: 0, borderRadius: "inherit" }} />
+        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: `${rightPct}%`, background: "linear-gradient(270deg,#ff8c00,#FFD700)", opacity: 0.35, transition: swiping ? "none" : "all .3s", zIndex: 0, borderRadius: "inherit" }} />
       )}
       <div className="match-avatar-wrap">
         <img loading="lazy" src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} />
@@ -66,12 +70,17 @@ const MatchCard = memo(function MatchCard({ m, expanded, swiping, view, actions 
               {m.zodiac && <span>{m.zodiac}</span>}
             </div>
             <button className="match-expand-btn" onClick={(e) => { e.stopPropagation(); setExpandedMatchId(null); setChatTarget(m); showScreen("chat"); }}>Open Chat</button>
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <button className="match-expand-btn" style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--coral)" }} onClick={(e) => { e.stopPropagation(); setExpandedMatchId(null); setUnmatchTarget(m.name); }}>Unmatch</button>
+              <button className="match-expand-btn" style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#ff4444" }} onClick={(e) => { e.stopPropagation(); setExpandedMatchId(null); setBlockTarget(m.name); }}>Block</button>
+              <button className="match-expand-btn" style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--gold)" }} onClick={(e) => { e.stopPropagation(); setExpandedMatchId(null); setReportTarget({ id: m.id, type: "match", name: m.name }); setShowReport(true); }}>Report</button>
+            </div>
           </div>
         )}
       </div>
       <div className="match-time">{m.messages?.[m.messages.length - 1]?.time || ""}</div>
-      <div style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "var(--coral)", opacity: swipingMe && swiping!.offset < 0 ? 0.8 : 0.3, transition: "opacity .2s", pointerEvents: "none" }}><FiHeart size={14} /> Report</div>
-      <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "var(--coral)", opacity: swipingMe && swiping!.offset > 0 ? 0.8 : 0.3, transition: "opacity .2s", pointerEvents: "none" }}>Unmatch <FiHeart size={14} /></div>
+      <div style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "#ff4444", opacity: swipingMe && swiping!.offset < 0 ? 0.85 : 0.25, transition: "opacity .2s", pointerEvents: "none" }}>Unmatch</div>
+      <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "var(--gold)", opacity: swipingMe && swiping!.offset > 0 ? 0.85 : 0.25, transition: "opacity .2s", pointerEvents: "none" }}>Report <FiHeart size={14} /></div>
     </div>
   );
 });

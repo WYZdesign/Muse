@@ -272,6 +272,7 @@ function MusePage() {
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
   const [showStories, setShowStories] = useState(false);
   const [unmatchTarget, setUnmatchTarget] = useState<string|null>(null);
+  const [blockTarget, setBlockTarget] = useState<string|null>(null);
   const [chatImages, setChatImages] = useState<Record<number,string[]>>({});
   const [typingTarget, setTypingTarget] = useState<number|null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -742,8 +743,8 @@ function MusePage() {
 
   const matchActions = useMemo(() => ({
     setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping,
-    setReportTarget, setShowReport, setUnmatchTarget, handleImgError, getIcebreaker
-  }), [setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping, setReportTarget, setShowReport, setUnmatchTarget, handleImgError, getIcebreaker]);
+    setReportTarget, setShowReport, setUnmatchTarget, setBlockTarget, handleImgError, getIcebreaker
+  }), [setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping, setReportTarget, setShowReport, setUnmatchTarget, setBlockTarget, handleImgError, getIcebreaker]);
 
   const navActive = useMemo(() => {
     const m: Record<string, string> = { discover: "discover", connections: "connections", matches: "matches", chat: "matches", briefs: "briefs", moments: "moments", profile: "profile", settings: "profile", subscription: "profile", portfolio: "profile" };
@@ -2284,7 +2285,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   ))}
                 </div>
                 <div style={{margin:"0 20px 12px",padding:"12px 0",display:"flex",gap:10,alignItems:"flex-start"}}>
-                  <img loading="lazy" src={currentUser.avatar} alt="" style={{width:40,height:40,borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={handleImgError} />
+                  <img loading="lazy" src={currentUser.avatar} alt="" style={{width:52,height:52,borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={handleImgError} />
                   <div style={{flex:1,display:"flex",flexDirection:"column",gap:8}}>
                     <textarea className="inp" placeholder="Share your work, ideas, or find collaborators..." rows={2} value={feedText} onChange={e=>setFeedText(e.target.value)} style={{resize:"none",fontSize:13,padding:"10px 14px",borderRadius:14,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)"}} />
                     <div style={{display:"flex",gap:8,alignItems:"center",width:"100%"}}>
@@ -2294,10 +2295,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       </label>
                       <button style={{width:36,height:36,borderRadius:10,background:"var(--glass)",border:"1px solid rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,color:"var(--text2)",flexShrink:0}} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
                       {feedMedia.slice(0,2).map((url,i)=><div key={i} style={{position:"relative",width:36,height:36}}>{url.endsWith(".mp4")||url.includes("video")?<video src={url} style={{width:36,height:36,borderRadius:8,objectFit:"cover"}} />:<img loading="lazy" src={url} alt="" style={{width:36,height:36,borderRadius:8,objectFit:"cover"}} />}<button onClick={()=>setFeedMedia(prev=>prev.filter((_,j)=>j!==i))} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"var(--coral)",border:"none",color:"#fff",fontSize:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><FiX size={10} /></button></div>)}
-                    </div>
-                    <div style={{display:"flex",gap:8,width:"100%"}}>
-                      <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();const hasVideo=feedMedia.some(u=>u.endsWith(".mp4")||u.includes("video"));const type=feedMedia.length?hasVideo?"video":"photo":"text";setFeedText("");setFeedMedia([]);setFeedPosts(prev=>[{id:uid(),author:currentUser.name,avatar:currentUser.avatar,type,text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedMedia[0]||undefined,media:feedMedia,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,media:feedMedia,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
-                      <button className="btn btn-outline" style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:600,borderRadius:12}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();setFeedText("");setFeedMedia([]);const moment={id:uid(),author:currentUser.name,avatar:currentUser.avatar,type:feedMedia.length?"photo":"text",text:txt,img:feedMedia[0]||undefined,media:[...feedMedia],time:"Just now"};setStories(prev=>[moment,...prev]);showToast("Moment posted!");}}}>⚡ Moment</button>
+                      <div style={{flex:1}} />
+                      <button className="btn btn-gold" style={{padding:"10px 16px",fontSize:13,fontWeight:700,borderRadius:12,flexShrink:0}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();const hasVideo=feedMedia.some(u=>u.endsWith(".mp4")||u.includes("video"));const type=feedMedia.length?hasVideo?"video":"photo":"text";setFeedText("");setFeedMedia([]);setFeedPosts(prev=>[{id:uid(),author:currentUser.name,avatar:currentUser.avatar,type,text:txt,likes:0,comments:0,shares:0,time:"Just now",img:feedMedia[0]||undefined,media:feedMedia,liked:false,saved:false,reactions:{}},...prev]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"feed",text:txt,media:feedMedia,userId:currentUser.id})});showToast("Posted!")}catch{showToast("Failed to post")}}}}>Post</button>
+                      <button className="btn btn-outline" style={{padding:"10px 16px",fontSize:13,fontWeight:600,borderRadius:12,flexShrink:0}} onClick={async()=>{if(feedText.trim()||feedMedia.length){const txt=feedText.trim();setFeedText("");setFeedMedia([]);const moment={id:uid(),author:currentUser.name,avatar:currentUser.avatar,type:feedMedia.length?"photo":"text",text:txt,img:feedMedia[0]||undefined,media:[...feedMedia],time:"Just now"};setStories(prev=>[moment,...prev]);showToast("Moment posted!");}}}>BTS</button>
                     </div>
                     {showEmojiPicker && <div style={{display:"flex",gap:6,flexWrap:"wrap",padding:"8px 0"}}>{["😍","🔥","❤️","😂","😢","😡","👍","🎉","✨","💯","👏","🙌"].map(e=><span key={e} style={{fontSize:22,cursor:"pointer",transition:"transform .15s"}} onClick={()=>{setFeedText(prev=>prev+" "+e);setShowEmojiPicker(false)}} onMouseEnter={e=>e.currentTarget.style.transform="scale(1.3)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>{e}</span>)}</div>}
                   </div>
@@ -2364,10 +2364,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div className={"screen-el"+(screen==="matches"?" active":"")}>
               <div className="hdr">
                 <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>Matches</div>
+                <div className="logo-link" style={{fontSize:28,backgroundImage:"linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent",position:"absolute",left:"50%",transform:"translateX(-50%)",whiteSpace:"nowrap"}}>Muses</div>
 <div style={{display:"flex",gap:10}}>
 {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
-{!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{width:"auto",padding:"0 12px",fontSize:12,fontWeight:700}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")}>{matchesView==="list"?"Grid":"List"}</button>)}
+{!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{width:"auto",height:34,padding:"0 12px",fontSize:12,fontWeight:700}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")}>{matchesView==="list"?"Grid":"List"}</button>)}
 {!searchOpen ? (<button className="hdr-btn" style={{width:34,height:34}} onClick={()=>setSearchOpen(true)}><FiSearch size={16} /></button>) : (
                     <div style={{display:"flex",alignItems:"center",gap:6,animation:"fadeIn .2s ease"}}>
                       <input className="inp" placeholder="Search..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} autoFocus style={{margin:0,padding:"6px 10px",fontSize:12,width:120,borderRadius:99}} />
@@ -2749,9 +2749,9 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
                         {(p.skills||[]).map(s=><span key={s} style={{fontSize:10,padding:"3px 8px",borderRadius:6,background:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.8)"}}>{s}</span>)}
                       </div>
-                      <div style={{display:"flex",gap:8,width:"100%",flexDirection:"column"}}>
-                        <button className="btn btn-gold" style={{width:"100%",padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:10}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})});if(!r.ok)throw new Error("failed");showToast("Connection request sent to "+p.name+"!")}catch{showToast("Failed to send connection")}}}>Connect</button>
-                        <button style={{width:"100%",padding:"10px 0",fontSize:13,fontWeight:600,borderRadius:10,border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.05)",color:"#fff",cursor:"pointer"}} onClick={()=>{setViewProfile(p);showToast("Viewing "+p.name+"'s profile")}}>View Profile</button>
+                      <div style={{display:"flex",gap:8,width:"100%"}}>
+                        <button className="btn btn-gold" style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:700,borderRadius:10}} onClick={async()=>{try{const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",targetId:p.id})});if(!r.ok)throw new Error("failed");showToast("Connection request sent to "+p.name+"!")}catch{showToast("Failed to send connection")}}}>Connect</button>
+                        <button style={{flex:1,padding:"10px 0",fontSize:13,fontWeight:600,borderRadius:10,border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.05)",color:"#fff",cursor:"pointer"}} onClick={()=>{setViewProfile(p);showToast("Viewing "+p.name+"'s profile")}}>View Profile</button>
                       </div>
                     </div>
                   </div>
@@ -3555,6 +3555,24 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
               <button className="btn btn-gold" style={{width:"100%",background:"linear-gradient(135deg,var(--coral),#ff4444)",borderColor:"var(--coral)"}} onClick={()=>{setMatches(prev=>prev.filter(m=>m.name!==unmatchTarget));setUnmatchTarget(null);showScreen("matches");showToast("Unmatched")}}>Unmatch</button>
               <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setUnmatchTarget(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {blockTarget && (
+        <div className="modal-overlay">
+          <div className="modal-header">
+            <button className="modal-back" onClick={()=>setBlockTarget(null)}><FiArrowLeft size={20} /></button>
+            <div className="modal-title">Block</div>
+            <button className="modal-close" onClick={()=>setBlockTarget(null)}><FiX size={18} /></button>
+          </div>
+          <div className="modal-body" style={{textAlign:"center"}}>
+            <div style={{fontSize:48,marginBottom:16}}>🚫</div>
+            <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Block {blockTarget}?</div>
+            <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>They won&apos;t be able to see your profile, message you, or match with you again. This cannot be undone.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              <button className="btn btn-gold" style={{width:"100%",background:"linear-gradient(135deg,#ff4444,#8b0000)",borderColor:"#ff4444"}} onClick={async()=>{const name=blockTarget;setMatches(prev=>prev.filter(m=>m.name!==name));setBlockTarget(null);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"block",targetName:name})});}catch{}showScreen("matches");showToast(name+" blocked")}}>Block</button>
+              <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setBlockTarget(null)}>Cancel</button>
             </div>
           </div>
         </div>

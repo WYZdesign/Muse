@@ -23,7 +23,7 @@ const tabs: { key: string; label: string; icon: React.ReactNode; hasScreen: bool
   { key:"discover", label:"Discover", icon:<FiCompass size={22} />, hasScreen:true },
   { key:"connections", label:"Feed", icon:<FiUsers size={22} />, hasScreen:true },
   { key:"briefs", label:"Collab", icon:<FiZap size={22} />, hasScreen:false },
-  { key:"matches", label:"Matches", icon:<FiCamera size={22} />, hasScreen:true },
+  { key:"matches", label:"Muses", icon:<FiCamera size={22} />, hasScreen:true },
   { key:"moments", label:"BTS", icon:<FiEye size={22} />, hasScreen:true },
 ];
 
