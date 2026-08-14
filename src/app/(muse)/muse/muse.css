@@ -989,6 +989,11 @@ img{background-color:#1a0a2e}
 /* Micro-interactions — hover lift + active squish on all buttons */
 .hdr-btn,.nav-item,.card-action-btn,.quick-reply,.send-btn,.btn,.conn-tab,.match-fab-btn{transition:transform .18s cubic-bezier(.22,1.4,.36,1),opacity .18s ease}
 .hdr-btn:active,.nav-item:active,.quick-reply:active,.send-btn:active,.btn:active,.conn-tab:active{transform:scale(.92)}
+.feed-action-btn{transition:transform .16s cubic-bezier(.22,1.4,.36,1),background .2s ease,color .2s ease,border-color .2s ease}
+.feed-action-btn:hover{transform:scale(1.07)}
+.feed-action-btn:active{transform:scale(0.85)}
+@keyframes feedLikePop{0%{transform:scale(1)}40%{transform:scale(1.35)}70%{transform:scale(0.9)}100%{transform:scale(1)}}
+.feed-action-btn.liked-pop{animation:feedLikePop .4s ease}
 @media(hover:hover){.hdr-btn:hover,.nav-item:hover,.quick-reply:hover,.send-btn:hover,.btn:hover{transform:translateY(-2px) scale(1.03)}}
 
 /* Radial menu — bouncier spring for the expand */

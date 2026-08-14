@@ -2342,11 +2342,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                           {post.shares > 0 && <span style={{fontSize:12,color:"var(--muted)"}}>{post.shares} shares</span>}
                         </div>
                       </div>
-                      <div style={{display:"flex",justifyContent:"space-around",padding:"10px 18px",borderTop:"1px solid rgba(255,255,255,0.04)"}}>
-                        <button style={{background:post.liked?"rgba(239,68,68,0.15)":"rgba(255,255,255,0.06)",border:post.liked?"1px solid rgba(239,68,68,0.3)":"1px solid rgba(255,255,255,0.08)",color:post.liked?"var(--coral)":"var(--text2)",cursor:"pointer",fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:6,padding:"6px 16px",borderRadius:99,transition:"all .2s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(239,68,68,0.15)"} onMouseLeave={e=>e.currentTarget.style.background=post.liked?"rgba(239,68,68,0.15)":"rgba(255,255,255,0.06)"} onClick={()=>{setFeedPosts(prev=>prev.map(p=>p.id===post.id?({...p,liked:!p.liked}):p));if(feedPostsStatic.some(p=>p.id===post.id))setFeedPostsStatic(prev=>prev.map(p=>p.id===post.id?({...p,liked:!p.liked}):p));}}
->♥ {post.likes+(post.liked?1:0)}</button>
-                        <button style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.08)",color:"var(--text2)",cursor:"pointer",fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:6,padding:"6px 16px",borderRadius:99,transition:"all .2s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.12)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.06)"} onClick={()=>setReplyingTo(replyingTo===post.id?null:post.id)}>💬 {post.comments}</button>
-                        <button style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.08)",color:"var(--text2)",cursor:"pointer",fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:6,padding:"6px 16px",borderRadius:99,transition:"all .2s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.12)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.06)"} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/post/"+post.id);showToast("Link copied!")}}>↗ {post.shares}</button>
+                      <div style={{display:"flex",gap:12,padding:"10px 18px",borderTop:"1px solid rgba(255,255,255,0.04)"}}>
+                        <button className={"feed-action-btn"+(post.liked?" liked-pop":"")} style={{flex:1,background:post.liked?"rgba(239,68,68,0.15)":"rgba(255,255,255,0.06)",border:post.liked?"1px solid rgba(239,68,68,0.3)":"1px solid rgba(255,255,255,0.08)",color:post.liked?"var(--coral)":"var(--text2)",cursor:"pointer",fontSize:13,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px 0",borderRadius:99}} onClick={()=>{setFeedPosts(prev=>prev.map(p=>p.id===post.id?({...p,liked:!p.liked}):p));if(feedPostsStatic.some(p=>p.id===post.id))setFeedPostsStatic(prev=>prev.map(p=>p.id===post.id?({...p,liked:!p.liked}):p));}}>♥ {post.likes+(post.liked?1:0)}</button>
+                        <button className="feed-action-btn" style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.08)",color:"var(--text2)",cursor:"pointer",fontSize:13,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px 0",borderRadius:99}} onClick={()=>setReplyingTo(replyingTo===post.id?null:post.id)}>💬 {post.comments}</button>
+                        <button className="feed-action-btn" style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.08)",color:"var(--text2)",cursor:"pointer",fontSize:13,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px 0",borderRadius:99}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/post/"+post.id);showToast("Link copied!")}}>↗ {post.shares}</button>
                       </div>
                       {replyingTo === post.id && (
                         <div style={{display:"flex",gap:8,padding:"10px 18px",borderTop:"1px solid rgba(255,255,255,0.04)"}}>
@@ -2364,18 +2363,18 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <div className="hdr">
                 <div style={{display:"flex",gap:12,alignItems:"center"}}>
                   <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                  {!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
-                </div>
-                <div className="logo-link" style={{fontSize:32,backgroundImage:"linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent",position:"absolute",left:"50%",transform:"translateX(-50%)",whiteSpace:"nowrap"}}>Muses</div>
-<div style={{display:"flex",gap:10}}>
-{!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{width:"auto",height:34,padding:"0 12px",fontSize:12,fontWeight:700}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")}>{matchesView==="list"?"Grid":"List"}</button>)}
-{!searchOpen ? (<button className="hdr-btn" style={{width:34,height:34}} onClick={()=>setSearchOpen(true)}><FiSearch size={16} /></button>) : (
+                  {!searchOpen ? (<button className="hdr-btn" style={{width:34,height:34}} onClick={()=>setSearchOpen(true)}><FiSearch size={16} /></button>) : (
                     <div style={{display:"flex",alignItems:"center",gap:6,animation:"fadeIn .2s ease"}}>
                       <input className="inp" placeholder="Search..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} autoFocus style={{margin:0,padding:"6px 10px",fontSize:12,width:120,borderRadius:99}} />
                       <button className="hdr-btn" style={{width:30,height:30,borderRadius:"50%",fontSize:12}} onClick={()=>{setSearchOpen(false);setSearchQuery("")}}>✕</button>
                     </div>
                   )}
                 </div>
+                <div className="logo-link" style={{fontSize:32,backgroundImage:"linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent",position:"absolute",left:"50%",transform:"translateX(-50%)",whiteSpace:"nowrap"}}>Muses</div>
+<div style={{display:"flex",gap:10}}>
+{!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{width:"auto",height:34,padding:"0 12px",fontSize:12,fontWeight:700}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")}>{matchesView==="list"?"Grid":"List"}</button>)}
+{!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
+</div>
               </div>
               {!showLikesYou && searchOpen && <div className="overlay-bg" onClick={()=>{setSearchOpen(false);setSearchQuery("")}} style={{position:"absolute",inset:0,zIndex:5}} />}
               {showLikesYou ? (
