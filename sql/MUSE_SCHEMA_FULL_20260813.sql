@@ -211,9 +211,8 @@ CREATE POLICY "Users can update own profile" ON muse_profiles FOR UPDATE USING (
 CREATE POLICY "Users can see their matches" ON muse_matches FOR SELECT USING (auth.uid() IN (SELECT auth_id FROM muse_profiles WHERE id IN (user_id, target_id)));
 CREATE POLICY "Users can create matches" ON muse_matches FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Users can read their messages" ON muse_messages FOR SELECT USING (
-  match_id IN (SELECT id FROM muse_matches WHERE user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()) OR target_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()))
-);
+-- (Removed: legacy "Users can read their messages" policy compared TEXT match_id to UUID muse_matches.id,
+--  which fails with "operator does not exist: text = uuid". Superseded by muse_messages_participants below.)
 
 -- Activity logging trigger
 CREATE OR REPLACE FUNCTION log_muse_activity()
@@ -293,16 +292,16 @@ ALTER TABLE muse_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_blocks ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can insert reports" ON muse_reports FOR INSERT WITH CHECK (
-  reporter_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+  reporter_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
 );
 CREATE POLICY "Users can view own reports" ON muse_reports FOR SELECT USING (
-  reporter_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+  reporter_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
 );
 CREATE POLICY "Users can insert blocks" ON muse_blocks FOR INSERT WITH CHECK (
-  user_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+  user_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
 );
 CREATE POLICY "Users can view own blocks" ON muse_blocks FOR SELECT USING (
-  user_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+  user_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
 );
 CREATE POLICY "Users can delete own blocks" ON muse_blocks FOR DELETE USING (true);
 
@@ -523,13 +522,8 @@ INSERT INTO muse_communities (name, description, img, category, is_nsfw, member_
   ('Adults Only (18+)', 'Mature creative content and collaborations', '', 'nsfw', true, 320)
 ON CONFLICT DO NOTHING;
 
--- Seed sessions
-INSERT INTO muse_sessions (host_id, title, description, type, rate, duration, skills, date, location, img, available, rating) VALUES
-  ('00000000-0000-0000-0000-000000000000', 'Portrait Photography Session', '1-on-1 portrait shoot in natural light', 'Photography', '$150', '60 min', ARRAY['Portrait','Natural Light','Posing'], '2026-07-20', 'Los Angeles, CA', '', true, 4.9),
-  ('00000000-0000-0000-0000-000000000000', 'Brand Strategy Consult', 'Help defining your creative brand identity', 'Consulting', '$200', '90 min', ARRAY['Branding','Strategy','Marketing'], '2026-07-22', 'Remote', '', true, 5.0),
-  ('00000000-0000-0000-0000-000000000000', 'Vocal Coaching', 'Improve your range and tone', 'Music', '$80', '45 min', ARRAY['Vocals','Technique','Performance'], '2026-07-25', 'Chicago, IL', '', true, 4.7),
-  ('00000000-0000-0000-0000-000000000000', 'Filmmaking Mentorship', 'Learn the fundamentals of directing', 'Film', '$120', '60 min', ARRAY['Directing','Story','Editing'], '2026-07-28', 'Remote', '', false, 4.8)
-ON CONFLICT DO NOTHING;
+-- Seed sessions (removed: host_id pointed at nil UUID 00000000-... which violates the muse_sessions_host_id_fkey
+-- FK on a fresh database. Demo content lives in the frontend; no DB seed sessions are required.)
 
 -- ============================================================
 -- 7. ERROR TELEMETRY (client-side error tracking via /api/telemetry)
