@@ -53,53 +53,67 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .sunset-stars .star:nth-child(7n) { background: #d4a5ff; box-shadow: 0 0 6px rgba(212,165,255,0.8); }
 @keyframes sunsetTwinkle { 0%,100% { opacity: 0.2; transform: scale(0.7); } 50% { opacity: 1; transform: scale(1.3); } }
 
-/* Shooting stars / Meteors — slow diagonal streaks that fizzle out */
+/* Shooting stars / Meteors — head leads, tail trails behind, varied angles */
 .sunset-shooting-star {
-  position: absolute; width: 130px; height: 2px; border-radius: 50%;
-  background: linear-gradient(90deg, rgba(255,255,255,0.95), rgba(255,215,0,0.55), rgba(255,140,80,0.15), transparent);
-  filter: drop-shadow(0 0 5px #ffd700);
+  position: absolute; width: 150px; height: 2px; border-radius: 999px;
+  /* tail: transparent behind → bright head at the leading (right) edge */
+  background: linear-gradient(90deg, transparent 0%, rgba(255,140,80,0.28) 35%, rgba(255,215,0,0.72) 75%, #fff 100%);
+  filter: drop-shadow(0 0 4px rgba(255,215,0,0.8));
   opacity: 0; pointer-events: none; z-index: 1; will-change: transform, opacity;
 }
-.sunset-shooting-star.ss-1 { top: 8%; left: 30%; animation: shootA 8s ease-in-out infinite 1.5s; }
-.sunset-shooting-star.ss-2 { top: 14%; right: 22%; animation: shootB 10s ease-in-out infinite 4.8s; }
-.sunset-shooting-star.ss-3 { top: 5%; left: 55%; animation: shootC 9s ease-in-out infinite 6.5s; }
-.sunset-shooting-star.ss-4 { top: 18%; left: 10%; animation: shootD 11s ease-in-out infinite 2.8s; }
-.sunset-shooting-star.ss-5 { top: 10%; right: 8%; animation: shootE 12s ease-in-out infinite 8.2s; }
-
-@keyframes shootA {
-  0% { transform: translate(0,0) rotate(-30deg) scaleX(0); opacity: 0; }
-  6% { opacity: 1; transform: translate(0,0) rotate(-30deg) scaleX(1); }
-  45% { opacity: 0.85; transform: translate(280px, 155px) rotate(-30deg) scaleX(1); }
-  60% { opacity: 0; transform: translate(360px, 200px) rotate(-30deg) scaleX(0.15); }
-  100% { opacity: 0; transform: translate(360px, 200px) rotate(-30deg) scaleX(0); }
+.sunset-shooting-star::before {
+  content: ""; position: absolute; right: -1px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 3px; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 8px 2px rgba(255,255,255,0.9), 0 0 18px 4px rgba(255,215,0,0.5);
 }
-@keyframes shootB {
-  0% { transform: translate(0,0) rotate(-40deg) scaleX(0); opacity: 0; }
-  6% { opacity: 1; transform: translate(0,0) rotate(-40deg) scaleX(1); }
-  45% { opacity: 0.85; transform: translate(-300px, 180px) rotate(-40deg) scaleX(1); }
-  60% { opacity: 0; transform: translate(-380px, 230px) rotate(-40deg) scaleX(0.15); }
-  100% { opacity: 0; transform: translate(-380px, 230px) rotate(-40deg) scaleX(0); }
+/* Down-left stars: head on the left, tail flips to the right */
+.sunset-shooting-star.ss-2, .sunset-shooting-star.ss-5 {
+  background: linear-gradient(270deg, transparent 0%, rgba(255,140,80,0.28) 35%, rgba(255,215,0,0.72) 75%, #fff 100%);
+}
+.sunset-shooting-star.ss-2::before, .sunset-shooting-star.ss-5::before { right: auto; left: -1px; }
+
+.sunset-shooting-star.ss-1 { top: 8%; left: 30%; animation: shootA 8s ease-in-out infinite 1.5s; }
+.sunset-shooting-star.ss-2 { top: 13%; right: 20%; animation: shootB 10s ease-in-out infinite 4.8s; }
+.sunset-shooting-star.ss-3 { top: 5%; left: 52%; animation: shootC 9s ease-in-out infinite 6.5s; }
+.sunset-shooting-star.ss-4 { top: 17%; left: 12%; animation: shootD 11s ease-in-out infinite 2.8s; }
+.sunset-shooting-star.ss-5 { top: 9%; right: 6%; animation: shootE 12s ease-in-out infinite 8.2s; }
+
+/* Down-right stars — head leads bottom-right, tail trails top-left */
+@keyframes shootA {
+  0% { transform: translate(0,0) rotate(28deg) scaleX(0); opacity: 0; }
+  7% { opacity: 1; transform: translate(0,0) rotate(28deg) scaleX(1); }
+  45% { opacity: 0.85; transform: translate(300px, 160px) rotate(28deg) scaleX(1); }
+  62% { opacity: 0; transform: translate(380px, 205px) rotate(28deg) scaleX(0.12); }
+  100% { opacity: 0; transform: translate(380px, 205px) rotate(28deg) scaleX(0); }
 }
 @keyframes shootC {
-  0% { transform: translate(0,0) rotate(-25deg) scaleX(0); opacity: 0; }
-  6% { opacity: 1; transform: translate(0,0) rotate(-25deg) scaleX(1); }
-  45% { opacity: 0.8; transform: translate(320px, 165px) rotate(-25deg) scaleX(1); }
-  60% { opacity: 0; transform: translate(400px, 210px) rotate(-25deg) scaleX(0.15); }
-  100% { opacity: 0; transform: translate(400px, 210px) rotate(-25deg) scaleX(0); }
+  0% { transform: translate(0,0) rotate(22deg) scaleX(0); opacity: 0; }
+  7% { opacity: 1; transform: translate(0,0) rotate(22deg) scaleX(1); }
+  45% { opacity: 0.8; transform: translate(330px, 145px) rotate(22deg) scaleX(1); }
+  62% { opacity: 0; transform: translate(410px, 180px) rotate(22deg) scaleX(0.12); }
+  100% { opacity: 0; transform: translate(410px, 180px) rotate(22deg) scaleX(0); }
 }
 @keyframes shootD {
-  0% { transform: translate(0,0) rotate(-35deg) scaleX(0); opacity: 0; }
-  6% { opacity: 1; transform: translate(0,0) rotate(-35deg) scaleX(1); }
-  45% { opacity: 0.8; transform: translate(260px, 140px) rotate(-35deg) scaleX(1); }
-  60% { opacity: 0; transform: translate(340px, 185px) rotate(-35deg) scaleX(0.15); }
-  100% { opacity: 0; transform: translate(340px, 185px) rotate(-35deg) scaleX(0); }
+  0% { transform: translate(0,0) rotate(33deg) scaleX(0); opacity: 0; }
+  7% { opacity: 1; transform: translate(0,0) rotate(33deg) scaleX(1); }
+  45% { opacity: 0.8; transform: translate(270px, 150px) rotate(33deg) scaleX(1); }
+  62% { opacity: 0; transform: translate(350px, 195px) rotate(33deg) scaleX(0.12); }
+  100% { opacity: 0; transform: translate(350px, 195px) rotate(33deg) scaleX(0); }
+}
+/* Down-left stars — head leads bottom-left, tail trails top-right */
+@keyframes shootB {
+  0% { transform: translate(0,0) rotate(-33deg) scaleX(0); opacity: 0; }
+  7% { opacity: 1; transform: translate(0,0) rotate(-33deg) scaleX(1); }
+  45% { opacity: 0.85; transform: translate(-320px, 180px) rotate(-33deg) scaleX(1); }
+  62% { opacity: 0; transform: translate(-400px, 225px) rotate(-33deg) scaleX(0.12); }
+  100% { opacity: 0; transform: translate(-400px, 225px) rotate(-33deg) scaleX(0); }
 }
 @keyframes shootE {
-  0% { transform: translate(0,0) rotate(-28deg) scaleX(0); opacity: 0; }
-  6% { opacity: 1; transform: translate(0,0) rotate(-28deg) scaleX(1); }
-  45% { opacity: 0.8; transform: translate(-280px, 150px) rotate(-28deg) scaleX(1); }
-  60% { opacity: 0; transform: translate(-360px, 195px) rotate(-28deg) scaleX(0.15); }
-  100% { opacity: 0; transform: translate(-360px, 195px) rotate(-28deg) scaleX(0); }
+  0% { transform: translate(0,0) rotate(-26deg) scaleX(0); opacity: 0; }
+  7% { opacity: 1; transform: translate(0,0) rotate(-26deg) scaleX(1); }
+  45% { opacity: 0.8; transform: translate(-290px, 155px) rotate(-26deg) scaleX(1); }
+  62% { opacity: 0; transform: translate(-370px, 200px) rotate(-26deg) scaleX(0.12); }
+  100% { opacity: 0; transform: translate(-370px, 200px) rotate(-26deg) scaleX(0); }
 }
 
 /* Nebula — dreamy color clouds drifting in the upper twilight sky */
@@ -168,14 +182,15 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 }
 @keyframes sunsetReflect { 0%,100% { opacity: 0.5; transform: translateX(-50%) scaleX(1); } 50% { opacity: 0.95; transform: translateX(-50%) scaleX(1.15); } }
 
-/* Realistic layered ocean waves in rich ocean blue shades */
-.sunset-wave { position: absolute; left: -8%; width: 116%; border-radius: 44% 56% 0 0; animation: sunsetWave ease-in-out infinite; }
-.sw-1 { bottom: 0; height: 38px; background: linear-gradient(180deg, rgba(26,162,170,0.38) 0%, rgba(13,75,98,0.65) 100%); animation-duration: 5.5s; }
-.sw-2 { bottom: 8px; height: 44px; background: linear-gradient(180deg, rgba(20,135,160,0.32) 0%, rgba(10,56,80,0.58) 100%); animation-duration: 7s; animation-delay: -1.8s; }
-.sw-3 { bottom: 18px; height: 48px; background: linear-gradient(180deg, rgba(14,105,138,0.28) 0%, rgba(7,38,60,0.65) 100%); animation-duration: 8.5s; animation-delay: -3.6s; }
-.sw-4 { bottom: 28px; height: 42px; background: linear-gradient(180deg, rgba(18,125,150,0.22) 0%, rgba(8,30,50,0.7) 100%); animation-duration: 6.8s; animation-delay: -2.2s; }
-.sw-5 { bottom: 36px; height: 34px; background: linear-gradient(180deg, rgba(30,185,195,0.18) 0%, rgba(10,48,70,0.75) 100%); animation-duration: 9.5s; animation-delay: -4.5s; }
-@keyframes sunsetWave { 0%,100% { transform: translateX(0) scaleY(1); } 50% { transform: translateX(2.5%) scaleY(1.18); } }
+/* Realistic layered ocean waves — super wavy overlapping sine rows */
+.sunset-waves-svg { position: absolute; bottom: 0; left: -8%; width: 116%; height: 100%; display: block; }
+.sunset-waves-svg .wv { transform-origin: center; animation: waveSway ease-in-out infinite; }
+.wv-1 { fill: rgba(30,185,205,0.5); animation-duration: 6.5s; }
+.wv-2 { fill: rgba(18,150,178,0.58); animation-duration: 8s; animation-delay: -2s; }
+.wv-3 { fill: rgba(12,118,150,0.64); animation-duration: 7s; animation-delay: -4s; }
+.wv-4 { fill: rgba(8,88,122,0.72); animation-duration: 9s; animation-delay: -1.5s; }
+.wv-5 { fill: rgba(6,58,92,0.82); animation-duration: 10s; animation-delay: -3s; }
+@keyframes waveSway { 0%,100% { transform: translateX(-16px); } 50% { transform: translateX(16px); } }
 
 /* Enter Gate Content Layout */
 .muse-enter-content {
@@ -187,10 +202,25 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   position: relative; margin-bottom: 12px;
   animation: museIconFloat 4.2s ease-in-out infinite;
 }
+.muse-enter-icon-wrap::before {
+  content: ""; position: absolute; inset: -16px; border-radius: 44px; z-index: -1;
+  background: conic-gradient(from 0deg, #FFD700, #ff8a80, #d4a5ff, #ffb5c2, #FF8C69, #87CEEB, #98FB98, #FFD700);
+  filter: blur(24px); opacity: 0.7;
+  animation: museIconGlow 9s linear infinite;
+}
 .muse-enter-icon {
-  width: 174px; height: 174px; object-fit: cover; border-radius: 32px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 34px rgba(255,215,0,0.45);
-  border: 1.5px solid rgba(255,215,0,0.4);
+  width: 174px; height: 174px; object-fit: cover; border-radius: 40px;
+  background: #0a0612;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  border: none;
+  display: block;
+}
+@keyframes museIconGlow {
+  0% { transform: rotate(0deg) scale(1); filter: blur(24px) hue-rotate(0deg); opacity: 0.65; }
+  25% { opacity: 0.95; }
+  50% { transform: rotate(180deg) scale(1.1); filter: blur(30px) hue-rotate(45deg); opacity: 0.85; }
+  75% { opacity: 0.95; }
+  100% { transform: rotate(360deg) scale(1); filter: blur(24px) hue-rotate(0deg); opacity: 0.65; }
 }
 .muse-enter-logo {
   font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(2.66rem, 7.7vw, 5.25rem);

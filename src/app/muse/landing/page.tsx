@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { FiCamera, FiUsers, FiZap, FiShield, FiHeart, FiStar, FiArrowRight, FiMessageSquare, FiMapPin, FiClock, FiLock, FiGlobe, FiLink } from "react-icons/fi";
+import { FiCamera, FiUsers, FiZap, FiShield, FiHeart, FiStar, FiArrowRight, FiMessageSquare, FiMapPin, FiClock, FiLock, FiGlobe, FiLink, FiChevronDown, FiSend, FiGift } from "react-icons/fi";
 import BackgroundScene from "@/components/BackgroundScene";
 import "@/components/BackgroundScene.css";
 import "./landing.css";
@@ -244,6 +244,30 @@ const TIERS = [
   { cls: "standard", badge: "Standard", name: "Everyone Else", perks: ["Free Tier Forever", "Pro at $9.99/mo", "Earn Pro via Referrals"] },
 ];
 
+const TESTIMONIALS = [
+  { quote: "Finally a place where creatives actually get booked instead of ghosted. Found my last three shoots here.", name: "Maya Chen", role: "Fashion Photographer, LA" },
+  { quote: "The disclosure forms alone are worth it. I've never felt safer walking into a collab with someone new.", name: "Jordan Rivera", role: "Cinematographer, NYC" },
+  { quote: "Posted a TFP brief on a Tuesday, had a full crew by Friday. This is how collabs should work.", name: "Avery Nguyen", role: "Art Director, SF" },
+];
+
+const FAQS = [
+  { q: "When does Muse launch?", a: "We're onboarding the first 150 founding members now, then rolling out to the full waitlist. Founding members get in first." },
+  { q: "How does verification work?", a: "We use phone + face verification (Stripe Identity) before any paid booking. No self-reported ages — real verification only." },
+  { q: "What does it cost?", a: "Free tier forever. Muse Pro is $9.99/mo. Founding members get lifetime Pro free, and you can earn Pro by referring friends." },
+  { q: "How is Muse different from Instagram or a job board?", a: "It's not a feed and it's not a marketplace. It's a convergence — discover creatives near you, collab safely, and get booked, all with safety built into every step." },
+  { q: "Is it safe?", a: "Disclosure forms, 24hr check-ins, trusted contacts, instant block, and two-track enforcement. Safety isn't a feature — it's the foundation." },
+];
+
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`muse-faq-item ${open ? "open" : ""}`} onClick={() => setOpen(v => !v)}>
+      <div className="muse-faq-q"><span>{q}</span><FiChevronDown size={18} className="muse-faq-chev" /></div>
+      <div className="muse-faq-a">{a}</div>
+    </div>
+  );
+}
+
 export default function MuseLandingPage() {
   const [signupCount, setSignupCount] = useState(0);
   const [selectedSource, setSelectedSource] = useState<keyof typeof QR_SOURCES>("default");
@@ -251,6 +275,9 @@ export default function MuseLandingPage() {
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState({ email: "", phone: "" });
+  const [heroEmail, setHeroEmail] = useState("");
+  const [heroSubmitting, setHeroSubmitting] = useState(false);
+  const [heroDone, setHeroDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string } | null>(null);
   const [gateClosing, setGateClosing] = useState(false);
@@ -287,6 +314,17 @@ export default function MuseLandingPage() {
       setQrDataUrl(URL.createObjectURL(blob));
     } catch { setQrDataUrl(""); }
     setShowQrModal(true);
+  };
+
+  const handleHeroSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!heroEmail.trim() || heroSubmitting) return;
+    setHeroSubmitting(true);
+    try {
+      const res = await fetch("/api/muse/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: heroEmail.trim(), source: selectedSource }) });
+      if (res.ok) { setHeroDone(true); setSignupCount(c => c + 1); }
+    } catch { /* noop */ }
+    finally { setHeroSubmitting(false); }
   };
 
   const copyLink = () => {
@@ -341,7 +379,7 @@ export default function MuseLandingPage() {
           <div className="muse-orb lavender" data-depth="2.4" />
         </div>
         <div className="muse-hero-inner">
-          <div className="muse-hero-eyebrow" data-depth="-0.6"><span className="dot" /> Founding members get lifetime Pro</div>
+          <div className="muse-hero-eyebrow" data-depth="-0.6"><span className="dot" /> Founding members get lifetime Pro · {Math.max(0, 150 - signupCount)} of 150 spots left</div>
           <h1 className="muse-hero-title">
             <span className="line" data-depth="-0.4"><SplitText text="Where Creatives" delay={0.15} /></span>
             <span className="line" data-depth="-0.4"><SplitText text="Find Their" delay={0.38} /></span>
@@ -354,6 +392,14 @@ export default function MuseLandingPage() {
             <Magnetic><a href="#join" className="muse-btn primary muse-shimmer">Join the Waitlist <FiArrowRight size={16} /></a></Magnetic>
             <Magnetic><a href="#features" className="muse-btn ghost">Explore Features</a></Magnetic>
           </div>
+          {!heroDone ? (
+            <form onSubmit={handleHeroSubmit} className="muse-hero-email" data-depth="-0.3">
+              <input type="email" placeholder="Enter your email for early access" value={heroEmail} onChange={e => setHeroEmail(e.target.value)} required aria-label="Email address" />
+              <button type="submit" disabled={heroSubmitting}>{heroSubmitting ? <span className="muse-spinner" style={{ borderTopColor: "#0a0612", borderColor: "rgba(10,6,18,0.25)" }} /> : <FiSend size={16} />}</button>
+            </form>
+          ) : (
+            <div className="muse-hero-email-done" data-depth="-0.3">✓ You're on the list — we'll notify you at launch</div>
+          )}
         </div>
         <div className="muse-hero-scroll">
           <span>Scroll</span>
@@ -594,11 +640,13 @@ export default function MuseLandingPage() {
             {/* Layered ocean waves in rich ocean blues */}
             <div className="sunset-ocean">
               <div className="sunset-reflection" />
-              <div className="sunset-wave sw-1" />
-              <div className="sunset-wave sw-2" />
-              <div className="sunset-wave sw-3" />
-              <div className="sunset-wave sw-4" />
-              <div className="sunset-wave sw-5" />
+              <svg className="sunset-waves-svg" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+                <path className="wv wv-1" d="M0,150 Q120,60 240,150 T480,150 T720,150 T960,150 T1200,150 T1440,150 L1440,320 L0,320 Z" />
+                <path className="wv wv-2" d="M0,185 Q120,280 240,185 T480,185 T720,185 T960,185 T1200,185 T1440,185 L1440,320 L0,320 Z" />
+                <path className="wv wv-3" d="M0,205 Q120,105 240,205 T480,205 T720,205 T960,205 T1200,205 T1440,205 L1440,320 L0,320 Z" />
+                <path className="wv wv-4" d="M0,235 Q120,320 240,235 T480,235 T720,235 T960,235 T1200,235 T1440,235 L1440,320 L0,320 Z" />
+                <path className="wv wv-5" d="M0,265 Q120,160 240,265 T480,265 T720,265 T960,265 T1200,265 T1440,265 L1440,320 L0,320 Z" />
+              </svg>
             </div>
           </div>
           <div className="muse-enter-content">
