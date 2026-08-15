@@ -56,17 +56,23 @@ export function screenText(text: string): { block: boolean; categories: string[]
 /** LLM-backed classification for text that passed heuristics but needs review. */
 async function llmScreen(text: string): Promise<{ safe: boolean; categories: string[]; severity: string; reason: string } | null> {
   if (!aiEnabled()) return null;
-  const { chatComplete } = await import("@/lib/ai");
   const prompt = `Classify the following user-generated content for a professional creative network (Muse). Respond with ONLY a JSON object, no other text, in the shape {"safe": boolean, "categories": string[], "severity": "none"|"low"|"high"|"critical", "reason": string}.
 
 Categories to detect: spam, harassment, hate_speech, sexual_solicitation, minor_risk, off_platform_payment, scam, self_harm, doxxing, violence, drugs.
 
 Content: """${text.slice(0, 1500)}"""`;
 
-  const raw = await chatComplete(
-    [{ role: "user", content: prompt }],
-    { maxTokens: 600, temperature: 0 }
-  );
+  let raw: string | null;
+  try {
+    const { chatComplete } = await import("@/lib/ai");
+    raw = await chatComplete(
+      [{ role: "user", content: prompt }],
+      { maxTokens: 600, temperature: 0 }
+    );
+  } catch {
+    // Fail-open: a moderation outage must never block normal content.
+    return null;
+  }
   if (!raw) return null;
   try {
     // Strip markdown code fences and any reasoning preamble.
