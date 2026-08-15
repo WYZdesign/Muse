@@ -311,6 +311,7 @@ export default function MuseLandingPage() {
   return (
     <div className="muse-landing">
       <BackgroundScene flash={null} />
+      <div className="muse-bg-overlay" aria-hidden="true" />
       <div className="muse-noise" />
       <div ref={progressRef} className="muse-progress" />
       <div className="muse-scroll-rail" aria-hidden="true">
@@ -322,7 +323,7 @@ export default function MuseLandingPage() {
       <div className="muse-content">
       {/* Nav */}
       <nav className={`muse-nav ${navScrolled ? "scrolled" : ""}`}>
-        <div className="muse-nav-logo">Muse<span className="accent">✦</span></div>
+        <div className="muse-nav-logo"><img src="/wyz-crown-icon.png" alt="Muse" className="muse-nav-icon" /></div>
         <div className="muse-nav-links">
           <a href="#features">Features</a>
           <a href="#how">How It Works</a>
@@ -545,8 +546,31 @@ export default function MuseLandingPage() {
 
       {!gateGone && (
         <div className={`muse-enter-gate ${gateClosing ? "closing" : ""}`} onClick={() => { if (!gateClosing) { setGateClosing(true); setTimeout(() => setGateGone(true), 850); } }}>
-          <div className="muse-enter-bg"><span className="eg-1" /><span className="eg-2" /><span className="eg-3" /></div>
+          <div className="sunset-scene" aria-hidden="true">
+            <div className="sunset-sky" />
+            <div className="sunset-stars">
+              {Array.from({ length: 40 }).map((_, i) => (
+                <span key={i} className="star" style={{ left: `${(i * 37) % 100}%`, top: `${(i * 13) % 42}%`, animationDelay: `${(i % 10) * 0.5}s` }} />
+              ))}
+            </div>
+            <div className="sunset-nebula neb-1" /><div className="sunset-nebula neb-2" /><div className="sunset-nebula neb-3" />
+            <div className="sunset-sun-glow" />
+            <div className="sunset-sun" />
+            <div className="sunset-clouds">
+              <span className="sunset-cloud c-1" /><span className="sunset-cloud c-2" /><span className="sunset-cloud c-3" />
+            </div>
+            <div className="sunset-birds">
+              <svg className="sunset-bird b-0" viewBox="0 0 46 20"><path d="M2 15 Q12 3 23 12 Q34 3 44 15 Q34 10 23 13 Q12 10 2 15 Z" /></svg>
+              <svg className="sunset-bird b-1" viewBox="0 0 46 20"><path d="M2 15 Q12 3 23 12 Q34 3 44 15 Q34 10 23 13 Q12 10 2 15 Z" /></svg>
+              <svg className="sunset-bird b-2" viewBox="0 0 46 20"><path d="M2 15 Q12 3 23 12 Q34 3 44 15 Q34 10 23 13 Q12 10 2 15 Z" /></svg>
+            </div>
+            <div className="sunset-ocean">
+              <div className="sunset-reflection" />
+              <div className="sunset-wave w-1" /><div className="sunset-wave w-2" /><div className="sunset-wave w-3" />
+            </div>
+          </div>
           <div className="muse-enter-content">
+            <img src="/wyz-crown-icon.png" alt="Muse" className="muse-enter-icon" />
             <div className="muse-enter-logo">Muse</div>
             <div className="muse-enter-sub">Creative Professional Network</div>
             <div className="muse-enter-prompt">Click to Enter ✦</div>

@@ -29,6 +29,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .muse-landing { height: auto; min-height: 100dvh; }
 
 /* Landing content sits above the app BackgroundScene (z-index 0-3) */
+.muse-bg-overlay { position: fixed; inset: 0; z-index: 4; pointer-events: none; background: rgba(0,0,0,0.4); }
 .muse-content { position: relative; z-index: 10; }
 
 /* ═══ CLICK-TO-ENTER GATE ═══ */
@@ -39,17 +40,72 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   transition: opacity 0.85s ease, filter 0.85s ease, transform 0.85s cubic-bezier(.76,0,.24,1);
 }
 .muse-enter-gate.closing { opacity: 0; filter: blur(20px); transform: scale(1.14); pointer-events: none; }
-.muse-enter-bg { position: absolute; inset: 0; pointer-events: none; }
-.muse-enter-bg span { position: absolute; border-radius: 50%; filter: blur(90px); mix-blend-mode: screen; animation: museEnterOrb 9s ease-in-out infinite; }
-.muse-enter-bg .eg-1 { width: 62vw; height: 62vw; background: #ffd700; top: -16%; left: -10%; opacity: 0.5; }
-.muse-enter-bg .eg-2 { width: 56vw; height: 56vw; background: #ff8a80; bottom: -12%; right: -12%; opacity: 0.45; animation-delay: -3s; }
-.muse-enter-bg .eg-3 { width: 50vw; height: 50vw; background: #d4a5ff; top: 30%; left: 30%; opacity: 0.4; animation-delay: -6s; }
-@keyframes museEnterOrb { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(34px,-30px) scale(1.18); } }
+/* ═══ CALIFORNIA SUNSET SCENE (click-to-enter backdrop) ═══ */
+.sunset-scene { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.sunset-sky { position: absolute; inset: 0; background: linear-gradient(180deg, #1a0f2e 0%, #3d1f5e 14%, #6b2d5c 28%, #c94f5e 42%, #f2765c 52%, #ffb35c 60%, #ffd98a 66%, #f2a15c 72%, #1f6f8a 80%, #143f5c 90%, #0a1f33 100%); }
+
+/* Stars — upper sky */
+.sunset-stars { position: absolute; top: 0; left: 0; right: 0; height: 55%; }
+.sunset-stars .star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff; box-shadow: 0 0 4px rgba(255,255,255,0.6); animation: sunsetTwinkle 3s ease-in-out infinite; }
+.sunset-stars .star:nth-child(3n) { background: #ffd98a; box-shadow: 0 0 5px rgba(255,217,138,0.7); }
+.sunset-stars .star:nth-child(5n) { width: 3px; height: 3px; }
+@keyframes sunsetTwinkle { 0%,100% { opacity: 0.15; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1.2); } }
+
+/* Nebula — dreamy color clouds */
+.sunset-nebula { position: absolute; border-radius: 50%; filter: blur(50px); mix-blend-mode: screen; opacity: 0.5; animation: sunsetDrift 10s ease-in-out infinite; }
+.neb-1 { width: 42vw; height: 24vw; background: radial-gradient(ellipse, rgba(212,165,255,0.5), transparent 70%); top: 8%; left: -5%; }
+.neb-2 { width: 36vw; height: 20vw; background: radial-gradient(ellipse, rgba(255,138,128,0.4), transparent 70%); top: 16%; right: -4%; animation-delay: -3s; }
+.neb-3 { width: 28vw; height: 16vw; background: radial-gradient(ellipse, rgba(20,180,210,0.3), transparent 70%); top: 4%; left: 35%; animation-delay: -6s; }
+@keyframes sunsetDrift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(26px,-14px); } }
+
+/* Sun + glow — horizon */
+.sunset-sun-glow { position: absolute; left: 50%; top: 62%; transform: translate(-50%,-50%); width: 64vw; height: 64vw; border-radius: 50%; background: radial-gradient(circle, rgba(255,200,90,0.55) 0%, rgba(255,150,70,0.25) 40%, transparent 70%); filter: blur(10px); animation: sunsetSunPulse 5s ease-in-out infinite; }
+.sunset-sun { position: absolute; left: 50%; top: 62%; transform: translate(-50%,-50%); width: 13vw; min-width: 92px; height: 13vw; min-height: 92px; border-radius: 50%; background: radial-gradient(circle, #fff7d9 0%, #ffe08a 30%, #ffb35c 60%, #f2765c 100%); box-shadow: 0 0 70px 22px rgba(255,180,90,0.6); animation: sunsetSunBob 5s ease-in-out infinite; }
+@keyframes sunsetSunPulse { 0%,100% { opacity: 0.75; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.06); } }
+@keyframes sunsetSunBob { 0%,100% { transform: translate(-50%,-50%) translateY(0); } 50% { transform: translate(-50%,-50%) translateY(-6px); } }
+
+/* Clouds — drifting */
+.sunset-clouds { position: absolute; inset: 0; }
+.sunset-cloud { position: absolute; border-radius: 999px; background: linear-gradient(180deg, rgba(255,190,150,0.5), rgba(255,140,110,0.2)); filter: blur(2px); animation: sunsetCloud 18s linear infinite; }
+.c-1 { width: 22vw; height: 5vw; top: 30%; left: -25%; }
+.c-2 { width: 18vw; height: 4vw; top: 24%; left: -20%; animation-delay: -6s; }
+.c-3 { width: 26vw; height: 6vw; top: 34%; left: -30%; animation-delay: -12s; }
+@keyframes sunsetCloud { 0% { transform: translateX(0); } 100% { transform: translateX(140vw); } }
+
+/* Birds — silhouettes */
+.sunset-birds { position: absolute; inset: 0; }
+.sunset-bird { position: absolute; width: 46px; height: 20px; fill: #2a1030; animation: sunsetBird 12s ease-in-out infinite; }
+.b-0 { top: 18%; left: -60px; }
+.b-1 { top: 12%; left: -60px; animation-delay: -4s; width: 32px; }
+.b-2 { top: 24%; left: -60px; animation-delay: -8s; width: 38px; }
+@keyframes sunsetBird { 0% { transform: translate(0,0) scaleX(1); } 50% { transform: translate(62vw,-22px) scaleX(1); } 100% { transform: translate(132vw,10px) scaleX(1); } }
+
+/* Ocean + sun reflection */
+.sunset-ocean { position: absolute; left: 0; right: 0; bottom: 0; height: 34%; }
+.sunset-reflection { position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); width: 26vw; min-width: 160px; height: 46%; background: linear-gradient(180deg, rgba(255,200,90,0.42) 0%, rgba(255,150,70,0.12) 55%, transparent 100%); filter: blur(6px); animation: sunsetReflect 5s ease-in-out infinite; }
+@keyframes sunsetReflect { 0%,100% { opacity: 0.45; } 50% { opacity: 0.9; } }
+.sunset-wave { position: absolute; left: -5%; width: 110%; height: 22px; border-radius: 50% 50% 0 0; animation: sunsetWave 5s ease-in-out infinite; }
+.w-1 { bottom: 0; background: rgba(20,110,150,0.32); }
+.w-2 { bottom: 9px; background: rgba(10,80,120,0.38); animation-delay: -1.6s; }
+.w-3 { bottom: 18px; background: rgba(6,55,100,0.5); animation-delay: -3.2s; }
+@keyframes sunsetWave { 0%,100% { transform: translateX(0) scaleY(1); } 50% { transform: translateX(2%) scaleY(1.25); } }
 .muse-enter-content { position: relative; z-index: 2; text-align: center; }
 .muse-enter-logo { font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(4rem, 13vw, 8.5rem); font-weight: 900; letter-spacing: -0.02em; background: linear-gradient(120deg,#FFD700,#FFBF00,#FF6B6B,#D4A5FF,#FF8C69,#FFD700); background-size: 300% 300%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: museGradientShift 6s ease infinite; filter: drop-shadow(0 2px 22px rgba(255,215,0,0.4)); }
 .muse-enter-sub { font-size: 11px; letter-spacing: 0.35em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-top: 8px; }
 .muse-enter-prompt { margin-top: 50px; display: inline-flex; align-items: center; gap: 10px; padding: 14px 32px; border-radius: 999px; border: 1px solid rgba(255,215,0,0.4); color: #FFD700; font-size: 13px; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 600; animation: museEnterPulse 2.4s ease-in-out infinite; }
 @keyframes museEnterPulse { 0%,100% { box-shadow: 0 0 0 rgba(255,215,0,0); transform: scale(1); } 50% { box-shadow: 0 0 32px rgba(255,215,0,0.35); transform: scale(1.04); } }
+
+/* Crown icon in enter gate + nav */
+.muse-enter-icon { width: 96px; height: 96px; object-fit: contain; margin: 0 auto 22px; filter: drop-shadow(0 4px 26px rgba(255,215,0,0.5)); animation: museIconFloat 4s ease-in-out infinite; }
+@keyframes museIconFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.muse-nav-icon { width: 34px; height: 34px; object-fit: contain; flex-shrink: 0; }
+
+/* Center-align all cards (icons, graphics, text) */
+.muse-feature-card, .muse-safety-card, .muse-tier-card, .muse-step { text-align: center; }
+.muse-feature-icon { margin-left: auto; margin-right: auto; }
+.muse-safety-card svg { display: block; margin-left: auto; margin-right: auto; }
+.muse-tier-badge { align-self: center; }
+.muse-tier-perk { justify-content: center; }
 
 .muse-landing a { color: inherit; text-decoration: none; }
 .muse-landing button { cursor: none; border: none; background: none; font-family: inherit; color: inherit; }
