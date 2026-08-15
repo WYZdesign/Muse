@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { FiCamera, FiUsers, FiZap, FiShield, FiHeart, FiStar, FiArrowRight, FiMessageSquare, FiMapPin, FiClock, FiLock, FiGlobe, FiLink } from "react-icons/fi";
 import SplashScreen from "@/components/SplashScreen";
-import BackgroundScene from "@/app/(muse)/muse/components/BackgroundScene";
-import "@/app/(muse)/muse/muse.css";
+import BackgroundScene from "@/components/BackgroundScene";
+import "@/components/BackgroundScene.css";
 import "./landing.css";
 
 const QR_SOURCES = {
