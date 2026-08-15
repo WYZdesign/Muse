@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { FiCamera, FiUsers, FiZap, FiShield, FiHeart, FiStar, FiArrowRight, FiMessageSquare, FiMapPin, FiClock, FiLock, FiGlobe, FiLink } from "react-icons/fi";
+import SplashScreen from "@/components/SplashScreen";
+import BackgroundScene from "@/app/(muse)/muse/components/BackgroundScene";
+import "@/app/(muse)/muse/muse.css";
 import "./landing.css";
 
 const QR_SOURCES = {
@@ -78,6 +81,85 @@ function Magnetic({ children, strength = 0.25 }: { children: React.ReactNode; st
   );
 }
 
+/* ── Mouse + gyroscope parallax ── */
+function useParallax<T extends HTMLElement>(strength = 16) {
+  const ref = useRef<T | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let tx = 0, ty = 0, cx = 0, cy = 0;
+    const onMouse = (e: MouseEvent) => { tx = (e.clientX / innerWidth - 0.5) * 2; ty = (e.clientY / innerHeight - 0.5) * 2; };
+    const onOrient = (e: DeviceOrientationEvent) => { const g = Math.max(-1, Math.min(1, (e.gamma ?? 0) / 45)); const b = Math.max(-1, Math.min(1, (e.beta ?? 0) / 90)); tx = g; ty = b; };
+    let raf = 0;
+    const tick = () => {
+      cx += (tx - cx) * 0.08; cy += (ty - cy) * 0.08;
+      el.querySelectorAll<HTMLElement>("[data-depth]").forEach((n) => { const d = parseFloat(n.dataset.depth || "0"); n.style.transform = `translate(${cx * d * strength}px, ${cy * d * strength}px)`; });
+      raf = requestAnimationFrame(tick);
+    };
+    addEventListener("mousemove", onMouse);
+    addEventListener("deviceorientation", onOrient);
+    raf = requestAnimationFrame(tick);
+    return () => { removeEventListener("mousemove", onMouse); removeEventListener("deviceorientation", onOrient); cancelAnimationFrame(raf); };
+  }, [strength]);
+  return ref;
+}
+
+/* ── Count-up number ── */
+function CountUp({ end, duration = 1600 }: { end: number; duration?: number }) {
+  const { ref, inView } = useInView<HTMLSpanElement>(0.5);
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (!inView) return;
+    let start = 0;
+    const step = (ts: number) => {
+      if (!start) start = ts;
+      const p = Math.min(1, (ts - start) / duration);
+      setVal(Math.round(end * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [inView, end, duration]);
+  return <span ref={ref}>{val.toLocaleString()}</span>;
+}
+
+/* ── 3D tilt card ── */
+function TiltCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const onMove = (e: React.MouseEvent) => {
+    const el = ref.current;
+    if (!el || window.matchMedia("(hover: none)").matches) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    el.style.transform = `perspective(900px) rotateY(${px * 9}deg) rotateX(${-py * 9}deg) translateY(-4px)`;
+  };
+  const onLeave = () => { const el = ref.current; if (el) el.style.transform = "perspective(900px) rotateY(0) rotateX(0) translateY(0)"; };
+  return <div ref={ref} onMouseMove={onMove} onMouseLeave={onLeave} className={`muse-tilt ${className}`}>{children}</div>;
+}
+
+/* ── Floating particles ── */
+function Particles({ count = 16 }: { count?: number }) {
+  return (
+    <div className="muse-particles" aria-hidden="true">
+      {Array.from({ length: count }).map((_, i) => (
+        <span key={i} className="muse-particle" style={{ "--x": `${(i * 61) % 100}%`, "--d": `${14 + (i % 8) * 2}s`, "--i": i } as React.CSSProperties} />
+      ))}
+    </div>
+  );
+}
+
+/* ── Bouncing scroll cue ── */
+function ScrollCue() {
+  return (
+    <div className="muse-scroll-cue" aria-hidden="true">
+      <div className="chev">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
+      </div>
+    </div>
+  );
+}
+
 /* ── Custom cursor ── */
 function Cursor() {
   const dotRef = useRef<HTMLDivElement>(null);
@@ -133,28 +215,28 @@ function Marquee() {
 }
 
 const FEATURES = [
-  { icon: <FiHeart size={28} />, title: "Discover & Match", desc: "Swipe-based discovery tailored to your creative type, style tags, and location. Match with photographers, models, filmmakers, and musicians who align with your vision." },
-  { icon: <FiZap size={28} />, title: "Collab Briefs", desc: "Post paid or TFP projects with budgets, timelines, and requirements. Creatives apply directly — no middlemen, no guesswork." },
-  { icon: <FiMessageSquare size={28} />, title: "Real Chat & Booking", desc: "Matched? Message instantly. Book sessions with built-in escrow payments, disclosure forms, and safety check-ins." },
-  { icon: <FiShield size={28} />, title: "Safety First", desc: "Mandatory disclosure forms for sensitive shoots, 24hr pre-shoot check-ins, trusted contact sharing, and instant block/report." },
-  { icon: <FiUsers size={28} />, title: "Communities & Events", desc: "Join local creative groups, RSVP to mixers, find studio partners, and connect with pros in your city." },
-  { icon: <FiCamera size={28} />, title: "Verified Profiles", desc: "Phone + email verification at signup. Face verification before paid bookings. Badges for responsiveness and collaboration history." },
+  { icon: <FiHeart size={28} />, title: "Discover & Match", desc: "Swipe through creatives near you. Match when you're both into it." },
+  { icon: <FiZap size={28} />, title: "Collab Briefs", desc: "Post a paid or TFP project. Creatives apply directly. No middlemen." },
+  { icon: <FiMessageSquare size={28} />, title: "Chat & Booking", desc: "Message instantly. Book with escrow and disclosure forms built in." },
+  { icon: <FiShield size={28} />, title: "Safety First", desc: "Disclosure forms, check-ins, and instant block — for every shoot." },
+  { icon: <FiUsers size={28} />, title: "Communities & Events", desc: "Find your people. RSVP to mixers and local creative events." },
+  { icon: <FiCamera size={28} />, title: "Verified Profiles", desc: "Phone + face verification. Real people, real portfolios." },
 ];
 
 const STEPS = [
-  { num: "01", title: "Join & Verify", desc: "Create your profile, add your creative type, style tags, and portfolio. Verify phone + email instantly." },
-  { num: "02", title: "Discover & Match", desc: "Swipe through creatives near you. Match when interest is mutual. No fake profiles, no bots." },
-  { num: "03", title: "Collaborate Safely", desc: "Chat, share disclosure forms, book with escrow, and run 24hr safety check-ins." },
-  { num: "04", title: "Build Your Network", desc: "Earn badges, get reviews, join communities, and grow a network that books you work." },
+  { num: "01", title: "Join & Verify", desc: "Make your profile. Verify in seconds." },
+  { num: "02", title: "Discover & Match", desc: "Swipe. Match. Skip the cold DMs." },
+  { num: "03", title: "Collaborate Safely", desc: "Chat, book, and shoot — with safety built in." },
+  { num: "04", title: "Build Your Network", desc: "Grow a network that books you work." },
 ];
 
 const SAFETY = [
-  { icon: <FiLock size={22} />, title: "Disclosure Forms", desc: "Structured checkboxes for compensation, content boundaries, location, and attendees. Both parties confirm before booking." },
-  { icon: <FiClock size={22} />, title: "24hr Check-Ins", desc: "Automated prompt before every shoot. Confirm nothing's changed or cancel with one tap." },
-  { icon: <FiMapPin size={22} />, title: "Trusted Contact", desc: "Share shoot details with anyone via SMS — they don't need the app." },
-  { icon: <FiShield size={22} />, title: "Two-Track Enforcement", desc: "Standard issues: graduated warnings. Explicit content + payment? Immediate block + founder review." },
-  { icon: <FiGlobe size={22} />, title: "Age Verification", desc: "Stripe Identity document + selfie verification before any paid booking. No self-reported birthdates." },
-  { icon: <FiMessageSquare size={22} />, title: "Transparent Reporting", desc: "Report someone and know the actual outcome — not just \"we reviewed it\"." },
+  { icon: <FiLock size={22} />, title: "Disclosure Forms", desc: "Both parties agree on boundaries before booking." },
+  { icon: <FiClock size={22} />, title: "24hr Check-Ins", desc: "A quick prompt before every shoot. Cancel with one tap." },
+  { icon: <FiMapPin size={22} />, title: "Trusted Contact", desc: "Share shoot details with anyone via SMS." },
+  { icon: <FiShield size={22} />, title: "Two-Track Enforcement", desc: "Clear rules. Instant action when they're broken." },
+  { icon: <FiGlobe size={22} />, title: "Age Verification", desc: "Stripe Identity before paid bookings. No self-reporting." },
+  { icon: <FiMessageSquare size={22} />, title: "Transparent Reporting", desc: "Report someone and see the actual outcome." },
 ];
 
 const TIERS = [
@@ -172,14 +254,11 @@ export default function MuseLandingPage() {
   const [formData, setFormData] = useState({ email: "", phone: "" });
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [loaded, setLoaded] = useState(false);
   const [navScrolled, setNavScrolled] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const t = setTimeout(() => setLoaded(true), 1600);
-    return () => clearTimeout(t);
-  }, []);
+  const railFillRef = useRef<HTMLDivElement>(null);
+  const railDotRef = useRef<HTMLDivElement>(null);
+  const heroParallax = useParallax<HTMLDivElement>(16);
 
   useEffect(() => {
     fetch("/api/muse/landing-stats").then(r => r.json()).then(d => { if (d.count !== undefined) setSignupCount(d.count); }).catch(() => {});
@@ -191,6 +270,8 @@ export default function MuseLandingPage() {
       const h = document.documentElement;
       const p = h.scrollTop / (h.scrollHeight - h.clientHeight) * 100;
       if (progressRef.current) progressRef.current.style.width = p + "%";
+      if (railFillRef.current) railFillRef.current.style.height = p + "%";
+      if (railDotRef.current) railDotRef.current.style.top = p + "%";
     };
     onScroll();
     addEventListener("scroll", onScroll, { passive: true });
@@ -228,17 +309,16 @@ export default function MuseLandingPage() {
 
   return (
     <div className="muse-landing">
+      <BackgroundScene />
       <div className="muse-noise" />
       <div ref={progressRef} className="muse-progress" />
+      <div className="muse-scroll-rail" aria-hidden="true">
+        <div ref={railFillRef} className="muse-scroll-rail-fill" />
+        <div ref={railDotRef} className="muse-scroll-rail-dot" />
+      </div>
       <Cursor />
 
-      {/* Preloader */}
-      <div className={`muse-preloader ${loaded ? "done" : ""}`}>
-        <div className="muse-preloader-word">
-          <span>M</span><span>u</span><span className="accent">s</span><span>e</span>
-        </div>
-      </div>
-
+      <div className="muse-content">
       {/* Nav */}
       <nav className={`muse-nav ${navScrolled ? "scrolled" : ""}`}>
         <div className="muse-nav-logo">Muse<span className="accent">✦</span></div>
@@ -252,22 +332,22 @@ export default function MuseLandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="muse-hero">
+      <section className="muse-hero" ref={heroParallax}>
         <div className="muse-hero-bg">
-          <div className="muse-orb gold" />
-          <div className="muse-orb coral" />
-          <div className="muse-orb lavender" />
+          <div className="muse-orb gold" data-depth="1" />
+          <div className="muse-orb coral" data-depth="1.7" />
+          <div className="muse-orb lavender" data-depth="2.4" />
         </div>
         <div className="muse-hero-inner">
-          <div className="muse-hero-eyebrow"><span className="dot" /> Founding members get lifetime Pro</div>
+          <div className="muse-hero-eyebrow" data-depth="-0.6"><span className="dot" /> Founding members get lifetime Pro</div>
           <h1 className="muse-hero-title">
-            <span className="line"><SplitText text="Where Creatives" delay={0.15} /></span>
-            <span className="line"><SplitText text="Find Their" delay={0.4} /></span>
-            <span className="line gradient"><SplitText text="Muse" delay={0.65} /></span>
+            <span className="line" data-depth="-0.4"><SplitText text="Where Creatives" delay={0.15} /></span>
+            <span className="line" data-depth="-0.4"><SplitText text="Find Their" delay={0.4} /></span>
+            <span className="line gradient muse-animated-gradient" data-depth="-0.4"><SplitText text="Muse" delay={0.65} /></span>
           </h1>
-          <p className="muse-hero-sub">The first platform built for photographers, models, filmmakers, musicians, actors, and designers to connect, collaborate, and get booked — safely.</p>
+          <p className="muse-hero-sub" data-depth="-0.3">Connect with photographers, models, filmmakers, and more. Collaborate on real work. Get booked — safely.</p>
           <div className="muse-hero-actions">
-            <Magnetic><a href="#join" className="muse-btn primary">Join the Waitlist <FiArrowRight size={16} /></a></Magnetic>
+            <Magnetic><a href="#join" className="muse-btn primary muse-shimmer">Join the Waitlist <FiArrowRight size={16} /></a></Magnetic>
             <Magnetic><a href="#features" className="muse-btn ghost">Explore Features</a></Magnetic>
           </div>
         </div>
@@ -278,6 +358,19 @@ export default function MuseLandingPage() {
       </section>
 
       <Marquee />
+
+      {/* Stats */}
+      <section className="muse-stats">
+        <Reveal>
+          <div className="muse-stats-grid">
+            <div className="muse-stat"><span className="num"><CountUp end={signupCount} />+</span><span className="lbl">Creatives</span></div>
+            <div className="muse-stat"><span className="num"><CountUp end={12} /></span><span className="lbl">Cities</span></div>
+            <div className="muse-stat"><span className="num"><CountUp end={100} />%</span><span className="lbl">Verified</span></div>
+          </div>
+        </Reveal>
+      </section>
+
+      <ScrollCue />
 
       {/* Features */}
       <section id="features" className="muse-section">
@@ -290,11 +383,13 @@ export default function MuseLandingPage() {
           <div className="muse-features-grid">
             {FEATURES.map((f, i) => (
               <Reveal key={f.title} delay={i * 0.08}>
-                <article className="muse-feature-card">
-                  <div className="muse-feature-icon">{f.icon}</div>
-                  <h3>{f.title}</h3>
-                  <p>{f.desc}</p>
-                </article>
+                <TiltCard className="h-full">
+                  <article className="muse-feature-card">
+                    <div className="muse-feature-icon">{f.icon}</div>
+                    <h3>{f.title}</h3>
+                    <p>{f.desc}</p>
+                  </article>
+                </TiltCard>
               </Reveal>
             ))}
           </div>
@@ -333,11 +428,13 @@ export default function MuseLandingPage() {
           <div className="muse-safety-grid">
             {SAFETY.map((s, i) => (
               <Reveal key={s.title} delay={i * 0.06}>
-                <div className="muse-safety-card">
-                  {s.icon}
-                  <h3>{s.title}</h3>
-                  <p>{s.desc}</p>
-                </div>
+                <TiltCard className="h-full">
+                  <div className="muse-safety-card">
+                    {s.icon}
+                    <h3>{s.title}</h3>
+                    <p>{s.desc}</p>
+                  </div>
+                </TiltCard>
               </Reveal>
             ))}
           </div>
@@ -355,11 +452,13 @@ export default function MuseLandingPage() {
           <div className="muse-tiers">
             {TIERS.map((t, i) => (
               <Reveal key={t.name} delay={i * 0.1}>
-                <article className={`muse-tier-card ${t.cls}`}>
-                  <span className="muse-tier-badge">{t.badge}</span>
-                  <h3>{t.name}</h3>
-                  {t.perks.map(p => <div key={p} className="muse-tier-perk"><FiStar size={13} /> {p}</div>)}
-                </article>
+                <TiltCard className="h-full">
+                  <article className={`muse-tier-card ${t.cls}`}>
+                    <span className="muse-tier-badge">{t.badge}</span>
+                    <h3>{t.name}</h3>
+                    {t.perks.map(p => <div key={p} className="muse-tier-perk"><FiStar size={13} /> {p}</div>)}
+                  </article>
+                </TiltCard>
               </Reveal>
             ))}
           </div>
@@ -425,6 +524,7 @@ export default function MuseLandingPage() {
           <div className="muse-footer-bottom"><p>© {new Date().getFullYear()} Muse. Built by WYZ Design.</p></div>
         </div>
       </footer>
+      </div>
 
       {/* QR Modal */}
       {showQrModal && (
@@ -441,6 +541,8 @@ export default function MuseLandingPage() {
           </div>
         </div>
       )}
+
+      <SplashScreen />
     </div>
   );
 }
