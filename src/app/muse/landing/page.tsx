@@ -677,11 +677,11 @@ export default function MuseLandingPage() {
             <div className="sunset-ocean">
               <div className="sunset-reflection" />
               <svg className="sunset-waves-svg" viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
-                <path className="wv wv-1" d="M0,130 Q120,-40 240,130 T480,130 T720,130 T960,130 T1200,130 T1440,130 L1440,360 L0,360 Z" />
-                <path className="wv wv-2" d="M0,165 Q120,320 240,165 T480,165 T720,165 T960,165 T1200,165 T1440,165 L1440,360 L0,360 Z" />
-                <path className="wv wv-3" d="M0,190 Q120,30 240,190 T480,190 T720,190 T960,190 T1200,190 T1440,190 L1440,360 L0,360 Z" />
-                <path className="wv wv-4" d="M0,220 Q120,360 240,220 T480,220 T720,220 T960,220 T1200,220 T1440,220 L1440,360 L0,360 Z" />
-                <path className="wv wv-5" d="M0,250 Q120,60 240,250 T480,250 T720,250 T960,250 T1200,250 T1440,250 L1440,360 L0,360 Z" />
+                <path className="wv wv-1" d="M0,120 C200,30 360,180 540,110 C720,40 900,160 1100,70 C1280,-10 1380,140 1440,110 L1440,360 L0,360 Z" />
+                <path className="wv wv-2" d="M0,150 C160,240 320,80 480,180 C640,260 800,100 980,190 C1160,270 1320,110 1440,170 L1440,360 L0,360 Z" />
+                <path className="wv wv-3" d="M0,190 C220,100 440,260 660,160 C880,80 1100,240 1300,130 C1380,90 1420,160 1440,180 L1440,360 L0,360 Z" />
+                <path className="wv wv-4" d="M0,225 C180,310 380,150 580,240 C780,320 980,170 1180,260 C1320,310 1400,210 1440,235 L1440,360 L0,360 Z" />
+                <path className="wv wv-5" d="M0,260 C260,170 520,310 780,220 C1040,150 1260,290 1440,240 L1440,360 L0,360 Z" />
               </svg>
             </div>
           </div>

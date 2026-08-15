@@ -72,65 +72,78 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 }
 .sunset-shooting-star.ss-2::before, .sunset-shooting-star.ss-5::before { right: auto; left: -1px; }
 
-.sunset-shooting-star.ss-1 { top: 8%; left: 30%; animation: shootA 8s ease-in-out infinite 1.5s; }
-.sunset-shooting-star.ss-2 { top: 13%; right: 20%; animation: shootB 10s ease-in-out infinite 4.8s; }
-.sunset-shooting-star.ss-3 { top: 5%; left: 52%; animation: shootC 9s ease-in-out infinite 6.5s; }
-.sunset-shooting-star.ss-4 { top: 17%; left: 12%; animation: shootD 11s ease-in-out infinite 2.8s; }
-.sunset-shooting-star.ss-5 { top: 9%; right: 6%; animation: shootE 12s ease-in-out infinite 8.2s; }
+.sunset-shooting-star.ss-1 { top: 8%; left: 30%; animation: shootA 7.5s linear infinite 1.5s; }
+.sunset-shooting-star.ss-2 { top: 13%; right: 20%; animation: shootB 9.5s linear infinite 4.8s; }
+.sunset-shooting-star.ss-3 { top: 5%; left: 52%; animation: shootC 8.5s linear infinite 6.5s; }
+.sunset-shooting-star.ss-4 { top: 17%; left: 12%; animation: shootD 10s linear infinite 2.8s; }
+.sunset-shooting-star.ss-5 { top: 9%; right: 6%; animation: shootE 11s linear infinite 8.2s; }
 
-/* Down-right stars — head leads bottom-right, tail trails top-left */
+/* Down-right stars — constant linear velocity through the fade */
 @keyframes shootA {
   0% { transform: translate(0,0) rotate(28deg) scaleX(0); opacity: 0; }
-  7% { opacity: 1; transform: translate(0,0) rotate(28deg) scaleX(1); }
-  45% { opacity: 0.85; transform: translate(300px, 160px) rotate(28deg) scaleX(1); }
-  62% { opacity: 0; transform: translate(380px, 205px) rotate(28deg) scaleX(0.12); }
-  100% { opacity: 0; transform: translate(380px, 205px) rotate(28deg) scaleX(0); }
+  4% { opacity: 1; transform: translate(32px, 17px) rotate(28deg) scaleX(1); }
+  36% { opacity: 0.9; transform: translate(288px, 153px) rotate(28deg) scaleX(1); }
+  48% { opacity: 0; transform: translate(384px, 204px) rotate(28deg) scaleX(0.6); }
+  100% { opacity: 0; transform: translate(384px, 204px) rotate(28deg) scaleX(0); }
 }
 @keyframes shootC {
   0% { transform: translate(0,0) rotate(22deg) scaleX(0); opacity: 0; }
-  7% { opacity: 1; transform: translate(0,0) rotate(22deg) scaleX(1); }
-  45% { opacity: 0.8; transform: translate(330px, 145px) rotate(22deg) scaleX(1); }
-  62% { opacity: 0; transform: translate(410px, 180px) rotate(22deg) scaleX(0.12); }
-  100% { opacity: 0; transform: translate(410px, 180px) rotate(22deg) scaleX(0); }
+  4% { opacity: 1; transform: translate(34px, 14px) rotate(22deg) scaleX(1); }
+  36% { opacity: 0.9; transform: translate(306px, 126px) rotate(22deg) scaleX(1); }
+  48% { opacity: 0; transform: translate(408px, 168px) rotate(22deg) scaleX(0.6); }
+  100% { opacity: 0; transform: translate(408px, 168px) rotate(22deg) scaleX(0); }
 }
 @keyframes shootD {
   0% { transform: translate(0,0) rotate(33deg) scaleX(0); opacity: 0; }
-  7% { opacity: 1; transform: translate(0,0) rotate(33deg) scaleX(1); }
-  45% { opacity: 0.8; transform: translate(270px, 150px) rotate(33deg) scaleX(1); }
-  62% { opacity: 0; transform: translate(350px, 195px) rotate(33deg) scaleX(0.12); }
-  100% { opacity: 0; transform: translate(350px, 195px) rotate(33deg) scaleX(0); }
+  4% { opacity: 1; transform: translate(28px, 18px) rotate(33deg) scaleX(1); }
+  36% { opacity: 0.9; transform: translate(252px, 162px) rotate(33deg) scaleX(1); }
+  48% { opacity: 0; transform: translate(336px, 216px) rotate(33deg) scaleX(0.6); }
+  100% { opacity: 0; transform: translate(336px, 216px) rotate(33deg) scaleX(0); }
 }
-/* Down-left stars — head leads bottom-left, tail trails top-right */
+/* Down-left stars — constant linear velocity through the fade */
 @keyframes shootB {
   0% { transform: translate(0,0) rotate(-33deg) scaleX(0); opacity: 0; }
-  7% { opacity: 1; transform: translate(0,0) rotate(-33deg) scaleX(1); }
-  45% { opacity: 0.85; transform: translate(-320px, 180px) rotate(-33deg) scaleX(1); }
-  62% { opacity: 0; transform: translate(-400px, 225px) rotate(-33deg) scaleX(0.12); }
-  100% { opacity: 0; transform: translate(-400px, 225px) rotate(-33deg) scaleX(0); }
+  4% { opacity: 1; transform: translate(-32px, 18px) rotate(-33deg) scaleX(1); }
+  36% { opacity: 0.9; transform: translate(-288px, 162px) rotate(-33deg) scaleX(1); }
+  48% { opacity: 0; transform: translate(-384px, 216px) rotate(-33deg) scaleX(0.6); }
+  100% { opacity: 0; transform: translate(-384px, 216px) rotate(-33deg) scaleX(0); }
 }
 @keyframes shootE {
   0% { transform: translate(0,0) rotate(-26deg) scaleX(0); opacity: 0; }
-  7% { opacity: 1; transform: translate(0,0) rotate(-26deg) scaleX(1); }
-  45% { opacity: 0.8; transform: translate(-290px, 155px) rotate(-26deg) scaleX(1); }
-  62% { opacity: 0; transform: translate(-370px, 200px) rotate(-26deg) scaleX(0.12); }
-  100% { opacity: 0; transform: translate(-370px, 200px) rotate(-26deg) scaleX(0); }
+  4% { opacity: 1; transform: translate(-30px, 15px) rotate(-26deg) scaleX(1); }
+  36% { opacity: 0.9; transform: translate(-270px, 135px) rotate(-26deg) scaleX(1); }
+  48% { opacity: 0; transform: translate(-360px, 180px) rotate(-26deg) scaleX(0.6); }
+  100% { opacity: 0; transform: translate(-360px, 180px) rotate(-26deg) scaleX(0); }
 }
 
-/* Nebula — dreamy color clouds drifting in the upper twilight sky */
-.sunset-nebula { position: absolute; border-radius: 50%; filter: blur(48px); mix-blend-mode: screen; opacity: 0.6; animation: sunsetDrift 13s ease-in-out infinite; z-index: 1; }
-.neb-1 { width: 46vw; height: 24vw; background: radial-gradient(ellipse, rgba(212,165,255,0.5), transparent 70%); top: 2%; left: -8%; }
-.neb-2 { width: 40vw; height: 21vw; background: radial-gradient(ellipse, rgba(255,138,128,0.42), transparent 70%); top: 8%; right: -6%; animation-delay: -3.5s; }
-.neb-3 { width: 32vw; height: 17vw; background: radial-gradient(ellipse, rgba(20,180,210,0.36), transparent 70%); top: 0%; left: 34%; animation-delay: -7s; }
-.neb-4 { width: 30vw; height: 16vw; background: radial-gradient(ellipse, rgba(147,112,219,0.4), transparent 70%); top: 14%; left: 8%; animation-delay: -9.5s; }
-.neb-5 { width: 36vw; height: 18vw; background: radial-gradient(ellipse, rgba(255,105,180,0.34), transparent 70%); top: 4%; right: 22%; animation-delay: -5.5s; }
-.neb-6 { width: 28vw; height: 15vw; background: radial-gradient(ellipse, rgba(0,191,255,0.3), transparent 70%); top: 20%; right: 2%; animation-delay: -11s; }
+/* Nebula — vibrant Aurora Borealis glowing cloud ribbons in the upper sky */
+.sunset-nebula { position: absolute; border-radius: 50%; filter: blur(34px); mix-blend-mode: screen; opacity: 0.85; animation: sunsetDrift 14s ease-in-out infinite; z-index: 1; }
+.neb-1 { width: 48vw; height: 25vw; background: radial-gradient(ellipse at 40% 60%, rgba(0,255,180,0.65) 0%, rgba(20,180,210,0.45) 40%, rgba(138,43,226,0.18) 70%, transparent 85%); top: 1%; left: -8%; }
+.neb-2 { width: 44vw; height: 23vw; background: radial-gradient(ellipse at 60% 40%, rgba(255,20,147,0.65) 0%, rgba(186,85,211,0.5) 40%, rgba(75,0,130,0.2) 70%, transparent 85%); top: 7%; right: -6%; animation-delay: -3.5s; }
+.neb-3 { width: 36vw; height: 19vw; background: radial-gradient(ellipse at 50% 50%, rgba(0,220,255,0.7) 0%, rgba(255,215,0,0.45) 45%, rgba(0,128,128,0.2) 75%, transparent 85%); top: 0%; left: 32%; animation-delay: -7s; }
+.neb-4 { width: 34vw; height: 18vw; background: radial-gradient(ellipse at 30% 70%, rgba(147,112,219,0.65) 0%, rgba(138,43,226,0.5) 45%, transparent 80%); top: 12%; left: 6%; animation-delay: -9.5s; }
+.neb-5 { width: 40vw; height: 20vw; background: radial-gradient(ellipse at 70% 30%, rgba(255,105,180,0.7) 0%, rgba(255,140,80,0.48) 40%, rgba(212,165,255,0.25) 75%, transparent 85%); top: 3%; right: 20%; animation-delay: -5.5s; }
+.neb-6 { width: 32vw; height: 17vw; background: radial-gradient(ellipse at 50% 50%, rgba(0,191,255,0.65) 0%, rgba(65,105,225,0.5) 45%, transparent 80%); top: 18%; right: 2%; animation-delay: -11s; }
 @keyframes sunsetDrift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(26px,-16px) scale(1.08); } }
 
-/* Sun + Horizon glow */
-.sunset-sun-glow { position: absolute; left: 50%; top: 62%; transform: translate(-50%,-50%); width: 66vw; height: 66vw; border-radius: 50%; background: radial-gradient(circle, rgba(255,200,90,0.6) 0%, rgba(255,140,60,0.28) 38%, transparent 70%); filter: blur(14px); animation: sunsetSunPulse 5s ease-in-out infinite; z-index: 1; }
-.sunset-sun { position: absolute; left: 50%; top: 62%; transform: translate(-50%,-50%); width: 12vw; min-width: 86px; max-width: 140px; height: 12vw; min-height: 86px; max-height: 140px; border-radius: 50%; background: radial-gradient(circle at 50% 40%, #ffffff 0%, #fff2be 25%, #ffb648 60%, #f1683c 100%); box-shadow: 0 0 80px 26px rgba(255,185,75,0.7), 0 0 20px 6px rgba(255,255,255,0.9); animation: sunsetSunBob 5s ease-in-out infinite; z-index: 1; }
-@keyframes sunsetSunPulse { 0%,100% { opacity: 0.8; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.07); } }
-@keyframes sunsetSunBob { 0%,100% { transform: translate(-50%,-50%) translateY(0); } 50% { transform: translate(-50%,-50%) translateY(-7px); } }
+/* Sun + Horizon glow — half-circle setting into the ocean horizon */
+.sunset-sun-glow {
+  position: absolute; left: 50%; bottom: 24%; transform: translateX(-50%);
+  width: 58vw; height: 32vw; border-radius: 58vw 58vw 0 0;
+  background: radial-gradient(ellipse at 50% 100%, rgba(255,200,90,0.65) 0%, rgba(255,140,60,0.3) 45%, transparent 75%);
+  filter: blur(16px); animation: sunsetSunPulse 5s ease-in-out infinite; z-index: 1;
+}
+.sunset-sun {
+  position: absolute; left: 50%; bottom: 33.3%; transform: translateX(-50%);
+  width: 14vw; min-width: 100px; max-width: 160px;
+  height: 7vw; min-height: 50px; max-height: 80px;
+  border-radius: 160px 160px 0 0;
+  background: radial-gradient(ellipse at 50% 100%, #ffffff 0%, #fff2be 25%, #ffb648 60%, #f1683c 100%);
+  box-shadow: 0 -8px 60px 20px rgba(255,185,75,0.7), 0 -2px 18px 4px rgba(255,255,255,0.85);
+  animation: sunsetSunBob 5s ease-in-out infinite; z-index: 1;
+}
+@keyframes sunsetSunPulse { 0%,100% { opacity: 0.82; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.06); } }
+@keyframes sunsetSunBob { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(3px); } }
 
 /* Varied, smaller drifting clouds — soft haze wisps instead of pills */
 .sunset-clouds { position: absolute; inset: 0; z-index: 1; }
@@ -172,25 +185,51 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   100% { transform: translateX(140vw) translateY(0); }
 }
 
-/* Ocean + Shimmering Sun Reflection */
+/* Ocean + Shimmering Sun Reflection with perspective funnel */
 .sunset-ocean { position: absolute; left: 0; right: 0; bottom: 0; height: 33.3%; z-index: 1; }
 .sunset-reflection {
   position: absolute; left: 50%; top: 0; transform: translateX(-50%);
-  width: 12vw; min-width: 86px; max-width: 140px; height: 100%;
-  background: linear-gradient(180deg, rgba(255,215,110,0.6) 0%, rgba(255,160,70,0.32) 38%, rgba(20,180,210,0.08) 72%, transparent 100%);
-  filter: blur(6px); z-index: 2; animation: sunsetReflect 5s ease-in-out infinite;
+  width: 32vw; min-width: 220px; max-width: 440px; height: 100%;
+  clip-path: polygon(36% 0%, 64% 0%, 100% 100%, 0% 100%);
+  background: linear-gradient(180deg, rgba(255,225,120,0.7) 0%, rgba(255,160,70,0.38) 35%, rgba(20,180,210,0.12) 70%, transparent 100%);
+  filter: blur(8px); z-index: 2; animation: sunsetReflect 5s ease-in-out infinite;
 }
 @keyframes sunsetReflect { 0%,100% { opacity: 0.8; transform: translateX(-50%) scaleY(1); } 50% { opacity: 1; transform: translateX(-50%) scaleY(1.06); } }
 
-/* Realistic layered ocean waves — super wavy overlapping sine rows */
+/* Realistic layered ocean waves — animated rising, falling, and rolling swells */
 .sunset-waves-svg { position: absolute; bottom: 0; left: -8%; width: 116%; height: 100%; display: block; }
-.sunset-waves-svg .wv { transform-origin: center; animation: waveSway ease-in-out infinite; }
-.wv-1 { fill: rgba(30,185,205,0.5); animation-duration: 6.5s; }
-.wv-2 { fill: rgba(18,150,178,0.58); animation-duration: 8s; animation-delay: -2s; }
-.wv-3 { fill: rgba(12,118,150,0.64); animation-duration: 7s; animation-delay: -4s; }
-.wv-4 { fill: rgba(8,88,122,0.72); animation-duration: 9s; animation-delay: -1.5s; }
-.wv-5 { fill: rgba(6,58,92,0.82); animation-duration: 10s; animation-delay: -3s; }
-@keyframes waveSway { 0%,100% { transform: translateX(-16px); } 50% { transform: translateX(16px); } }
+.sunset-waves-svg .wv { transform-origin: center bottom; will-change: transform; }
+.wv-1 { fill: rgba(30,195,215,0.48); animation: waveRise1 6.2s ease-in-out infinite alternate; }
+.wv-2 { fill: rgba(18,155,182,0.56); animation: waveRise2 8.4s ease-in-out infinite -2.1s alternate; }
+.wv-3 { fill: rgba(12,122,155,0.64); animation: waveRise3 7.0s ease-in-out infinite -4.3s alternate; }
+.wv-4 { fill: rgba(8,92,128,0.72); animation: waveRise4 9.8s ease-in-out infinite -1.5s alternate; }
+.wv-5 { fill: rgba(6,60,96,0.85); animation: waveRise5 11.2s ease-in-out infinite -3.8s alternate; }
+
+@keyframes waveRise1 {
+  0% { transform: translateX(-22px) translateY(-18px) scaleY(1); }
+  50% { transform: translateX(0px) translateY(8px) scaleY(0.92); }
+  100% { transform: translateX(22px) translateY(16px) scaleY(1.08); }
+}
+@keyframes waveRise2 {
+  0% { transform: translateX(26px) translateY(20px) scaleY(0.94); }
+  50% { transform: translateX(-6px) translateY(-14px) scaleY(1.12); }
+  100% { transform: translateX(-26px) translateY(-26px) scaleY(1.02); }
+}
+@keyframes waveRise3 {
+  0% { transform: translateX(-30px) translateY(-22px) scaleY(1.05); }
+  50% { transform: translateX(8px) translateY(16px) scaleY(0.9); }
+  100% { transform: translateX(30px) translateY(24px) scaleY(1.14); }
+}
+@keyframes waveRise4 {
+  0% { transform: translateX(20px) translateY(24px) scaleY(0.92); }
+  50% { transform: translateX(-10px) translateY(-18px) scaleY(1.08); }
+  100% { transform: translateX(-20px) translateY(-32px) scaleY(1.04); }
+}
+@keyframes waveRise5 {
+  0% { transform: translateX(-16px) translateY(-14px) scaleY(1); }
+  50% { transform: translateX(4px) translateY(12px) scaleY(0.96); }
+  100% { transform: translateX(16px) translateY(18px) scaleY(1.06); }
+}
 
 /* Enter Gate Content Layout */
 .muse-enter-content {
@@ -405,8 +444,8 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .muse-btn.ghost { background: #ffffff; color: #0a0612; border: 2px solid #ffffff; box-shadow: 0 4px 20px rgba(255, 255, 255, 0.18); }
 .muse-btn.ghost:hover { background: #ffd700; border-color: #ffd700; color: #0a0612; transform: translateY(-3px); }
 
-.muse-hero-scroll { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; }
-.muse-hero-scroll .track { width: 1px; height: 46px; background: rgba(255,255,255,0.15); position: relative; overflow: hidden; }
+.muse-hero-scroll { position: relative; margin-top: 36px; margin-bottom: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; }
+.muse-hero-scroll .track { width: 1px; height: 40px; background: rgba(255,255,255,0.15); position: relative; overflow: hidden; }
 .muse-hero-scroll .track::after { content: ""; position: absolute; top: -50%; left: 0; width: 100%; height: 50%; background: var(--gold); animation: museScrollLine 1.8s cubic-bezier(.4,0,.2,1) infinite; }
 @keyframes museScrollLine { to { top: 100%; } }
 
