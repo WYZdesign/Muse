@@ -309,7 +309,7 @@ export default function MuseLandingPage() {
 
   return (
     <div className="muse-landing">
-      <BackgroundScene />
+      <BackgroundScene flash={null} />
       <div className="muse-noise" />
       <div ref={progressRef} className="muse-progress" />
       <div className="muse-scroll-rail" aria-hidden="true">
