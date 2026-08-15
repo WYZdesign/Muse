@@ -282,6 +282,7 @@ function MusePage() {
   const shuffleSeed = useRef(Math.floor(Math.random() * 100000));
   const matchSwipeRef = useRef<{id:string;startX:number;el:HTMLElement|null}>({id:"",startX:0,el:null});
   const [matchSwiping, setMatchSwiping] = useState<{id:string;offset:number} | null>(null);
+  const [realtimeStatus, setRealtimeStatus] = useState<"connecting"|"connected"|"disconnected">("connecting");
   const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number;startTime:number;el:HTMLElement|null;axis:"x"|"y"|null}>({startX:0,startY:0,active:false,relY:0,startTime:0,el:null,axis:null});
   const likeLabelRef = useRef<HTMLDivElement>(null);
   const nopeLabelRef = useRef<HTMLDivElement>(null);
@@ -1051,6 +1052,7 @@ function MusePage() {
         setMatches(prev => prev.map(m => String(m.id) === theirId ? { ...m, messages: [...m.messages, msg] } : m));
         setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
       },
+      onStatus: (status) => setRealtimeStatus(status),
     });
     return unsub;
   }, [chatTarget?.id, authUser?.id]);
@@ -2452,6 +2454,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
                       <div className="chat-type">{chatTarget.type}</div>
                     </div>
                   </div>
+                  {realtimeStatus === "disconnected" && (
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"6px 12px",fontSize:12,fontWeight:600,color:"#ffb347",background:"rgba(255,140,0,0.12)",borderBottom:"1px solid rgba(255,140,0,0.25)"}}>
+                      <span style={{width:8,height:8,borderRadius:"50%",background:"#ffb347",animation:"pulseDot 1.2s ease-in-out infinite"}} />
+                      Reconnecting… messages will resume automatically
+                    </div>
+                  )}
                   <div className="messages" ref={messagesEndRef}>
                     {(chatTarget.messages || []).map((msg, i) => (
                       <div key={i} className={"msg "+(msg.from==="me"?"msg-me":"msg-them")}>

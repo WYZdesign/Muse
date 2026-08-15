@@ -55,10 +55,13 @@ export async function persistMessage(opts: {
  * Subscribe to realtime inserts on muse_messages for a conversation.
  * `onMessage` fires with the remote sender id + text. Returns an unsubscribe fn.
  */
+export type RealtimeStatus = "connecting" | "connected" | "disconnected";
+
 export function subscribeToConversation(opts: {
   myId: string;
   theirId: string;
   onMessage: (senderId: string, text: string) => void;
+  onStatus?: (status: RealtimeStatus) => void;
 }): () => void {
   if (!opts.myId || opts.myId === "local") return () => {};
   const convo = convoIdFor(opts.myId, opts.theirId);
@@ -81,7 +84,14 @@ export function subscribeToConversation(opts: {
         opts.onMessage(sender, text);
       }
     )
-    .subscribe();
+    .subscribe((status: string) => {
+      // status: SUBSCRIBED | CHANNEL_ERROR | TIMED_OUT | CLOSED
+      if (opts.onStatus) {
+        if (status === "SUBSCRIBED") opts.onStatus("connected");
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") opts.onStatus("disconnected");
+        else if (status === "CLOSED") opts.onStatus("disconnected");
+      }
+    });
   return () => {
     try { supabase.removeChannel(channel); } catch (err) {
       trackError("realtime_unsubscribe_failed", { convo, err: String(err) });

@@ -107,7 +107,8 @@ export async function GET(req: NextRequest) {
       }
       const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") || "200", 10) || 200, 500);
       const before = req.nextUrl.searchParams.get("before") || undefined;
-      let query = sb.from("muse_messages").select("*").eq("match_id", matchId).order("created_at", { ascending: false }).limit(limit);
+      // Oldest-first (correct chat display order) so clients can render raw without reversing.
+      let query = sb.from("muse_messages").select("*").eq("match_id", matchId).order("created_at", { ascending: true }).limit(limit);
       if (before) query = query.lt("created_at", before);
       const { data } = await query;
       return NextResponse.json({ messages: data || [] });

@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       const { data: authUser, error: authErr } = await sb.auth.admin.createUser({
         email: email.toLowerCase(),
         password,
-        email_confirm: true,
+        email_confirm: false,
         user_metadata: { name: name || email.split("@")[0] },
       });
       if (authErr) return safeServerError(authErr, "register auth");
@@ -76,6 +76,10 @@ export async function POST(req: NextRequest) {
         password,
       });
       if (authErr) return NextResponse.json({ error: authErr.message }, { status: 401 });
+
+      if (!authData.user.email_confirmed_at) {
+        return NextResponse.json({ error: "Please verify your email before logging in", code: "EMAIL_NOT_VERIFIED" }, { status: 403 });
+      }
 
       const sb = getServiceClient();
       const { data: profile } = await sb.from("muse_profiles").select("*").eq("auth_id", authData.user.id).maybeSingle();

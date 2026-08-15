@@ -950,6 +950,8 @@ img{background-color:#1a0a2e}
 .match-radial-btn.btn-nope{background:rgba(10,6,18,0.85)}
 .match-radial-btn.btn-note{background:linear-gradient(135deg,#1a0a2e,#533483)}
 
+@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:0.3}}
+
 /* Screen transitions */
 .screen-el{opacity:0;pointer-events:none}
 .screen-el.active{opacity:1;pointer-events:auto}
