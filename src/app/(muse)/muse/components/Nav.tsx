@@ -54,7 +54,6 @@ export default React.memo(function Nav({ active, onNavigate, onHamburgerToggle, 
         } as React.CSSProperties : undefined;
         return (
           <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs" as Screen); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined} style={{ "--line-color": color } as React.CSSProperties}>
-            {isActive && <div className="nav-indicator" style={{position:"absolute",top:-2,left:0,right:0,margin:"0 auto",width:20,height:3,borderRadius:2,background:"var(--gold)"}} />}
             <span className="nav-icon" style={isActive ? { ...iconGradient, display:"inline-flex", alignItems:"center", justifyContent:"center" } : undefined}>{tab.icon}</span>
             <span className="nav-label" style={isActive ? gradientStyle : { color:"var(--muted)", fontWeight: 600 }}>{" " + tab.label}</span>
           </button>

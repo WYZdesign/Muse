@@ -2342,10 +2342,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                           {post.shares > 0 && <span style={{fontSize:12,color:"var(--muted)"}}>{post.shares} shares</span>}
                         </div>
                       </div>
-                      <div style={{display:"flex",gap:8,padding:"12px 10px",borderTop:"1px solid rgba(255,255,255,0.04)"}}>
-                        <button className={"feed-action-btn"+(post.liked?" liked-pop":"")} style={{flex:1,background:post.liked?"rgba(239,68,68,0.18)":"rgba(239,68,68,0.07)",border:post.liked?"1px solid rgba(239,68,68,0.35)":"1px solid rgba(239,68,68,0.16)",color:post.liked?"#ff5c5c":"#ef4444",cursor:"pointer",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:7,padding:"12px 0",borderRadius:12}} onClick={()=>{setFeedPosts(prev=>prev.map(p=>p.id===post.id?({...p,liked:!p.liked}):p));if(feedPostsStatic.some(p=>p.id===post.id))setFeedPostsStatic(prev=>prev.map(p=>p.id===post.id?({...p,liked:!p.liked}):p));}}>♥ {post.likes+(post.liked?1:0)}</button>
-                        <button className="feed-action-btn" style={{flex:1,background:"rgba(30,144,255,0.07)",border:"1px solid rgba(30,144,255,0.16)",color:"#1E90FF",cursor:"pointer",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:7,padding:"12px 0",borderRadius:12}} onClick={()=>setReplyingTo(replyingTo===post.id?null:post.id)}>💬 {post.comments}</button>
-                        <button className="feed-action-btn" style={{flex:1,background:"rgba(255,215,0,0.07)",border:"1px solid rgba(255,215,0,0.16)",color:"var(--gold)",cursor:"pointer",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:7,padding:"12px 0",borderRadius:12}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/post/"+post.id);showToast("Link copied!")}}>↗ {post.shares}</button>
+                      <div style={{display:"flex",gap:10,padding:"12px 16px",borderTop:"1px solid rgba(255,255,255,0.05)"}}>
+                        <button className={"feed-action-btn"+(post.liked?" liked-pop":"")} style={{flex:1,height:42,background:post.liked?"rgba(239,68,68,0.18)":"rgba(255,255,255,0.04)",border:post.liked?"1.5px solid rgba(239,68,68,0.35)":"1px solid rgba(255,255,255,0.08)",color:post.liked?"#ff5c5c":"#ff8a8a",cursor:"pointer",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8,borderRadius:14,transition:"all .2s ease"}} onClick={()=>{setFeedPosts(prev=>prev.map(p=>p.id===post.id?({...p,liked:!p.liked}):p));if(feedPostsStatic.some(p=>p.id===post.id))setFeedPostsStatic(prev=>prev.map(p=>p.id===post.id?({...p,liked:!p.liked}):p));}}>♥ {post.likes+(post.liked?1:0)}</button>
+                        <button className="feed-action-btn" style={{flex:1,height:42,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"#87CEEE",cursor:"pointer",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8,borderRadius:14,transition:"all .2s ease"}} onClick={()=>setReplyingTo(replyingTo===post.id?null:post.id)}>💬 {post.comments}</button>
+                        <button className="feed-action-btn" style={{flex:1,height:42,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"var(--gold)",cursor:"pointer",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8,borderRadius:14,transition:"all .2s ease"}} onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/post/"+post.id);showToast("Link copied!")}}>↗ {post.shares}</button>
                       </div>
                       {replyingTo === post.id && (
                         <div style={{display:"flex",gap:8,padding:"10px 18px",borderTop:"1px solid rgba(255,255,255,0.04)"}}>
@@ -2360,68 +2360,87 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <Nav active="connections" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
               <div className={"screen-el"+(screen==="matches"?" active":"")}>
-              <div className="hdr">
-                <div style={{display:"flex",gap:12,alignItems:"center"}}>
+                <div className="hdr" style={{justifyContent:"space-between",alignItems:"center",padding:"12px 18px"}}>
                   <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                  {!searchOpen ? (<button className="hdr-btn" style={{width:34,height:34}} onClick={()=>setSearchOpen(true)}><FiSearch size={16} /></button>) : (
-                    <div style={{display:"flex",alignItems:"center",gap:6,animation:"fadeIn .2s ease"}}>
-                      <input className="inp" placeholder="Search..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} autoFocus style={{margin:0,padding:"6px 10px",fontSize:12,width:120,borderRadius:99}} />
-                      <button className="hdr-btn" style={{width:30,height:30,borderRadius:"50%",fontSize:12}} onClick={()=>{setSearchOpen(false);setSearchQuery("")}}>✕</button>
-                    </div>
-                  )}
+                  <div className="logo-link" style={{fontSize:30,backgroundImage:"linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent",position:"absolute",left:"50%",transform:"translateX(-50%)",whiteSpace:"nowrap"}}>Muses</div>
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <button className="hdr-btn" style={{width:34,height:34,borderRadius:10}} onClick={()=>setSearchOpen(!searchOpen)} aria-label="Search"><FiSearch size={16} /></button>
+                    {!showLikesYou && (
+                      <button className="hdr-btn" style={{width:34,height:34,borderRadius:10,fontSize:12,fontWeight:700}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")} aria-label="Toggle view">{matchesView==="list"?"⊞":"☰"}</button>
+                    )}
+                  </div>
                 </div>
-                <div className="logo-link" style={{fontSize:32,backgroundImage:"linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent",position:"absolute",left:"50%",transform:"translateX(-50%)",whiteSpace:"nowrap"}}>Muses</div>
-<div style={{display:"flex",gap:10}}>
-{!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{width:"auto",height:34,padding:"0 12px",fontSize:12,fontWeight:700}} onClick={()=>setMatchesView(v=>v==="list"?"grid":"list")}>{matchesView==="list"?"Grid":"List"}</button>)}
-{!searchOpen && !showLikesYou && (<button className="hdr-btn" style={{position:"relative",width:34,height:34,overflow:"visible"}} onClick={()=>setShowLikesYou(!showLikesYou)}><FiHeart size={16} />{likedBy.length > 0 && <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,boxShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>{likedBy.length}</span>}</button>)}
-</div>
-              </div>
-              {!showLikesYou && searchOpen && <div className="overlay-bg" onClick={()=>{setSearchOpen(false);setSearchQuery("")}} style={{position:"absolute",inset:0,zIndex:5}} />}
-              {showLikesYou ? (
-                <div style={{flex:1,overflowY:"auto",padding:"0 20px 80px"}}>
-                  <button className="chat-back" onClick={()=>setShowLikesYou(false)} style={{marginLeft:-8,marginBottom:8}}><FiArrowLeft size={20} /></button>
-                  <div style={{fontSize:18,fontWeight:800,marginBottom:4}}>Likes You</div>
-                  <div style={{fontSize:13,color:"var(--text2)",marginBottom:16}}>People who swiped right on you</div>
-                  {likedBy.length === 0 ? (
-                    <div className="empty-state">
-                      <div className="empty-icon"><FiHeart size={48} /></div>
-                      <div className="empty-title">No likes yet</div>
-                      <div className="empty-sub">Keep swiping, people will start noticing you</div>
-                    </div>
-                  ) : (
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12}}>
-                      {likedBy.map(p => (
-                        <div key={p.id} style={{position:"relative",borderRadius:16,overflow:"hidden",aspectRatio:"3/4",cursor:"pointer"}} onClick={()=>{if(currentUser.tier!=="muse_pro"){showToast("Upgrade to Muse Pro to view profiles");setShowPremiumPopup(true);}else{setViewProfile(p);}}}>
-                          <img loading="lazy" src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover",filter:currentUser.tier!=="muse_pro"?"blur(3px)":undefined}} />
-                          <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"12px",background:"linear-gradient(to top,rgba(10,6,18,0.9),transparent)"}}>
-                            <div style={{fontSize:15,fontWeight:700}}>{p.name}</div>
-                            <div style={{fontSize:12,background:"linear-gradient(90deg,var(--gold),var(--amber))",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:600}}>{p.type}</div>
-                          </div>
-                          <div style={{position:"absolute",top:8,right:8,padding:"4px 10px",borderRadius:99,background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:10,fontWeight:700,color:"#fff"}}>♥ Liked You</div>
-                          {currentUser.tier!=="muse_pro" && (<div style={{position:"absolute",top:8,left:8,padding:"2px 8px",borderRadius:99,background:"rgba(0,0,0,0.6)",fontSize:10,fontWeight:600,color:"#fff"}}>PRO</div>)}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+
+                {/* Sub-nav tabs: Matches vs Likes You */}
+                <div style={{display:"flex",gap:6,margin:"0 16px 12px",padding:"3px",background:"rgba(255,255,255,0.04)",borderRadius:14,border:"1px solid rgba(255,255,255,0.06)"}}>
+                  <button
+                    style={{flex:1,padding:"8px 0",borderRadius:11,border:"none",background:!showLikesYou?"linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))":"transparent",color:!showLikesYou?"var(--gold)":"var(--text2)",fontWeight:700,fontSize:13,cursor:"pointer",transition:"all .25s",boxShadow:!showLikesYou?"0 2px 8px rgba(255,69,0,0.15)":"none"}}
+                    onClick={()=>setShowLikesYou(false)}
+                  >
+                    Matches {matches.length > 0 ? `(${matches.length})` : ""}
+                  </button>
+                  <button
+                    style={{flex:1,padding:"8px 0",borderRadius:11,border:"none",background:showLikesYou?"linear-gradient(135deg,rgba(255,20,147,0.25),rgba(255,105,180,0.15))":"transparent",color:showLikesYou?"#FF69B4":"var(--text2)",fontWeight:700,fontSize:13,cursor:"pointer",transition:"all .25s",display:"flex",alignItems:"center",justifyContent:"center",gap:6,boxShadow:showLikesYou?"0 2px 8px rgba(255,20,147,0.15)":"none"}}
+                    onClick={()=>setShowLikesYou(true)}
+                  >
+                    <span>♥ Likes You</span>
+                    {likedBy.length > 0 && (
+                      <span style={{padding:"1px 6px",borderRadius:99,background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:10,fontWeight:800,color:"#fff"}}>{likedBy.length}</span>
+                    )}
+                  </button>
                 </div>
-              ) : (
-              <>
-              <div className="match-list" style={matchesView==="grid" ? {flex:1,display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12,alignContent:"flex-start",overflowY:"auto",padding:"12px 16px 80px"} : {flex:1,display:"flex",flexDirection:"column",alignItems:"stretch",justifyContent:"flex-start",overflowY:"auto",padding:"0 0 80px"}}>
-                {matches.length === 0 && (
-                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",padding:40}}>
-                    <div className="empty-icon"><FiHeart size={64} /></div>
-                    <div style={{fontSize:20,fontWeight:800,color:"var(--text)",whiteSpace:"nowrap"}}>No sparks yet</div>
-                    <div style={{fontSize:13,color:"var(--text2)",maxWidth:240,marginTop:6}}>Start swiping to find your creative connections</div>
+
+                {/* Search Bar when active */}
+                {searchOpen && (
+                  <div style={{margin:"0 16px 12px",display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:12,padding:"6px 12px",animation:"fadeIn .2s ease"}}>
+                    <FiSearch size={14} color="var(--muted)" />
+                    <input className="inp" placeholder="Search by name or style..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} autoFocus style={{flex:1,margin:0,padding:"4px 0",border:"none",background:"transparent",fontSize:13,color:"var(--text)"}} />
+                    {searchQuery && <button onClick={()=>setSearchQuery("")} style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:12}}>✕</button>}
                   </div>
                 )}
-                {matches.filter(m => searchQuery === "" || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(m => (
-                  <MatchCard key={m.id} m={m} expanded={expandedMatchId === String(m.id)} swiping={matchSwiping?.id === String(m.id) ? matchSwiping : null} view={matchesView} actions={matchActions} />
-                ))}
+
+                {showLikesYou ? (
+                  <div style={{flex:1,overflowY:"auto",padding:"0 16px 80px"}}>
+                    <div style={{fontSize:13,color:"var(--text2)",marginBottom:14}}>People who liked your profile and want to connect</div>
+                    {likedBy.length === 0 ? (
+                      <div className="empty-state" style={{padding:"40px 20px",textAlign:"center"}}>
+                        <div className="empty-icon" style={{fontSize:48,marginBottom:12}}>♥</div>
+                        <div className="empty-title" style={{fontSize:18,fontWeight:800}}>No likes yet</div>
+                        <div className="empty-sub" style={{fontSize:13,color:"var(--text2)",maxWidth:260,margin:"6px auto 0"}}>Keep your profile fresh and active — sparks will start flying!</div>
+                      </div>
+                    ) : (
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12}}>
+                        {likedBy.map(p => (
+                          <div key={p.id} style={{position:"relative",borderRadius:16,overflow:"hidden",aspectRatio:"3/4",cursor:"pointer",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)"}} onClick={()=>{if(currentUser.tier!=="muse_pro"){showToast("Upgrade to Muse Pro to view profiles");setShowPremiumPopup(true);}else{setViewProfile(p);}}}>
+                            <img loading="lazy" src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover",filter:currentUser.tier!=="muse_pro"?"blur(4px)":undefined}} />
+                            <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"12px 10px",background:"linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.6) 60%,transparent 100%)"}}>
+                              <div style={{fontSize:14,fontWeight:700,color:"#fff"}}>{p.name}</div>
+                              <div style={{fontSize:11,color:"var(--gold)",fontWeight:600}}>{p.type}</div>
+                            </div>
+                            <div style={{position:"absolute",top:8,right:8,padding:"3px 8px",borderRadius:99,background:"linear-gradient(135deg,var(--coral),var(--pink))",fontSize:9,fontWeight:800,color:"#fff",boxShadow:"0 2px 8px rgba(0,0,0,0.4)"}}>♥ Liked You</div>
+                            {currentUser.tier!=="muse_pro" && (<div style={{position:"absolute",top:8,left:8,padding:"2px 7px",borderRadius:99,background:"rgba(0,0,0,0.65)",fontSize:9,fontWeight:700,color:"var(--gold)",border:"1px solid rgba(255,215,0,0.3)"}}>PRO</div>)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="match-list" style={matchesView==="grid" ? {flex:1,display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12,alignContent:"flex-start",overflowY:"auto",padding:"8px 16px 80px"} : {flex:1,display:"flex",flexDirection:"column",alignItems:"stretch",justifyContent:"flex-start",overflowY:"auto",padding:"0 0 80px"}}>
+                    {matches.length === 0 && (
+                      <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",padding:"48px 24px"}}>
+                        <div className="empty-icon" style={{fontSize:56,marginBottom:12}}>♥</div>
+                        <div style={{fontSize:20,fontWeight:800,color:"var(--text)",whiteSpace:"nowrap"}}>No sparks yet</div>
+                        <div style={{fontSize:13,color:"var(--text2)",maxWidth:260,marginTop:6,lineHeight:1.5}}>Swipe right on creatives in Discover to ignite new collaborations.</div>
+                        <button className="btn btn-gold" style={{marginTop:18,padding:"10px 24px",fontSize:13,fontWeight:700,borderRadius:12}} onClick={()=>showScreen("discover")}>Start Discovering</button>
+                      </div>
+                    )}
+                    {matches.filter(m => searchQuery === "" || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(m => (
+                      <MatchCard key={m.id} m={m} expanded={expandedMatchId === String(m.id)} view={matchesView} actions={matchActions} />
+                    ))}
+                  </div>
+                )}
+                <Nav active="matches" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
               </div>
-              </>
-              )}
-              <Nav active="matches" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
-            </div>
             <div className={"screen-el"+(screen==="chat"&&chatTarget?" active":"")}>
               {chatTarget && (
                 <div className="chat-wrap">
@@ -2810,20 +2829,23 @@ const isMatch=matchScore>55||Math.random()>0.5;
               <Nav active="portfolio" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
             </div>
              <div className={"screen-el"+(screen==="moments"?" active":"")}>
-               <div className="hdr">
+               <div className="hdr" style={{justifyContent:"space-between",alignItems:"center",padding:"12px 18px"}}>
                  <button className="chat-back" onClick={()=>showScreen("discover")}><FiArrowLeft size={20} /></button>
-                  <div className="logo-link" style={{fontSize:32,backgroundImage:"linear-gradient(90deg,#FF1493,#FF0000,#DDA0DD,#FF1493,#FF69B4,#FF1493)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>BTS</div>
-                  <div style={{width:40}} />
+                 <div className="logo-link" style={{fontSize:30,backgroundImage:"linear-gradient(90deg,#FF1493,#FF69B4,#FFA07A,#FFD700)",backgroundSize:"300% 100%",WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent",position:"absolute",left:"50%",transform:"translateX(-50%)",whiteSpace:"nowrap"}}>Behind The Scenes</div>
+                 <button className="hdr-btn" style={{width:34,height:34,borderRadius:10}} onClick={()=>{showScreen("connections");showToast("Share your BTS moment!");}} aria-label="Snap moment"><FiCamera size={16} /></button>
                </div>
                <div style={{flex:1,overflowY:"auto",padding:"0 0 80px"}}>
                <div className="moments-page">
                 <div className="moments-hero">
-                  <h2>Behind The Scenes</h2>
-                  <p>Raw creative process. BTS, WIP, unpolished gold.</p>
+                  <h2>Raw Creative Process</h2>
+                  <p>Unpolished work, WIP experiments, studio setups & candid moments.</p>
                 </div>
                 <div className="moments-quick-capture" onClick={()=>{showScreen("connections");showToast("Share your moment from the Feed composer!")}}>
-                  <div className="moments-quick-capture-icon">📸</div>
-                  <span>What's happening? Snap a moment...</span>
+                  <div className="moments-quick-capture-icon"><FiCamera size={20} color="#fff" /></div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"var(--text)"}}>Snap a Behind-the-Scenes Moment</div>
+                    <div style={{fontSize:11,color:"var(--muted)"}}>Share what you&apos;re currently creating</div>
+                  </div>
                 </div>
                 <div className="moments-story-row">
                   {stories.slice(0, 8).map((s,i)=>(
@@ -2848,39 +2870,45 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <span key={t} className={"moments-tab"+(t==="All"?" active":"")}>{t}</span>
                   ))}
                 </div>
-                {stories.map(s=>(
-                  <div key={s.id} className="moments-card">
-                    <img loading="lazy" src={s.img||s.avatar} alt="" className="moments-card-img" onError={handleImgError} />
-                    <div className="moments-card-body">
-                      <div className="moments-card-user">
-                        <img loading="lazy" src={s.avatar} alt="" className="moments-card-avatar" onError={handleImgError} />
-                        <div>
-                          <div className="moments-card-username">{s.author}</div>
-                          <div className="moments-card-loc">📍 {s.time}</div>
+                <div className="moments-feed">
+                  {stories.map(s=>(
+                    <div key={s.id} className="moments-card">
+                      <div className="moments-card-body" style={{paddingBottom:8}}>
+                        <div className="moments-card-user">
+                          <img loading="lazy" src={s.avatar} alt="" className="moments-card-avatar" onError={handleImgError} />
+                          <div>
+                            <div className="moments-card-username">{s.author}</div>
+                            <div className="moments-card-loc">📍 {s.time}</div>
+                          </div>
+                        </div>
+                        <div className="moments-card-caption">{s.text || "A creative moment captured."}</div>
+                      </div>
+                      <img loading="lazy" src={s.img||s.avatar} alt="" className="moments-card-img" onError={handleImgError} />
+                      <div className="moments-card-body" style={{paddingTop:10}}>
+                        <div className="moments-card-stats">
+                          <button className={"moments-action-btn"+(s.liked?" liked":"")} onClick={()=>{setStories(prev=>prev.map(item=>item.id===s.id?{...item,liked:!item.liked,likes:(item.likes||0)+(item.liked?-1:1)}:item));}}>♥ {s.likes||0}</button>
+                          <button className="moments-action-btn" onClick={()=>{showScreen("connections");showToast("Open feed to comment");}}>💬 {s.comments||0}</button>
+                          <button className="moments-action-btn" onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/post/"+s.id);showToast("Moment link copied!");}}>↗ Share</button>
                         </div>
                       </div>
-                      <div className="moments-card-caption">{s.text || "A creative moment captured."}</div>
-                      <div className="moments-card-stats">
-                        <span>♥ {s.likes||0}</span><span>💬 {s.comments||0}</span><span>↗ Share</span>
-                      </div>
                     </div>
-                  </div>
-                ))}
-                {stories.length===0 && [1,2,3].map(i=>(
-                  <div key={i} className="moments-card" style={{opacity:0.7}}>
-                    <div className="moments-card-img" style={{background:"linear-gradient(135deg,rgba(255,107,107,0.15),rgba(255,217,61,0.1))",height:220}} />
-                    <div className="moments-card-body">
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                        <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}} />
-                        <div>
-                          <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>No moments yet</div>
-                          <div style={{fontSize:11,color:"var(--muted)"}}>Moments disappear after 24 hours</div>
+                  ))}
+                  {stories.length===0 && [1,2,3].map(i=>(
+                    <div key={i} className="moments-card" style={{opacity:0.7}}>
+                      <div className="moments-card-img" style={{background:"linear-gradient(135deg,rgba(255,20,147,0.15),rgba(255,217,61,0.1))",height:220}} />
+                      <div className="moments-card-body">
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                          <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}} />
+                          <div>
+                            <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>No moments yet</div>
+                            <div style={{fontSize:11,color:"var(--muted)"}}>Moments disappear after 24 hours</div>
+                          </div>
                         </div>
+                        <div style={{fontSize:13,color:"var(--text2)"}}>Be the first to post a Moment and light up this feed!</div>
                       </div>
-                      <div style={{fontSize:13,color:"var(--text2)"}}>Be the first to post a Moment and light up this feed!</div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
                </div>
                </div>
                <Nav active="moments" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
