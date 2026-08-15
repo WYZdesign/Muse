@@ -10,7 +10,7 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-export default function BackgroundScene({ flash }: { flash: string | null }) {
+export default function BackgroundScene({ flash, paused = false }: { flash: string | null; paused?: boolean }) {
   const cometRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
 
@@ -62,10 +62,12 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
   }, []);
 
   useEffect(() => {
+    if (paused) return;
     const canvas = cometRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     let w = 0, h = 0;
     const resize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
     resize();
@@ -188,7 +190,7 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
     const onVis = () => { if (document.hidden) { cancelAnimationFrame(animId); } else { animId = requestAnimationFrame(animate); } };
     document.addEventListener("visibilitychange", onVis);
     return () => { cancelAnimationFrame(animId); document.removeEventListener("visibilitychange", onVis); window.removeEventListener("resize", resize); };
-  }, []);
+  }, [paused]);
 
   return (
     <>

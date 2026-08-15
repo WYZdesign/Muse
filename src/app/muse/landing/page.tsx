@@ -281,7 +281,7 @@ export default function MuseLandingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string } | null>(null);
   const [gateClosing, setGateClosing] = useState(false);
-  const [gateGone, setGateGone] = useState(false);
+  const [gateGone, setGateGone] = useState(() => typeof window !== "undefined" && sessionStorage.getItem("muse_entered") === "1");
   const [navScrolled, setNavScrolled] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
   const railFillRef = useRef<HTMLDivElement>(null);
@@ -348,7 +348,7 @@ export default function MuseLandingPage() {
 
   return (
     <div className="muse-landing">
-      <BackgroundScene flash={null} />
+      <BackgroundScene flash={null} paused={!gateGone} />
       <div className="muse-bg-overlay" aria-hidden="true" />
       <div className="muse-noise" />
       <div ref={progressRef} className="muse-progress" />
@@ -491,6 +491,26 @@ export default function MuseLandingPage() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section className="muse-section">
+        <div className="muse-container">
+          <Reveal className="muse-section-head">
+            <span className="muse-kicker">Early Voices</span>
+            <h2 className="muse-section-title">Creatives Are <span className="accent">Already In</span></h2>
+          </Reveal>
+          <div className="muse-testimonials-grid">
+            {TESTIMONIALS.map((t, i) => (
+              <Reveal key={t.name} delay={i * 0.1}>
+                <figure className="muse-testimonial">
+                  <blockquote>{t.quote}</blockquote>
+                  <figcaption><strong>{t.name}</strong><span>{t.role}</span></figcaption>
+                </figure>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Founding members */}
       <section id="founding" className="muse-section">
         <div className="muse-container">
@@ -512,6 +532,9 @@ export default function MuseLandingPage() {
               </Reveal>
             ))}
           </div>
+          <Reveal delay={0.2}>
+            <div className="muse-referral-blurb"><FiGift size={18} /> Refer 3 friends and get Muse Pro free for a year — even before launch.</div>
+          </Reveal>
         </div>
       </section>
 
@@ -559,6 +582,19 @@ export default function MuseLandingPage() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <section id="faq" className="muse-section">
+        <div className="muse-container" style={{ maxWidth: 760 }}>
+          <Reveal className="muse-section-head">
+            <span className="muse-kicker">Questions</span>
+            <h2 className="muse-section-title">Frequently Asked</h2>
+          </Reveal>
+          <div className="muse-faq">
+            {FAQS.map(f => <FaqItem key={f.q} q={f.q} a={f.a} />)}
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="muse-footer">
         <div className="muse-container">
@@ -593,7 +629,7 @@ export default function MuseLandingPage() {
       )}
 
       {!gateGone && (
-        <div className={`muse-enter-gate ${gateClosing ? "closing" : ""}`} onClick={() => { if (!gateClosing) { setGateClosing(true); setTimeout(() => setGateGone(true), 850); } }}>
+        <div className={`muse-enter-gate ${gateClosing ? "closing" : ""}`} onClick={() => { if (!gateClosing) { setGateClosing(true); try { sessionStorage.setItem("muse_entered", "1"); } catch {} setTimeout(() => setGateGone(true), 850); } }}>
           <div className="sunset-scene" aria-hidden="true">
             <div className="sunset-sky" />
             <div className="sunset-overlay" />
@@ -640,12 +676,12 @@ export default function MuseLandingPage() {
             {/* Layered ocean waves in rich ocean blues */}
             <div className="sunset-ocean">
               <div className="sunset-reflection" />
-              <svg className="sunset-waves-svg" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
-                <path className="wv wv-1" d="M0,150 Q120,60 240,150 T480,150 T720,150 T960,150 T1200,150 T1440,150 L1440,320 L0,320 Z" />
-                <path className="wv wv-2" d="M0,185 Q120,280 240,185 T480,185 T720,185 T960,185 T1200,185 T1440,185 L1440,320 L0,320 Z" />
-                <path className="wv wv-3" d="M0,205 Q120,105 240,205 T480,205 T720,205 T960,205 T1200,205 T1440,205 L1440,320 L0,320 Z" />
-                <path className="wv wv-4" d="M0,235 Q120,320 240,235 T480,235 T720,235 T960,235 T1200,235 T1440,235 L1440,320 L0,320 Z" />
-                <path className="wv wv-5" d="M0,265 Q120,160 240,265 T480,265 T720,265 T960,265 T1200,265 T1440,265 L1440,320 L0,320 Z" />
+              <svg className="sunset-waves-svg" viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
+                <path className="wv wv-1" d="M0,130 Q120,-40 240,130 T480,130 T720,130 T960,130 T1200,130 T1440,130 L1440,360 L0,360 Z" />
+                <path className="wv wv-2" d="M0,165 Q120,320 240,165 T480,165 T720,165 T960,165 T1200,165 T1440,165 L1440,360 L0,360 Z" />
+                <path className="wv wv-3" d="M0,190 Q120,30 240,190 T480,190 T720,190 T960,190 T1200,190 T1440,190 L1440,360 L0,360 Z" />
+                <path className="wv wv-4" d="M0,220 Q120,360 240,220 T480,220 T720,220 T960,220 T1200,220 T1440,220 L1440,360 L0,360 Z" />
+                <path className="wv wv-5" d="M0,250 Q120,60 240,250 T480,250 T720,250 T960,250 T1200,250 T1440,250 L1440,360 L0,360 Z" />
               </svg>
             </div>
           </div>
