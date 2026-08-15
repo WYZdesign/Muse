@@ -395,6 +395,23 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .muse-stat .num { font-family: 'Playfair Display', serif; font-weight: 800; font-size: clamp(2.4rem, 5.5vw, 4rem); line-height: 1; background: linear-gradient(135deg, #ffd700, #ff8a80, #d4a5ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .muse-stat .lbl { display: block; margin-top: 9px; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
 
+/* ═══ MOBILE / TOUCH OPTIMIZATIONS ═══ */
+.muse-landing * { -webkit-tap-highlight-color: transparent; }
+.muse-landing a, .muse-landing button, .muse-landing input, .muse-landing select { touch-action: manipulation; }
+
+/* Tap press feedback */
+.muse-feature-card:active, .muse-safety-card:active, .muse-tier-card:active, .muse-step:active { transform: scale(0.965); }
+.muse-btn:active { transform: scale(0.95); }
+.muse-nav-cta:active, .muse-qr-btn:active, .muse-copy-btn:active { transform: scale(0.94); }
+
+/* Reduce heavy blur on mobile for smooth 60fps */
+@media (max-width: 720px) {
+  .scene-orb { filter: blur(55px); }
+  .nebula-fog { filter: blur(45px); }
+  .aurora-strip { filter: blur(28px); }
+  .muse-hero-title { font-size: clamp(2.4rem, 12vw, 4rem); }
+}
+
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 920px) {
   .muse-features-grid, .muse-safety-grid, .muse-tiers { grid-template-columns: repeat(2, 1fr); }
