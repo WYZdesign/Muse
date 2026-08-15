@@ -39,7 +39,9 @@ export async function POST(req: NextRequest) {
     if (action === "register") {
       const { email, password, name, data } = body;
       if (!email || !password) return NextResponse.json({ error: "Email and password required" }, { status: 400 });
-      const pwErr = validatePassword(password);
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+      if (String(password).length > 200) return NextResponse.json({ error: "Password too long" }, { status: 400 });
+      const pwErr = validatePassword(String(password));
       if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
 
       const sb = getServiceClient();
