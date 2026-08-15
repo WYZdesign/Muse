@@ -5,3 +5,11 @@ node_modules/
 .vercel
 tsconfig.tsbuildinfo
 *_pp.webp
+
+# Screenshot / test artifacts (not source)
+temp_screens/
+test-results/
+_AUDIT_SHOTS/
+_audit_artifacts/*.png
+_audit_artifacts/*.cjs
+scripts/capture_screens.mjs
