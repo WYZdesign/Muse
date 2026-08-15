@@ -81,7 +81,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
       const angle = Math.random() < 0.5
         ? (Math.PI * 0.08 + Math.random() * Math.PI * 0.22)   // down-right ~14-54°
         : (Math.PI * 0.72 + Math.random() * Math.PI * 0.2);   // down-left ~130-165°
-      const speed = (1.5 + Math.random() * 3) * 0.7, edge = Math.random();
+      const speed = 3.2 + Math.random() * 0.8, edge = Math.random();
       let x: number, y: number;
       if (edge < 0.25) { x = -50; y = Math.random() * h; }
       else if (edge < 0.5) { x = w + 50; y = Math.random() * h; }
@@ -92,7 +92,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
         color: COLORS[~~(Math.random() * COLORS.length)],
         tailLen: 80 + Math.random() * 140,
-        life: 0, maxLife: 300 + Math.random() * 500,
+        life: 0, maxLife: 160 + Math.random() * 100,
         sparks: [], active: true,
         size: 2.5 + Math.random() * 3,
         freq: 0.12 + Math.random() * 0.2,
@@ -160,11 +160,13 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
           ctx!.fill();
         }
       }
-      // Bottom waves — tall, spread out, teal/cyan/seafoam matching splash
+      // Bottom waves — layered ocean swell matching sunset landing palette
       const waveColors = [
-        { y: h * 0.72, alpha: 0.12, color: "20,200,210" },
-        { y: h * 0.78, alpha: 0.09, color: "10,160,180" },
-        { y: h * 0.84, alpha: 0.06, color: "0,120,150" },
+        { y: h * 0.72, alpha: 0.48, color: "30,195,215" },
+        { y: h * 0.78, alpha: 0.56, color: "18,155,182" },
+        { y: h * 0.84, alpha: 0.64, color: "12,122,155" },
+        { y: h * 0.88, alpha: 0.72, color: "8,92,128" },
+        { y: h * 0.92, alpha: 0.85, color: "6,60,96" },
       ];
       for (const wave of waveColors) {
         ctx!.save();

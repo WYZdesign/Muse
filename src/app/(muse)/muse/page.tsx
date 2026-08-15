@@ -1227,21 +1227,38 @@ function MusePage() {
 
   return !hydrated ? (
     <div style={{"display":"contents"}}>
-      <div className="scene"><div className="scene-wash" /><div className="scene-glow" /><div className="splash-sun" /><div className="splash-sun-glow" /></div>
-      <div className="app" data-theme={theme}>
-        <div className="skeleton-container">
-          {[1,2,3].map(i => (
-            <div key={i} className="skeleton-block">
-              <div className="skeleton-pulse" style={{width:"76px",height:"76px",borderRadius:"50%"}} />
-              <div className="skeleton-pulse" style={{width:"60%",height:"16px",marginTop:12}} />
-              <div className="skeleton-pulse" style={{width:"40%",height:"12px",marginTop:8}} />
-            </div>
+      <div className="splash-scene">
+        <div className="splash-sky" />
+        <div className="splash-overlay" />
+        <div className="splash-stars">
+          {Array.from({length:36}).map((_,i)=>(
+            <span key={i} className="splash-star" style={{left:`${(i*37)%100}%`,top:`${(i*13)%45}%`,animationDelay:`${(i%8)*0.4}s`}} />
           ))}
-            </div>
-            <div className="hamburger-waves">
-              <div className="wave wave-1" /><div className="wave wave-2" /><div className="wave wave-3" /><div className="wave wave-4" /><div className="wave wave-5" /><div className="wave wave-6" /><div className="wave wave-7" /><div className="wave wave-8" />
-            </div>
-          </div>
+        </div>
+        <div className="splash-meteor sm-1" /><div className="splash-meteor sm-2" /><div className="splash-meteor sm-3" />
+        <div className="splash-nebula sbn-1" /><div className="splash-nebula sbn-2" /><div className="splash-nebula sbn-3" />
+        <div className="splash-sun-glow" />
+        <div className="splash-sun" />
+        <div className="splash-cloud spc-1" /><div className="splash-cloud spc-2" /><div className="splash-cloud spc-3" />
+        <div className="splash-ocean">
+          <svg className="splash-waves-svg" viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
+            <path className="swv swv-6" d="M0,10 C240,50 480,-10 720,30 C960,70 1200,0 1440,20 L1440,360 L0,360 Z" />
+            <path className="swv swv-7" d="M0,35 C180,80 400,10 600,55 C800,90 1040,20 1240,60 C1360,75 1420,40 1440,50 L1440,360 L0,360 Z" />
+            <path className="swv swv-8" d="M0,60 C220,20 460,90 700,40 C940,0 1180,80 1440,55 L1440,360 L0,360 Z" />
+            <path className="swv swv-1" d="M0,120 C200,30 360,180 540,110 C720,40 900,160 1100,70 C1280,-10 1380,140 1440,110 L1440,360 L0,360 Z" />
+            <path className="swv swv-2" d="M0,150 C160,240 320,80 480,180 C640,260 800,100 980,190 C1160,270 1320,110 1440,170 L1440,360 L0,360 Z" />
+            <path className="swv swv-3" d="M0,190 C220,100 440,260 660,160 C880,80 1100,240 1300,130 C1380,90 1420,160 1440,180 L1440,360 L0,360 Z" />
+            <path className="swv swv-4" d="M0,225 C180,310 380,150 580,240 C780,320 980,170 1180,260 C1320,310 1400,210 1440,235 L1440,360 L0,360 Z" />
+            <path className="swv swv-5" d="M0,260 C260,170 520,310 780,220 C1040,150 1260,290 1440,240 L1440,360 L0,360 Z" />
+          </svg>
+        </div>
+      </div>
+      <div className="splash-content">
+        <img src="/muse-app-icon.png" alt="" className="splash-logo-icon" />
+        <div className="splash-logo-text">Muse</div>
+        <div className="splash-tagline">Creative Professional Network</div>
+        <div className="splash-loader"><div className="splash-loader-bar" /></div>
+      </div>
     </div>
   ) : (
     <div style={{"display":"contents"}}>

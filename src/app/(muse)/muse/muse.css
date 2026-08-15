@@ -98,20 +98,88 @@ a{color:inherit;text-decoration:none}
   50%{transform:translateX(6%) translateY(-6px) scaleY(1.2) skewX(3deg)}
 }
 
+/* ═══ SPLASH LOADING SCENE — sunset vibe matching landing page ═══ */
+.splash-scene{position:fixed;inset:0;overflow:hidden;z-index:0}
+.splash-sky{position:absolute;inset:0;background:linear-gradient(180deg,#100620 0%,#2a1245 12%,#4d1c52 24%,#8c2a52 36%,#c9454a 46%,#e86842 52%,#f79646 58%,#fdbb58 62%,#fed980 66%,#f09f54 67%,#186b84 68%,#0d4662 82%,#072235 100%)}
+.splash-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:1;pointer-events:none}
+
+/* Stars */
+.splash-stars{position:absolute;top:0;left:0;right:0;height:50%;z-index:1}
+.splash-star{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;box-shadow:0 0 4px rgba(255,255,255,0.7);animation:splashTwinkle 3s ease-in-out infinite}
+.splash-star:nth-child(3n){background:#ffd98a;box-shadow:0 0 5px rgba(255,217,138,0.8)}
+.splash-star:nth-child(5n){width:3px;height:3px}
+.splash-star:nth-child(7n){background:#d4a5ff;box-shadow:0 0 6px rgba(212,165,255,0.8)}
+@keyframes splashTwinkle{0%,100%{opacity:0.2;transform:scale(0.7)}50%{opacity:1;transform:scale(1.3)}}
+
+/* Shooting meteors */
+.splash-meteor{position:absolute;width:150px;height:2px;border-radius:999px;background:linear-gradient(90deg,transparent 0%,rgba(255,140,80,0.28) 35%,rgba(255,215,0,0.72) 75%,#fff 100%);filter:drop-shadow(0 0 4px rgba(255,215,0,0.8));opacity:0;pointer-events:none;z-index:1;will-change:transform,opacity}
+.splash-meteor::before{content:"";position:absolute;right:-1px;top:50%;transform:translateY(-50%);width:3px;height:3px;border-radius:50%;background:#fff;box-shadow:0 0 8px 2px rgba(255,255,255,0.9),0 0 18px 4px rgba(255,215,0,0.5)}
+.splash-meteor.sm-1{top:8%;left:30%;animation:shootA 7.5s linear infinite 1.5s}
+.splash-meteor.sm-2{top:13%;right:20%;animation:shootB 9.5s linear infinite 4.8s}
+.splash-meteor.sm-3{top:5%;left:52%;animation:shootC 8.5s linear infinite 6.5s}
+
+/* Nebula clouds */
+.splash-nebula{position:absolute;border-radius:50%;filter:blur(34px);mix-blend-mode:screen;opacity:0.85;animation:splashNebula 14s ease-in-out infinite;z-index:1}
+.sbn-1{width:48vw;height:25vw;background:radial-gradient(ellipse at 40% 60%,rgba(0,255,180,0.65) 0%,rgba(20,180,210,0.45) 40%,rgba(138,43,226,0.18) 70%,transparent 85%);top:1%;left:-8%}
+.sbn-2{width:44vw;height:23vw;background:radial-gradient(ellipse at 60% 40%,rgba(255,20,147,0.65) 0%,rgba(186,85,211,0.5) 40%,rgba(75,0,130,0.2) 70%,transparent 85%);top:7%;right:-6%;animation-delay:-3.5s}
+.sbn-3{width:36vw;height:19vw;background:radial-gradient(ellipse at 50% 50%,rgba(0,220,255,0.7) 0%,rgba(255,215,0,0.45) 45%,rgba(0,128,128,0.2) 75%,transparent 85%);top:0%;left:32%;animation-delay:-7s}
+@keyframes splashNebula{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(26px,-16px) scale(1.08)}}
+
+/* Sun */
+.splash-sun-glow{position:absolute;left:50%;bottom:33.3%;transform:translateX(-50%);width:58vw;height:32vw;border-radius:58vw 58vw 0 0;background:radial-gradient(ellipse at 50% 100%,rgba(255,200,90,0.65) 0%,rgba(255,140,60,0.3) 45%,transparent 75%);filter:blur(16px);animation:splashSunPulse 5s ease-in-out infinite;z-index:1}
+.splash-sun{position:absolute;left:50%;bottom:33.3%;transform:translateX(-50%);width:14vw;min-width:100px;max-width:160px;height:7vw;min-height:50px;max-height:80px;border-radius:160px 160px 0 0;background:radial-gradient(ellipse at 50% 100%,#ffffff 0%,#fff2be 25%,#ffb648 60%,#f1683c 100%);box-shadow:0 -8px 60px 20px rgba(255,185,75,0.7),0 -2px 18px 4px rgba(255,255,255,0.85);animation:splashSunBob 5s ease-in-out infinite;z-index:1}
+@keyframes splashSunPulse{0%,100%{opacity:0.82;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.06)}}
+@keyframes splashSunBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(3px)}}
+
+/* Drifting clouds */
+.splash-cloud{position:absolute;border-radius:50%;filter:blur(26px);opacity:0.7;mix-blend-mode:screen;animation:splashCloud linear infinite;z-index:1}
+.spc-1{width:26vw;height:7vw;top:20%;left:-30%;background:radial-gradient(ellipse,rgba(255,220,185,0.34),rgba(255,140,100,0.08) 55%,transparent 75%);animation-duration:26s}
+.spc-2{width:20vw;height:5.5vw;top:14%;left:-22%;background:radial-gradient(ellipse,rgba(255,190,215,0.3),rgba(212,165,255,0.08) 55%,transparent 75%);animation-duration:32s;animation-delay:-9s}
+.spc-3{width:30vw;height:8vw;top:30%;left:-35%;background:radial-gradient(ellipse,rgba(255,200,150,0.32),rgba(240,110,80,0.09) 55%,transparent 75%);animation-duration:22s;animation-delay:-4s}
+@keyframes splashCloud{0%{transform:translateX(0)}100%{transform:translateX(140vw)}}
+
+/* Ocean waves stacked to sun */
+.splash-ocean{position:absolute;left:0;right:0;bottom:0;height:33.3%;z-index:2}
+.splash-waves-svg{position:absolute;bottom:0;left:-8%;width:116%;height:100%;display:block}
+.splash-waves-svg .swv{transform-origin:center bottom;will-change:transform}
+.swv-1{fill:rgba(30,195,215,0.48);animation:swave1 6.2s ease-in-out infinite alternate}
+.swv-2{fill:rgba(18,155,182,0.56);animation:swave2 8.4s ease-in-out infinite -2.1s alternate}
+.swv-3{fill:rgba(12,122,155,0.64);animation:swave3 7.0s ease-in-out infinite -4.3s alternate}
+.swv-4{fill:rgba(8,92,128,0.72);animation:swave4 9.8s ease-in-out infinite -1.5s alternate}
+.swv-5{fill:rgba(6,60,96,0.85);animation:swave5 11.2s ease-in-out infinite -3.8s alternate}
+.swv-6{fill:rgba(30,195,215,0.3);animation:swave6 12s ease-in-out infinite alternate}
+.swv-7{fill:rgba(18,155,182,0.22);animation:swave7 10s ease-in-out infinite -3s alternate}
+.swv-8{fill:rgba(12,122,155,0.16);animation:swave8 8.8s ease-in-out infinite -5s alternate}
+@keyframes swave1{0%{transform:translateX(-22px) translateY(-18px) scaleY(1)}50%{transform:translateX(0) translateY(8px) scaleY(0.92)}100%{transform:translateX(22px) translateY(16px) scaleY(1.08)}}
+@keyframes swave2{0%{transform:translateX(26px) translateY(20px) scaleY(0.94)}50%{transform:translateX(-6px) translateY(-14px) scaleY(1.12)}100%{transform:translateX(-26px) translateY(-26px) scaleY(1.02)}}
+@keyframes swave3{0%{transform:translateX(-30px) translateY(-22px) scaleY(1.05)}50%{transform:translateX(8px) translateY(16px) scaleY(0.9)}100%{transform:translateX(30px) translateY(24px) scaleY(1.14)}}
+@keyframes swave4{0%{transform:translateX(20px) translateY(24px) scaleY(0.92)}50%{transform:translateX(-10px) translateY(-18px) scaleY(1.08)}100%{transform:translateX(-20px) translateY(-32px) scaleY(1.04)}}
+@keyframes swave5{0%{transform:translateX(-16px) translateY(-14px) scaleY(1)}50%{transform:translateX(4px) translateY(12px) scaleY(0.96)}100%{transform:translateX(16px) translateY(18px) scaleY(1.06)}}
+@keyframes swave6{0%{transform:translateX(-18px) translateY(-12px) scaleY(1)}50%{transform:translateX(6px) translateY(10px) scaleY(0.94)}100%{transform:translateX(18px) translateY(14px) scaleY(1.06)}}
+@keyframes swave7{0%{transform:translateX(14px) translateY(10px) scaleY(0.96)}50%{transform:translateX(-8px) translateY(-12px) scaleY(1.08)}100%{transform:translateX(-14px) translateY(-16px) scaleY(1.02)}}
+@keyframes swave8{0%{transform:translateX(-10px) translateY(-8px) scaleY(1.02)}50%{transform:translateX(4px) translateY(6px) scaleY(0.96)}100%{transform:translateX(10px) translateY(10px) scaleY(1.04)}}
+
+/* Centered branding + loader */
+.splash-content{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.splash-logo-icon{width:120px;height:120px;border-radius:32px;object-fit:cover;background:#0a0612;box-shadow:0 8px 40px rgba(0,0,0,0.5);border:none;animation:splashIconFloat 4.2s ease-in-out infinite}
+@keyframes splashIconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.splash-logo-text{font-family:'Playfair Display',serif;font-style:italic;font-size:48px;font-weight:900;background:linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFB5C2,#FF8C69,#FFD700);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lavaFlow 7s ease-in-out infinite;margin-top:12px}
+.splash-tagline{color:rgba(240,234,255,0.72);font-size:14px;margin-top:6px;letter-spacing:0.5px}
+.splash-loader{width:120px;height:3px;border-radius:2px;background:rgba(255,255,255,0.1);margin-top:24px;overflow:hidden}
+.splash-loader-bar{width:40%;height:100%;border-radius:2px;background:linear-gradient(90deg,#FFD700,#FF8A80,#D4A5FF);animation:splashLoad 1.4s ease-in-out infinite}
+@keyframes splashLoad{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+
 /* ═══ OCEAN WAVES — bottom of every page ═══ */
 .ocean-waves{position:fixed;bottom:0;left:0;width:100%;height:80px;z-index:1;pointer-events:none;overflow:hidden;opacity:0.4}
 .wave{position:absolute;bottom:-10px;left:-5%;width:120%;height:60px;border-radius:40% 50% 0 0;animation:waveDrift 8s ease-in-out infinite}
-.wave-1{background:linear-gradient(180deg,rgba(255,154,86,0.22) 0%,rgba(255,181,140,0.12) 50%,transparent 100%);animation-delay:0s}
-.wave-2{background:linear-gradient(180deg,rgba(255,107,107,0.18) 0%,rgba(255,138,128,0.1) 50%,transparent 100%);animation-delay:-3s;bottom:-18px;border-radius:35% 45% 0 0}
-.wave-3{background:linear-gradient(180deg,rgba(255,181,194,0.16) 0%,rgba(255,154,86,0.08) 50%,transparent 100%);animation-delay:-5s;bottom:-25px;border-radius:30% 50% 0 0}
-.wave-4{background:linear-gradient(180deg,rgba(255,138,128,0.2) 0%,rgba(255,181,140,0.1) 50%,transparent 100%);animation-delay:-1.5s;bottom:-14px;border-radius:45% 40% 0 0}
-.wave-5{background:linear-gradient(180deg,rgba(255,154,86,0.14) 0%,rgba(255,107,107,0.07) 50%,transparent 100%);animation-delay:-6.5s;bottom:-30px;border-radius:38% 48% 0 0}
-.wave-6{background:linear-gradient(180deg,rgba(255,181,140,0.24) 0%,rgba(255,154,86,0.12) 50%,transparent 100%);animation-delay:-2.2s;bottom:-20px;border-radius:42% 44% 0 0}
-.wave-7{background:linear-gradient(180deg,rgba(255,107,107,0.2) 0%,rgba(255,181,194,0.1) 50%,transparent 100%);animation-delay:-4.4s;bottom:-34px;border-radius:36% 46% 0 0}
-.wave-8{background:linear-gradient(180deg,rgba(255,220,120,0.18) 0%,rgba(255,154,86,0.09) 50%,transparent 100%);animation-delay:-7.8s;bottom:-40px;border-radius:40% 42% 0 0}
-.splash-sun{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(255,220,80,0.75) 0%,rgba(255,154,86,0.55) 40%,rgba(255,107,107,0.2) 68%,transparent 100%);filter:blur(1px);animation:sunSetPulse 6s ease-in-out infinite;pointer-events:none;z-index:0}
-.splash-sun-glow{position:absolute;bottom:-60px;left:50%;transform:translateX(-50%);width:640px;height:260px;background:radial-gradient(ellipse at center,rgba(255,154,86,0.4) 0%,rgba(255,107,107,0.2) 40%,rgba(255,181,194,0.1) 65%,transparent 100%);filter:blur(18px);pointer-events:none;z-index:0}
-@keyframes sunSetPulse{0%,100%{transform:translateX(-50%) scale(1);opacity:0.85}50%{transform:translateX(-50%) scale(1.08);opacity:1}}
+.wave-1{background:linear-gradient(180deg,rgba(30,195,215,0.48) 0%,rgba(30,195,215,0.2) 50%,transparent 100%);animation-delay:0s}
+.wave-2{background:linear-gradient(180deg,rgba(18,155,182,0.56) 0%,rgba(18,155,182,0.22) 50%,transparent 100%);animation-delay:-3s;bottom:-18px;border-radius:35% 45% 0 0}
+.wave-3{background:linear-gradient(180deg,rgba(12,122,155,0.64) 0%,rgba(12,122,155,0.26) 50%,transparent 100%);animation-delay:-5s;bottom:-25px;border-radius:30% 50% 0 0}
+.wave-4{background:linear-gradient(180deg,rgba(8,92,128,0.72) 0%,rgba(8,92,128,0.28) 50%,transparent 100%);animation-delay:-1.5s;bottom:-14px;border-radius:45% 40% 0 0}
+.wave-5{background:linear-gradient(180deg,rgba(6,60,96,0.85) 0%,rgba(6,60,96,0.34) 50%,transparent 100%);animation-delay:-6.5s;bottom:-30px;border-radius:38% 48% 0 0}
+.wave-6{background:linear-gradient(180deg,rgba(12,122,155,0.52) 0%,rgba(12,122,155,0.18) 50%,transparent 100%);animation-delay:-2.2s;bottom:-20px;border-radius:42% 44% 0 0}
+.wave-7{background:linear-gradient(180deg,rgba(18,155,182,0.42) 0%,rgba(18,155,182,0.14) 50%,transparent 100%);animation-delay:-4.4s;bottom:-34px;border-radius:36% 46% 0 0}
+.wave-8{background:linear-gradient(180deg,rgba(30,195,215,0.36) 0%,rgba(30,195,215,0.12) 50%,transparent 100%);animation-delay:-7.8s;bottom:-40px;border-radius:40% 42% 0 0}
 @keyframes waveDrift{0%,100%{transform:translateX(0) scaleY(1)}25%{transform:translateX(3%) scaleY(1.1)}50%{transform:translateX(-2%) scaleY(0.9)}75%{transform:translateX(1%) scaleY(1.05)}}
 
 /* ═══ HAMBURGER PANEL WAVES ═══ */
