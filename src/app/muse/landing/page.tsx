@@ -559,8 +559,12 @@ export default function MuseLandingPage() {
             {/* Shooting stars / Meteors */}
             <div className="sunset-shooting-star ss-1" />
             <div className="sunset-shooting-star ss-2" />
+            <div className="sunset-shooting-star ss-3" />
+            <div className="sunset-shooting-star ss-4" />
+            <div className="sunset-shooting-star ss-5" />
             {/* Dreamy nebula clouds */}
             <div className="sunset-nebula neb-1" /><div className="sunset-nebula neb-2" /><div className="sunset-nebula neb-3" />
+            <div className="sunset-nebula neb-4" /><div className="sunset-nebula neb-5" /><div className="sunset-nebula neb-6" />
             {/* Golden hour sun + horizon aura */}
             <div className="sunset-sun-glow" />
             <div className="sunset-sun" />
