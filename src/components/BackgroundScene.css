@@ -65,14 +65,17 @@
 @keyframes auroraDrift2{0%,100%{transform:translateX(0) translateY(0) scaleY(1) skewX(2deg)}50%{transform:translateX(-5%) translateY(8px) scaleY(1.4) skewX(-3deg)}}
 @keyframes auroraDrift3{0%,100%{transform:translateX(0) translateY(0) scaleY(1) skewX(0deg)}50%{transform:translateX(6%) translateY(-6px) scaleY(1.2) skewX(3deg)}}
 
-/* Ocean waves */
-.ocean-waves{position:fixed;bottom:0;left:0;width:100%;height:80px;z-index:1;pointer-events:none;overflow:hidden;opacity:0.4}
-.wave{position:absolute;bottom:-10px;left:-5%;width:120%;height:60px;border-radius:40% 50% 0 0;animation:waveDrift 8s ease-in-out infinite}
-.wave-1{background:linear-gradient(180deg,rgba(255,154,86,0.22) 0%,rgba(255,181,140,0.12) 50%,transparent 100%);animation-delay:0s}
-.wave-2{background:linear-gradient(180deg,rgba(255,107,107,0.18) 0%,rgba(255,138,128,0.1) 50%,transparent 100%);animation-delay:-3s;bottom:-18px;border-radius:35% 45% 0 0}
-.wave-3{background:linear-gradient(180deg,rgba(255,181,194,0.16) 0%,rgba(255,154,86,0.08) 50%,transparent 100%);animation-delay:-5s;bottom:-25px;border-radius:30% 50% 0 0}
-.wave-4{background:linear-gradient(180deg,rgba(255,138,128,0.2) 0%,rgba(255,181,140,0.1) 50%,transparent 100%);animation-delay:-1.5s;bottom:-14px;border-radius:45% 40% 0 0}
-.wave-5{background:linear-gradient(180deg,rgba(255,154,86,0.14) 0%,rgba(255,107,107,0.07) 50%,transparent 100%);animation-delay:-6.5s;bottom:-30px;border-radius:38% 48% 0 0}
+/* Ocean waves — shorter, layered, ocean blue */
+.ocean-waves{position:fixed;bottom:0;left:0;width:100%;height:64px;z-index:1;pointer-events:none;overflow:hidden;opacity:0.5}
+.wave{position:absolute;bottom:-8px;left:-5%;width:120%;height:44px;border-radius:40% 50% 0 0;animation:waveDrift ease-in-out infinite}
+.wave-1{background:linear-gradient(180deg,rgba(20,163,168,0.28) 0%,rgba(13,115,119,0.14) 50%,transparent 100%);animation-duration:7s;height:40px}
+.wave-2{background:linear-gradient(180deg,rgba(26,138,158,0.22) 0%,rgba(10,100,130,0.11) 50%,transparent 100%);animation-duration:9s;animation-delay:-2s;bottom:-14px;height:48px;border-radius:35% 45% 0 0}
+.wave-3{background:linear-gradient(180deg,rgba(10,126,164,0.18) 0%,rgba(8,90,120,0.09) 50%,transparent 100%);animation-duration:6s;animation-delay:-4s;bottom:-20px;height:36px;border-radius:30% 50% 0 0}
+.wave-4{background:linear-gradient(180deg,rgba(20,200,210,0.16) 0%,rgba(10,160,180,0.08) 50%,transparent 100%);animation-duration:8s;animation-delay:-1s;bottom:-10px;height:42px;border-radius:45% 40% 0 0}
+.wave-5{background:linear-gradient(180deg,rgba(0,150,180,0.14) 0%,rgba(0,110,140,0.07) 50%,transparent 100%);animation-duration:10s;animation-delay:-5s;bottom:-24px;height:34px;border-radius:38% 48% 0 0}
+.wave-6{background:linear-gradient(180deg,rgba(13,115,119,0.2) 0%,rgba(8,80,90,0.1) 50%,transparent 100%);animation-duration:7.5s;animation-delay:-3s;bottom:-16px;height:46px;border-radius:42% 44% 0 0}
+.wave-7{background:linear-gradient(180deg,rgba(26,138,158,0.12) 0%,rgba(10,100,130,0.06) 50%,transparent 100%);animation-duration:11s;animation-delay:-6s;bottom:-28px;height:30px;border-radius:36% 46% 0 0}
+.wave-8{background:linear-gradient(180deg,rgba(20,180,200,0.15) 0%,rgba(10,140,160,0.07) 50%,transparent 100%);animation-duration:9.5s;animation-delay:-7s;bottom:-32px;height:26px;border-radius:40% 42% 0 0}
 @keyframes waveDrift{0%,100%{transform:translateX(0) scaleY(1)}25%{transform:translateX(3%) scaleY(1.1)}50%{transform:translateX(-2%) scaleY(0.9)}75%{transform:translateX(1%) scaleY(1.05)}}
 
 /* Sparkles */
