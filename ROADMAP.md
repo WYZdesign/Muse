@@ -87,4 +87,14 @@ Current state is solid for closed beta: functional, feature-complete, reasonably
 - Security: rate limiting, auth, moderation, CSAM pipeline (detect → suspend → stage → auto-transmit)
 - NCMEC ESP application submitted; DMCA registered (DMCA-1078382)
 - Legal pages (ToS/Privacy/DMCA/Safety) + COMPLIANCE_HANDOFF.md
-- SEO (robots, sitemap, OG 1200×630, 404), consolidated schema, unit tests (18), awwwards motion layer
+- SEO (robots, sitemap, OG 1200×630, 404), consolidated schema, awwwards motion layer
+- **Security headers** (Tier 0.1) — CSP + HSTS + X-Frame-Options + nosniff + Referrer-Policy + Permissions-Policy on all routes
+- **Sentry** (Tier 0.2) — wired end-to-end (client/server configs, global-error, Vercel env)
+- **CI runs tests + audit** (Tier 0.3) — lint → tsc → vitest → `npm audit` → build
+- **Coverage enforcement** (Tier 2.4) — thresholds in place
+- **Email verification enforcement** — register sends confirmation email; login rejects unconfirmed
+- **Realtime reconnect indicator** in chat
+- **Chat message order fixed** (oldest-first)
+- **Tests: 46 unit/integration + 14 E2E smoke** (was 18), all passing
+- **Staging Supabase project created** (`rwgofoxqycpzsvxfnozt`) + 49-table schema applied + keys in vault (Tier 4.1 — Vercel preview wiring pending)
+- **3 schema bugs fixed** in `sql/MUSE_SCHEMA_FULL_20260813.sql` (TEXT=UUID RLS policy mismatches + orphaned seed sessions)

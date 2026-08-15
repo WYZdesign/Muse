@@ -1,6 +1,17 @@
 # Muse App — Production Readiness Audit & 100K User Roadmap
 ## 2026-08-09 | For: Torree
 
+> **UPDATE (2026-08-14):** Since this audit, the following were resolved:
+> - Security headers (CSP/HSTS/XFO/nosniff/Referrer/Permissions) now emitted on ALL routes (`next.config.ts`).
+> - Sentry error monitoring wired end-to-end.
+> - CI now runs `npm test` + `npm audit` (not just lint/typecheck/build).
+> - Email verification enforced (register sends confirmation; login rejects unconfirmed).
+> - Chat message order fixed; realtime reconnect indicator added.
+> - Staging Supabase project created (`rwgofoxqycpzsvxfnozt`), schema applied (49 tables), keys in vault.
+> - 3 schema bugs fixed (TEXT=UUID RLS mismatches, orphaned seed sessions).
+> - Test count grew 18 → 46 unit/integration + 14 E2E smoke.
+> - Item #10 (saveState debounce) already at 2s; #9 (error logging) largely covered by Sentry now.
+
 ---
 
 ## SCORE: 8.2/10 — Ready for closed beta, not yet ready for 100K public launch
