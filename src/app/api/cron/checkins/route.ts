@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const sb = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+import { getServiceClient } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
   // Verify cron secret
@@ -13,6 +8,8 @@ export async function GET(req: NextRequest) {
   if (authHeader !== expected) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const sb = getServiceClient();
 
   try {
     // Find bookings that start in ~24 hours and haven't had check-in sent

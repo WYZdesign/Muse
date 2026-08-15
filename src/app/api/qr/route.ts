@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
-
-const sb = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
 
 // Simple QR code generator using a free API or generate SVG
 // For production, you'd use a library like 'qrcode' or a service
@@ -31,6 +26,7 @@ async function generateQrSvg(url: string): Promise<string> {
 }
 
 export async function GET(req: NextRequest) {
+  const sb = getServiceClient();
   const ip = clientIp(req);
   if (!checkRate(ip, "qr", 120)) {
     return NextResponse.json({ error: "Rate limited" }, { status: 429 });
@@ -68,6 +64,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const sb = getServiceClient();
   const { url, source, action } = await req.json();
   
   if (!url) {
