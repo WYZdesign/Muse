@@ -283,6 +283,9 @@ function MusePage() {
   const matchSwipeRef = useRef<{id:string;startX:number;el:HTMLElement|null}>({id:"",startX:0,el:null});
   const [matchSwiping, setMatchSwiping] = useState<{id:string;offset:number} | null>(null);
   const [realtimeStatus, setRealtimeStatus] = useState<"connecting"|"connected"|"disconnected">("connecting");
+  const [themTyping, setThemTyping] = useState(false);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sendTypingRef = useRef<() => void>(() => {});
   const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number;startTime:number;el:HTMLElement|null;axis:"x"|"y"|null}>({startX:0,startY:0,active:false,relY:0,startTime:0,el:null,axis:null});
   const likeLabelRef = useRef<HTMLDivElement>(null);
   const nopeLabelRef = useRef<HTMLDivElement>(null);
@@ -382,6 +385,7 @@ function MusePage() {
 
   // ─── PERSISTENCE ───
   const STORAGE_KEY = "muse_v1";
+  const lastSyncRef = useRef(0);
   const saveState = useCallback(() => {
     try {
       const MAX_ITEMS = 50;
@@ -395,7 +399,12 @@ function MusePage() {
         searchQuery, connTab, museCat, connFilter, authUser, chatTarget
       };
       safeSetItem(STORAGE_KEY, JSON.stringify(data));
-      try { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs }) }); } catch {}
+      // Throttle the server sync to once per 30s (was every saveState tick) — big load reduction at scale.
+      const now = Date.now();
+      if (now - lastSyncRef.current > 30000) {
+        lastSyncRef.current = now;
+        try { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs }) }); } catch {}
+      }
     } catch(e) {}
   }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,connFilter,authUser,chatTarget]);
 
@@ -574,7 +583,7 @@ function MusePage() {
     });
     return () => { authListener?.subscription?.unsubscribe(); };
   }, []);
-  useEffect(() => { const t = setTimeout(saveState, 2000); return () => clearTimeout(t); }, [saveState]);
+  useEffect(() => { const t = setTimeout(saveState, 4000); return () => clearTimeout(t); }, [saveState]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -1043,7 +1052,7 @@ function MusePage() {
     if (!chatTarget || !authUser?.profile?.id) return;
     const myId = authUser.profile.id;
     const theirId = String(chatTarget.id);
-    const unsub = subscribeToConversation({
+    const sub = subscribeToConversation({
       myId,
       theirId,
       onMessage: (senderId, text) => {
@@ -1053,8 +1062,14 @@ function MusePage() {
         setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
       },
       onStatus: (status) => setRealtimeStatus(status),
+      onTyping: () => {
+        setThemTyping(true);
+        if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+        typingTimerRef.current = setTimeout(() => setThemTyping(false), 2200);
+      },
     });
-    return unsub;
+    sendTypingRef.current = sub.sendTyping;
+    return sub.unsubscribe;
   }, [chatTarget?.id, authUser?.id]);
 
   // ═══ SAFETY: fetch check-ins and safety profile on mount ═══
@@ -2272,7 +2287,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                    <div style={{position:"absolute",bottom:20,color:"rgba(255,255,255,0.5)",fontSize:13}}>{lightboxIdx+1} / {lightboxPhotos.length}</div>
                  </div>
                )}
-               <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+               <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
             </div>
             <div className={"screen-el"+(screen==="connections"?" active":"")}>
               <div className="hdr">
@@ -2359,7 +2374,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   );
                 }))}
               </div>
-              <Nav active="connections" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+              <Nav active="connections" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
             </div>
               <div className={"screen-el"+(screen==="matches"?" active":"")}>
                 <div className="hdr" style={{justifyContent:"space-between",alignItems:"center",padding:"12px 18px"}}>
@@ -2441,7 +2456,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     ))}
                   </div>
                 )}
-                <Nav active="matches" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+                <Nav active="matches" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
               </div>
             <div className={"screen-el"+(screen==="chat"&&chatTarget?" active":"")}>
               {chatTarget && (
@@ -2451,7 +2466,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                      <img loading="lazy" src={chatTarget.img} alt={chatTarget.name} className="chat-avatar" onError={handleImgError} onClick={()=>setViewProfile(chatTarget)} style={{cursor:"pointer"}} />
                     <div className="chat-info">
                       <div className="chat-name">{chatTarget.name}</div>
-                      <div className="chat-type">{chatTarget.type}</div>
+                      <div className="chat-type">{themTyping ? <span style={{ color: "var(--gold)", fontStyle: "italic" }}>typing…</span> : chatTarget.type}</div>
                     </div>
                   </div>
                   {realtimeStatus === "disconnected" && (
@@ -2506,12 +2521,12 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         }
                       }} />
                     </label>
-                    <input className="chat-inp" placeholder="Type a message..." value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&chatInput.trim()){sendMsg()}}} />
+                    <input className="chat-inp" placeholder="Type a message..." value={chatInput} onChange={e=>{setChatInput(e.target.value); sendTypingRef.current();}} onKeyDown={e=>{if(e.key==="Enter"&&chatInput.trim()){sendMsg()}}} />
                     <button className="send-btn" onClick={()=>sendMsg()}><FiSend size={18} /></button>
                   </div>
                 </div>
               )}
-              <Nav active="matches" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+              <Nav active="matches" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
             </div>
             <div className={"screen-el"+(screen==="briefs"?" active":"")}>
               <div className="hdr">
@@ -2574,7 +2589,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   ));
                 })()}
               </div>
-              <Nav active="briefs" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+              <Nav active="briefs" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
             </div>
 
             <div className={"screen-el"+(screen==="community"?" active":"")}>
@@ -2621,7 +2636,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <div style={{textAlign:"center",padding:40,color:"var(--muted)",fontSize:13}}>No upcoming events</div>
                 )}
               </div>
-              <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+              <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
             </div>
 
             <div className={"screen-el"+(screen==="sessions"?" active":"")}>
@@ -2750,7 +2765,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   </div>
                 )}
               </div>
-              <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+              <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
             </div>
 
             <div className={"screen-el"+(screen==="network"?" active":"")}>
@@ -2819,7 +2834,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   </>
                 )}
               </div>
-              <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+              <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
             </div>
             <div className={"screen-el"+(screen==="portfolio"?" active":"")}>
               <div className="hdr">
@@ -2834,7 +2849,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   matchOptions={matches.map((m: any) => ({ id: m.id, name: m.name, avatar: m.img || m.avatar }))}
                 />
               </div>
-              <Nav active="portfolio" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+              <Nav active="portfolio" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
             </div>
              <div className={"screen-el"+(screen==="moments"?" active":"")}>
                <div className="hdr" style={{justifyContent:"space-between",alignItems:"center",padding:"12px 18px"}}>
@@ -2919,7 +2934,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 </div>
                </div>
                </div>
-               <Nav active="moments" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+               <Nav active="moments" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
             </div>
             <div className={"screen-el"+(screen==="profile"?" active":"")}>
               <div className="hdr" style={{justifyContent:"space-between"}}>
@@ -3117,7 +3132,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 <div className="profile-btn"><button className="btn btn-outline" onClick={() => setShowShareProfile(true)}>Share Profile</button></div>
                 <div className="profile-btn"><button className="btn btn-outline" style={{borderColor:"rgba(255,138,128,0.2)",color:"var(--coral)"}} onClick={doLogout}>Log Out</button></div>
               </div>
-              <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+              <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
             </div>
             {toastMsg && <div className="toast">{toastMsg}</div>}
           </div>
@@ -3254,7 +3269,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 );
               })}
             </div>
-            <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+            <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
           </div>
         </div>
       )}
@@ -3380,7 +3395,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
               </div>
               <button className="btn btn-outline" style={{width:"100%",marginBottom:20}} onClick={doLogout}>Log Out</button>
             </div>
-            <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} />
+            <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
           </div>
         </div>
       )}

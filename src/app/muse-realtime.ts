@@ -62,8 +62,9 @@ export function subscribeToConversation(opts: {
   theirId: string;
   onMessage: (senderId: string, text: string) => void;
   onStatus?: (status: RealtimeStatus) => void;
-}): () => void {
-  if (!opts.myId || opts.myId === "local") return () => {};
+  onTyping?: () => void;
+}): { unsubscribe: () => void; sendTyping: () => void } {
+  if (!opts.myId || opts.myId === "local") return { unsubscribe: () => {}, sendTyping: () => {} };
   const convo = convoIdFor(opts.myId, opts.theirId);
   const channel = supabase
     .channel("muse-msg-" + convo)
@@ -84,6 +85,9 @@ export function subscribeToConversation(opts: {
         opts.onMessage(sender, text);
       }
     )
+    .on("broadcast", { event: "typing" }, () => {
+      if (opts.onTyping) opts.onTyping();
+    })
     .subscribe((status: string) => {
       // status: SUBSCRIBED | CHANNEL_ERROR | TIMED_OUT | CLOSED
       if (opts.onStatus) {
@@ -92,10 +96,17 @@ export function subscribeToConversation(opts: {
         else if (status === "CLOSED") opts.onStatus("disconnected");
       }
     });
-  return () => {
-    try { supabase.removeChannel(channel); } catch (err) {
-      trackError("realtime_unsubscribe_failed", { convo, err: String(err) });
-    }
+  return {
+    unsubscribe: () => {
+      try { supabase.removeChannel(channel); } catch (err) {
+        trackError("realtime_unsubscribe_failed", { convo, err: String(err) });
+      }
+    },
+    sendTyping: () => {
+      try { channel.send({ type: "broadcast", event: "typing", payload: {} }); } catch (err) {
+        trackError("realtime_typing_failed", { convo, err: String(err) });
+      }
+    },
   };
 }
 
