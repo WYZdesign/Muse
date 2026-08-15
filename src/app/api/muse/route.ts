@@ -1337,6 +1337,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    // ── Analytics / error beacons (fire-and-forget) ──
+    if (actionType === "track-error" || actionType === "track-event") {
+      try {
+        const { name, params, url, time } = rest;
+        await sb.from("muse_events_log").insert({
+          name: String(name || actionType).slice(0, 200),
+          props: { ...(params || {}), url: url || "", time: time || "" },
+          ua: req.headers.get("user-agent") || "",
+          ip: clientIp(req),
+        });
+      } catch { /* best-effort analytics */ }
+      return NextResponse.json({ success: true });
+    }
+
     return NextResponse.json({ error: "Unknown action type" }, { status: 400 });
   } catch (e: unknown) {
     return safeServerError(e, "muse route");
