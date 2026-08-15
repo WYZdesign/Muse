@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { FiCamera, FiUsers, FiZap, FiShield, FiHeart, FiStar, FiArrowRight, FiMessageSquare, FiMapPin, FiClock, FiLock, FiGlobe, FiLink } from "react-icons/fi";
-import SplashScreen from "@/components/SplashScreen";
 import BackgroundScene from "@/components/BackgroundScene";
 import "@/components/BackgroundScene.css";
 import "./landing.css";
@@ -254,6 +253,8 @@ export default function MuseLandingPage() {
   const [formData, setFormData] = useState({ email: "", phone: "" });
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [gateClosing, setGateClosing] = useState(false);
+  const [gateGone, setGateGone] = useState(false);
   const [navScrolled, setNavScrolled] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
   const railFillRef = useRef<HTMLDivElement>(null);
@@ -542,7 +543,16 @@ export default function MuseLandingPage() {
         </div>
       )}
 
-      <SplashScreen />
+      {!gateGone && (
+        <div className={`muse-enter-gate ${gateClosing ? "closing" : ""}`} onClick={() => { if (!gateClosing) { setGateClosing(true); setTimeout(() => setGateGone(true), 850); } }}>
+          <div className="muse-enter-bg"><span className="eg-1" /><span className="eg-2" /><span className="eg-3" /></div>
+          <div className="muse-enter-content">
+            <div className="muse-enter-logo">Muse</div>
+            <div className="muse-enter-sub">Creative Professional Network</div>
+            <div className="muse-enter-prompt">Click to Enter ✦</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
