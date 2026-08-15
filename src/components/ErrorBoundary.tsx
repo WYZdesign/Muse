@@ -17,10 +17,14 @@ export class ErrorBoundary extends React.Component<Props, State> {
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error("[Muse ErrorBoundary]", error, info.componentStack);
     try {
-      fetch("/api/telemetry", {
+      fetch("/api/muse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: error.message, context: String(info.componentStack || "").slice(0, 2000) }),
+        body: JSON.stringify({
+          action: "track-error",
+          name: "error_boundary",
+          params: { message: error.message, stack: String(info.componentStack || "").slice(0, 2000) },
+        }),
       });
     } catch { /* silent */ }
   }
