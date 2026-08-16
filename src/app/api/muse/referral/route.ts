@@ -145,6 +145,14 @@ export async function POST(req: NextRequest) {
       if (!referral) return NextResponse.json({ error: "Referral not found" }, { status: 404 });
       if (referral.status === "reward_issued") return NextResponse.json({ error: "Reward already issued" }, { status: 400 });
 
+      // Authorization: only the referrer, the referee, or an admin may redeem.
+      // Without this, any user could redeem an arbitrary referralId to mint
+      // free months for themselves and others.
+      const admins = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase());
+      const isParty = String(referral.referrer_id) === String(profile.id) || String(referral.referee_id) === String(profile.id);
+      const isAdmin = admins.includes((profile.email || "").toLowerCase());
+      if (!isParty && !isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
       // Update referral status
       await sb.from("muse_referrals").update({
         status: "reward_issued",

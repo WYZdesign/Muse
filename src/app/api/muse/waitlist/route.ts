@@ -36,10 +36,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to join waitlist" }, { status: 500 });
     }
 
-    // Increment counter in analytics
+    // Increment counter in analytics (upsert must ADD, not reset to 1).
+    const today = new Date().toISOString().split("T")[0];
+    const { data: existingDay } = await sb.from("muse_landing_analytics").select("signups").eq("date", today).maybeSingle();
+    const newCount = ((existingDay as { signups?: number } | null)?.signups ?? 0) + 1;
     await sb.from("muse_landing_analytics").upsert({
-      date: new Date().toISOString().split("T")[0],
-      signups: 1,
+      date: today,
+      signups: newCount,
     }, { onConflict: "date" });
 
     // Record signup event for source attribution (QR / referral tracking)
