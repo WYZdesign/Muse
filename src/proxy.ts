@@ -11,7 +11,7 @@ function originAllowed(origin: string): boolean {
   if (ALLOWED_ORIGINS.includes(origin)) return true;
   if (/^https:\/\/muse-.+\.vercel\.app$/.test(origin)) return true;
   if (origin.endsWith("-wyzdesigns-projects.vercel.app")) return true;
-  if (origin === "http://localhost:3000" && process.env.NODE_ENV === "development") return true;
+  if (process.env.NODE_ENV === "development" && /^https?:\/\/localhost(:\d+)?$/.test(origin)) return true;
   return false;
 }
 
