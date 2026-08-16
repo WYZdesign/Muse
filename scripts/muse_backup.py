@@ -135,19 +135,19 @@ def verify_dump(file_path):
 def main():
     log("═══ Muse Nightly Backup ═══")
     
+    if DRY_RUN:
+        log("DRY RUN — would execute pg_dump and upload to R2")
+        log(f"  DB: {(DB_URL or 'not configured')[:30]}...")
+        log(f"  R2: {R2_ENDPOINT or 'not configured'}")
+        log(f"  Bucket: {R2_BUCKET}")
+        log(f"  Retention: {RETENTION_DAYS} days")
+        return
+    
     if not DB_URL:
         log("ERROR: DATABASE_URL not set")
         sys.exit(1)
     
     check_deps()
-    
-    if DRY_RUN:
-        log("DRY RUN — would execute pg_dump and upload to R2")
-        log(f"  DB: {DB_URL[:30]}...")
-        log(f"  R2: {R2_ENDPOINT or 'not configured'}")
-        log(f"  Bucket: {R2_BUCKET}")
-        log(f"  Retention: {RETENTION_DAYS} days")
-        return
     
     # Step 1: pg_dump
     dump_path = pg_dump()
@@ -158,6 +158,7 @@ def main():
         sys.exit(1)
     
     # Step 3: Upload to R2
+    r2_key = None
     if R2_ENDPOINT and R2_ACCESS_KEY:
         r2_key = upload_to_r2(dump_path)
     else:
@@ -173,7 +174,7 @@ def main():
         "timestamp": datetime.now().isoformat(),
         "file": dump_path.name,
         "size_bytes": dump_path.stat().st_size,
-        "r2_key": r2_key if R2_ENDPOINT else None,
+        "r2_key": r2_key,
         "retention_days": RETENTION_DAYS,
     }
     manifest_path = LOCAL_DIR / "last_backup.json"
