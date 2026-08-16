@@ -106,13 +106,19 @@ export async function POST(req: NextRequest) {
       if (!profile) {
         const name = (user.user_metadata?.name as string) || (user.email ? user.email.split("@")[0] : "Creative");
         const avatar = (user.user_metadata?.avatar_url as string) || (user.user_metadata?.picture as string) || "";
-        const { data: created, error: createErr } = await sb.from("muse_profiles").insert({
+        const { data: created, error: createErr } = await sb.from("muse_profiles").upsert({
           auth_id: user.id,
           email: (user.email || "").toLowerCase(),
           name,
           avatar,
-        }).select("*").single();
+        }, { onConflict: "auth_id" }).select("*").single();
         if (!createErr && created) profile = created;
+        else if (createErr) {
+          // Unique-violation on auth_id means a concurrent request already
+          // created the profile — fetch it instead of failing.
+          const { data: existing } = await sb.from("muse_profiles").select("*").eq("auth_id", user.id).maybeSingle();
+          if (existing) profile = existing;
+        }
       }
 
       // Enforcement: suspended accounts cannot establish a session.

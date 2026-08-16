@@ -84,7 +84,9 @@ export async function POST(req: NextRequest) {
       } else if (scanResult.shouldReport) {
         await reportIncident({ userId: profileId, context: folder, result: scanResult });
       }
-      return NextResponse.json({ error: "Content violates safety policies", flaggedCategories: scanResult.flaggedCategories }, { status: 403 });
+      // Distinguish "moderation unavailable" (fail-closed) from an actual policy violation.
+      const msg = scanResult.scanned ? "Content violates safety policies" : "Moderation unavailable — try again later";
+      return NextResponse.json({ error: msg, flaggedCategories: scanResult.flaggedCategories }, { status: scanResult.scanned ? 403 : 503 });
     }
 
     const safeFolder = folder.replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "avatars";

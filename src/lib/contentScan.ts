@@ -53,9 +53,11 @@ export interface ModerationResult {
 export async function scanWithRekognition(imageBuffer: Buffer): Promise<ModerationResult> {
   const client = await getRekognition();
   if (!client || !DetectModerationLabelsCommand) {
-    // Fails-open but LOUD: content is not scanned when credentials are missing.
-    console.error("[muse:safety] AWS Rekognition unavailable — upload not scanned. Set AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION.");
-    return { safe: true, scanned: false, flaggedCategories: [], confidence: 0, shouldBlock: false, shouldReport: false, isCSAM: false, details: [] };
+    // Fail-closed: if moderation is unavailable (missing AWS creds / SDK load
+    // failure), BLOCK the content rather than silently allowing unscanned
+    // uploads through. This is a safety-critical path.
+    console.error("[muse:safety] AWS Rekognition unavailable — upload blocked. Set AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION.");
+    return { safe: false, scanned: false, flaggedCategories: ["MODERATION_UNAVAILABLE"], confidence: 0, shouldBlock: true, shouldReport: false, isCSAM: false, details: [] };
   }
   try {
     const command = new DetectModerationLabelsCommand({
@@ -94,7 +96,8 @@ export async function scanWithRekognition(imageBuffer: Buffer): Promise<Moderati
     return { safe: flaggedCategories.length === 0, scanned: true, flaggedCategories, confidence: maxConfidence, shouldBlock, shouldReport, isCSAM, details };
   } catch (error) {
     console.error("Rekognition scan failed:", error);
-    return { safe: true, scanned: false, flaggedCategories: [], confidence: 0, shouldBlock: false, shouldReport: false, isCSAM: false, details: [] };
+    // Fail-closed: a scan error must never allow content through unchecked.
+    return { safe: false, scanned: false, flaggedCategories: ["SCAN_ERROR"], confidence: 0, shouldBlock: true, shouldReport: false, isCSAM: false, details: [] };
   }
 }
 

@@ -60,6 +60,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ allowed: true, scanned: result.scanned, flaggedCategories: result.flaggedCategories.length > 0 ? result.flaggedCategories : undefined });
   } catch (error) {
     console.error("Content scan error:", error);
-    return NextResponse.json({ allowed: true, scanError: "Scan failed" });
+    // Fail-closed: a failed scan must NEVER allow content through (a fail-open
+    // would let CSAM/nudity bypass moderation on a Rekognition outage).
+    return NextResponse.json({ allowed: false, scanError: "Moderation unavailable — try again later" }, { status: 503 });
   }
 }
