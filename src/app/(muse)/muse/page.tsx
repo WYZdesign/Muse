@@ -14,7 +14,7 @@ import { PORTRAIT_IMG } from "./components/photoOrientation";
 import MyAlbumsManager from "./components/MyAlbumsManager";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
-import { safeSetItem, safeGetItem, safeRemoveItem, QUOTA_MSG } from "./lib/safe-storage";
+import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, QUOTA_MSG } from "./lib/safe-storage";
 import { getAccessToken, authFetch } from "./lib/api";
 import { uid } from "./lib/uid";
 import DisclosureModal from "./components/DisclosureModal";
@@ -398,11 +398,13 @@ function MusePage() {
 
   // ─── PERSISTENCE ───
   const STORAGE_KEY = "muse_v1";
+  const STATE_VERSION = 2;
   const lastSyncRef = useRef(0);
   const saveState = useCallback(() => {
     try {
       const MAX_ITEMS = 50;
       const data = {
+        v: STATE_VERSION,
         currentUser, obData, obStep, matches: matches.slice(-MAX_ITEMS), dailyLikes, superLikes,
         savedBriefs, appliedBriefs, userBriefs: userBriefs.slice(-MAX_ITEMS), blockedUsers, notifPrefs,
         obConnectedSocials, showNsfw, rsvpdEvents, forumPosts: forumPosts.slice(-MAX_ITEMS), feedPosts: feedPosts.slice(-MAX_ITEMS),
@@ -421,11 +423,16 @@ function MusePage() {
     } catch(e) {}
   }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,connFilter,authUser,chatTarget]);
 
-  const loadState = useCallback(() => {
+  const loadState = useCallback(async () => {
     try {
-      const raw = safeGetItem(STORAGE_KEY);
+      const raw = await safeGetItemAsync(STORAGE_KEY);
       if (!raw) return;
       const d = JSON.parse(raw);
+      // Schema version gate: discard stale/future schemas to avoid corrupting hydration.
+      if (typeof d.v !== "number" || d.v > STATE_VERSION) {
+        safeRemoveItem(STORAGE_KEY);
+        return;
+      }
       if (d.currentUser) setCurrentUser(prev => ({ ...prev, ...d.currentUser, stats: { ...prev.stats, ...(d.currentUser.stats || {}) }, portfolios: Array.isArray(d.currentUser.portfolios) ? d.currentUser.portfolios : (prev.portfolios || []) }));
       if (d.obData) setObData(d.obData);
       if (d.obStep) setObStep(d.obStep);
@@ -630,7 +637,8 @@ function MusePage() {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    try { const raw = safeGetItem("muse_v1"); const d = raw ? JSON.parse(raw) : {}; d.theme = theme; safeSetItem("muse_v1", JSON.stringify(d)); } catch {}
+    // Persistence is handled by saveState (theme is part of its payload) —
+    // no separate read-modify-write here to avoid a lost-update race on muse_v1.
   }, [theme]);
 
   const showToast = useCallback((msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); }, []);
@@ -1076,7 +1084,7 @@ function MusePage() {
     setChatInput("");
     setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
     const myId = authUser?.profile?.id || authUser?.id || "local";
-    await persistMessage({ myId, theirId: targetId, text: clean });
+    try { await persistMessage({ myId, theirId: targetId, text: clean }); } catch {}
     trackEvent("message_sent", { has_match: true });
     // Show typing + simulated reply only when no real remote partner is present.
     setTypingTarget(Number(chatTarget.id));
@@ -1213,7 +1221,8 @@ function MusePage() {
   const saveProfileEdits = useCallback(async () => {
     setCurrentUser(prev => ({ ...prev, name: editName || prev.name, avatar: editAvatar || prev.avatar }));
     setObData(prev => ({ ...prev, bio: editBio, loc: editLoc }));
-    const geo = await getGeolocation();
+    let geo: { lat: number; long: number; city?: string } | null = null;
+    try { geo = await getGeolocation(); } catch {}
     setShowEditProfile(false);
     try {
       await authFetch("/api/muse/auth", {

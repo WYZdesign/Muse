@@ -10,9 +10,11 @@ export const runtime = "nodejs";
  */
 export async function GET(req: NextRequest) {
   try {
-    // Verify this is a Vercel Cron invocation (not a random GET).
-    if (req.headers.get("x-vercel-cron") !== "1") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // Verify cron secret (same pattern as checkins) — a spoofable header is not auth.
+    const authHeader = req.headers.get("authorization");
+    const expected = `Bearer ${process.env.CRON_SECRET}`;
+    if (!process.env.CRON_SECRET || authHeader !== expected) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const sb = getServiceClient();
@@ -33,16 +35,13 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Grab the latest messages for a content-level checkpoint.
+    // Content checkpoint: message COUNT only — never return message bodies
+    // (PII). This endpoint is a health/summary ping, not a restore source.
     try {
-      const { data: messages } = await sb
-        .from("muse_messages")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50);
-      snapshots["_recent_messages"] = messages || [];
+      const { count, error } = await sb.from("muse_messages").select("*", { count: "exact", head: true });
+      snapshots["_message_count"] = error ? { error: "query failed" } : { count: count ?? 0 };
     } catch {
-      snapshots["_recent_messages"] = [];
+      snapshots["_message_count"] = { count: "query failed" };
     }
 
     return NextResponse.json({ success: true, timestamp: new Date().toISOString(), ...snapshots });

@@ -5,8 +5,17 @@ let _dbPromise: Promise<IDBDatabase> | null = null;
 const IDB_NAME = "muse_kv";
 const IDB_STORE = "kv";
 
+function notifyQuota(): void {
+  try {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("muse:storage-quota"));
+    }
+  } catch {}
+}
+
 function getDB(): Promise<IDBDatabase> {
   if (_dbPromise) return _dbPromise;
+  if (typeof indexedDB === "undefined") return Promise.reject(new Error("IndexedDB unavailable"));
   _dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
     const req = indexedDB.open(IDB_NAME, 1);
     req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(IDB_STORE)) req.result.createObjectStore(IDB_STORE); };
@@ -50,7 +59,7 @@ const _memCache = new Map<string, string>();
 export function safeSetItem(key: string, value: string): boolean {
   _memCache.set(key, value);
   if (value.length < 50_000) {
-    try { localStorage.setItem(key, value); return true; } catch {}
+    try { localStorage.setItem(key, value); return true; } catch { notifyQuota(); }
   }
   idbSet(key, value);
   return true;
@@ -73,7 +82,9 @@ export function safeRemoveItem(key: string): void {
 export async function safeGetItemAsync(key: string): Promise<string | null> {
   const cached = safeGetItem(key);
   if (cached) return cached;
-  return idbGet(key);
+  const v = await idbGet(key);
+  if (v) _memCache.set(key, v);
+  return v;
 }
 
 export { QUOTA_MSG };

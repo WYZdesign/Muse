@@ -12,20 +12,32 @@ export async function GET(req: NextRequest) {
   const sb = getServiceClient();
 
   try {
-    // Find bookings that start in ~24 hours and haven't had check-in sent
-    const twentyFourHoursFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    const twentyFiveHoursFromNow = new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString();
+    // Find sessions dated ~24 hours out (muse_sessions.date is a "YYYY-MM-DD" TEXT
+    // string). muse_bookings.session_id is a UUID FK to muse_sessions(id), NOT a
+    // timestamp — filtering bookings by session_id against datetimes never matches.
+    const targetDay = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+    const { data: sessions, error: sessionError } = await sb
+      .from("muse_sessions")
+      .select("id")
+      .eq("date", targetDay);
+
+    if (sessionError) throw sessionError;
+    const sessionIds = (sessions || []).map(s => s.id);
+    if (sessionIds.length === 0) {
+      return NextResponse.json({ success: true, checkinsCreated: 0 });
+    }
 
     const { data: upcomingBookings, error: bookingError } = await sb
       .from("muse_bookings")
       .select("id, user_id, host_id, session_id, status")
       .eq("status", "confirmed")
-      .gte("session_id", twentyFourHoursFromNow)
-      .lt("session_id", twentyFiveHoursFromNow);
+      .in("session_id", sessionIds);
 
     if (bookingError) throw bookingError;
 
     let created = 0;
+    const scheduledFor = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     for (const booking of upcomingBookings || []) {
       // Create check-in for both parties
       for (const userId of [booking.user_id, booking.host_id].filter(Boolean)) {
@@ -33,7 +45,7 @@ export async function GET(req: NextRequest) {
           user_id: userId,
           booking_id: booking.id,
           status: "pending",
-          scheduled_for: twentyFourHoursFromNow,
+          scheduled_for: scheduledFor,
         }, { onConflict: "user_id,booking_id" });
 
         if (!checkinError) {
