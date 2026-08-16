@@ -174,18 +174,25 @@ a{color:inherit;text-decoration:none}
 .splash-loader-bar{width:40%;height:100%;border-radius:2px;background:linear-gradient(90deg,#FFD700,#FF8A80,#D4A5FF);animation:splashLoad 1.4s ease-in-out infinite}
 @keyframes splashLoad{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
 
-/* ═══ OCEAN WAVES — bottom of every page ═══ */
-.ocean-waves{position:fixed;bottom:0;left:0;width:100%;height:80px;z-index:1;pointer-events:none;overflow:hidden;opacity:0.4}
-.wave{position:absolute;bottom:-10px;left:-5%;width:120%;height:60px;border-radius:40% 50% 0 0;animation:waveDrift 8s ease-in-out infinite}
-.wave-1{background:linear-gradient(180deg,rgba(30,195,215,0.48) 0%,rgba(30,195,215,0.2) 50%,transparent 100%);animation-delay:0s}
-.wave-2{background:linear-gradient(180deg,rgba(18,155,182,0.56) 0%,rgba(18,155,182,0.22) 50%,transparent 100%);animation-delay:-3s;bottom:-18px;border-radius:35% 45% 0 0}
-.wave-3{background:linear-gradient(180deg,rgba(12,122,155,0.64) 0%,rgba(12,122,155,0.26) 50%,transparent 100%);animation-delay:-5s;bottom:-25px;border-radius:30% 50% 0 0}
-.wave-4{background:linear-gradient(180deg,rgba(8,92,128,0.72) 0%,rgba(8,92,128,0.28) 50%,transparent 100%);animation-delay:-1.5s;bottom:-14px;border-radius:45% 40% 0 0}
-.wave-5{background:linear-gradient(180deg,rgba(6,60,96,0.85) 0%,rgba(6,60,96,0.34) 50%,transparent 100%);animation-delay:-6.5s;bottom:-30px;border-radius:38% 48% 0 0}
-.wave-6{background:linear-gradient(180deg,rgba(12,122,155,0.52) 0%,rgba(12,122,155,0.18) 50%,transparent 100%);animation-delay:-2.2s;bottom:-20px;border-radius:42% 44% 0 0}
-.wave-7{background:linear-gradient(180deg,rgba(18,155,182,0.42) 0%,rgba(18,155,182,0.14) 50%,transparent 100%);animation-delay:-4.4s;bottom:-34px;border-radius:36% 46% 0 0}
-.wave-8{background:linear-gradient(180deg,rgba(30,195,215,0.36) 0%,rgba(30,195,215,0.12) 50%,transparent 100%);animation-delay:-7.8s;bottom:-40px;border-radius:40% 42% 0 0}
-@keyframes waveDrift{0%,100%{transform:translateX(0) scaleY(1)}25%{transform:translateX(3%) scaleY(1.1)}50%{transform:translateX(-2%) scaleY(0.9)}75%{transform:translateX(1%) scaleY(1.05)}}
+/* ═══ OCEAN WAVES SVG — bottom of every page, matching landing ═══ */
+.ocean-waves-svg{position:fixed;bottom:0;left:-2%;width:104%;height:40vh;z-index:1;pointer-events:none;opacity:0.7}
+.owv{transform-origin:center bottom;will-change:transform}
+.owv-1{fill:rgba(30,195,215,0.48);animation:owave1 6.2s ease-in-out infinite alternate}
+.owv-2{fill:rgba(18,155,182,0.56);animation:owave2 8.4s ease-in-out infinite -2.1s alternate}
+.owv-3{fill:rgba(12,122,155,0.64);animation:owave3 7.0s ease-in-out infinite -4.3s alternate}
+.owv-4{fill:rgba(8,92,128,0.72);animation:owave4 9.8s ease-in-out infinite -1.5s alternate}
+.owv-5{fill:rgba(6,60,96,0.85);animation:owave5 11.2s ease-in-out infinite -3.8s alternate}
+.owv-6{fill:rgba(30,195,215,0.3);animation:owave6 12s ease-in-out infinite alternate}
+.owv-7{fill:rgba(18,155,182,0.22);animation:owave7 10s ease-in-out infinite -3s alternate}
+.owv-8{fill:rgba(12,122,155,0.16);animation:owave8 8.8s ease-in-out infinite -5s alternate}
+@keyframes owave1{0%{transform:translateX(-22px) translateY(-18px) scaleY(1)}50%{transform:translateX(0) translateY(8px) scaleY(0.92)}100%{transform:translateX(22px) translateY(16px) scaleY(1.08)}}
+@keyframes owave2{0%{transform:translateX(26px) translateY(20px) scaleY(0.94)}50%{transform:translateX(-6px) translateY(-14px) scaleY(1.12)}100%{transform:translateX(-26px) translateY(-26px) scaleY(1.02)}}
+@keyframes owave3{0%{transform:translateX(-30px) translateY(-22px) scaleY(1.05)}50%{transform:translateX(8px) translateY(16px) scaleY(0.9)}100%{transform:translateX(30px) translateY(24px) scaleY(1.14)}}
+@keyframes owave4{0%{transform:translateX(20px) translateY(24px) scaleY(0.92)}50%{transform:translateX(-10px) translateY(-18px) scaleY(1.08)}100%{transform:translateX(-20px) translateY(-32px) scaleY(1.04)}}
+@keyframes owave5{0%{transform:translateX(-16px) translateY(-14px) scaleY(1)}50%{transform:translateX(4px) translateY(12px) scaleY(0.96)}100%{transform:translateX(16px) translateY(18px) scaleY(1.06)}}
+@keyframes owave6{0%{transform:translateX(-18px) translateY(-12px) scaleY(1)}50%{transform:translateX(6px) translateY(10px) scaleY(0.94)}100%{transform:translateX(18px) translateY(14px) scaleY(1.06)}}
+@keyframes owave7{0%{transform:translateX(14px) translateY(10px) scaleY(0.96)}50%{transform:translateX(-8px) translateY(-12px) scaleY(1.08)}100%{transform:translateX(-14px) translateY(-16px) scaleY(1.02)}}
+@keyframes owave8{0%{transform:translateX(-10px) translateY(-8px) scaleY(1.02)}50%{transform:translateX(4px) translateY(6px) scaleY(0.96)}100%{transform:translateX(10px) translateY(10px) scaleY(1.04)}}
 
 /* ═══ HAMBURGER PANEL WAVES ═══ */
 .hamburger-waves{position:absolute;bottom:0;left:0;width:100%;height:60px;pointer-events:none;overflow:hidden;opacity:0.25}
