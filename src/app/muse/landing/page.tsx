@@ -86,6 +86,7 @@ function useParallax<T extends HTMLElement>(strength = 16) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    if (window.matchMedia?.("(hover: none)").matches) return;
     let tx = 0, ty = 0, cx = 0, cy = 0;
     const onMouse = (e: MouseEvent) => { tx = (e.clientX / innerWidth - 0.5) * 2; ty = (e.clientY / innerHeight - 0.5) * 2; };
     const onOrient = (e: DeviceOrientationEvent) => { const g = Math.max(-1, Math.min(1, (e.gamma ?? 0) / 45)); const b = Math.max(-1, Math.min(1, (e.beta ?? 0) / 90)); tx = g; ty = b; };
