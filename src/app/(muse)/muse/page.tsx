@@ -208,6 +208,7 @@ function MusePage() {
   const [obConnectedSocials, setObConnectedSocials] = useState<Record<string, boolean>>({});
   const [obPortfolioItems, setObPortfolioItems] = useState<{img:string;title:string}[]>([]);
   const [likedBy, setLikedBy] = useState<Profile[]>([]);
+  const [showLikesYou, setShowLikesYou] = useState(false);
   const [matchesView, setMatchesView] = useState<"list"|"grid">("list");
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
@@ -1784,7 +1785,8 @@ const isMatch=matchScore>55||Math.random()>0.5;
             </div>
             <DiscoverScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showDiscoveryPrefs={showDiscoveryPrefs} setShowDiscoveryPrefs={setShowDiscoveryPrefs} showFilterModal={showFilterModal} setShowFilterModal={setShowFilterModal} mapView={mapView} setMapView={setMapView} filteredProfiles={filteredProfiles} currentIdx={currentIdx} setCurrentIdx={setCurrentIdx} boostActive={boostActive} setBoostActive={setBoostActive} setBoostEnd={setBoostEnd} discoverSearchOpen={discoverSearchOpen} setDiscoverSearchOpen={setDiscoverSearchOpen} discoverSearch={discoverSearch} setDiscoverSearch={setDiscoverSearch} myGeo={myGeo} apiFetch={apiFetch} showToast={showToast} doSwipe={doSwipe} setViewProfile={setViewProfile} viewProfile={viewProfile} handleImgError={handleImgError} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} stories={stories} currentUser={currentUser} uid={uid} />
             <FeedScreen screen={screen} showScreen={showScreen} feedFilter={feedFilter} setFeedFilter={setFeedFilter} feedText={feedText} setFeedText={setFeedText} feedMedia={feedMedia} setFeedMedia={setFeedMedia} feedPosts={feedPosts} setFeedPosts={setFeedPosts} showEmojiPicker={showEmojiPicker} setShowEmojiPicker={setShowEmojiPicker} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} currentUser={currentUser} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} stories={stories} setStories={setStories} uploadImage={uploadImage} uid={uid} />
-            <MusesScreen screen={screen} showScreen={showScreen} matches={matches} setMatches={setMatches} searchOpen={searchOpen} setSearchOpen={setSearchOpen} matchesView={matchesView} setMatchesView={setMatchesView} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} searchQuery={searchQuery} setSearchQuery={setSearchQuery} expandedMatchId={expandedMatchId} matchActions={matchActions} />
+            <MusesScreen screen={screen} showScreen={showScreen} matches={matches} setMatches={setMatches} searchOpen={searchOpen} setSearchOpen={setSearchOpen} matchesView={matchesView} setMatchesView={setMatchesView} showLikesYou={showLikesYou} setShowLikesYou={setShowLikesYou} likedBy={likedBy} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} searchQuery={searchQuery} setSearchQuery={setSearchQuery} expandedMatchId={expandedMatchId} matchActions={matchActions} setShowPremiumPopup={setShowPremiumPopup} />
+            <BtsScreen screen={screen} stories={stories} setStories={setStories} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} setShowStory={setShowStory} handleImgError={handleImgError} />
             <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} messages={chatTarget?.messages || []} setMessages={((msgs: any) => setChatTarget((prev: any) => prev ? {...prev, messages: typeof msgs === "function" ? msgs(prev?.messages || []) : msgs} : prev)) as any} chatText={chatInput} setChatText={setChatInput} chatImg="" setChatImg={()=>{}} messagesEndRef={messagesEndRef} sendChat={sendMsg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} />
             <CollabScreen screen={screen} showScreen={showScreen} museCat={museCat} setMuseCat={setMuseCat} userBriefs={userBriefs} setUserBriefs={setUserBriefs} showPostBrief={showPostBrief} setShowPostBrief={setShowPostBrief} liveBriefs={liveBriefs || []} showNsfw={showNsfw} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} uid={uid} />
 
@@ -2085,27 +2087,16 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div style={{position:"absolute",bottom:24,color:"rgba(255,255,255,0.5)",fontSize:12,zIndex:3,pointerEvents:"none"}}>Tap sides to navigate · tap ✕ to close</div>
         </div>
       )}
-      {/* GLOBAL PREMIUM — popup centered in viewport, star tab pinned to right edge */}
-      {!premiumDismissed && (
+      {/* GLOBAL PREMIUM — popup centered in viewport (star side-tab removed) */}
+      {!premiumDismissed && showPremiumPopup && (
         <div className="premium-wrap">
-          {showPremiumPopup ? (
-            <div className="premium-popup">
-              <button className="premium-popup-close" onClick={() => { try{safeSetItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }} aria-label="Dismiss premium" title="Dismiss premium">✕</button>
-              <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
-              <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
-              <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
-              <div style={{marginTop:8,fontSize:10,color:"var(--muted)",textAlign:"center"}} onClick={() => { try{safeSetItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }}>Don&apos;t show again</div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowPremiumPopup(true)}
-              className="premium-star-tab"
-              aria-label="Premium"
-              title="Muse Premium"
-            >
-              <div className="premium-star-icon">✦</div>
-            </button>
-          )}
+          <div className="premium-popup">
+            <button className="premium-popup-close" onClick={() => { try{safeSetItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }} aria-label="Dismiss premium" title="Dismiss premium">✕</button>
+            <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:4}}>✨ Muse Premium</div>
+            <div style={{fontSize:11,color:"var(--text2)",lineHeight:1.4,marginBottom:8}}>Unlimited likes, superlikes & boosts.</div>
+            <button className="btn btn-gold" style={{fontSize:11,padding:"6px 14px",width:"100%"}} onClick={()=>{setShowPremiumPopup(false);setHamburgerScreen("profile");setShowHamburger(true)}}>Upgrade $9.99</button>
+            <div style={{marginTop:8,fontSize:10,color:"var(--muted)",textAlign:"center"}} onClick={() => { try{safeSetItem("muse_hide_premium","1");}catch{}; setShowPremiumPopup(false); setPremiumDismissed(true); }}>Don&apos;t show again</div>
+          </div>
         </div>
       )}
       {viewProfile && (
