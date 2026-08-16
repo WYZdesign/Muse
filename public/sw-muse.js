@@ -1,6 +1,6 @@
 /* Muse PWA Service Worker — scoped push notifications */
 
-const CACHE = "muse-shell-v2";
+const CACHE = "muse-shell-v3";
 const SHELL = ["/muse", "/muse/offline", "/manifest.webmanifest", "/favicon-192x192.png"];
 
 self.addEventListener("install", (event) => {
@@ -59,7 +59,10 @@ self.addEventListener("notificationclick", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
-  if (req.url.indexOf("/api/") !== -1) return;
+  const url = req.url;
+  if (url.indexOf("/api/") !== -1) return;
+  // Never cache Next.js build assets — they use content hashing for cache busting
+  if (url.indexOf("/_next/") !== -1) return;
 
   event.respondWith(
     caches.match(req).then((cached) => {

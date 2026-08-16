@@ -25,6 +25,31 @@ export const metadata: Metadata = {
 export default function MuseLayout({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary>
+      <script dangerouslySetInnerHTML={{ __html: `
+        (function(){
+          try {
+            var bid = window.__NEXT_DATA__ && window.__NEXT_DATA__.buildId;
+            if (!bid) return;
+            var prev = sessionStorage.getItem('muse_build');
+            if (prev && prev !== bid) {
+              sessionStorage.setItem('muse_build', bid);
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(regs) {
+                  regs.forEach(function(r) { r.unregister(); });
+                  caches.keys().then(function(ks) {
+                    ks.forEach(function(k) { caches.delete(k); });
+                    window.location.reload();
+                  });
+                });
+              } else {
+                window.location.reload();
+              }
+              return;
+            }
+            sessionStorage.setItem('muse_build', bid);
+          } catch(e) {}
+        })();
+      ` }} />
       <SplashScreen />
       {children}
     </ErrorBoundary>
