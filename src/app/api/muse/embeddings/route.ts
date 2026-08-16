@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServiceClient } from "@/lib/supabase";
+import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { embedText, cosineSimilarity, aiEnabled } from "@/lib/ai";
 
@@ -13,6 +13,14 @@ export async function POST(req: NextRequest) {
     if (!checkRate(clientIp(req), "embeddings", 30)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
+
+    // Auth required for ALL actions: embed/batch-embed spend OpenRouter budget
+    // and search enumerates profiles. Never expose these anonymously.
+    const header = req.headers.get("authorization") || "";
+    const bearer = header.replace(/^Bearer\s+/i, "").trim();
+    if (!bearer) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { data: authData } = await supabase.auth.getUser(bearer);
+    if (!authData.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
     const { action } = body;

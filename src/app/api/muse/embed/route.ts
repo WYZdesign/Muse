@@ -72,7 +72,11 @@ export async function POST(req: NextRequest) {
 
     // ── embed-profile ──
     if (action === "embed-profile") {
-      const targetId = body.userId || profile.id;
+      // Only the caller's own profile (or an admin) — prevent using this as a
+      // free way to spend OpenRouter budget embedding arbitrary profiles.
+      const admins = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase());
+      const isAdmin = admins.includes((profile.email || "").toLowerCase());
+      const targetId = isAdmin ? (body.userId || profile.id) : profile.id;
       const r = await embedAndStore(targetId);
       if (!r.ok) return NextResponse.json({ error: r.error }, { status: 400 });
       return NextResponse.json({ success: true, dims: r.dims });

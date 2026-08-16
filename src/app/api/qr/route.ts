@@ -18,10 +18,11 @@ async function generateQrSvg(url: string): Promise<string> {
     // Fallback to simple SVG
   }
   
-  // Fallback: simple SVG placeholder
+  // Fallback: simple SVG placeholder — escape the URL to prevent SVG injection.
+  const esc = url.replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" })[c] as string);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
     <rect width="300" height="300" fill="white"/>
-    <text x="150" y="150" text-anchor="middle" font-family="monospace" font-size="12" fill="#0a0612">QR: ${url}</text>
+    <text x="150" y="150" text-anchor="middle" font-family="monospace" font-size="12" fill="#0a0612">QR: ${esc}</text>
   </svg>`;
 }
 
@@ -65,7 +66,12 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const sb = getServiceClient();
-  const { url, source, action } = await req.json();
+  const ip = clientIp(req);
+  if (!checkRate(ip, "qr-post", 60)) {
+    return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  }
+  const body = await req.json().catch(() => ({}));
+  const { url, source, action } = body;
   
   if (!url) {
     return NextResponse.json({ error: "url required" }, { status: 400 });
