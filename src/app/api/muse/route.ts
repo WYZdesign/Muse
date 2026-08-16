@@ -624,17 +624,18 @@ export async function POST(req: NextRequest) {
       if (!booker?.age_verified) {
         return NextResponse.json({ error: "Identity verification required", code: "VERIFICATION_REQUIRED" }, { status: 403 });
       }
-      const { data: session } = await sb.from("muse_sessions").select("id").eq("id", sessionId).maybeSingle();
+      const { data: session } = await sb.from("muse_sessions").select("id, host_id").eq("id", sessionId).maybeSingle();
       if (!session) return NextResponse.json({ error: "Session not found" }, { status: 400 });
-      if (hostId) {
-        const { data: host } = await sb.from("muse_profiles").select("id").eq("id", hostId).maybeSingle();
+      const effectiveHostId = hostId || (session as any).host_id || null;
+      if (effectiveHostId) {
+        const { data: host } = await sb.from("muse_profiles").select("id").eq("id", effectiveHostId).maybeSingle();
         if (!host) return NextResponse.json({ error: "Host not found" }, { status: 400 });
       }
       await sb.from("muse_bookings").upsert(
-        { session_id: sessionId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, host_id: hostId || null, status: "pending" },
+        { session_id: sessionId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, host_id: effectiveHostId, status: "pending" },
         { onConflict: "session_id,user_id", ignoreDuplicates: true }
       );
-      await sb.from("muse_notifications").insert({ user_id: hostId || profile.id, from_id: profile.id, type: "booking", body: `${profile.name} requested to book a session`, read: false });
+      await sb.from("muse_notifications").insert({ user_id: effectiveHostId || profile.id, from_id: profile.id, type: "booking", body: `${profile.name} requested to book a session`, read: false });
       return NextResponse.json({ success: true });
     }
 
