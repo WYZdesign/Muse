@@ -140,8 +140,7 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
           setExpandedMatchId(null);
           return;
         }
-        setChatTarget(m);
-        showScreen("chat");
+        setExpandedMatchId(mid);
       }}
     >
       {/* Swipe background reveal left (Unmatch) */}
