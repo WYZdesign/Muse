@@ -1,7 +1,10 @@
 /* Muse PWA Service Worker — scoped push notifications */
 
-const CACHE = "muse-shell-v4";
-const SHELL = ["/muse", "/muse/offline", "/manifest.webmanifest", "/favicon-192x192.png"];
+const CACHE = "muse-shell-v5";
+// NOTE: do NOT pre-cache "/muse" (the app HTML shell). A cached shell
+// references old /_next/ chunk filenames that 404 after a redeploy → blank
+// screen. Only offline page + static assets are safe to cache.
+const SHELL = ["/muse/offline", "/manifest.webmanifest", "/favicon-192x192.png"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -66,17 +69,11 @@ self.addEventListener("fetch", (event) => {
 
   // Navigation requests: network-first, fallback to cache only when offline.
   // (Stale HTML shell references old /_next/ chunk names that 404 on the new
-  // deploy — serving it online causes a blank screen. Always hit the network.)
+  // deploy — serving it online causes a blank screen. Always hit the network,
+  // and never cache.put HTML navigations at all.)
   if (req.mode === "navigate") {
     event.respondWith(
       fetch(req)
-        .then((resp) => {
-          if (resp && resp.status === 200 && resp.type === "basic") {
-            const copy = resp.clone();
-            caches.open(CACHE).then((cache) => cache.put(req, copy));
-          }
-          return resp;
-        })
         .catch(() => caches.match(req).then((cached) => cached || caches.match("/muse/offline")))
     );
     return;

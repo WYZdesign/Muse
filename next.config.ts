@@ -55,6 +55,16 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      // HTML documents must never be cached — a stale shell references dead
+      // /_next/ chunk URLs and renders a blank screen. Always revalidate.
+      {
+        source: "/muse",
+        headers: [{ key: "Cache-Control", value: "no-store" }],
+      },
+      {
+        source: "/muse/landing",
+        headers: [{ key: "Cache-Control", value: "no-store" }],
+      },
     ];
   },
 };

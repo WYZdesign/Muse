@@ -25,7 +25,7 @@ function getAccessToken(): string | null {
 export async function registerMuseServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
   try {
-    const reg = await navigator.serviceWorker.register("/sw-muse.js", { scope: "/" });
+    const reg = await navigator.serviceWorker.register("/sw-muse.js", { scope: "/", updateViaCache: "none" });
     await navigator.serviceWorker.ready;
     return reg;
   } catch (e) {

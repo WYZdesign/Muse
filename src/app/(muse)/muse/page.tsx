@@ -527,9 +527,14 @@ function MusePage() {
     if (loadStateRef.current) return;
     loadStateRef.current = true;
 
-    // Build-version check: if stale code is detected, clear SW + caches and hard reload
+    // Build-version check: if stale code is detected, clear SW + caches and hard reload.
+    // App Router does not set __NEXT_DATA__.buildId, so derive the deploy fingerprint
+    // from Vercel's dpl= query param on the first /_next/ static chunk URL — it changes
+    // on every deployment.
     try {
-      const bid = (window as any).__NEXT_DATA__?.buildId;
+      const script = document.querySelector<HTMLScriptElement>('script[src*="/_next/static/"]');
+      const m = script?.src.match(/dpl=([^&"']+)/);
+      const bid = m ? m[1] : null;
       if (bid) {
         const prev = sessionStorage.getItem("muse_build");
         if (prev && prev !== bid) {
