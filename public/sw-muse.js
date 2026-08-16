@@ -1,6 +1,6 @@
 /* Muse PWA Service Worker — scoped push notifications */
 
-const CACHE = "muse-shell-v3";
+const CACHE = "muse-shell-v4";
 const SHELL = ["/muse", "/muse/offline", "/manifest.webmanifest", "/favicon-192x192.png"];
 
 self.addEventListener("install", (event) => {
@@ -63,6 +63,24 @@ self.addEventListener("fetch", (event) => {
   if (url.indexOf("/api/") !== -1) return;
   // Never cache Next.js build assets — they use content hashing for cache busting
   if (url.indexOf("/_next/") !== -1) return;
+
+  // Navigation requests: network-first, fallback to cache only when offline.
+  // (Stale HTML shell references old /_next/ chunk names that 404 on the new
+  // deploy — serving it online causes a blank screen. Always hit the network.)
+  if (req.mode === "navigate") {
+    event.respondWith(
+      fetch(req)
+        .then((resp) => {
+          if (resp && resp.status === 200 && resp.type === "basic") {
+            const copy = resp.clone();
+            caches.open(CACHE).then((cache) => cache.put(req, copy));
+          }
+          return resp;
+        })
+        .catch(() => caches.match(req).then((cached) => cached || caches.match("/muse/offline")))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(req).then((cached) => {
