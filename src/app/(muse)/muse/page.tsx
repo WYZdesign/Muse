@@ -568,6 +568,37 @@ function MusePage() {
     setHydrated(true);
     try { window.dispatchEvent(new CustomEvent("muse:hydrated")); } catch {}
 
+    // Remote kill-switch: if MUSE_CACHE_VERSION changed server-side, purge SW +
+    // caches and reload once. Non-blocking; only acts on an actual mismatch.
+    try {
+      const purgeAndReload = () => {
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.unregister());
+            caches.keys().then(ks => {
+              ks.forEach(k => caches.delete(k));
+              window.location.reload();
+            });
+          });
+        } else {
+          window.location.reload();
+        }
+      };
+      fetch("/api/muse/cache-version", { cache: "no-store" })
+        .then(r => (r.ok ? r.json() : null))
+        .then((d: { version?: string } | null) => {
+          if (!d || !d.version) return;
+          const prev = sessionStorage.getItem("muse_cache_version");
+          if (prev && prev !== d.version) {
+            sessionStorage.setItem("muse_cache_version", d.version);
+            purgeAndReload();
+            return;
+          }
+          sessionStorage.setItem("muse_cache_version", d.version);
+        })
+        .catch(() => {});
+    } catch {}
+
     // Capture geolocation for distance matching (best-effort, silent on denial).
     getGeolocation().then(g => { if (g) { setMyGeo(g); try { safeSetItem("muse_geo", JSON.stringify(g)); } catch {} } })
       .catch(() => { /* silently handled */ });
