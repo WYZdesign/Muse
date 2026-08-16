@@ -62,6 +62,9 @@ export async function POST(req: NextRequest) {
       customer_email: email || undefined,
       client_reference_id: userId || undefined,
       metadata: { plan, userId: userId || "" },
+      // Subscription metadata is separate from session metadata — propagate the
+      // userId so the webhook can downgrade tier on cancellation.
+      subscription_data: { metadata: { userId: userId || "" } },
       success_url: `${req.nextUrl.origin}/muse?upgraded=${plan}`,
       cancel_url: `${req.nextUrl.origin}/muse/subscription`,
       allow_promotion_codes: true,

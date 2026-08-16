@@ -21,7 +21,10 @@ export async function POST(req: NextRequest) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.client_reference_id || session.metadata?.userId;
-        const plan = session.metadata?.plan || "spark";
+        // Only ever assign a tier we actually know — never trust arbitrary
+        // metadata.plan strings (a stray value would land an unknown tier).
+        const KNOWN_TIERS = new Set(["free", "muse_pro", "spark", "muse", "sovereign"]);
+        const plan = session.metadata?.plan && KNOWN_TIERS.has(session.metadata.plan) ? session.metadata.plan : "muse_pro";
         if (userId) {
           await sb.from("muse_profiles").update({ tier: plan }).eq("auth_id", userId);
         }
@@ -29,7 +32,8 @@ export async function POST(req: NextRequest) {
       }
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        const userId = sub.metadata?.userId;
+        // userId is propagated into subscription_data.metadata at checkout.
+        const userId = sub.metadata?.userId as string | undefined;
         if (userId) {
           await sb.from("muse_profiles").update({ tier: "free" }).eq("auth_id", userId);
         }
