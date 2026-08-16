@@ -18,7 +18,7 @@ function fallbackAnswer(q: string): string {
   for (const f of FALLBACK_ANSWERS) {
     if (f.re.test(q)) return f.answer;
   }
-  return "I can help with how Muse works, safety, bookings, albums, and account questions. For anything else, email support@wyzdesign.com.";
+  return "I can help with how Muse works, safety, bookings, albums, and account questions. For anything else, email info@wyzdesign.com.";
 }
 
 export async function POST(req: NextRequest) {

@@ -53,7 +53,7 @@ export interface MenuModalProps {
   authUser: any;
 }
 
-const SUPPORT_EMAIL = "support@wyzdesign.com";
+const SUPPORT_EMAIL = "info@wyzdesign.com";
 
 export const MenuModal = memo(function MenuModal({
   showHamburger,

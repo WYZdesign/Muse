@@ -10,7 +10,7 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-export default function BackgroundScene({ flash }: { flash: string | null }) {
+export default function BackgroundScene({ flash, paused = false }: { flash: string | null; paused?: boolean }) {
   const cometRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
 
@@ -62,10 +62,12 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
   }, []);
 
   useEffect(() => {
+    if (paused) return;
     const canvas = cometRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     let w = 0, h = 0;
     const resize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
     resize();
@@ -76,7 +78,10 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
 
     function spawnComet() {
       if (comets.filter((c: any) => c.active).length >= 6) return;
-      const angle = Math.random() * Math.PI * 2, speed = (2 + Math.random() * 4) * 0.7, edge = Math.random();
+      const angle = Math.random() < 0.5
+        ? (Math.PI * 0.08 + Math.random() * Math.PI * 0.22)   // down-right ~14-54°
+        : (Math.PI * 0.72 + Math.random() * Math.PI * 0.2);   // down-left ~130-165°
+      const speed = 3.2 + Math.random() * 0.8, edge = Math.random();
       let x: number, y: number;
       if (edge < 0.25) { x = -50; y = Math.random() * h; }
       else if (edge < 0.5) { x = w + 50; y = Math.random() * h; }
@@ -87,7 +92,7 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
         color: COLORS[~~(Math.random() * COLORS.length)],
         tailLen: 80 + Math.random() * 140,
-        life: 0, maxLife: 300 + Math.random() * 500,
+        life: 0, maxLife: 160 + Math.random() * 100,
         sparks: [], active: true,
         size: 2.5 + Math.random() * 3,
         freq: 0.12 + Math.random() * 0.2,
@@ -155,11 +160,13 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
           ctx!.fill();
         }
       }
-      // Bottom waves — tall, spread out, teal/cyan/seafoam matching splash
+      // Bottom waves — layered ocean swell matching sunset landing palette
       const waveColors = [
-        { y: h * 0.72, alpha: 0.12, color: "20,200,210" },
-        { y: h * 0.78, alpha: 0.09, color: "10,160,180" },
-        { y: h * 0.84, alpha: 0.06, color: "0,120,150" },
+        { y: h * 0.72, alpha: 0.48, color: "30,195,215" },
+        { y: h * 0.78, alpha: 0.56, color: "18,155,182" },
+        { y: h * 0.84, alpha: 0.64, color: "12,122,155" },
+        { y: h * 0.88, alpha: 0.72, color: "8,92,128" },
+        { y: h * 0.92, alpha: 0.85, color: "6,60,96" },
       ];
       for (const wave of waveColors) {
         ctx!.save();
@@ -185,7 +192,7 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
     const onVis = () => { if (document.hidden) { cancelAnimationFrame(animId); } else { animId = requestAnimationFrame(animate); } };
     document.addEventListener("visibilitychange", onVis);
     return () => { cancelAnimationFrame(animId); document.removeEventListener("visibilitychange", onVis); window.removeEventListener("resize", resize); };
-  }, []);
+  }, [paused]);
 
   return (
     <>
@@ -219,7 +226,7 @@ export default function BackgroundScene({ flash }: { flash: string | null }) {
       </div>
       <div className="particles" ref={particlesRef} />
       <div className="ocean-waves">
-        <div className="wave wave-1" /><div className="wave wave-2" /><div className="wave wave-3" /><div className="wave wave-4" /><div className="wave wave-5" />
+        <div className="wave wave-1" /><div className="wave wave-2" /><div className="wave wave-3" /><div className="wave wave-4" /><div className="wave wave-5" /><div className="wave wave-6" /><div className="wave wave-7" /><div className="wave wave-8" />
       </div>
       {flash && <div className="screen-flash" style={{background:flash}} />}
     </>

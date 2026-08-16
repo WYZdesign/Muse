@@ -31,7 +31,7 @@ describe("museSystemPrompt", () => {
     const p = museSystemPrompt();
     expect(p).toContain("Muse");
     expect(p).toContain("muse.wyzdesign.com");
-    expect(p).toContain("support@wyzdesign.com");
+    expect(p).toContain("info@wyzdesign.com");
   });
 
   it("instructs against inventing features", () => {

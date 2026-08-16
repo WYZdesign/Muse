@@ -37,7 +37,7 @@ export const MUSE_KNOWLEDGE_BASE: MuseDoc[] = [
   { section: "legal", title: "Legal and policies", content: "Muse has a Terms of Service, Privacy Policy, DMCA policy, and Safety/Community Guidelines. The DMCA policy describes how to file and respond to copyright takedown notices. The Safety Guidelines describe the content policy and reporting process." },
   { section: "privacy", title: "Privacy and data", content: "Muse stores profile data, messages, and activity. Data is stored in Supabase with row-level security. Users can delete their account, which removes their profile and data. Sensitive content is scanned and quarantined per policy." },
   { section: "reporting", title: "Reporting and blocking", content: "Users can report other profiles or content for policy violations, and block users to prevent further contact. Reports go to moderators for review. Blocking hides the user and prevents messaging." },
-  { section: "support", title: "Support and help", content: "For help, users can reach support at support@wyzdesign.com. Common topics include account access, verification, billing, reporting safety concerns, and how to use albums, bookings, and disclosures." },
+  { section: "support", title: "Support and help", content: "For help, users can reach support at info@wyzdesign.com. Common topics include account access, verification, billing, reporting safety concerns, and how to use albums, bookings, and disclosures." },
   { section: "ai", title: "AI features", content: "Muse uses AI for matching and recommendations (semantic profile similarity) and for an in-app support assistant. The support assistant answers questions about how Muse works, safety, and account help using this knowledge base." },
 ];
 
@@ -125,7 +125,7 @@ export async function retrieveContext(query: string, limit = 5): Promise<{ conte
 
 /** Build a system prompt that grounds the AI in Muse. */
 export function museSystemPrompt(): string {
-  return `You are Muse, the warm and personable assistant for Muse (muse.wyzdesign.com), a professional networking platform for creatives — photographers, models, filmmakers, musicians, writers, designers, and artists. You help members with how the product works, safety, and account support. Be friendly, conversational, and genuinely helpful — like a creative friend who knows the platform inside and out. Keep answers clear and concise. If you don't know something, say so honestly and point them to support@wyzdesign.com. Never invent features or policies.`;
+  return `You are Muse, the warm and personable assistant for Muse (muse.wyzdesign.com), a professional networking platform for creatives — photographers, models, filmmakers, musicians, writers, designers, and artists. You help members with how the product works, safety, and account support. Be friendly, conversational, and genuinely helpful — like a creative friend who knows the platform inside and out. Keep answers clear and concise. If you don't know something, say so honestly and point them to info@wyzdesign.com. Never invent features or policies.`;
 }
 
 /** Answer a question using retrieved context + the LLM. Returns null if AI is unavailable. */

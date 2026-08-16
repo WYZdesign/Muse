@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 
-const CONTACT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@wyzdesign.com";
+const CONTACT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";
 
 // U.S. states that legally require government-issued ID verification for
 // adult/NSFW content (not just a self-reported age checkbox).

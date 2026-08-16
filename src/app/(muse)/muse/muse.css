@@ -159,6 +159,11 @@ a{color:inherit;text-decoration:none}
 @keyframes swave7{0%{transform:translateX(14px) translateY(10px) scaleY(0.96)}50%{transform:translateX(-8px) translateY(-12px) scaleY(1.08)}100%{transform:translateX(-14px) translateY(-16px) scaleY(1.02)}}
 @keyframes swave8{0%{transform:translateX(-10px) translateY(-8px) scaleY(1.02)}50%{transform:translateX(4px) translateY(6px) scaleY(0.96)}100%{transform:translateX(10px) translateY(10px) scaleY(1.04)}}
 
+/* Splash meteor trajectories */
+@keyframes shootA{0%{transform:translate(0,0) rotate(28deg) scaleX(0);opacity:0}4%{opacity:1;transform:translate(32px,17px) rotate(28deg) scaleX(1)}36%{opacity:0.9;transform:translate(288px,153px) rotate(28deg) scaleX(1)}48%{opacity:0;transform:translate(384px,204px) rotate(28deg) scaleX(0.6)}100%{opacity:0;transform:translate(384px,204px) rotate(28deg) scaleX(0)}}
+@keyframes shootB{0%{transform:translate(0,0) rotate(-33deg) scaleX(0);opacity:0}4%{opacity:1;transform:translate(-32px,18px) rotate(-33deg) scaleX(1)}36%{opacity:0.9;transform:translate(-288px,162px) rotate(-33deg) scaleX(1)}48%{opacity:0;transform:translate(-384px,216px) rotate(-33deg) scaleX(0.6)}100%{opacity:0;transform:translate(-384px,216px) rotate(-33deg) scaleX(0)}}
+@keyframes shootC{0%{transform:translate(0,0) rotate(22deg) scaleX(0);opacity:0}4%{opacity:1;transform:translate(34px,14px) rotate(22deg) scaleX(1)}36%{opacity:0.9;transform:translate(306px,126px) rotate(22deg) scaleX(1)}48%{opacity:0;transform:translate(408px,168px) rotate(22deg) scaleX(0.6)}100%{opacity:0;transform:translate(408px,168px) rotate(22deg) scaleX(0)}}
+
 /* Centered branding + loader */
 .splash-content{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
 .splash-logo-icon{width:120px;height:120px;border-radius:32px;object-fit:cover;background:#0a0612;box-shadow:0 8px 40px rgba(0,0,0,0.5);border:none;animation:splashIconFloat 4.2s ease-in-out infinite}

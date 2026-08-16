@@ -2,7 +2,7 @@
 
 import React from "react";
 
-const SUPPORT = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@wyzdesign.com";
+const SUPPORT = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";
 
 interface Props { children: React.ReactNode; fallback?: React.ReactNode; }
 interface State { hasError: boolean; error: Error | null; }

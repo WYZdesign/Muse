@@ -51,10 +51,10 @@ export default function SupportChat({ open, onClose }: { open: boolean; onClose:
         body: JSON.stringify({ question: q }),
       });
       const d = await r.json();
-      const text = d.answer || "Hmm, I'm not sure about that one. Email support@wyzdesign.com and we'll sort you out.";
+      const text = d.answer || "Hmm, I'm not sure about that one. Email info@wyzdesign.com and we'll sort you out.";
       setMessages((m) => [...m, { role: "assistant", text, sources: d.sources }]);
     } catch {
-      setMessages((m) => [...m, { role: "assistant", text: "Something went wrong on my end. Email support@wyzdesign.com." }]);
+      setMessages((m) => [...m, { role: "assistant", text: "Something went wrong on my end. Email info@wyzdesign.com and we'll sort you out." }]);
     } finally {
       setLoading(false);
     }
