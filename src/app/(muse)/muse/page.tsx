@@ -745,16 +745,32 @@ function MusePage() {
   const unreadNotificationCount = useMemo(() => activityFeed.filter(n => !n.read).length, [activityFeed]);
 
   const filteredProfiles = useMemo(() => {
-    const base = liveProfiles?.length ? [...PROFILES, ...liveProfiles.filter((lp:any) => !PROFILES.some((dp:any) => String(dp.id) === String(lp.id)))] : PROFILES;
-    let list = showNsfw ? base : base.filter(p => !p.nsfw);
+    // Stable order guarantee: the demo/static deck is shuffled ONCE with a
+    // session seed, then live profiles are APPENDED (never reshuffled), and
+    // we do NOT re-sort by distance after first paint. This stops the visible
+    // card from "randomly switching" when liveProfiles/myGeo arrive async.
+    let seed = 0;
+    try {
+      const stored = sessionStorage.getItem("muse_shuffle_seed");
+      if (stored) seed = parseInt(stored, 10) || 0;
+      else { seed = Math.floor(Math.random() * 0x7fffffff); sessionStorage.setItem("muse_shuffle_seed", String(seed)); }
+    } catch {}
+    const mulberry = (a: number) => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const base = [...PROFILES];
+    for (let i = base.length - 1; i > 0; i--) {
+      const j = Math.floor(mulberry(seed + i) * (i + 1));
+      [base[i], base[j]] = [base[j], base[i]];
+    }
+    // Append live (deduped) profiles at the end — order of the already-shuffled
+    // deck is untouched, so the visible card never jumps.
+    const merged = liveProfiles?.length ? [...base, ...liveProfiles.filter((lp: any) => !base.some((dp: any) => String(dp.id) === String(lp.id)))] : base;
+    let list = showNsfw ? merged : merged.filter(p => !p.nsfw);
     if (filterStyles.length > 0) list = list.filter(p => p.styles.some(s => filterStyles.includes(s)));
     if (filterScore > 50) list = list.filter(p => p.score >= filterScore);
     if (discoverSearch.trim()) {
       const q = discoverSearch.toLowerCase();
       list = list.filter(p => p.name.toLowerCase().includes(q) || p.type?.toLowerCase().includes(q) || p.loc?.toLowerCase().includes(q) || p.styles?.some(s => s.toLowerCase().includes(q)));
     }
-    // Sort by distance if geolocation is available (closest first),
-    // but never discard profiles far away — this is a global creative network.
     const enriched = list.map(p => {
       const geo = CITY_GEO[p.loc];
       const distMi = myGeo && geo ? distanceMiles(myGeo, geo) : null;
@@ -773,19 +789,8 @@ function MusePage() {
       }
       return boosted;
     });
-    // Sort: if geo available, closest profiles first, then by distance
-    if (myGeo) enriched.sort((a: any, b: any) => {
-      const da = a.distanceMi ?? 99999;
-      const db = b.distanceMi ?? 99999;
-      return da - db;
-    });
-    // Shuffle: true Fisher-Yates so order is random on every refresh/load
-    for (let i = enriched.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [enriched[i], enriched[j]] = [enriched[j], enriched[i]];
-    }
     return enriched;
-  }, [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoveryPrefs.distance, discoverSearch]);
+  }, [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch]);
 
   useEffect(() => {
     const profile = filteredProfiles[currentIdx];
@@ -1828,7 +1833,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 )}
               </div>
             </div>
-            <DiscoverScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showDiscoveryPrefs={showDiscoveryPrefs} setShowDiscoveryPrefs={setShowDiscoveryPrefs} showFilterModal={showFilterModal} setShowFilterModal={setShowFilterModal} mapView={mapView} setMapView={setMapView} filteredProfiles={filteredProfiles} currentIdx={currentIdx} setCurrentIdx={setCurrentIdx} boostActive={boostActive} setBoostActive={setBoostActive} setBoostEnd={setBoostEnd} discoverSearchOpen={discoverSearchOpen} setDiscoverSearchOpen={setDiscoverSearchOpen} discoverSearch={discoverSearch} setDiscoverSearch={setDiscoverSearch} myGeo={myGeo} apiFetch={apiFetch} showToast={showToast} doSwipe={doSwipe} setViewProfile={setViewProfile} viewProfile={viewProfile} handleImgError={handleImgError} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} stories={stories} currentUser={currentUser} uid={uid} />
+            <DiscoverScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showDiscoveryPrefs={showDiscoveryPrefs} setShowDiscoveryPrefs={setShowDiscoveryPrefs} showFilterModal={showFilterModal} setShowFilterModal={setShowFilterModal} mapView={mapView} setMapView={setMapView} filteredProfiles={filteredProfiles} currentIdx={currentIdx} setCurrentIdx={setCurrentIdx} boostActive={boostActive} setBoostActive={setBoostActive} setBoostEnd={setBoostEnd} discoverSearchOpen={discoverSearchOpen} setDiscoverSearchOpen={setDiscoverSearchOpen} discoverSearch={discoverSearch} setDiscoverSearch={setDiscoverSearch} myGeo={myGeo} apiFetch={apiFetch} showToast={showToast} doSwipe={doSwipe} setViewProfile={setViewProfile} viewProfile={viewProfile} handleImgError={handleImgError} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} stories={stories} currentUser={currentUser} uid={uid} showMatchMenu={showMatchMenu} setShowMatchMenu={setShowMatchMenu} />
             <FeedScreen screen={screen} showScreen={showScreen} feedFilter={feedFilter} setFeedFilter={setFeedFilter} feedText={feedText} setFeedText={setFeedText} feedMedia={feedMedia} setFeedMedia={setFeedMedia} feedPosts={feedPosts} setFeedPosts={setFeedPosts} showEmojiPicker={showEmojiPicker} setShowEmojiPicker={setShowEmojiPicker} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} currentUser={currentUser} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} stories={stories} setStories={setStories} uploadImage={uploadImage} uid={uid} bootstrapped={bootstrapped} feedPostsStatic={feedPostsStatic} setFeedPostsStatic={setFeedPostsStatic} feedReactions={feedReactions} replyingTo={replyingTo} setReplyingTo={setReplyingTo} commentText={commentText} setCommentText={setCommentText} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} />
             <MusesScreen screen={screen} showScreen={showScreen} matches={matches} setMatches={setMatches} searchOpen={searchOpen} setSearchOpen={setSearchOpen} matchesView={matchesView} setMatchesView={setMatchesView} showLikesYou={showLikesYou} setShowLikesYou={setShowLikesYou} likedBy={likedBy} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} searchQuery={searchQuery} setSearchQuery={setSearchQuery} expandedMatchId={expandedMatchId} matchActions={matchActions} setShowPremiumPopup={setShowPremiumPopup} />
             <BtsScreen screen={screen} stories={stories} setStories={setStories} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} setShowStory={setShowStory} handleImgError={handleImgError} />
