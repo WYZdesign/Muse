@@ -526,6 +526,31 @@ function MusePage() {
   useEffect(() => {
     if (loadStateRef.current) return;
     loadStateRef.current = true;
+
+    // Build-version check: if stale code is detected, clear SW + caches and hard reload
+    try {
+      const bid = (window as any).__NEXT_DATA__?.buildId;
+      if (bid) {
+        const prev = sessionStorage.getItem("muse_build");
+        if (prev && prev !== bid) {
+          sessionStorage.setItem("muse_build", bid);
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+              regs.forEach(r => r.unregister());
+              caches.keys().then(ks => {
+                ks.forEach(k => caches.delete(k));
+                window.location.reload();
+              });
+            });
+          } else {
+            window.location.reload();
+          }
+          return;
+        }
+        sessionStorage.setItem("muse_build", bid);
+      }
+    } catch {}
+
     try { sessionStorage.setItem("muse_loaded", "1"); } catch {}
     loadState();
     setHydrated(true);
