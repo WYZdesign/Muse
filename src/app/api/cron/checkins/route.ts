@@ -37,15 +37,16 @@ export async function GET(req: NextRequest) {
     if (bookingError) throw bookingError;
 
     let created = 0;
-    const scheduledFor = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     for (const booking of upcomingBookings || []) {
       // Create check-in for both parties
       for (const userId of [booking.user_id, booking.host_id].filter(Boolean)) {
+        // Match the actual muse_safety_checkins schema (checkin_type, status, notes)
+        // — there is no scheduled_for column.
         const { error: checkinError } = await sb.from("muse_safety_checkins").upsert({
           user_id: userId,
           booking_id: booking.id,
+          checkin_type: "pre_shoot_24h",
           status: "pending",
-          scheduled_for: scheduledFor,
         }, { onConflict: "user_id,booking_id" });
 
         if (!checkinError) {

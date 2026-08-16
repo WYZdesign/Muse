@@ -17,6 +17,9 @@ const CSP = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https://images.unsplash.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://res.cloudinary.com",
   "font-src 'self' data: https://fonts.gstatic.com",
+  "media-src 'self' blob: data: https:",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
   `connect-src 'self' https://${SUPABASE_HOST} wss://${SUPABASE_HOST} https://*.supabase.co https://api.openrouter.ai https://api.stripe.com https://js.stripe.com https://api.mapbox.com https://events.mapbox.com https://*.sentry.io`,
   "frame-src https://js.stripe.com https://hooks.stripe.com",
 ].join("; ");

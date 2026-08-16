@@ -13,3 +13,9 @@ _AUDIT_SHOTS/
 _audit_artifacts/*.png
 _audit_artifacts/*.cjs
 scripts/capture_screens.mjs
+scripts/capture_regression.mjs
+scripts/diagnose.mjs
+scripts/inspect_styles.mjs
+scripts/test_prod.mjs
+scripts/__pycache__/
+**/__pycache__/
