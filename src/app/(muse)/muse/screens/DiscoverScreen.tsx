@@ -375,8 +375,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                 </div>
               )}
             </div>
-            {!isUnlimited && dailyLikes < 10 && <div className="limit-bar"><div className="limit-dots">{Array.from({ length: 10 }, (_, i) => <div key={i} className={"limit-dot" + (i < dailyLikes ? " filled" : "")} />)}</div><div className="limit-text">{dailyLikes} likes left</div></div>}
-            {!isUnlimited && superLikes < 3 && <div className="limit-bar"><div className="limit-dots">{Array.from({ length: 3 }, (_, i) => <div key={i} className={"limit-dot" + (i < superLikes ? " super-filled" : "")} />)}</div><div className="limit-text">{superLikes} super likes left</div></div>}
+            {!isUnlimited && (dailyLikes < 10 || superLikes < 3) && <div className="limit-bars">{dailyLikes < 10 && <div className="limit-bar"><div className="limit-dots">{Array.from({ length: 10 }, (_, i) => <div key={i} className={"limit-dot" + (i < dailyLikes ? " filled" : "")} />)}</div><div className="limit-text">{dailyLikes} likes left</div></div>}{superLikes < 3 && <div className="limit-bar"><div className="limit-dots">{Array.from({ length: 3 }, (_, i) => <div key={i} className={"limit-dot" + (i < superLikes ? " super-filled" : "")} />)}</div><div className="limit-text">{superLikes} super likes left</div></div>}</div>}
             {isUnlimited && <div className="limit-bar" style={{ background: "rgba(10,6,18,0.55)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 99, padding: "6px 16px", marginTop: 0, position: "absolute", top: 8, left: "50%", transform: "translateX(-50%)", zIndex: 20, backdropFilter: "blur(12px)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}><div style={{ fontSize: 12, fontWeight: 700, color: "var(--gold)", letterSpacing: 0.5 }}>∞ Unlimited</div></div>}
           </>
         )}
