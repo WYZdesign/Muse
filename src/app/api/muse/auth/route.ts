@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "register") {
-      const { email, password, name, data } = body;
+      const { email, password, name } = body;
       if (!email || !password) return NextResponse.json({ error: "Email and password required" }, { status: 400 });
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) return NextResponse.json({ error: "Invalid email" }, { status: 400 });
       if (String(password).length > 200) return NextResponse.json({ error: "Password too long" }, { status: 400 });
@@ -56,11 +56,13 @@ export async function POST(req: NextRequest) {
       });
       if (authErr) return safeServerError(authErr, "register auth");
 
+      // Insert ONLY whitelisted fields. Never spread arbitrary client data
+      // into the profile row — that would allow mass-assignment of tier,
+      // verified, suspended, etc.
       const { error: profileErr } = await sb.from("muse_profiles").insert({
         auth_id: authUser.user!.id,
         email: email.toLowerCase(),
-        name: name || email.split("@")[0],
-        ...(data || {}),
+        name: sanitizeText(name || email.split("@")[0], 60),
       });
       if (profileErr) return safeServerError(profileErr, "register profile");
 
