@@ -1338,6 +1338,7 @@ export async function POST(req: NextRequest) {
       }
       const { targetUserId, reason, durationDays } = rest;
       if (!targetUserId) return NextResponse.json({ error: "targetUserId required" }, { status: 400 });
+      if (targetUserId === profile.id) return NextResponse.json({ error: "Cannot suspend yourself" }, { status: 400 });
       const suspensionEnd = durationDays ? new Date(Date.now() + durationDays * 86400000).toISOString() : null;
       const { error } = await sb.from("muse_strikes").insert({
         user_id: targetUserId, issued_by: profile.id,
@@ -1347,6 +1348,8 @@ export async function POST(req: NextRequest) {
         suspension_ends_at: suspensionEnd,
       });
       if (error) return safeServerError(error, "db op");
+      // Actually suspend the account — a strike row alone does not enforce the ban.
+      await sb.from("muse_profiles").update({ suspended: true, suspended_at: new Date().toISOString() }).eq("id", targetUserId);
       await sb.from("muse_notifications").insert({
         user_id: targetUserId, from_id: profile.id, type: "suspension",
         body: suspensionEnd ? `Your account has been suspended until ${new Date(suspensionEnd).toLocaleDateString()}` : "Your account has been permanently banned",
