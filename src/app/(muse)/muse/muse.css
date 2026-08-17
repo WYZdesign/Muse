@@ -76,7 +76,7 @@ a{color:inherit;text-decoration:none}
 .nf-6{width:280px;height:200px;bottom:25%;right:10%;background:radial-gradient(ellipse,rgba(255,218,185,0.13),rgba(255,181,194,0.04) 50%,transparent 70%);animation-duration:29s;animation-delay:10s}
 .nf-7{width:260px;height:190px;top:60%;left:5%;background:radial-gradient(ellipse,rgba(212,165,255,0.3),rgba(160,80,220,0.03) 50%,transparent 70%);animation-duration:31s;animation-delay:14s}
 .nf-8{width:340px;height:260px;top:55%;right:5%;background:radial-gradient(ellipse,rgba(255,107,107,0.11),rgba(255,138,128,0.04) 50%,transparent 70%);animation-duration:27s;animation-delay:2s}
-@keyframes nebulaDrift{0%,100%{transform:translate(0,0) scale(1);opacity:0.6}25%{transform:translate(30px,-20px) scale(1.08);opacity:0.8}50%{transform:translate(-20px,25px) scale(0.95);opacity:0.5}75%{transform:translate(15px,10px) scale(1.04);opacity:0.7}}
+@keyframes nebulaDrift{0%,100%{transform:translate(0,0) scale(1);opacity:0.55;filter:blur(80px) hue-rotate(0deg)}25%{transform:translate(30px,-20px) scale(1.08);opacity:0.8;filter:blur(80px) hue-rotate(40deg)}50%{transform:translate(-20px,25px) scale(0.95);opacity:0.45;filter:blur(80px) hue-rotate(-25deg)}75%{transform:translate(15px,10px) scale(1.04);opacity:0.7;filter:blur(80px) hue-rotate(15deg)}}
 
 /* ═══ AURORA BOREALIS — top of every page (realistic northern lights) ═══ */
 .aurora-strip{position:absolute;width:120%;height:160px;left:-10%;pointer-events:none;z-index:2;filter:blur(45px);mix-blend-mode:screen;opacity:0.55;will-change:transform,opacity}
@@ -173,26 +173,6 @@ a{color:inherit;text-decoration:none}
 .splash-loader{width:120px;height:3px;border-radius:2px;background:rgba(255,255,255,0.1);margin-top:24px;overflow:hidden}
 .splash-loader-bar{width:40%;height:100%;border-radius:2px;background:linear-gradient(90deg,#FFD700,#FF8A80,#D4A5FF);animation:splashLoad 1.4s ease-in-out infinite}
 @keyframes splashLoad{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
-
-/* ═══ OCEAN WAVES SVG — bottom of every page, matching landing ═══ */
-.ocean-waves-svg{position:fixed;bottom:0;left:-2%;width:104%;height:40vh;z-index:1;pointer-events:none;opacity:0.7}
-.owv{transform-origin:center bottom;will-change:transform}
-.owv-1{fill:rgba(30,195,215,0.48);animation:owave1 6.2s ease-in-out infinite alternate}
-.owv-2{fill:rgba(18,155,182,0.56);animation:owave2 8.4s ease-in-out infinite -2.1s alternate}
-.owv-3{fill:rgba(12,122,155,0.64);animation:owave3 7.0s ease-in-out infinite -4.3s alternate}
-.owv-4{fill:rgba(8,92,128,0.72);animation:owave4 9.8s ease-in-out infinite -1.5s alternate}
-.owv-5{fill:rgba(6,60,96,0.85);animation:owave5 11.2s ease-in-out infinite -3.8s alternate}
-.owv-6{fill:rgba(30,195,215,0.3);animation:owave6 12s ease-in-out infinite alternate}
-.owv-7{fill:rgba(18,155,182,0.22);animation:owave7 10s ease-in-out infinite -3s alternate}
-.owv-8{fill:rgba(12,122,155,0.16);animation:owave8 8.8s ease-in-out infinite -5s alternate}
-@keyframes owave1{0%{transform:translateY(-18px) scaleY(1)}50%{transform:translateY(8px) scaleY(0.92)}100%{transform:translateY(16px) scaleY(1.08)}}
-@keyframes owave2{0%{transform:translateY(20px) scaleY(0.94)}50%{transform:translateY(-14px) scaleY(1.12)}100%{transform:translateY(-26px) scaleY(1.02)}}
-@keyframes owave3{0%{transform:translateY(-22px) scaleY(1.05)}50%{transform:translateY(16px) scaleY(0.9)}100%{transform:translateY(24px) scaleY(1.14)}}
-@keyframes owave4{0%{transform:translateY(24px) scaleY(0.92)}50%{transform:translateY(-18px) scaleY(1.08)}100%{transform:translateY(-32px) scaleY(1.04)}}
-@keyframes owave5{0%{transform:translateY(-14px) scaleY(1)}50%{transform:translateY(12px) scaleY(0.96)}100%{transform:translateY(18px) scaleY(1.06)}}
-@keyframes owave6{0%{transform:translateY(-12px) scaleY(1)}50%{transform:translateY(10px) scaleY(0.94)}100%{transform:translateY(14px) scaleY(1.06)}}
-@keyframes owave7{0%{transform:translateY(10px) scaleY(0.96)}50%{transform:translateY(-12px) scaleY(1.08)}100%{transform:translateY(-16px) scaleY(1.02)}}
-@keyframes owave8{0%{transform:translateY(-8px) scaleY(1.02)}50%{transform:translateY(6px) scaleY(0.96)}100%{transform:translateY(10px) scaleY(1.04)}}
 
 /* ═══ HAMBURGER PANEL WAVES ═══ */
 .hamburger-waves{position:absolute;bottom:0;left:0;width:100%;height:60px;pointer-events:none;overflow:hidden;opacity:0.25}

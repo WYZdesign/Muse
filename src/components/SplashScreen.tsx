@@ -94,40 +94,40 @@ export default function SplashScreen() {
           ))}
         </div>
 
-        {/* Layered ocean waves — bottom third only */}
+        {/* Layered ocean waves — bottom third, incrementally smaller toward horizon */}
         <div className="fusion-ocean">
           <svg className="fusion-waves-svg" viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
-            <path className="fwv fwv-6" d="M0,10 C240,50 480,-10 720,30 C960,70 1200,0 1440,20 L1440,360 L0,360 Z" />
-            <path className="fwv fwv-7" d="M0,35 C180,80 400,10 600,55 C800,90 1040,20 1240,60 C1360,75 1420,40 1440,50 L1440,360 L0,360 Z" />
-            <path className="fwv fwv-8" d="M0,60 C220,20 460,90 700,40 C940,0 1180,80 1440,55 L1440,360 L0,360 Z" />
-            <path className="fwv fwv-1" d="M0,120 C200,30 360,180 540,110 C720,40 900,160 1100,70 C1280,-10 1380,140 1440,110 L1440,360 L0,360 Z" />
-            <path className="fwv fwv-2" d="M0,150 C160,240 320,80 480,180 C640,260 800,100 980,190 C1160,270 1320,110 1440,170 L1440,360 L0,360 Z" />
-            <path className="fwv fwv-3" d="M0,190 C220,100 440,260 660,160 C880,80 1100,240 1300,130 C1380,90 1420,160 1440,180 L1440,360 L0,360 Z" />
-            <path className="fwv fwv-4" d="M0,225 C180,310 380,150 580,240 C780,320 980,170 1180,260 C1320,310 1400,210 1440,235 L1440,360 L0,360 Z" />
-            <path className="fwv fwv-5" d="M0,260 C260,170 520,310 780,220 C1040,150 1260,290 1440,240 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-6" d="M0,8 C180,14 360,2 540,9 C720,16 900,2 1080,9 C1260,16 1380,6 1440,10 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-7" d="M0,22 C180,30 360,10 540,24 C720,34 900,12 1080,26 C1260,36 1380,20 1440,26 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-8" d="M0,40 C180,52 360,22 540,44 C720,60 900,26 1080,46 C1260,62 1380,38 1440,46 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-1" d="M0,90 C180,108 360,60 540,96 C720,122 900,66 1080,98 C1260,124 1380,84 1440,98 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-2" d="M0,140 C180,162 360,100 540,148 C720,184 900,108 1080,150 C1260,184 1380,128 1440,150 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-3" d="M0,185 C200,215 380,135 560,196 C760,250 940,145 1120,200 C1260,236 1380,168 1440,196 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-4" d="M0,228 C180,262 380,168 580,242 C780,302 980,176 1180,248 C1320,292 1400,210 1440,248 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-5" d="M0,268 C220,312 420,198 640,282 C860,348 1060,206 1260,290 C1360,326 1410,252 1440,288 L1440,360 L0,360 Z" />
           </svg>
         </div>
       </div>
 
-      {/* Centered branding + loader */}
-      <div style={{ position: "relative", zIndex: 4, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <img src="/muse-app-icon.png" alt="Muse" style={{ width: 88, height: 88, borderRadius: 24, objectFit: "cover", boxShadow: "0 8px 40px rgba(0,0,0,0.5)", animation: "splashIconFloat 4.2s ease-in-out infinite" }} />
+      {/* Centered branding + loader — raised high, oversized */}
+      <div style={{ position: "relative", zIndex: 4, display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "34vh" }}>
+        <img src="/muse-app-icon.png" alt="Muse" style={{ width: 132, height: 132, borderRadius: 36, objectFit: "cover", boxShadow: "0 12px 60px rgba(0,0,0,0.55)", animation: "splashIconFloat 4.2s ease-in-out infinite" }} />
         <div style={{
-          fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: 44, fontWeight: 900, letterSpacing: -1,
+          fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: 68, fontWeight: 900, letterSpacing: -2,
           background: "linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFB5C2,#FF8C69,#FFD700)",
           backgroundSize: "300% 300%", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-          animation: "fontLava 7s ease-in-out infinite", marginTop: 10,
+          animation: "fontLava 7s ease-in-out infinite", marginTop: 16,
           textShadow: "0 2px 20px rgba(255,215,0,0.25)",
         }}>Muse</div>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 4, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", marginTop: 4, marginBottom: 22 }}>Creative Professional Network</div>
-        <div style={{ width: 120, height: 3, borderRadius: 2, background: "rgba(255,255,255,0.12)", overflow: "hidden" }}>
+        <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: 5, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", marginTop: 8, marginBottom: 28 }}>Creative Professional Network</div>
+        <div style={{ width: 180, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.12)", overflow: "hidden" }}>
           <div style={{ width: "40%", height: "100%", borderRadius: 2, background: "linear-gradient(90deg,#FFD700,#FF8A80,#D4A5FF)", animation: "splashLoad 1.4s ease-in-out infinite" }} />
         </div>
       </div>
 
       <style>{`
         .fusion-scene{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-        .fusion-sky{position:absolute;inset:0;background:linear-gradient(180deg,#0a0612 0%,#1a0f2e 10%,#2d1b4e 20%,#4d1c52 30%,#8c2a52 40%,#c9454a 48%,#e86842 54%,#f79646 60%,#fdbb58 64%,#fed980 68%,#f09f54 69%,#186b84 70%,#0d4662 82%,#072235 100%)}
+        .fusion-sky{position:absolute;inset:0;background:linear-gradient(180deg,#0a0612 0%,#1a0f2e 10%,#2d1b4e 20%,#4d1c52 30%,#8c2a52 40%,#c9454a 48%,#e86842 54%,#f79646 60%,#fdbb58 64%,#fed980 66.7%,#f09f54 66.7%,#186b84 67%,#0d4662 82%,#072235 100%)}
         .fusion-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.22);z-index:2;pointer-events:none}
         .fusion-stars{position:absolute;top:0;left:0;right:0;height:50%;z-index:1}
         .fusion-stars .star{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;box-shadow:0 0 4px rgba(255,255,255,0.7);animation:sunsetTwinkle 3s ease-in-out infinite}
@@ -157,8 +157,8 @@ export default function SplashScreen() {
         .neb-5{width:40vw;height:20vw;background:radial-gradient(ellipse at 70% 30%,rgba(255,105,180,0.75) 0%,rgba(255,140,80,0.52) 40%,rgba(212,165,255,0.28) 75%,transparent 85%);top:3%;right:20%;animation-delay:-5.5s}
         .neb-6{width:32vw;height:17vw;background:radial-gradient(ellipse at 50% 50%,rgba(0,191,255,0.7) 0%,rgba(65,105,225,0.55) 45%,transparent 80%);top:18%;right:2%;animation-delay:-11s}
         @keyframes sunsetDrift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(26px,-16px) scale(1.08)}}
-        .fusion-sun-glow{position:absolute;left:50%;bottom:24%;transform:translateX(-50%);width:58vw;height:32vw;border-radius:58vw 58vw 0 0;background:radial-gradient(ellipse at 50% 100%,rgba(255,200,90,0.7) 0%,rgba(255,140,60,0.34) 45%,transparent 75%);filter:blur(16px);animation:sunsetSunPulse 5s ease-in-out infinite;z-index:1}
-        .fusion-sun{position:absolute;left:50%;bottom:33.3%;transform:translateX(-50%);width:14vw;min-width:100px;max-width:160px;height:7vw;min-height:50px;max-height:80px;border-radius:160px 160px 0 0;background:radial-gradient(ellipse at 50% 100%,#ffffff 0%,#fff2be 25%,#ffb648 60%,#f1683c 100%);box-shadow:0 -8px 60px 20px rgba(255,185,75,0.75),0 -2px 18px 4px rgba(255,255,255,0.9);animation:sunsetSunBob 5s ease-in-out infinite;z-index:1}
+        .fusion-sun-glow{position:absolute;left:50%;bottom:20%;transform:translateX(-50%);width:70vw;height:38vw;border-radius:70vw 70vw 0 0;background:radial-gradient(ellipse at 50% 100%,rgba(255,200,90,0.7) 0%,rgba(255,140,60,0.34) 45%,transparent 75%);filter:blur(16px);animation:sunsetSunPulse 5s ease-in-out infinite;z-index:1}
+        .fusion-sun{position:absolute;left:50%;bottom:33.3%;transform:translateX(-50%);width:17vw;min-width:120px;max-width:192px;height:8.4vw;min-height:60px;max-height:96px;border-radius:192px 192px 0 0;background:radial-gradient(ellipse at 50% 100%,#ffffff 0%,#fff2be 25%,#ffb648 60%,#f1683c 100%);box-shadow:0 -8px 60px 20px rgba(255,185,75,0.75),0 -2px 18px 4px rgba(255,255,255,0.9);animation:sunsetSunBob 5s ease-in-out infinite;z-index:1}
         @keyframes sunsetSunPulse{0%,100%{opacity:0.85;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.06)}}
         @keyframes sunsetSunBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(3px)}}
         .fusion-clouds{position:absolute;inset:0;z-index:1}
@@ -203,14 +203,14 @@ export default function SplashScreen() {
         .fusion-ocean{position:absolute;left:0;right:0;bottom:0;height:33.3%;z-index:2}
         .fusion-waves-svg{position:absolute;bottom:0;left:-8%;width:116%;height:100%;display:block}
         .fusion-waves-svg .fwv{transform-origin:center bottom;will-change:transform}
-        .fwv-1{fill:rgba(30,195,215,0.52);animation:waveRise1 6.2s ease-in-out infinite alternate}
-        .fwv-2{fill:rgba(18,155,182,0.6);animation:waveRise2 8.4s ease-in-out infinite -2.1s alternate}
-        .fwv-3{fill:rgba(12,122,155,0.68);animation:waveRise3 7.0s ease-in-out infinite -4.3s alternate}
-        .fwv-4{fill:rgba(8,92,128,0.76);animation:waveRise4 9.8s ease-in-out infinite -1.5s alternate}
-        .fwv-5{fill:rgba(6,60,96,0.88);animation:waveRise5 11.2s ease-in-out infinite -3.8s alternate}
-        .fwv-6{fill:rgba(30,195,215,0.34);animation:waveRise6 12s ease-in-out infinite alternate}
-        .fwv-7{fill:rgba(18,155,182,0.26);animation:waveRise7 10s ease-in-out infinite -3s alternate}
-        .fwv-8{fill:rgba(12,122,155,0.2);animation:waveRise8 8.8s ease-in-out infinite -5s alternate}
+        .fwv-6{fill:rgba(34,235,245,0.6);animation:waveRise6 12s ease-in-out infinite alternate}
+        .fwv-7{fill:rgba(30,215,232,0.6);animation:waveRise7 10s ease-in-out infinite -3s alternate}
+        .fwv-8{fill:rgba(26,195,218,0.6);animation:waveRise8 8.8s ease-in-out infinite -5s alternate}
+        .fwv-1{fill:rgba(20,170,200,0.6);animation:waveRise1 6.2s ease-in-out infinite alternate}
+        .fwv-2{fill:rgba(15,142,178,0.6);animation:waveRise2 8.4s ease-in-out infinite -2.1s alternate}
+        .fwv-3{fill:rgba(11,112,154,0.6);animation:waveRise3 7.0s ease-in-out infinite -4.3s alternate}
+        .fwv-4{fill:rgba(8,84,130,0.6);animation:waveRise4 9.8s ease-in-out infinite -1.5s alternate}
+        .fwv-5{fill:rgba(5,58,102,0.6);animation:waveRise5 11.2s ease-in-out infinite -3.8s alternate}
         @keyframes waveRise1{0%{transform:translateY(-18px) scaleY(1)}50%{transform:translateY(8px) scaleY(0.92)}100%{transform:translateY(16px) scaleY(1.08)}}
         @keyframes waveRise2{0%{transform:translateY(20px) scaleY(0.94)}50%{transform:translateY(-14px) scaleY(1.12)}100%{transform:translateY(-26px) scaleY(1.02)}}
         @keyframes waveRise3{0%{transform:translateY(-22px) scaleY(1.05)}50%{transform:translateY(16px) scaleY(0.9)}100%{transform:translateY(24px) scaleY(1.14)}}

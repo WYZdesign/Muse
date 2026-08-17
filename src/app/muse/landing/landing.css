@@ -426,7 +426,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .muse-reveal.scale-in.in { transform: none; }
 
 /* ═══ SPLIT TEXT ═══ */
-.muse-split { display: inline-flex; flex-wrap: wrap; }
+.muse-split { display: inline-flex; flex-wrap: wrap; justify-content: center; }
 .muse-split .word { display: inline-block; overflow: hidden; vertical-align: bottom; }
 .muse-split .word > span {
   display: inline-block; transform: translateY(115%);

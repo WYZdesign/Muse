@@ -202,18 +202,6 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
         ))}
       </div>
       <div className="particles" ref={particlesRef} />
-      <div className="ocean-waves-svg">
-        <svg viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
-          <path className="owv owv-6" d="M0,10 C240,50 480,-10 720,30 C960,70 1200,0 1440,20 L1440,360 L0,360 Z" />
-          <path className="owv owv-7" d="M0,35 C180,80 400,10 600,55 C800,90 1040,20 1240,60 C1360,75 1420,40 1440,50 L1440,360 L0,360 Z" />
-          <path className="owv owv-8" d="M0,60 C220,20 460,90 700,40 C940,0 1180,80 1440,55 L1440,360 L0,360 Z" />
-          <path className="owv owv-1" d="M0,120 C200,30 360,180 540,110 C720,40 900,160 1100,70 C1280,-10 1380,140 1440,110 L1440,360 L0,360 Z" />
-          <path className="owv owv-2" d="M0,150 C160,240 320,80 480,180 C640,260 800,100 980,190 C1160,270 1320,110 1440,170 L1440,360 L0,360 Z" />
-          <path className="owv owv-3" d="M0,190 C220,100 440,260 660,160 C880,80 1100,240 1300,130 C1380,90 1420,160 1440,180 L1440,360 L0,360 Z" />
-          <path className="owv owv-4" d="M0,225 C180,310 380,150 580,240 C780,320 980,170 1180,260 C1320,310 1400,210 1440,235 L1440,360 L0,360 Z" />
-          <path className="owv owv-5" d="M0,260 C260,170 520,310 780,220 C1040,150 1260,290 1440,240 L1440,360 L0,360 Z" />
-        </svg>
-      </div>
       {flash && <div className="screen-flash" style={{background:flash}} />}
     </>
   );
