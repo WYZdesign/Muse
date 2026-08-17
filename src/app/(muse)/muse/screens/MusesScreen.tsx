@@ -147,7 +147,7 @@ export const MusesScreen = memo(function MusesScreen({
           )}
         </div>
       ) : (
-        <div className="match-list" style={matchesView === "grid" ? { flex: 1, display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 16, alignContent: "flex-start", overflowY: "auto", padding: "12px 16px 80px" } : { flex: 1, display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "flex-start", overflowY: "auto", padding: "0 16px 80px", gap: 10 }}>
+        <div className="match-list" style={matchesView === "grid" ? { flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "repeat(2,1fr)", gridAutoFlow: "row", gridAutoRows: "auto", gap: 16, alignContent: "flex-start", overflowY: "auto", padding: "12px 16px 96px" } : { flex: 1, display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "flex-start", overflowY: "auto", padding: "0 16px 80px", gap: 10 }}>
           {matches.length === 0 && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "48px 24px" }}>
               <div className="empty-icon" style={{ fontSize: 56, marginBottom: 12 }}>♥</div>
