@@ -851,7 +851,7 @@ function MusePage() {
 
   const openHamburger = useCallback(() => { setHamburgerScreen(""); setShowHamburger(true); }, []);
 
-  const handleOAuth = useCallback(async (provider: "google" | "facebook") => {
+  const handleOAuth = useCallback(async (provider: "google" | "facebook" | "apple") => {
     setAuthLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -1487,6 +1487,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   <div style={{display:"flex",gap:10}}>
                     <button className="auth-social-btn" style={{flex:1}} onClick={()=>handleOAuth("google")}><svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.5 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5c10 0 19.5-7.3 19.5-19.5 0-1.3-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 12.5 24 12.5c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.5 4.5 24 4.5 16.3 4.5 9.7 8.8 6.3 14.7z"/><path fill="#4CAF50" d="M24 43.5c5.4 0 10.3-2.1 14-5.4l-6.5-5.5C29.6 34 26.9 35 24 35c-5.3 0-9.7-2.6-11.3-7.5l-6.5 5C9.6 40.2 16.2 43.5 24 43.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.6l6.5 5.5C41.4 35.7 43.5 30.3 43.5 24c0-1.3-.1-2.3-.4-3.5z"/></svg>Google</button>
                     <button className="auth-social-btn" style={{flex:1}} onClick={()=>handleOAuth("facebook")}><svg width="16" height="16" viewBox="0 0 48 48"><path fill="#1877F2" d="M48 24C48 10.7 37.3 0 24 0S0 10.7 0 24c0 11.9 8.7 21.8 20 23.6V31h-6v-7h6v-5.3c0-5.9 3.5-9.2 8.9-9.2 2.6 0 5.3.5 5.3.5v5.8h-3c-2.9 0-3.8 1.8-3.8 3.7V24h6.5l-1 7h-5.5v16.6C39.3 45.8 48 35.9 48 24z"/></svg>Facebook</button>
+                    <button className="auth-social-btn" style={{flex:1}} onClick={()=>handleOAuth("apple")} aria-label="Continue with Apple"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#fff" d="M16.36 12.77c.02 2.8 2.46 3.73 2.49 3.74-.02.07-.39 1.33-1.28 2.64-.77 1.13-1.57 2.25-2.83 2.27-1.24.03-1.64-.73-3.06-.73-1.42 0-1.86.71-3.04.76-1.22.05-2.15-1.22-2.93-2.35-1.6-2.31-2.82-6.53-1.18-9.38.81-1.41 2.27-2.31 3.85-2.33 1.2-.02 2.33.81 3.06.81.73 0 2.1-1 3.54-.85.6.03 2.29.24 3.38 1.83-.09.05-2.02 1.18-2 3.5zM14.3 4.25c.65-.78 1.08-1.87.96-2.95-.93.04-2.05.62-2.72 1.4-.6.69-1.12 1.8-.98 2.86 1.04.08 2.1-.53 2.74-1.31z"/></svg>Apple</button>
                   </div>
                   <div className="auth-terms-wrap">
                     <span style={{fontSize:12,color:"var(--muted)"}}>By continuing you agree to our</span><span className="auth-terms" onClick={()=>setShowTerms(true)}>Terms</span><span className="auth-terms" onClick={()=>setShowPrivacy(true)}>Privacy</span><span className="auth-terms" onClick={()=>setShowGuidelines(true)}>Guidelines</span>
