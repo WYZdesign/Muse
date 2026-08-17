@@ -967,7 +967,7 @@ img{background-color:#1a0a2e}
 .card-photo-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.4);box-shadow:0 0 4px rgba(0,0,0,0.5);transition:all .25s}
 .card-photo-dot.active{width:20px;border-radius:4px;background:linear-gradient(120deg,var(--gold),var(--pink),var(--lavender),var(--gold));background-size:300% 300%;animation:dotLava 3s ease-in-out infinite}
 @keyframes dotLava{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-.card-photo-zone{position:absolute;top:0;height:62vh;width:35%;z-index:2;transition:opacity .3s ease}
+.card-photo-zone{position:absolute;top:0;height:62vh;width:35%;z-index:5;transition:opacity .3s ease}
 .card-photo-zone.hidden{opacity:0;pointer-events:none}
 .card-photo-zone-left{left:0}
 .card-photo-zone-right{right:0}
