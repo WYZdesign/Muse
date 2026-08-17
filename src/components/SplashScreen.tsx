@@ -1,198 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 const DURATION = 3000;
 
 export default function SplashScreen() {
   const [visible, setVisible] = useState(true);
   const [fade, setFade] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    function resize() {
-      if (!canvas) return;
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener("resize", resize);
-
-    const W = canvas.width;
-    const H = canvas.height;
-
-    // 60 stars (was 130) — less heat
-    const cols = 10, rows = 6;
-    const stars: { x: number; y: number; r: number; a: number; da: number; hue: number }[] = [];
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        stars.push({
-          x: (col / cols) * W + (Math.random() - 0.5) * (W / cols),
-          y: (row / rows) * (H * 0.55) + Math.random() * (H * 0.55 / rows),
-          r: Math.random() * 1.6 + 0.3,
-          a: Math.random(),
-          da: (Math.random() - 0.5) * 0.018,
-          hue: Math.random() > 0.3 ? 0 : (Math.random() > 0.5 ? 50 : 280),
-        });
-      }
-    }
-
-    // 3 wide aurora strips
-    // 8 nebula fogs
-    const nebulae = [
-      { x: W*0.15, y: H*0.12, r: W*0.3, c: "rgba(138,43,226,0.05)" },
-      { x: W*0.5, y: H*0.05, r: W*0.35, c: "rgba(255,105,180,0.04)" },
-      { x: W*0.8, y: H*0.1, r: W*0.28, c: "rgba(72,61,139,0.06)" },
-      { x: W*0.35, y: H*0.02, r: W*0.32, c: "rgba(147,112,219,0.04)" },
-      { x: W*0.65, y: H*0.15, r: W*0.24, c: "rgba(255,215,0,0.025)" },
-      { x: W*0.9, y: H*0.06, r: W*0.22, c: "rgba(220,20,60,0.03)" },
-      { x: W*0.05, y: H*0.2, r: W*0.26, c: "rgba(0,191,255,0.025)" },
-      { x: W*0.45, y: H*0.08, r: W*0.28, c: "rgba(186,85,211,0.04)" },
-    ];
-
-    // Comets — 3 dynamic shooting stars with trails
-    const comets = [
-      { x: W*0.2, y: H*0.05, vx: 1.8, vy: 1.2, life: 0, maxLife: 80 },
-      { x: W*0.7, y: H*0.02, vx: 2.0, vy: 0.8, life: 0, maxLife: 70, delay: 250 },
-    ];
-
-    // 16 embers
-    const embers = Array.from({ length: 8 }, () => ({
-      x: Math.random() * W,
-      y: H * 0.55 + Math.random() * H * 0.35,
-      r: Math.random() * 2.5 + 0.5,
-      vy: -(Math.random() * 0.8 + 0.3),
-      vx: (Math.random() - 0.5) * 0.4,
-      life: Math.random(),
-      maxLife: 0.6 + Math.random() * 0.4,
-      hue: 20 + Math.random() * 20,
-    }));
-
-    let frame = 0;
-    let animId: number;
-
-    function draw() {
-      if (!ctx || !canvas) return;
-      ctx.clearRect(0, 0, W, H);
-
-      // Nebula fogs
-      for (const n of nebulae) {
-        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
-        grad.addColorStop(0, n.c);
-        grad.addColorStop(1, "transparent");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H * 0.6);
-      }
-
-      // Soft haze clouds — wide radial gradients drifting slowly at top
-      const hazeLayers = [
-        { x: W * 0.25, y: H * 0.06, r: W * 0.45, c1: "rgba(72,209,204,0.06)", c2: "transparent", vx: 0.15 },
-        { x: W * 0.65, y: H * 0.04, r: W * 0.4, c1: "rgba(138,43,226,0.05)", c2: "transparent", vx: -0.12 },
-        { x: W * 0.45, y: H * 0.09, r: W * 0.5, c1: "rgba(255,105,180,0.04)", c2: "transparent", vx: 0.1 },
-        { x: W * 0.8, y: H * 0.03, r: W * 0.35, c1: "rgba(0,191,255,0.05)", c2: "transparent", vx: -0.18 },
-        { x: W * 0.1, y: H * 0.07, r: W * 0.38, c1: "rgba(147,112,219,0.04)", c2: "transparent", vx: 0.13 },
-      ];
-      for (const hz of hazeLayers) {
-        const cx = (hz.x + frame * hz.vx + W) % W;
-        const grad = ctx.createRadialGradient(cx, hz.y, 0, cx, hz.y, hz.r);
-        grad.addColorStop(0, hz.c1);
-        grad.addColorStop(1, hz.c2);
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H * 0.35);
-      }
-
-      // Stars (unchanged)
-      for (const s of stars) {
-        s.a += s.da;
-        if (s.a <= 0.1 || s.a >= 1) s.da *= -1;
-        s.a = Math.max(0.1, Math.min(1, s.a));
-        const alpha = 0.25 + s.a * 0.75;
-        const color = s.hue === 0
-          ? `rgba(255,255,255,${alpha})`
-          : s.hue === 50
-            ? `rgba(255,215,0,${alpha*0.7})`
-            : `rgba(212,165,255,${alpha*0.7})`;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
-        ctx.fill();
-      }
-
-      // Dynamic comets with trails
-      for (const c of comets) {
-        if ((c.delay || 0) > 0) { c.delay!--; continue; }
-        c.life++;
-        if (c.life > c.maxLife) {
-          c.x = Math.random() * W * 0.9;
-          c.y = 10 + Math.random() * H * 0.15;
-          c.life = 0;
-          c.maxLife = 60 + Math.random() * 50;
-          c.vx = 1.5 + Math.random() * 2;
-          c.vy = 1 + Math.random() * 1;
-        }
-        const progress = c.life / c.maxLife;
-        const cx = c.x + c.vx * c.life;
-        const cy = c.y + c.vy * c.life;
-        // Trail
-        const trailLen = 70;
-        const angle = Math.atan2(c.vy, c.vx);
-        for (let t = 0; t < trailLen; t+=3) {
-          const tx = cx - Math.cos(angle) * t;
-          const ty = cy - Math.sin(angle) * t;
-          const ta = (1 - t/trailLen) * (1 - progress) * 0.5;
-          ctx.fillStyle = `rgba(255,215,0,${ta})`;
-          ctx.beginPath();
-          ctx.arc(tx, ty, 1.5, 0, Math.PI*2);
-          ctx.fill();
-        }
-        // Head
-        ctx.fillStyle = `rgba(255,255,255,${(1-progress)*0.9})`;
-        ctx.beginPath();
-        ctx.arc(cx, cy, 2.5, 0, Math.PI*2);
-        ctx.fill();
-      }
-
-      // Embers
-      for (const e of embers) {
-        e.x += e.vx;
-        e.y += e.vy;
-        e.life -= 0.002;
-        if (e.life <= 0 || e.y < H*0.3) {
-          e.x = Math.random() * W;
-          e.y = H*0.55 + Math.random() * H*0.35;
-          e.life = e.maxLife;
-        }
-        const alpha = Math.max(0, e.life/e.maxLife) * 0.6;
-        ctx.fillStyle = `rgba(255,${100+e.hue},${20+e.hue*0.5},${alpha})`;
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, e.r, 0, Math.PI*2);
-        ctx.fill();
-      }
-
-      // Horizon glow — warm sand meeting ocean
-      const hGlow = ctx.createLinearGradient(0, H*0.62, 0, H);
-      hGlow.addColorStop(0, "transparent");
-      hGlow.addColorStop(0.3, "rgba(20,180,200,0.08)");
-      hGlow.addColorStop(0.6, "rgba(193,68,14,0.12)");
-      hGlow.addColorStop(1, "rgba(244,200,115,0.3)");
-      ctx.fillStyle = hGlow;
-      ctx.fillRect(0, H*0.5, W, H*0.5);
-
-      frame++;
-      animId = requestAnimationFrame(draw);
-    }
-
-    draw();
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
 
   useEffect(() => {
     const done = () => { setFade(true); setTimeout(() => setVisible(false), 700); };
@@ -203,11 +17,10 @@ export default function SplashScreen() {
 
   if (!visible) return null;
 
-  // 35 sprites evenly spaced across full page using CSS grid
-  const sprites = Array.from({ length: 35 }, (_, i) => ({
+  const sprites = Array.from({ length: 28 }, (_, i) => ({
     row: Math.floor(i / 7),
     col: i % 7,
-    char: ["✦","✧","⋆","·","◆","◈","✶","⭑"][i % 8],
+    char: ["✦", "✧", "⋆", "·", "◆", "◈", "✶", "⭑"][i % 8],
     size: 8 + (i % 4) * 3,
     delay: (i * 0.08) % 2,
     duration: 2.5 + (i % 3) * 1.5,
@@ -219,96 +32,196 @@ export default function SplashScreen() {
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       transition: "opacity .7s cubic-bezier(.4,0,.2,1)",
       opacity: fade ? 0 : 1, pointerEvents: fade ? "none" : "auto", overflow: "hidden",
+      background: "#0a0612",
     }}>
-      {/* Beach scene: sand → ocean → horizon → galaxy */}
-      <div style={{
-        position: "absolute", inset: 0, zIndex: 0,
-        background: "linear-gradient(180deg, #0a0612 0%, #1a0f2e 12%, #2d1b4e 25%, #1a3a5c 38%, #0d7377 50%, #14a3a8 58%, #0d7377 65%, #1a8a9e 72%, #d4a76a 88%, #c4956a 94%, #a67c52 100%)",
-      }} />
+      {/* FUSION SUNSET SCENE — galaxy top, golden sunset mid, ocean bottom */}
+      <div className="fusion-scene" aria-hidden="true">
+        <div className="fusion-sky" />
+        <div className="fusion-overlay" />
 
-      {/* Canvas */}
-      <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 2 }} />
-
-      {/* Layered ocean waves — matches the landing promo page */}
-      <div style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "100%", zIndex: 2, pointerEvents: "none" }}>
-        <svg className="splash-waves-svg" viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
-          <path className="swv swv-6" d="M0,10 C240,50 480,-10 720,30 C960,70 1200,0 1440,20 L1440,360 L0,360 Z" />
-          <path className="swv swv-7" d="M0,35 C180,80 400,10 600,55 C800,90 1040,20 1240,60 C1360,75 1420,40 1440,50 L1440,360 L0,360 Z" />
-          <path className="swv swv-8" d="M0,60 C220,20 460,90 700,40 C940,0 1180,80 1440,55 L1440,360 L0,360 Z" />
-          <path className="swv swv-1" d="M0,120 C200,30 360,180 540,110 C720,40 900,160 1100,70 C1280,-10 1380,140 1440,110 L1440,360 L0,360 Z" />
-          <path className="swv swv-2" d="M0,150 C160,240 320,80 480,180 C640,260 800,100 980,190 C1160,270 1320,110 1440,170 L1440,360 L0,360 Z" />
-          <path className="swv swv-3" d="M0,190 C220,100 440,260 660,160 C880,80 1100,240 1300,130 C1380,90 1420,160 1440,180 L1440,360 L0,360 Z" />
-          <path className="swv swv-4" d="M0,225 C180,310 380,150 580,240 C780,320 980,170 1180,260 C1320,310 1400,210 1440,235 L1440,360 L0,360 Z" />
-          <path className="swv swv-5" d="M0,260 C260,170 520,310 780,220 C1040,150 1260,290 1440,240 L1440,360 L0,360 Z" />
-        </svg>
-      </div>
-
-      {/* Evenly dispersed sprites grid */}
-      <div style={{
-        position: "absolute", inset: 0, zIndex: 3, pointerEvents: "none",
-        display: "grid", gridTemplateColumns: "repeat(7,1fr)", gridTemplateRows: "repeat(5,1fr)",
-      }}>
-        {sprites.map((s, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{
-              fontSize: s.size, opacity: 0,
-              color: i%4===0?"#FFD700":i%4===1?"#D4A5FF":i%4===2?"#FF8A80":"rgba(255,255,255,0.5)",
-              animation: `sprIn ${s.duration}s ease-in-out ${s.delay}s forwards, sprFloat ${s.duration}s ease-in-out ${s.delay}s infinite`,
-            }}>{s.char}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Logo */}
-      <div style={{ position: "relative", zIndex: 4, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <div style={{
-          fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: 80, fontWeight: 900, letterSpacing: -2,
-          background: "linear-gradient(120deg,#FFD700,#FFBF00,#FF6B6B,#D4A5FF,#FF8C69,#FFD700)",
-          backgroundSize: "300% 300%",
-          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-          filter: "drop-shadow(0 2px 16px rgba(255,215,0,0.45))",
-          animation: "fontLava 7s ease-in-out infinite, fontIn 0.6s ease-out",
-          marginBottom: 2,
-        }}>Muse</div>
-        <div style={{
-          fontSize: 10, fontWeight: 600, letterSpacing: 4, color: "rgba(255,255,255,0.45)", textTransform: "uppercase",
-          marginBottom: 36, animation: "fontFadeUp 0.8s 0.3s ease-out both",
-        }}>Creative Professional Network</div>
-        <div style={{ display: "flex", gap: 14, animation: "fontFadeUp 0.8s 0.6s ease-out both" }}>
-          {[0,1,2].map(i=>(
-            <div key={i} style={{ width: 10, height: 10, borderRadius: "50%",
-              background: i===0?"#FFD700":i===1?"#FF8A80":"#D4A5FF",
-              animation: `fontDot 1.6s ease-in-out ${i*0.25}s infinite`,
-            }}/>
+        {/* Twinkling stars — upper galaxy twilight */}
+        <div className="fusion-stars">
+          {Array.from({ length: 60 }).map((_, i) => (
+            <span key={i} className="star" style={{ left: `${(i * 37) % 100}%`, top: `${(i * 13) % 42}%`, animationDelay: `${(i % 10) * 0.45}s` }} />
           ))}
+        </div>
+
+        {/* Aurora nebula ribbons */}
+        <div className="fusion-nebula neb-1" /><div className="fusion-nebula neb-2" /><div className="fusion-nebula neb-3" />
+        <div className="fusion-nebula neb-4" /><div className="fusion-nebula neb-5" /><div className="fusion-nebula neb-6" />
+
+        {/* Shooting stars */}
+        <div className="fusion-shooting-star ss-1" />
+        <div className="fusion-shooting-star ss-2" />
+        <div className="fusion-shooting-star ss-3" />
+        <div className="fusion-shooting-star ss-4" />
+        <div className="fusion-shooting-star ss-5" />
+
+        {/* Golden hour sun */}
+        <div className="fusion-sun-glow" />
+        <div className="fusion-sun" />
+
+        {/* Drifting clouds */}
+        <div className="fusion-clouds">
+          <span className="fusion-cloud c-1" />
+          <span className="fusion-cloud c-2" />
+          <span className="fusion-cloud c-3" />
+          <span className="fusion-cloud c-4" />
+          <span className="fusion-cloud c-5" />
+        </div>
+
+        {/* Birds */}
+        <div className="fusion-birds">
+          <div className="fusion-flock bf-0"><span className="bird-wing-left" /><span className="bird-wing-right" /></div>
+          <div className="fusion-flock bf-1"><span className="bird-wing-left" /><span className="bird-wing-right" /></div>
+          <div className="fusion-flock bf-2"><span className="bird-wing-left" /><span className="bird-wing-right" /></div>
+          <div className="fusion-flock bf-3"><span className="bird-wing-left" /><span className="bird-wing-right" /></div>
+        </div>
+
+        {/* Sparkle sprites — the ✦✧⋆ field from the galaxy splash */}
+        <div className="fusion-sparkles">
+          {sprites.map((s, i) => (
+            <div key={i} className="fusion-sparkle" style={{ gridRow: s.row + 1, gridColumn: s.col + 1 }}>
+              <span style={{ fontSize: s.size, color: i % 4 === 0 ? "#FFD700" : i % 4 === 1 ? "#D4A5FF" : i % 4 === 2 ? "#FF8A80" : "rgba(255,255,255,0.6)", animation: `sprIn ${s.duration}s ease-in-out ${s.delay}s forwards, sprFloat ${s.duration}s ease-in-out ${s.delay}s infinite` }}>{s.char}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Rising embers — warm near the ocean */}
+        <div className="fusion-embers">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <span key={i} className="ember" style={{ left: `${(i * 53) % 100}%`, animationDelay: `${(i % 6) * 0.7}s`, animationDuration: `${4 + (i % 4)}s` }} />
+          ))}
+        </div>
+
+        {/* Layered ocean waves — bottom third only */}
+        <div className="fusion-ocean">
+          <svg className="fusion-waves-svg" viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
+            <path className="fwv fwv-6" d="M0,10 C240,50 480,-10 720,30 C960,70 1200,0 1440,20 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-7" d="M0,35 C180,80 400,10 600,55 C800,90 1040,20 1240,60 C1360,75 1420,40 1440,50 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-8" d="M0,60 C220,20 460,90 700,40 C940,0 1180,80 1440,55 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-1" d="M0,120 C200,30 360,180 540,110 C720,40 900,160 1100,70 C1280,-10 1380,140 1440,110 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-2" d="M0,150 C160,240 320,80 480,180 C640,260 800,100 980,190 C1160,270 1320,110 1440,170 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-3" d="M0,190 C220,100 440,260 660,160 C880,80 1100,240 1300,130 C1380,90 1420,160 1440,180 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-4" d="M0,225 C180,310 380,150 580,240 C780,320 980,170 1180,260 C1320,310 1400,210 1440,235 L1440,360 L0,360 Z" />
+            <path className="fwv fwv-5" d="M0,260 C260,170 520,310 780,220 C1040,150 1260,290 1440,240 L1440,360 L0,360 Z" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Centered branding + loader */}
+      <div style={{ position: "relative", zIndex: 4, display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <img src="/muse-app-icon.png" alt="Muse" style={{ width: 88, height: 88, borderRadius: 24, objectFit: "cover", boxShadow: "0 8px 40px rgba(0,0,0,0.5)", animation: "splashIconFloat 4.2s ease-in-out infinite" }} />
+        <div style={{
+          fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: 44, fontWeight: 900, letterSpacing: -1,
+          background: "linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFB5C2,#FF8C69,#FFD700)",
+          backgroundSize: "300% 300%", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+          animation: "fontLava 7s ease-in-out infinite", marginTop: 10,
+          textShadow: "0 2px 20px rgba(255,215,0,0.25)",
+        }}>Muse</div>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 4, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", marginTop: 4, marginBottom: 22 }}>Creative Professional Network</div>
+        <div style={{ width: 120, height: 3, borderRadius: 2, background: "rgba(255,255,255,0.12)", overflow: "hidden" }}>
+          <div style={{ width: "40%", height: "100%", borderRadius: 2, background: "linear-gradient(90deg,#FFD700,#FF8A80,#D4A5FF)", animation: "splashLoad 1.4s ease-in-out infinite" }} />
         </div>
       </div>
 
       <style>{`
-        .splash-waves-svg{position:absolute;bottom:0;left:-8%;width:116%;height:100%;display:block}
-        .splash-waves-svg .swv{transform-origin:center bottom;will-change:transform}
-        .swv-1{fill:rgba(30,195,215,0.48);animation:swave1 6.2s ease-in-out infinite alternate}
-        .swv-2{fill:rgba(18,155,182,0.56);animation:swave2 8.4s ease-in-out infinite -2.1s alternate}
-        .swv-3{fill:rgba(12,122,155,0.64);animation:swave3 7.0s ease-in-out infinite -4.3s alternate}
-        .swv-4{fill:rgba(8,92,128,0.72);animation:swave4 9.8s ease-in-out infinite -1.5s alternate}
-        .swv-5{fill:rgba(6,60,96,0.85);animation:swave5 11.2s ease-in-out infinite -3.8s alternate}
-        .swv-6{fill:rgba(30,195,215,0.3);animation:swave6 12s ease-in-out infinite alternate}
-        .swv-7{fill:rgba(18,155,182,0.22);animation:swave7 10s ease-in-out infinite -3s alternate}
-        .swv-8{fill:rgba(12,122,155,0.16);animation:swave8 8.8s ease-in-out infinite -5s alternate}
-        @keyframes swave1{0%{transform:translateY(-18px) scaleY(1)}50%{transform:translateY(8px) scaleY(0.92)}100%{transform:translateY(16px) scaleY(1.08)}}
-        @keyframes swave2{0%{transform:translateY(20px) scaleY(0.94)}50%{transform:translateY(-14px) scaleY(1.12)}100%{transform:translateY(-26px) scaleY(1.02)}}
-        @keyframes swave3{0%{transform:translateY(-22px) scaleY(1.05)}50%{transform:translateY(16px) scaleY(0.9)}100%{transform:translateY(24px) scaleY(1.14)}}
-        @keyframes swave4{0%{transform:translateY(24px) scaleY(0.92)}50%{transform:translateY(-18px) scaleY(1.08)}100%{transform:translateY(-32px) scaleY(1.04)}}
-        @keyframes swave5{0%{transform:translateY(-14px) scaleY(1)}50%{transform:translateY(12px) scaleY(0.96)}100%{transform:translateY(18px) scaleY(1.06)}}
-        @keyframes swave6{0%{transform:translateY(-12px) scaleY(1)}50%{transform:translateY(10px) scaleY(0.94)}100%{transform:translateY(14px) scaleY(1.06)}}
-        @keyframes swave7{0%{transform:translateY(10px) scaleY(0.96)}50%{transform:translateY(-12px) scaleY(1.08)}100%{transform:translateY(-16px) scaleY(1.02)}}
-        @keyframes swave8{0%{transform:translateY(-8px) scaleY(1.02)}50%{transform:translateY(6px) scaleY(0.96)}100%{transform:translateY(10px) scaleY(1.04)}}
-        @keyframes fontLava { 0%{background-position:0 50%} 50%{background-position:100% 50%} 100%{background-position:0 50%} }
-        @keyframes fontIn { from{opacity:0;transform:translateY(16px) scale(0.92)} to{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes fontFadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes fontDot { 0%,100%{transform:scale(1);opacity:0.3} 50%{transform:scale(2.2);opacity:1} }
-        @keyframes sprIn { from{opacity:0;transform:scale(0) translateY(10px)} to{opacity:0.4;transform:scale(1) translateY(0)} }
-        @keyframes sprFloat { 0%,100%{transform:translateY(0) scale(1);opacity:0.3} 50%{transform:translateY(-10px) scale(1.2);opacity:0.6} }
+        .fusion-scene{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+        .fusion-sky{position:absolute;inset:0;background:linear-gradient(180deg,#0a0612 0%,#1a0f2e 10%,#2d1b4e 20%,#4d1c52 30%,#8c2a52 40%,#c9454a 48%,#e86842 54%,#f79646 60%,#fdbb58 64%,#fed980 68%,#f09f54 69%,#186b84 70%,#0d4662 82%,#072235 100%)}
+        .fusion-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.22);z-index:2;pointer-events:none}
+        .fusion-stars{position:absolute;top:0;left:0;right:0;height:50%;z-index:1}
+        .fusion-stars .star{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;box-shadow:0 0 4px rgba(255,255,255,0.7);animation:sunsetTwinkle 3s ease-in-out infinite}
+        .fusion-stars .star:nth-child(3n){background:#ffd98a;box-shadow:0 0 5px rgba(255,217,138,0.8)}
+        .fusion-stars .star:nth-child(5n){width:3px;height:3px}
+        .fusion-stars .star:nth-child(7n){background:#d4a5ff;box-shadow:0 0 6px rgba(212,165,255,0.8)}
+        @keyframes sunsetTwinkle{0%,100%{opacity:0.2;transform:scale(0.7)}50%{opacity:1;transform:scale(1.3)}}
+        .fusion-shooting-star{position:absolute;width:150px;height:2px;border-radius:999px;background:linear-gradient(90deg,transparent 0%,rgba(255,140,80,0.28) 35%,rgba(255,215,0,0.72) 75%,#fff 100%);filter:drop-shadow(0 0 4px rgba(255,215,0,0.8));opacity:0;pointer-events:none;z-index:1;will-change:transform,opacity}
+        .fusion-shooting-star::before{content:"";position:absolute;right:-1px;top:50%;transform:translateY(-50%);width:3px;height:3px;border-radius:50%;background:#fff;box-shadow:0 0 8px 2px rgba(255,255,255,0.9),0 0 18px 4px rgba(255,215,0,0.5)}
+        .fusion-shooting-star.ss-2,.fusion-shooting-star.ss-5{background:linear-gradient(270deg,transparent 0%,rgba(255,140,80,0.28) 35%,rgba(255,215,0,0.72) 75%,#fff 100%)}
+        .fusion-shooting-star.ss-2::before,.fusion-shooting-star.ss-5::before{right:auto;left:-1px}
+        .fusion-shooting-star.ss-1{top:8%;left:30%;animation:shootA 7.5s linear infinite 1.5s}
+        .fusion-shooting-star.ss-2{top:13%;right:20%;animation:shootB 9.5s linear infinite 4.8s}
+        .fusion-shooting-star.ss-3{top:5%;left:52%;animation:shootC 8.5s linear infinite 6.5s}
+        .fusion-shooting-star.ss-4{top:17%;left:12%;animation:shootD 10s linear infinite 2.8s}
+        .fusion-shooting-star.ss-5{top:9%;right:6%;animation:shootE 11s linear infinite 8.2s}
+        @keyframes shootA{0%{transform:translate(0,0) rotate(28deg) scaleX(0);opacity:0}4%{opacity:1;transform:translate(32px,17px) rotate(28deg) scaleX(1)}36%{opacity:0.9;transform:translate(288px,153px) rotate(28deg) scaleX(1)}48%{opacity:0;transform:translate(384px,204px) rotate(28deg) scaleX(0.6)}100%{opacity:0;transform:translate(384px,204px) rotate(28deg) scaleX(0)}}
+        @keyframes shootC{0%{transform:translate(0,0) rotate(22deg) scaleX(0);opacity:0}4%{opacity:1;transform:translate(34px,14px) rotate(22deg) scaleX(1)}36%{opacity:0.9;transform:translate(306px,126px) rotate(22deg) scaleX(1)}48%{opacity:0;transform:translate(408px,168px) rotate(22deg) scaleX(0.6)}100%{opacity:0;transform:translate(408px,168px) rotate(22deg) scaleX(0)}}
+        @keyframes shootD{0%{transform:translate(0,0) rotate(33deg) scaleX(0);opacity:0}4%{opacity:1;transform:translate(28px,18px) rotate(33deg) scaleX(1)}36%{opacity:0.9;transform:translate(252px,162px) rotate(33deg) scaleX(1)}48%{opacity:0;transform:translate(336px,216px) rotate(33deg) scaleX(0.6)}100%{opacity:0;transform:translate(336px,216px) rotate(33deg) scaleX(0)}}
+        @keyframes shootB{0%{transform:translate(0,0) rotate(-33deg) scaleX(0);opacity:0}4%{opacity:1;transform:translate(-32px,18px) rotate(-33deg) scaleX(1)}36%{opacity:0.9;transform:translate(-288px,162px) rotate(-33deg) scaleX(1)}48%{opacity:0;transform:translate(-384px,216px) rotate(-33deg) scaleX(0.6)}100%{opacity:0;transform:translate(-384px,216px) rotate(-33deg) scaleX(0)}}
+        @keyframes shootE{0%{transform:translate(0,0) rotate(-26deg) scaleX(0);opacity:0}4%{opacity:1;transform:translate(-30px,15px) rotate(-26deg) scaleX(1)}36%{opacity:0.9;transform:translate(-270px,135px) rotate(-26deg) scaleX(1)}48%{opacity:0;transform:translate(-360px,180px) rotate(-26deg) scaleX(0.6)}100%{opacity:0;transform:translate(-360px,180px) rotate(-26deg) scaleX(0)}}
+        .fusion-nebula{position:absolute;border-radius:50%;filter:blur(34px);mix-blend-mode:screen;opacity:0.9;animation:sunsetDrift 14s ease-in-out infinite;z-index:1}
+        .neb-1{width:48vw;height:25vw;background:radial-gradient(ellipse at 40% 60%,rgba(0,255,180,0.7) 0%,rgba(20,180,210,0.5) 40%,rgba(138,43,226,0.2) 70%,transparent 85%);top:1%;left:-8%}
+        .neb-2{width:44vw;height:23vw;background:radial-gradient(ellipse at 60% 40%,rgba(255,20,147,0.7) 0%,rgba(186,85,211,0.55) 40%,rgba(75,0,130,0.22) 70%,transparent 85%);top:7%;right:-6%;animation-delay:-3.5s}
+        .neb-3{width:36vw;height:19vw;background:radial-gradient(ellipse at 50% 50%,rgba(0,220,255,0.75) 0%,rgba(255,215,0,0.5) 45%,rgba(0,128,128,0.22) 75%,transparent 85%);top:0%;left:32%;animation-delay:-7s}
+        .neb-4{width:34vw;height:18vw;background:radial-gradient(ellipse at 30% 70%,rgba(147,112,219,0.7) 0%,rgba(138,43,226,0.55) 45%,transparent 80%);top:12%;left:6%;animation-delay:-9.5s}
+        .neb-5{width:40vw;height:20vw;background:radial-gradient(ellipse at 70% 30%,rgba(255,105,180,0.75) 0%,rgba(255,140,80,0.52) 40%,rgba(212,165,255,0.28) 75%,transparent 85%);top:3%;right:20%;animation-delay:-5.5s}
+        .neb-6{width:32vw;height:17vw;background:radial-gradient(ellipse at 50% 50%,rgba(0,191,255,0.7) 0%,rgba(65,105,225,0.55) 45%,transparent 80%);top:18%;right:2%;animation-delay:-11s}
+        @keyframes sunsetDrift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(26px,-16px) scale(1.08)}}
+        .fusion-sun-glow{position:absolute;left:50%;bottom:24%;transform:translateX(-50%);width:58vw;height:32vw;border-radius:58vw 58vw 0 0;background:radial-gradient(ellipse at 50% 100%,rgba(255,200,90,0.7) 0%,rgba(255,140,60,0.34) 45%,transparent 75%);filter:blur(16px);animation:sunsetSunPulse 5s ease-in-out infinite;z-index:1}
+        .fusion-sun{position:absolute;left:50%;bottom:33.3%;transform:translateX(-50%);width:14vw;min-width:100px;max-width:160px;height:7vw;min-height:50px;max-height:80px;border-radius:160px 160px 0 0;background:radial-gradient(ellipse at 50% 100%,#ffffff 0%,#fff2be 25%,#ffb648 60%,#f1683c 100%);box-shadow:0 -8px 60px 20px rgba(255,185,75,0.75),0 -2px 18px 4px rgba(255,255,255,0.9);animation:sunsetSunBob 5s ease-in-out infinite;z-index:1}
+        @keyframes sunsetSunPulse{0%,100%{opacity:0.85;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.06)}}
+        @keyframes sunsetSunBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(3px)}}
+        .fusion-clouds{position:absolute;inset:0;z-index:1}
+        .fusion-cloud{position:absolute;border-radius:50%;filter:blur(26px);opacity:0.75;mix-blend-mode:screen;animation:sunsetCloud linear infinite}
+        .c-1{width:26vw;height:7vw;top:20%;left:-30%;background:radial-gradient(ellipse,rgba(255,220,185,0.38),rgba(255,140,100,0.1) 55%,transparent 75%);animation-duration:26s}
+        .c-2{width:20vw;height:5.5vw;top:14%;left:-22%;background:radial-gradient(ellipse,rgba(255,190,215,0.34),rgba(212,165,255,0.1) 55%,transparent 75%);animation-duration:32s;animation-delay:-9s}
+        .c-3{width:30vw;height:8vw;top:30%;left:-35%;background:radial-gradient(ellipse,rgba(255,200,150,0.36),rgba(240,110,80,0.1) 55%,transparent 75%);animation-duration:22s;animation-delay:-4s}
+        .c-4{width:22vw;height:6vw;top:25%;left:-26%;background:radial-gradient(ellipse,rgba(255,230,170,0.34),rgba(255,150,90,0.08) 55%,transparent 75%);animation-duration:29s;animation-delay:-14s}
+        .c-5{width:16vw;height:4.5vw;top:36%;left:-18%;background:radial-gradient(ellipse,rgba(255,180,150,0.3),rgba(255,120,90,0.07) 55%,transparent 75%);animation-duration:36s;animation-delay:-18s}
+        @keyframes sunsetCloud{0%{transform:translateX(0) scaleX(1)}50%{transform:translateX(70vw) scaleX(1.15)}100%{transform:translateX(140vw) scaleX(1)}}
+        .fusion-birds{position:absolute;inset:0;z-index:1}
+        .fusion-flock{position:absolute;display:flex;align-items:center;justify-content:center;will-change:transform}
+        .fusion-flock.bf-0{top:48%;left:-60px;animation:birdFlight0 11s linear infinite;animation-delay:0s}
+        .fusion-flock.bf-1{top:52%;left:-60px;animation:birdFlight1 14s linear infinite;animation-delay:3.5s;transform:scale(0.75)}
+        .fusion-flock.bf-2{top:56%;left:-60px;animation:birdFlight2 12.5s linear infinite;animation-delay:7s;transform:scale(0.85)}
+        .fusion-flock.bf-3{top:60%;left:-60px;animation:birdFlight3 16s linear infinite;animation-delay:10.5s;transform:scale(0.65)}
+        .bird-wing-left,.bird-wing-right{display:inline-block;width:14px;height:8px;border-top:2.2px solid #1f0b29;border-radius:50% 50% 0 0;transform-origin:bottom center}
+        .bird-wing-left{transform:rotate(-16deg);animation:flapLeft 0.38s ease-in-out infinite alternate}
+        .bird-wing-right{transform:rotate(16deg);animation:flapRight 0.38s ease-in-out infinite alternate;margin-left:-2px}
+        .bf-0 .bird-wing-left{animation-duration:0.32s}
+        .bf-0 .bird-wing-right{animation-duration:0.32s}
+        .bf-1 .bird-wing-left{animation-duration:0.44s}
+        .bf-1 .bird-wing-right{animation-duration:0.44s}
+        .bf-2 .bird-wing-left{animation-duration:0.36s}
+        .bf-2 .bird-wing-right{animation-duration:0.36s}
+        .bf-3 .bird-wing-left{animation-duration:0.5s}
+        .bf-3 .bird-wing-right{animation-duration:0.5s}
+        @keyframes flapLeft{0%{transform:rotate(-24deg) scaleY(1.1)}100%{transform:rotate(18deg) scaleY(0.4)}}
+        @keyframes flapRight{0%{transform:rotate(24deg) scaleY(1.1)}100%{transform:rotate(-18deg) scaleY(0.4)}}
+        @keyframes birdFlight0{0%{transform:translateX(0) translateY(0)}15%{transform:translateX(21vw) translateY(-22px)}30%{transform:translateX(42vw) translateY(8px)}50%{transform:translateX(70vw) translateY(-18px)}70%{transform:translateX(98vw) translateY(14px)}85%{transform:translateX(119vw) translateY(-10px)}100%{transform:translateX(140vw) translateY(6px)}}
+        @keyframes birdFlight1{0%{transform:translateX(0) translateY(0)}20%{transform:translateX(28vw) translateY(12px)}40%{transform:translateX(56vw) translateY(-20px)}60%{transform:translateX(84vw) translateY(16px)}80%{transform:translateX(112vw) translateY(-8px)}100%{transform:translateX(140vw) translateY(4px)}}
+        @keyframes birdFlight2{0%{transform:translateX(0) translateY(0)}18%{transform:translateX(25vw) translateY(-14px)}35%{transform:translateX(49vw) translateY(18px)}55%{transform:translateX(77vw) translateY(-24px)}75%{transform:translateX(105vw) translateY(10px)}90%{transform:translateX(126vw) translateY(-6px)}100%{transform:translateX(140vw) translateY(2px)}}
+        @keyframes birdFlight3{0%{transform:translateX(0) translateY(0)}25%{transform:translateX(35vw) translateY(16px)}45%{transform:translateX(63vw) translateY(-12px)}65%{transform:translateX(91vw) translateY(20px)}85%{transform:translateX(119vw) translateY(-16px)}100%{transform:translateX(140vw) translateY(8px)}}
+        .fusion-sparkles{position:absolute;inset:0;z-index:3;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(4,1fr);pointer-events:none}
+        .fusion-sparkle{display:flex;align-items:center;justify-content:center}
+        .fusion-sparkle span{opacity:0}
+        @keyframes sprIn{from{opacity:0;transform:scale(0) translateY(10px)}to{opacity:0.5;transform:scale(1) translateY(0)}}
+        @keyframes sprFloat{0%,100%{transform:translateY(0) scale(1);opacity:0.35}50%{transform:translateY(-10px) scale(1.2);opacity:0.65}}
+        .fusion-embers{position:absolute;left:0;right:0;bottom:28%;height:20%;z-index:2;pointer-events:none}
+        .fusion-embers .ember{position:absolute;bottom:0;width:3px;height:3px;border-radius:50%;background:radial-gradient(circle,#ffd98a 0%,#ff8c50 60%,transparent 100%);box-shadow:0 0 6px 1px rgba(255,180,80,0.6);opacity:0;animation:emberRise ease-in-out infinite}
+        @keyframes emberRise{0%{opacity:0;transform:translateY(0) scale(1)}10%{opacity:0.7}100%{opacity:0;transform:translateY(-60px) scale(0.3)}}
+        .fusion-ocean{position:absolute;left:0;right:0;bottom:0;height:33.3%;z-index:2}
+        .fusion-waves-svg{position:absolute;bottom:0;left:-8%;width:116%;height:100%;display:block}
+        .fusion-waves-svg .fwv{transform-origin:center bottom;will-change:transform}
+        .fwv-1{fill:rgba(30,195,215,0.52);animation:waveRise1 6.2s ease-in-out infinite alternate}
+        .fwv-2{fill:rgba(18,155,182,0.6);animation:waveRise2 8.4s ease-in-out infinite -2.1s alternate}
+        .fwv-3{fill:rgba(12,122,155,0.68);animation:waveRise3 7.0s ease-in-out infinite -4.3s alternate}
+        .fwv-4{fill:rgba(8,92,128,0.76);animation:waveRise4 9.8s ease-in-out infinite -1.5s alternate}
+        .fwv-5{fill:rgba(6,60,96,0.88);animation:waveRise5 11.2s ease-in-out infinite -3.8s alternate}
+        .fwv-6{fill:rgba(30,195,215,0.34);animation:waveRise6 12s ease-in-out infinite alternate}
+        .fwv-7{fill:rgba(18,155,182,0.26);animation:waveRise7 10s ease-in-out infinite -3s alternate}
+        .fwv-8{fill:rgba(12,122,155,0.2);animation:waveRise8 8.8s ease-in-out infinite -5s alternate}
+        @keyframes waveRise1{0%{transform:translateY(-18px) scaleY(1)}50%{transform:translateY(8px) scaleY(0.92)}100%{transform:translateY(16px) scaleY(1.08)}}
+        @keyframes waveRise2{0%{transform:translateY(20px) scaleY(0.94)}50%{transform:translateY(-14px) scaleY(1.12)}100%{transform:translateY(-26px) scaleY(1.02)}}
+        @keyframes waveRise3{0%{transform:translateY(-22px) scaleY(1.05)}50%{transform:translateY(16px) scaleY(0.9)}100%{transform:translateY(24px) scaleY(1.14)}}
+        @keyframes waveRise4{0%{transform:translateY(24px) scaleY(0.92)}50%{transform:translateY(-18px) scaleY(1.08)}100%{transform:translateY(-32px) scaleY(1.04)}}
+        @keyframes waveRise5{0%{transform:translateY(-14px) scaleY(1)}50%{transform:translateY(12px) scaleY(0.96)}100%{transform:translateY(18px) scaleY(1.06)}}
+        @keyframes waveRise6{0%{transform:translateY(-12px) scaleY(1)}50%{transform:translateY(10px) scaleY(0.94)}100%{transform:translateY(14px) scaleY(1.06)}}
+        @keyframes waveRise7{0%{transform:translateY(10px) scaleY(0.96)}50%{transform:translateY(-12px) scaleY(1.08)}100%{transform:translateY(-16px) scaleY(1.02)}}
+        @keyframes waveRise8{0%{transform:translateY(-8px) scaleY(1.02)}50%{transform:translateY(6px) scaleY(0.96)}100%{transform:translateY(10px) scaleY(1.04)}}
+        @keyframes splashIconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        @keyframes fontLava{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+        @keyframes splashLoad{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
       `}</style>
     </div>
   );
