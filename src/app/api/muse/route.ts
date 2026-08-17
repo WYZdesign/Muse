@@ -778,6 +778,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "view-album") {
+      if (!checkRate(ip, "view-album", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { albumId } = rest;
       if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
       const { data: album } = await sb.from("muse_albums").select("view_count").eq("id", albumId).maybeSingle();
@@ -787,12 +788,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "like-album") {
+      if (!checkRate(ip, "like-album", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { albumId } = rest;
       if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
       const { data: album } = await sb.from("muse_albums").select("like_count").eq("id", albumId).maybeSingle();
       if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      const { error } = await sb.from("muse_albums").update({ like_count: (album.like_count || 0) + 1 }).eq("id", albumId);
-      if (error) return safeServerError(error, "db op");
+      // Idempotent like: one user may like an album once. Upsert a row (unique
+      // on album_id,user_id) so repeat taps don't inflate the counter.
+      const { data: existingLike } = await sb.from("muse_album_likes").select("id").eq("album_id", albumId).eq("user_id", profile.id).maybeSingle();
+      if (existingLike) return NextResponse.json({ success: true, alreadyLiked: true });
+      await sb.from("muse_album_likes").insert({ album_id: albumId, user_id: profile.id });
+      const { count } = await sb.from("muse_album_likes").select("*", { count: "exact", head: true }).eq("album_id", albumId);
+      await sb.from("muse_albums").update({ like_count: (count ?? 0) }).eq("id", albumId);
       return NextResponse.json({ success: true });
     }
 
