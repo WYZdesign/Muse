@@ -670,8 +670,9 @@ export async function POST(req: NextRequest) {
         }
         results.push("matches");
       }
-      if (rest.feedPosts?.length) results.push("feed");
-      if (rest.forumPosts?.length) results.push("forum");
+      // Feed/forum "sync" was a no-op (client-authored posts are persisted via
+      // the feed/forum actions already). Drop the misleading branches entirely
+      // so sync never reports work it didn't do.
       return NextResponse.json({ success: true, synced: results });
     }
 
