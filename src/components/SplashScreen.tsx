@@ -61,6 +61,14 @@ export default function SplashScreen() {
         <div className="fusion-sun-glow" />
         <div className="fusion-sun" />
 
+        {/* Wavy horizon line — sun's bottom dips into rippling water */}
+        <div className="fusion-horizon">
+          <svg viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true">
+            <path className="fhw fhw-1" d="M0,30 C120,10 240,50 360,30 C480,10 600,50 720,30 C840,10 960,50 1080,30 C1200,10 1320,50 1440,30 L1440,60 L0,60 Z" />
+            <path className="fhw fhw-2" d="M0,34 C160,18 320,50 480,34 C640,18 800,50 960,34 C1120,18 1280,50 1440,34 L1440,60 L0,60 Z" />
+          </svg>
+        </div>
+
         {/* Drifting clouds */}
         <div className="fusion-clouds">
           <span className="fusion-cloud c-1" />
@@ -159,6 +167,12 @@ export default function SplashScreen() {
         @keyframes sunsetDrift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(26px,-16px) scale(1.08)}}
         .fusion-sun-glow{position:absolute;left:50%;bottom:20%;transform:translateX(-50%);width:70vw;height:38vw;border-radius:70vw 70vw 0 0;background:radial-gradient(ellipse at 50% 100%,rgba(255,200,90,0.7) 0%,rgba(255,140,60,0.34) 45%,transparent 75%);filter:blur(16px);animation:sunsetSunPulse 5s ease-in-out infinite;z-index:1}
         .fusion-sun{position:absolute;left:50%;bottom:33.3%;transform:translateX(-50%);width:17vw;min-width:120px;max-width:192px;height:8.4vw;min-height:60px;max-height:96px;border-radius:192px 192px 0 0;background:radial-gradient(ellipse at 50% 100%,#ffffff 0%,#fff2be 25%,#ffb648 60%,#f1683c 100%);box-shadow:0 -8px 60px 20px rgba(255,185,75,0.75),0 -2px 18px 4px rgba(255,255,255,0.9);animation:sunsetSunBob 5s ease-in-out infinite;z-index:1}
+        .fusion-horizon{position:absolute;left:0;right:0;bottom:32.5%;height:5vh;min-height:20px;z-index:3;pointer-events:none}
+        .fusion-horizon svg{width:100%;height:100%;display:block}
+        .fhw{transform-origin:center;will-change:transform}
+        .fhw-1{fill:rgba(20,170,200,0.55);animation:horizonSway 5s ease-in-out infinite alternate}
+        .fhw-2{fill:rgba(10,90,120,0.5);animation:horizonSway 6.4s ease-in-out infinite -2.2s alternate}
+        @keyframes horizonSway{0%{transform:translateX(-8px) translateY(0)}50%{transform:translateX(0) translateY(-4px)}100%{transform:translateX(8px) translateY(0)}}
         @keyframes sunsetSunPulse{0%,100%{opacity:0.85;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.06)}}
         @keyframes sunsetSunBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(3px)}}
         .fusion-clouds{position:absolute;inset:0;z-index:1}
