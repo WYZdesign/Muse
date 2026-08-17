@@ -94,20 +94,20 @@ export const MusesScreen = memo(function MusesScreen({
       </div>
 
       {/* Sub-nav tabs: Matches vs Likes You */}
-      <div style={{ display: "flex", gap: 6, margin: "0 16px 12px", padding: "3px", background: "rgba(255,255,255,0.04)", borderRadius: 14, border: "1px solid rgba(255,255,255,0.06)" }}>
+      <div style={{ display: "flex", gap: 6, margin: "0 16px 12px", padding: "4px", background: "rgba(255,255,255,0.04)", borderRadius: 16, border: "1px solid rgba(255,255,255,0.06)" }}>
         <button
-          style={{ flex: 1, padding: "8px 0", borderRadius: 11, border: "none", background: !showLikesYou ? "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))" : "transparent", color: !showLikesYou ? "var(--gold)" : "var(--text2)", fontWeight: 700, fontSize: 13, cursor: "pointer", transition: "all .25s", boxShadow: !showLikesYou ? "0 2px 8px rgba(255,69,0,0.15)" : "none" }}
+          style={{ flex: 1, padding: "16px 0", borderRadius: 13, border: "none", background: !showLikesYou ? "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))" : "transparent", color: !showLikesYou ? "var(--gold)" : "var(--text2)", fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all .25s", boxShadow: !showLikesYou ? "0 2px 8px rgba(255,69,0,0.15)" : "none" }}
           onClick={() => setShowLikesYou(false)}
         >
           Matches {matches.length > 0 ? `(${matches.length})` : ""}
         </button>
         <button
-          style={{ flex: 1, padding: "8px 0", borderRadius: 11, border: "none", background: showLikesYou ? "linear-gradient(135deg,rgba(255,20,147,0.25),rgba(255,105,180,0.15))" : "transparent", color: showLikesYou ? "#FF69B4" : "var(--text2)", fontWeight: 700, fontSize: 13, cursor: "pointer", transition: "all .25s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: showLikesYou ? "0 2px 8px rgba(255,20,147,0.15)" : "none" }}
+          style={{ flex: 1, padding: "16px 0", borderRadius: 13, border: "none", background: showLikesYou ? "linear-gradient(135deg,rgba(255,20,147,0.25),rgba(255,105,180,0.15))" : "transparent", color: showLikesYou ? "#FF69B4" : "var(--text2)", fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all .25s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: showLikesYou ? "0 2px 8px rgba(255,20,147,0.15)" : "none" }}
           onClick={() => setShowLikesYou(true)}
         >
           <span>♥ Likes You</span>
           {likedBy.length > 0 && (
-            <span style={{ padding: "1px 6px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 10, fontWeight: 800, color: "#fff" }}>{likedBy.length}</span>
+            <span style={{ padding: "2px 7px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 11, fontWeight: 800, color: "#fff" }}>{likedBy.length}</span>
           )}
         </button>
       </div>
