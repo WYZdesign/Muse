@@ -118,16 +118,17 @@ export default function SplashScreen() {
       </div>
 
       {/* Centered branding + loader — raised high, oversized */}
-      <div style={{ position: "relative", zIndex: 4, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "34vh" }}>
-        <img src="/muse-app-icon.png" alt="Muse" style={{ width: 132, height: 132, borderRadius: 36, objectFit: "cover", boxShadow: "0 12px 60px rgba(0,0,0,0.55)", animation: "splashIconFloat 4.2s ease-in-out infinite" }} />
+      <div style={{ position: "relative", zIndex: 4, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "34vh", padding: "0 20px", boxSizing: "border-box" }}>
+        <img src="/muse-app-icon.png" alt="Muse" style={{ width: 112, height: 112, borderRadius: 31, objectFit: "cover", boxShadow: "0 12px 60px rgba(0,0,0,0.55)", animation: "splashIconFloat 4.2s ease-in-out infinite" }} />
         <div style={{
-          fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: 68, fontWeight: 900, letterSpacing: -2,
+          fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: 60, fontWeight: 900, letterSpacing: 0,
           background: "linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFB5C2,#FF8C69,#FFD700)",
           backgroundSize: "300% 300%", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-          animation: "fontLava 7s ease-in-out infinite", marginTop: 16,
+          animation: "fontLava 7s ease-in-out infinite", marginTop: 16, padding: "0 0.15em",
+          lineHeight: 1.1, maxWidth: "100%", whiteSpace: "nowrap", overflow: "visible",
           textShadow: "0 2px 20px rgba(255,215,0,0.25)",
         }}>Muse</div>
-        <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: 5, textIndent: 5, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", marginTop: 8, marginBottom: 28, whiteSpace: "nowrap" }}>Creative Professional Network</div>
+        <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: 5, textIndent: 5, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", marginTop: 8, marginBottom: 28, whiteSpace: "normal", textAlign: "center", maxWidth: "100%", lineHeight: 1.5 }}>Creative Professional Network</div>
         <div style={{ width: 180, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.12)", overflow: "hidden" }}>
           <div style={{ width: "40%", height: "100%", borderRadius: 2, background: "linear-gradient(90deg,#FFD700,#FF8A80,#D4A5FF)", animation: "splashLoad 1.4s ease-in-out infinite" }} />
         </div>
@@ -166,8 +167,8 @@ export default function SplashScreen() {
         .neb-6{width:32vw;height:17vw;background:radial-gradient(ellipse at 50% 50%,rgba(0,191,255,0.7) 0%,rgba(65,105,225,0.55) 45%,transparent 80%);top:18%;right:2%;animation-delay:-11s}
         @keyframes sunsetDrift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(26px,-16px) scale(1.08)}}
         .fusion-sun-glow{position:absolute;left:50%;bottom:20%;transform:translateX(-50%);width:70vw;height:38vw;border-radius:70vw 70vw 0 0;background:radial-gradient(ellipse at 50% 100%,rgba(255,200,90,0.7) 0%,rgba(255,140,60,0.34) 45%,transparent 75%);filter:blur(16px);animation:sunsetSunPulse 5s ease-in-out infinite;z-index:1}
-        .fusion-sun{position:absolute;left:50%;bottom:33.3%;transform:translateX(-50%);width:17vw;min-width:120px;max-width:192px;height:8.4vw;min-height:60px;max-height:96px;border-radius:192px 192px 0 0;background:radial-gradient(ellipse at 50% 100%,#ffffff 0%,#fff2be 25%,#ffb648 60%,#f1683c 100%);box-shadow:0 -8px 60px 20px rgba(255,185,75,0.75),0 -2px 18px 4px rgba(255,255,255,0.9);animation:sunsetSunBob 5s ease-in-out infinite;z-index:1}
-        .fusion-horizon{position:absolute;left:0;right:0;bottom:32.5%;height:5vh;min-height:20px;z-index:3;pointer-events:none}
+        .fusion-sun{position:absolute;left:50%;bottom:34%;transform:translateX(-50%);width:17vw;min-width:120px;max-width:192px;height:8.4vw;min-height:60px;max-height:96px;border-radius:192px 192px 0 0;background:radial-gradient(ellipse at 50% 100%,#ffffff 0%,#fff2be 25%,#ffb648 60%,#f1683c 100%);box-shadow:0 -8px 60px 20px rgba(255,185,75,0.75),0 -2px 18px 4px rgba(255,255,255,0.9);animation:sunsetSunBob 5s ease-in-out infinite;z-index:1}
+        .fusion-horizon{position:absolute;left:0;right:0;bottom:30.5%;height:3.5vh;min-height:14px;z-index:3;pointer-events:none}
         .fusion-horizon svg{width:100%;height:100%;display:block}
         .fhw{transform-origin:center;will-change:transform}
         .fhw-1{fill:rgba(20,170,200,0.55);animation:horizonSway 5s ease-in-out infinite alternate}
