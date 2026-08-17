@@ -244,44 +244,44 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .wv-8 { fill: rgba(12,122,155,0.16); animation: waveRise8 8.8s ease-in-out infinite -5s alternate; }
 
 @keyframes waveRise1 {
-  0% { transform: translateX(-22px) translateY(-18px) scaleY(1); }
-  50% { transform: translateX(0px) translateY(8px) scaleY(0.92); }
-  100% { transform: translateX(22px) translateY(16px) scaleY(1.08); }
+  0% { transform: translateY(-18px) scaleY(1); }
+  50% { transform: translateY(8px) scaleY(0.92); }
+  100% { transform: translateY(16px) scaleY(1.08); }
 }
 @keyframes waveRise2 {
-  0% { transform: translateX(26px) translateY(20px) scaleY(0.94); }
-  50% { transform: translateX(-6px) translateY(-14px) scaleY(1.12); }
-  100% { transform: translateX(-26px) translateY(-26px) scaleY(1.02); }
+  0% { transform: translateY(20px) scaleY(0.94); }
+  50% { transform: translateY(-14px) scaleY(1.12); }
+  100% { transform: translateY(-26px) scaleY(1.02); }
 }
 @keyframes waveRise3 {
-  0% { transform: translateX(-30px) translateY(-22px) scaleY(1.05); }
-  50% { transform: translateX(8px) translateY(16px) scaleY(0.9); }
-  100% { transform: translateX(30px) translateY(24px) scaleY(1.14); }
+  0% { transform: translateY(-22px) scaleY(1.05); }
+  50% { transform: translateY(16px) scaleY(0.9); }
+  100% { transform: translateY(24px) scaleY(1.14); }
 }
 @keyframes waveRise4 {
-  0% { transform: translateX(20px) translateY(24px) scaleY(0.92); }
-  50% { transform: translateX(-10px) translateY(-18px) scaleY(1.08); }
-  100% { transform: translateX(-20px) translateY(-32px) scaleY(1.04); }
+  0% { transform: translateY(24px) scaleY(0.92); }
+  50% { transform: translateY(-18px) scaleY(1.08); }
+  100% { transform: translateY(-32px) scaleY(1.04); }
 }
 @keyframes waveRise5 {
-  0% { transform: translateX(-16px) translateY(-14px) scaleY(1); }
-  50% { transform: translateX(4px) translateY(12px) scaleY(0.96); }
-  100% { transform: translateX(16px) translateY(18px) scaleY(1.06); }
+  0% { transform: translateY(-14px) scaleY(1); }
+  50% { transform: translateY(12px) scaleY(0.96); }
+  100% { transform: translateY(18px) scaleY(1.06); }
 }
 @keyframes waveRise6 {
-  0% { transform: translateX(-18px) translateY(-12px) scaleY(1); }
-  50% { transform: translateX(6px) translateY(10px) scaleY(0.94); }
-  100% { transform: translateX(18px) translateY(14px) scaleY(1.06); }
+  0% { transform: translateY(-12px) scaleY(1); }
+  50% { transform: translateY(10px) scaleY(0.94); }
+  100% { transform: translateY(14px) scaleY(1.06); }
 }
 @keyframes waveRise7 {
-  0% { transform: translateX(14px) translateY(10px) scaleY(0.96); }
-  50% { transform: translateX(-8px) translateY(-12px) scaleY(1.08); }
-  100% { transform: translateX(-14px) translateY(-16px) scaleY(1.02); }
+  0% { transform: translateY(10px) scaleY(0.96); }
+  50% { transform: translateY(-12px) scaleY(1.08); }
+  100% { transform: translateY(-16px) scaleY(1.02); }
 }
 @keyframes waveRise8 {
-  0% { transform: translateX(-10px) translateY(-8px) scaleY(1.02); }
-  50% { transform: translateX(4px) translateY(6px) scaleY(0.96); }
-  100% { transform: translateX(10px) translateY(10px) scaleY(1.04); }
+  0% { transform: translateY(-8px) scaleY(1.02); }
+  50% { transform: translateY(6px) scaleY(0.96); }
+  100% { transform: translateY(10px) scaleY(1.04); }
 }
 
 /* Enter Gate Content Layout */

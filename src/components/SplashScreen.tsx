@@ -174,30 +174,6 @@ export default function SplashScreen() {
         ctx.fill();
       }
 
-      // Ocean waves — multiple layers with varied sizes
-      const waves = [
-        { y: H * 0.68, amp: 10, freq: 0.004, speed: 0.03, alpha: 0.14, color: "20,220,230" },
-        { y: H * 0.73, amp: 16, freq: 0.006, speed: 0.04, alpha: 0.11, color: "10,190,200" },
-        { y: H * 0.78, amp: 20, freq: 0.005, speed: 0.035, alpha: 0.09, color: "0,160,180" },
-        { y: H * 0.83, amp: 14, freq: 0.007, speed: 0.05, alpha: 0.07, color: "0,130,155" },
-        { y: H * 0.88, amp: 8, freq: 0.009, speed: 0.06, alpha: 0.05, color: "0,100,130" },
-      ];
-      for (const w of waves) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(-10, H);
-        for (let x = -10; x <= W + 10; x += 4) {
-          const y = w.y + Math.sin(x * w.freq + frame * w.speed) * w.amp
-            + Math.cos(x * w.freq * 2 + frame * w.speed * 1.5) * w.amp * 0.6;
-          ctx.lineTo(x, y);
-        }
-        ctx.lineTo(W + 10, H);
-        ctx.closePath();
-        ctx.fillStyle = `rgba(${w.color},${w.alpha})`;
-        ctx.fill();
-        ctx.restore();
-      }
-
       // Horizon glow — warm sand meeting ocean
       const hGlow = ctx.createLinearGradient(0, H*0.62, 0, H);
       hGlow.addColorStop(0, "transparent");
@@ -253,6 +229,20 @@ export default function SplashScreen() {
       {/* Canvas */}
       <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 2 }} />
 
+      {/* Layered ocean waves — matches the landing promo page */}
+      <div style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "100%", zIndex: 2, pointerEvents: "none" }}>
+        <svg className="splash-waves-svg" viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
+          <path className="swv swv-6" d="M0,10 C240,50 480,-10 720,30 C960,70 1200,0 1440,20 L1440,360 L0,360 Z" />
+          <path className="swv swv-7" d="M0,35 C180,80 400,10 600,55 C800,90 1040,20 1240,60 C1360,75 1420,40 1440,50 L1440,360 L0,360 Z" />
+          <path className="swv swv-8" d="M0,60 C220,20 460,90 700,40 C940,0 1180,80 1440,55 L1440,360 L0,360 Z" />
+          <path className="swv swv-1" d="M0,120 C200,30 360,180 540,110 C720,40 900,160 1100,70 C1280,-10 1380,140 1440,110 L1440,360 L0,360 Z" />
+          <path className="swv swv-2" d="M0,150 C160,240 320,80 480,180 C640,260 800,100 980,190 C1160,270 1320,110 1440,170 L1440,360 L0,360 Z" />
+          <path className="swv swv-3" d="M0,190 C220,100 440,260 660,160 C880,80 1100,240 1300,130 C1380,90 1420,160 1440,180 L1440,360 L0,360 Z" />
+          <path className="swv swv-4" d="M0,225 C180,310 380,150 580,240 C780,320 980,170 1180,260 C1320,310 1400,210 1440,235 L1440,360 L0,360 Z" />
+          <path className="swv swv-5" d="M0,260 C260,170 520,310 780,220 C1040,150 1260,290 1440,240 L1440,360 L0,360 Z" />
+        </svg>
+      </div>
+
       {/* Evenly dispersed sprites grid */}
       <div style={{
         position: "absolute", inset: 0, zIndex: 3, pointerEvents: "none",
@@ -295,6 +285,24 @@ export default function SplashScreen() {
       </div>
 
       <style>{`
+        .splash-waves-svg{position:absolute;bottom:0;left:-8%;width:116%;height:100%;display:block}
+        .splash-waves-svg .swv{transform-origin:center bottom;will-change:transform}
+        .swv-1{fill:rgba(30,195,215,0.48);animation:swave1 6.2s ease-in-out infinite alternate}
+        .swv-2{fill:rgba(18,155,182,0.56);animation:swave2 8.4s ease-in-out infinite -2.1s alternate}
+        .swv-3{fill:rgba(12,122,155,0.64);animation:swave3 7.0s ease-in-out infinite -4.3s alternate}
+        .swv-4{fill:rgba(8,92,128,0.72);animation:swave4 9.8s ease-in-out infinite -1.5s alternate}
+        .swv-5{fill:rgba(6,60,96,0.85);animation:swave5 11.2s ease-in-out infinite -3.8s alternate}
+        .swv-6{fill:rgba(30,195,215,0.3);animation:swave6 12s ease-in-out infinite alternate}
+        .swv-7{fill:rgba(18,155,182,0.22);animation:swave7 10s ease-in-out infinite -3s alternate}
+        .swv-8{fill:rgba(12,122,155,0.16);animation:swave8 8.8s ease-in-out infinite -5s alternate}
+        @keyframes swave1{0%{transform:translateY(-18px) scaleY(1)}50%{transform:translateY(8px) scaleY(0.92)}100%{transform:translateY(16px) scaleY(1.08)}}
+        @keyframes swave2{0%{transform:translateY(20px) scaleY(0.94)}50%{transform:translateY(-14px) scaleY(1.12)}100%{transform:translateY(-26px) scaleY(1.02)}}
+        @keyframes swave3{0%{transform:translateY(-22px) scaleY(1.05)}50%{transform:translateY(16px) scaleY(0.9)}100%{transform:translateY(24px) scaleY(1.14)}}
+        @keyframes swave4{0%{transform:translateY(24px) scaleY(0.92)}50%{transform:translateY(-18px) scaleY(1.08)}100%{transform:translateY(-32px) scaleY(1.04)}}
+        @keyframes swave5{0%{transform:translateY(-14px) scaleY(1)}50%{transform:translateY(12px) scaleY(0.96)}100%{transform:translateY(18px) scaleY(1.06)}}
+        @keyframes swave6{0%{transform:translateY(-12px) scaleY(1)}50%{transform:translateY(10px) scaleY(0.94)}100%{transform:translateY(14px) scaleY(1.06)}}
+        @keyframes swave7{0%{transform:translateY(10px) scaleY(0.96)}50%{transform:translateY(-12px) scaleY(1.08)}100%{transform:translateY(-16px) scaleY(1.02)}}
+        @keyframes swave8{0%{transform:translateY(-8px) scaleY(1.02)}50%{transform:translateY(6px) scaleY(0.96)}100%{transform:translateY(10px) scaleY(1.04)}}
         @keyframes fontLava { 0%{background-position:0 50%} 50%{background-position:100% 50%} 100%{background-position:0 50%} }
         @keyframes fontIn { from{opacity:0;transform:translateY(16px) scale(0.92)} to{opacity:1;transform:translateY(0) scale(1)} }
         @keyframes fontFadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }

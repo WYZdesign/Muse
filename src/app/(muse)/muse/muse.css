@@ -150,14 +150,14 @@ a{color:inherit;text-decoration:none}
 .swv-6{fill:rgba(30,195,215,0.3);animation:swave6 12s ease-in-out infinite alternate}
 .swv-7{fill:rgba(18,155,182,0.22);animation:swave7 10s ease-in-out infinite -3s alternate}
 .swv-8{fill:rgba(12,122,155,0.16);animation:swave8 8.8s ease-in-out infinite -5s alternate}
-@keyframes swave1{0%{transform:translateX(-22px) translateY(-18px) scaleY(1)}50%{transform:translateX(0) translateY(8px) scaleY(0.92)}100%{transform:translateX(22px) translateY(16px) scaleY(1.08)}}
-@keyframes swave2{0%{transform:translateX(26px) translateY(20px) scaleY(0.94)}50%{transform:translateX(-6px) translateY(-14px) scaleY(1.12)}100%{transform:translateX(-26px) translateY(-26px) scaleY(1.02)}}
-@keyframes swave3{0%{transform:translateX(-30px) translateY(-22px) scaleY(1.05)}50%{transform:translateX(8px) translateY(16px) scaleY(0.9)}100%{transform:translateX(30px) translateY(24px) scaleY(1.14)}}
-@keyframes swave4{0%{transform:translateX(20px) translateY(24px) scaleY(0.92)}50%{transform:translateX(-10px) translateY(-18px) scaleY(1.08)}100%{transform:translateX(-20px) translateY(-32px) scaleY(1.04)}}
-@keyframes swave5{0%{transform:translateX(-16px) translateY(-14px) scaleY(1)}50%{transform:translateX(4px) translateY(12px) scaleY(0.96)}100%{transform:translateX(16px) translateY(18px) scaleY(1.06)}}
-@keyframes swave6{0%{transform:translateX(-18px) translateY(-12px) scaleY(1)}50%{transform:translateX(6px) translateY(10px) scaleY(0.94)}100%{transform:translateX(18px) translateY(14px) scaleY(1.06)}}
-@keyframes swave7{0%{transform:translateX(14px) translateY(10px) scaleY(0.96)}50%{transform:translateX(-8px) translateY(-12px) scaleY(1.08)}100%{transform:translateX(-14px) translateY(-16px) scaleY(1.02)}}
-@keyframes swave8{0%{transform:translateX(-10px) translateY(-8px) scaleY(1.02)}50%{transform:translateX(4px) translateY(6px) scaleY(0.96)}100%{transform:translateX(10px) translateY(10px) scaleY(1.04)}}
+@keyframes swave1{0%{transform:translateY(-18px) scaleY(1)}50%{transform:translateY(8px) scaleY(0.92)}100%{transform:translateY(16px) scaleY(1.08)}}
+@keyframes swave2{0%{transform:translateY(20px) scaleY(0.94)}50%{transform:translateY(-14px) scaleY(1.12)}100%{transform:translateY(-26px) scaleY(1.02)}}
+@keyframes swave3{0%{transform:translateY(-22px) scaleY(1.05)}50%{transform:translateY(16px) scaleY(0.9)}100%{transform:translateY(24px) scaleY(1.14)}}
+@keyframes swave4{0%{transform:translateY(24px) scaleY(0.92)}50%{transform:translateY(-18px) scaleY(1.08)}100%{transform:translateY(-32px) scaleY(1.04)}}
+@keyframes swave5{0%{transform:translateY(-14px) scaleY(1)}50%{transform:translateY(12px) scaleY(0.96)}100%{transform:translateY(18px) scaleY(1.06)}}
+@keyframes swave6{0%{transform:translateY(-12px) scaleY(1)}50%{transform:translateY(10px) scaleY(0.94)}100%{transform:translateY(14px) scaleY(1.06)}}
+@keyframes swave7{0%{transform:translateY(10px) scaleY(0.96)}50%{transform:translateY(-12px) scaleY(1.08)}100%{transform:translateY(-16px) scaleY(1.02)}}
+@keyframes swave8{0%{transform:translateY(-8px) scaleY(1.02)}50%{transform:translateY(6px) scaleY(0.96)}100%{transform:translateY(10px) scaleY(1.04)}}
 
 /* Splash meteor trajectories */
 @keyframes shootA{0%{transform:translate(0,0) rotate(28deg) scaleX(0);opacity:0}4%{opacity:1;transform:translate(32px,17px) rotate(28deg) scaleX(1)}36%{opacity:0.9;transform:translate(288px,153px) rotate(28deg) scaleX(1)}48%{opacity:0;transform:translate(384px,204px) rotate(28deg) scaleX(0.6)}100%{opacity:0;transform:translate(384px,204px) rotate(28deg) scaleX(0)}}
@@ -185,14 +185,14 @@ a{color:inherit;text-decoration:none}
 .owv-6{fill:rgba(30,195,215,0.3);animation:owave6 12s ease-in-out infinite alternate}
 .owv-7{fill:rgba(18,155,182,0.22);animation:owave7 10s ease-in-out infinite -3s alternate}
 .owv-8{fill:rgba(12,122,155,0.16);animation:owave8 8.8s ease-in-out infinite -5s alternate}
-@keyframes owave1{0%{transform:translateX(-22px) translateY(-18px) scaleY(1)}50%{transform:translateX(0) translateY(8px) scaleY(0.92)}100%{transform:translateX(22px) translateY(16px) scaleY(1.08)}}
-@keyframes owave2{0%{transform:translateX(26px) translateY(20px) scaleY(0.94)}50%{transform:translateX(-6px) translateY(-14px) scaleY(1.12)}100%{transform:translateX(-26px) translateY(-26px) scaleY(1.02)}}
-@keyframes owave3{0%{transform:translateX(-30px) translateY(-22px) scaleY(1.05)}50%{transform:translateX(8px) translateY(16px) scaleY(0.9)}100%{transform:translateX(30px) translateY(24px) scaleY(1.14)}}
-@keyframes owave4{0%{transform:translateX(20px) translateY(24px) scaleY(0.92)}50%{transform:translateX(-10px) translateY(-18px) scaleY(1.08)}100%{transform:translateX(-20px) translateY(-32px) scaleY(1.04)}}
-@keyframes owave5{0%{transform:translateX(-16px) translateY(-14px) scaleY(1)}50%{transform:translateX(4px) translateY(12px) scaleY(0.96)}100%{transform:translateX(16px) translateY(18px) scaleY(1.06)}}
-@keyframes owave6{0%{transform:translateX(-18px) translateY(-12px) scaleY(1)}50%{transform:translateX(6px) translateY(10px) scaleY(0.94)}100%{transform:translateX(18px) translateY(14px) scaleY(1.06)}}
-@keyframes owave7{0%{transform:translateX(14px) translateY(10px) scaleY(0.96)}50%{transform:translateX(-8px) translateY(-12px) scaleY(1.08)}100%{transform:translateX(-14px) translateY(-16px) scaleY(1.02)}}
-@keyframes owave8{0%{transform:translateX(-10px) translateY(-8px) scaleY(1.02)}50%{transform:translateX(4px) translateY(6px) scaleY(0.96)}100%{transform:translateX(10px) translateY(10px) scaleY(1.04)}}
+@keyframes owave1{0%{transform:translateY(-18px) scaleY(1)}50%{transform:translateY(8px) scaleY(0.92)}100%{transform:translateY(16px) scaleY(1.08)}}
+@keyframes owave2{0%{transform:translateY(20px) scaleY(0.94)}50%{transform:translateY(-14px) scaleY(1.12)}100%{transform:translateY(-26px) scaleY(1.02)}}
+@keyframes owave3{0%{transform:translateY(-22px) scaleY(1.05)}50%{transform:translateY(16px) scaleY(0.9)}100%{transform:translateY(24px) scaleY(1.14)}}
+@keyframes owave4{0%{transform:translateY(24px) scaleY(0.92)}50%{transform:translateY(-18px) scaleY(1.08)}100%{transform:translateY(-32px) scaleY(1.04)}}
+@keyframes owave5{0%{transform:translateY(-14px) scaleY(1)}50%{transform:translateY(12px) scaleY(0.96)}100%{transform:translateY(18px) scaleY(1.06)}}
+@keyframes owave6{0%{transform:translateY(-12px) scaleY(1)}50%{transform:translateY(10px) scaleY(0.94)}100%{transform:translateY(14px) scaleY(1.06)}}
+@keyframes owave7{0%{transform:translateY(10px) scaleY(0.96)}50%{transform:translateY(-12px) scaleY(1.08)}100%{transform:translateY(-16px) scaleY(1.02)}}
+@keyframes owave8{0%{transform:translateY(-8px) scaleY(1.02)}50%{transform:translateY(6px) scaleY(0.96)}100%{transform:translateY(10px) scaleY(1.04)}}
 
 /* ═══ HAMBURGER PANEL WAVES ═══ */
 .hamburger-waves{position:absolute;bottom:0;left:0;width:100%;height:60px;pointer-events:none;overflow:hidden;opacity:0.25}
