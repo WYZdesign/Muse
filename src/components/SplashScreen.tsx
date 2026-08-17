@@ -110,7 +110,7 @@ export default function SplashScreen() {
       </div>
 
       {/* Centered branding + loader — raised high, oversized */}
-      <div style={{ position: "relative", zIndex: 4, display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "34vh" }}>
+      <div style={{ position: "relative", zIndex: 4, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "34vh" }}>
         <img src="/muse-app-icon.png" alt="Muse" style={{ width: 132, height: 132, borderRadius: 36, objectFit: "cover", boxShadow: "0 12px 60px rgba(0,0,0,0.55)", animation: "splashIconFloat 4.2s ease-in-out infinite" }} />
         <div style={{
           fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: 68, fontWeight: 900, letterSpacing: -2,
@@ -119,7 +119,7 @@ export default function SplashScreen() {
           animation: "fontLava 7s ease-in-out infinite", marginTop: 16,
           textShadow: "0 2px 20px rgba(255,215,0,0.25)",
         }}>Muse</div>
-        <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: 5, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", marginTop: 8, marginBottom: 28 }}>Creative Professional Network</div>
+        <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: 5, textIndent: 5, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", marginTop: 8, marginBottom: 28, whiteSpace: "nowrap" }}>Creative Professional Network</div>
         <div style={{ width: 180, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.12)", overflow: "hidden" }}>
           <div style={{ width: "40%", height: "100%", borderRadius: 2, background: "linear-gradient(90deg,#FFD700,#FF8A80,#D4A5FF)", animation: "splashLoad 1.4s ease-in-out infinite" }} />
         </div>
