@@ -136,11 +136,8 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
       onPointerCancel={handlePointerEnd}
       onClick={() => {
         if (Math.abs(dragOffset) > 10) return;
-        if (expanded) {
-          setExpandedMatchId(null);
-          return;
-        }
-        setExpandedMatchId(mid);
+        setChatTarget(m);
+        showScreen("chat");
       }}
     >
       {/* Swipe background reveal left (Unmatch) */}
