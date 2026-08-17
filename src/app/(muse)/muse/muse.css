@@ -385,10 +385,10 @@ img{background-color:#1a0a2e}
 .match-time{font-size:11px;color:var(--muted);flex-shrink:0}
 .match-card-grid{display:block;position:relative;aspect-ratio:3/4;overflow:hidden;border-radius:16px;padding:0;border:1px solid rgba(255,255,255,0.08);background:#1a0a2e;box-shadow:0 4px 16px rgba(0,0,0,0.35)}
 .match-card-grid .match-avatar-wrap{position:absolute;inset:0;width:100%;height:100%}
-.match-card-grid .match-avatar{width:100%;height:100%;border-radius:0;border:none}
-.match-card-grid .match-info{position:absolute;bottom:0;left:0;right:0;padding:12px 10px;background:linear-gradient(to top,rgba(10,6,18,0.9),transparent)}
-.match-card-grid .match-name{color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.8)}
-.match-card-grid .match-type{-webkit-text-fill-color:#FFD700}
+.match-card-grid .match-avatar{width:100%;height:100%;border-radius:0;border:none;object-fit:cover}
+.match-card-grid .match-info{position:absolute;bottom:0;left:0;right:0;padding:14px 12px;background:linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.6) 60%,transparent 100%)}
+.match-card-grid .match-name{color:#fff;font-size:14px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,0.8)}
+.match-card-grid .match-type{color:#FFD700;font-size:11px;font-weight:600;-webkit-text-fill-color:#FFD700}
 .match-card-grid .match-msg{display:none}
 .match-card-grid .match-time{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);padding:2px 8px;border-radius:99px;font-size:10px}
 .match-card-grid .online-dot{display:none}
