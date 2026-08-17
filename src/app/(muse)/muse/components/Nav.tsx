@@ -61,7 +61,6 @@ export default React.memo(function Nav({ active, onNavigate, onHamburgerToggle, 
       })}
       <button className="nav-item" onClick={() => onHamburgerToggle?.()} aria-label="Menu" style={{ position: "relative" }}>
         <span className="nav-icon"><FiMenu size={22} /></span>
-        {unreadCount && unreadCount > 0 ? <span className="nav-badge">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
         <span>Menu</span>
       </button>
     </div>
