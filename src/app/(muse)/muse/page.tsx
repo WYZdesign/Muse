@@ -116,6 +116,7 @@ function MusePage() {
   const [showMatchMenu, setShowMatchMenu] = useState(false);
   const cardScrollRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
+  const shuffleSeedRef = useRef<number>(Math.floor(Math.random() * 0x7fffffff));
   const [galleryView, setGalleryView] = useState<{ profileId: string | number; name: string; photos: string[]; idx: number } | null>(null);
   const [lightboxPhotos, setLightboxPhotos] = useState<string[]>([]);
   const [lightboxIdx, setLightboxIdx] = useState<number>(0);
@@ -746,15 +747,11 @@ function MusePage() {
 
   const filteredProfiles = useMemo(() => {
     // Stable order guarantee: the demo/static deck is shuffled ONCE with a
-    // session seed, then live profiles are APPENDED (never reshuffled), and
-    // we do NOT re-sort by distance after first paint. This stops the visible
-    // card from "randomly switching" when liveProfiles/myGeo arrive async.
-    let seed = 0;
-    try {
-      const stored = sessionStorage.getItem("muse_shuffle_seed");
-      if (stored) seed = parseInt(stored, 10) || 0;
-      else { seed = Math.floor(Math.random() * 0x7fffffff); sessionStorage.setItem("muse_shuffle_seed", String(seed)); }
-    } catch {}
+    // per-mount random seed, then live profiles are APPENDED (never reshuffled),
+    // and we do NOT re-sort by distance after first paint. A new seed on every
+    // full page load/refresh means a different card shows first each time,
+    // while the order stays fixed during a single session (no mid-view jumps).
+    const seed = shuffleSeedRef.current;
     const mulberry = (a: number) => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
     const base = [...PROFILES];
     for (let i = base.length - 1; i > 0; i--) {
