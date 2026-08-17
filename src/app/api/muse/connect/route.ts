@@ -103,6 +103,10 @@ export async function POST(req: NextRequest) {
     if (action === "create-payment") {
       const { payeeId, amountCents, description, bookingId } = body;
       if (!payeeId || !amountCents) return NextResponse.json({ error: "payeeId and amountCents required" }, { status: 400 });
+      // Server-side validation: amount must be a positive integer (cents).
+      const amount = Number(amountCents);
+      if (!Number.isInteger(amount) || amount <= 0) return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+      if (String(payeeId) === String(profile.id)) return NextResponse.json({ error: "Cannot pay yourself" }, { status: 400 });
 
       // Fetch payee's connect account
       const { data: payee } = await sb.from("muse_profiles")
@@ -114,12 +118,12 @@ export async function POST(req: NextRequest) {
       const payeeAccount = await stripe.accounts.retrieve(payee.stripe_connect_id);
       if (!payeeAccount.charges_enabled) return NextResponse.json({ error: "Payee account not fully onboarded" }, { status: 400 });
 
-      const commission = Math.round(amountCents * COMMISSION_RATE);
-      const netAmount = amountCents - commission;
+      const commission = Math.round(amount * COMMISSION_RATE);
+      const netAmount = amount - commission;
 
       // Create PaymentIntent with destination charge
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: amountCents,
+        amount: amount,
         currency: "usd",
         application_fee_amount: commission,
         transfer_data: { destination: payee.stripe_connect_id },
@@ -139,7 +143,7 @@ export async function POST(req: NextRequest) {
         payer_id: profile.id,
         payee_id: payeeId,
         stripe_payment_intent: paymentIntent.id,
-        amount_cents: amountCents,
+        amount_cents: amount,
         commission_cents: commission,
         net_amount_cents: netAmount,
         status: "pending",
@@ -148,7 +152,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
-        amountCents,
+        amountCents: amount,
         commissionCents: commission,
         netCents: netAmount,
         commissionPct: COMMISSION_RATE * 100,
