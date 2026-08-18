@@ -1,7 +1,7 @@
 # Muse — S++ Roadmap (Platinum / 100/100)
 
 Honest audit of what's missing between "works" (current) and "platinum" (target).
-Current state is solid for closed beta: functional, feature-complete, reasonably secure. But it is NOT yet production-grade — gaps are in observability, security headers, architecture, testing, and operations.
+Current state is solid for closed beta: functional, feature-complete, reasonably secure, 89 automated tests passing, API auth-gated. But it is NOT yet production-grade — gaps are in observability, architecture, testing depth (happy paths), and operations.
 
 ---
 
@@ -11,7 +11,7 @@ Current state is solid for closed beta: functional, feature-complete, reasonably
 |---|------|----------------|--------|
 | 0.1 | **Security headers** — CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy via `headers()` in next.config.ts | `next.config.ts` has NO headers config. Zero protection against clickjacking/XSS/MIME-sniffing. | Low |
 | 0.2 | **Sentry error monitoring** — `errorTracker.ts` is a stub ("ready for Sentry"). No @sentry deps. | You're flying blind: no visibility into production crashes. | Medium |
-| 0.3 | **CI runs tests + audit** — `ci.yml` runs lint/typecheck/build but NOT `npm test` and NOT `npm audit`. | 18 tests exist but never run in CI; no dependency vuln scanning. | Low |
+| 0.3 | **CI runs tests + audit** — `ci.yml` runs lint/typecheck/tests/build but NOT `npm audit`. | 89 tests run in CI; no dependency vuln scanning. | Low |
 | 0.4 | **Accessibility audit** — no a11y testing, no aria audit, no keyboard/screen-reader pass. | Accessibility is both a legal exposure and a quality bar. | Medium |
 
 ## Tier 1 — Architecture & performance (the big debt)
@@ -24,12 +24,12 @@ Current state is solid for closed beta: functional, feature-complete, reasonably
 | 1.4 | **Bundle analysis + code splitting** — no `@next/bundle-analyzer`, no per-route splitting. | Page weight / first-load speed. | Low |
 | 1.5 | **Validation layer** (zod) — no runtime validation of API inputs; only manual checks. | Input robustness, fewer 400/500s. | Medium |
 
-## Tier 2 — Test coverage (currently 18 unit tests only)
+## Tier 2 — Test coverage (89 tests passing: 46 unit + 22 integration + 21 E2E smoke)
 
 | # | Item | Why | Effort |
 |---|------|-----|--------|
-| 2.1 | **E2E tests** — Playwright is already a devDep but unused. | Catch regressions across the actual flows (onboard → discover → match → book). | High |
-| 2.2 | **Integration tests** for API routes (auth, upload, match, checkout, support). | The API surface is untested end-to-end. | Medium |
+| 2.1 | **E2E tests** — 21 smoke tests cover request-safety/health/checkout-auth/geocode contracts, but no full user flows (onboard → discover → match → book). | Catch regressions across the actual flows. | High |
+| 2.2 | **Integration tests: happy paths** — auth-reject, request-safety (413/415/400/4xx), health, geocode, checkout are covered. Upload/match/push/verification happy-path tests still need staging credentials. | API surface mostly tested; authenticated flows are not. | Medium |
 | 2.3 | **Component tests** (testing-library). | UI logic coverage. | Medium |
 | 2.4 | **Coverage enforcement** (80%+ threshold, block below). | Prevents silent regressions. | Low |
 | 2.5 | **Visual regression** (Playwright screenshots / Chromatic). | Catches the UI glitches you've been manually finding. | Medium |
@@ -70,9 +70,9 @@ Current state is solid for closed beta: functional, feature-complete, reasonably
 
 ## Suggested execution order (impact / effort)
 
-1. **Tier 0** (hardening) — cheap, immediately raises the floor: headers, CI tests+audit, Sentry.
+1. **Tier 0.3** (npm audit in CI) — cheap, raises the floor.
 2. **Tier 1.1** (split page.tsx) — the biggest lever on everything else; do it carefully with vision.
-3. **Tier 2** (tests) — E2E + integration, run in CI.
+3. **Tier 2 happy paths** — upload/match/push/verification once staging env is wired.
 4. **Tier 4** (ops) — staging + monitoring + backups.
 5. **Tier 3** (features) — notifications, notification center, discovery v2, Smart Photos.
 6. **Tier 5** (AI differentiators) — advanced matching, gamification.
@@ -95,6 +95,11 @@ Current state is solid for closed beta: functional, feature-complete, reasonably
 - **Email verification enforcement** — register sends confirmation email; login rejects unconfirmed
 - **Realtime reconnect indicator** in chat
 - **Chat message order fixed** (oldest-first)
-- **Tests: 46 unit/integration + 14 E2E smoke** (was 18), all passing
+- **Tests: 89 passing** (46 unit + 22 integration + 21 E2E smoke), `tsc` clean, run in CI
 - **Staging Supabase project created** (`rwgofoxqycpzsvxfnozt`) + 49-table schema applied + keys in vault (Tier 4.1 — Vercel preview wiring pending)
 - **3 schema bugs fixed** in `sql/MUSE_SCHEMA_FULL_20260813.sql` (TEXT=UUID RLS policy mismatches + orphaned seed sessions)
+- **`/api/checkout` auth-gated** — resolves identity from verified Bearer token, 401s without, ignores client-supplied userId (5 checkout tests)
+- **authFetch consolidated** — single canonical implementation in `src/app/(muse)/muse/lib/api.ts`; admin page, ModerationPanel, MyAlbumsManager, auth-client all share it
+- **API request-safety tests** — 415 text/plain, 413 oversized, 400 missing params, malformed JSON → 4xx never 500, health no-store, geocode `lon` contract
+- **Fake-data audit** — SessionsScreen fabricated bookings/requests → honest empty states; ChatScreen new-match empty state; BtsScreen moments already had empty states
+- **Em-dash copy pass** — user-facing strings across modals, screens, onboarding, and offline page (comments/admin dashboards left as-is)
