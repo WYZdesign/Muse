@@ -11,10 +11,10 @@ export interface TutorialStep {
 }
 
 const STEPS: TutorialStep[] = [
-  { id: "card", title: "Discover Cards", anchor: "card", body: "This is your deck of creatives. Tap the left/right sides of the photo to browse their images, and scroll down to read their full profile, prompts, styles, and portfolio." },
-  { id: "fab", title: "Match Actions", anchor: "fab", body: "This is the magic button. Tap it to open your quick actions — Rewind, Pass, Super Like, Like, and Like + Note." },
-  { id: "swipe", title: "Swipe to Decide", anchor: "center", body: "You can also swipe right to like, left to pass, or tap the radial buttons. Every like brings you closer to a match." },
-  { id: "nav", title: "Navigation", anchor: "nav", body: "Use the bottom bar to move between Discover, Feed, Collab, Muses, and BTS. The Menu button (☰) opens everything else — your profile, settings, and more." },
+  { id: "card", title: "Discover Cards", anchor: "card", body: "Here's your deck of creatives. Tap the left or right side of the photo to browse their images, and scroll down to read their full profile, prompts, styles, and portfolio." },
+  { id: "fab", title: "Match Actions", anchor: "fab", body: "This is the magic button. Tap it to open your quick actions: Rewind, Pass, Super Like, Like, and Like + Note." },
+  { id: "swipe", title: "Swipe to Decide", anchor: "center", body: "You can also swipe right to like and left to pass, or tap the round buttons. Every like gets you closer to a match." },
+  { id: "nav", title: "Navigation", anchor: "nav", body: "Use the bottom bar to move between Discover, Feed, Collab, Muses, and BTS. The menu button opens everything else, like your profile and settings." },
 ];
 
 export const DiscoverTutorial = memo(function DiscoverTutorial({

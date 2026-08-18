@@ -16,24 +16,24 @@ export interface CodexScreenProps {
 // ── BADGE MASTER GLOSSARY ────────────────────────────────────────────────────
 interface BadgeDef { name: string; icon: string; color: string; short: string; long: string; tier: "trust" | "achievement" | "engagement" | "community"; }
 const BADGES: BadgeDef[] = [
-  { name: "Verified Pro", icon: "✓", color: "#FFD700", tier: "trust", short: "Identity verified by Muse", long: "This member's government ID and/or professional credentials were verified by the Muse team. A Verified Pro is a confirmed real person with a legitimate creative identity — the strongest trust signal on the platform." },
-  { name: "Top Creator", icon: "★", color: "#FF8A80", tier: "achievement", short: "80+ collaborations completed", long: "Awarded after completing 80 or more collaborations on Muse. Top Creators are seasoned professionals with a proven, high-volume track record of shipped work." },
-  { name: "Creative Sage", icon: "◊", color: "#FFB5C2", tier: "achievement", short: "47+ collaborations completed", long: "Awarded after 47+ completed collaborations. Creative Sages are trusted veterans with deep experience — the middle milestone between Rising Star and Top Creator." },
-  { name: "Super Collab", icon: "♥", color: "#FF69B4", tier: "engagement", short: "High match compatibility", long: "Indicates this profile scores exceptionally high against your own compatibility criteria — shared styles, complementary roles, aligned personality, or mutual interests. A Super Collab is a strong prompt to reach out." },
-  { name: "Match Magnet", icon: "♥", color: "#FF69B4", tier: "engagement", short: "10+ matches this month", long: "Received 10 or more matches in the current month. Match Magnets are in high demand right now — expect a busy inbox and quick responses." },
-  { name: "Quick Responder", icon: "⚡", color: "#FFD700", tier: "engagement", short: "Responds within 2 hours", long: "This member replies to messages within 2 hours on average. A Quick Responder badge means fast, reliable communication — ideal if you're on a tight timeline." },
-  { name: "Style Icon", icon: "✦", color: "#D4A5FF", tier: "community", short: "Recognized for outstanding style", long: "Their portfolio has been spotlighted by the Muse community for exceptional aesthetic, composition, or distinctive voice. A Style Icon is someone worth studying." },
-  { name: "Local Legend", icon: "📍", color: "#87CEEB", tier: "community", short: "Top creative in their city", long: "Ranked among the most-active and highest-rated creatives in their city. Local Legends are the go-to collaborators in their market." },
-  { name: "Rising Star", icon: "✦", color: "#98FB98", tier: "achievement", short: "New to Muse, gaining traction", long: "New to Muse and already gaining momentum — either 100+ matches received, or rapid early traction. Rising Stars are fresh energy; get in early before they blow up." },
-  { name: "Full Moon", icon: "🌕", color: "#C0C0FF", tier: "achievement", short: "1 year on Muse", long: "Earned after one full year on the platform. A Full Moon member has been a consistent part of the Muse community." },
-  { name: "Golden Hour", icon: "☀️", color: "#FFD700", tier: "achievement", short: "50+ shoots completed", long: "Completed 50+ shoots through Muse bookings. Golden Hour creators have delivered at volume and are battle-tested on set." },
-  { name: "Collab King", icon: "👑", color: "#FFD700", tier: "achievement", short: "10+ bookings completed", long: "Completed 10+ bookings through Muse. A Collab King has proven they can convert a match into real, paid, finished work." },
+  { name: "Verified Pro", icon: "✓", color: "#FFD700", tier: "trust", short: "Identity verified by Muse", long: "We checked this member's government ID and professional credentials. A Verified Pro is a confirmed real person with a real creative identity, and it's the strongest trust signal on the platform." },
+  { name: "Top Creator", icon: "★", color: "#FF8A80", tier: "achievement", short: "80+ collaborations completed", long: "Earned after completing 80 or more collaborations on Muse. Top Creators are seasoned pros with a long, proven record of shipped work." },
+  { name: "Creative Sage", icon: "◊", color: "#FFB5C2", tier: "achievement", short: "47+ collaborations completed", long: "Earned after 47+ completed collaborations. Creative Sages are trusted veterans with deep experience, the step between Rising Star and Top Creator." },
+  { name: "Super Collab", icon: "♥", color: "#FF69B4", tier: "engagement", short: "High match compatibility", long: "This profile scores really well against your own compatibility, whether it's shared styles, complementary roles, aligned personality, or shared interests. A Super Collab is a strong nudge to say hi." },
+  { name: "Match Magnet", icon: "♥", color: "#FF69B4", tier: "engagement", short: "10+ matches this month", long: "Got 10 or more matches this month. Match Magnets are in demand right now, so expect a busy inbox and quick replies." },
+  { name: "Quick Responder", icon: "⚡", color: "#FFD700", tier: "engagement", short: "Responds within 2 hours", long: "This member replies within 2 hours on average. A Quick Responder badge means fast, reliable communication, perfect when you're on a deadline." },
+  { name: "Style Icon", icon: "✦", color: "#D4A5FF", tier: "community", short: "Recognized for outstanding style", long: "The community has spotlighted their portfolio for standout aesthetic, composition, or a distinctive voice. A Style Icon is someone worth studying." },
+  { name: "Local Legend", icon: "📍", color: "#87CEEB", tier: "community", short: "Top creative in their city", long: "Ranked among the most active and highest-rated creatives in their city. Local Legends are the go-to collaborators in their market." },
+  { name: "Rising Star", icon: "✦", color: "#98FB98", tier: "achievement", short: "New to Muse, gaining traction", long: "New to Muse and already picking up steam, whether that's 100+ matches or quick early traction. Rising Stars are fresh energy, so connect early." },
+  { name: "Full Moon", icon: "🌕", color: "#C0C0FF", tier: "achievement", short: "1 year on Muse", long: "Earned after a full year on the platform. A Full Moon member has been a steady part of the Muse community." },
+  { name: "Golden Hour", icon: "☀️", color: "#FFD700", tier: "achievement", short: "50+ shoots completed", long: "Completed 50+ shoots through Muse bookings. Golden Hour creators have delivered at scale and are proven on set." },
+  { name: "Collab King", icon: "👑", color: "#FFD700", tier: "achievement", short: "10+ bookings completed", long: "Completed 10+ bookings through Muse. A Collab King has shown they can turn a match into real, paid, finished work." },
   { name: "Social Butterfly", icon: "🦋", color: "#FF69B4", tier: "engagement", short: "500+ messages", long: "Sent 500+ messages on Muse. Social Butterflies are deeply active conversationalists and networkers." },
 ];
 
 // ── CONNECTION TYPE GLOSSARY ─────────────────────────────────────────────────
 const CONN_TYPES = [
-  { name: "Collaborator", icon: "🤝", color: "#FFD700", desc: "You want to make work together — a project, a shoot, a commission." },
+  { name: "Collaborator", icon: "🤝", color: "#FFD700", desc: "You want to make work together, like a project, a shoot, or a commission." },
   { name: "Friend", icon: "👥", color: "#87CEEB", desc: "You're looking for creative community and genuine friendship, not just work." },
   { name: "Mentor", icon: "🎓", color: "#98FB98", desc: "You want guidance, teaching, or someone to learn from (or to be that for others)." },
   { name: "Partner", icon: "💞", color: "#FF69B4", desc: "You're open to a deeper romantic or creative-life partnership." },
@@ -92,27 +92,27 @@ export const CodexScreen = memo(function CodexScreen({
 
         {tab === "personality" && (
           <>
-            <Section title="🌞 Western Zodiac" subtitle="Your sun sign — determined by your birth date. It's the core of your creative identity and drive." howTo="Find yours: the sign the Sun was in on your birthday (e.g. Mar 21–Apr 19 = Aries)." why="Why it matters: it shapes how you approach work, collaborate, and express yourself — and powers zodiac match compatibility.">
-              {CODEX_ZODIAC.map(z => <Expandable key={z.name} icon={z.icon} name={`${z.name} — ${z.tag}`} short={z.short} long={z.long} color="#FFD700" />)}
+            <Section title="🌞 Western Zodiac" subtitle="Your sun sign, based on your birth date. It's the heart of your creative identity and drive." howTo="Find yours: it's the sign the Sun was in on your birthday (for example, Mar 21 to Apr 19 is Aries)." why="Why it matters: it shapes how you approach work, collaborate, and express yourself, and it powers zodiac match compatibility.">
+              {CODEX_ZODIAC.map(z => <Expandable key={z.name} icon={z.icon} name={`${z.name}, ${z.tag}`} short={z.short} long={z.long} color="#FFD700" />)}
             </Section>
-            <Section title="🐉 Chinese Zodiac" subtitle="Your year animal — based on the lunar calendar year you were born. It reflects temperament and instinct." howTo="Find yours: your animal is determined by your birth year in a 12-year cycle (e.g. 2000 = Dragon, 2001 = Snake)." why="Why it matters: it reveals instinct, temperament, and natural working style — used in match compatibility.">
+            <Section title="🐉 Chinese Zodiac" subtitle="Your year animal, based on the lunar calendar year you were born. It reflects temperament and instinct." howTo="Find yours: your animal is set by your birth year in a 12-year cycle (for example, 2000 is Dragon, 2001 is Snake)." why="Why it matters: it reveals your instinct, temperament, and natural working style, and it feeds match compatibility.">
               {CODEX_CHINESE.map(c => <Expandable key={c.name} icon={c.icon} name={c.name} short={c.short} long={c.long} color="#FF8A80" />)}
             </Section>
-            <Section title="🧠 MBTI (16 Personality Types)" subtitle="A framework of 16 types based on 4 dimensions: Introversion/Extraversion, Sensing/Intuition, Thinking/Feeling, Judging/Perceiving." howTo="Find yours: take the official MBTI assessment (or a free 16personalities-style test). It's a self-report questionnaire, not a scientific measurement." why="Why it matters: it reveals how you think, communicate, create, and collaborate — and which types you naturally work best with.">
-              {CODEX_MBTI.map(m => <Expandable key={m.code} icon="🧠" name={`${m.code} — ${m.tag}`} short={m.short} long={`${m.long} Best collabs: ${m.best}.`} color="#D4A5FF" />)}
+            <Section title="🧠 MBTI (16 Personality Types)" subtitle="A framework of 16 types built on 4 dimensions: Introversion/Extraversion, Sensing/Intuition, Thinking/Feeling, and Judging/Perceiving." howTo="Find yours: take a free personality assessment. It's a self-report questionnaire, not a scientific test." why="Why it matters: it shows how you think, communicate, create, and collaborate, and which types you naturally work best with.">
+              {CODEX_MBTI.map(m => <Expandable key={m.code} icon="🧠" name={`${m.code}, ${m.tag}`} short={m.short} long={`${m.long} You'll click best with ${m.best}.`} color="#D4A5FF" />)}
             </Section>
-            <Section title="🔢 Life Path Numbers" subtitle="Derived from your full birth date by reducing each part to a single digit and summing. A core numerology concept." howTo="Find yours: add all digits of your birth date (MM + DD + YYYY) and reduce to a single digit, except Master Numbers 11, 22, 33." why="Why it matters: it's your life's blueprint — strengths, challenges, and purpose — and feeds match compatibility.">
-              {CODEX_LIFE_PATH.map(n => <Expandable key={n.n} icon="🔢" name={`Life Path ${n.n} — ${n.title}`} short={n.title} long={n.long} color="#98FB98" />)}
+            <Section title="🔢 Life Path Numbers" subtitle="Derived from your full birth date by reducing each part to a single digit and adding them up. A core numerology concept." howTo="Find yours: add every digit of your birth date (month + day + year) and reduce to one digit, except the Master Numbers 11, 22, and 33." why="Why it matters: it's your life's blueprint, your strengths, challenges, and purpose, and it feeds match compatibility.">
+              {CODEX_LIFE_PATH.map(n => <Expandable key={n.n} icon="🔢" name={`Life Path ${n.n}, ${n.title}`} short={n.title} long={n.long} color="#98FB98" />)}
             </Section>
           </>
         )}
 
         {tab === "roles" && (
           <>
-            <Section title="🎭 Creative Types" subtitle="The role you play on set and in collaboration — your primary discipline." howTo="Pick the one that best describes your main craft; you can list multiple in your profile." why="Why it matters: it's how matches find the exact collaborator they need (photographer, model, director, etc.).">
+            <Section title="🎭 Creative Types" subtitle="The role you play on set and in a collaboration, your main discipline." howTo="Pick the one that best fits your main craft. You can list more than one in your profile." why="Why it matters: it's how matches find the exact collaborator they need, whether that's a photographer, model, director, or more.">
               {CODEX_TYPES.map(t => <Expandable key={t.name} icon={t.icon} name={t.name} short={t.long.split(". ")[0] + "."} long={t.long} color="#FFD700" />)}
             </Section>
-            <Section title="🖌️ Aesthetics / Styles" subtitle="Visual and creative styles you work in — the look and feel of your work." howTo="Choose the styles that describe your portfolio; they filter your matches and feed the compatibility score." why="Why it matters: shared styles are the #1 driver of match score (up to +21%).">
+            <Section title="🖌️ Aesthetics / Styles" subtitle="The visual and creative styles you work in, the look and feel of your work." howTo="Choose the styles that describe your portfolio. They filter your matches and feed your compatibility score." why="Why it matters: shared styles are the biggest driver of match score, up to +21%.">
               {CODEX_AESTHETICS.map(a => <Expandable key={a.name} icon="🎨" name={a.name} short={a.long.split(". ")[0] + "."} long={a.long} color="#FFB5C2" />)}
             </Section>
           </>
@@ -126,14 +126,14 @@ export const CodexScreen = memo(function CodexScreen({
             <Section title="⚖️ How Match % Works" subtitle="The compatibility score on every profile.">
               <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 16, fontSize: 13, color: "var(--text2)", lineHeight: 1.7 }}>
                 <div>• Starts at 40% baseline.</div>
-                <div>• <b>Shared styles</b> — up to +21%.</div>
-                <div>• <b>Complementary looking-for</b> — +15%.</div>
-                <div>• <b>Role match</b> — +8%.</div>
-                <div>• <b>Zodiac compatibility</b> — up to +6%.</div>
-                <div>• <b>Chinese zodiac match</b> — +6%.</div>
-                <div>• <b>MBTI compatibility</b> — up to +5%.</div>
-                <div>• <b>Life path match</b> — +5%.</div>
-                <div>• <b>Verified</b> — +3%; <b>50+ collabs</b> — +2%.</div>
+                <div>• <b>Shared styles</b>: up to +21%.</div>
+                <div>• <b>Complementary looking-for</b>: +15%.</div>
+                <div>• <b>Role match</b>: +8%.</div>
+                <div>• <b>Zodiac compatibility</b>: up to +6%.</div>
+                <div>• <b>Chinese zodiac match</b>: +6%.</div>
+                <div>• <b>MBTI compatibility</b>: up to +5%.</div>
+                <div>• <b>Life path match</b>: +5%.</div>
+                <div>• <b>Verified</b>: +3%; <b>50+ collabs</b>: +2%.</div>
                 <div style={{ marginTop: 8, color: "var(--muted)" }}>Capped at 99%. A score of 70%+ is a strong signal to reach out.</div>
               </div>
             </Section>
