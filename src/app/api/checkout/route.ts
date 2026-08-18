@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { checkRate, clientIp } from "@/lib/rate-limit";
+import { supabase } from "@/lib/supabase";
 
 export const runtime = "nodejs";
 
@@ -24,9 +25,20 @@ export async function POST(req: NextRequest) {
     if (!secret) return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
 
     const body = await req.json();
-    const { plan, email, userId } = body as { plan?: string; email?: string; userId?: string };
+    const { plan, email } = body as { plan?: string; email?: string };
 
     if (!plan || !PRICE_MAP[plan]) return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+
+    // Resolve identity from the verified session token — never trust a
+    // client-supplied userId (that would let anyone tie a checkout to
+    // another account and trigger tier changes on their profile).
+    const header = req.headers.get("authorization") || "";
+    const bearer = header.replace(/^Bearer\s+/i, "").trim();
+    const token = bearer || (typeof body.access_token === "string" ? body.access_token : "") || "";
+    if (!token) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    const { data: authData, error: authErr } = await supabase.auth.getUser(token);
+    if (authErr || !authData.user) return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+    const userId = authData.user.id;
 
     const stripe = new Stripe(secret);
 

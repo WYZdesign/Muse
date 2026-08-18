@@ -14,7 +14,7 @@ export interface MatchCardProps {
     setReportTarget: (v: any) => void;
     setShowReport: (v: boolean) => void;
     setUnmatchTarget: (v: string) => void;
-    setBlockTarget: (v: string) => void;
+    setBlockTarget: (v: { id: string; name: string } | null) => void;
     handleImgError: (e: any) => void;
     getIcebreaker: (type: string, seed?: string) => string;
   };
@@ -251,7 +251,7 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
                 style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--text2)" }}
                 onClick={() => {
                   setExpandedMatchId(null);
-                  setBlockTarget(m.name);
+                  setBlockTarget({ id: String(m.id), name: m.name });
                 }}
               >
                 <FiSlash size={13} style={{ marginRight: 4 }} /> Block

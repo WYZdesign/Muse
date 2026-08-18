@@ -136,7 +136,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                       style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap" }}
                       onClick={async () => {
                         try {
-                          const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "book-session", sessionId: s.id, hostId: s.id }) });
+                          const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "book-session", sessionId: s.id }) });
                           if (r.status === 403) {
                             const d = await r.json().catch(() => ({}));
                             if (d.code === "VERIFICATION_REQUIRED") {

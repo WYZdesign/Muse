@@ -17,10 +17,13 @@ function flushQueue() {
   while (queue.length > 0) {
     const item = queue.shift();
     if (item) {
-      navigator.sendBeacon(
-        "/api/muse",
-        JSON.stringify({ action: "track-error", ...item })
-      );
+      // Use fetch with JSON (not sendBeacon) — the API rejects text/plain.
+      fetch("/api/muse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "track-error", ...item }),
+        keepalive: true,
+      }).catch(() => {});
     }
   }
 }

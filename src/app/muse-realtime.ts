@@ -132,7 +132,7 @@ export function getGeolocation(): Promise<GeoResult> {
         try {
           // Route geocoding through our own server endpoint (no direct
           // third-party browser calls — avoids CORS/rate-limit/privacy issues).
-          const r = await fetch(`/api/geocode?lat=${lat}&long=${long}`);
+          const r = await fetch(`/api/geocode?lat=${lat}&lon=${long}`);
           if (r.ok) {
             const j = await r.json();
             city = j.city || "";

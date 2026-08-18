@@ -496,13 +496,16 @@ export async function POST(req: NextRequest) {
       if (!checkRate(ip, "feed", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const vErr = validateInput(rest);
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
-      const { text, image_url, image, img } = rest;
+      const { text, image_url, image, img, media } = rest;
       if (!text?.trim()) return NextResponse.json({ error: "text required" }, { status: 400 });
       const cleanText = sanitizeText(String(text).trim());
       if (!cleanText) return NextResponse.json({ error: "text required" }, { status: 400 });
       const screen = screenText(cleanText);
       if (screen.block) return NextResponse.json({ error: "Post blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
-      const { error } = await sb.from("muse_feed_posts").insert({ author_id: profile.id, text: cleanText, img: img || image_url || image || "", type: (img || image_url || image) ? "photo" : "text" });
+      // Accept media (array from client) or single image fields.
+      const mediaArr = Array.isArray(media) ? media : [];
+      const resolvedImg = img || image_url || image || mediaArr[0] || "";
+      const { error } = await sb.from("muse_feed_posts").insert({ author_id: profile.id, text: cleanText, img: resolvedImg, type: resolvedImg ? "photo" : "text" });
       if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
@@ -652,7 +655,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "save-preferences") {
-      const prefs = rest;
+      const ALLOWED_PREFS = new Set([
+        "nsfw", "showOnline", "showDistance", "notifications", "emailNotifications",
+        "pushNotifications", "soundEffects", "darkMode", "distance", "ageRange",
+        "openToTravel", "autoReply", "privacy", "visibility", "tags",
+      ]);
+      const prefs: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(rest)) {
+        if (ALLOWED_PREFS.has(k)) prefs[k] = v;
+      }
+      if (Object.keys(prefs).length === 0) return NextResponse.json({ error: "No valid preferences provided" }, { status: 400 });
       const { error } = await sb.from("muse_profiles").update({ preferences: prefs }).eq("id", profile.id);
       if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
