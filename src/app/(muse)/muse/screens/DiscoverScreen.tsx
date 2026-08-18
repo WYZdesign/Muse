@@ -149,6 +149,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   nopeLabelRef,
   cardScrollRef,
 }: DiscoverScreenProps) {
+  const [badgeInfo, setBadgeInfo] = useState<{ name: string; desc: string; icon: string; color: string } | null>(null);
   return (
     <div className={"screen-el" + (screen === "discover" ? " active" : "")}>
       <div className="discover-wrap">
@@ -344,7 +345,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 })()}
                               </div>
                               <div className="match-score" style={{ marginBottom: 16 }}><div className="score-bar"><div className="score-fill" style={{ width: profile.score + "%" }} /></div><span className="score-text">{profile.score}%</span></div>
-                              {(profile as any).badges?.length > 0 && <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges.map((b: any, i: number) => <span key={i} className="tag" style={{ background: `${b.color}20`, border: `1px solid ${b.color}40`, color: b.color }}>{b.icon} {b.name}</span>)}</div></div>}
+                              {(profile as any).badges?.length > 0 && <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges.map((b: any, i: number) => <button key={i} className="tag" onClick={(e) => { e.stopPropagation(); setBadgeInfo(b); }} style={{ background: `${b.color}20`, border: `1px solid ${b.color}40`, color: b.color, cursor: "pointer" }}>{b.icon} {b.name}</button>)}</div></div>}
                               <div className="card-section" style={{ fontSize: 12, color: "var(--muted)" }}>📍 {profile.loc}</div>
                             </div>
                           </div>
@@ -410,6 +411,19 @@ export const DiscoverScreen = memo(function DiscoverScreen({
           )}
           <img src={lightboxPhotos[lightboxIdx] || lightboxPhotos[0]} alt="" style={{ maxWidth: "100vw", maxHeight: "100vh", objectFit: "contain" }} onClick={(e) => e.stopPropagation()} onError={handleImgError} />
           <div style={{ position: "absolute", bottom: 20, color: "rgba(255,255,255,0.5)", fontSize: 13 }}>{lightboxIdx + 1} / {lightboxPhotos.length}</div>
+        </div>
+      )}
+      {/* Badge info popover */}
+      {badgeInfo && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setBadgeInfo(null)}>
+          <div style={{ background: "#1a0a2e", border: `1px solid ${badgeInfo.color}40`, borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, background: `${badgeInfo.color}20`, border: `1px solid ${badgeInfo.color}40`, color: badgeInfo.color, flexShrink: 0 }}>{badgeInfo.icon}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{badgeInfo.name}</div>
+            </div>
+            <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6 }}>{badgeInfo.desc}</div>
+            <button onClick={() => setBadgeInfo(null)} style={{ marginTop: 18, width: "100%", padding: "12px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))", color: "var(--gold)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Got it</button>
+          </div>
         </div>
       )}
       <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
