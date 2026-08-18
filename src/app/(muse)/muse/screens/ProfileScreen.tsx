@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { FiArrowLeft, FiMenu, FiEdit2, FiSettings } from "react-icons/fi";
+import { FiArrowLeft, FiMenu, FiEdit2, FiSettings, FiBookOpen } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen, Match } from "../components/types";
 
@@ -103,6 +103,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         </div>
         <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>Your Profile</div>
         <div style={{ display: "flex", gap: 10 }}>
+          <button className="hdr-btn" onClick={() => showScreen("codex")} aria-label="The Codex" title="The Codex — badges, personality & matching glossary"><FiBookOpen size={18} /></button>
           <button className="hdr-btn" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setShowEditProfile(true); }} aria-label="Edit Profile"><FiEdit2 size={18} /></button>
           <button className="hdr-btn" onClick={() => setScreen("settings")} aria-label="Settings"><FiSettings size={18} /></button>
         </div>

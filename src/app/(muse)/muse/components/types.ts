@@ -6,7 +6,7 @@ export type Match = Partial<Profile> & {
   intent?: string;
   messages: { from: string; text: string; time: string; img?: string }[];
 };
-export type Screen = "auth"|"onboard"|"discover"|"connections"|"matches"|"chat"|"profile"|"briefs"|"portfolio"|"settings"|"subscription"|"community"|"events"|"sessions"|"moments"|"forum"|"network";
+export type Screen = "auth"|"onboard"|"discover"|"connections"|"matches"|"chat"|"profile"|"briefs"|"portfolio"|"settings"|"subscription"|"community"|"events"|"sessions"|"moments"|"forum"|"network"|"codex";
 
 export const EXCLUDED_PORTFOLIOS = [
   "/models/NIK/",
