@@ -33,6 +33,7 @@ import { NetworkScreen } from "./screens/NetworkScreen";
 import { PortfolioScreen } from "./screens/PortfolioScreen";
 import { BtsScreen } from "./screens/BtsScreen";
 import { CodexScreen } from "./screens/CodexScreen";
+import { DiscoverTutorial } from "./screens/DiscoverTutorial";
 import { ProfileScreen } from "./screens/ProfileScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { SubscriptionScreen } from "./screens/SubscriptionScreen";
@@ -249,6 +250,7 @@ function MusePage() {
   const [premiumDismissed, setPremiumDismissed] = useState<boolean>(() => {
     try { return !!safeGetItem("muse_hide_premium"); } catch { return false; }
   });
+  const [showDiscoverTutorial, setShowDiscoverTutorial] = useState(false);
 
   // ═══ TRUST & SAFETY STATE ═══
   const [showDisclosureModal, setShowDisclosureModal] = useState(false);
@@ -1337,6 +1339,7 @@ function MusePage() {
       <a href="#muse-main" className="sr-only" style={{zIndex:99999}} onFocus={(e)=>{e.currentTarget.style.cssText="position:fixed;top:0;left:0;padding:8px 16px;background:var(--gold);color:#0a0612;fontWeight:700;borderRadius:0 0 8px 0;width:auto;height:auto;clip:auto;overflow:visible;margin:0"}} onBlur={(e)=>{e.currentTarget.removeAttribute("style")}}>Skip to main content</a>
       <CardPreloader currentIdx={currentIdx} profiles={filteredProfiles} />
       <Confetti active={showConfetti} />
+      {showDiscoverTutorial && <DiscoverTutorial onDone={() => setShowDiscoverTutorial(false)} />}
       {swipeDir && <SwipeParticles active dir={swipeDir} />}
       <BackgroundScene flash={screenFlash} />
       {showMatchOverlay && (
@@ -1825,7 +1828,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                           try { await authFetch("/api/muse/referral", { method: "POST", body: JSON.stringify({ action: "apply", referralCode: obData.referralCode.trim().toUpperCase() }) }); } catch {}
                         }
                       }
-                      setScreen("discover");showToast("Welcome to Muse!")
+                      setScreen("discover");showToast("Welcome to Muse!");setShowDiscoverTutorial(true)
                     }}>Enter Muse</button>
                     <button className="back-link" onClick={()=>setObStep(16)}>Back</button>
                   </div>
