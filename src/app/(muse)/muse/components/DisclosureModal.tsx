@@ -37,6 +37,7 @@ type DisclosureForm = {
   editApprovalRequired: boolean;
   ndaRequired: boolean;
   modelReleaseRequired: boolean;
+  agreeTerms: boolean;
 };
 
 const INITIAL: DisclosureForm = {
@@ -52,7 +53,7 @@ const INITIAL: DisclosureForm = {
   locationType: "", locationAddress: "", locationPublic: true,
   othersPresent: false, othersCount: 0, othersDesc: "",
   usageRights: "", usageCustomDesc: "", editApprovalRequired: false,
-  ndaRequired: false, modelReleaseRequired: false,
+  ndaRequired: false, modelReleaseRequired: false, agreeTerms: false,
 };
 
 type Props = {
@@ -79,6 +80,7 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
   const wouldBlock = isNsfw && hasPayment;
 
   const handleSubmit = async () => {
+    if (!form.agreeTerms) { setBlocked(false); return; }
     setLoading(true);
     try {
       if (wouldBlock) {
@@ -294,7 +296,7 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
 
             <div style={{ marginTop: 20, padding: 14, background: "rgba(255,215,0,0.06)", borderRadius: 10, border: "1px solid rgba(255,215,0,0.15)" }}>
               <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
-                <input type="checkbox" style={{ marginTop: 2, accentColor: "#ffd700", width: 16, height: 16 }} onChange={() => {}} />
+                <input type="checkbox" checked={form.agreeTerms} onChange={e => set("agreeTerms", e.target.checked)} style={{ marginTop: 2, accentColor: "#ffd700", width: 16, height: 16, flexShrink: 0 }} />
                 <span style={{ fontSize: 12, color: "#f5f0ff", lineHeight: 1.5 }}>
                   I have read and agree to the <a href="/muse" style={{ color: "#ffd700" }}>Muse Community Guidelines</a> and <a href="/muse" style={{ color: "#ffd700" }}>Terms of Service</a>. I understand that this disclosure is a binding agreement between both parties for this specific shoot.
                 </span>
@@ -316,7 +318,7 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
               Next →
             </button>
           ) : (
-            <button onClick={handleSubmit} disabled={loading} style={{ padding: "10px 24px", borderRadius: 12, background: wouldBlock ? "rgba(255,50,50,0.8)" : "linear-gradient(135deg, #ffd700, #ff8c00)", border: "none", color: "#0a0612", fontSize: 13, fontWeight: 700, cursor: loading ? "wait" : "pointer" }}>
+            <button onClick={handleSubmit} disabled={loading || !form.agreeTerms} style={{ padding: "10px 24px", borderRadius: 12, background: wouldBlock ? "rgba(255,50,50,0.8)" : "linear-gradient(135deg, #ffd700, #ff8c00)", border: "none", color: "#0a0612", fontSize: 13, fontWeight: 700, cursor: loading || !form.agreeTerms ? "not-allowed" : "pointer", opacity: !form.agreeTerms ? 0.5 : 1 }}>
               {loading ? "Sending..." : wouldBlock ? "⚠ Review & Submit" : "Send Disclosure"}
             </button>
           )}
