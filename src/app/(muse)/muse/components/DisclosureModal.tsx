@@ -162,7 +162,17 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
           <div style={{ fontSize: 13, color: "#f5f0ff", lineHeight: 1.8 }}>
             <div><strong>Compensation:</strong> {(disc as any).compensation_amount || "Not specified"}. {(disc as any).compensation_timing || "Not specified"}</div>
             <div><strong>Location:</strong> {(disc as any).location_type || "Not specified"} {(disc as any).location_address ? `, ${(disc as any).location_address}` : ""}</div>
-            <div><strong>Content types:</strong> {[].filter(Boolean).join(", ") || "See below"}</div>
+            <div><strong>Content types:</strong> {[
+              (disc as any).content_type_nudity && "Nudity",
+              (disc as any).content_type_artistic_nudity && "Artistic nude",
+              (disc as any).content_type_boudoir && "Boudoir",
+              (disc as any).content_type_portrait && "Portrait",
+              (disc as any).content_type_fashion && "Fashion",
+              (disc as any).content_type_editorial && "Editorial",
+              (disc as any).content_type_commercial && "Commercial",
+              (disc as any).content_type_conceptual && "Conceptual",
+              (disc as any).content_type_other && ((disc as any).content_type_other_desc || "Other"),
+            ].filter(Boolean).join(", ") || "Not specified"}</div>
             <div style={{ marginTop: 8, padding: 10, background: "rgba(255,255,255,0.04)", borderRadius: 8, fontSize: 12 }}>
               <strong>Boundary Checklist:</strong>
               <div style={{ marginTop: 4 }}>
