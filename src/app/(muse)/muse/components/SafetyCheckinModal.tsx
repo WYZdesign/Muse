@@ -100,7 +100,7 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
                   Please confirm: Is everything still as originally disclosed? Same date, time, location, and content boundaries?
                 </div>
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>
-                  {new Date(c.created_at).toLocaleDateString()} — Booking status: {c.booking_id?.status || "active"}
+                  {new Date(c.created_at).toLocaleDateString()}. Booking status: {c.booking_id?.status || "active"}
                 </div>
 
                 <div style={{ padding: 10, background: "rgba(255,255,255,0.03)", borderRadius: 8, marginBottom: 12, fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
@@ -221,7 +221,7 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
             <div style={{ padding: 14, background: "rgba(78,205,196,0.06)", borderRadius: 10, border: "1px solid rgba(78,205,196,0.15)" }}>
               <div style={{ fontSize: 12, color: "#4ecdc4", fontWeight: 700, marginBottom: 6 }}>💡 Safety Tip</div>
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
-                The easiest and most protective thing you can do is make it simple to back out. If something feels off, trust your instincts — you can cancel anytime without explanation. No shoot is worth compromising your comfort.
+                The easiest and most protective thing you can do is make it simple to back out. If something feels off, trust your instincts. You can cancel anytime without explanation. No shoot is worth compromising your comfort.
               </div>
             </div>
           </div>

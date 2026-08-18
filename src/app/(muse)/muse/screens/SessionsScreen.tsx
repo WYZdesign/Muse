@@ -95,7 +95,7 @@ export const SessionsScreen = memo(function SessionsScreen({
               <div style={{ textAlign: "center", padding: "32px 20px" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>No bookings yet</div>
-                <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>Book a session with a creative below — your confirmed bookings will show up here.</div>
+                <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>Book a session with a creative below. Your confirmed bookings will show up here.</div>
               </div>
             )}
             {/* Available Sessions */}

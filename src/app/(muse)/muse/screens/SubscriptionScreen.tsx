@@ -43,7 +43,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
           </div>
           {currentUser.foundingTier && (
             <div style={{ padding: "12px 16px", borderRadius: 16, marginBottom: 14, background: currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.1)" : "rgba(212,165,255,0.1)", border: `1px solid ${currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.3)" : "rgba(212,165,255,0.3)"}` }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)" }}>{currentUser.foundingTier === "founding" ? "🏆 Founding Member — Lifetime Pro" : "⭐ Early Member — Free Pro"}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)" }}>{currentUser.foundingTier === "founding" ? "🏆 Founding Member, Lifetime Pro" : "⭐ Early Member, Free Pro"}</div>
               <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>
                 {currentUser.foundingTier === "founding"
                   ? "You're locked in for life. Thanks for believing in Muse."

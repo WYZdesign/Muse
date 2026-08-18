@@ -195,7 +195,7 @@ export default function MyAlbumsManager({
           <div className="modal-overlay" onClick={() => setShowInviteManager(false)}>
             <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 380, width: "90%", padding: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Album Access</div>
-              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Only people you toggle on below can see this album. Everyone else — including people you've matched with — cannot.</div>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Only people you toggle on below can see this album. Everyone else, including people you've matched with, cannot.</div>
               {matchOptions.length === 0 && <div style={{ fontSize: 13, color: "var(--muted)" }}>You don't have any matches yet to invite.</div>}
               {matchOptions.map(m => {
                 const has = grantedIds.has(String(m.id));

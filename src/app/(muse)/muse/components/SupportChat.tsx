@@ -24,7 +24,7 @@ const PANEL = {
   boxShadow: "0 -20px 60px rgba(0,0,0,0.6)",
 } as const;
 
-const GREETING = "Hey, I'm Muse — your creative wingmate. 🌊 Whether you're figuring out bookings, wondering how verification works, or just want tips on putting your best work forward, I've got you. What can I help you with?";
+const GREETING = "Hey, I'm Muse, your creative wingmate. 🌊 Whether you're figuring out bookings, wondering how verification works, or just want tips on putting your best work forward, I've got you. What can I help you with?";
 
 export default function SupportChat({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [messages, setMessages] = useState<ChatMsg[]>([

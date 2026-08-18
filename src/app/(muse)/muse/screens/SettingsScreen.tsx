@@ -226,7 +226,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               { icon: <FiDollarSign size={18} />, label: "Payment History", desc: "View earnings and transactions", action: () => setShowPaymentHistory(true) },
               { icon: <FiGift size={18} />, label: "Referral Program", desc: "Invite friends, earn free months", action: () => setShowReferral(true) },
               { icon: <FiShield size={18} />, label: "Safety Center", desc: "Check-ins, emergency contacts, trusted friends", action: () => setShowSafetyCheckin(true) },
-              { icon: <FiStar size={18} />, label: "Profile Completion", desc: `${Math.round((promptResponses.length / Math.max(promptBankData.length, 1)) * 100)}% — answer prompts to improve matches`, action: () => setShowPromptBank(true) },
+              { icon: <FiStar size={18} />, label: "Profile Completion", desc: `${Math.round((promptResponses.length / Math.max(promptBankData.length, 1)) * 100)}% answered. Fill in prompts to improve matches`, action: () => setShowPromptBank(true) },
               { icon: <FiFile size={18} />, label: "Terms of Service", desc: "Legal terms", action: () => setShowTerms(true) },
               { icon: <FiFile size={18} />, label: "Privacy Policy", desc: "How we handle your data", action: () => setShowPrivacy(true) },
               { icon: <FiFile size={18} />, label: "Community Guidelines", desc: "Standards & expectations", action: () => setShowGuidelines(true) },

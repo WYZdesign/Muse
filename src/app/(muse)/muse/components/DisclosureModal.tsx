@@ -158,8 +158,8 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>Both parties must confirm the same terms. Please review carefully.</p>
 
           <div style={{ fontSize: 13, color: "#f5f0ff", lineHeight: 1.8 }}>
-            <div><strong>Compensation:</strong> {(disc as any).compensation_amount || "Not specified"} — {(disc as any).compensation_timing || "Not specified"}</div>
-            <div><strong>Location:</strong> {(disc as any).location_type || "Not specified"} {(disc as any).location_address ? `— ${(disc as any).location_address}` : ""}</div>
+            <div><strong>Compensation:</strong> {(disc as any).compensation_amount || "Not specified"}. {(disc as any).compensation_timing || "Not specified"}</div>
+            <div><strong>Location:</strong> {(disc as any).location_type || "Not specified"} {(disc as any).location_address ? `, ${(disc as any).location_address}` : ""}</div>
             <div><strong>Content types:</strong> {[].filter(Boolean).join(", ") || "See below"}</div>
             <div style={{ marginTop: 8, padding: 10, background: "rgba(255,255,255,0.04)", borderRadius: 8, fontSize: 12 }}>
               <strong>Boundary Checklist:</strong>
@@ -170,7 +170,7 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
                 {(disc as any).boundary_penetration && <span style={{ color: "#ff6b6b", marginLeft: 12 }}>⚠ Penetration included</span>}
               </div>
             </div>
-            <div style={{ marginTop: 8 }}><strong>Others present:</strong> {(disc as any).others_present ? `${(disc as any).others_count} — ${(disc as any).others_desc || "See details"}` : "No — solo shoot"}</div>
+            <div style={{ marginTop: 8 }}><strong>Others present:</strong> {(disc as any).others_present ? `${(disc as any).others_count}. ${(disc as any).others_desc || "See details"}` : "No. Solo shoot"}</div>
             <div><strong>Usage rights:</strong> {(disc as any).usage_rights || "Not specified"}</div>
           </div>
 
@@ -238,7 +238,7 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
           <div>
             {section("Boundary Checklist", "🛡️")}
             <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 14, lineHeight: 1.5 }}>
-              Check each item that applies. Items marked &quot;none&quot; are <strong>deliberately shown</strong> to ensure both parties think about every boundary — even ones you don&apos;t plan to cross.
+              Check each item that applies. Items marked &quot;none&quot; are <strong>deliberately shown</strong> to ensure both parties think about every boundary, even ones you don&apos;t plan to cross.
             </p>
 
             <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.7)", marginBottom: 8, marginTop: 16 }}>Nudity Level</div>

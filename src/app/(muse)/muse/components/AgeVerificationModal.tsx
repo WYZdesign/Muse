@@ -95,7 +95,7 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
           <p style={{ fontSize: 14, color: "#98FB98", marginBottom: 20 }}>Your identity has been verified. You're all set for paid bookings.</p>
         ) : (
           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 20, lineHeight: 1.6 }}>
-            Paid bookings require government ID + selfie verification (18+ only). This is a one-time check via Stripe Identity — secure, encrypted, and never shared with other members.
+            Paid bookings require government ID + selfie verification (18+ only). This is a one-time check via Stripe Identity. Secure, encrypted, and never shared with other members.
           </p>
         )}
 
@@ -145,7 +145,7 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
         </div>
 
         <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 16, lineHeight: 1.5 }}>
-          Verification is provided by Stripe Identity. Your documents are encrypted and never stored on Muse servers. You can verify or skip at any time — paid bookings require it.
+          Verification is provided by Stripe Identity. Your documents are encrypted and never stored on Muse servers. You can verify or skip at any time. Paid bookings require it.
         </p>
       </div>
     </div>

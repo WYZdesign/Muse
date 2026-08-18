@@ -57,7 +57,7 @@ export default function OfflinePage() {
           disabled={clearing}
           style={{ padding: "12px 32px", borderRadius: 12, background: "rgba(255,255,255,0.08)", color: "#f5f0ff", border: "1px solid rgba(255,255,255,0.15)", fontSize: 14, fontWeight: 600, cursor: clearing ? "default" : "pointer", opacity: clearing ? 0.6 : 1 }}
         >
-          {done ? "✓ Recovered — redirecting…" : clearing ? "Clearing…" : "Clear cache & reload"}
+          {done ? "✓ Recovered. Redirecting…" : clearing ? "Clearing…" : "Clear cache & reload"}
         </button>
       </div>
       <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", maxWidth: 340, marginTop: 24, lineHeight: 1.6 }}>
