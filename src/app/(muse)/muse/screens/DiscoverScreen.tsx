@@ -7,6 +7,97 @@ import MuseMap from "../components/MuseMap";
 import type { Screen, Profile } from "../components/types";
 import { PORTRAIT_IMG } from "../components/photoOrientation";
 
+// ── Tag description maps (for expandable info popover) ──────────────────────
+const ZODIAC_FULL: Record<string, { icon: string; tag: string; desc: string }> = {
+  Aries: { icon: "♈", tag: "The Pioneer", desc: "Bold, ambitious, and always first to try something new. Natural leader energy — great at kicking off projects and rallying collaborators." },
+  Taurus: { icon: "♉", tag: "The Builder", desc: "Reliable, patient, and deeply creative. Values quality over quantity and sees work through to a polished finish." },
+  Gemini: { icon: "♊", tag: "The Communicator", desc: "Versatile, expressive, and quick-witted. Thrives on variety and keeps conversations flowing on set." },
+  Cancer: { icon: "♋", tag: "The Nurturer", desc: "Intuitive, emotional, and protective. Creates safe, supportive spaces where collaborators do their best work." },
+  Leo: { icon: "♌", tag: "The Performer", desc: "Creative, passionate, and generous. A natural performer who brings energy and warmth to every project." },
+  Virgo: { icon: "♍", tag: "The Analyst", desc: "Analytical, practical, and detail-oriented. Brings precision and polish to every frame and deliverable." },
+  Libra: { icon: "♎", tag: "The Diplomat", desc: "Balanced, social, and artistic. Sees beauty in everything and keeps teams in harmony." },
+  Scorpio: { icon: "♏", tag: "The Strategist", desc: "Resourceful, brave, and passionate. Deep focus and intensity — commits fully to the work." },
+  Sagittarius: { icon: "♐", tag: "The Explorer", desc: "Generous, idealistic, and adventurous. Always exploring new horizons and pushing creative boundaries." },
+  Capricorn: { icon: "♑", tag: "The Achiever", desc: "Responsible, disciplined, and ambitious. Builds lasting things and delivers on time, every time." },
+  Aquarius: { icon: "♒", tag: "The Visionary", desc: "Progressive, original, and independent. Thinks outside the box and invents new creative forms." },
+  Pisces: { icon: "♓", tag: "The Dreamer", desc: "Compassionate, artistic, and intuitive. Feels deeply and creates freely — the soul of any project." },
+};
+
+const MBTI_FULL: Record<string, { tag: string; desc: string }> = {
+  INTJ: { tag: "The Architect", desc: "Strategic, independent, future-focused. Plans ahead and executes ruthlessly toward a singular vision." },
+  INTP: { tag: "The Logician", desc: "Inventive, analytical, endlessly curious. Deconstructs ideas to their bones and rebuilds them better." },
+  ENTJ: { tag: "The Commander", desc: "Bold, decisive, natural leader. Rallies teams and drives projects to completion on schedule." },
+  ENTP: { tag: "The Debater", desc: "Quick-witted idea generator who thrives on challenge. Sparks innovation through argument and exploration." },
+  INFJ: { tag: "The Advocate", desc: "Quiet visionary guided by strong principles. Crafts meaning and pursues causes with quiet intensity." },
+  INFP: { tag: "The Mediator", desc: "Idealistic and deeply creative. Translates emotion and imagination into authentic work." },
+  ENFJ: { tag: "The Protagonist", desc: "Charismatic, empathetic leader. Brings out the best in people and makes collaborators feel valued." },
+  ENFP: { tag: "The Campaigner", desc: "Enthusiastic, spontaneous, endlessly sociable. Ignites energy and possibility wherever they go." },
+  ISTJ: { tag: "The Logistician", desc: "Dependable, detail-oriented, organized. Delivers flawless execution and honors every commitment." },
+  ISFJ: { tag: "The Defender", desc: "Warm, meticulous, protective. The reliable backbone of any creative crew." },
+  ESTJ: { tag: "The Executive", desc: "Efficient organizer who turns plans into reality. Runs tight, productive productions." },
+  ESFJ: { tag: "The Consul", desc: "Harmonious, people-first, conscientious. Keeps teams connected and morale high." },
+  ISTP: { tag: "The Virtuoso", desc: "Hands-on, cool under pressure, master tooler. Solves problems on the fly with calm precision." },
+  ISFP: { tag: "The Adventurer", desc: "Artistic, spontaneous, sensory. Creates beauty in the moment and lives by aesthetics." },
+  ESTP: { tag: "The Entrepreneur", desc: "Bold, energetic, pragmatic. Thrives on set, making split-second decisions with flair." },
+  ESFP: { tag: "The Entertainer", desc: "Lively, expressive, magnetic. Brings the show — and the crowd — to every project." },
+};
+
+const CHINESE_FULL: Record<string, string> = {
+  Rat: "Quick-witted, resourceful, and adaptable. Sees opportunity everywhere and moves fast.",
+  Ox: "Steadfast, reliable, and methodical. The dependable workhorse who never quits.",
+  Tiger: "Courageous, competitive, and magnetic. Brings fearless energy to every collaboration.",
+  Rabbit: "Graceful, diplomatic, and gentle. Prefers harmony and quiet excellence over noise.",
+  Dragon: "Charismatic, ambitious, and confident. A natural showstopper who leads with flair.",
+  Snake: "Wise, intuitive, and enigmatic. Thinks deeply and moves with calculated precision.",
+  Horse: "Energetic, independent, and spirited. Chases freedom and creative adventure.",
+  Goat: "Creative, gentle, and aesthetic. Nurtures beauty and calm in every project.",
+  Monkey: "Clever, playful, and inventive. Finds clever solutions and keeps things fun.",
+  Rooster: "Confident, observant, and exacting. Proud of craft and detail-oriented.",
+  Dog: "Loyal, honest, and protective. A true collaborator you can always count on.",
+  Pig: "Generous, warm, and sincere. Brings heart and authenticity to every collaboration.",
+};
+
+const LIFE_PATH_FULL: Record<string, string> = {
+  "1": "The Leader — independent, ambitious, a born initiator. Pioneers new directions.",
+  "2": "The Diplomat — sensitive, cooperative, the glue of any collaboration.",
+  "3": "The Creative — expressive, joyful, natural communicator and artist.",
+  "4": "The Builder — disciplined, reliable, master of structure and tangible work.",
+  "5": "The Freedom Seeker — versatile, restless, drawn to adventure and experimentation.",
+  "6": "The Nurturer — responsible, loving, makes collaborators feel supported and safe.",
+  "7": "The Seeker — analytical, introspective, digs deep for meaning and truth.",
+  "8": "The Powerhouse — driven, commanding, channels ambition into real-world success.",
+  "9": "The Humanitarian — compassionate, wise, creates work that serves a larger purpose.",
+  "11": "The Illuminator (Master Number) — intensely intuitive and inspired; a conduit for visionary ideas.",
+  "22": "The Master Builder — dreams on a world-changing scale, with the discipline to build it.",
+  "33": "The Master Teacher — the rare healer-mentor; elevates everyone around them.",
+};
+
+const STYLE_FULL: Record<string, string> = {
+  Portrait: "Focused on the human subject — face, form, and expression.",
+  Editorial: "Magazine-style storytelling imagery with a narrative arc.",
+  Commercial: "Brand and advertising work built to sell a product or idea.",
+  "Music Video": "Moving image synced to music, performance, and rhythm.",
+  Documentary: "Real, unscripted storytelling — truth captured on camera.",
+  Branding: "Visual identity, logos, and cohesive brand systems.",
+  "Body Art": "Fine-art figure and body-paint photography of the human form.",
+  "Fine Art": "Gallery-intent imagery prioritizing concept and emotion over commerce.",
+  Fashion: "Clothing, style, and runway-focused work.",
+  Experimental: "Boundary-pushing, unconventional approaches to image and film.",
+  Dark: "Moody, dramatic, low-key aesthetics with high contrast.",
+  Dreamy: "Soft, ethereal, romantic visuals with hazy light.",
+  Bold: "High-impact, saturated, unapologetically striking imagery.",
+  Vintage: "Retro, film-inspired aesthetics with nostalgic warmth.",
+  Abstract: "Non-representational art focused on form, color, and texture.",
+  Film: "Motion-picture work — narrative, short, and feature film.",
+};
+
+const CONN_FULL: Record<string, string> = {
+  collab: "Wants to make work together — a project, a shoot, a commission.",
+  partner: "Open to a deeper romantic or creative-life partnership.",
+  friend: "Looking for creative community and genuine friendship, not just work.",
+  mentor: "Seeking guidance, teaching, or someone to learn from (or to be that for others).",
+};
+
 export interface DiscoverScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
@@ -277,16 +368,16 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               {profile.bio && <div className="card-section"><div className="card-section-title">About</div><div className="card-section-text">{profile.bio}</div></div>}
                               {profile.looking.length > 0 && <div className="card-section"><div className="card-section-title">Looking for</div><div className="card-section-text">{profile.looking.join(", ")}</div></div>}
                               <div className="card-section"><div className="card-section-title">Creative Style</div>
-                                <div className="card-section-tags">{profile.styles.map(s => <span key={s} className="tag">{s}</span>)}</div>
+                                <div className="card-section-tags">{profile.styles.map(s => <button key={s} className="tag" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: s, desc: STYLE_FULL[s] || "A creative style this member works in.", icon: "🎨", color: "#FFD700" }); }} style={{ cursor: "pointer" }}>{s}</button>)}</div>
                               </div>
                               <div className="card-section">
                                 <div className="card-section-title">Personality</div>
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                                  {(profile as any).zodiac && <span className="tag" style={{ background: "rgba(212,165,255,0.12)", border: "1px solid rgba(212,165,255,0.25)", color: "var(--lavender)" }}>{({ Aries: "♈ Aries", Taurus: "♉ Taurus", Gemini: "♊ Gemini", Cancer: "♋ Cancer", Leo: "♌ Leo", Virgo: "♍ Virgo", Libra: "♎ Libra", Scorpio: "♏ Scorpio", Sagittarius: "♐ Sagittarius", Capricorn: "♑ Capricorn", Aquarius: "♒ Aquarius", Pisces: "♓ Pisces" } as any)[(profile as any).zodiac] || (profile as any).zodiac}</span>}
-                                  {(profile as any).mbti && <span className="tag" style={{ background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)" }}>{({ INTJ: "Architect", INTP: "Logician", ENTJ: "Commander", ENTP: "Debater", INFJ: "Advocate", INFP: "Mediator", ENFJ: "Protagonist", ENFP: "Campaigner", ISTJ: "Logistician", ISFJ: "Defender", ESTJ: "Executive", ESFJ: "Consul", ISTP: "Virtuoso", ISFP: "Adventurer", ESTP: "Entrepreneur", ESFP: "Entertainer" } as any)[(profile as any).mbti] || (profile as any).mbti} · {(profile as any).mbti}</span>}
-                                  {(profile as any).chinese && <span className="tag" style={{ background: "rgba(255,138,128,0.1)", border: "1px solid rgba(255,138,128,0.2)", color: "var(--coral)" }}>🐉 {(profile as any).chinese}</span>}
-                                  {(profile as any).lifePath && <span className="tag" style={{ background: "rgba(152,251,152,0.1)", border: "1px solid rgba(152,251,152,0.2)", color: "var(--mint)" }}>🔢 Life Path {(profile as any).lifePath}</span>}
-                                  {(profile as any).connection && <span className="tag" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--text2)" }}>{({ collab: "🤝 Collab", partner: "💼 Partner", friend: "👋 Friend", mentor: "🎓 Mentor" } as any)[(profile as any).connection] || (profile as any).connection}</span>}
+                                  {(profile as any).zodiac && <button className="tag" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: ((profile as any).zodiac), desc: `${ZODIAC_FULL[(profile as any).zodiac]?.tag} — ${ZODIAC_FULL[(profile as any).zodiac]?.desc}`, icon: ZODIAC_FULL[(profile as any).zodiac]?.icon || "♈", color: "#D4A5FF" }); }} style={{ background: "rgba(212,165,255,0.12)", border: "1px solid rgba(212,165,255,0.25)", color: "var(--lavender)", cursor: "pointer" }}>{({ Aries: "♈ Aries", Taurus: "♉ Taurus", Gemini: "♊ Gemini", Cancer: "♋ Cancer", Leo: "♌ Leo", Virgo: "♍ Virgo", Libra: "♎ Libra", Scorpio: "♏ Scorpio", Sagittarius: "♐ Sagittarius", Capricorn: "♑ Capricorn", Aquarius: "♒ Aquarius", Pisces: "♓ Pisces" } as any)[(profile as any).zodiac] || (profile as any).zodiac}</button>}
+                                  {(profile as any).mbti && <button className="tag" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: (profile as any).mbti, desc: `${MBTI_FULL[(profile as any).mbti]?.tag} — ${MBTI_FULL[(profile as any).mbti]?.desc}`, icon: "🧠", color: "#FFD700" }); }} style={{ background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", cursor: "pointer" }}>{({ INTJ: "Architect", INTP: "Logician", ENTJ: "Commander", ENTP: "Debater", INFJ: "Advocate", INFP: "Mediator", ENFJ: "Protagonist", ENFP: "Campaigner", ISTJ: "Logistician", ISFJ: "Defender", ESTJ: "Executive", ESFJ: "Consul", ISTP: "Virtuoso", ISFP: "Adventurer", ESTP: "Entrepreneur", ESFP: "Entertainer" } as any)[(profile as any).mbti] || (profile as any).mbti} · {(profile as any).mbti}</button>}
+                                  {(profile as any).chinese && <button className="tag" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: (profile as any).chinese, desc: CHINESE_FULL[(profile as any).chinese] || "A Chinese zodiac temperament.", icon: "🐉", color: "#FF8A80" }); }} style={{ background: "rgba(255,138,128,0.1)", border: "1px solid rgba(255,138,128,0.2)", color: "var(--coral)", cursor: "pointer" }}>🐉 {(profile as any).chinese}</button>}
+                                  {(profile as any).lifePath && <button className="tag" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `Life Path ${(profile as any).lifePath}`, desc: LIFE_PATH_FULL[String((profile as any).lifePath)] || "A numerology life path number.", icon: "🔢", color: "#98FB98" }); }} style={{ background: "rgba(152,251,152,0.1)", border: "1px solid rgba(152,251,152,0.2)", color: "var(--mint)", cursor: "pointer" }}>🔢 Life Path {(profile as any).lifePath}</button>}
+                                  {(profile as any).connection && <button className="tag" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: ({ collab: "Collaborator", partner: "Partner", friend: "Friend", mentor: "Mentor" } as any)[(profile as any).connection] || "Connection", desc: CONN_FULL[(profile as any).connection] || "A connection type.", icon: ({ collab: "🤝", partner: "💼", friend: "👋", mentor: "🎓" } as any)[(profile as any).connection] || "🔗", color: "#87CEEB" }); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--text2)", cursor: "pointer" }}>{({ collab: "🤝 Collab", partner: "💼 Partner", friend: "👋 Friend", mentor: "🎓 Mentor" } as any)[(profile as any).connection] || (profile as any).connection}</button>}
                                 </div>
                               </div>
                               {(profile as any).zodiac && (
