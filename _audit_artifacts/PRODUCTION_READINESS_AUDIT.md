@@ -1,6 +1,14 @@
 # Muse App — Production Readiness Audit & 100K User Roadmap
 ## 2026-08-09 | For: Torree
 
+> **UPDATE (2026-08-18):** Since the 2026-08-14 update, the following were also resolved:
+> - `/api/checkout` now auth-gated (resolves identity from verified Bearer token, 401s without, ignores client-supplied userId).
+> - `authFetch` consolidated to a single canonical implementation (`src/app/(muse)/muse/lib/api.ts`), shared by admin page, ModerationPanel, MyAlbumsManager, auth-client.
+> - Fake-data audit: SessionsScreen fabricated bookings/requests → honest empty states; ChatScreen new-match empty state added.
+> - Em-dash copy pass across all user-facing strings (modals, screens, onboarding, offline page).
+> - Test count now **89 passing (46 unit + 22 integration + 21 E2E smoke)**, `tsc` clean, all run in CI.
+> - Integration tests cover auth-reject, request-safety (415/413/400/4xx-never-500), health no-store, geocode `lon` contract, and checkout auth.
+>
 > **UPDATE (2026-08-14):** Since this audit, the following were resolved:
 > - Security headers (CSP/HSTS/XFO/nosniff/Referrer/Permissions) now emitted on ALL routes (`next.config.ts`).
 > - Sentry error monitoring wired end-to-end.
@@ -9,7 +17,7 @@
 > - Chat message order fixed; realtime reconnect indicator added.
 > - Staging Supabase project created (`rwgofoxqycpzsvxfnozt`), schema applied (49 tables), keys in vault.
 > - 3 schema bugs fixed (TEXT=UUID RLS mismatches, orphaned seed sessions).
-> - Test count grew 18 → 46 unit/integration + 14 E2E smoke.
+> - Test count grew 18 → 46 unit/integration + 14 E2E smoke (now 89 total as of 2026-08-18).
 > - Item #10 (saveState debounce) already at 2s; #9 (error logging) largely covered by Sentry now.
 
 ---
