@@ -86,6 +86,13 @@ export const ChatScreen = memo(function ChatScreen({
             </div>
           )}
           <div className="messages" ref={messagesEndRef as any}>
+            {(chatTarget.messages || []).length === 0 && !(typingTarget === chatTarget.id) && (
+              <div style={{ textAlign: "center", padding: "48px 24px 24px", color: "var(--muted)" }}>
+                <div style={{ fontSize: 38, marginBottom: 12 }}>🌊</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>You matched with {chatTarget.name}</div>
+                <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>Break the ice with a quick reply below, or send your own message to kick things off.</div>
+              </div>
+            )}
             {(chatTarget.messages || []).map((msg: any, i: number) => (
               <div key={i} className={"msg " + (msg.from === "me" ? "msg-me" : "msg-them")}>
                 {msg.img && <img loading="lazy" src={msg.img} alt="" style={{ maxWidth: 200, borderRadius: 12, marginBottom: 6, display: "block" }} />}

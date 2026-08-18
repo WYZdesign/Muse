@@ -90,34 +90,13 @@ export const SessionsScreen = memo(function SessionsScreen({
                 <div style={{ height: 16 }} />
               </>
             )}
-            {/* Sample bookings placeholder */}
+            {/* Empty state — no fabricated bookings */}
             {matches.filter(m => m.booked).length === 0 && (
-              <>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>My Bookings</div>
-                <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 16 }}>No bookings yet — book a session below to get started</div>
-                {[
-                  { name: "ARCANA", type: "Photographer", date: "Fri · 2:00 PM", status: "Confirmed", img: "/models/ARCANA/Bodypaint-2.webp" },
-                  { name: "MITRI", type: "Producer", date: "Sat · 11:30 AM", status: "Pending", img: "/models/MITRI/Mitri-10.webp" },
-                  { name: "NAKIA", type: "Videographer", date: "Mon · 4:00 PM", status: "Confirmed", img: "/models/NAKIA/Nakia-10.webp" },
-                ].map((b, i) => (
-                  <div key={i} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
-                    <img loading="lazy" src={b.img} alt={b.name} style={{ width: "28%", alignSelf: "stretch", minHeight: 110, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
-                    <div className="conn-content" style={{ flex: 1, padding: 12, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div className="conn-name" style={{ fontSize: 15 }}>{b.name}</div>
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: b.status === "Confirmed" ? "rgba(0,230,118,0.15)" : "rgba(255,215,0,0.15)", color: b.status === "Confirmed" ? "var(--mint)" : "var(--gold)" }}>{b.status}</span>
-                      </div>
-                      <div className="conn-meta" style={{ fontSize: 12 }}>{b.type}</div>
-                      <div className="conn-meta" style={{ fontSize: 12, color: "var(--gold)", fontWeight: 600 }}>{b.date}</div>
-                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                        <button className="btn btn-gold" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 700, borderRadius: 10 }} onClick={() => openChat({ id: i + 1000, name: b.name, img: b.img, type: b.type, messages: [] })}>Message</button>
-                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 10 }} onClick={() => { setDisclosureTarget({ id: String(i), name: b.name }); setDisclosureBookingId(String(i)); setShowDisclosureModal(true); }}>Details</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <div style={{ height: 16 }} />
-              </>
+              <div style={{ textAlign: "center", padding: "32px 20px" }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>No bookings yet</div>
+                <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>Book a session with a creative below — your confirmed bookings will show up here.</div>
+              </div>
             )}
             {/* Available Sessions */}
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", margin: "4px 0 10px" }}>Available Sessions</div>
@@ -164,45 +143,16 @@ export const SessionsScreen = memo(function SessionsScreen({
         {sessTab === "requests" && (
           <div style={{ padding: "0 0 20px" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>Incoming Requests</div>
-            {[
-              { name: "SIMONE", type: "Model", type2: "Photography Session", img: "/models/SIMONE/Simone-107.webp", note: "Would love to do a golden hour editorial shoot" },
-              { name: "KAYLEN", type: "Stylist", type2: "Styling Consultation", img: "/models/KAYLEN/kaylen (retouched)-10.webp", note: "Need help with wardrobe for my next campaign" },
-              { name: "JERMAINE", type: "Director", type2: "Creative Direction", img: "/models/JERMAINE/Jermaine-20.webp", note: "Looking for a creative director for a music video" },
-            ].map((r, i) => (
-              <div key={i} className="conn-card" style={{ margin: "0 0 10px", padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
-                <img loading="lazy" src={r.img} alt={r.name} style={{ width: "25%", alignSelf: "stretch", minHeight: 110, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
-                <div className="conn-content" style={{ flex: 1, padding: 12, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div className="conn-name" style={{ fontSize: 15 }}>{r.name}</div>
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "rgba(212,165,255,0.15)", color: "var(--lavender)" }}>{r.type2}</span>
-                  </div>
-                  <div className="conn-meta" style={{ fontSize: 12 }}>{r.type}</div>
-                  <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4, lineHeight: 1.4 }}>{r.note}</div>
-                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                    <button className="btn btn-gold" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 700, borderRadius: 10 }} onClick={() => showToast("Request accepted!")}>Accept</button>
-                    <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 10 }} onClick={() => showToast("Request declined")}>Decline</button>
-                  </div>
-                </div>
-              </div>
-            ))}
+            <div style={{ textAlign: "center", padding: "32px 20px" }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🗓️</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>No requests yet</div>
+              <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>When someone books one of your sessions, you'll see their request here to accept or decline.</div>
+            </div>
             <div style={{ height: 16 }} />
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", margin: "4px 0 10px" }}>Sent Requests</div>
-            {[
-              { name: "DARRYL", type: "Videographer", status: "Pending", img: "/models/DARRYL/Darryl-2.webp", note: "Music video production" },
-              { name: "ANGEL", type: "Makeup Artist", status: "Accepted", img: "/models/ANGEL/Angel-2.webp", note: "Editorial makeup session" },
-            ].map((r, i) => (
-              <div key={i} className="conn-card" style={{ margin: "0 0 10px", padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
-                <img loading="lazy" src={r.img} alt={r.name} style={{ width: "25%", alignSelf: "stretch", minHeight: 110, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
-                <div className="conn-content" style={{ flex: 1, padding: 12, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div className="conn-name" style={{ fontSize: 15 }}>{r.name}</div>
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: r.status === "Accepted" ? "rgba(0,230,118,0.15)" : "rgba(255,215,0,0.15)", color: r.status === "Accepted" ? "var(--mint)" : "var(--gold)" }}>{r.status}</span>
-                  </div>
-                  <div className="conn-meta" style={{ fontSize: 12 }}>{r.type}</div>
-                  <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>{r.note}</div>
-                </div>
-              </div>
-            ))}
+            <div style={{ textAlign: "center", padding: "20px" }}>
+              <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>Requests you send to book a creative's session will show up here with their status.</div>
+            </div>
           </div>
         )}
       </div>
