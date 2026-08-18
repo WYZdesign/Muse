@@ -101,8 +101,12 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
         data-mid={mid}
         className="match-card match-card-grid"
         onClick={() => {
-          setChatTarget(m);
-          showScreen("chat");
+          if (expanded) {
+            setChatTarget(m);
+            showScreen("chat");
+          } else {
+            setExpandedMatchId(mid);
+          }
         }}
       >
         <div className="match-avatar-wrap">
@@ -112,6 +116,11 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
         <div className="match-info">
           <div className="match-name">{m.name}</div>
           <div className="match-type">{m.type}</div>
+          {expanded && (
+            <div className="match-msg" style={{ display: "block", marginTop: 6, fontSize: 12, color: "#eee", lineHeight: 1.4 }}>
+              {m.bio || m.messages?.[m.messages.length - 1]?.text || getIcebreaker(m.type, mid)}
+            </div>
+          )}
         </div>
         <div className="match-time">{m.messages?.[m.messages.length - 1]?.time || "New"}</div>
       </div>
