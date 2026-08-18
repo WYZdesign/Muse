@@ -14,10 +14,9 @@ export interface ChatScreenProps {
   setMessages: React.Dispatch<React.SetStateAction<any[]>>;
   chatText: string;
   setChatText: (t: string) => void;
-  chatImg: string;
-  setChatImg: (s: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   sendChat: () => void;
+  sendChatImg?: (url: string) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   setViewProfile: (p: any) => void;
   setUnmatchTarget: (t: any) => void;
@@ -51,10 +50,9 @@ export const ChatScreen = memo(function ChatScreen({
   setMessages,
   chatText,
   setChatText,
-  chatImg,
-  setChatImg,
   messagesEndRef,
   sendChat,
+  sendChatImg,
   handleImgError,
   setViewProfile,
   setUnmatchTarget,
@@ -66,6 +64,8 @@ export const ChatScreen = memo(function ChatScreen({
   sendTyping,
   openHamburger,
   unreadNotificationCount,
+  showToast,
+  uploadImage,
 }: ChatScreenProps) {
   return (
     <div className={"screen-el" + (screen === "chat" && chatTarget ? " active" : "")}>
@@ -121,12 +121,14 @@ export const ChatScreen = memo(function ChatScreen({
           <div className="chat-input-wrap">
             <label style={{ cursor: "pointer", color: "var(--muted)", fontSize: 18, display: "flex", alignItems: "center" }}>
               <FiImage size={18} />
-              <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
                 const f = e.target.files?.[0];
-                if (f) {
-                  const url = URL.createObjectURL(f);
-                  setChatImg(url);
-                }
+                if (!f) return;
+                e.target.value = "";
+                if (!uploadImage) { showToast?.("Image upload unavailable"); return; }
+                showToast?.("Uploading image...");
+                const url = await uploadImage(f, "chat");
+                if (url) sendChatImg?.(url);
               }} />
             </label>
             <input className="chat-inp" placeholder="Type a message..." value={chatText} onChange={e => { setChatText(e.target.value); if (sendTyping) sendTyping(); }} onKeyDown={e => { if (e.key === "Enter" && chatText.trim()) { sendChat(); } }} />

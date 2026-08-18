@@ -743,6 +743,38 @@ function MusePage() {
 
   const unreadNotificationCount = useMemo(() => activityFeed.filter(n => !n.read).length, [activityFeed]);
 
+  // Merge server-side notifications (bookings, connections, check-ins) into the
+  // activity feed so the Activity modal shows real DB rows, not just local events.
+  useEffect(() => {
+    const pid = authUser?.profile?.id;
+    if (!pid) return;
+    let cancelled = false;
+    authFetch("/api/muse?type=notifications")
+      .then(r => r.json())
+      .then(j => {
+        if (cancelled) return;
+        const list = (j.notifications || []) as any[];
+        if (!list.length) return;
+        setActivityFeed(prev => {
+          const existing = new Set(prev.map(a => a.text));
+          const mapped = list
+            .filter(n => n && n.body && !existing.has(n.body))
+            .map((n: any) => ({
+              id: uid(),
+              type: n.type || "info",
+              from: "",
+              avatar: "",
+              text: String(n.body),
+              time: n.created_at ? new Date(n.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "",
+              read: !!n.read,
+            }));
+          return mapped.length ? [...mapped.reverse(), ...prev] : prev;
+        });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [authUser?.profile?.id]);
+
   const filteredProfiles = useMemo(() => {
     // Stable order guarantee: the demo/static deck is shuffled ONCE with a
     // per-mount random seed, then live profiles are APPENDED (never reshuffled),
@@ -1129,6 +1161,29 @@ function MusePage() {
     }, 1200 + Math.random() * 2000);
   }, [chatInput, chatTarget, authUser]);
 
+  // Send an image message (chat attach button → uploaded URL → image bubble).
+  const sendChatImg = useCallback(async (imgUrl: string) => {
+    if (!imgUrl || !chatTarget) return;
+    const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const userMsg = { from: "me" as const, text: "", img: imgUrl, time: now };
+    const targetId = String(chatTarget.id);
+    setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, userMsg] } : prev);
+    setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, userMsg] } : m));
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
+    const myId = authUser?.profile?.id || authUser?.id || "local";
+    try { await persistMessage({ myId, theirId: targetId, text: "", img: imgUrl }); } catch {}
+    trackEvent("message_image_sent", { has_match: true });
+    setTypingTarget(Number(chatTarget.id));
+    setTimeout(() => {
+      setTypingTarget(null);
+      const replies = ["Love this shot! 🔥","This is gorgeous","Wow, where was this taken?","You've got a great eye","This is exactly my style","Incredible work","Okay, this is art","I need to know the story behind this"];
+      const reply = { from: "them" as const, text: replies[~~(Math.random() * replies.length)], time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
+      setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, reply] } : prev);
+      setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, reply] } : m));
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
+    }, 1200 + Math.random() * 2000);
+  }, [chatTarget, authUser]);
+
   // Real-time incoming messages for the active conversation.
   useEffect(() => {
     if (!chatTarget || !authUser?.profile?.id) return;
@@ -1450,7 +1505,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           </div>
         </div>
       )}
-      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} />
+      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} onOpenActivity={() => { setShowActivityFeed(true); setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); }} unreadCount={unreadNotificationCount} />
       {screen === "auth" ? (
         <div className="phone-wrap">
           <div className="phone" id="muse-app">
@@ -1835,7 +1890,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <MusesScreen screen={screen} showScreen={showScreen} matches={matches} setMatches={setMatches} searchOpen={searchOpen} setSearchOpen={setSearchOpen} matchesView={matchesView} setMatchesView={setMatchesView} showLikesYou={showLikesYou} setShowLikesYou={setShowLikesYou} likedBy={likedBy} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} searchQuery={searchQuery} setSearchQuery={setSearchQuery} expandedMatchId={expandedMatchId} matchActions={matchActions} setShowPremiumPopup={setShowPremiumPopup} />
             <BtsScreen screen={screen} stories={stories} setStories={setStories} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} setShowStory={setShowStory} handleImgError={handleImgError} />
             <CodexScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
-            <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} messages={chatTarget?.messages || []} setMessages={((msgs: any) => setChatTarget((prev: any) => prev ? {...prev, messages: typeof msgs === "function" ? msgs(prev?.messages || []) : msgs} : prev)) as any} chatText={chatInput} setChatText={setChatInput} chatImg="" setChatImg={()=>{}} messagesEndRef={messagesEndRef} sendChat={sendMsg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} />
+            <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} messages={chatTarget?.messages || []} setMessages={((msgs: any) => setChatTarget((prev: any) => prev ? {...prev, messages: typeof msgs === "function" ? msgs(prev?.messages || []) : msgs} : prev)) as any} chatText={chatInput} setChatText={setChatInput} messagesEndRef={messagesEndRef} sendChat={sendMsg} sendChatImg={sendChatImg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} uploadImage={uploadImage} showToast={showToast} />
             <CollabScreen screen={screen} showScreen={showScreen} museCat={museCat} setMuseCat={setMuseCat} userBriefs={userBriefs} setUserBriefs={setUserBriefs} showPostBrief={showPostBrief} setShowPostBrief={setShowPostBrief} liveBriefs={liveBriefs || []} showNsfw={showNsfw} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} uid={uid} appliedBriefs={appliedBriefs} setAppliedBriefs={setAppliedBriefs} savedBriefs={savedBriefs} setSavedBriefs={setSavedBriefs} setChatTarget={setChatTarget} />
 
             <CommunityScreen screen={screen} showScreen={showScreen} commTab={commTab} setCommTab={setCommTab} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} />

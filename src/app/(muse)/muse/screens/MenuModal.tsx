@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { FiX, FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiHeadphones } from "react-icons/fi";
+import { FiX, FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiHeadphones, FiBell } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import { COMMUNITIES, EVENTS, SESSIONS, PROFESSIONALS, FORUM_POSTS } from "../components/types";
 
@@ -51,6 +51,8 @@ export interface MenuModalProps {
   authFetch: (url: string, opts?: any) => Promise<any>;
   uid: () => any;
   authUser: any;
+  onOpenActivity?: () => void;
+  unreadCount?: number;
 }
 
 const SUPPORT_EMAIL = "info@wyzdesign.com";
@@ -101,6 +103,8 @@ export const MenuModal = memo(function MenuModal({
   authFetch,
   uid,
   authUser,
+  onOpenActivity,
+  unreadCount,
 }: MenuModalProps) {
   if (!showHamburger) return null;
 
@@ -121,6 +125,17 @@ export const MenuModal = memo(function MenuModal({
         {!hamburgerScreen ? (
           <>
             <div className="hamburger-title">Menu</div>
+            <div
+              className="hamburger-item"
+              onClick={() => { setShowHamburger(false); onOpenActivity?.(); }}
+              style={{ marginBottom: 4 }}
+            >
+              <div className="hamburger-item-icon" style={{ background: "linear-gradient(135deg,#FFD700,#FF8C69)" }}><FiBell size={20} /></div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flex: 1 }}>
+                <div><div className="hamburger-item-label">Activity</div><div className="hamburger-item-desc">Matches, likes &amp; reminders</div></div>
+                {unreadCount ? <span style={{ background: "var(--coral)", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 10, padding: "2px 8px" }}>{unreadCount}</span> : null}
+              </div>
+            </div>
             {[
               { key: "community", icon: <FiUsers size={20} />, label: "Community", desc: "Channels, groups & events", grad: "linear-gradient(135deg,#FF8A80,#FF4757,#FFD700)" },
               { key: "sessions", icon: <FiCalendar size={20} />, label: "Sessions", desc: "Bookings & one-on-ones", grad: "linear-gradient(135deg,#E1BEE7,#9C27B0,#FF4081)" },
