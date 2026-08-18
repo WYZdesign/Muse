@@ -4,7 +4,7 @@ import React, { memo, useState } from "react";
 import { FiArrowLeft, FiBookOpen } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
-import { ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, CREATIVE_TYPES, LOOKING_FOR, AESTHETICS } from "../components/types";
+import { CODEX_ZODIAC, CODEX_CHINESE, CODEX_LIFE_PATH, CODEX_MBTI, CODEX_TYPES, CODEX_AESTHETICS } from "../components/codexData";
 
 export interface CodexScreenProps {
   screen: Screen;
@@ -31,42 +31,6 @@ const BADGES: BadgeDef[] = [
   { name: "Social Butterfly", icon: "🦋", color: "#FF69B4", tier: "engagement", short: "500+ messages", long: "Sent 500+ messages on Muse. Social Butterflies are deeply active conversationalists and networkers." },
 ];
 
-// ── MBTI MASTER GLOSSARY ─────────────────────────────────────────────────────
-const MBTI_MAP: Record<string, { tag: string; desc: string; best: string }> = {
-  "INTJ": { tag: "The Architect", desc: "Strategic, independent, and future-focused. INTJs plan years ahead and execute ruthlessly toward a singular vision.", best: "ENTP, ENFP" },
-  "INTP": { tag: "The Logician", desc: "Inventive, analytical, endlessly curious. INTPs deconstruct ideas to their bones and rebuild them better.", best: "ENTJ, ENFJ" },
-  "ENTJ": { tag: "The Commander", desc: "Bold, decisive, natural leaders. ENTJs rally teams and drive projects to completion on schedule.", best: "INTP, INFP" },
-  "ENTP": { tag: "The Debater", desc: "Quick-witted idea generators who thrive on challenge. ENTPs spark innovation through argument and exploration.", best: "INTJ, INFJ" },
-  "INFJ": { tag: "The Advocate", desc: "Quiet visionaries guided by strong principles. INFJs craft meaning and pursue causes with quiet intensity.", best: "ENFP, ENTP" },
-  "INFP": { tag: "The Mediator", desc: "Idealistic and deeply creative. INFPs translate emotion and imagination into authentic work.", best: "ENFJ, ENTJ" },
-  "ENFJ": { tag: "The Protagonist", desc: "Charismatic, empathetic leaders who bring out the best in people. ENFJs make collaborators feel seen and valued.", best: "INFP, INTP" },
-  "ENFP": { tag: "The Campaigner", desc: "Enthusiastic, spontaneous, and endlessly sociable. ENFPs ignite energy and possibility wherever they go.", best: "INFJ, INTJ" },
-  "ISTJ": { tag: "The Logistician", desc: "Dependable, detail-oriented, and organized. ISTJs deliver flawless execution and honor every commitment.", best: "ESFP, ESTP" },
-  "ISFJ": { tag: "The Defender", desc: "Warm, meticulous, and protective. ISFJs are the reliable backbone of any creative crew.", best: "ESFP, ESTP" },
-  "ESTJ": { tag: "The Executive", desc: "Efficient organizers who turn plans into reality. ESTJs run tight, productive productions.", best: "ISFP, ISTP" },
-  "ESFJ": { tag: "The Consul", desc: "Harmonious, people-first, and conscientious. ESFJs keep teams connected and morale high.", best: "ISFP, ISTP" },
-  "ISTP": { tag: "The Virtuoso", desc: "Hands-on, cool under pressure, master toolers. ISTPs solve problems on the fly with calm precision.", best: "ESFJ, ESTJ" },
-  "ISFP": { tag: "The Adventurer", desc: "Artistic, spontaneous, and sensory. ISFPs create beauty in the moment and live by aesthetics.", best: "ESFJ, ESTJ" },
-  "ESTP": { tag: "The Entrepreneur", desc: "Bold, energetic, and pragmatic. ESTPs thrive on set, making split-second decisions with flair.", best: "ISTJ, ISFJ" },
-  "ESFP": { tag: "The Entertainer", desc: "Lively, expressive, and magnetic. ESFPs bring the show — and the crowd — to every project.", best: "ISTJ, ISFJ" },
-};
-
-// ── LIFE PATH MASTER GLOSSARY ────────────────────────────────────────────────
-const LIFE_PATH_MAP: Record<string, string> = {
-  "1": "The Leader — independent, ambitious, a born initiator. Path 1 creatives pioneer new directions and hate being told what to do.",
-  "2": "The Diplomat — sensitive, cooperative, the glue of any collaboration. Path 2 excels at harmony and intuitive partnership.",
-  "3": "The Creative — expressive, joyful, natural communicators. Path 3 is the artist, writer, and performer archetype.",
-  "4": "The Builder — disciplined, reliable, master of structure. Path 4 turns vision into durable, tangible work.",
-  "5": "The Freedom Seeker — versatile, restless, drawn to adventure. Path 5 thrives on variety and bold experimentation.",
-  "6": "The Nurturer — responsible, loving, the caregiver of the group. Path 6 makes collaborators feel supported and safe.",
-  "7": "The Seeker — analytical, introspective, drawn to mystery. Path 7 digs deep for meaning and truth.",
-  "8": "The Powerhouse — driven, commanding, built for achievement. Path 8 channels ambition into real-world success.",
-  "9": "The Humanitarian — compassionate, wise, globally minded. Path 9 creates work that serves a larger purpose.",
-  "11": "The Illuminator — a Master Number. Intensely intuitive and inspired; the conduit for visionary ideas.",
-  "22": "The Master Builder — a Master Number. Dreams on a world-changing scale, with the discipline to actually build them.",
-  "33": "The Master Teacher — a Master Number. The rare healer-mentor; elevates everyone around them.",
-};
-
 // ── CONNECTION TYPE GLOSSARY ─────────────────────────────────────────────────
 const CONN_TYPES = [
   { name: "Collaborator", icon: "🤝", color: "#FFD700", desc: "You want to make work together — a project, a shoot, a commission." },
@@ -74,27 +38,6 @@ const CONN_TYPES = [
   { name: "Mentor", icon: "🎓", color: "#98FB98", desc: "You want guidance, teaching, or someone to learn from (or to be that for others)." },
   { name: "Partner", icon: "💞", color: "#FF69B4", desc: "You're open to a deeper romantic or creative-life partnership." },
 ];
-
-// ── CREATIVE TYPE GLOSSARY ───────────────────────────────────────────────────
-const TYPE_ICONS: Record<string, string> = {
-  "Photographer": "📷", "Model": "🧍", "Content Creator": "🎥", "Director": "🎬", "Editor": "✂️",
-  "MUA": "💄", "Stylist": "👗", "Actor": "🎭", "Videographer": "📹", "Writer": "✍️", "Producer": "📋", "Designer": "🎨", "Musician": "🎵",
-};
-
-const TYPE_DESC: Record<string, string> = {
-  "Photographer": "Captures still imagery — editorial, portrait, fashion, fine art, commercial.",
-  "Model": "The on-camera subject — runway, editorial, figure, and lifestyle.",
-  "Content Creator": "Produces social and digital content across platforms for brands and audiences.",
-  "Director": "Leads creative vision on set — film, music video, commercial, and experimental.",
-  "Editor": "Post-production craft — cutting, pacing, color, VFX, and finishing.",
-  "MUA": "Makeup Artist — transforms faces and bodies into art.",
-  "Stylist": "Curates wardrobe, props, and look — the aesthetic architect.",
-  "Actor": "Performs character work across film, stage, and commercial.",
-  "Videographer": "Captures moving image — drone, gimbal, documentary, and event.",
-  "Writer": "Crafts narrative — scripts, copy, essays, and editorial prose.",
-  "Producer": "Makes it happen — funding, crew, schedule, and logistics.",
-  "Designer": "Shapes visual systems — branding, UI/UX, layout, and identity.",
-};
 
 export const CodexScreen = memo(function CodexScreen({
   screen,
@@ -149,30 +92,28 @@ export const CodexScreen = memo(function CodexScreen({
 
         {tab === "personality" && (
           <>
-            <Section title="🌞 Western Zodiac" subtitle="Your sun sign — the core of your creative identity.">
-              {ZODIAC.map(z => <Chip key={z} icon="" name={z} desc={ZE[z] || ""} color="#FFD700" />)}
+            <Section title="🌞 Western Zodiac" subtitle="Your sun sign — determined by your birth date. It's the core of your creative identity and drive." howTo="Find yours: the sign the Sun was in on your birthday (e.g. Mar 21–Apr 19 = Aries)." why="Why it matters: it shapes how you approach work, collaborate, and express yourself — and powers zodiac match compatibility.">
+              {CODEX_ZODIAC.map(z => <Expandable key={z.name} icon={z.icon} name={`${z.name} — ${z.tag}`} short={z.short} long={z.long} color="#FFD700" />)}
             </Section>
-            <Section title="🐉 Chinese Zodiac" subtitle="Your year animal — temperament and instinct.">
-              {CHINESE.map(c => <Chip key={c} icon="" name={c} desc={CE[c] || ""} color="#FF8A80" />)}
+            <Section title="🐉 Chinese Zodiac" subtitle="Your year animal — based on the lunar calendar year you were born. It reflects temperament and instinct." howTo="Find yours: your animal is determined by your birth year in a 12-year cycle (e.g. 2000 = Dragon, 2001 = Snake)." why="Why it matters: it reveals instinct, temperament, and natural working style — used in match compatibility.">
+              {CODEX_CHINESE.map(c => <Expandable key={c.name} icon={c.icon} name={c.name} short={c.short} long={c.long} color="#FF8A80" />)}
             </Section>
-            <Section title="🧠 MBTI" subtitle="16 personality types — how you think, create, and collaborate.">
-              {MBTI.map(m => <Chip key={m} icon="" name={`${m} — ${MBTI_MAP[m]?.tag || ""}`} desc={`${MBTI_MAP[m]?.desc || ""} Best collabs: ${MBTI_MAP[m]?.best || ""}.`} color="#D4A5FF" />)}
+            <Section title="🧠 MBTI (16 Personality Types)" subtitle="A framework of 16 types based on 4 dimensions: Introversion/Extraversion, Sensing/Intuition, Thinking/Feeling, Judging/Perceiving." howTo="Find yours: take the official MBTI assessment (or a free 16personalities-style test). It's a self-report questionnaire, not a scientific measurement." why="Why it matters: it reveals how you think, communicate, create, and collaborate — and which types you naturally work best with.">
+              {CODEX_MBTI.map(m => <Expandable key={m.code} icon="🧠" name={`${m.code} — ${m.tag}`} short={m.short} long={`${m.long} Best collabs: ${m.best}.`} color="#D4A5FF" />)}
             </Section>
-            <Section title="🔢 Life Path Numbers" subtitle="Derived from your birthdate — your life's blueprint.">
-              {LIFE_PATHS.map(n => <Chip key={n} icon="" name={`Life Path ${n}`} desc={LIFE_PATH_MAP[String(n)] || ""} color="#98FB98" />)}
+            <Section title="🔢 Life Path Numbers" subtitle="Derived from your full birth date by reducing each part to a single digit and summing. A core numerology concept." howTo="Find yours: add all digits of your birth date (MM + DD + YYYY) and reduce to a single digit, except Master Numbers 11, 22, 33." why="Why it matters: it's your life's blueprint — strengths, challenges, and purpose — and feeds match compatibility.">
+              {CODEX_LIFE_PATH.map(n => <Expandable key={n.n} icon="🔢" name={`Life Path ${n.n} — ${n.title}`} short={n.title} long={n.long} color="#98FB98" />)}
             </Section>
           </>
         )}
 
         {tab === "roles" && (
           <>
-            <Section title="🎭 Creative Types" subtitle="The role you play on set and in collaboration.">
-              {CREATIVE_TYPES.map(t => <Chip key={t} icon={TYPE_ICONS[t] || "🎨"} name={t} desc={TYPE_DESC[t] || "A creative professional."} color="#FFD700" />)}
+            <Section title="🎭 Creative Types" subtitle="The role you play on set and in collaboration — your primary discipline." howTo="Pick the one that best describes your main craft; you can list multiple in your profile." why="Why it matters: it's how matches find the exact collaborator they need (photographer, model, director, etc.).">
+              {CODEX_TYPES.map(t => <Expandable key={t.name} icon={t.icon} name={t.name} short={t.long.split(". ")[0] + "."} long={t.long} color="#FFD700" />)}
             </Section>
-            <Section title="🖌️ Aesthetics / Styles" subtitle="Visual and creative styles you work in.">
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {AESTHETICS.map(a => <span key={a} style={{ padding: "8px 14px", borderRadius: 99, fontSize: 12, fontWeight: 600, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "var(--text)" }}>{a}</span>)}
-              </div>
+            <Section title="🖌️ Aesthetics / Styles" subtitle="Visual and creative styles you work in — the look and feel of your work." howTo="Choose the styles that describe your portfolio; they filter your matches and feed the compatibility score." why="Why it matters: shared styles are the #1 driver of match score (up to +21%).">
+              {CODEX_AESTHETICS.map(a => <Expandable key={a.name} icon="🎨" name={a.name} short={a.long.split(". ")[0] + "."} long={a.long} color="#FFB5C2" />)}
             </Section>
           </>
         )}
@@ -180,12 +121,7 @@ export const CodexScreen = memo(function CodexScreen({
         {tab === "matching" && (
           <>
             <Section title="💞 Connection Types" subtitle="What you're looking for in a match.">
-              {CONN_TYPES.map(c => <Chip key={c.name} icon={c.icon} name={c.name} desc={c.desc} color={c.color} />)}
-            </Section>
-            <Section title="🔎 Looking For" subtitle="Roles you want to connect with.">
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {LOOKING_FOR.map(l => <span key={l} style={{ padding: "8px 14px", borderRadius: 99, fontSize: 12, fontWeight: 600, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)" }}>{l}</span>)}
-              </div>
+              {CONN_TYPES.map(c => <Expandable key={c.name} icon={c.icon} name={c.name} short={c.desc} long={c.desc} color={c.color} />)}
             </Section>
             <Section title="⚖️ How Match % Works" subtitle="The compatibility score on every profile.">
               <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 16, fontSize: 13, color: "var(--text2)", lineHeight: 1.7 }}>
@@ -209,25 +145,36 @@ export const CodexScreen = memo(function CodexScreen({
   );
 });
 
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Section({ title, subtitle, howTo, why, children }: { title: string; subtitle?: string; howTo?: string; why?: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 24 }}>
       <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 2 }}>{title}</div>
-      {subtitle && <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>{subtitle}</div>}
+      {subtitle && <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, marginBottom: 8 }}>{subtitle}</div>}
+      {(howTo || why) && (
+        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 10, marginBottom: 12, fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>
+          {howTo && <div style={{ marginBottom: 4 }}>🔍 <b>How it's determined:</b> {howTo}</div>}
+          {why && <div>💡 <b>Why it matters:</b> {why}</div>}
+        </div>
+      )}
       {children}
     </div>
   );
 }
 
-function Chip({ icon, name, desc, color }: { icon: string; name: string; desc: string; color: string }) {
+function Expandable({ icon, name, short, long, color }: { icon: string; name: string; short: string; long: string; color: string }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 14px", marginBottom: 8, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
-      {icon ? <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, background: `${color}20`, border: `1px solid ${color}40`, flexShrink: 0 }}>{icon}</div> : null}
+    <button onClick={() => setOpen(o => !o)} style={{ width: "100%", textAlign: "left", display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 14px", marginBottom: 8, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: `1px solid ${open ? color + "40" : "rgba(255,255,255,0.06)"}`, cursor: "pointer", transition: "all .25s" }}>
+      <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, background: `${color}20`, border: `1px solid ${color}40`, flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{name}</div>
-        <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>{desc}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", flex: 1 }}>{name}</div>
+          <div style={{ color: "var(--muted)", fontSize: 15, transition: "transform .25s", transform: open ? "rotate(90deg)" : "none", flexShrink: 0 }}>›</div>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>{short}</div>
+        {open && <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>{long}</div>}
       </div>
-    </div>
+    </button>
   );
 }
 
