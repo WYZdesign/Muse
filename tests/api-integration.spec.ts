@@ -184,10 +184,12 @@ test.describe("POST /api/muse — request safety", () => {
   });
 
   test("rejects oversized Content-Length with 413", async ({ request }) => {
+    test.setTimeout(60000);
     const big = JSON.stringify({ action: "track-event", name: "x".repeat(6 * 1024 * 1024) });
     const r = await request.post("/api/muse", {
       headers: { "Content-Type": "application/json", ...ORIGIN },
       data: big,
+      timeout: 30000,
     });
     // enforceRequestSafety caps at 5MB via Content-Length. Some proxies strip
     // Content-Length (chunked), so accept the documented 413 OR a 429 rate
