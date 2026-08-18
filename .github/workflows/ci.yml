@@ -42,4 +42,4 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: placeholder
           SUPABASE_SECRET_KEY: placeholder
           STRIPE_SECRET_KEY: placeholder
-          NEXT_PUBLIC_SUPPORT_EMAIL: support@wyzdesign.com
+          NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com

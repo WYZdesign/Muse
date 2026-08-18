@@ -9,9 +9,6 @@ import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles 
 import { trackError } from "@/lib/errorTracker";
 import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2, FiShield, FiGift, FiDollarSign } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
-import Nav from "./components/Nav";
-import { PORTRAIT_IMG } from "./components/photoOrientation";
-import MyAlbumsManager from "./components/MyAlbumsManager";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
 import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, QUOTA_MSG } from "./lib/safe-storage";
@@ -20,8 +17,6 @@ import { uid } from "./lib/uid";
 import DisclosureModal from "./components/DisclosureModal";
 import AgeVerificationModal from "./components/AgeVerificationModal";
 import SupportChat from "./components/SupportChat";
-import MatchCard from "./components/MatchCard";
-import MuseMap from "./components/MuseMap";
 import { DiscoverScreen } from "./screens/DiscoverScreen";
 import { FeedScreen } from "./screens/FeedScreen";
 import { MusesScreen } from "./screens/MusesScreen";
@@ -44,7 +39,7 @@ import PromptBankModal from "./components/PromptBankModal";
 import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
-import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, FORUM_POSTS, TIERS, PROFESSIONALS, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
+import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
 
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL || "torree.marcel@gmail.com";
@@ -1845,7 +1840,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
             <CommunityScreen screen={screen} showScreen={showScreen} commTab={commTab} setCommTab={setCommTab} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} />
 
-            <SessionsScreen screen={screen} showScreen={showScreen} sessTab={sessTab} setSessTab={setSessTab} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} uid={uid} currentUser={currentUser} setShowAgeVerification={setShowAgeVerification} />
+            <SessionsScreen screen={screen} showScreen={showScreen} sessTab={sessTab} setSessTab={setSessTab} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} uid={uid} currentUser={currentUser} setShowAgeVerification={setShowAgeVerification} liveSessions={liveSessions || undefined} setDisclosureTarget={setDisclosureTarget} setDisclosureBookingId={setDisclosureBookingId} setShowDisclosureModal={setShowDisclosureModal} setViewProfile={setViewProfile} />
 
             <NetworkScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} />
             <PortfolioScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} />

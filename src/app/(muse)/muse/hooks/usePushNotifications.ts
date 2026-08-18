@@ -3,7 +3,6 @@
 import { useEffect, useCallback, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { PushNotifications, PushNotificationSchema, Token, ActionPerformed } from "@capacitor/push-notifications";
-import { authFetch } from "../lib/auth-client";
 
 type PermissionStatus = "prompt" | "granted" | "denied" | "prompt-with-rationale";
 
@@ -82,14 +81,11 @@ export function usePushNotifications(config: PushConfig = {}) {
   }, [register, config]);
 
   const sendTokenToBackend = useCallback(async (pushToken: string) => {
-    try {
-      await authFetch("/api/muse/push", {
-        method: "POST",
-        body: JSON.stringify({ token: pushToken, platform: Capacitor.getPlatform() }),
-      });
-    } catch (e) {
-      console.error("Failed to send push token:", e);
-    }
+    // /api/muse/push only accepts Web Push subscription payloads
+    // ({action, subscription, access_token}). Native device tokens
+    // (APNs/FCM) need a dedicated route + table — until that exists this is
+    // a deliberate no-op so a malformed payload is never POSTed.
+    void pushToken;
   }, []);
 
   return { token, permissionState, error, register };

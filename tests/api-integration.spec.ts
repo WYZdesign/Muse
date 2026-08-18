@@ -129,4 +129,34 @@ test.describe("POST /api/checkout", () => {
     const body = await r.json();
     expect(body.error).toBeTruthy();
   });
+
+  test("rejects missing auth token (401) before touching Stripe", async ({ request }) => {
+    // Auth gate must fire before the Stripe-not-configured 503 path, so this
+    // is contract-stable regardless of whether STRIPE_SECRET_KEY is set.
+    const r = await request.post("/api/checkout", {
+      headers: { "Content-Type": "application/json", ...ORIGIN },
+      data: { plan: "muse_pro" },
+    });
+    expect(r.status()).toBe(401);
+    const body = await r.json();
+    expect(body.error).toBeTruthy();
+  });
+
+  test("rejects an invalid bearer token (401)", async ({ request }) => {
+    const r = await request.post("/api/checkout", {
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer not-a-real-jwt", ...ORIGIN },
+      data: { plan: "muse_pro" },
+    });
+    expect(r.status()).toBe(401);
+  });
+
+  test("ignores a client-supplied userId (identity comes from the token)", async ({ request }) => {
+    // Even with an explicit userId in the body, an invalid token must 401 —
+    // proving the server never trusts client-claimed identity.
+    const r = await request.post("/api/checkout", {
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer not-a-real-jwt", ...ORIGIN },
+      data: { plan: "muse_pro", userId: "someone-elses-profile-id" },
+    });
+    expect(r.status()).toBe(401);
+  });
 });
