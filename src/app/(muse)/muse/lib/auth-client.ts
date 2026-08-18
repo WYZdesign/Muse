@@ -1,14 +1,4 @@
 "use client";
 
-export function getAccessToken(): string {
-  if (typeof window === "undefined") return "";
-  try { return JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
-}
-
-export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const token = getAccessToken();
-  const headers = new Headers(options.headers);
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  if (!headers.has("Content-Type") && options.body) headers.set("Content-Type", "application/json");
-  return fetch(url, { ...options, headers });
-}
+// Centralized auth helpers — single implementation lives in ./api.
+export { getAccessToken, authFetch } from "./api";

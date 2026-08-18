@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAccessToken, authFetch } from "@/app/(muse)/muse/lib/api";
 
 type Report = {
   id: string; reporter_id: { id: string; name: string; avatar: string } | null;
@@ -15,19 +16,6 @@ type Strike = {
   created_at: string;
 };
 type AuditLog = { id: string; query_text: string; query_result_summary: string; created_at: string };
-
-function getAccessToken(): string {
-  if (typeof window === "undefined") return "";
-  try { return JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
-}
-
-async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const token = getAccessToken();
-  const headers = new Headers(options.headers);
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  if (!headers.has("Content-Type") && options.body) headers.set("Content-Type", "application/json");
-  return fetch(url, { ...options, headers });
-}
 
 export default function AdminModerationPanel() {
   const [tab, setTab] = useState<"reports" | "strikes" | "brain" | "audit">("reports");

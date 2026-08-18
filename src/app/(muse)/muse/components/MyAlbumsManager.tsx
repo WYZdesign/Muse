@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { FiPlus, FiLock, FiGlobe, FiUsers, FiTrash2, FiX } from "react-icons/fi";
+import { getAccessToken, authFetch } from "../lib/api";
 
 type Album = {
   id: string;
@@ -21,19 +22,6 @@ const ACCESS_META: Record<string, { icon: React.ReactNode; label: string }> = {
   private: { icon: <FiLock size={12} />, label: "Private" },
   invite: { icon: <FiUsers size={12} />, label: "Invite Only" },
 };
-
-function getAccessToken(): string {
-  if (typeof window === "undefined") return "";
-  try { return JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
-}
-
-async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const token = getAccessToken();
-  const headers = new Headers(options.headers);
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  if (!headers.has("Content-Type") && options.body) headers.set("Content-Type", "application/json");
-  return fetch(url, { ...options, headers });
-}
 
 /**
  * Full album management for the signed-in user's own profile: create/delete

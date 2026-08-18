@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAccessToken, authFetch } from "@/app/(muse)/muse/lib/api";
 
 type AnalyticsData = {
   totals: { users: number; matches: number; albums: number };
@@ -13,19 +14,6 @@ type AnalyticsData = {
   payments?: { total: number; succeeded: number; totalVolume: number; totalCommission: number };
   connectedAccounts?: number;
 };
-
-function getAccessToken(): string {
-  if (typeof window === "undefined") return "";
-  try { return JSON.parse(localStorage.getItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
-}
-
-async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const token = getAccessToken();
-  const headers = new Headers(options.headers);
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  if (!headers.has("Content-Type") && options.body) headers.set("Content-Type", "application/json");
-  return fetch(url, { ...options, headers });
-}
 
 /**
  * Real admin analytics dashboard — reads live aggregated data from Supabase
