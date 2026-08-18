@@ -353,11 +353,11 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                             <div className={"match-fab" + (cardScrolled ? " hidden" : "")}>
                               <button className={"match-fab-btn" + (showMatchMenu ? " open" : "")} onClick={() => setShowMatchMenu(v => !v)} aria-label="Match actions" style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>{showMatchMenu ? <FiCamera size={28} /> : "M"}</button>
                               <div className={"match-radial" + (showMatchMenu ? " open" : "")}>
-                                <button className="match-radial-btn btn-rewind" style={{ left: -56, top: 0 }} onClick={doRewind} aria-label="Rewind">↺</button>
-                                <button className="match-radial-btn btn-nope" style={{ left: -52, top: -21 }} onClick={() => doSwipe("left")} aria-label="Pass">✕</button>
-                                <button className="match-radial-btn btn-super" style={{ left: -40, top: -40, width: 37, height: 37, fontSize: 16 }} onClick={() => doSwipe("super")} aria-label="Super Like">★</button>
-                                <button className="match-radial-btn btn-like" style={{ left: -21, top: -52 }} onClick={() => doSwipe("right")} aria-label="Like">♥</button>
-                                <button className="match-radial-btn btn-note" style={{ left: 0, top: -56 }} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
+                                <button className="match-radial-btn btn-rewind" style={{ left: -80, top: -20 }} onClick={doRewind} aria-label="Rewind">↺</button>
+                                <button className="match-radial-btn btn-nope" style={{ left: -75, top: -43 }} onClick={() => doSwipe("left")} aria-label="Pass">✕</button>
+                                <button className="match-radial-btn btn-super" style={{ left: -60, top: -60, width: 37, height: 37, fontSize: 16 }} onClick={() => doSwipe("super")} aria-label="Super Like">★</button>
+                                <button className="match-radial-btn btn-like" style={{ left: -43, top: -75 }} onClick={() => doSwipe("right")} aria-label="Like">♥</button>
+                                <button className="match-radial-btn btn-note" style={{ left: -20, top: -80 }} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
                               </div>
                             </div>
                           )}
