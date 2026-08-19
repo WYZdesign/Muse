@@ -137,6 +137,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ events: data || [] });
     }
 
+    if (type === "rsvps") {
+      if (!profileId) return NextResponse.json({ rsvps: [] });
+      const { data } = await sb.from("muse_rsvps").select("event_id").eq("user_id", profileId);
+      return NextResponse.json({ rsvps: (data || []).map((r: any) => r.event_id) });
+    }
+
     if (type === "admin") {
       // Require a verified session token, not just a matching email param.
       const token = bearerTokenFromReq(req);
@@ -895,6 +901,29 @@ export async function POST(req: NextRequest) {
       await sb.from("muse_album_likes").insert({ album_id: albumId, user_id: profile.id });
       const { count } = await sb.from("muse_album_likes").select("*", { count: "exact", head: true }).eq("album_id", albumId);
       await sb.from("muse_albums").update({ like_count: (count ?? 0) }).eq("id", albumId);
+      return NextResponse.json({ success: true });
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // RSVP SYSTEM — event attendance
+    // ════════════════════════════════════════════════════════════════
+
+    if (actionType === "rsvp") {
+      if (!checkRate(ip, "rsvp", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const { eventId } = rest;
+      if (!eventId) return NextResponse.json({ error: "eventId required" }, { status: 400 });
+      const { data: existing } = await sb.from("muse_rsvps").select("id").eq("event_id", eventId).eq("user_id", profile.id).maybeSingle();
+      if (existing) return NextResponse.json({ success: true, alreadyRsvpd: true });
+      const { error } = await sb.from("muse_rsvps").insert({ event_id: eventId, user_id: profile.id });
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
+
+    if (actionType === "cancel-rsvp") {
+      if (!checkRate(ip, "cancel-rsvp", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const { eventId } = rest;
+      if (!eventId) return NextResponse.json({ error: "eventId required" }, { status: 400 });
+      await sb.from("muse_rsvps").delete().eq("event_id", eventId).eq("user_id", profile.id);
       return NextResponse.json({ success: true });
     }
 

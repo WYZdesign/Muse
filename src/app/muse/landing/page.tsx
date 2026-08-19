@@ -241,7 +241,7 @@ const FEATURES = [
   { icon: <FiHeart size={28} />, title: "Discover & Match", desc: "Swipe through creatives near you. Match when you're both into it." },
   { icon: <FiZap size={28} />, title: "Collab Briefs", desc: "Post a paid or TFP project. Creatives apply directly. No middlemen." },
   { icon: <FiMessageSquare size={28} />, title: "Chat & Booking", desc: "Message instantly. Book with escrow and disclosure forms built in." },
-  { icon: <FiShield size={28} />, title: "Safety First", desc: "Disclosure forms, check-ins, and instant block — for every shoot." },
+  { icon: <FiShield size={28} />, title: "Safety First", desc: "Disclosure forms, check-ins, and instant block for every shoot." },
   { icon: <FiUsers size={28} />, title: "Communities & Events", desc: "Find your people. RSVP to mixers and local creative events." },
   { icon: <FiCamera size={28} />, title: "Verified Profiles", desc: "Phone + face verification. Real people, real portfolios." },
 ];
@@ -249,7 +249,7 @@ const FEATURES = [
 const STEPS = [
   { num: "01", title: "Join & Verify", desc: "Make your profile. Verify in seconds." },
   { num: "02", title: "Discover & Match", desc: "Swipe. Match. Skip the cold DMs." },
-  { num: "03", title: "Collaborate Safely", desc: "Chat, book, and shoot — with safety built in." },
+  { num: "03", title: "Collaborate Safely", desc: "Chat, book, and shoot with safety built in." },
   { num: "04", title: "Build Your Network", desc: "Grow a network that books you work." },
 ];
 
@@ -276,10 +276,10 @@ const TESTIMONIALS = [
 
 const FAQS = [
   { q: "When does Muse launch?", a: "We're onboarding the first 150 founding members now, then rolling out to the full waitlist. Founding members get in first." },
-  { q: "How does verification work?", a: "We use phone + face verification (Stripe Identity) before any paid booking. No self-reported ages — real verification only." },
+  { q: "How does verification work?", a: "We use phone + face verification (Stripe Identity) before any paid booking. No self-reported ages, real verification only." },
   { q: "What does it cost?", a: "Free tier forever. Muse Pro is $9.99/mo. Founding members get lifetime Pro free, and you can earn Pro by referring friends." },
-  { q: "How is Muse different from Instagram or a job board?", a: "It's not a feed and it's not a marketplace. It's a convergence — discover creatives near you, collab safely, and get booked, all with safety built into every step." },
-  { q: "Is it safe?", a: "Disclosure forms, 24hr check-ins, trusted contacts, instant block, and two-track enforcement. Safety isn't a feature — it's the foundation." },
+  { q: "How is Muse different from Instagram or a job board?", a: "It's not a feed and it's not a job board. It's where you discover creatives near you, collab safely, and get booked, all with safety built into every step." },
+  { q: "Is it safe?", a: "Disclosure forms, 24hr check-ins, trusted contacts, instant block, and two-track enforcement. Safety isn't a feature, it's the foundation." },
 ];
 
 function FaqItem({ q, a }: { q: string; a: string }) {
@@ -411,7 +411,7 @@ export default function MuseLandingPage() {
               <span className="gradient muse-animated-gradient" style={{ display: "inline-block", padding: "0 0.1em" }}>Muse</span>
             </span>
           </h1>
-          <p className="muse-hero-sub" data-depth="-0.3">Connect with photographers, models, filmmakers, and more. Collaborate on real work. Get booked — safely.</p>
+          <p className="muse-hero-sub" data-depth="-0.3">Connect with photographers, models, filmmakers, and more. Work together on real projects. Get booked, safely.</p>
           <div className="muse-hero-actions">
             <Magnetic><a href="#join" className="muse-btn primary muse-shimmer">Join the Waitlist <FiArrowRight size={16} /></a></Magnetic>
             <Magnetic><a href="#features" className="muse-btn ghost">Explore Features</a></Magnetic>
@@ -419,10 +419,10 @@ export default function MuseLandingPage() {
           {!heroDone ? (
             <form onSubmit={handleHeroSubmit} className="muse-hero-email" data-depth="-0.3">
               <input type="email" placeholder="Enter your email for early access" value={heroEmail} onChange={e => setHeroEmail(e.target.value)} required aria-label="Email address" />
-              <button type="submit" disabled={heroSubmitting}>{heroSubmitting ? <span className="muse-spinner" style={{ borderTopColor: "#0a0612", borderColor: "rgba(10,6,18,0.25)" }} /> : <FiSend size={16} />}</button>
+              <button type="submit" disabled={heroSubmitting}>{heroSubmitting ? <span className="muse-spinner" style={{ borderTopColor: "#0a0612", borderColor: "rgba(10,6,18,0.25)" }} /> : "Join"}</button>
             </form>
           ) : (
-            <div className="muse-hero-email-done" data-depth="-0.3">✓ You're on the list — we'll notify you at launch</div>
+            <div className="muse-hero-email-done" data-depth="-0.3">✓ You're on the list, we'll notify you at launch</div>
           )}
         </div>
         <div className="muse-hero-scroll">
@@ -452,7 +452,7 @@ export default function MuseLandingPage() {
           <Reveal className="muse-section-head">
             <span className="muse-kicker">The Platform</span>
             <h2 className="muse-section-title">Built for How You <span className="accent">Actually Work</span></h2>
-            <p className="muse-section-sub">Not a dating app. Not a job board. A creative convergence.</p>
+            <p className="muse-section-sub">Not a dating app. Not a job board. Something built for how you actually work.</p>
           </Reveal>
           <div className="muse-features-grid">
             {FEATURES.map((f, i) => (
@@ -565,7 +565,7 @@ export default function MuseLandingPage() {
             ))}
           </div>
           <Reveal delay={0.2}>
-            <div className="muse-referral-blurb"><FiGift size={18} /> Refer 3 friends and get Muse Pro free for a year — even before launch.</div>
+            <div className="muse-referral-blurb"><FiGift size={24} /> Refer 3 friends and get Muse Pro free for a year, even before launch.</div>
           </Reveal>
         </div>
       </section>
@@ -729,7 +729,7 @@ export default function MuseLandingPage() {
             </div>
             <div className="muse-enter-logo">Muse</div>
             <div className="muse-enter-sub">Creative Professional Network</div>
-            <div className="muse-enter-prompt">Click to Enter ✦</div>
+            <div className="muse-enter-prompt">Tap to Enter ✦</div>
           </div>
         </div>
       )}

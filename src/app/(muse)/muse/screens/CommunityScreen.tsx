@@ -75,7 +75,7 @@ export const CommunityScreen = memo(function CommunityScreen({
               <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5, marginBottom: 10 }}>{ev.desc}</div>
             </div>
             <div style={{ display: "flex", gap: 8, padding: "0 16px 16px", width: "100%" }}>
-              <button className={"btn " + (rsvpdEvents.includes(ev.id) ? "btn-outline" : "btn-gold")} style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 700, borderRadius: 12 }} onClick={() => { setRsvpdEvents(prev => prev.includes(ev.id) ? prev.filter((x: number) => x !== ev.id) : [...prev, ev.id]); showToast(rsvpdEvents.includes(ev.id) ? "RSVP cancelled" : "RSVP confirmed!"); }}>{rsvpdEvents.includes(ev.id) ? "Going" : "RSVP"}</button>
+              <button className={"btn " + (rsvpdEvents.includes(ev.id) ? "btn-outline" : "btn-gold")} style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 700, borderRadius: 12 }} onClick={async () => { const isRsvpd = rsvpdEvents.includes(ev.id); try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: isRsvpd ? "cancel-rsvp" : "rsvp", eventId: ev.id }) }); setRsvpdEvents(prev => isRsvpd ? prev.filter((x: number) => x !== ev.id) : [...prev, ev.id]); showToast(isRsvpd ? "RSVP cancelled" : "RSVP confirmed!"); } catch { showToast("Failed to update RSVP"); } }}>{rsvpdEvents.includes(ev.id) ? "Going" : "RSVP"}</button>
               <button className="btn btn-outline" style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 600, borderRadius: 12 }} onClick={() => { navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/" + ev.id); showToast("Event link copied!"); }}>Share</button>
             </div>
           </div>
