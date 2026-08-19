@@ -303,3 +303,34 @@ The core loop is verified (signup → discover → match → chat → book → p
 1. **Systematic dead-button audit** — grep every `onClick` across all screens and trace to a real handler/action/modal (Edit Profile + Share Profile were the two confirmed dead modals; now fixed). The 57 `= () => {}` matches in screens are harmless default-prop fallbacks, NOT dead handlers.
 2. **Live payment test** — Stripe test card `4242 4242 4242 4242` via a free-tier account's Upgrade flow (owner is pre-pro).
 3. **Facebook App → Live** for public OAuth.
+
+---
+
+## 18. INDEPENDENT SCOUR — 2026-08-19 (all 22 API routes audited)
+
+### Route-by-route audit (the territory Claude flagged as un-checked)
+Read every `src/app/api/**/route.ts` file (22 total). Findings below — all genuine, none speculative.
+
+**Routes verified clean (no issues found):**
+- `muse/upload` — magic-byte validation (PNG/JPEG/WebP/GIF), 10MB cap, blocklisted extensions, Rekognition scan with fail-closed behavior, CSAM→NCMEC escalation, suspended-account gate, ownership-gated DELETE (`path.startsWith(profileId + "/")`).
+- `muse/verification` — Stripe Identity (document + live capture + matching selfie), rate-limited (5/min), `get-verification-status` writes `age_verified` on `verified`.
+- `muse/auth` — whitelisted mass-assignment guard (never spreads arbitrary client fields into profile), brute-force rate limits per action, `forgot-password` always returns success (no email enumeration), suspended-account session block, `delete-account` cascades all child tables then `auth.admin.deleteUser`.
+- `webhooks/stripe` — signature verification, `KNOWN_TIERS` whitelist (never trusts arbitrary `metadata.plan`), subscription downgrade on `customer.subscription.deleted`, booking escrow `held`/`succeeded`/`failed` transitions.
+- `muse/connect` — 5% commission, `capture_method: manual` escrow, `application_fee_amount`, self-payment block, admin-gated `transfer`.
+- `backup` + `cron/checkins` — both CRON_SECRET-gated (Bearer header match). Backup returns COUNTS only (no PII/message bodies). Checkins cron correctly matches `muse_sessions.date` TEXT → `muse_bookings.session_id` UUID FK (a prior bug-prone join, documented in comments).
+- `muse/push`, `muse/match`, `muse/embed`, `muse/embeddings`, `muse/support`, `muse/content-scan`, `geocode`, `waitlist`, `health`, `cache-version`, `qr` — all properly auth-gated + rate-limited where they touch user data or paid APIs (Rekognition/OpenRouter/Stripe).
+
+### Fixes shipped this session (`41e8ae2`)
+**Error-message leak hardening** — 7 routes returned raw `e.message` (Stripe/Postgres internals) to the client in their catch blocks: `checkout`, `connect`, `match`, `support`, `push`, `embed`, `embeddings`. Standardized all to log `console.error(...)` server-side + return generic `"Server error"` to the client — matching the pattern already used by `route.ts` (main), `auth`, `upload`, and `content-scan`. This is a minor info-disclosure hardening, not a critical vuln.
+
+### Escrow capture/release — CONFIRMED WIRED
+- `complete-booking` (route.ts:1199) calls `stripe.paymentIntents.capture(...)` on held manual-capture payments.
+- `cancel-booking` (route.ts:1161) calls `stripe.paymentIntents.cancel(...)` to release the hold.
+- Both wrapped in try/catch (non-fatal if already captured/cancelled).
+
+### Noted (not blocking, for future)
+- `waitlist/route.ts` signup-counter upsert has a read-then-write race on `muse_landing_analytics.signups` (could under-count under concurrent signups). Cosmetic; landing stats only.
+- `qr/route.ts` uses an external `api.qrserver.com` service with an SVG fallback; the fallback correctly escapes URL to prevent SVG injection.
+
+### Verification
+`npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. Pushed to `main` (`41e8ae2`) → Vercel auto-deploys.
