@@ -20,6 +20,21 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+        // Booking payment (manual capture / escrow): store the PaymentIntent + mark held
+        const musePayerId = session.metadata?.muse_payer_id;
+        const museBookingId = session.metadata?.muse_booking_id;
+        if (musePayerId && session.payment_intent) {
+          await sb.from("muse_booking_payments")
+            .update({
+              stripe_payment_intent: String(session.payment_intent),
+              status: "held",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("booking_id", museBookingId || "")
+            .eq("status", "pending");
+          break;
+        }
+        // Subscription — only ever assign a tier we actually know
         const userId = session.client_reference_id || session.metadata?.userId;
         // Only ever assign a tier we actually know — never trust arbitrary
         // metadata.plan strings (a stray value would land an unknown tier).

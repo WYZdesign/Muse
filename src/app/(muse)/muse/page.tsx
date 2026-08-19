@@ -1249,6 +1249,31 @@ function MusePage() {
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
 
+  // ═══ MOMENTS: fetch real BTS moments (replaces demo fallback) ═══
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    let cancelled = false;
+    authFetch("/api/muse?type=moments")
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled || !Array.isArray(d.moments)) return;
+        const mapped = d.moments.map((m: any) => ({
+          id: m.id,
+          author: m.author_id?.name || "Muse",
+          avatar: m.author_id?.avatar || "",
+          text: m.text || "",
+          img: m.img || "",
+          time: m.created_at ? new Date(m.created_at).toLocaleDateString() : "",
+          liked: false,
+          likes: m.likes || 0,
+          comments: m.comments || 0,
+        }));
+        setStories(mapped);
+      })
+      .catch((err) => { trackError("fetch_moments", { err: String(err) }); });
+    return () => { cancelled = true; };
+  }, [authUser?.profile?.id]);
+
   // ═══ BRIEFS: fetch real briefs from API ═══
   useEffect(() => {
     if (!authUser?.profile?.id) return;

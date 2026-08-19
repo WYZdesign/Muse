@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen, Match } from "../components/types";
@@ -55,6 +55,24 @@ export const SessionsScreen = memo(function SessionsScreen({
   setShowDisclosureModal = () => {},
   setViewProfile = () => {},
 }: SessionsScreenProps) {
+  const [showCreate, setShowCreate] = useState(false);
+  const [newSession, setNewSession] = useState({ title: "", description: "", type: "Photoshoot", rate: "", duration: "60 min", date: "", location: "" });
+  const [creating, setCreating] = useState(false);
+  const submitSession = async () => {
+    if (!newSession.title.trim()) { showToast("Title is required"); return; }
+    setCreating(true);
+    try {
+      const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-session", ...newSession }) });
+      if (!r.ok) throw new Error("failed");
+      showToast("Session listed — you're now bookable");
+      setShowCreate(false);
+      setNewSession({ title: "", description: "", type: "Photoshoot", rate: "", duration: "60 min", date: "", location: "" });
+    } catch {
+      showToast("Failed to list session");
+    } finally {
+      setCreating(false);
+    }
+  };
   return (
     <div className={"screen-el" + (screen === "sessions" ? " active" : "")}>
       <div className="hdr">
@@ -99,7 +117,10 @@ export const SessionsScreen = memo(function SessionsScreen({
               </div>
             )}
             {/* Available Sessions */}
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", margin: "4px 0 10px" }}>Available Sessions</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "4px 0 10px" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Available Sessions</div>
+              <button className="btn btn-gold" style={{ fontSize: 12, fontWeight: 700, padding: "6px 14px", borderRadius: 99 }} onClick={() => setShowCreate(true)}>+ List a Session</button>
+            </div>
             {(liveSessions || SESSIONS).map(s => (
               <div key={s.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
                 <img loading="lazy" src={s.img} alt={s.name} style={{ width: "25%", alignSelf: "stretch", minHeight: 120, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
@@ -156,6 +177,26 @@ export const SessionsScreen = memo(function SessionsScreen({
           </div>
         )}
       </div>
+      {showCreate && (
+        <div className="modal-overlay" onClick={() => setShowCreate(false)}>
+          <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 20 }}>
+            <div className="modal-title" style={{ marginBottom: 4 }}>List a Session</div>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Become bookable — set your rate and availability.</div>
+            <input className="inp" placeholder="Title (e.g. Portrait Photoshoot)" value={newSession.title} onChange={e => setNewSession(p => ({ ...p, title: e.target.value }))} style={{ marginBottom: 8 }} />
+            <textarea className="inp" placeholder="Description" rows={3} value={newSession.description} onChange={e => setNewSession(p => ({ ...p, description: e.target.value }))} style={{ marginBottom: 8, resize: "none" }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <input className="inp" placeholder="Type" value={newSession.type} onChange={e => setNewSession(p => ({ ...p, type: e.target.value }))} style={{ flex: 1 }} />
+              <input className="inp" placeholder="Rate (e.g. $200)" value={newSession.rate} onChange={e => setNewSession(p => ({ ...p, rate: e.target.value }))} style={{ flex: 1 }} />
+            </div>
+            <input className="inp" placeholder="Duration (e.g. 90 min)" value={newSession.duration} onChange={e => setNewSession(p => ({ ...p, duration: e.target.value }))} style={{ margin: "8px 0" }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <input className="inp" placeholder="Date" value={newSession.date} onChange={e => setNewSession(p => ({ ...p, date: e.target.value }))} style={{ flex: 1 }} />
+              <input className="inp" placeholder="Location" value={newSession.location} onChange={e => setNewSession(p => ({ ...p, location: e.target.value }))} style={{ flex: 1 }} />
+            </div>
+            <button className="btn btn-gold" style={{ width: "100%", marginTop: 12, fontWeight: 700 }} onClick={submitSession} disabled={creating}>{creating ? "Listing..." : "List Session"}</button>
+          </div>
+        </div>
+      )}
       <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );

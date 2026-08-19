@@ -227,6 +227,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ reviews: data || [] });
     }
 
+    if (type === "moments") {
+      const { data } = await sb.from("muse_moments")
+        .select("id, text, img, type, likes, comments, created_at, author_id(name, avatar)")
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return NextResponse.json({ moments: data || [] });
+    }
+
     if (type === "notifications" && user) {
       const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ notifications: [] });
@@ -520,6 +529,19 @@ export async function POST(req: NextRequest) {
       const { error } = await sb.from("muse_feed_posts").insert({ author_id: profile.id, text: cleanText, img: resolvedImg, type: resolvedImg ? "photo" : "text" });
       if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
+    }
+
+    if (actionType === "create-moment") {
+      if (!checkRate(ip, "create-moment", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const { text, img } = rest;
+      const cleanText = sanitizeText(String(text || "").slice(0, 500));
+      const resolvedImg = img && typeof img === "string" ? String(img).slice(0, 500) : "";
+      if (!cleanText && !resolvedImg) return NextResponse.json({ error: "text or img required" }, { status: 400 });
+      const { data, error } = await sb.from("muse_moments").insert({
+        author_id: profile.id, text: cleanText, img: resolvedImg, type: resolvedImg ? "photo" : "text",
+      }).select("id, text, img, type, likes, comments, created_at, author_id(name, avatar)").single();
+      if (error) return safeServerError(error, "db op");
+      return NextResponse.json({ success: true, moment: data });
     }
 
     if (actionType === "brief") {

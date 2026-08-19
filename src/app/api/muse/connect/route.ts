@@ -160,6 +160,51 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // ═══ CREATE-BOOKING-CHECKOUT: Redirect-based booking payment (no client Stripe.js needed) ═══
+    if (action === "create-booking-checkout") {
+      const { payeeId, amountCents, bookingId, description } = body;
+      if (!payeeId || !amountCents) return NextResponse.json({ error: "payeeId and amountCents required" }, { status: 400 });
+      const amount = Number(amountCents);
+      if (!Number.isInteger(amount) || amount <= 0) return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+      if (String(payeeId) === String(profile.id)) return NextResponse.json({ error: "Cannot pay yourself" }, { status: 400 });
+
+      const { data: payee } = await sb.from("muse_profiles")
+        .select("id, stripe_connect_id, name")
+        .eq("id", payeeId).maybeSingle();
+      if (!payee?.stripe_connect_id) return NextResponse.json({ error: "Payee has no Stripe account" }, { status: 400 });
+      const payeeAccount = await stripe.accounts.retrieve(payee.stripe_connect_id);
+      if (!payeeAccount.charges_enabled) return NextResponse.json({ error: "Payee account not fully onboarded" }, { status: 400 });
+
+      const commission = Math.round(amount * COMMISSION_RATE);
+      const netAmount = amount - commission;
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        line_items: [{
+          price_data: { currency: "usd", unit_amount: amount, product_data: { name: description || `Muse booking with ${payee.name}` } },
+          quantity: 1,
+        }],
+        payment_intent_data: {
+          capture_method: "manual",
+          application_fee_amount: commission,
+          transfer_data: { destination: payee.stripe_connect_id },
+          metadata: {
+            muse_payer_id: profile.id, muse_payee_id: payeeId, muse_booking_id: bookingId || "",
+            commission_cents: String(commission), net_cents: String(netAmount),
+          },
+        },
+        success_url: `${req.nextUrl.origin}/muse?payment=success`,
+        cancel_url: `${req.nextUrl.origin}/muse?payment=cancelled`,
+      });
+
+      await sb.from("muse_booking_payments").insert({
+        booking_id: bookingId || null, payer_id: profile.id, payee_id: payeeId,
+        stripe_payment_intent: "", amount_cents: amount, commission_cents: commission,
+        net_amount_cents: netAmount, status: "pending",
+      });
+
+      return NextResponse.json({ url: session.url, amountCents: amount, commissionCents: commission });
+    }
+
     // ═══ ACCOUNT-STATUS: Check Connect account status ═══
     if (action === "account-status") {
       if (!profile.stripe_connect_id) return NextResponse.json({ connected: false });
