@@ -155,3 +155,25 @@ Other SQL files in `sql/` are historical migrations already baked into the schem
 
 ### Verification done this session
 - `npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. (Playwright integration/smoke not re-run — they target the deployed app and are unaffected by these backend additions.)
+
+---
+
+## 13. LIVE-SITE AUDIT — 2026-08-19 (login-and-browse via Playwright, fixed errors)
+
+Logged in as `torree.marcel@gmail.com` and browsed the live app, capturing console errors + 4xx/5xx. Root causes found + fixed (all pushed):
+
+- `a3ef83f` — **500s** on `/api/muse?type=albums|album-photos|reviews`: discover fell back to seed profiles with *numeric* ids, which the albums endpoint cast to UUID → Postgres error. Fixed with a `UUID_RE` guard (non-UUID → empty result). Also CSP (`vercel.live`), manifest `scope`, OG/meta description rewrite.
+- `0405b14` — **401** on `/api/muse/match` pre-login: `bootstrapData` now gates the match fetch on an existing `access_token`.
+- `67d4fda` — **404** on model images: 10 `Nico + Draco-*.webp` files have a literal `+` in the filename; Vercel decodes `+` as space. Fixed by encoding `+` → `%2B` in `types.ts` + `photoOrientation.ts` (verified `%2B` → 200).
+
+### Audit facts (verified, for Claude)
+- `public/models/` IS tracked in git (1000 files, 130MB) — the placeholder photos are committed, not missing. Only the `+`-in-filename subset 404'd.
+- Default auth mode is **Sign Up** (not Log In) — `button.btn-gold` reads "Create Account" until the "Log In" tab is clicked.
+- `track-event` is already auth-exempt (route.ts:432-434). The remaining `/api/muse` POST 401 on boot is a minor pre-auth action (likely `sync`), untraced.
+
+### Remaining (recommended for Claude / next)
+1. **Disclosure trigger weakness** — the payment+NSFW keyword check is client-side only (`page.tsx:1140-1149` in `sendMsg`). Messages also persist via `muse-realtime.ts persistMessage` (client-direct to `muse_messages`, RLS-gated, no server moderation) and a server `message` action (route.ts:502). Recommend server-side keyword detection in the `message` action so the trigger can't be bypassed. NOTE: the *enforcement* (create/confirm-disclosure + Stripe Identity age gate) is already server-side; this is about the *prompt*.
+2. **Unused deps** — `zod` + `@supabase/ssr` in `package.json` but imported nowhere (verified grep). Safe to `npm uninstall`.
+3. **Hook extraction** — Claude's spec: 11 hooks, ~150 state vars still in `page.tsx` (244 hooks total). Start with `useChatState`, one commit each, `tsc` + unit tests after each.
+4. **Untraced screens** — Collab/Briefs lifecycle, Community beyond join, Subscription Stripe flow, Codex, Settings sub-panels, admin panel, match/like/super-like path.
+5. **End-to-end payment test** — escrow/Checkout/capture is code-complete + UI-wired but not live-tested (needs Stripe test keys + browser + onboarded host Connect account).
