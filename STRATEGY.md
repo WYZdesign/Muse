@@ -70,10 +70,11 @@ Both must feel "equally safe" — same digital trust layer, studio adds physical
 
 ## Valuation thesis
 - Valuation is a **payments/trust story, not a social-graph story.** Take-rate + escrow + verification-as-a-service is what's fundable; $9.99/mo Pro is table stakes.
-- Realistic: niche exit $50–150M (Behance-scale) if it owns the creative-booking trust layer. Unicorn only via expanding into broad creator *transactions*.
+- ⚠️ No specific exit figure is derivable at 0 users / 0 revenue — any dollar range right now is speculation. Behance (~$150M to Adobe) is only a *directional upper-bound reference* for a "creative portfolio network," not a target.
 - Measure **transactions (bookings closed, dollars moved, repeat rate)**, never raw signups.
 
-## Why now (timing thesis)
+## Why now (timing thesis) — narrative framing, NOT validated data
+> Directional story only; none of this is measured demand. Treat as pitch narrative, not evidence.
 - Creator economy normalized "anyone can be a creator" (models/actors/content creators are no longer agency-gated).
 - IRL is back post-pandemic (mixers, meetups, "touch grass" energy). Muse = software layer for the IRL creator economy.
 - Dating apps burned out a generation; Muse ends in a real outcome (a shoot / portfolio / paid gig), not infinite scroll.
@@ -84,12 +85,14 @@ Both must feel "equally safe" — same digital trust layer, studio adds physical
 - This is a reputation score for "people who shoot." Buyers of that data: insurance underwriters, brands vetting influencers, payment processors (fraud), studios (screening).
 - Airbnb analogy turned up a notch: the trust layer IS the moat, not the bookings. The shoot is the entry point; the trust data is the business.
 - SEQUENCING: this is the 10-year vision, not the 10-user pitch. Lead with "book a shoot safely"; the data asset compounds silently in the background.
+- ⚠️ **FCRA LEGAL FLAG:** selling reputation/trust data to third parties for *eligibility decisions about people* can make Muse a "consumer reporting agency" under the Fair Credit Reporting Act — triggering accuracy, dispute-handling, and permissible-purpose obligations. This is NOT a casual revenue stream; it requires an actual attorney conversation before it goes near a pitch deck or product decision.
 
 ## Brand / emotional core
 - "Muse" = aspirational, not utility ("be someone's inspiration, be seen, be made into art"). A dignity play, not an efficiency play.
 - Gig platforms sell efficiency; Muse sells **being seen**. That's why it can hold a brand Upwork/Fiverr can't. Never strip the poetry out — safety + poetry together IS the product.
 
 ## The credential — "Muse-verified" as portable status
+- Someday nice-to-have, NOT a near-term thesis. Skip for now; revisit only if verification actually takes off.
 - Verification doubles as a portable badge: "Muse-verified photographer/model" in IG bios, portfolios, pitches.
 - Every off-platform flaunt of the badge = free marketing. The safety feature quietly becomes a social signal, which is what spreads.
 
