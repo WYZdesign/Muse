@@ -207,7 +207,7 @@ The core loop is verified (signup → discover → match → chat → book → p
 - Flag: dead buttons, no-op handlers (`onClick={() => {}}`), actions that 400/500, UI that doesn't reflect the DB write, and anything "wired but does nothing."
 - Verify against **code**, not the UI impression. Report a ✅/⚠️/❌ table like the booking-loop pass.
 
-### Also still open (unchanged)
+### Also still open
 - **9 hooks remain** in the `page.tsx` state extraction (`useChatState` + `useBriefsState` done; next: `useAuthState`, `useDiscoverState`, `useBookingState`, `useProfileState`, `useFeedState`, `useCommunityState`, `useSettingsState`, `usePersonalityTestState`).
-- **NSFW blur** — in progress (card hero located at `DiscoverScreen.tsx:310-317`); blur NSFW profile photos behind an "18+ — tap to reveal" gate so the app doesn't appear to openly display adult content.
+- **NSFW blur + moderation** ✅ DONE `4cb28eb` — discover card hero blurs NSFW profiles behind an "18+ NSFW · Tap to reveal" overlay (`DiscoverScreen.tsx`); `contentScan.ts` now allows `Suggestive` (boudoir/tasteful/artistic is legitimate, age-gated) and still blocks `Explicit Nudity` (nipples/groin). Still TODO: extend the blur to profile view, moments, and album photos.
 - **Live payment test** — needs Stripe test keys + browser.
