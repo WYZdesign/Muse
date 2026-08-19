@@ -358,8 +358,15 @@ function MusePage() {
   // arrays when the table is empty or the request fails (graceful fallback).
   const bootstrapData = useCallback(async () => {
     try {
+      let token = "";
+      try { token = JSON.parse(localStorage.getItem("muse_user") || "{}")?.access_token || ""; } catch {}
+      // Match recommendations require auth — skip when there's no session yet
+      // (avoids a 401 on the pre-login boot).
+      const matchPromise = token
+        ? apiFetch("/api/muse/match?limit=50").then(r => r.ok ? r.json() : null).catch(() => null)
+        : Promise.resolve(null);
       const [matchData, briefs, feed, forum, events] = await Promise.all([
-        apiFetch("/api/muse/match?limit=50").then(r => r.ok ? r.json() : null).catch(() => null),
+        matchPromise,
         apiFetch("/api/muse?type=briefs").then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch("/api/muse?type=feed").then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch("/api/muse?type=forum").then(r => r.ok ? r.json() : null).catch(() => null),
