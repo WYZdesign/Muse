@@ -73,6 +73,26 @@ Both must feel "equally safe" — same digital trust layer, studio adds physical
 - Realistic: niche exit $50–150M (Behance-scale) if it owns the creative-booking trust layer. Unicorn only via expanding into broad creator *transactions*.
 - Measure **transactions (bookings closed, dollars moved, repeat rate)**, never raw signups.
 
+## Why now (timing thesis)
+- Creator economy normalized "anyone can be a creator" (models/actors/content creators are no longer agency-gated).
+- IRL is back post-pandemic (mixers, meetups, "touch grass" energy). Muse = software layer for the IRL creator economy.
+- Dating apps burned out a generation; Muse ends in a real outcome (a shoot / portfolio / paid gig), not infinite scroll.
+- AI image generation makes "real + verified" scarce and valuable. Muse is accidentally the **anti-AI platform: real humans, real shoots, real trust.** Lean into this as AI anxiety peaks.
+
+## The big vision — trust data as the "credit bureau" of the creator economy
+- The real asset is NOT the booking fee — it's the accumulated **trust data**: verified identity, consent/disclosure history, review trail, transaction history.
+- This is a reputation score for "people who shoot." Buyers of that data: insurance underwriters, brands vetting influencers, payment processors (fraud), studios (screening).
+- Airbnb analogy turned up a notch: the trust layer IS the moat, not the bookings. The shoot is the entry point; the trust data is the business.
+- SEQUENCING: this is the 10-year vision, not the 10-user pitch. Lead with "book a shoot safely"; the data asset compounds silently in the background.
+
+## Brand / emotional core
+- "Muse" = aspirational, not utility ("be someone's inspiration, be seen, be made into art"). A dignity play, not an efficiency play.
+- Gig platforms sell efficiency; Muse sells **being seen**. That's why it can hold a brand Upwork/Fiverr can't. Never strip the poetry out — safety + poetry together IS the product.
+
+## The credential — "Muse-verified" as portable status
+- Verification doubles as a portable badge: "Muse-verified photographer/model" in IG bios, portfolios, pitches.
+- Every off-platform flaunt of the badge = free marketing. The safety feature quietly becomes a social signal, which is what spreads.
+
 ## Top risks
 1. **Liability** — "we've got your back every step" = more exposure. Promise process, get real counsel (ATTORNEY_HANDOFF.md).
 2. **Positioning drift into dating** — kills supply (models) + payment/App-Store risk.
