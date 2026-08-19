@@ -5,6 +5,7 @@ import { FiArrowLeft } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 import { TIERS } from "../components/types";
+import { startSubscriptionCheckout } from "../lib/api";
 
 export interface SubscriptionScreenProps {
   screen: Screen;
@@ -66,20 +67,8 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
                   onClick={async () => {
                     if (isCurrent) return;
                     if (tier.name === "Free") { showToast("You're on the Free plan"); return; }
-                    try {
-                      let tok = "";
-                      try { const raw = localStorage.getItem("muse_user"); tok = raw ? (JSON.parse(raw).access_token || "") : ""; } catch {}
-                      const r = await fetch("/api/checkout", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", ...(tok ? { "Authorization": `Bearer ${tok}` } : {}) },
-                        body: JSON.stringify({ type: "subscription", plan: tierKey, email: authUser?.email }),
-                      });
-                      const d = await r.json();
-                      if (d.url) { window.location.href = d.url; }
-                      else { showToast(d.error || "Checkout unavailable, try again later"); }
-                    } catch {
-                      showToast("Checkout unavailable, try again later");
-                    }
+                    const url = await startSubscriptionCheckout(tierKey, authUser?.email, showToast);
+                    if (url) { window.location.href = url; }
                   }}
                 >
                   {isCurrent ? "Current Plan" : tier.name === "Free" ? "Free Plan" : "Select " + tier.name}

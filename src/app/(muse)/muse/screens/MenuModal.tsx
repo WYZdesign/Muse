@@ -3,6 +3,7 @@
 import React, { memo } from "react";
 import { FiX, FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiHeadphones, FiBell } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
+import { startSubscriptionCheckout } from "../lib/api";
 import { COMMUNITIES, EVENTS, SESSIONS, PROFESSIONALS, FORUM_POSTS } from "../components/types";
 
 export interface MenuModalProps {
@@ -338,7 +339,7 @@ export const MenuModal = memo(function MenuModal({
                   <div style={{ fontSize: 24, marginBottom: 6 }}>✨</div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: "var(--gold)" }}>$9.99/month</div>
                   <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 10 }}>Unlimited likes, superlikes, boosts &amp; more</div>
-                  <button className="btn btn-gold" style={{ fontSize: 12, padding: "8px 20px" }} onClick={async () => { try { let tok = ""; try { const raw = localStorage.getItem("muse_user"); tok = raw ? (JSON.parse(raw).access_token || "") : ""; } catch {} const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json", ...(tok ? { "Authorization": `Bearer ${tok}` } : {}) }, body: JSON.stringify({ type: "subscription", plan: "muse_pro", email: authUser?.email }) }); const d = await r.json(); if (d.url) { window.location.href = d.url; } else { showToast(d.error || "Checkout unavailable, try again later"); } } catch { showToast("Checkout unavailable, try again later"); } }}>Upgrade</button>
+                  <button className="btn btn-gold" style={{ fontSize: 12, padding: "8px 20px" }} onClick={async () => { const url = await startSubscriptionCheckout("muse_pro", authUser?.email, showToast); if (url) { window.location.href = url; } }}>Upgrade</button>
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "20px 0 10px" }}>Statistics</div>
                 <div className="stats-row" style={{ marginTop: 8 }}>
