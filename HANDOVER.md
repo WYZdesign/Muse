@@ -334,3 +334,43 @@ Read every `src/app/api/**/route.ts` file (22 total). Findings below — all gen
 
 ### Verification
 `npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. Pushed to `main` (`41e8ae2`) → Vercel auto-deploys.
+
+---
+
+## 19. SESSION UPDATE — 2026-08-19 (strike enforcement closure, the last real code gap)
+
+### Moderation enforcement gap — CLOSED (`199c11b`)
+Claude's independent audit found the single most consequential remaining gap: **strikes were recorded but never enforced.** `muse_strikes` rows were inserted (disclosure hard-block, admin suspend), admins could view/appeal/resolve them — but there was NO code that counted a user's accumulated strikes and auto-suspended at a threshold. The "3 strikes and you're out" graduated track designed early on had no implementation.
+
+**Two bugs fixed:**
+
+1. **High-severity disclosure hard-block recorded a `severity: "suspension"` strike but never set `suspended: true`.** The "attempted to arrange paid explicit sexual content" path (route.ts `create-disclosure` NSFW+payment combo) inserted a strike row with `severity: "suspension"` yet the account stayed active — the immediate-suspend track was effectively cosmetic.
+
+2. **No accumulation → escalation.** Standard strikes could accumulate forever with no consequence.
+
+**Fix — `applyStrikeAndEscalate(sb, userId, strike)` helper (route.ts, module-level):**
+- Inserts the strike.
+- Counts all enforceable strikes for the user (excludes only `appeal_status = "overturned"`).
+- Suspends immediately if the new strike is `severity: "suspension"` or `"permanent_ban"` (Track 2 — high severity).
+- Otherwise suspends once `activeCount >= STRIKE_SUSPENSION_THRESHOLD` (3) (Track 1 — graduated).
+- On suspension: sets `muse_profiles.suspended = true` + `suspended_at`, and inserts a `muse_notifications` `suspension` row.
+
+**Wiring:**
+- `create-disclosure` hard-block → `applyStrikeAndEscalate` with `severity: "suspension"` (now actually suspends).
+- `report` action → when a target accumulates **3+ reports from distinct reporters**, issues a `severity: "warning"` standard strike (which counts toward the graduated ladder). Distinct-reporter check prevents a single malicious reporter from farming strikes.
+- `admin-suspend-user` was already correct (inserts strike + sets `suspended: true` directly) — left as-is.
+
+**Schema note:** `muse_strikes` fields — `category` (`standard`/`high_severity`), `severity` (`warning`/`suspension`/`permanent_ban`), `appeal_status` (`none`/`pending`/`upheld`/`overturned`), `suspension_ends_at` (NULL = permanent). The graduated track is severity-agnostic: N `warning` strikes escalate the same as one `suspension` strike. Overturned appeals are excluded from the count.
+
+### Other confirmed-clean findings from Claude's audit (no action needed)
+- **XSS:** zero `dangerouslySetInnerHTML` anywhere in the app — no raw-HTML injection vector for user content (bios, forum posts, chat).
+- **Escrow:** capture/release wired (see section 18).
+
+### Still open (unchanged, non-blocking)
+1. **`next/image` adoption** — zero usage; every image is a raw `<img>` tag. Real mobile performance cost (no responsive sizing, no WebP/AVIF negotiation, no default lazy-load). This is the one backlog item that has sat on every list since early conversation. Recommended as the next code priority.
+2. **Live payment test** — Stripe `4242 4242 4242 4242` via a free-tier account.
+3. **Facebook App → Live**.
+4. **Attorney memo review**.
+
+### Verification
+`npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. Pushed to `main` (`199c11b`) → Vercel auto-deploys.
