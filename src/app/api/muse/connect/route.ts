@@ -125,6 +125,7 @@ export async function POST(req: NextRequest) {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: "usd",
+        capture_method: "manual",
         application_fee_amount: commission,
         transfer_data: { destination: payee.stripe_connect_id },
         description: description || `Muse booking payment to ${payee.name}`,

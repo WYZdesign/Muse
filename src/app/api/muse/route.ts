@@ -5,6 +5,7 @@ import { checkRate, clientIp } from "@/lib/rate-limit";
 import { enforceRequestSafety, sanitizeText } from "@/lib/request-safety";
 import { askMuseAI } from "@/lib/aiDocs";
 import { screenText, moderateText } from "@/lib/aiModeration";
+import Stripe from "stripe";
 
 function getAuthUser() {
   return supabase.auth.getUser();
@@ -213,6 +214,17 @@ export async function GET(req: NextRequest) {
     if (type === "sessions") {
       const { data } = await sb.from("muse_sessions").select("*").order("date", { ascending: true }).limit(20);
       return NextResponse.json({ sessions: data || [] });
+    }
+
+    if (type === "reviews") {
+      const targetProfileId = req.nextUrl.searchParams.get("profile_id") || (profileId || "");
+      if (!targetProfileId) return NextResponse.json({ error: "profile_id required" }, { status: 400 });
+      const { data } = await sb.from("muse_reviews")
+        .select("id, rating, body, created_at, reviewer_id(name, avatar, type)")
+        .eq("reviewee_id", targetProfileId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return NextResponse.json({ reviews: data || [] });
     }
 
     if (type === "notifications" && user) {
@@ -642,6 +654,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    if (actionType === "create-session") {
+      if (!checkRate(ip, "create-session", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const { title, description, type, rate, duration, skills, date, location, img } = rest;
+      if (!title || !String(title).trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
+      const { data, error } = await sb.from("muse_sessions").insert({
+        host_id: profile.id,
+        title: String(title).slice(0, 200),
+        description: String(description || "").slice(0, 1000),
+        type: String(type || "Photoshoot").slice(0, 50),
+        rate: String(rate || "").slice(0, 50),
+        duration: String(duration || "60 min").slice(0, 50),
+        skills: Array.isArray(skills) ? skills.slice(0, 20).map((s: unknown) => String(s).slice(0, 50)) : [],
+        date: String(date || "").slice(0, 100),
+        location: String(location || "").slice(0, 200),
+        img: String(img || "").slice(0, 500),
+        available: true,
+      }).select().single();
+      if (error) return safeServerError(error, "db op");
+      return NextResponse.json({ success: true, session: data });
+    }
+
     if (actionType === "connect") {
       if (!checkRate(ip, "connect", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { targetId } = rest;
@@ -1041,6 +1074,17 @@ export async function POST(req: NextRequest) {
       const isParty = String(booking.user_id) === String(profile.id) || String(booking.host_id) === String(profile.id);
       if (!isParty) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+      // Release escrow hold if a held (manual-capture) payment exists
+      const { data: cancelPayment } = await sb.from("muse_booking_payments")
+        .select("id, stripe_payment_intent, status").eq("booking_id", bookingId).maybeSingle();
+      if (cancelPayment?.stripe_payment_intent && cancelPayment.status !== "succeeded") {
+        try {
+          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+          await stripe.paymentIntents.cancel(cancelPayment.stripe_payment_intent);
+          await sb.from("muse_booking_payments").update({ status: "cancelled" }).eq("id", cancelPayment.id);
+        } catch (e: unknown) { /* non-fatal */ }
+      }
+
       const { error } = await sb.from("muse_bookings").update({
         status: "cancelled", cancelled_at: new Date().toISOString(),
         cancel_reason: String(reason || "Cancelled by user"),
@@ -1056,6 +1100,62 @@ export async function POST(req: NextRequest) {
         });
       }
       return NextResponse.json({ success: true });
+    }
+
+    if (actionType === "complete-booking") {
+      if (!checkRate(ip, "complete-booking", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const { bookingId } = rest;
+      if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
+      const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
+      if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      const isParty = String(booking.user_id) === String(profile.id) || String(booking.host_id) === String(profile.id);
+      if (!isParty) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      if (booking.status !== "confirmed") return NextResponse.json({ error: "Only confirmed bookings can be completed" }, { status: 400 });
+
+      // Release escrow to the host if a held (manual-capture) payment exists
+      const { data: payment } = await sb.from("muse_booking_payments")
+        .select("id, stripe_payment_intent, status").eq("booking_id", bookingId).maybeSingle();
+      if (payment?.stripe_payment_intent && payment.status !== "succeeded") {
+        try {
+          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+          await stripe.paymentIntents.capture(payment.stripe_payment_intent);
+          await sb.from("muse_booking_payments").update({ status: "succeeded" }).eq("id", payment.id);
+        } catch (e: unknown) { /* non-fatal: intent may already be captured/cancelled */ }
+      }
+
+      await sb.from("muse_bookings").update({
+        status: "completed", completed_at: new Date().toISOString(), updated_at: new Date().toISOString()
+      }).eq("id", bookingId);
+
+      const otherId = String(booking.user_id) === String(profile.id) ? booking.host_id : booking.user_id;
+      if (otherId) {
+        await sb.from("muse_notifications").insert({
+          user_id: otherId, from_id: profile.id, type: "booking_completed",
+          body: `${profile.name} marked the shoot as complete — leave a review`, read: false
+        });
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    if (actionType === "submit-review") {
+      if (!checkRate(ip, "submit-review", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const { bookingId, rating, body } = rest;
+      if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
+      const r = Number(rating);
+      if (!Number.isInteger(r) || r < 1 || r > 5) return NextResponse.json({ error: "rating must be an integer 1-5" }, { status: 400 });
+      const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
+      if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      if (booking.status !== "completed") return NextResponse.json({ error: "Only completed bookings can be reviewed" }, { status: 400 });
+      const isParty = String(booking.user_id) === String(profile.id) || String(booking.host_id) === String(profile.id);
+      if (!isParty) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      const revieweeId = String(booking.user_id) === String(profile.id) ? booking.host_id : booking.user_id;
+      if (!revieweeId) return NextResponse.json({ error: "No other party to review" }, { status: 400 });
+      const { data, error } = await sb.from("muse_reviews").upsert({
+        booking_id: bookingId, reviewer_id: profile.id, reviewee_id: revieweeId,
+        rating: r, body: String(body || "").slice(0, 1000),
+      }, { onConflict: "booking_id,reviewer_id" }).select().single();
+      if (error) return safeServerError(error, "db op");
+      return NextResponse.json({ success: true, review: data });
     }
 
     // ════════════════════════════════════════════════════════════════
