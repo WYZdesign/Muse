@@ -28,6 +28,14 @@ export interface CollabScreenProps {
   savedBriefs?: number[];
   setSavedBriefs?: React.Dispatch<React.SetStateAction<number[]>>;
   setChatTarget?: (t: any) => void;
+  briefTitle?: string;
+  setBriefTitle?: (v: string) => void;
+  briefDesc?: string;
+  setBriefDesc?: (v: string) => void;
+  briefBudget?: string;
+  setBriefBudget?: (v: string) => void;
+  briefCat?: "tfp" | "paid" | "opencall" | "concept";
+  setBriefCat?: (c: "tfp" | "paid" | "opencall" | "concept") => void;
 }
 
 export const CollabScreen = memo(function CollabScreen({
@@ -50,9 +58,28 @@ export const CollabScreen = memo(function CollabScreen({
   savedBriefs = [],
   setSavedBriefs = () => {},
   setChatTarget = () => {},
+  briefTitle = "",
+  setBriefTitle = () => {},
+  briefDesc = "",
+  setBriefDesc = () => {},
+  briefBudget = "",
+  setBriefBudget = () => {},
+  briefCat = "concept" as "tfp" | "paid" | "opencall" | "concept",
+  setBriefCat = () => {},
   openHamburger,
   unreadNotificationCount,
 }: CollabScreenProps) {
+  const submitBrief = async () => {
+    if (!briefTitle.trim()) { showToast("Title required"); return; }
+    try {
+      const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "brief", title: briefTitle.trim(), desc: briefDesc.trim(), budget: briefBudget.trim() || "Negotiable", cat: briefCat, tags: [], paid: briefCat === "paid" }) });
+      if (!r.ok) throw new Error("failed");
+      setUserBriefs((prev: any[]) => [{ id: uid(), title: briefTitle.trim(), desc: briefDesc.trim(), budget: briefBudget.trim() || "Negotiable", tags: [], cat: briefCat, author: currentUser.name, authorImg: currentUser.avatar, deadline: "Flexible", urgent: false, nsfw: false }, ...prev]);
+      setShowPostBrief(false);
+      setBriefTitle(""); setBriefDesc(""); setBriefBudget(""); setBriefCat("concept");
+      showToast("Brief posted!");
+    } catch { showToast("Failed to post brief"); }
+  };
   return (
     <div className={"screen-el" + (screen === "briefs" ? " active" : "")}>
       <div className="hdr">
@@ -168,6 +195,26 @@ export const CollabScreen = memo(function CollabScreen({
           ));
         })()}
       </div>
+      {showPostBrief && (
+        <div className="modal-overlay" onClick={() => setShowPostBrief(false)}>
+          <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 20 }}>
+            <div className="modal-title" style={{ marginBottom: 4 }}>Post a Brief</div>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Share a project, collab, or open call.</div>
+            <input className="inp" placeholder="Title" value={briefTitle} onChange={e => setBriefTitle(e.target.value)} style={{ marginBottom: 8 }} />
+            <textarea className="inp" placeholder="Describe the project" rows={3} value={briefDesc} onChange={e => setBriefDesc(e.target.value)} style={{ marginBottom: 8, resize: "none" }} />
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              <input className="inp" placeholder="Budget" value={briefBudget} onChange={e => setBriefBudget(e.target.value)} style={{ flex: 1 }} />
+              <select className="inp" value={briefCat} onChange={e => setBriefCat(e.target.value as any)} style={{ flex: 1 }}>
+                <option value="concept">Concept</option>
+                <option value="tfp">TFP</option>
+                <option value="paid">Paid</option>
+                <option value="opencall">Open Call</option>
+              </select>
+            </div>
+            <button className="btn btn-gold" style={{ width: "100%", fontWeight: 700 }} onClick={submitBrief}>Post Brief</button>
+          </div>
+        </div>
+      )}
       <Nav active="briefs" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );

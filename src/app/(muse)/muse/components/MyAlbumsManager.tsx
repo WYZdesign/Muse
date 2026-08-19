@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { FiPlus, FiLock, FiGlobe, FiUsers, FiTrash2, FiX } from "react-icons/fi";
+import { FiPlus, FiLock, FiGlobe, FiUsers, FiTrash2, FiX, FiHeart } from "react-icons/fi";
 import { getAccessToken, authFetch } from "../lib/api";
 
 type Album = {
@@ -50,6 +50,7 @@ export default function MyAlbumsManager({
   const [newAccess, setNewAccess] = useState<"public" | "private" | "invite">("public");
   const [accessList, setAccessList] = useState<{ viewer_profile_id: string }[]>([]);
   const [showInviteManager, setShowInviteManager] = useState(false);
+  const [liked, setLiked] = useState(false);
 
   const authedFetch = useCallback((body: Record<string, unknown>) =>
     authFetch("/api/muse", { method: "POST", body: JSON.stringify(body) }).then(r => r.json())
@@ -68,11 +69,25 @@ export default function MyAlbumsManager({
 
   const openAlbum = useCallback((album: Album) => {
     setSelected(album);
+    setLiked(false);
     authFetch(`/api/muse?type=album-photos&album_id=${album.id}`)
       .then(r => r.json())
       .then(d => setPhotos(Array.isArray(d.photos) ? d.photos : []))
       .catch(() => setPhotos([]));
-  }, []);
+    authedFetch({ action: "view-album", albumId: album.id }).catch(() => {});
+  }, [authedFetch]);
+
+  const likeAlbum = useCallback(async () => {
+    if (!selected) return;
+    const d = await authedFetch({ action: "like-album", albumId: selected.id });
+    if (d.success || d.alreadyLiked) {
+      setLiked(true);
+      setSelected(prev => prev ? { ...prev, like_count: (prev.like_count || 0) + (d.alreadyLiked ? 0 : 1) } : prev);
+      refreshAlbums();
+    } else {
+      showToast(d.error || "Failed to like");
+    }
+  }, [selected, authedFetch, refreshAlbums, showToast]);
 
   const createAlbum = useCallback(async () => {
     if (!newTitle.trim()) { showToast("Album title required"); return; }
@@ -155,6 +170,7 @@ export default function MyAlbumsManager({
             <div style={{ fontSize: 16, fontWeight: 700 }}>{selected.title}</div>
             <div style={{ fontSize: 12, color: "var(--muted)" }}>{selected.photo_count} photos · {selected.view_count} views · {selected.like_count} likes</div>
           </div>
+          <button className="hdr-btn" onClick={likeAlbum} aria-label="Like album" style={{ color: liked ? "var(--coral)" : undefined }}><FiHeart size={16} /></button>
           <button className="hdr-btn" onClick={() => deleteAlbum(selected.id)}><FiTrash2 size={16} /></button>
         </div>
 

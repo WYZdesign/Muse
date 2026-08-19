@@ -183,7 +183,12 @@ export const FeedScreen = memo(function FeedScreen({
                     setFeedMedia([]);
                     const moment = { id: uid(), author: currentUser.name, avatar: currentUser.avatar, type: feedMedia.length ? "photo" : "text", text: txt, img: feedMedia[0] || undefined, media: [...feedMedia], time: "Just now" };
                     setStories(prev => [moment, ...prev]);
-                    showToast("Moment posted!");
+                    try {
+                      await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-moment", text: txt, img: feedMedia[0] || "" }) });
+                      showToast("Moment posted!");
+                    } catch {
+                      showToast("Moment posted locally");
+                    }
                   }
                 }}
               >
