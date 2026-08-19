@@ -177,3 +177,37 @@ Logged in as `torree.marcel@gmail.com` and browsed the live app, capturing conso
 3. **Hook extraction** — IN PROGRESS. `useChatState` extracted (`25e3444`) as proof-of-pattern (7 state vars moved to `src/app/(muse)/muse/hooks/useChatState.ts`; `tsc` + build + 46 tests green). **10 hooks remain** per Claude's spec: `useAuthState`, `useDiscoverState`, `useBookingState`, `useProfileState`, `useFeedState`, `useCommunityState`, `useBriefsState`, `useSettingsState`, `usePersonalityTestState` (`useAppShellState` stays in page.tsx). One hook per commit, `tsc` + unit tests after each.
 4. **Untraced screens** — Collab/Briefs lifecycle, Community beyond join, Subscription Stripe flow, Codex, Settings sub-panels, admin panel, match/like/super-like path.
 5. **End-to-end payment test** — escrow/Checkout/capture is code-complete + UI-wired but not live-tested (needs Stripe test keys + browser + onboarded host Connect account).
+
+---
+
+## 14. REQUEST FOR CLAUDE — full user-journey ghost trace (everything we never searched)
+
+The core loop is verified (signup → discover → match → chat → book → pay → complete → review). But most other surfaces were never traced end-to-end. **Ghost every journey below** — for each: does it work end-to-end, where does each action lead, is the outcome *successful* (real DB write, correct state, visible to the other party), and where are the dead ends / no-ops / 4xx-5xx?
+
+### Journeys to ghost (keep the user's intent in mind — they want to DO the thing)
+1. **Forum** — create a post, comment, reply, upvote, sort, expand a thread (`NetworkScreen`/`FeedScreen` "forum" tab). Does the post persist + show for others? Is there a real `forum` action write path, or read-only?
+2. **Feed** — post text + photo, react, comment, filter (`FeedScreen`). Does the post persist? Does the comment/reaction write anywhere?
+3. **Collab briefs** — create a brief, apply to someone's brief, save a brief, filter (`CollabScreen`). Does `brief-apply` notify the owner? Does `brief` (create) persist to `muse_briefs`?
+4. **Community** — join a group, RSVP an event (`CommunityScreen`). Do `join-community` / RSVP persist, or are they local-state only?
+5. **Moments/BTS** — post a moment, view stories, like (`BtsScreen`). `create-moment` + `type=moments` were just built — confirm the post path is wired client-side too, and expires at 24h.
+6. **Portfolio/albums** — create album, add/remove photos, set access tiers, grant/revoke access, like (`MyAlbumsManager`). CRUD is verified; trace the *access-tier* and *like-album* flows end-to-end.
+7. **Network** — connect, pros list, forum (`NetworkScreen`). Does `connect` notify the target?
+8. **Settings** — every sub-panel: `save-preferences`, NSFW toggle + age gate, notification prefs, connected accounts (Stripe Connect onboarding), delete account.
+9. **Referral** — generate code, copy link, refer (`ProfileScreen` → `/api/muse/referral`). Does the code actually unlock a perk on redemption?
+10. **Subscription** — Pro Checkout redirect → webhook → tier upgrade → paywalled features unlock.
+11. **Admin** — admin-brain query, reports, strikes, appeals, suspend/ban (`admin/page.tsx` + `ModerationPanel`). Do strikes/appeals/suspension actually gate the user?
+12. **Safety** — safety check-in (`respond-checkin`), trusted contact (`share-safety-details`), disclosure (verified).
+13. **Profile** — edit profile, share profile, badge system, prompt bank (`save-prompt-response`), personality/self-discovery test.
+14. **Codex** — badges/glossary/matching (`CodexScreen`).
+15. **Search** — discover search, muses search, filter modal.
+16. **Block/unmatch/report** — do they persist + remove the target from view for the reporter?
+
+### Method (same standard as the booking-loop trace)
+- Trace each screen's actual `action: "..."` / `?type=...` calls against the API route inventory (44+ actions).
+- Flag: dead buttons, no-op handlers (`onClick={() => {}}`), actions that 400/500, UI that doesn't reflect the DB write, and anything "wired but does nothing."
+- Verify against **code**, not the UI impression. Report a ✅/⚠️/❌ table like the booking-loop pass.
+
+### Also still open (unchanged)
+- **9 hooks remain** in the `page.tsx` state extraction (`useChatState` + `useBriefsState` done; next: `useAuthState`, `useDiscoverState`, `useBookingState`, `useProfileState`, `useFeedState`, `useCommunityState`, `useSettingsState`, `usePersonalityTestState`).
+- **NSFW blur** — in progress (card hero located at `DiscoverScreen.tsx:310-317`); blur NSFW profile photos behind an "18+ — tap to reveal" gate so the app doesn't appear to openly display adult content.
+- **Live payment test** — needs Stripe test keys + browser.

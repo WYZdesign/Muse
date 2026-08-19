@@ -26,7 +26,9 @@ async function getRekognition() {
 
 const MODERATION_CATEGORIES: Record<string, { block: boolean; report: boolean }> = {
   "Explicit Nudity": { block: true, report: true },
-  "Suggestive": { block: true, report: false },
+  // Boudoir / tasteful / artistic nudity is legitimate on Muse (age-gated, not
+  // blocked) — "Suggestive" is allowed through and flagged for the age-gate blur.
+  "Suggestive": { block: false, report: false },
   "Violence": { block: true, report: true },
   "Visually Disturbing": { block: true, report: true },
   "Rude Gestures": { block: false, report: false },
