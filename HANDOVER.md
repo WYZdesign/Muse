@@ -133,19 +133,25 @@ Other SQL files in `sql/` are historical migrations already baked into the schem
   - **SessionsScreen** "List a Session" button + form modal (calls `create-session`).
   - **BTS/Moments live feed**: `muse_moments` table + `create-moment` action + `GET /api/muse?type=moments`, replacing the `DEMO_MOMENTS` fallback.
   - **Booking payment**: `create-booking-checkout` (Stripe Checkout redirect, manual-capture escrow, 5% commission, destination charge — no client Stripe.js needed). Webhook `checkout.session.completed` stores the PaymentIntent + marks the booking payment `held`.
+- `8b7faf6` — **full booking management UI** (the core loop is now complete end-to-end):
+  - `GET /api/muse?type=bookings` returns the user's bookings as booker + host (joined session + profile).
+  - `page.tsx`: `myBookings` state + fetch + passed to SessionsScreen.
+  - **SessionsScreen "My Bookings"** (booker): real `muse_bookings` with status badge + Pay (confirmed) / Complete / Leave Review (completed).
+  - **SessionsScreen "Requests"** (host): accept/decline (`respond-booking`) + Complete + Leave Review.
+  - **Pay button**: calls `create-booking-checkout` → redirects to Stripe Checkout (parses session `rate` text to cents).
+  - **Review modal**: 5-star + body, submits via `submit-review`.
 
 ### Corrections to the prior audit (verified against code, not assumed)
 1. **Payment path already existed.** `create-payment` (connect route) already created a PaymentIntent with 5% commission (`COMMISSION_RATE = 0.05`) + `transfer_data.destination` to the host. The "no payment tied to a booking" claim was wrong. What was actually missing: escrow, UI wiring, and a client-usable flow. Escrow + Checkout flow now added.
 2. **"Send note" is NOT missing.** It's `doLikeWithNote` (page.tsx) → note modal → `action: "match"` with `intent` + the note text (page.tsx:978). No separate `send-note` action is required.
 
 ### Manual actions required (human)
-1. Run **`sql/MUSE_BOOKING_LOOP_20260818.sql`** (`completed_at` + `muse_reviews` table) and **`sql/MUSE_MOMENTS_20260818.sql`** (`muse_moments` table) — in BOTH prod (`ejbwjmzrazfgtisqsamf`) and staging (`rwgofoxqycpzsvxfnozt`) SQL Editors.
+1. Run **`sql/MUSE_BOOKING_LOOP_20260818.sql`** (`completed_at` + `muse_reviews` table) and **`sql/MUSE_MOMENTS_20260818.sql`** (`muse_moments` table) — in BOTH prod (`ejbwjmzrazfgtisqsamf`) and staging (`rwgofoxqycpzsvxfnozt`) SQL Editors. ✅ CONFIRMED RUN — verified via PostgREST (`muse_reviews` + `muse_moments` both return 200 `[]`).
 2. Confirm the Stripe webhook endpoint is registered for `checkout.session.completed` + `payment_intent.succeeded` (it already handles them; ensure the booking Checkout's events reach it).
 
 ### Remaining (not yet built / not end-to-end tested)
-1. **Payment client UI** — `create-booking-checkout` returns `{ url }`; the client must call it and `window.location.href = url` after a booking is confirmed. No "Pay" button is wired in SessionsScreen bookings yet. Backend complete; this is the one remaining client piece.
-2. **End-to-end payment test** — the escrow/Checkout/capture flow is backend-complete but NOT live-tested (needs Stripe test keys + browser).
-3. **Untraced screens** (from the audit "not yet traced" list): Collab/Briefs full lifecycle, Community beyond join, Subscription Stripe flow, Codex, Settings sub-panels, admin panel, match/like/super-like creation path, disclosure trigger's client-side keyword weakness.
+1. **End-to-end payment test** — the escrow/Checkout/capture flow is backend-complete + UI-wired, but NOT live-tested (needs Stripe test keys + a browser + a host with an onboarded Connect account).
+2. **Untraced screens** (from the audit "not yet traced" list): Collab/Briefs full lifecycle, Community beyond join, Subscription Stripe flow, Codex, Settings sub-panels, admin panel, match/like/super-like creation path, disclosure trigger's client-side keyword weakness.
 
 ### Verification done this session
 - `npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. (Playwright integration/smoke not re-run — they target the deployed app and are unaffected by these backend additions.)
