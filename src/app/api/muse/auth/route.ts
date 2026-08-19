@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       const { data: authUser, error: authErr } = await sb.auth.admin.createUser({
         email: email.toLowerCase(),
         password,
-        email_confirm: false,
+        email_confirm: true,
         user_metadata: { name: name || email.split("@")[0] },
       });
       if (authErr) return safeServerError(authErr, "register auth");

@@ -30,7 +30,8 @@ import { NetworkScreen } from "./screens/NetworkScreen";
 import { PortfolioScreen } from "./screens/PortfolioScreen";
 import { BtsScreen } from "./screens/BtsScreen";
 import { CodexScreen } from "./screens/CodexScreen";
-import { DiscoverTutorial } from "./screens/DiscoverTutorial";
+import { TutorialOverlay } from "./screens/TutorialOverlay";
+import { TUTORIALS } from "./screens/tutorials";
 import { ProfileScreen } from "./screens/ProfileScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { SubscriptionScreen } from "./screens/SubscriptionScreen";
@@ -220,7 +221,7 @@ function MusePage() {
   const [showActivityFeed, setShowActivityFeed] = useState(false);
   const [showHamburger, setShowHamburger] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
-  const [showDiscoverTutorial, setShowDiscoverTutorial] = useState(false);
+  const [activeTutorial, setActiveTutorial] = useState<string | null>(null);
 
   // ═══ TRUST & SAFETY STATE ═══
   const [showDisclosureModal, setShowDisclosureModal] = useState(false);
@@ -643,6 +644,23 @@ function MusePage() {
     // Persistence is handled by saveState (theme is part of its payload) —
     // no separate read-modify-write here to avoid a lost-update race on muse_v1.
   }, [theme]);
+
+  // First-visit tutorials: show the matching overlay the first time a user
+  // lands on a screen that has a tutorial, then remember it so we never nag.
+  useEffect(() => {
+    if (screen === "auth" || screen === "onboard" || screen === "chat" || screen === "portfolio" || screen === "codex" || screen === "network") return;
+    const def = TUTORIALS[screen];
+    if (!def) return;
+    if (activeTutorial) return;
+    let seen: string[] = [];
+    try { seen = JSON.parse(safeGetItem("muse_tutorials_seen") || "[]"); } catch {}
+    if (Array.isArray(seen) && seen.includes(def.key)) return;
+    // Don't auto-fire during the very first discover tutorial (already handled
+    // by the "Enter Muse" flow) — only auto-fire for subsequent screens.
+    if (def.key === "discover") return;
+    try { safeSetItem("muse_tutorials_seen", JSON.stringify([...(Array.isArray(seen) ? seen : []), def.key])); } catch {}
+    setActiveTutorial(def.key);
+  }, [screen, activeTutorial]);
 
   const showToast = useCallback((msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); }, []);
 
@@ -1409,7 +1427,7 @@ function MusePage() {
       <a href="#muse-main" className="sr-only" style={{zIndex:99999}} onFocus={(e)=>{e.currentTarget.style.cssText="position:fixed;top:0;left:0;padding:8px 16px;background:var(--gold);color:#0a0612;fontWeight:700;borderRadius:0 0 8px 0;width:auto;height:auto;clip:auto;overflow:visible;margin:0"}} onBlur={(e)=>{e.currentTarget.removeAttribute("style")}}>Skip to main content</a>
       <CardPreloader currentIdx={currentIdx} profiles={filteredProfiles} />
       <Confetti active={showConfetti} />
-      {showDiscoverTutorial && <DiscoverTutorial onDone={() => setShowDiscoverTutorial(false)} />}
+      {activeTutorial && TUTORIALS[activeTutorial] && <TutorialOverlay tutorial={TUTORIALS[activeTutorial]} onDone={() => setActiveTutorial(null)} />}
       {swipeDir && <SwipeParticles active dir={swipeDir} />}
       <BackgroundScene flash={screenFlash} />
       {showMatchOverlay && (
@@ -1548,7 +1566,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                   {formErrors.email && <div className="error-msg">{formErrors.email}</div>}
                   <div style={{position:"relative"}}>
                     <input className={"inp"+(formErrors.pass?" error":"")} placeholder="Password" type={showPass?"text":"password"} value={authPass} onChange={e=>{setAuthPass(e.target.value);setFormErrors(p=>({...p,pass:""}))}} style={{paddingRight:44}} />
-                    <button type="button" onClick={()=>setShowPass(p=>!p)} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:18,padding:8,lineHeight:1,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}} aria-label={showPass?"Hide password":"Show password"}>{showPass?"🙈":"👁️"}</button>
+                    <button type="button" onClick={()=>setShowPass(p=>!p)} style={{position:"absolute",right:4,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:18,padding:0,lineHeight:1,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center"}} aria-label={showPass?"Hide password":"Show password"}>{showPass?"🙈":"👁️"}</button>
                   </div>
                   {authMode==="signup" && authPass && (()=>{const l=authPass.length;const u=/[A-Z]/.test(authPass);const y=/[!@#$%^&*]/.test(authPass);const s=l>=8&&u&&y?l>=12?4:3:l>=6?2:1;const lbl=["","Weak","Fair","Strong","Very strong"][s];const col=["","var(--sunset)","var(--sunset-orange)","var(--amber)","var(--mint)"][s];const t=["","weak","fair","strong","vstrong"][s];return(<div><div className="pw-meter-label" style={{color:col}}>{lbl}</div><div className="pw-meter-wrap"><div className={"pw-meter-bar"+(s>=1?" "+t:"")}/><div className={"pw-meter-bar"+(s>=2?" "+t:"")}/><div className={"pw-meter-bar"+(s>=3?" "+t:"")}/><div className={"pw-meter-bar"+(s>=4?" "+t:"")}/></div></div>);})()}
                   {formErrors.pass && <div className="error-msg">{formErrors.pass}</div>}
@@ -1580,7 +1598,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div className="sparkle" style={{top:"20%",right:"10%",fontSize:18}}>✧</div>
                     <div className="sparkle" style={{bottom:"30%",left:"15%",fontSize:20}}>✦</div>
                     <div className="sparkle" style={{bottom:"15%",right:"6%",fontSize:16}}>✧</div>
-                    <div className="hero-text">Find your Muse</div>
+                    <div className="hero-text" style={{textAlign:"center"}}>Find your Muse</div>
                     <div className="hero-sub">Where creatives find <em>real connections</em></div>
                     <div className="hero-quote">"Creativity craves connection"</div>
                     <button className="btn btn-gold" onClick={()=>setObStep(1)}>Get Started</button>
@@ -1593,8 +1611,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <input className="inp" placeholder="Display Name" value={obData.name||""} onChange={e=>setObData(d=>({...d,name:e.target.value}))} />
                     <input className="inp" placeholder="Location (City, State)" value={obData.loc||""} onChange={e=>setObData(d=>({...d,loc:e.target.value}))} />
                     <textarea className="inp" placeholder="Who are you as a creative?" rows={3} value={obData.bio||""} onChange={e=>setObData(d=>({...d,bio:e.target.value}))} />
-                    <button className="btn btn-gold" onClick={()=>setObStep(2)}>Next</button>
-                    <button className="ob-skip" onClick={()=>setObStep(2)}>Skip for now</button>
+                    <button className="btn btn-gold" disabled={!(obData.name||"").trim()} style={!(obData.name||"").trim()?{opacity:0.5}:undefined} onClick={()=>setObStep(2)}>Next</button>
                   </div>
                 )}
                 {obStep === 2 && (
@@ -1606,8 +1623,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <div key={t} className={"chip"+(obData.type===t?" sel":"")} onClick={()=>setObData(d=>({...d,type:t}))}><span>{t}</span></div>
                       ))}
                     </div>
-                    <button className="btn btn-gold" onClick={()=>setObStep(3)}>Next</button>
-                    <button className="ob-skip" onClick={()=>setObStep(3)}>Skip for now</button>
+                    <button className="btn btn-gold" disabled={!obData.type} style={!obData.type?{opacity:0.5}:undefined} onClick={()=>setObStep(3)}>Next</button>
                   </div>
                 )}
                 {obStep === 3 && (
@@ -1619,8 +1635,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <div key={l} className={"chip"+((obData.looking||[]).includes(l)?" sel":"")} onClick={()=>{const arr=obData.looking||[];setObData(d=>({...d,looking:arr.includes(l)?arr.filter(x=>x!==l):[...arr,l]}))}}><span>{l}</span></div>
                       ))}
                     </div>
-                    <button className="btn btn-gold" onClick={()=>setObStep(4)}>Next</button>
-                    <button className="ob-skip" onClick={()=>setObStep(4)}>Skip for now</button>
+                    <button className="btn btn-gold" disabled={!(obData.looking||[]).length} style={!(obData.looking||[]).length?{opacity:0.5}:undefined} onClick={()=>setObStep(4)}>Next</button>
                   </div>
                 )}
                 {obStep === 4 && (
@@ -1632,8 +1647,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                         <div key={s} className={"chip"+((obData.styles||[]).includes(s)?" sel":"")} onClick={()=>{const arr=obData.styles||[];setObData(d=>({...d,styles:arr.includes(s)?arr.filter(x=>x!==s):[...arr,s]}))}}><span>{s}</span></div>
                       ))}
                     </div>
-                    <button className="btn btn-gold" onClick={()=>setObStep(5)}>Next</button>
-                    <button className="ob-skip" onClick={()=>setObStep(5)}>Skip for now</button>
+                    <button className="btn btn-gold" disabled={!(obData.styles||[]).length} style={!(obData.styles||[]).length?{opacity:0.5}:undefined} onClick={()=>setObStep(5)}>Next</button>
                   </div>
                 )}
                 {obStep === 5 && (
@@ -1898,7 +1912,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                           try { await authFetch("/api/muse/referral", { method: "POST", body: JSON.stringify({ action: "apply", referralCode: obData.referralCode.trim().toUpperCase() }) }); } catch {}
                         }
                       }
-                      setScreen("discover");showToast("Welcome to Muse!");setShowDiscoverTutorial(true)
+                      setScreen("discover");showToast("Welcome to Muse!");setActiveTutorial("discover")
                     }}>Enter Muse</button>
                     <button className="back-link" onClick={()=>setObStep(16)}>Back</button>
                   </div>
@@ -2407,7 +2421,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <span style={{fontWeight:400}}>({Math.max(0,Math.ceil((boostEnd-Date.now())/60000))}m)</span>
         </div>
       )}
-      <SupportChat open={supportOpen} onClose={()=>setSupportOpen(false)} />
+      <SupportChat open={supportOpen} onClose={()=>setSupportOpen(false)} onStartTutorial={(key) => setActiveTutorial(key)} />
     </div>
   );
 }

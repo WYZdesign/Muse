@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { FiArrowLeft, FiMenu, FiEdit2, FiSettings } from "react-icons/fi";
+import { FiArrowLeft, FiEdit2, FiSettings } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen, Match } from "../components/types";
 
@@ -99,7 +99,6 @@ export const ProfileScreen = memo(function ProfileScreen({
       <div className="hdr" style={{ justifyContent: "space-between" }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
-          <button className="hdr-btn" onClick={openHamburger} aria-label="Menu"><FiMenu size={18} /></button>
         </div>
         <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>Your Profile</div>
         <div style={{ display: "flex", gap: 10 }}>

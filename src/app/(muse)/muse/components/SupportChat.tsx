@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { TUTORIALS } from "../screens/tutorials";
 
 interface ChatMsg {
   role: "user" | "assistant";
@@ -26,12 +27,13 @@ const PANEL = {
 
 const GREETING = "Hey, I'm Muse, your creative wingmate. 🌊 Whether you're figuring out bookings, wondering how verification works, or just want tips on putting your best work forward, I've got you. What can I help you with?";
 
-export default function SupportChat({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function SupportChat({ open, onClose, onStartTutorial }: { open: boolean; onClose: () => void; onStartTutorial?: (key: string) => void }) {
   const [messages, setMessages] = useState<ChatMsg[]>([
     { role: "assistant", text: GREETING },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showTours, setShowTours] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,6 +62,8 @@ export default function SupportChat({ open, onClose }: { open: boolean; onClose:
     }
   }
 
+  const tourEntries = Object.values(TUTORIALS);
+
   if (!open) return null;
 
   return (
@@ -74,6 +78,32 @@ export default function SupportChat({ open, onClose }: { open: boolean; onClose:
         </div>
         <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.6)", fontSize: 20, cursor: "pointer", padding: 4 }} aria-label="Close">✕</button>
       </div>
+
+      {/* Guided tours quick access */}
+      <div style={{ padding: "10px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <button
+          onClick={() => setShowTours(s => !s)}
+          style={{ padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg,#D4A5FF,#B388FF)", border: "none", color: "#0a0612", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}
+        >
+          🎓 Guided Tours
+        </button>
+        <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.5)" }}>Step-by-step walkthroughs of every page</span>
+      </div>
+      {showTours && (
+        <div style={{ padding: "4px 14px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", maxHeight: "40%", overflowY: "auto" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {tourEntries.map(t => (
+              <button
+                key={t.key}
+                onClick={() => { if (onStartTutorial) onStartTutorial(t.key); setShowTours(false); onClose(); }}
+                style={{ padding: "8px 14px", borderRadius: 12, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5f0ff", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}
+              >
+                {t.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
         {messages.map((m, i) => (

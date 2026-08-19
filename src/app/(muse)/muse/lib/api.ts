@@ -11,6 +11,9 @@ export async function authFetch(url: string, options: RequestInit = {}): Promise
   const token = getAccessToken();
   const headers = new Headers(options.headers);
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  if (!headers.has("Content-Type") && options.body) headers.set("Content-Type", "application/json");
+  // Only set Content-Type for string bodies (JSON). For FormData / Blob /
+  // ArrayBuffer bodies, the browser must set the multipart boundary itself —
+  // forcing application/json here corrupts the request and breaks uploads.
+  if (!headers.has("Content-Type") && typeof options.body === "string") headers.set("Content-Type", "application/json");
   return fetch(url, { ...options, headers });
 }
