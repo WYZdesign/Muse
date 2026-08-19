@@ -236,6 +236,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ moments: data || [] });
     }
 
+    if (type === "bookings") {
+      if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      const { data: asBooker } = await sb.from("muse_bookings")
+        .select("id, status, created_at, completed_at, session_id(id, title, type, rate, duration, img), host_id(id, name, avatar, type)")
+        .eq("user_id", profileId).order("created_at", { ascending: false });
+      const { data: asHost } = await sb.from("muse_bookings")
+        .select("id, status, created_at, completed_at, session_id(id, title, type, rate, duration, img), user_id(id, name, avatar, type)")
+        .eq("host_id", profileId).order("created_at", { ascending: false });
+      return NextResponse.json({ asBooker: asBooker || [], asHost: asHost || [] });
+    }
+
     if (type === "notifications" && user) {
       const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ notifications: [] });

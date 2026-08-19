@@ -25,6 +25,8 @@ export interface SessionsScreenProps {
   openHamburger?: () => void;
   unreadNotificationCount?: number;
   liveSessions?: any[];
+  myBookings?: { asBooker: any[]; asHost: any[] };
+  setMyBookings?: React.Dispatch<React.SetStateAction<{ asBooker: any[]; asHost: any[] }>>;
   setDisclosureTarget?: (t: any) => void;
   setDisclosureBookingId?: (id: string) => void;
   setShowDisclosureModal?: (v: boolean) => void;
@@ -50,6 +52,8 @@ export const SessionsScreen = memo(function SessionsScreen({
   unreadNotificationCount,
   setMatches = () => {},
   liveSessions = [],
+  myBookings = { asBooker: [], asHost: [] },
+  setMyBookings = () => {},
   setDisclosureTarget = () => {},
   setDisclosureBookingId = () => {},
   setShowDisclosureModal = () => {},
@@ -73,6 +77,66 @@ export const SessionsScreen = memo(function SessionsScreen({
       setCreating(false);
     }
   };
+
+  const [reviewTarget, setReviewTarget] = useState<any>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewBody, setReviewBody] = useState("");
+  const [reviewSending, setReviewSending] = useState(false);
+
+  const refreshBookings = async () => {
+    try {
+      const r = await authFetch("/api/muse?type=bookings");
+      const j = await r.json();
+      if (j.asBooker) setMyBookings({ asBooker: j.asBooker || [], asHost: j.asHost || [] });
+    } catch { /* non-fatal */ }
+  };
+
+  const respondBooking = async (bookingId: string, response: "accept" | "decline") => {
+    try {
+      const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "respond-booking", bookingId, response }) });
+      if (!r.ok) throw new Error("failed");
+      showToast(response === "accept" ? "Booking accepted — pre-shoot check-in sent" : "Booking declined");
+      refreshBookings();
+    } catch { showToast("Failed to respond"); }
+  };
+
+  const completeBooking = async (bookingId: string) => {
+    try {
+      const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "complete-booking", bookingId }) });
+      if (!r.ok) throw new Error("failed");
+      showToast("Shoot marked complete");
+      refreshBookings();
+    } catch { showToast("Failed to complete"); }
+  };
+
+  const payBooking = async (booking: any) => {
+    const host = booking.host_id;
+    const session = booking.session_id;
+    if (!host?.id) { showToast("Host unavailable"); return; }
+    const m = String(session?.rate || "").match(/\d+/);
+    const amountCents = m ? parseInt(m[0]) * 100 : 0;
+    if (!amountCents) { showToast("This session has no numeric rate — ask the host to set one"); return; }
+    try {
+      const r = await authFetch("/api/muse/connect", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-booking-checkout", payeeId: host.id, amountCents, bookingId: booking.id, description: `Booking: ${session?.title || "Muse session"}` }) });
+      const j = await r.json();
+      if (j.url) { window.location.href = j.url; }
+      else { showToast(j.error || "Payment unavailable"); }
+    } catch { showToast("Failed to start payment"); }
+  };
+
+  const submitReview = async () => {
+    if (!reviewTarget) return;
+    setReviewSending(true);
+    try {
+      const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit-review", bookingId: reviewTarget.id, rating: reviewRating, body: reviewBody }) });
+      if (!r.ok) throw new Error("failed");
+      showToast("Review submitted");
+      setReviewTarget(null);
+      setReviewBody("");
+      setReviewRating(5);
+      refreshBookings();
+    } catch { showToast("Failed to submit review"); } finally { setReviewSending(false); }
+  };
   return (
     <div className={"screen-el" + (screen === "sessions" ? " active" : "")}>
       <div className="hdr">
@@ -88,34 +152,46 @@ export const SessionsScreen = memo(function SessionsScreen({
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
         {sessTab === "sessions" && (
           <>
-            {/* My Bookings */}
-            {matches.filter(m => m.booked).length > 0 && (
-              <>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>My Bookings</div>
-                {matches.filter(m => m.booked).map(m => (
-                  <div key={m.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
-                    <img loading="lazy" src={m.img} alt={m.name} style={{ width: "25%", alignSelf: "stretch", minHeight: 120, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
-                    <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                      <div className="conn-name" style={{ fontSize: 15 }}>{m.name}</div>
-                      <div className="conn-meta" style={{ fontSize: 12 }}>{m.type} · Booked Session</div>
-                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                        <button className="btn btn-gold" style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap" }} onClick={() => { openChat(m); }}>Message</button>
-                        <button className="btn btn-outline" style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap" }} onClick={() => { setChatTarget(m); showScreen("chat"); }}>Details</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <div style={{ height: 16 }} />
-              </>
-            )}
-            {/* Empty state — no fabricated bookings */}
-            {matches.filter(m => m.booked).length === 0 && (
-              <div style={{ textAlign: "center", padding: "32px 20px" }}>
+            {/* My Bookings (real) */}
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>My Bookings</div>
+            {myBookings.asBooker.length === 0 && (
+              <div style={{ textAlign: "center", padding: "24px 20px" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>No bookings yet</div>
-                <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>Book a session with a creative below. Your confirmed bookings will show up here.</div>
+                <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>Book a session with a creative below. Your bookings will show up here.</div>
               </div>
             )}
+            {myBookings.asBooker.map(b => {
+              const host = b.host_id || {};
+              const sess = b.session_id || {};
+              const label = b.status === "pending" ? "Awaiting host" : b.status === "confirmed" ? "Confirmed" : b.status === "completed" ? "Completed" : "Cancelled";
+              const labelBg = b.status === "completed" ? "rgba(152,251,152,0.15)" : b.status === "confirmed" ? "rgba(255,215,0,0.15)" : b.status === "cancelled" ? "rgba(255,100,100,0.15)" : "rgba(255,255,255,0.08)";
+              const labelColor = b.status === "completed" ? "#98fb98" : b.status === "confirmed" ? "var(--gold)" : b.status === "cancelled" ? "#ff6464" : "var(--muted)";
+              return (
+                <div key={b.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
+                  <img loading="lazy" src={host.avatar || sess.img || ""} alt={host.name || "Host"} style={{ width: "25%", alignSelf: "stretch", minHeight: 120, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
+                  <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <div className="conn-name" style={{ fontSize: 15 }}>{host.name || "Host"}</div>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: labelBg, color: labelColor, whiteSpace: "nowrap" }}>{label}</span>
+                    </div>
+                    <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                      {b.status === "confirmed" && (
+                        <>
+                          <button className="btn btn-gold" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={() => payBooking(b)}>Pay</button>
+                          <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete</button>
+                        </>
+                      )}
+                      {b.status === "completed" && (
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setReviewTarget(b)}>Leave Review</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{ height: 12 }} />
             {/* Available Sessions */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "4px 0 10px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Available Sessions</div>
@@ -164,16 +240,44 @@ export const SessionsScreen = memo(function SessionsScreen({
         {sessTab === "requests" && (
           <div style={{ padding: "0 0 20px" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>Incoming Requests</div>
-            <div style={{ textAlign: "center", padding: "32px 20px" }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🗓️</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>No requests yet</div>
-              <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>When someone books one of your sessions, you'll see their request here to accept or decline.</div>
-            </div>
-            <div style={{ height: 16 }} />
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", margin: "4px 0 10px" }}>Sent Requests</div>
-            <div style={{ textAlign: "center", padding: "20px" }}>
-              <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>Requests you send to book a creative's session will show up here with their status.</div>
-            </div>
+            {myBookings.asHost.length === 0 && (
+              <div style={{ textAlign: "center", padding: "24px 20px" }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>🗓️</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>No requests yet</div>
+                <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>When someone books one of your sessions, you'll see their request here to accept or decline.</div>
+              </div>
+            )}
+            {myBookings.asHost.map(b => {
+              const booker = b.user_id || {};
+              const sess = b.session_id || {};
+              const label = b.status === "pending" ? "Pending" : b.status === "confirmed" ? "Confirmed" : b.status === "completed" ? "Completed" : "Cancelled";
+              return (
+                <div key={b.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
+                  <img loading="lazy" src={booker.avatar || sess.img || ""} alt={booker.name || "Booker"} style={{ width: "25%", alignSelf: "stretch", minHeight: 110, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
+                  <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <div className="conn-name" style={{ fontSize: 15 }}>{booker.name || "Booker"}</div>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: "rgba(255,255,255,0.08)", color: "var(--muted)" }}>{label}</span>
+                    </div>
+                    <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                      {b.status === "pending" && (
+                        <>
+                          <button className="btn btn-gold" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={() => respondBooking(b.id, "accept")}>Accept</button>
+                          <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => respondBooking(b.id, "decline")}>Decline</button>
+                        </>
+                      )}
+                      {b.status === "confirmed" && (
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete Shoot</button>
+                      )}
+                      {b.status === "completed" && (
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setReviewTarget(b)}>Leave Review</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -194,6 +298,21 @@ export const SessionsScreen = memo(function SessionsScreen({
               <input className="inp" placeholder="Location" value={newSession.location} onChange={e => setNewSession(p => ({ ...p, location: e.target.value }))} style={{ flex: 1 }} />
             </div>
             <button className="btn btn-gold" style={{ width: "100%", marginTop: 12, fontWeight: 700 }} onClick={submitSession} disabled={creating}>{creating ? "Listing..." : "List Session"}</button>
+          </div>
+        </div>
+      )}
+      {reviewTarget && (
+        <div className="modal-overlay" onClick={() => setReviewTarget(null)}>
+          <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, width: "90%", padding: 20 }}>
+            <div className="modal-title" style={{ marginBottom: 4 }}>Leave a Review</div>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>How was your shoot with {reviewTarget.host_id?.name || reviewTarget.user_id?.name || "them"}?</div>
+            <div style={{ display: "flex", gap: 6, marginBottom: 12, justifyContent: "center" }}>
+              {[1, 2, 3, 4, 5].map(n => (
+                <button key={n} onClick={() => setReviewRating(n)} style={{ background: "none", border: "none", fontSize: 30, cursor: "pointer", color: n <= reviewRating ? "var(--gold)" : "rgba(255,255,255,0.2)", lineHeight: 1 }}>{n <= reviewRating ? "★" : "☆"}</button>
+              ))}
+            </div>
+            <textarea className="inp" placeholder="Share your experience (optional)" rows={3} value={reviewBody} onChange={e => setReviewBody(e.target.value)} style={{ resize: "none" }} />
+            <button className="btn btn-gold" style={{ width: "100%", marginTop: 12, fontWeight: 700 }} onClick={submitReview} disabled={reviewSending}>{reviewSending ? "Submitting..." : "Submit Review"}</button>
           </div>
         </div>
       )}

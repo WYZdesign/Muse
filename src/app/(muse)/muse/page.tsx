@@ -142,6 +142,7 @@ function MusePage() {
   const [liveEvents, setLiveEvents] = useState<any[] | null>(null);
   const [liveCommunities, setLiveCommunities] = useState<typeof COMMUNITIES | null>(null);
   const [liveSessions, setLiveSessions] = useState<typeof SESSIONS | null>(null);
+  const [myBookings, setMyBookings] = useState<{ asBooker: any[]; asHost: any[] }>({ asBooker: [], asHost: [] });
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
@@ -1274,6 +1275,17 @@ function MusePage() {
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
 
+  // ═══ BOOKINGS: fetch real bookings (booker + host) ═══
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    let cancelled = false;
+    authFetch("/api/muse?type=bookings")
+      .then(r => r.json())
+      .then(d => { if (!cancelled && d.asBooker) setMyBookings({ asBooker: d.asBooker || [], asHost: d.asHost || [] }); })
+      .catch((err) => { trackError("fetch_bookings", { err: String(err) }); });
+    return () => { cancelled = true; };
+  }, [authUser?.profile?.id]);
+
   // ═══ BRIEFS: fetch real briefs from API ═══
   useEffect(() => {
     if (!authUser?.profile?.id) return;
@@ -1920,7 +1932,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
             <CommunityScreen screen={screen} showScreen={showScreen} commTab={commTab} setCommTab={setCommTab} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} />
 
-            <SessionsScreen screen={screen} showScreen={showScreen} sessTab={sessTab} setSessTab={setSessTab} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} uid={uid} currentUser={currentUser} setShowAgeVerification={setShowAgeVerification} liveSessions={liveSessions || undefined} setDisclosureTarget={setDisclosureTarget} setDisclosureBookingId={setDisclosureBookingId} setShowDisclosureModal={setShowDisclosureModal} setViewProfile={setViewProfile} />
+            <SessionsScreen screen={screen} showScreen={showScreen} sessTab={sessTab} setSessTab={setSessTab} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} uid={uid} currentUser={currentUser} setShowAgeVerification={setShowAgeVerification} liveSessions={liveSessions || undefined} myBookings={myBookings} setMyBookings={setMyBookings} setDisclosureTarget={setDisclosureTarget} setDisclosureBookingId={setDisclosureBookingId} setShowDisclosureModal={setShowDisclosureModal} setViewProfile={setViewProfile} />
 
             <NetworkScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} />
             <PortfolioScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} />
