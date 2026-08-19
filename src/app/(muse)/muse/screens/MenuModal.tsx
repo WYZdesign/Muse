@@ -325,6 +325,14 @@ export const MenuModal = memo(function MenuModal({
                   <div className="hamburger-item-icon" style={{ background: "linear-gradient(135deg,#FFD700,#FFBF00,#FF8A80)" }}><FiUser size={20} /></div>
                   <div><div className="hamburger-item-label">Edit Profile</div><div className="hamburger-item-desc">Update your bio, skills, portfolio</div></div>
                 </button>
+                <button className="hamburger-item" style={{ width: "100%", marginBottom: 6 }} onClick={() => { setHamburgerScreen(""); setShowHamburger(false); setScreen("settings"); }}>
+                  <div className="hamburger-item-icon" style={{ background: "linear-gradient(135deg,#D4A5FF,#B388FF,#7C4DFF)" }}><FiSettings size={20} /></div>
+                  <div><div className="hamburger-item-label">Account Settings</div><div className="hamburger-item-desc">Privacy, notifications, security</div></div>
+                </button>
+                <button className="hamburger-item" style={{ width: "100%", marginBottom: 6 }} onClick={() => { setShowHamburger(false); setSupportOpen(true); }}>
+                  <div className="hamburger-item-icon" style={{ background: "linear-gradient(135deg,#4DD0E1,#26C6DA,#00ACC1)" }}><FiHeadphones size={20} /></div>
+                  <div><div className="hamburger-item-label">Help &amp; Support</div><div className="hamburger-item-desc">Chat with the Muse assistant</div></div>
+                </button>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "20px 0 10px" }}>Muse Premium</div>
                 <div style={{ textAlign: "center", padding: 12, marginBottom: 10, background: "linear-gradient(135deg,rgba(255,215,0,0.08),rgba(255,138,128,0.06))", borderRadius: 16, border: "1px solid rgba(255,215,0,0.15)" }}>
                   <div style={{ fontSize: 24, marginBottom: 6 }}>✨</div>
@@ -338,10 +346,6 @@ export const MenuModal = memo(function MenuModal({
                   <div className="stat"><div className="stat-num">{currentUser.stats?.likes || 0}</div><div className="stat-label">Likes</div></div>
                   <div className="stat"><div className="stat-num">{currentUser.stats?.bookingsCompleted || 0}</div><div className="stat-label">Bookings</div></div>
                 </div>
-                <button className="hamburger-item" style={{ width: "100%", marginBottom: 6, marginTop: 20 }} onClick={() => { setShowHamburger(false); setSupportOpen(true); }}>
-                  <div className="hamburger-item-icon" style={{ background: "linear-gradient(135deg,#FFD700,#FFBF00,#FF8A80)" }}><FiHeadphones size={20} /></div>
-                  <div><div className="hamburger-item-label">Help &amp; Support</div><div className="hamburger-item-desc">Chat with the Muse assistant</div></div>
-                </button>
                 <button className="btn btn-gold" style={{ width: "100%", marginTop: 24, fontSize: 12, padding: "12px 0" }} onClick={doLogoutFull}>Log Out</button>
               </div>
             )}
