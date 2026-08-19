@@ -467,11 +467,13 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 
 .muse-hero-inner { position: relative; z-index: 2; text-align: center; max-width: 980px; }
 .muse-hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 9px; padding: 9px 18px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap; text-align: center;
+  gap: 9px; padding: 9px 18px; border-radius: 999px; max-width: 100%; box-sizing: border-box; line-height: 1.7;
   background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.24);
   color: var(--gold); font-size: 13px; letter-spacing: 0.12em; font-weight: 600; margin-bottom: 34px;
 }
 .muse-hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); animation: musePulse 1.8s ease-in-out infinite; }
+.muse-hero-eyebrow-text { white-space: normal; min-width: 0; }
 @keyframes musePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
 .muse-hero-title {
@@ -501,6 +503,13 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .muse-hero-scroll .track { width: 1px; height: 40px; background: rgba(255,255,255,0.15); position: relative; overflow: hidden; }
 .muse-hero-scroll .track::after { content: ""; position: absolute; top: -50%; left: 0; width: 100%; height: 50%; background: var(--gold); animation: museScrollLine 1.8s cubic-bezier(.4,0,.2,1) infinite; }
 @keyframes museScrollLine { to { top: 100%; } }
+
+/* ═══ MYSTICAL SECTION DIVIDER ═══ */
+.muse-divider {
+  display: flex; justify-content: center; width: 100%; margin: 0 auto; padding: 0 24px;
+  pointer-events: none; box-sizing: border-box;
+}
+.muse-divider svg { width: 100%; max-width: 760px; height: auto; opacity: 0.75; display: block; }
 
 /* ═══ MARQUEE ═══ */
 .muse-marquee { padding: 28px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: hidden; position: relative; }
@@ -773,6 +782,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   .muse-footer-grid { grid-template-columns: 1fr; }
   .muse-section { padding: 90px 20px; }
   .muse-hero { padding: 110px 20px 80px; }
+  .muse-hero-eyebrow { letter-spacing: 0.05em; padding: 8px 16px; border-radius: 20px; }
   .muse-form-row { flex-direction: column; gap: 10px; }
   .muse-cta-card { padding: 48px 24px; }
   .muse-cta { padding: 90px 20px 120px; }

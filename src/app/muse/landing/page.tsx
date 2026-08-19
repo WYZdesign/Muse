@@ -16,6 +16,29 @@ const QR_SOURCES = {
   personal: "?src=personal_invite",
 } as const;
 
+/* ── Mystical curly section divider ── */
+function SectionDivider() {
+  return (
+    <div className="muse-divider" aria-hidden="true">
+      <svg viewBox="0 0 1200 56" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="museDivGrad" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stopColor="#ffd700" stopOpacity="0" />
+            <stop offset="0.25" stopColor="#ff8a80" stopOpacity="0.5" />
+            <stop offset="0.5" stopColor="#ffd700" stopOpacity="0.95" />
+            <stop offset="0.75" stopColor="#d4a5ff" stopOpacity="0.5" />
+            <stop offset="1" stopColor="#d4a5ff" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d="M140 28 C 280 28, 400 28, 540 28" stroke="url(#museDivGrad)" strokeWidth="1" strokeLinecap="round" opacity="0.45" />
+        <path d="M660 28 C 800 28, 920 28, 1060 28" stroke="url(#museDivGrad)" strokeWidth="1" strokeLinecap="round" opacity="0.45" />
+        <path d="M545 28 C 556 10, 586 10, 600 28 C 614 46, 644 46, 655 28" stroke="#ffd700" strokeWidth="1.4" strokeLinecap="round" opacity="0.8" />
+        <path d="M600 14 L 606 24 L 616 28 L 606 32 L 600 42 L 594 32 L 584 28 L 594 24 Z" fill="#ffd700" opacity="0.9" />
+      </svg>
+    </div>
+  );
+}
+
 /* ── In-view hook ── */
 function useInView<T extends HTMLElement>(threshold = 0.15) {
   const ref = useRef<T | null>(null);
@@ -50,7 +73,7 @@ function SplitText({ text, delay = 0, className = "" }: { text: string; delay?: 
   return (
     <span ref={ref} className={`muse-split ${inView ? "in" : ""} ${className}`}>
       {words.map((w, i) => (
-        <span key={i} className="word" style={{ marginRight: "0.24em" }}>
+        <span key={i} className="word" style={{ marginRight: i < words.length - 1 ? "0.24em" : 0 }}>
           <span style={{ "--sd": `${delay + i * 0.06}s` } as React.CSSProperties}>{w}</span>
         </span>
       ))}
@@ -380,7 +403,7 @@ export default function MuseLandingPage() {
           <div className="muse-orb lavender" data-depth="2.4" />
         </div>
         <div className="muse-hero-inner">
-          <div className="muse-hero-eyebrow" data-depth="-0.6"><span className="dot" /> Founding members get lifetime Pro · {Math.max(0, 150 - signupCount)} of 150 spots left</div>
+          <div className="muse-hero-eyebrow" data-depth="-0.6"><span className="dot" /> <span className="muse-hero-eyebrow-text">Founding members get lifetime Pro · {Math.max(0, 150 - signupCount)} of 150 spots left</span></div>
           <h1 className="muse-hero-title">
             <span className="line" data-depth="-0.4"><SplitText text="Where Creatives" delay={0.15} /></span>
             <span className="line" data-depth="-0.4"><SplitText text="Find Their" delay={0.38} /></span>
@@ -447,6 +470,8 @@ export default function MuseLandingPage() {
         </div>
       </section>
 
+      <SectionDivider />
+
       {/* How it works */}
       <section id="how" className="muse-section">
         <div className="muse-container">
@@ -467,6 +492,8 @@ export default function MuseLandingPage() {
           </div>
         </div>
       </section>
+
+      <SectionDivider />
 
       {/* Safety */}
       <section id="safety" className="muse-section muse-safety">
@@ -492,6 +519,8 @@ export default function MuseLandingPage() {
         </div>
       </section>
 
+      <SectionDivider />
+
       {/* Testimonials */}
       <section className="muse-section">
         <div className="muse-container">
@@ -511,6 +540,8 @@ export default function MuseLandingPage() {
           </div>
         </div>
       </section>
+
+      <SectionDivider />
 
       {/* Founding members */}
       <section id="founding" className="muse-section">
@@ -538,6 +569,8 @@ export default function MuseLandingPage() {
           </Reveal>
         </div>
       </section>
+
+      <SectionDivider />
 
       {/* CTA */}
       <section id="join" className="muse-cta">
@@ -582,6 +615,8 @@ export default function MuseLandingPage() {
           </Reveal>
         </div>
       </section>
+
+      <SectionDivider />
 
       {/* FAQ */}
       <section id="faq" className="muse-section">
