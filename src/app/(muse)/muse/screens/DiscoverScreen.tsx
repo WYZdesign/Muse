@@ -418,7 +418,14 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                         style={{ position: "relative", borderRadius: 14, overflow: "hidden", aspectRatio: "3/4", background: "rgba(255,255,255,0.03)", cursor: "pointer" }}
                                         onClick={() => { setLightboxPhotos(albumPhotos); setLightboxIdx(portIdx); }}
                                       >
-                                        <img loading="lazy" src={albumPhotos[portIdx]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={handleImgError} />
+                                        <img loading="lazy" src={albumPhotos[portIdx]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", filter: (profile as any).nsfw && !revealedNsfw.has(String(profile.id)) ? "blur(26px) brightness(0.7)" : "none", transition: "filter .3s" }} onError={handleImgError} />
+                                        {(profile as any).nsfw && !revealedNsfw.has(String(profile.id)) && (
+                                          <div onClick={(e) => { e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); }} style={{ position: "absolute", inset: 0, zIndex: 4, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(10,6,18,0.45)", cursor: "pointer" }}>
+                                            <div style={{ fontSize: 24, fontWeight: 800, color: "#ff8a80" }}>18+</div>
+                                            <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", letterSpacing: 0.03 }}>NSFW content</div>
+                                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)" }}>Tap to reveal</div>
+                                          </div>
+                                        )}
                                         {/* Tap zones */}
                                         {albumPhotos.length > 1 && (
                                           <>

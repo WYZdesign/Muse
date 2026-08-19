@@ -286,7 +286,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
         </div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setShowEditProfile(true); }}>Edit Profile</button></div>
-        <div className="profile-btn"><button className="btn btn-outline" onClick={() => setScreen("settings")}><FiSettings size={16} style={{ marginRight: 6 }} /> Settings</button></div>
+        <div className="profile-btn"><button className="btn btn-outline" onClick={() => setScreen("settings")}><FiSettings size={16} style={{ marginRight: 6 }} /> Account Settings</button></div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => setShowShareProfile(true)}>Share Profile</button></div>
         <div className="profile-btn"><button className="btn btn-outline" style={{ borderColor: "rgba(255,138,128,0.2)", color: "var(--coral)" }} onClick={doLogout}>Log Out</button></div>
       </div>
