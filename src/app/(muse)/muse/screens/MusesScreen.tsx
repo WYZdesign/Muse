@@ -32,7 +32,6 @@ export interface MusesScreenProps {
   setSearchQuery?: (v: string) => void;
   expandedMatchId?: string | null;
   matchActions?: any;
-  setShowPremiumPopup?: (v: boolean) => void;
 }
 
 export const MusesScreen = memo(function MusesScreen({
@@ -61,7 +60,6 @@ export const MusesScreen = memo(function MusesScreen({
   setSearchQuery = () => {},
   expandedMatchId = null,
   matchActions,
-  setShowPremiumPopup = () => {},
 }: MusesScreenProps) {
   return (
     <div className={"screen-el" + (screen === "matches" ? " active" : "")}>
@@ -133,7 +131,7 @@ export const MusesScreen = memo(function MusesScreen({
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 }}>
               {likedBy.map(p => (
-                <div key={p.id} style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "3/4", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }} onClick={() => { if (currentUser.tier !== "muse_pro") { showToast("Upgrade to Muse Pro to view profiles"); setShowPremiumPopup(true); } else { setViewProfile(p); } }}>
+                <div key={p.id} style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "3/4", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }} onClick={() => { if (currentUser.tier !== "muse_pro") { showToast("Upgrade to Muse Pro to view profiles"); } else { setViewProfile(p); } }}>
                   <img loading="lazy" src={p.img} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", filter: currentUser.tier !== "muse_pro" ? "blur(4px)" : undefined }} />
                   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 10px", background: "linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.6) 60%,transparent 100%)" }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{p.name}</div>

@@ -341,7 +341,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 @keyframes museEnterPulse { 0%,100% { box-shadow: 0 0 16px rgba(255,215,0,0.2); transform: scale(1); } 50% { box-shadow: 0 0 34px rgba(255,215,0,0.45); transform: scale(1.04); } }
 @keyframes museIconFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
 
-.muse-nav-icon { width: 34px; height: 34px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+.muse-nav-icon { width: 30px; height: 30px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
 
 /* Center-align all cards (icons, graphics, text) */
 .muse-feature-card, .muse-safety-card, .muse-tier-card, .muse-step { text-align: center; }
@@ -439,9 +439,9 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .muse-nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 22px 40px; transition: background .3s ease, padding .3s ease;
+  padding: 12px 40px; transition: background .3s ease, padding .3s ease;
 }
-.muse-nav.scrolled { background: rgba(10, 6, 18, 0.72); backdrop-filter: blur(14px); padding: 14px 40px; border-bottom: 1px solid var(--line); }
+.muse-nav.scrolled { background: rgba(10, 6, 18, 0.72); backdrop-filter: blur(14px); padding: 10px 40px; border-bottom: 1px solid var(--line); }
 .muse-nav-logo { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 800; letter-spacing: 1px; }
 .muse-nav-logo .accent { color: var(--gold); }
 .muse-nav-links { display: flex; gap: 34px; }
@@ -456,7 +456,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 /* ═══ HERO ═══ */
 .muse-hero {
   position: relative; min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 120px 24px 80px; overflow: hidden;
+  padding: 88px 24px 80px; overflow: hidden;
 }
 .muse-hero-bg { position: absolute; inset: 0; pointer-events: none; }
 .muse-orb { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.45; animation: museFloat 14s ease-in-out infinite; }
@@ -782,7 +782,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   .muse-features-grid, .muse-safety-grid, .muse-tiers, .muse-steps { grid-template-columns: 1fr; }
   .muse-footer-grid { grid-template-columns: 1fr; }
   .muse-section { padding: 90px 20px; }
-  .muse-hero { padding: 110px 20px 80px; }
+  .muse-hero { padding: 90px 20px 80px; }
   .muse-hero-eyebrow { letter-spacing: 0.05em; padding: 8px 16px; border-radius: 20px; }
   .muse-form-row { flex-direction: column; gap: 10px; }
   .muse-cta-card { padding: 48px 24px; }
