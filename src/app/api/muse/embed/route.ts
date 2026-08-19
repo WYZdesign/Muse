@@ -125,6 +125,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (e: unknown) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Server error" }, { status: 500 });
+    console.error("[embed] failed:", e);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

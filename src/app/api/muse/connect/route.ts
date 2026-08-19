@@ -247,7 +247,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Server error";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error("[connect] failed:", e);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: false, error: "Unknown action" }, { status: 400 });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Server error";
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    console.error("[push] failed:", e);
+    return NextResponse.json({ success: false, error: "Server error" }, { status: 500 });
   }
 }

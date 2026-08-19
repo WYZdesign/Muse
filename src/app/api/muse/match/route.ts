@@ -136,6 +136,7 @@ export async function GET(req: NextRequest) {
       vectorMatches: Object.keys(cosineScores).length,
     });
   } catch (e: unknown) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Server error" }, { status: 500 });
+    console.error("[match] failed:", e);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

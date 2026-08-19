@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Server error";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error("[checkout] failed:", e);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
