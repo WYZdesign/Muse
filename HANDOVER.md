@@ -211,3 +211,72 @@ The core loop is verified (signup → discover → match → chat → book → p
 - **9 hooks remain** in the `page.tsx` state extraction (`useChatState` + `useBriefsState` done; next: `useAuthState`, `useDiscoverState`, `useBookingState`, `useProfileState`, `useFeedState`, `useCommunityState`, `useSettingsState`, `usePersonalityTestState`).
 - **NSFW blur + moderation** ✅ DONE `4cb28eb` — discover card hero blurs NSFW profiles behind an "18+ NSFW · Tap to reveal" overlay (`DiscoverScreen.tsx`); `contentScan.ts` now allows `Suggestive` (boudoir/tasteful/artistic is legitimate, age-gated) and still blocks `Explicit Nudity` (nipples/groin). Still TODO: extend the blur to profile view, moments, and album photos.
 - **Live payment test** — needs Stripe test keys + browser.
+
+---
+
+## 15. SESSION UPDATE — 2026-08-19 (Stripe onboarding, X OAuth, premium popup, NSFW blur completion, RSVP)
+
+### Stripe — FULLY ONBOARDED (manual, done by Torreé)
+- Connected account `acct_1U6FfvAfDBHWmLX4` (email `info@wyzdesign.com`) is now **Enabled** — no longer "Restricted".
+- Completed: terms of service accepted, business details (`WYZ Design LLC`, EIN `••2681`, address `1200 S. Wall St., Los Angeles, CA 90015`, industry `Apps`), website `https://muse.wyzdesign.com` (NOT the broken `www.` variant — that one has no valid SSL cert and causes `ERR_CERT_COMMON_NAME_INVALID`), public name `Muse`, statement descriptor `MUSE CO.`, support phone `+1 (213) 399-9610`, representative `Torree Harris` (DOB 1991-10-14, SSN last-4, ID doc), payout bank `COASTAL COMMUNITY BANK` (routing `125109019` — this is the user's **Bluevine** account; Bluevine partners with Coastal Community Bank, so this is correct and expected).
+- **Product:** single active `Muse Pro` product, `$9.99/month`, lookup key `price_muse_pro_monthly` (this is what `checkout/route.ts` queries), category `General - Electronically Supplied Services` (Eligible for Managed Payments), description + image set, tax behavior `Exclusive`. The duplicate "General - Services" product (Ineligible) was **archived**.
+- **Important:** the "Create a live customer / Create an invoice / Create a non-recurring product" items in Stripe's *Setup guide* checklist are generic beginner-tutorial steps — IGNORE them. The app's Checkout API auto-creates customers + invoices on real purchases. No manual customer/invoice creation needed.
+- **Remaining:** only the **live payment test** (app → Settings → Muse Pro → Upgrade → `4242 4242 4242 4242`), which creates the first real customer + invoice automatically through the code.
+
+### X/Twitter OAuth button — DONE (`79739f7`)
+- Replaced the **Apple** login button with **X/Twitter** (`handleOAuth` provider union changed `"apple"` → `"x"`). X logo SVG inline. Apple is deferred (requires paid Apple Developer account).
+- X OAuth keys live in the **Supabase dashboard** (Auth → Providers → x), NOT Vercel: `MUSE_X_CLIENT_ID` / `MUSE_X_CLIENT_SECRET` from the vault. Already added by Torreé.
+- **Facebook OAuth "error occurred" after confirm** is a Facebook App config issue (app in Development mode; needs Live mode + redirect URI `https://ejbwjmzrazfgtisqsamf.supabase.co/auth/v1/callback` whitelisted in the FB app's Valid OAuth Redirect URIs). NOT a code bug.
+
+### Premium popup — REMOVED (`79739f7`)
+- Deleted the "Muse Premium" popup entirely (state `showPremiumPopup`/`premiumDismissed`, the auto-dismiss `useEffect`, the popup render block, and the `setShowPremiumPopup` trigger in `MusesScreen`). Premium is now reached via the Profile tab + a dedicated premium page.
+
+### Landing page fixes (`79739f7`)
+- Nav bar was too tall (padding `22px` → `12px`, logo `34px` → `30px`), and there was a huge gap at the top on desktop (hero `padding-top` `120px` → `88px`, mobile `110px` → `90px`).
+
+### Settings button — moved + renamed (`79739f7`, `a4535e1`)
+- Removed the gear icon from the profile **header**.
+- Added a full-width rectangular **"Account Settings"** button directly under **"Edit Profile"** on the Profile tab (routes to `setScreen("settings")`).
+
+### NSFW blur — COMPLETED (`be58799`, `a4535e1`)
+- Now applied to ALL surfaces: discover card hero, discover card portfolio photos, profile view modal, and moments (BTS feed). Every one uses the "18+ NSFW · Tap to reveal" pattern with `revealedNsfw` `Set<string>` state.
+
+### RSVP — SQL APPLIED + VERIFIED (`5d0003c` + manual SQL run)
+- `sql/MUSE_RSVP_20260819.sql` was run manually in the Supabase SQL Editor. **Verified live via PostgREST** — `muse_rsvps` returns `200 []` (table exists + RLS active).
+- Frontend: CommunityScreen + MenuModal RSVP buttons call `action: "rsvp"` / `"cancel-rsvp"`; page.tsx fetches `?type=rsvps` into `rsvpdEvents`.
+
+### All 5 ghost-trace ⚠️ items — CONFIRMED WIRED (verified against code)
+1. **Moments posting** ✅ → `create-moment` server action (BTS button in FeedScreen).
+2. **Referral redemption** ✅ → `/api/muse/referral` has `generate`/`apply`/`redeem-reward`/`status`; page.tsx:1923 calls `apply`.
+3. **Subscription unlock** ✅ → Stripe webhook `checkout.session.completed` sets `tier: "muse_pro"`; `customer.subscription.deleted` reverts to `free`.
+4. **Admin panel** ✅ → `ModerationPanel.tsx` calls `admin-reports`/`admin-strikes`/`admin-suspend-user`; all email-gated via `ADMIN_EMAILS`.
+5. **Block/report call sites** ✅ → `action:"block"` (route.ts:640, page.tsx:2181), `action:"report"` (route.ts:621, page.tsx:1976).
+
+### Env vars — COMPLETE
+- The only thing that was missing is X/Twitter, which belongs in **Supabase** (not Vercel) and is now done. Vercel already has: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ADMIN_EMAILS`, `CRON_SECRET`, `OPENROUTER_API_KEY`, `AWS_ACCESS_KEY_ID/SECRET/REGION`, `NCMEC_*`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `NEXT_PUBLIC_SUPPORT_EMAIL`.
+
+---
+
+## 16. FINAL STATE — CLOSED-BETA GATES
+
+| Gate | Status |
+|---|---|
+| Core product loop (signup→discover→match→book→pay→complete→review) | ✅ code-complete |
+| Stripe onboarding (account, product, bank, terms) | ✅ done |
+| RLS security + IDOR + admin auth | ✅ hardened + verified |
+| NSFW blur + moderation (all surfaces) | ✅ done |
+| 89 tests + tsc + build + 0 audit vulns | ✅ green |
+| RSVP SQL + all migrations applied + verified | ✅ done |
+| OAuth (Google/Facebook/X/Spotify) | ✅ Google/X/Spotify verified; Facebook needs App→Live (config) |
+
+**Remaining for true closed-beta go-live (all manual/human, none blocking code):**
+1. **Live payment test** — Stripe test card `4242 4242 4242 4242` through the app's Upgrade flow.
+2. **Facebook App → Live** (for non-test users; Dev mode works for admins/testers).
+3. **Attorney memo review** — `_audit_artifacts/ATTORNEY_HANDOFF.md` → real attorney.
+
+**Recommended code backlog (deferred, non-blocking):**
+1. **Hook extraction** — 9 of 11 remain (`useChatState` + `useBriefsState` done): `useAuthState`, `useDiscoverState`, `useBookingState`, `useProfileState`, `useFeedState`, `useCommunityState`, `useSettingsState`, `usePersonalityTestState`, + 1 more per Claude's spec. One hook per commit, `tsc` + unit tests after each.
+2. **Accessibility** — ~25 icon-only buttons missing `aria-label`.
+3. **Split `page.tsx`** — ~2400-line monolith; highest value, highest risk.
+4. **zod validation** on API inputs.
+5. **Image optimization** — `next/image` / resize params.
