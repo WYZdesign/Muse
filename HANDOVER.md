@@ -280,3 +280,26 @@ The core loop is verified (signup → discover → match → chat → book → p
 3. **Split `page.tsx`** — ~2400-line monolith; highest value, highest risk.
 4. **zod validation** on API inputs.
 5. **Image optimization** — `next/image` / resize params.
+
+---
+
+## 17. SESSION UPDATE — 2026-08-19 (Edit Profile + Share Profile modals restored, tier leak fixed)
+
+### Edit Profile + Share Profile modals — RESTORED (`c0325a4`)
+- **Root cause:** the `showEditProfile` and `showShareProfile` state existed and their buttons called `setShowEditProfile(true)` / `setShowShareProfile(true)`, but the JSX render blocks had been **removed** at some point — clicking "Edit Profile" (pencil icon AND the profile-page button) was a dead no-op.
+- **Fix:** recovered the original markup from git history (commit `a88614d`) and re-added both render blocks to `page.tsx` (before the disclosure modal). Edit Profile modal now uses the canonical full-screen pattern (`modal-overlay` → `modal-header` + `modal-body`, no `modal-panel` wrapper) with avatar preview/upload, Display Name, Bio, Location fields, and Save wired to `saveProfileEdits()`. Share Profile is a bottom sheet (`share-sheet`).
+
+### Tier/premium leak — FIXED (`c0325a4`)
+- **Root cause:** `saveState`/`loadState` persisted `currentUser.tier` into `muse_v1` localStorage. A stale `tier: "muse_pro"` from the owner session (`torree.marcel@gmail.com`, forced to `muse_pro` via `OWNER_EMAIL` check) leaked into a free account (`wildyetzealous@gmail.com`) on account switch. The DB was always correct (`wildyetzealous@gmail.com` = `free`).
+- **Fix:**
+  1. `loadState` now forces `tier: "free"`, `foundingTier: ""`, `proExpiresAt: ""` on restore — tier is always re-derived from the auth session, never from localStorage.
+  2. `doLogout` now resets `setUserTier("free")` and clears `foundingTier`/`proExpiresAt` in addition to the existing `currentUser` reset.
+- **Note:** the owner account (`torree.marcel@gmail.com`) correctly shows "Muse Pro" (it IS the owner, forced to `muse_pro` at `page.tsx:473-474`). To test the Upgrade flow, use a free-tier account.
+
+### Verification
+- `npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. Pushed to `main` → Vercel auto-deploys.
+
+### Still open for Claude (next session)
+1. **Systematic dead-button audit** — grep every `onClick` across all screens and trace to a real handler/action/modal (Edit Profile + Share Profile were the two confirmed dead modals; now fixed). The 57 `= () => {}` matches in screens are harmless default-prop fallbacks, NOT dead handlers.
+2. **Live payment test** — Stripe test card `4242 4242 4242 4242` via a free-tier account's Upgrade flow (owner is pre-pro).
+3. **Facebook App → Live** for public OAuth.
