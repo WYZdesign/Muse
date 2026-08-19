@@ -405,7 +405,7 @@ function MusePage() {
         safeRemoveItem(STORAGE_KEY);
         return;
       }
-      if (d.currentUser) setCurrentUser(prev => ({ ...prev, ...d.currentUser, stats: { ...prev.stats, ...(d.currentUser.stats || {}) }, portfolios: Array.isArray(d.currentUser.portfolios) ? d.currentUser.portfolios : (prev.portfolios || []) }));
+      if (d.currentUser) setCurrentUser(prev => ({ ...prev, ...d.currentUser, tier: "free", foundingTier: "", proExpiresAt: "", stats: { ...prev.stats, ...(d.currentUser.stats || {}) }, portfolios: Array.isArray(d.currentUser.portfolios) ? d.currentUser.portfolios : (prev.portfolios || []) }));
       if (d.obData) setObData(d.obData);
       if (d.obStep) setObStep(d.obStep);
       if (d.matches) setMatches(d.matches);
@@ -657,7 +657,7 @@ function MusePage() {
     try { await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "logout" }) }); } catch(e) {}
     const keys = ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium","muse_referral_code","muse_open_count","muse_hide_premium"];
     keys.forEach(k => { try { safeRemoveItem(k); } catch {} });
-    setAuthUser(null); setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free" })); setScreen("auth"); showToast("Logged out");
+    setAuthUser(null); setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free", foundingTier:"", proExpiresAt:"" })); setUserTier("free"); setScreen("auth"); showToast("Logged out");
   }, [showToast]);
 
   const doLogoutFull = useCallback(async () => {
@@ -2239,6 +2239,44 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 setChatTarget({...viewProfile,messages:[]});setViewProfile(null);showScreen("chat");
               }}>Message</button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* ══════ EDIT PROFILE MODAL ══════ */}
+      {showEditProfile && (
+        <div className="modal-overlay">
+          <div className="modal-header">
+            <button className="modal-back" onClick={()=>setShowEditProfile(false)} aria-label="Back"><FiArrowLeft size={20} /></button>
+            <div className="modal-title">Edit Profile</div>
+            <button className="modal-close" onClick={()=>setShowEditProfile(false)} aria-label="Close"><FiX size={18} /></button>
+          </div>
+          <div className="modal-body">
+            <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
+              <div style={{position:"relative"}}>
+                <img src={editAvatar || currentUser.avatar} alt="" style={{width:88,height:88,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--gold)",background:"#1a0a2e"}} onError={handleImgError} />
+                <button type="button" onClick={()=>editAvatarInputRef.current?.click()} style={{position:"absolute",bottom:0,right:0,width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#ffd700,#ff8a80)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#0a0612"}} title="Upload profile photo" aria-label="Upload profile photo">+</button>
+                <input ref={editAvatarInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setEditAvatar(url);showToast("Photo added!")}}}} />
+              </div>
+            </div>
+            <input className="inp" placeholder="Display Name" value={editName} onChange={e=>setEditName(e.target.value)} />
+            <textarea className="inp" placeholder="Bio" rows={3} value={editBio} onChange={e=>setEditBio(e.target.value)} />
+            <input className="inp" placeholder="Location" value={editLoc} onChange={e=>setEditLoc(e.target.value)} />
+            <button className="btn btn-gold" style={{width:"100%"}} onClick={saveProfileEdits}>Save</button>
+          </div>
+        </div>
+      )}
+      {/* ══════ SHARE PROFILE SHEET ══════ */}
+      {showShareProfile && (
+        <div className="modal-overlay" onClick={()=>setShowShareProfile(false)}>
+          <div className="share-sheet" onClick={e=>e.stopPropagation()}>
+            <div className="share-title">Share Profile</div>
+            <div className="share-options">
+              <div className="share-opt" onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/profile/"+(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"));setShowShareProfile(false)}}><span className="share-opt-icon"><FiLink size={24} /></span><span className="share-opt-label">Copy</span></div>
+              <div className="share-opt" onClick={()=>{window.open("https://twitter.com/intent/tweet?text=Check%20out%20my%20Muse%20profile!&url="+encodeURIComponent("https://wyzdesign.com/muse"),"blank")}}><span className="share-opt-icon"><FiTwitter size={24} /></span><span className="share-opt-label">Twitter</span></div>
+              <div className="share-opt" onClick={()=>{const url="https://wyzdesign.com/muse/profile/"+(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase());if(navigator.share){navigator.share({title:"My Muse Profile",text:"Check out my Muse profile!",url}).catch(()=>{});}else{window.open("https://www.instagram.com/");}setShowShareProfile(false)}}><span className="share-opt-icon"><FiInstagram size={24} /></span><span className="share-opt-label">IG</span></div>
+            </div>
+            <div className="share-link"><span className="share-link-text">{"wyzdesign.com/muse/profile/"+(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())}</span><button className="share-link-copy" onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/profile/"+(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"))}}>Copy</button></div>
+            <button className="btn btn-outline" style={{marginTop:16,width:"100%"}} onClick={()=>setShowShareProfile(false)}>Close</button>
           </div>
         </div>
       )}
