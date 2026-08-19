@@ -253,7 +253,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 6, animation: "fadeIn .2s ease" }}>
                 <input className="inp" placeholder="Search..." value={discoverSearch} onChange={e => setDiscoverSearch(e.target.value)} autoFocus style={{ margin: 0, padding: "6px 10px", fontSize: 12, width: 120, borderRadius: 99 }} />
-                <button className="hdr-btn" style={{ width: 30, height: 30, borderRadius: "50%", fontSize: 12 }} onClick={() => { setDiscoverSearchOpen(false); setDiscoverSearch(""); }}>✕</button>
+                <button className="hdr-btn" aria-label="Close search" style={{ width: 30, height: 30, borderRadius: "50%", fontSize: 12 }} onClick={() => { setDiscoverSearchOpen(false); setDiscoverSearch(""); }}>✕</button>
               </div>
             )}
             {!discoverSearchOpen && (
@@ -493,7 +493,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
       {/* Lightbox */}
       {lightboxPhotos.length > 0 && (
         <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.95)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => { setLightboxPhotos([]); setLightboxIdx(0); }}>
-          <button onClick={(e) => { e.stopPropagation(); setLightboxPhotos([]); setLightboxIdx(0); }} style={{ position: "absolute", top: 16, right: 16, zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 18 }}>✕</button>
+          <button onClick={(e) => { e.stopPropagation(); setLightboxPhotos([]); setLightboxIdx(0); }} aria-label="Close" style={{ position: "absolute", top: 16, right: 16, zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 18 }}>✕</button>
           {lightboxPhotos.length > 1 && (
             <>
               <button onClick={(e) => { e.stopPropagation(); setLightboxIdx(i => (i - 1 + lightboxPhotos.length) % lightboxPhotos.length); }} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 22 }}>‹</button>

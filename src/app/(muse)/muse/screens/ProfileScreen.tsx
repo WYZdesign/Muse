@@ -111,7 +111,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         {isUnlimited && showUnlimitedBadge && (
           <div style={{ position: "fixed", top: 80, right: 20, zIndex: 9998, padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,191,0,0.1))", border: "1px solid rgba(255,215,0,0.2)", fontSize: 11, fontWeight: 700, color: "var(--gold)", boxShadow: "0 4px 16px rgba(255,215,0,0.2)", display: "flex", alignItems: "center", gap: 6 }}>
             <span>⚡</span>∞ Unlimited Likes &amp; Super Likes
-            <button onClick={() => setShowUnlimitedBadge(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
+            <button onClick={() => setShowUnlimitedBadge(false)} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
           </div>
         )}
         <div className="completeness">

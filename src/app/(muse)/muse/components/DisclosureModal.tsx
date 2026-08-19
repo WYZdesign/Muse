@@ -204,7 +204,7 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <h2 style={{ fontSize: 18, fontWeight: 800, color: "#ffd700" }}>📋 Shoot Disclosure</h2>
-          <button onClick={onCancel} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 20, cursor: "pointer" }}>✕</button>
+          <button onClick={onCancel} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
         <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 20, lineHeight: 1.5 }}>
           Both you and <strong style={{ color: "#ffd700" }}>{responderName}</strong> must review and confirm the same document. This protects everyone.

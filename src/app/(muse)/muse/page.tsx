@@ -1917,7 +1917,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowReport(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Report</div>
-            <button className="modal-close" onClick={()=>setShowReport(false)}><FiX size={18} /></button>
+            <button className="modal-close" onClick={()=>setShowReport(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body">
             {[
@@ -1946,7 +1946,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowLikeNote(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Like + Note</div>
-            <button className="modal-close" onClick={()=>setShowLikeNote(false)}><FiX size={18} /></button>
+            <button className="modal-close" onClick={()=>setShowLikeNote(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body" style={{display:"flex",flexDirection:"column",gap:16,paddingTop:20}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -1982,7 +1982,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowTerms(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Terms of Service</div>
-            <button className="modal-close" onClick={()=>setShowTerms(false)}><FiX size={18} /></button>
+            <button className="modal-close" onClick={()=>setShowTerms(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body" style={{maxHeight:"70vh",overflowY:"auto",lineHeight:1.7,fontSize:13,color:"var(--text2)"}}>
             <div style={{fontWeight:700,fontSize:16,color:"var(--text)",marginBottom:12}}>Muse Terms of Service</div>
@@ -2007,7 +2007,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowPrivacy(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Privacy Policy</div>
-            <button className="modal-close" onClick={()=>setShowPrivacy(false)}><FiX size={18} /></button>
+            <button className="modal-close" onClick={()=>setShowPrivacy(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body" style={{maxHeight:"70vh",overflowY:"auto",lineHeight:1.7,fontSize:13,color:"var(--text2)"}}>
             <div style={{fontWeight:700,fontSize:16,color:"var(--text)",marginBottom:12}}>Muse Privacy Policy</div>
@@ -2031,7 +2031,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowGuidelines(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Community Guidelines</div>
-            <button className="modal-close" onClick={()=>setShowGuidelines(false)}><FiX size={18} /></button>
+            <button className="modal-close" onClick={()=>setShowGuidelines(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body" style={{maxHeight:"70vh",overflowY:"auto",lineHeight:1.7,fontSize:13,color:"var(--text2)"}}>
             <div style={{fontWeight:700,fontSize:16,color:"var(--text)",marginBottom:12}}>Muse Community Guidelines</div>
@@ -2055,7 +2055,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowDeleteConfirm(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Delete Account</div>
-            <button className="modal-close" onClick={()=>setShowDeleteConfirm(false)}><FiX size={18} /></button>
+            <button className="modal-close" onClick={()=>setShowDeleteConfirm(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body" style={{textAlign:"center"}}>
             <div style={{fontSize:48,marginBottom:16}}>⚠️</div>
@@ -2075,7 +2075,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowDiscoveryPrefs(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Discovery Preferences</div>
-            <button className="modal-close" onClick={()=>setShowDiscoveryPrefs(false)}><FiX size={18} /></button>
+            <button className="modal-close" onClick={()=>setShowDiscoveryPrefs(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body">
             <div style={{marginBottom:20}}>
@@ -2108,7 +2108,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setUnmatchTarget(null)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Unmatch</div>
-            <button className="modal-close" onClick={()=>setUnmatchTarget(null)}><FiX size={18} /></button>
+            <button className="modal-close" onClick={()=>setUnmatchTarget(null)} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body" style={{textAlign:"center"}}>
             <div style={{fontSize:48,marginBottom:16}}>💔</div>
@@ -2126,7 +2126,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setBlockTarget(null)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Block</div>
-            <button className="modal-close" onClick={()=>setBlockTarget(null)}><FiX size={18} /></button>
+            <button className="modal-close" onClick={()=>setBlockTarget(null)} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body" style={{textAlign:"center"}}>
             <div style={{fontSize:48,marginBottom:16}}>🚫</div>
@@ -2146,7 +2146,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowActivityFeed(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Activity</div>
-            <button className="modal-close" onClick={()=>setShowActivityFeed(false)}><FiX size={18} /></button>
+            <button className="modal-close" onClick={()=>setShowActivityFeed(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body" style={{maxHeight:"70vh",overflowY:"auto"}}>
             {activityFeed.length===0 ? (
@@ -2211,7 +2211,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 <div style={{fontSize:24,fontWeight:800,fontFamily:"'Playfair Display',serif",fontStyle:"italic"}}>{viewProfile.name}</div>
                 <div style={{fontSize:14,color:"var(--gold)",fontWeight:600}}>{viewProfile.type}</div>
               </div>
-              <button onClick={()=>setViewProfile(null)} style={{position:"absolute",top:12,right:12,width:32,height:32,borderRadius:"50%",background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+              <button onClick={()=>setViewProfile(null)} aria-label="Close profile" style={{position:"absolute",top:12,right:12,width:32,height:32,borderRadius:"50%",background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
             </div>
             <div style={{padding:20}}>
               {viewProfile.bio && <p style={{color:"var(--text2)",lineHeight:1.6,fontSize:14,marginBottom:16}}>{viewProfile.bio}</p>}

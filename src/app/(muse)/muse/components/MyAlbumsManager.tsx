@@ -150,7 +150,7 @@ export default function MyAlbumsManager({
     return (
       <div className="my-albums-detail">
         <div className="my-albums-detail-hdr">
-          <button className="hdr-btn" onClick={() => setSelected(null)}><FiX size={18} /></button>
+          <button className="hdr-btn" onClick={() => setSelected(null)} aria-label="Close"><FiX size={18} /></button>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 16, fontWeight: 700 }}>{selected.title}</div>
             <div style={{ fontSize: 12, color: "var(--muted)" }}>{selected.photo_count} photos · {selected.view_count} views · {selected.like_count} likes</div>
@@ -185,7 +185,7 @@ export default function MyAlbumsManager({
           {photos.map(p => (
             <div key={p.id} className="album-thumb-owner">
               <img src={p.img_url} alt={p.caption || ""} />
-              <button className="album-thumb-remove" onClick={() => removePhoto(p.id)}><FiX size={12} /></button>
+              <button className="album-thumb-remove" onClick={() => removePhoto(p.id)} aria-label="Remove photo"><FiX size={12} /></button>
             </div>
           ))}
         </div>

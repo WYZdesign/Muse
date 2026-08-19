@@ -148,7 +148,7 @@ export const FeedScreen = memo(function FeedScreen({
                   ) : (
                     <img loading="lazy" src={url} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: "cover" }} />
                   )}
-                  <button onClick={() => setFeedMedia(prev => prev.filter((_, j) => j !== i))} style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: "var(--coral)", border: "none", color: "#fff", fontSize: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiX size={10} /></button>
+                  <button onClick={() => setFeedMedia(prev => prev.filter((_, j) => j !== i))} aria-label="Remove media" style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: "var(--coral)", border: "none", color: "#fff", fontSize: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiX size={10} /></button>
                 </div>
               ))}
               <button

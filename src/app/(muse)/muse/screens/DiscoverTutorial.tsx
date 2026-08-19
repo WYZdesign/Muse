@@ -55,7 +55,7 @@ export const DiscoverTutorial = memo(function DiscoverTutorial({
             {idx >= STEPS.length - 1 ? "Let's go!" : "Next"}
           </button>
         </div>
-        <button onClick={onDone} style={{ position: "absolute", top: 12, right: 14, background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 18, cursor: "pointer" }}>✕</button>
+        <button onClick={onDone} aria-label="Close" style={{ position: "absolute", top: 12, right: 14, background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 18, cursor: "pointer" }}>✕</button>
       </div>
     </div>
   );
