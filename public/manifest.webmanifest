@@ -3,7 +3,7 @@
   "short_name": "Muse",
   "description": "Creative connections & collaborations",
   "start_url": "/muse",
-  "scope": "/muse/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0a0612",
   "theme_color": "#ffd700",

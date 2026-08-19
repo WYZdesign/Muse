@@ -7,6 +7,8 @@ import { askMuseAI } from "@/lib/aiDocs";
 import { screenText, moderateText } from "@/lib/aiModeration";
 import Stripe from "stripe";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function getAuthUser() {
   return supabase.auth.getUser();
 }
@@ -219,6 +221,7 @@ export async function GET(req: NextRequest) {
     if (type === "reviews") {
       const targetProfileId = req.nextUrl.searchParams.get("profile_id") || (profileId || "");
       if (!targetProfileId) return NextResponse.json({ error: "profile_id required" }, { status: 400 });
+      if (!UUID_RE.test(targetProfileId)) return NextResponse.json({ reviews: [] });
       const { data } = await sb.from("muse_reviews")
         .select("id, rating, body, created_at, reviewer_id(name, avatar, type)")
         .eq("reviewee_id", targetProfileId)
@@ -264,6 +267,8 @@ export async function GET(req: NextRequest) {
       if (targetProfileId === "me") {
         if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
         targetProfileId = profileId;
+      } else if (!UUID_RE.test(targetProfileId)) {
+        return NextResponse.json({ albums: [] });
       }
       const isOwner = !!profileId && String(profileId) === String(targetProfileId);
       let query = sb.from("muse_albums").select("id, profile_id, title, description, cover_url, access_level, tags, position, view_count, like_count, created_at").eq("profile_id", targetProfileId).order("position");
@@ -292,6 +297,7 @@ export async function GET(req: NextRequest) {
     if (type === "album-photos") {
       const albumId = req.nextUrl.searchParams.get("album_id");
       if (!albumId) return NextResponse.json({ error: "album_id required" }, { status: 400 });
+      if (!UUID_RE.test(albumId)) return NextResponse.json({ photos: [] });
       const { data: album } = await sb.from("muse_albums").select("id, profile_id, access_level").eq("id", albumId).maybeSingle();
       if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
       const isOwner = !!profileId && String(profileId) === String(album.profile_id);

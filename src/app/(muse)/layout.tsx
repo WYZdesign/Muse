@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   icons: { icon: "/muse-icon.png", apple: "/apple-touch-icon.png", shortcut: "/muse-icon.png" },
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Muse", startupImage: "/apple-touch-icon.png" },
-  openGraph: { title: "Muse — Where Creatives Connect", description: "Discover and connect with creative professionals. Your network for collaboration, bookings, and creative growth.", url: "https://muse.wyzdesign.com/muse", siteName: "Muse", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Muse — Where Creatives Connect" }] },
-  twitter: { card: "summary_large_image", title: "Muse — Where Creatives Connect", description: "Discover and connect with creative professionals. Your network for collaboration, bookings, and creative growth.", images: ["/og-image.png"] },
+  openGraph: { title: "Muse — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", url: "https://muse.wyzdesign.com/muse", siteName: "Muse", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Muse — Where Creatives Connect" }] },
+  twitter: { card: "summary_large_image", title: "Muse — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", images: ["/og-image.png"] },
   robots: { index: true, follow: true },
 };
 
