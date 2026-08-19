@@ -42,6 +42,19 @@ Not a dating app. Not a job board. Not strictly LinkedIn. "Safe creative connect
 
 Both must feel "equally safe" — same digital trust layer, studio adds physical oversight on top.
 
+## The Peerspace wedge (key insight)
+- Peerspace's hosts are **independent** studios/lofts/galleries listing on their marketplace (~15% commission). They are NOT Peerspace.
+- Peerspace owns the **space** layer; NOBODY owns the **trust + transaction** layer for shoots (verified talent, consent, escrow, check-ins, two-way reviews).
+- Move: pitch Peerspace's own hosts the layer Peerspace can't offer — "we bring verified talent + signed consent + protected payment + safety check-in for the shoot itself." Complement, not competitor.
+- Peerspace-listed hosts = a pre-vetted supply list (already rent for shoots, already understand hourly booking).
+
+## The moat = a trust network (not a feature)
+- Verification + consent + disclosure + escrow + check-ins + reviews + moderation compound into switching cost.
+- It's **behavioral data** (who's safe, who shows up, who pays) — accrues only by running transactions. Software can be copied; a consent/review/trust history can't.
+
+## Multi-city asset (underrated)
+- FD Photo Mixers already run **LA, NYC, Chicago** — a three-city offline community BEFORE launch. Almost no marketplace launches multi-city. This is an unfair advantage on par with FD.
+
 ## Competitive landscape
 - **Instagram/Behance/Dribbble** — discovery, no transactions/verification/booking.
 - **ModelMayhem/PurplePort** — direct but dated, no modern safety/payments.
@@ -67,11 +80,22 @@ Both must feel "equally safe" — same digital trust layer, studio adds physical
 4. **NSFW/adult adjacency** — Stripe/App-Store scrutiny; one minors incident is existential.
 
 ## Immediate next moves
-1. Pitch FD Photo Studio (anchor) → one real paid booking through the app end-to-end.
-2. Recruit 10–20 creatives from Mixers + FB groups to seed supply.
-3. Get 5 paid shoots + 20 TFP collabs transacting.
-4. Pitch studio #2 with FD data.
-5. Legal review in parallel.
+1. Write the FD pitch (one page: "fill your empty hours with verified, pre-consented shoots; you keep space fee, we handle talent+payment+safety; zero cost to join").
+2. Seed supply — 20 creatives from Mixers + FB groups before formal open (two-sided markets die on the empty side).
+3. Instrument the beta — track transactions (bookings, dollars, repeat rate, match→shoot time), NOT signups.
+4. Legal in parallel — attorney memo out now; don't let safety features outpace liability language.
+5. Pick ONE city for the first transaction loop (LA or Chicago — deepest FD relationships).
+
+## Go-to-market (sequenced)
+1. One city, one loop first — FD anchor + Mixers/FB seed → 5 paid + 20 TFP transacting.
+2. Studio network — pitch Peerspace-listed spaces with FD data as the deck.
+3. Vertical expansion — MUA, stylist, musician.
+4. Multi-city — flip the switch on NYC/Chicago Mixers already seeded.
+
+## Exit paths (realistic)
+- Peerspace (space) acquires Muse for the trust/transaction layer.
+- Agency network / booking company acquires for verified-talent supply.
+- Creator-economy platform acquires for IRL-trust infrastructure.
 
 ## Open questions for Claude to pressure-test
 - Studio revenue split (exact % + who pays whom).
