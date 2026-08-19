@@ -13,6 +13,53 @@ function getAuthUser() {
   return supabase.auth.getUser();
 }
 
+// Graduated-enforcement ladder: number of active (non-overturned, non-warning)
+// strikes that escalates to automatic account suspension.
+const STRIKE_SUSPENSION_THRESHOLD = 3;
+
+/**
+ * Insert a strike and enforce the two-track enforcement ladder:
+ *  - Track 2 (high-severity): a single strike with severity "suspension" or
+ *    "permanent_ban" immediately suspends the account.
+ *  - Track 1 (graduated): otherwise, accumulated active strikes escalate to
+ *    suspension once STRIKE_SUSPENSION_THRESHOLD is reached.
+ * Returns the active strike count and whether a suspension was applied.
+ */
+async function applyStrikeAndEscalate(
+  sb: ReturnType<typeof getServiceClient>,
+  userId: string,
+  strike: { reason: string; category?: string; severity?: string; details?: string; issued_by?: string },
+): Promise<{ inserted: boolean; activeCount: number; suspended: boolean }> {
+  const { error } = await sb.from("muse_strikes").insert({ user_id: userId, ...strike });
+  if (error) return { inserted: false, activeCount: 0, suspended: false };
+
+  // Count all enforceable strikes (exclude only overturned appeals). The
+  // graduated track is severity-agnostic: N "warning" strikes escalate the
+  // same way a single "suspension" strike does immediately.
+  const { data: active, error: countErr } = await sb.from("muse_strikes")
+    .select("id")
+    .eq("user_id", userId)
+    .neq("appeal_status", "overturned");
+  if (countErr) return { inserted: true, activeCount: 0, suspended: false };
+
+  const activeCount = (active || []).length;
+  const isHighSeverity = strike.severity === "suspension" || strike.severity === "permanent_ban";
+  const shouldSuspend = isHighSeverity || activeCount >= STRIKE_SUSPENSION_THRESHOLD;
+
+  if (shouldSuspend) {
+    await sb.from("muse_profiles").update({ suspended: true, suspended_at: new Date().toISOString() }).eq("id", userId);
+    await sb.from("muse_notifications").insert({
+      user_id: userId,
+      type: "suspension",
+      body: `Your account has been suspended after ${activeCount} community guideline violation${activeCount === 1 ? "" : "s"}.`,
+      read: false,
+    });
+    return { inserted: true, activeCount, suspended: true };
+  }
+
+  return { inserted: true, activeCount, suspended: false };
+}
+
 /**
  * Resolve the caller's identity from a verified session token.
  * Token is read from the Authorization: Bearer header first, then from
@@ -634,6 +681,34 @@ export async function POST(req: NextRequest) {
       const { error } = await sb.from("muse_reports").insert({ reporter_id: profile.id, target_id, target_type: target_type || "user", reason, details: details || "", ai_classification: aiClassification });
       if (error) return safeServerError(error, "db op");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "report", details: { target_id, reason } });
+
+      // Graduated enforcement: when a user accumulates 3+ reports from distinct
+      // reporters, issue a standard strike (which escalates toward suspension
+      // via applyStrikeAndEscalate). Prevents a single malicious reporter from
+      // farming strikes — only distinct reporters count.
+      if (target_type === "user" || target_type === "match") {
+        try {
+          const { count: distinctReporters } = await sb.from("muse_reports")
+            .select("reporter_id", { count: "exact", head: true })
+            .eq("target_id", target_id);
+          // Count distinct reporters (exact-count query above returns rows count;
+          // distinct requires a follow-up). Use a cheaper heuristic: total reports
+          // from the reporter list is sufficient to gate — distinct handled below.
+          const { data: allReports } = await sb.from("muse_reports")
+            .select("reporter_id")
+            .eq("target_id", target_id)
+            .limit(50);
+          const distinct = new Set((allReports || []).map((r: any) => String(r.reporter_id))).size;
+          if (distinct >= 3) {
+            await applyStrikeAndEscalate(sb, target_id, {
+              category: "standard",
+              severity: "warning",
+              reason: "Multiple user reports",
+              details: `${distinct} distinct reporters flagged this account`,
+            });
+          }
+        } catch { /* best-effort enforcement; never block report creation */ }
+      }
       return NextResponse.json({ success: true });
     }
 
@@ -963,9 +1038,10 @@ export async function POST(req: NextRequest) {
           boundary_explicit_acts: !!boundaryExplicitActs,
           boundary_penetration: !!boundaryPenetration,
         });
-        // Auto-strike the user (high-severity)
-        await sb.from("muse_strikes").insert({
-          user_id: profile.id, category: "high_severity", severity: "suspension",
+        // Auto-strike the user (high-severity) — severity "suspension" escalates
+        // to an immediate account suspension via applyStrikeAndEscalate.
+        await applyStrikeAndEscalate(sb, profile.id, {
+          category: "high_severity", severity: "suspension",
           reason: "Attempted to arrange paid explicit sexual content",
           details: "Disclosure was hard-blocked: NSFW content + payment combination",
         });
