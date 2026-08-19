@@ -17,6 +17,7 @@ import { uid } from "./lib/uid";
 import DisclosureModal from "./components/DisclosureModal";
 import AgeVerificationModal from "./components/AgeVerificationModal";
 import { useChatState } from "./hooks/useChatState";
+import { useBriefsState } from "./hooks/useBriefsState";
 import SupportChat from "./components/SupportChat";
 import { DiscoverScreen } from "./screens/DiscoverScreen";
 import { FeedScreen } from "./screens/FeedScreen";
@@ -118,22 +119,15 @@ function MusePage() {
   const [lightboxIdx, setLightboxIdx] = useState<number>(0);
   const [portfolioPhotoIdx, setPortfolioPhotoIdx] = useState(0);
   const [promptIdx, setPromptIdx] = useState(0);
-  const [discoverSearchOpen, setDiscoverSearchOpen] = useState(false);
-  const [savedBriefs, setSavedBriefs] = useState<number[]>([]);
-  const [appliedBriefs, setAppliedBriefs] = useState<number[]>([]);
-  const [showAgeGate, setShowAgeGate] = useState(false);
+   const [discoverSearchOpen, setDiscoverSearchOpen] = useState(false);
+   const { savedBriefs, setSavedBriefs, appliedBriefs, setAppliedBriefs, showPostBrief, setShowPostBrief, briefTitle, setBriefTitle, briefDesc, setBriefDesc, briefBudget, setBriefBudget, briefCat, setBriefCat, userBriefs, setUserBriefs } = useBriefsState();
+   const [showAgeGate, setShowAgeGate] = useState(false);
   const [pendingNsfw, setPendingNsfw] = useState(false);
   const [userTier, setUserTier] = useState<string>("free");
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterStyles, setFilterStyles] = useState<string[]>([]);
-  const [filterScore, setFilterScore] = useState(50);
-  const [showPostBrief, setShowPostBrief] = useState(false);
-  const [briefTitle, setBriefTitle] = useState("");
-  const [briefDesc, setBriefDesc] = useState("");
-  const [briefBudget, setBriefBudget] = useState("");
-  const [briefCat, setBriefCat] = useState<"tfp"|"paid"|"opencall"|"concept">("concept");
-  const [userBriefs, setUserBriefs] = useState<{id:number;title:string;desc:string;budget:string;tags:string[];cat:string}[]>([]);
-  // Live data overrides (fetched from the API; falls back to static arrays).
+   const [filterScore, setFilterScore] = useState(50);
+   // Live data overrides (fetched from the API; falls back to static arrays).
   const [liveProfiles, setLiveProfiles] = useState<typeof PROFILES | null>(null);
   const [liveBriefs, setLiveBriefs] = useState<typeof BRIEFS | null>(null);
   const [liveFeed, setLiveFeed] = useState<any[] | null>(null);
