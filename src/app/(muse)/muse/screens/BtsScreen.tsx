@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
@@ -28,6 +28,7 @@ export const BtsScreen = memo(function BtsScreen({
   setShowStory,
   handleImgError,
 }: BtsScreenProps) {
+  const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
   return (
     <div className={"screen-el" + (screen === "moments" ? " active" : "")}>
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: "12px 18px" }}>
@@ -101,7 +102,16 @@ export const BtsScreen = memo(function BtsScreen({
                   </div>
                   <div className="moments-card-caption">{s.text || "A creative moment captured."}</div>
                 </div>
-                <img loading="lazy" src={s.img || s.avatar} alt="" className="moments-card-img" onError={handleImgError} />
+                <div style={{position:"relative",overflow:"hidden"}}>
+                  <img loading="lazy" src={s.img || s.avatar} alt="" className="moments-card-img" onError={handleImgError} style={{filter:s.nsfw&&!revealedNsfw.has(String(s.id))?"blur(26px) brightness(0.7)":"none",transition:"filter .3s"}} />
+                  {s.nsfw&&!revealedNsfw.has(String(s.id))&&(
+                    <button onClick={()=>setRevealedNsfw(prev=>{const n=new Set(prev);n.add(String(s.id));return n;})} style={{position:"absolute",inset:0,zIndex:5,background:"rgba(10,6,18,0.45)",border:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer"}}>
+                      <div style={{fontSize:24,fontWeight:800,color:"#ff8a80"}}>18+</div>
+                      <div style={{fontSize:12,fontWeight:700,color:"#fff",letterSpacing:0.03}}>NSFW content</div>
+                      <div style={{fontSize:10,color:"rgba(255,255,255,0.7)"}}>Tap to reveal</div>
+                    </button>
+                  )}
+                </div>
                 <div className="moments-card-body" style={{ paddingTop: 10 }}>
                   <div className="moments-card-stats">
                     <button className={"moments-action-btn" + (s.liked ? " liked" : "")} onClick={() => { setStories(prev => prev.map(item => item.id === s.id ? { ...item, liked: !item.liked, likes: (item.likes || 0) + (item.liked ? -1 : 1) } : item)); }}>♥ {s.likes || 0}</button>

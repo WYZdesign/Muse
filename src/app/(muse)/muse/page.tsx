@@ -275,6 +275,7 @@ function MusePage() {
   }, [showPremiumPopup]);
 
   const [viewProfile, setViewProfile] = useState<any>(null);
+  const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
    const [showStories, setShowStories] = useState(false);
    const [blockTarget, setBlockTarget] = useState<{id:string;name:string}|null>(null);
@@ -2250,7 +2251,14 @@ const isMatch=matchScore>55||Math.random()>0.5;
         <div className="modal-overlay" onClick={()=>setViewProfile(null)}>
           <div className="modal-panel" onClick={e=>e.stopPropagation()} style={{maxWidth:400,width:"90%",maxHeight:"85vh",overflowY:"auto",borderRadius:24,padding:0,background:"linear-gradient(180deg,#0f081e,#0a0612)"}}>
             <div style={{position:"relative",width:"100%",aspectRatio:"3/4",overflow:"hidden"}}>
-              <img loading="lazy" src={viewProfile.img} alt={viewProfile.name} style={{width:"100%",height:"100%",objectFit:"cover"}} />
+              <img loading="lazy" src={viewProfile.img} alt={viewProfile.name} style={{width:"100%",height:"100%",objectFit:"cover",filter:viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))?"blur(26px) brightness(0.7)":"none",transition:"filter .3s"}} />
+              {viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))&&(
+                <button onClick={(e)=>{e.stopPropagation();setRevealedNsfw(prev=>{const n=new Set(prev);n.add(String(viewProfile.id));return n;})}} style={{position:"absolute",inset:0,zIndex:5,background:"rgba(10,6,18,0.45)",border:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer"}}>
+                  <div style={{fontSize:30,fontWeight:800,color:"#ff8a80"}}>18+</div>
+                  <div style={{fontSize:13,fontWeight:700,color:"#fff",letterSpacing:0.03}}>NSFW content</div>
+                  <div style={{fontSize:11,color:"rgba(255,255,255,0.7)"}}>Tap to reveal</div>
+                </button>
+              )}
               <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px",background:"linear-gradient(to top,rgba(10,6,18,0.95),transparent)"}}>
                 <div style={{fontSize:24,fontWeight:800,fontFamily:"'Playfair Display',serif",fontStyle:"italic"}}>{viewProfile.name}</div>
                 <div style={{fontSize:14,color:"var(--gold)",fontWeight:600}}>{viewProfile.type}</div>
