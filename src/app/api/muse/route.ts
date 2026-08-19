@@ -513,6 +513,16 @@ export async function POST(req: NextRequest) {
         await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message_blocked", details: { categories: screen.categories } });
         return NextResponse.json({ error: "Message blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
       }
+      // Disclosure trigger (server-side enforcement) — payment + NSFW keywords
+      // require a signed disclosure before the shoot. Mirrors the client-side
+      // prompt so a bypassed client still can't send the raw message.
+      const lower = cleanText.toLowerCase();
+      const hasPayment = /\$[\d]+|\bpay\b|\bcompensation\b|\brate\b|\bbudget\b|\bfee\b|\bcharged?\b/i.test(lower);
+      const hasNsfw = /\bnude\b|\bnudity\b|\bnsfw\b|\bnsf[ww]\b|\bexplicit\b|\bboudoir\b|\bpenetrat\b|\bsexual\b|\berotic\b|\btopless\b|\bundressed\b|\bintimate\b|\bsensual\b|\badult\b/i.test(lower);
+      if (hasPayment && hasNsfw) {
+        await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "disclosure_required", details: { to: toId } });
+        return NextResponse.json({ error: "Disclosure required before discussing paid NSFW shoots", code: "DISCLOSURE_REQUIRED" }, { status: 409 });
+      }
       // Canonical convo key derived server-side so the sender is always a
       // participant — a client-supplied match_id can't target another pair.
       const matchId = [profile.id, String(toId)].sort().join("__");
