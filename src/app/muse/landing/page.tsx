@@ -305,7 +305,11 @@ export default function MuseLandingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string } | null>(null);
   const [gateClosing, setGateClosing] = useState(false);
-  const [gateGone, setGateGone] = useState(() => typeof window !== "undefined" && sessionStorage.getItem("muse_entered") === "1");
+  // NOTE: always initialize false so server and client's first render match.
+  // Reading sessionStorage in the initializer caused a hydration mismatch
+  // (React error #418) for returning visitors whose gate should stay hidden —
+  // the server always renders the gate, so the client must too, on first paint.
+  const [gateGone, setGateGone] = useState(false);
   const [navScrolled, setNavScrolled] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
   const railFillRef = useRef<HTMLDivElement>(null);
@@ -314,6 +318,14 @@ export default function MuseLandingPage() {
 
   useEffect(() => {
     fetch("/api/muse/landing-stats").then(r => r.json()).then(d => { if (d.count !== undefined) setSignupCount(d.count); }).catch(() => {});
+  }, []);
+
+  // Runs after hydration completes, so flipping this doesn't cause a
+  // server/client mismatch — see the note on the gateGone useState above.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("muse_entered") === "1") setGateGone(true);
+    } catch {}
   }, []);
 
   useEffect(() => {
