@@ -729,7 +729,7 @@ export default function MuseLandingPage() {
             </div>
             <div className="muse-enter-logo">Muse</div>
             <div className="muse-enter-sub">Creative Professional Network</div>
-            <div className="muse-enter-prompt">Tap to Enter ✦</div>
+            <div className="muse-enter-prompt">Tap to Enter <span style={{fontSize:'1.5em',lineHeight:1}}>✦</span></div>
           </div>
         </div>
       )}

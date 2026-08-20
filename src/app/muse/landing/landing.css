@@ -42,8 +42,8 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .muse-enter-gate.closing { opacity: 0; filter: blur(20px); transform: scale(1.14); pointer-events: none; }
 /* ═══ CALIFORNIA SUNSET SCENE (click-to-enter backdrop) ═══ */
 .sunset-scene { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-.sunset-sky { position: absolute; inset: 0; background: linear-gradient(180deg, #100620 0%, #2a1245 12%, #4d1c52 24%, #8c2a52 36%, #c9454a 46%, #e86842 52%, #f79646 58%, #fdbb58 62%, #fed980 66%, #f09f54 67%, #186b84 68%, #0d4662 82%, #072235 100%); }
-.sunset-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.40); z-index: 2; pointer-events: none; }
+.sunset-sky { position: absolute; inset: 0; background: linear-gradient(180deg, #1a0a30 0%, #3a1a5e 12%, #5e2468 24%, #a83262 36%, #e05050 46%, #f07848 52%, #ffa04c 58%, #ffc860 62%, #ffe088 66%, #f5b050 67%, #20a0c0 68%, #1078a0 82%, #0a4060 100%); }
+.sunset-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.22); z-index: 2; pointer-events: none; }
 
 /* Stars — upper twilight sky */
 .sunset-stars { position: absolute; top: 0; left: 0; right: 0; height: 50%; z-index: 1; }
@@ -117,29 +117,29 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 }
 
 /* Nebula — vibrant Aurora Borealis glowing cloud ribbons in the upper sky */
-.sunset-nebula { position: absolute; border-radius: 50%; filter: blur(34px); mix-blend-mode: screen; opacity: 0.85; animation: sunsetDrift 14s ease-in-out infinite; z-index: 1; }
-.neb-1 { width: 48vw; height: 25vw; background: radial-gradient(ellipse at 40% 60%, rgba(0,255,180,0.65) 0%, rgba(20,180,210,0.45) 40%, rgba(138,43,226,0.18) 70%, transparent 85%); top: 1%; left: -8%; }
-.neb-2 { width: 44vw; height: 23vw; background: radial-gradient(ellipse at 60% 40%, rgba(255,20,147,0.65) 0%, rgba(186,85,211,0.5) 40%, rgba(75,0,130,0.2) 70%, transparent 85%); top: 7%; right: -6%; animation-delay: -3.5s; }
-.neb-3 { width: 36vw; height: 19vw; background: radial-gradient(ellipse at 50% 50%, rgba(0,220,255,0.7) 0%, rgba(255,215,0,0.45) 45%, rgba(0,128,128,0.2) 75%, transparent 85%); top: 0%; left: 32%; animation-delay: -7s; }
-.neb-4 { width: 34vw; height: 18vw; background: radial-gradient(ellipse at 30% 70%, rgba(147,112,219,0.65) 0%, rgba(138,43,226,0.5) 45%, transparent 80%); top: 12%; left: 6%; animation-delay: -9.5s; }
-.neb-5 { width: 40vw; height: 20vw; background: radial-gradient(ellipse at 70% 30%, rgba(255,105,180,0.7) 0%, rgba(255,140,80,0.48) 40%, rgba(212,165,255,0.25) 75%, transparent 85%); top: 3%; right: 20%; animation-delay: -5.5s; }
-.neb-6 { width: 32vw; height: 17vw; background: radial-gradient(ellipse at 50% 50%, rgba(0,191,255,0.65) 0%, rgba(65,105,225,0.5) 45%, transparent 80%); top: 18%; right: 2%; animation-delay: -11s; }
+.sunset-nebula { position: absolute; border-radius: 50%; filter: blur(34px); mix-blend-mode: screen; opacity: 0.95; animation: sunsetDrift 14s ease-in-out infinite; z-index: 1; }
+.neb-1 { width: 48vw; height: 25vw; background: radial-gradient(ellipse at 40% 60%, rgba(0,255,180,0.8) 0%, rgba(20,180,210,0.55) 40%, rgba(138,43,226,0.22) 70%, transparent 85%); top: 1%; left: -8%; }
+.neb-2 { width: 44vw; height: 23vw; background: radial-gradient(ellipse at 60% 40%, rgba(255,20,147,0.8) 0%, rgba(186,85,211,0.6) 40%, rgba(75,0,130,0.24) 70%, transparent 85%); top: 7%; right: -6%; animation-delay: -3.5s; }
+.neb-3 { width: 36vw; height: 19vw; background: radial-gradient(ellipse at 50% 50%, rgba(0,220,255,0.85) 0%, rgba(255,215,0,0.55) 45%, rgba(0,128,128,0.24) 75%, transparent 85%); top: 0%; left: 32%; animation-delay: -7s; }
+.neb-4 { width: 34vw; height: 18vw; background: radial-gradient(ellipse at 30% 70%, rgba(147,112,219,0.8) 0%, rgba(138,43,226,0.6) 45%, transparent 80%); top: 12%; left: 6%; animation-delay: -9.5s; }
+.neb-5 { width: 40vw; height: 20vw; background: radial-gradient(ellipse at 70% 30%, rgba(255,105,180,0.85) 0%, rgba(255,140,80,0.58) 40%, rgba(212,165,255,0.3) 75%, transparent 85%); top: 3%; right: 20%; animation-delay: -5.5s; }
+.neb-6 { width: 32vw; height: 17vw; background: radial-gradient(ellipse at 50% 50%, rgba(0,191,255,0.8) 0%, rgba(65,105,225,0.6) 45%, transparent 80%); top: 18%; right: 2%; animation-delay: -11s; }
 @keyframes sunsetDrift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(26px,-16px) scale(1.08); } }
 
 /* Sun + Horizon glow — half-circle setting into the ocean horizon */
 .sunset-sun-glow {
   position: absolute; left: 50%; bottom: 24%; transform: translateX(-50%);
   width: 58vw; height: 32vw; border-radius: 58vw 58vw 0 0;
-  background: radial-gradient(ellipse at 50% 100%, rgba(255,200,90,0.65) 0%, rgba(255,140,60,0.3) 45%, transparent 75%);
+  background: radial-gradient(ellipse at 50% 100%, rgba(255,200,90,0.8) 0%, rgba(255,140,60,0.4) 45%, transparent 75%);
   filter: blur(16px); animation: sunsetSunPulse 5s ease-in-out infinite; z-index: 1;
 }
 .sunset-sun {
   position: absolute; left: 50%; bottom: 33.3%; transform: translateX(-50%);
-  width: 14vw; min-width: 100px; max-width: 160px;
-  height: 7vw; min-height: 50px; max-height: 80px;
-  border-radius: 160px 160px 0 0;
+  width: 16vw; min-width: 110px; max-width: 180px;
+  height: 8vw; min-height: 55px; max-height: 90px;
+  border-radius: 180px 180px 0 0;
   background: radial-gradient(ellipse at 50% 100%, #ffffff 0%, #fff2be 25%, #ffb648 60%, #f1683c 100%);
-  box-shadow: 0 -8px 60px 20px rgba(255,185,75,0.7), 0 -2px 18px 4px rgba(255,255,255,0.85);
+  box-shadow: 0 -8px 60px 20px rgba(255,185,75,0.85), 0 -2px 18px 4px rgba(255,255,255,0.95);
   animation: sunsetSunBob 5s ease-in-out infinite; z-index: 1;
 }
 @keyframes sunsetSunPulse { 0%,100% { opacity: 0.82; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.06); } }
@@ -147,12 +147,12 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 
 /* Varied, smaller drifting clouds — soft haze wisps instead of pills */
 .sunset-clouds { position: absolute; inset: 0; z-index: 1; }
-.sunset-cloud { position: absolute; border-radius: 50%; filter: blur(26px); opacity: 0.7; mix-blend-mode: screen; animation: sunsetCloud linear infinite; }
-.c-1 { width: 26vw; height: 7vw; top: 20%; left: -30%; background: radial-gradient(ellipse, rgba(255,220,185,0.34), rgba(255,140,100,0.08) 55%, transparent 75%); animation-duration: 26s; }
-.c-2 { width: 20vw; height: 5.5vw; top: 14%; left: -22%; background: radial-gradient(ellipse, rgba(255,190,215,0.3), rgba(212,165,255,0.08) 55%, transparent 75%); animation-duration: 32s; animation-delay: -9s; }
-.c-3 { width: 30vw; height: 8vw; top: 30%; left: -35%; background: radial-gradient(ellipse, rgba(255,200,150,0.32), rgba(240,110,80,0.09) 55%, transparent 75%); animation-duration: 22s; animation-delay: -4s; }
-.c-4 { width: 22vw; height: 6vw; top: 25%; left: -26%; background: radial-gradient(ellipse, rgba(255,230,170,0.3), rgba(255,150,90,0.07) 55%, transparent 75%); animation-duration: 29s; animation-delay: -14s; }
-.c-5 { width: 16vw; height: 4.5vw; top: 36%; left: -18%; background: radial-gradient(ellipse, rgba(255,180,150,0.26), rgba(255,120,90,0.06) 55%, transparent 75%); animation-duration: 36s; animation-delay: -18s; }
+.sunset-cloud { position: absolute; border-radius: 50%; filter: blur(26px); opacity: 0.85; mix-blend-mode: screen; animation: sunsetCloud linear infinite; }
+.c-1 { width: 26vw; height: 7vw; top: 20%; left: -30%; background: radial-gradient(ellipse, rgba(255,220,185,0.45), rgba(255,140,100,0.12) 55%, transparent 75%); animation-duration: 26s; }
+.c-2 { width: 20vw; height: 5.5vw; top: 14%; left: -22%; background: radial-gradient(ellipse, rgba(255,190,215,0.4), rgba(212,165,255,0.12) 55%, transparent 75%); animation-duration: 32s; animation-delay: -9s; }
+.c-3 { width: 30vw; height: 8vw; top: 30%; left: -35%; background: radial-gradient(ellipse, rgba(255,200,150,0.42), rgba(240,110,80,0.14) 55%, transparent 75%); animation-duration: 22s; animation-delay: -4s; }
+.c-4 { width: 22vw; height: 6vw; top: 25%; left: -26%; background: radial-gradient(ellipse, rgba(255,230,170,0.4), rgba(255,150,90,0.1) 55%, transparent 75%); animation-duration: 29s; animation-delay: -14s; }
+.c-5 { width: 16vw; height: 4.5vw; top: 36%; left: -18%; background: radial-gradient(ellipse, rgba(255,180,150,0.35), rgba(255,120,90,0.08) 55%, transparent 75%); animation-duration: 36s; animation-delay: -18s; }
 @keyframes sunsetCloud { 0% { transform: translateX(0) scaleX(1); } 50% { transform: translateX(70vw) scaleX(1.15); } 100% { transform: translateX(140vw) scaleX(1); } }
 
 /* Dynamic flying birds with wing-flapping animation */
@@ -234,12 +234,12 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 /* Realistic layered ocean waves — animated rising, falling, and rolling swells */
 .sunset-waves-svg { position: absolute; bottom: 0; left: -8%; width: 116%; height: 100%; display: block; }
 .sunset-waves-svg .wv { transform-origin: center bottom; will-change: transform; }
-.wv-1 { fill: rgba(30,195,215,0.48); animation: waveRise1 6.2s ease-in-out infinite alternate; }
-.wv-2 { fill: rgba(18,155,182,0.56); animation: waveRise2 8.4s ease-in-out infinite -2.1s alternate; }
-.wv-3 { fill: rgba(12,122,155,0.64); animation: waveRise3 7.0s ease-in-out infinite -4.3s alternate; }
-.wv-4 { fill: rgba(8,92,128,0.72); animation: waveRise4 9.8s ease-in-out infinite -1.5s alternate; }
-.wv-5 { fill: rgba(6,60,96,0.85); animation: waveRise5 11.2s ease-in-out infinite -3.8s alternate; }
-.wv-6 { fill: rgba(30,195,215,0.3); animation: waveRise6 12s ease-in-out infinite alternate; }
+.wv-1 { fill: rgba(40,210,230,0.58); animation: waveRise1 6.2s ease-in-out infinite alternate; }
+.wv-2 { fill: rgba(28,175,200,0.65); animation: waveRise2 8.4s ease-in-out infinite -2.1s alternate; }
+.wv-3 { fill: rgba(20,140,175,0.72); animation: waveRise3 7.0s ease-in-out infinite -4.3s alternate; }
+.wv-4 { fill: rgba(14,112,150,0.8); animation: waveRise4 9.8s ease-in-out infinite -1.5s alternate; }
+.wv-5 { fill: rgba(10,80,120,0.9); animation: waveRise5 11.2s ease-in-out infinite -3.8s alternate; }
+.wv-6 { fill: rgba(40,210,230,0.4); animation: waveRise6 12s ease-in-out infinite alternate; }
 .wv-7 { fill: rgba(18,155,182,0.22); animation: waveRise7 10s ease-in-out infinite -3s alternate; }
 .wv-8 { fill: rgba(12,122,155,0.16); animation: waveRise8 8.8s ease-in-out infinite -5s alternate; }
 
@@ -291,7 +291,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   padding: 20px; margin-top: 8vh;
 }
 .muse-enter-icon-wrap {
-  position: relative; margin-bottom: 12px;
+  position: relative; margin-bottom: 0px;
   animation: museIconFloat 4.2s ease-in-out infinite;
 }
 .muse-enter-icon-wrap::before {
@@ -321,14 +321,14 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   background-size: 300% 300%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
   animation: museGradientShift 6s ease infinite;
   filter: drop-shadow(0 2px 24px rgba(255,215,0,0.5));
-  margin-top: 4px;
+  margin-top: 0px;
 }
 .muse-enter-sub {
   font-size: 9px; letter-spacing: 0.34em; text-transform: uppercase;
-  color: rgba(255,255,255,0.45); margin-top: 10px; font-weight: 500;
+  color: rgba(255,255,255,0.45); margin-top: 4px; font-weight: 500;
 }
 .muse-enter-prompt {
-  margin-top: 36px; display: inline-flex; align-items: center; gap: 10px;
+  margin-top: 52px; display: inline-flex; align-items: center; gap: 10px;
   padding: 15px 36px; border-radius: 999px;
   background: linear-gradient(135deg, rgba(255,215,0,0.18), rgba(255,138,128,0.14));
   border: 1.5px solid rgba(255,215,0,0.6); color: #FFD700;
