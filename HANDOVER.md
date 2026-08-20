@@ -571,3 +571,34 @@ Per Claude's honest pushback, the previous 10/10 claims were not credible. Accep
 8. **9 of 11 state hooks** (code backlog).
 9. **`page.tsx` monolith split** (code backlog).
 10. **Checkout duplicate-product risk** — Claude's flagged item: the on-the-fly product/price creation in `checkout/route.ts` could create a new product in live mode if `price_muse_pro_monthly` lookup misses, risking a wrong/missing category for Managed Payments. **Recommended next Claude task: verify the lookup key resolves to the manually-created Muse Pro product and the dynamic creation is never triggered in live mode.**
+
+---
+
+## 25. SESSION UPDATE — 2026-08-19 (checkout live-mode guard + referral leak, the final two)
+
+Claude's close-out list had two remaining code items; both are now fixed, committed, and pushed (`f489366`).
+
+### Checkout duplicate-product guard — FIXED
+The silent on-the-fly product/price creation in `checkout/route.ts` was the last real financial/operational risk. Now:
+- If `STRIPE_SECRET_KEY` matches `/^sk_live_/i` AND the `price_muse_pro_monthly` lookup misses → **fails loudly**: `console.error` + a clear 500 (`"Subscription price not configured"`). No silent product minting in production.
+- Auto-creation remains only for test/dev keys (where a throwaway product is harmless).
+- **Verified live:** `price_muse_pro_monthly` resolves to `price_1U4BdcAlrkQDEH7CNRW6b2rZ` (active, $9.99, on `prod_V4KIQZeko5q8gW`), so the guard does not break live checkout.
+
+### Referral route error leak (#8) — FIXED
+`muse/referral/route.ts` was returning raw `e.message` to the client (missed in the earlier 7-route hardening pass). Fixed to `console.error` server-side + generic `"Server error"`. **Confirmed final:** grep for `e instanceof Error ? e.message` across all `route.ts` returns zero matches — no more raw-error leaks anywhere.
+
+### Claude's other confirmations (no action needed)
+- **`loadState`/`saveState` payload clean:** `authUser` holds only `{id, email, profile}` (no token/password); arrays capped; `tier` correctly excluded. No secrets persisted.
+- **Referral UI:** "Copy Referral Link" genuinely works — referrer sees their code via copy+toast. Functional, not a gap.
+- **`email_confirm: true`:** accepted as closed-beta-only. **Revert condition (explicit):** before open beta, or the moment signups come from anyone outside a personally-controlled invite list. Not a calendar date.
+
+### Still open (ranked, honest)
+1. **Apply `sql/MUSE_RATE_LIMIT_20260819.sql`** — manual, Supabase SQL Editor. The only step between "durable rate limiting is built" and "it's live."
+2. **Live charge test** — in-app `MUSEBETA` promo + real card.
+3. **Policy confirmation from the user:** strike severity separation ("don't mix" is now the built behavior) — needs an explicit yes.
+4. **Three under-audited traces** (real coverage gaps, not confirmed bugs): tutorial anchor accuracy, full booking-loop re-trace, forum/collab/community write→read-back trace.
+5. Human-owned: attorney review, insurance, Facebook App → Live, NCMEC creds.
+6. Code backlog: `next/image`, 9 of 11 hooks, `page.tsx` split, `zod`, delete `DiscoverTutorial.tsx`.
+
+### Verification
+`npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. Pushed to `main` (`f489366`); Vercel auto-deploys.
