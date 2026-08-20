@@ -602,3 +602,81 @@ The silent on-the-fly product/price creation in `checkout/route.ts` was the last
 
 ### Verification
 `npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. Pushed to `main` (`f489366`); Vercel auto-deploys.
+
+---
+
+## 26. SESSION UPDATE — 2026-08-19 (payment-integrity fix — the most serious finding yet)
+
+Claude's booking-loop re-trace surfaced the single most dangerous issue of the entire engagement, and it is now FIXED.
+
+### Payment-integrity trust boundary — FIXED (`fb0f66a`)
+**The bug (confirmed):** `create-booking-checkout` (`connect/route.ts`) trusted a **client-supplied `amountCents`** with no validation against the session's actual rate. The server only checked "positive integer" and "not paying yourself" — anyone crafting an API call directly could charge an arbitrary amount for a real booking. Compounding it: `muse_sessions.rate` was free text (`String(rate).slice(0,50)`), and the Pay button parsed price via `String(rate).match(/\d+/)` — the *first* number, so "2 hour shoot, $150" would charge **$2.00** silently.
+
+**Fix:**
+- `src/lib/money.ts` — new `parseRateToCents()`: parses free-text rates to canonical cents, returns `null` for empty/non-numeric AND for **ambiguous multi-number** strings (`"$50-100/hr"`, `"2 hour, $150"`), with a $1M sanity cap. 7 unit tests (`money.test.ts`).
+- `create-booking-checkout` now: looks up the booking → its session **server-side**, derives the amount from `session.rate` via `parseRateToCents`, derives the payee from `session.host_id` (not the client), and **ignores any client-supplied amount entirely**. Only the booker (`booking.user_id === profile.id`) can pay.
+- `create-payment` (the client-secret flow, currently uncalled by frontend) got the same hardening: if `bookingId` is supplied, amount is derived from the session rate; client amounts only accepted for legacy no-booking payments.
+- `SessionsScreen.payBooking` no longer computes/sends `amountCents` or `payeeId` — it sends only `bookingId` + `description`.
+
+### Reviews read-back — FIXED (`fb0f66a`)
+The earlier gap (reviews written via `submit-review` but never displayed): the viewProfile modal now fetches `?type=reviews&profile_id=X` on open (via a `useEffect` keyed on `viewProfile.id`, with a cancellation guard) and renders a "Reviews" section with reviewer name, star rating, and body.
+
+### Code hygiene — DONE (`d1c7c73`)
+- Deleted superseded `DiscoverTutorial.tsx` (replaced by `TutorialOverlay.tsx`). `zod` was already removed from `package.json` earlier.
+
+### Verification
+`npx tsc --noEmit` clean, `npm run build` clean, **53 unit tests pass** (9 files, up from 46). Pushed to `main` (`fb0f66a`, `d1c7c73`); Vercel auto-deploys.
+
+---
+
+## 27. FINAL HANDOFF TO CLAUDE — BE CRITICAL, SPECULATIVE, AND EXHAUSTIVE
+
+> **Claude, this is a full-stop request to audit harder than you ever have.** I believe the app is now in strong shape, but "I believe" is exactly what I want you to dismantle. Treat every claim below as unproven until you read the code yourself. Your value is in finding what I *cannot* see — the blind spots, the speculative failure modes, the things that only break under real load, real money, real users, or real adversaries. Do not give me comfort. Give me a defect list.
+
+### Speculative failure modes I want you to actively hunt (not just verify)
+
+These are hypotheses, not findings — I want you to prove or disprove each with code, and add your own:
+
+1. **Concurrency / race conditions.** `complete-booking` and `cancel-booking` both mutate `muse_bookings` and `muse_booking_payments` without any transaction or idempotency key. Can two concurrent `complete-booking` calls double-capture the same payment intent, or double-insert reviews? Is the `muse_reviews` upsert (`onConflict: booking_id,reviewer_id`) actually race-safe? What about `respond-booking` racing with `cancel-booking`?
+
+2. **Stripe webhook vs. direct-action divergence.** The webhook (`webhooks/stripe/route.ts`) sets booking payment status to `succeeded`/`failed` on payment-intent events, but `complete-booking` captures the intent inline. If the webhook fires AFTER `complete-booking` already captured, does anything double-write or flip a settled booking back? Is there an idempotency guarantee on webhook delivery (Stripe retries on 5xx)?
+
+3. **The `rate` field is still free text at creation.** I fixed the *payment* path to reject ambiguous rates, but `create-session` (`route.ts:805`) still stores `String(rate).slice(0,50)` with no validation. A host can still create a session with rate `"2 hour, $150"` that is *unpayable* (parse returns null at checkout). Should `create-session` reject ambiguous rates at creation time, or is there a UI that guides the host to a single number? Trace the session-creation form.
+
+4. **`muse_booking_payments` rows with empty `stripe_payment_intent`.** `create-booking-checkout` inserts a payment row with `stripe_payment_intent: ""` (empty string) because the PaymentIntent is created *inside* the Checkout Session, not known at insert time. The webhook matches on `booking_id` — but does it ever match a payment that was inserted but whose checkout was abandoned? Do orphaned `pending` payment rows accumulate forever and block `complete-booking` (which checks `payment.status !== "succeeded"`)? Trace the abandoned-checkout path end-to-end.
+
+5. **Commission math at the $1 boundary.** `commission = Math.round(amount * 0.05)`. For a $1 session (100 cents), commission = 5 cents, net = 95 cents. Stripe's `application_fee_amount` has a minimum and the transfer amount has a minimum. Does a tiny booking (e.g. "$1" or "$2") fail at Stripe with an unclear error? What's the minimum bookable amount that actually processes?
+
+6. **The `revealedNsfw` Set and `muse_tutorials_seen` localStorage are unbounded.** Is there any risk of localStorage quota exhaustion, or a user who clears one but not the other getting stuck in an inconsistent state?
+
+7. **`loadState` forces `tier: "free"` on restore** — correct for fixing the leak, but does it ALSO wipe a legitimately-persisted `foundingTier`/`proExpiresAt` that should survive a reload? Trace what happens to a founding member's badge across a hard refresh.
+
+8. **The review fetch in the profile modal is unauthenticated** (`fetch('/api/muse?type=reviews...')` without a token). Is that correct (reviews are public), or does it 401 for some profiles? Does the modal degrade gracefully when the request fails?
+
+9. **Sentry `sourcemaps.disable: true`** — is error reporting actually useful with source maps off, or are production stack traces now useless? Is that a deliberate tradeoff or an oversight?
+
+10. **The `email_confirm: true` revert condition** is documented as "before open beta," but what *code* enforces that? Nothing. If the team forgets, accounts stay unverified silently. Should there be a `TODO`-level guard or a launch checklist item in a place that can't be missed?
+
+### The three traces I still haven't done (you must, and I won't pretend otherwise)
+
+- **Tutorial anchor accuracy** — `screens/tutorials.ts` anchors (`card`/`fab`/`nav`/`header`/`center`) vs. actual on-screen elements. Are the highlight boxes pointing at the right things on every screen, or are they decorative?
+- **Full booking loop continuous trace** — create-session → book → respond → pay → complete → review, in one pass, with real payloads.
+- **Forum / Collab / Community write→read-back** — create → persist → visible-to-others → interact, end to end.
+
+### Your scorecard (again, calibrated, not comfort)
+
+Re-score everything from scratch. The prior numbers (Security 7, Trust & safety 8, Tech infra 7) were *before* the payment-integrity fix. Recompute. If you can't verify something, write "unverified" — I prefer a hole in the grid over a made-up 10.
+
+### Verification commands
+
+```
+cd /home/claude/muse-repo && git pull origin main
+npx tsc --noEmit
+npm run build
+npx vitest run
+```
+
+### Git head at handover time
+`d1c7c73` (delete DiscoverTutorial) ← `fb0f66a` (payment-integrity + reviews) ← `f489366` (checkout guard + referral leak) ← `bec3625`/`2444028` (rate-limit + strikes) ← `2bb392f` (sections 22-23).
+
+Build clean, 53 tests pass, `tsc --noEmit` clean. All pushed to `main`; Vercel auto-deploys.
