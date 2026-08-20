@@ -30,13 +30,18 @@
 
 ## Known Issues Still Open
 
-### From HANDOVER_V3 (Chrome extension Claude)
-1. **Waitlist confirmation email** — `/api/muse/waitlist` returns 200 OK but no confirmation email was received. Check Supabase or email service logs.
-2. **Founding-member "already yours" treatment** — Spec written but not implemented. Add "You have this" badge on current tier card + reassurance line near founding banner in `SubscriptionScreen.tsx`.
-3. **Placeholder images in Discover/BTS/Community** — Some profile cards show flat rectangles where images should be. Improved `handleImgError` fallback but root cause may be null/empty image URLs in data.
+### Resolved this session (commit `f1c7c27`)
+- **§3 Founding-member "already yours" badge** — ✅ Implemented. Added gold-to-lavender "✓ You have this" pill badge on the current tier card + "Browse plans below anytime — you won't be charged" reassurance line under the founding banner in `SubscriptionScreen.tsx`.
+- **§4 BTS empty-state placeholder** — ✅ Implemented. Empty-state cards now show a centered camera icon + "No moments yet" label instead of a bare gradient rectangle.
+- **§6 SQL catch-up migration** — ✅ VERIFIED applied. All 7 tables (`muse_waitlist`, `muse_landing_analytics`, `muse_qr_events`, `muse_verification_sessions`, `muse_rate_limits`, `muse_events_log`, `muse_ncmec_reports`) + 4 columns (`founding_tier`, `pro_expires_at`, `age_verified`, `suspended`) confirmed live via PostgREST (status 200).
 
-### From this session
-4. **Onboarding form filling** — Playwright script (`_audit/run_audit.py`) successfully walks through all 18 steps but doesn't capture every screen after onboarding (only Discover). Full tab-by-tab audit still needs doing.
+### From HANDOVER_V3 (Chrome extension Claude) — still open
+1. **Waitlist confirmation email** — `/api/muse/waitlist` returns 200 OK but no confirmation email was received. Check email service logs. (Backend question, no code fix identified.)
+2. **§4 Discover card "blank" appearance** — Downgraded to false alarm by Chrome Claude: card was fully loaded 1s later, lazy-load/render-timing artifact. No further action.
+
+### Remaining
+3. **Onboarding full tab-by-tab visual audit** — Playwright walkthrough works through all 18 steps but only captures Discover after onboarding. Full screen-by-screen screenshot audit still pending.
+4. **Pricing section narrow-viewport (≤920px) layout** — 3-tier grid becomes 2+1, lone third card may look stranded. Needs a real ≤920px visual check.
 
 ---
 
