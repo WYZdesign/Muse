@@ -680,3 +680,63 @@ npx vitest run
 `d1c7c73` (delete DiscoverTutorial) ← `fb0f66a` (payment-integrity + reviews) ← `f489366` (checkout guard + referral leak) ← `bec3625`/`2444028` (rate-limit + strikes) ← `2bb392f` (sections 22-23).
 
 Build clean, 53 tests pass, `tsc --noEmit` clean. All pushed to `main`; Vercel auto-deploys.
+
+---
+
+## 28. SYNC POINT — 2026-08-19 (final commit `810fe98`, everyone on the same page)
+
+This section exists solely so the state is unambiguous to whoever reads it next. Nothing here is new work — it is a single authoritative summary of where the repo actually is right now.
+
+### Exact git state (verified via `git fetch` + `git log origin/main`)
+- **Local `main` == `origin/main` == `810fe98`.** No uncommitted changes (`git status` is clean). A `git pull origin main` will bring Claude fully up to date.
+
+### Full recent commit list (newest first)
+```
+810fe98 fix: validate session rate at creation time (reject ambiguous free-text rates)
+4d36049 handover: sections 26-27 - payment-integrity fix + exhaustive critical-audit request
+d1c7c73 chore: delete superseded DiscoverTutorial (replaced by TutorialOverlay)
+fb0f66a fix: payment-integrity - derive booking amount server-side from session rate; wire reviews read-back
+f489366 fix: live-mode guard on checkout product fallback + referral route error leak
+bec3625 handover: section 24 - rate limit durability + strike separation
+2444028 fix: durable Postgres-backed rate limiting, strike severity separation, MUSEBETA promo UX
+2bb392f handover: sections 22-23 - Stripe promo, landing fix, AI review, critical-audit request
+```
+
+### What `810fe98` added (the last thing Claude's last message flagged)
+Claude confirmed the payment-integrity fix (`fb0f66a`) was correct, but its one remaining sub-point — that `create-session` still stored `rate` as unvalidated free text, letting a host create an *unpayable* session — is now closed:
+- `route.ts` `create-session` now rejects any non-empty `rate` that fails `parseRateToCents()` (i.e. ambiguous strings like `"$50-100/hr"` or `"2 hour, $150"`), returning a clear 400 with guidance. Empty rate is still allowed (free/TFP sessions). This means a session can never be created in a state where checkout would fail to parse its rate.
+
+### Complete, current status of every open item (this is the source of truth)
+
+| # | Item | State | Owner |
+|---|---|---|---|
+| 1 | Payment-integrity (server-derived amount) | ✅ Fixed `fb0f66a` | code |
+| 2 | Rate validation at session creation | ✅ Fixed `810fe98` | code |
+| 3 | Checkout live-mode guard | ✅ Fixed `f489366` | code |
+| 4 | Referral error leak | ✅ Fixed `f489366` | code |
+| 5 | Durable rate limiting (Postgres) | ⚠️ **Needs `sql/MUSE_RATE_LIMIT_20260819.sql` applied manually** in Supabase SQL Editor | **Torreé (manual)** |
+| 6 | Strike severity separation | ✅ Fixed `2444028` — but **needs explicit policy yes** ("don't mix" is the built behavior) | Torreé (confirm) |
+| 7 | Reviews read-back | ✅ Fixed `fb0f66a` | code |
+| 8 | Live charge test | ⏳ via in-app `MUSEBETA` + real card | Torreé |
+| 9 | Attorney review | ⏳ | Torreé |
+| 10 | Insurance | ⏳ | Torreé |
+| 11 | Facebook App → Live | ⏳ | Torreé |
+| 12 | NCMEC creds | ⏳ | Torreé |
+| 13 | Tutorial anchor accuracy | 🔍 unverified trace | Claude |
+| 14 | Full booking loop re-trace | 🔍 unverified trace | Claude |
+| 15 | Forum/Collab/Community trace | 🔍 unverified trace | Claude |
+| 16 | `next/image` adoption | backlog | future |
+| 17 | 9 of 11 state hooks | backlog | future |
+| 18 | `page.tsx` split | backlog | future |
+| 19 | `zod` validation | backlog (dep already removed) | future |
+
+### For Claude specifically — one sentence
+Pull `810fe98`, then continue the three unverified traces (tutorial anchors, full booking loop, forum/collab/community) and the speculative-failure-mode list in section 27; item 5 (rate-limit SQL) is blocked on Torreé, not you.
+
+### Verification (rerun before trusting anything above)
+```
+cd /home/claude/muse-repo && git pull origin main
+npx tsc --noEmit
+npm run build
+npx vitest run   # 53 tests
+```
