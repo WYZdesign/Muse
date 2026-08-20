@@ -71,16 +71,26 @@ export async function POST(req: NextRequest) {
     }
     // ───────────────────────────────────────────────────────────────────────
 
-    // Look up an existing price for this plan, or create one on the fly.
+    // Look up an existing price for this plan. In LIVE mode, a miss is an
+    // operator error (the price must exist), NOT a cue to silently mint a
+    // throwaway product with a wrong/missing Managed Payments category. Only
+    // allow on-the-fly creation against non-live keys, where it's harmless.
     let priceId: string | null = null;
     try {
       const prices = await stripe.prices.list({ lookup_keys: [PRICE_MAP[plan]], limit: 1, active: true });
       if (prices.data.length > 0) priceId = prices.data[0].id;
-    } catch { /* fall through to dynamic product creation */ }
+    } catch (e) {
+      console.error("[checkout] price lookup failed:", e);
+    }
 
     if (!priceId) {
-      // Create a product + recurring price dynamically — works for first-time
-      // setup or when prices haven't been manually created in the Dashboard.
+      const isLive = /^sk_live_/i.test(secret);
+      if (isLive) {
+        // Fail loudly — never silently create a product/price in production.
+        console.error(`[checkout] price lookup key "${PRICE_MAP[plan]}" not found in LIVE mode; refusing to auto-create.`);
+        return NextResponse.json({ error: "Subscription price not configured. Please contact support." }, { status: 500 });
+      }
+      // Test/dev only: create a product + recurring price on the fly.
       const product = await stripe.products.create({
         name: "Muse Pro",
         metadata: { plan: "muse_pro" },
