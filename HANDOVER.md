@@ -740,3 +740,43 @@ npx tsc --noEmit
 npm run build
 npx vitest run   # 53 tests
 ```
+
+---
+
+## 29. SESSION UPDATE — 2026-08-19 (Claude's three confirmed findings fixed)
+
+Claude's last audit round surfaced three real, confirmed findings (out of 10 speculative items + 3 traces). All three are now fixed, committed, and pushed (`c587022`).
+
+### 1. Duplicate booking-payment rows — FIXED (highest stakes)
+Claude's sharpest find: `create-booking-checkout` **unconditionally `INSERT`ed** a new `muse_booking_payments` row on every Pay click. A user who clicked Pay, abandoned Stripe checkout, then paid again created two `pending` rows — and `complete-booking`'s `.maybeSingle()` lookup **errors on >1 row**, silently breaking the ability to ever complete that booking.
+
+**Fix:**
+- New migration `sql/MUSE_BOOKING_PAYMENT_UNIQUE_20260819.sql` — de-dupes existing duplicate rows (keeps latest), then adds `UNIQUE (booking_id)`. ⚠️ **Requires manual apply** in Supabase SQL Editor.
+- `create-booking-checkout` now uses `.upsert(..., { onConflict: "booking_id" })` so a retry reuses the existing row.
+- `complete-booking`'s escrow lookup changed from `.maybeSingle()` to `.order("created_at", { ascending: false }).limit(1)` + take `[0]`, so even historical duplicates can't error the query.
+
+### 2. Sentry sourcemaps disabled — FIXED
+`next.config.ts` had `sourcemaps: { disable: true }`, so production errors showed minified `chunk-abc123.js:1` stack traces (nearly useless). Flipped to `disable: false`. Real stack traces restored.
+
+### 3. Tutorial anchors were decorative — FIXED
+Claude confirmed the suspicion: `card`/`fab`/`center` anchors were hardcoded fixed positions shaped to **Discover's** layout (single centered swipe card, circular FAB), then reused verbatim on other screens with different layouts — the highlight boxes floated over empty/wrong content.
+
+**Fix:**
+- `TutorialOverlay.tsx` now measures the **actual DOM element** via `querySelector` + `getBoundingClientRect()` (with a mount-settle delay + resize listener), so the gold ring outlines the real target.
+- `tutorials.ts` added a `selector?` field per step, targeting real, verified nodes: `.nav` (bottom bar), `.hdr` (header), `.swipe-card.top-card` (discover card), `.match-radial-btn.btn-like` (like button), `.moments-feed` (BTS feed), `.match-list` (Muses list). Screens without a unique interactive element keep a generic-position fallback.
+
+### Claude's other confirmations (no action needed)
+- **Concurrency items 1+2 (race on complete-booking, webhook divergence):** assessed low-risk — no double-charge because `stripe.paymentIntents.capture()` on an already-captured intent throws and the code catches it; Stripe's idempotency is the real protection. The only residual is a possible duplicate "booking completed" notification on rapid double-tap (minor UX, not urgent).
+- **Forum/Collab/Community trace:** genuinely clean — brief-creation gap (flagged many rounds ago) confirmed closed; real write → persist → read-back with proper upsert + server-side count derivation.
+- **Item 3 (pre-existing unpayable sessions from before the rate-validation fix):** Claude flagged this as a next check — see below.
+
+### Still open / next for Claude
+1. **Apply two manual SQL migrations** (blocked on Torreé): `MUSE_RATE_LIMIT_20260819.sql` AND `MUSE_BOOKING_PAYMENT_UNIQUE_20260819.sql`.
+2. **Check whether pre-existing `muse_sessions` rows in the live DB have unparseable rates** (created before the `810fe98` validation fix). If any exist, they're unpayable at checkout until edited.
+3. **Remaining speculative items** (section 27): item 4 (orphaned `pending` payment rows from abandoned checkouts — now mitigated by the unique constraint + upsert, but confirm), items 6-8, 10.
+4. **Policy confirmation from Torreé:** strike severity separation ("don't mix").
+5. Human-owned: live charge test, attorney review, insurance, Facebook App → Live, NCMEC creds.
+6. Code backlog: `next/image`, 9 of 11 hooks, `page.tsx` split.
+
+### Verification
+`npx tsc --noEmit` clean, `npm run build` clean, 53 unit tests pass. Pushed to `main` (`c587022`); Vercel auto-deploys.
