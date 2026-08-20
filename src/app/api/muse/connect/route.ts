@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
+import { parseRateToCents } from "@/lib/money";
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
@@ -102,11 +103,26 @@ export async function POST(req: NextRequest) {
     // ═══ CREATE-PAYMENT: Pay for a booking via marketplace ═══
     if (action === "create-payment") {
       const { payeeId, amountCents, description, bookingId } = body;
-      if (!payeeId || !amountCents) return NextResponse.json({ error: "payeeId and amountCents required" }, { status: 400 });
-      // Server-side validation: amount must be a positive integer (cents).
-      const amount = Number(amountCents);
-      if (!Number.isInteger(amount) || amount <= 0) return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+      if (!payeeId) return NextResponse.json({ error: "payeeId required" }, { status: 400 });
       if (String(payeeId) === String(profile.id)) return NextResponse.json({ error: "Cannot pay yourself" }, { status: 400 });
+
+      // Payment-integrity: if a booking is supplied, derive the amount from
+      // its session's declared rate — never trust a client-supplied amount.
+      let amount: number;
+      if (bookingId) {
+        const { data: booking } = await sb.from("muse_bookings")
+          .select("id, user_id, session_id").eq("id", bookingId).maybeSingle();
+        if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+        if (String(booking.user_id) !== String(profile.id)) return NextResponse.json({ error: "Only the booker can pay" }, { status: 403 });
+        const { data: sessionRec } = await sb.from("muse_sessions").select("rate").eq("id", booking.session_id).maybeSingle();
+        const parsed = sessionRec ? parseRateToCents(sessionRec.rate) : null;
+        if (parsed === null) return NextResponse.json({ error: "Session has no valid single rate set" }, { status: 400 });
+        amount = parsed;
+      } else {
+        // No booking — legacy/standalone payment. Still validate the shape.
+        amount = Number(amountCents);
+        if (!Number.isInteger(amount) || amount <= 0) return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+      }
 
       // Fetch payee's connect account
       const { data: payee } = await sb.from("muse_profiles")
@@ -162,10 +178,34 @@ export async function POST(req: NextRequest) {
 
     // ═══ CREATE-BOOKING-CHECKOUT: Redirect-based booking payment (no client Stripe.js needed) ═══
     if (action === "create-booking-checkout") {
-      const { payeeId, amountCents, bookingId, description } = body;
-      if (!payeeId || !amountCents) return NextResponse.json({ error: "payeeId and amountCents required" }, { status: 400 });
-      const amount = Number(amountCents);
-      if (!Number.isInteger(amount) || amount <= 0) return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+      const { bookingId, description } = body;
+      if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
+
+      // ── Payment-integrity: derive the amount + payee from the booking's
+      // session SERVER-SIDE. Never trust a client-supplied amount — anyone
+      // could craft an API call and charge an arbitrary figure. ──
+      const { data: booking } = await sb.from("muse_bookings")
+        .select("id, user_id, host_id, session_id")
+        .eq("id", bookingId).maybeSingle();
+      if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+      if (String(booking.user_id) !== String(profile.id)) {
+        return NextResponse.json({ error: "Only the booker can pay for this booking" }, { status: 403 });
+      }
+
+      const { data: sessionRec } = await sb.from("muse_sessions")
+        .select("id, host_id, rate, title")
+        .eq("id", booking.session_id).maybeSingle();
+      if (!sessionRec) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+
+      // Authoritative amount from the host's declared rate.
+      const amount = parseRateToCents(sessionRec.rate);
+      if (amount === null) {
+        return NextResponse.json({ error: "This session has no valid single rate set — please ask the host to update it." }, { status: 400 });
+      }
+
+      // Authoritative payee from the session host (not the client).
+      const payeeId = sessionRec.host_id || booking.host_id;
+      if (!payeeId) return NextResponse.json({ error: "Host not found" }, { status: 400 });
       if (String(payeeId) === String(profile.id)) return NextResponse.json({ error: "Cannot pay yourself" }, { status: 400 });
 
       const { data: payee } = await sb.from("muse_profiles")
@@ -180,7 +220,7 @@ export async function POST(req: NextRequest) {
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
         line_items: [{
-          price_data: { currency: "usd", unit_amount: amount, product_data: { name: description || `Muse booking with ${payee.name}` } },
+          price_data: { currency: "usd", unit_amount: amount, product_data: { name: description || sessionRec.title || `Muse booking with ${payee.name}` } },
           quantity: 1,
         }],
         payment_intent_data: {
@@ -188,7 +228,7 @@ export async function POST(req: NextRequest) {
           application_fee_amount: commission,
           transfer_data: { destination: payee.stripe_connect_id },
           metadata: {
-            muse_payer_id: profile.id, muse_payee_id: payeeId, muse_booking_id: bookingId || "",
+            muse_payer_id: profile.id, muse_payee_id: payeeId, muse_booking_id: bookingId,
             commission_cents: String(commission), net_cents: String(netAmount),
           },
         },
@@ -197,7 +237,7 @@ export async function POST(req: NextRequest) {
       });
 
       await sb.from("muse_booking_payments").insert({
-        booking_id: bookingId || null, payer_id: profile.id, payee_id: payeeId,
+        booking_id: bookingId, payer_id: profile.id, payee_id: payeeId,
         stripe_payment_intent: "", amount_cents: amount, commission_cents: commission,
         net_amount_cents: netAmount, status: "pending",
       });

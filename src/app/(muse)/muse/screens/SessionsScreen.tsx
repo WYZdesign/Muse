@@ -113,11 +113,10 @@ export const SessionsScreen = memo(function SessionsScreen({
     const host = booking.host_id;
     const session = booking.session_id;
     if (!host?.id) { showToast("Host unavailable"); return; }
-    const m = String(session?.rate || "").match(/\d+/);
-    const amountCents = m ? parseInt(m[0]) * 100 : 0;
-    if (!amountCents) { showToast("This session has no numeric rate — ask the host to set one"); return; }
     try {
-      const r = await authFetch("/api/muse/connect", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-booking-checkout", payeeId: host.id, amountCents, bookingId: booking.id, description: `Booking: ${session?.title || "Muse session"}` }) });
+      // Amount is derived server-side from the session's declared rate —
+      // never send a client-computed amount.
+      const r = await authFetch("/api/muse/connect", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-booking-checkout", bookingId: booking.id, description: `Booking: ${session?.title || "Muse session"}` }) });
       const j = await r.json();
       if (j.url) { window.location.href = j.url; }
       else { showToast(j.error || "Payment unavailable"); }

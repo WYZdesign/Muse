@@ -251,6 +251,7 @@ function MusePage() {
   }, []);
 
   const [viewProfile, setViewProfile] = useState<any>(null);
+  const [viewProfileReviews, setViewProfileReviews] = useState<any[]>([]);
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
    const [showStories, setShowStories] = useState(false);
@@ -320,10 +321,24 @@ function MusePage() {
     return res;
   }, []);
 
+  // Load a profile's reviews when the profile modal opens (reviews are
+  // written via submit-review but were previously never read back).
+  useEffect(() => {
+    if (!viewProfile?.id) { setViewProfileReviews([]); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/muse?type=reviews&profile_id=${encodeURIComponent(viewProfile.id)}`);
+        const d = await res.json();
+        if (!cancelled) setViewProfileReviews(d.reviews || []);
+      } catch { if (!cancelled) setViewProfileReviews([]); }
+    })();
+    return () => { cancelled = true; };
+  }, [viewProfile?.id]);
+
   // Pulls real data from the API on mount; silently keeps the static demo
   // arrays when the table is empty or the request fails (graceful fallback).
-  const bootstrapData = useCallback(async () => {
-    try {
+  const bootstrapData = useCallback(async () => {    try {
       let token = "";
       try { token = JSON.parse(localStorage.getItem("muse_user") || "{}")?.access_token || ""; } catch {}
       // Match recommendations require auth — skip when there's no session yet
@@ -2248,6 +2263,20 @@ const isMatch=matchScore>55||Math.random()>0.5;
               {viewProfile.styles?.length > 0 && <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>{viewProfile.styles.map((s:string)=><span key={s} className="tag">{s}</span>)}</div>}
               {viewProfile.zodiac && <div style={{fontSize:13,color:"var(--text2)",marginBottom:4}}>♈ {viewProfile.zodiac}{viewProfile.mbti?` · 🧠 ${viewProfile.mbti}`:""}</div>}
               {typeof viewProfile.collabs === "number" && <div style={{fontSize:13,color:"var(--text2)",marginBottom:16}}>🤝 {viewProfile.collabs} collaborations</div>}
+              {viewProfileReviews.length > 0 && (
+                <div style={{marginBottom:16}}>
+                  <div style={{fontSize:14,fontWeight:700,color:"var(--text)",marginBottom:8}}>Reviews</div>
+                  {viewProfileReviews.map((rv:any) => (
+                    <div key={rv.id} style={{padding:"10px 12px",borderRadius:12,background:"rgba(255,255,255,0.04)",marginBottom:8}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                        <span style={{fontSize:12,fontWeight:700,color:"var(--text)"}}>{rv.reviewer_id?.name || "Anonymous"}</span>
+                        <span style={{fontSize:12,color:"var(--gold)"}}>{"★".repeat(rv.rating)}{"☆".repeat(5 - rv.rating)}</span>
+                      </div>
+                      {rv.body && <div style={{fontSize:12,color:"var(--text2)",lineHeight:1.5}}>{rv.body}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
               <button className="btn btn-gold" style={{width:"100%"}} onClick={()=>{
                 if(!matches.find((m:any)=>m.id===viewProfile.id)) setMatches((prev:any)=>[...prev,{...viewProfile,messages:[]}]);
                 setChatTarget({...viewProfile,messages:[]});setViewProfile(null);showScreen("chat");
