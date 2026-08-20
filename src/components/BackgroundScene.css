@@ -66,7 +66,7 @@
 @keyframes auroraDrift3{0%,100%{transform:translateX(0) translateY(0) scaleY(1) skewX(0deg)}50%{transform:translateX(6%) translateY(-6px) scaleY(1.2) skewX(3deg)}}
 
 /* Ocean waves — layered swell matching sunset landing palette */
-.ocean-waves{position:fixed;bottom:0;left:0;width:100%;height:80px;z-index:1;pointer-events:none;overflow:hidden;opacity:0.7}
+.ocean-waves,.ocean-waves-svg{position:fixed;bottom:0;left:0;width:100%;height:80px;z-index:1;pointer-events:none;overflow:hidden;opacity:0.7}
 .wave{position:absolute;bottom:-8px;left:-5%;width:120%;height:44px;border-radius:40% 50% 0 0;animation:waveDrift ease-in-out infinite}
 .wave-1{background:linear-gradient(180deg,rgba(30,195,215,0.48) 0%,rgba(30,195,215,0.2) 50%,transparent 100%);animation-duration:6.2s;height:40px}
 .wave-2{background:linear-gradient(180deg,rgba(18,155,182,0.56) 0%,rgba(18,155,182,0.22) 50%,transparent 100%);animation-duration:8.4s;animation-delay:-2.1s;bottom:-14px;height:48px;border-radius:35% 45% 0 0}
