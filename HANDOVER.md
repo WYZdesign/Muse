@@ -527,3 +527,47 @@ Then actually read the files for the 10 areas above — `route.ts`, `screens/*.t
 - `git log` head: `4e1c407` (checkout promo robust), `d5fafdd` (promo + landing gap), `2214696` (handover 20-21), `01550ac` (checkout helper), `075d315` (upload/onboarding/tutorials).
 - Build clean, 46 unit tests pass, `tsc --noEmit` clean.
 - All pushed to `main`; Vercel auto-deploys.
+
+---
+
+## 24. SESSION UPDATE — 2026-08-19 (Claude's rate-limit + strike findings fixed)
+
+### Durable rate limiting — FIXED (`2444028`)
+Claude's #1 finding, confirmed and acted on: `checkRate` was a module-scope in-memory `Map`, which resets on every Vercel cold start and is per-instance — structurally weak against distributed/bursty traffic and cold-start resets.
+
+**Fix:**
+- `sql/MUSE_RATE_LIMIT_20260819.sql` — creates `muse_rate_limits` table + an atomic `check_rate(p_key, p_limit)` Postgres function (single-statement upsert that resets the 60s window when stale). `GRANT EXECUTE` to `service_role` only; revoked from `anon`/`authenticated`.
+- `lib/rate-limit.ts` — `checkRate()` is now **async**, backed by the Postgres RPC, with the in-memory `Map` kept as a cheap first-line backstop. **Fails open** (returns `true`) if the RPC/table isn't available yet or DB errors, so a missing migration never blocks traffic.
+- **All 58 call sites** across 17 route files updated from `checkRate(...)` → `await checkRate(...)`.
+- `rate-limit.test.ts` updated to `await` the async signature.
+
+**⚠️ Requires manual apply:** the migration `sql/MUSE_RATE_LIMIT_20260819.sql` must be run in the Supabase SQL Editor (same as prior migrations — no Supabase CLI/psql available). Until applied, rate limiting is in-memory-only (fails open). This is the ONE remaining step to make rate limiting truly durable.
+
+### Strike severity separation — FIXED (`2444028`)
+Claude's finding #7: the graduated-strike count query mixed severities, so one past suspension + two minor warnings would re-suspend a user.
+
+**Fix:** `applyStrikeAndEscalate` now counts ONLY `severity: "warning"` strikes for the graduated threshold (`.eq("severity", "warning")`). High-severity strikes (`suspension`/`permanent_ban`) are their own track (immediate action) and no longer feed the graduated ladder. Notification copy also distinguishes the two cases. This was a policy clarification Claude asked for — now it's explicit in code + comments.
+
+### MUSEBETA promo — the "invalid" mystery resolved
+- The coupon `MUSEBETA` is **live and valid** (100% off, `forever`) — confirmed via direct Stripe API.
+- **Why Stripe's native field said "invalid":** the Vercel `STRIPE_SECRET_KEY` is a **restricted key** that cannot create `promotion_codes` (API returns `parameter_unknown: coupon`). Stripe's hosted checkout promo field only matches *promotion code* objects, not raw coupon IDs — so typing `MUSEBETA` there can never work.
+- **The working path:** use the **in-app promo field** (SubscriptionScreen → "Promo code" → `MUSEBETA` → Apply). The checkout route attaches the 100%-off coupon via `discounts` on the session (server-side), so the Stripe page shows $0 without touching the native field. Added a green "✓ MUSEBETA applied — you won't be charged" confirmation banner.
+- **Alternative if you want the Stripe native field to work:** create a *promotion code* in the Stripe Dashboard (Products → Coupons → MUSEBETA → create promotion code), OR use a full-access (non-restricted) live secret key in Vercel.
+
+### Verification
+`npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. Pushed to `main` (`2444028`) → Vercel auto-deploys.
+
+### Claude's calibrated scorecard (accepted, not contested)
+Per Claude's honest pushback, the previous 10/10 claims were not credible. Accepted recalibration: **Security 7, Trust & safety 8, Technical infrastructure 7** (rate-limit durability was the reason — now being fixed via the migration above; once applied, security/infra should be re-scored upward). Everything else: unverified this pass. This handover now reflects evidence-based scores, not confident maxima.
+
+### Remaining (unchanged, ordered by stakes)
+1. **Apply `sql/MUSE_RATE_LIMIT_20260819.sql`** (manual, Supabase SQL Editor) — makes rate limiting durable.
+2. **Live charge test** via in-app MUSEBETA promo + real card.
+3. **Attorney review** (`_audit_artifacts/ATTORNEY_HANDOFF.md`).
+4. **General liability insurance** (committed, not obtained).
+5. **Facebook App → Live**.
+6. **NCMEC credentials**.
+7. **`next/image` adoption** (code backlog).
+8. **9 of 11 state hooks** (code backlog).
+9. **`page.tsx` monolith split** (code backlog).
+10. **Checkout duplicate-product risk** — Claude's flagged item: the on-the-fly product/price creation in `checkout/route.ts` could create a new product in live mode if `price_muse_pro_monthly` lookup misses, risking a wrong/missing category for Managed Payments. **Recommended next Claude task: verify the lookup key resolves to the manually-created Muse Pro product and the dynamic creation is never triggered in live mode.**
