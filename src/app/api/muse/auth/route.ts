@@ -29,10 +29,10 @@ export async function POST(req: NextRequest) {
     const ip = clientIp(req);
 
     // Brute-force protection: cap auth attempts per IP.
-    if (action === "register" && !checkRate(ip, "register", 5)) {
+    if (action === "register" && !await checkRate(ip, "register", 5)) {
       return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
     }
-    if (action === "login" && !checkRate(ip, "login", 20)) {
+    if (action === "login" && !await checkRate(ip, "login", 20)) {
       return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
     }
 
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "session") {
-      if (!checkRate(ip, "session", 30)) {
+      if (!await checkRate(ip, "session", 30)) {
         return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
       }
       const { access_token } = body;
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "logout") {
-      if (!checkRate(ip, "logout", 10)) {
+      if (!await checkRate(ip, "logout", 10)) {
         return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
       }
       await supabase.auth.signOut();
@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
     if (action === "forgot-password") {
       const { email } = body;
       if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
-      if (!checkRate(ip, "forgot-password", 5)) {
+      if (!await checkRate(ip, "forgot-password", 5)) {
         return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
       }
       // Always return success to avoid revealing whether the email exists.
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "update-password") {
-      if (!checkRate(ip, "update-password", 5)) {
+      if (!await checkRate(ip, "update-password", 5)) {
         return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
       }
       const { access_token, new_password } = body;
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "update-profile") {
-      if (!checkRate(ip, "update-profile", 20)) {
+      if (!await checkRate(ip, "update-profile", 20)) {
         return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
       }
       const accessToken = bearerOrBodyToken(req, body);
@@ -198,7 +198,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "delete-account") {
-      if (!checkRate(ip, "delete-account", 3)) {
+      if (!await checkRate(ip, "delete-account", 3)) {
         return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
       }
       const accessToken = bearerOrBodyToken(req, body);

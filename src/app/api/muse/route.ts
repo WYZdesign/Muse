@@ -21,9 +21,16 @@ const STRIKE_SUSPENSION_THRESHOLD = 3;
  * Insert a strike and enforce the two-track enforcement ladder:
  *  - Track 2 (high-severity): a single strike with severity "suspension" or
  *    "permanent_ban" immediately suspends the account.
- *  - Track 1 (graduated): otherwise, accumulated active strikes escalate to
- *    suspension once STRIKE_SUSPENSION_THRESHOLD is reached.
- * Returns the active strike count and whether a suspension was applied.
+ *  - Track 1 (graduated): accumulated STANDARD strikes (severity "warning")
+ *    escalate to suspension once STRIKE_SUSPENSION_THRESHOLD is reached.
+ *
+ * The graduated count deliberately counts ONLY "warning"-severity strikes,
+ * never high-severity ones. Mixing severities would let one past suspension
+ * plus two minor warnings re-suspend a user — a harsher policy than intended.
+ * High-severity incidents are their own track (immediate action); the
+ * graduated ladder measures repeated *standard* violations only.
+ *
+ * Returns the active standard-strike count and whether a suspension applied.
  */
 async function applyStrikeAndEscalate(
   sb: ReturnType<typeof getServiceClient>,
@@ -33,12 +40,12 @@ async function applyStrikeAndEscalate(
   const { error } = await sb.from("muse_strikes").insert({ user_id: userId, ...strike });
   if (error) return { inserted: false, activeCount: 0, suspended: false };
 
-  // Count all enforceable strikes (exclude only overturned appeals). The
-  // graduated track is severity-agnostic: N "warning" strikes escalate the
-  // same way a single "suspension" strike does immediately.
+  // Count only standard "warning" strikes (exclude overturned appeals). This
+  // keeps the graduated track independent of high-severity strikes.
   const { data: active, error: countErr } = await sb.from("muse_strikes")
     .select("id")
     .eq("user_id", userId)
+    .eq("severity", "warning")
     .neq("appeal_status", "overturned");
   if (countErr) return { inserted: true, activeCount: 0, suspended: false };
 
@@ -51,7 +58,9 @@ async function applyStrikeAndEscalate(
     await sb.from("muse_notifications").insert({
       user_id: userId,
       type: "suspension",
-      body: `Your account has been suspended after ${activeCount} community guideline violation${activeCount === 1 ? "" : "s"}.`,
+      body: isHighSeverity
+        ? "Your account has been suspended for a severe policy violation."
+        : `Your account has been suspended after ${activeCount} community guideline violations.`,
       read: false,
     });
     return { inserted: true, activeCount, suspended: true };
@@ -478,7 +487,7 @@ export async function POST(req: NextRequest) {
     // Blanket write-rate ceiling per IP. Per-action limits below are tighter;
     // this catches any action that doesn't have its own check (and throttles
     // brute-force / scripted abuse across the whole write surface).
-    if (actionType !== "track-event" && !checkRate(ip, "write", 120)) {
+    if (actionType !== "track-event" && !await checkRate(ip, "write", 120)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 
@@ -486,7 +495,7 @@ export async function POST(req: NextRequest) {
     // anonymous visitor viewing the auth screen before signing up) — product
     // analytics needs to capture that funnel too, not just logged-in actions.
     if (actionType === "track-event") {
-      if (!checkRate(ip, "track-event", 120)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "track-event", 120)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { name, props } = rest;
       if (!name || typeof name !== "string" || name.length > 100) {
         return NextResponse.json({ error: "Invalid event name" }, { status: 400 });
@@ -498,7 +507,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "track-error") {
-      if (!checkRate(ip, "track-error", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "track-error", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { name, params, time } = rest;
       const sbErr = getServiceClient();
       await sbErr.from("muse_events_log").insert({
@@ -537,7 +546,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "match") {
-      if (!checkRate(ip, "match", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "match", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { target_id } = rest;
       if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
       if (target_id === profile.id) return NextResponse.json({ error: "Cannot match yourself" }, { status: 400 });
@@ -553,7 +562,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "message") {
-      if (!checkRate(ip, "message", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "message", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const vErr = validateInput(rest);
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
       const { toId, text, image_url, img, client_msg_id } = rest;
@@ -594,7 +603,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "feed") {
-      if (!checkRate(ip, "feed", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "feed", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const vErr = validateInput(rest);
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
       const { text, image_url, image, img, media } = rest;
@@ -612,7 +621,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "create-moment") {
-      if (!checkRate(ip, "create-moment", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "create-moment", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { text, img } = rest;
       const cleanText = sanitizeText(String(text || "").slice(0, 500));
       const resolvedImg = img && typeof img === "string" ? String(img).slice(0, 500) : "";
@@ -625,7 +634,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "brief") {
-      if (!checkRate(ip, "brief", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "brief", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const vErr = validateInput(rest);
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
       const { title, desc, budget, cat, tags, paid, rate } = rest;
@@ -647,7 +656,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "forum") {
-      if (!checkRate(ip, "forum", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "forum", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const vErr = validateInput(rest);
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
       const { title, body: forumBody, text, cat, type: forumType, postId } = rest;
@@ -666,7 +675,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "report") {
-      if (!checkRate(ip, "report", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "report", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { target_id, target_type, reason, details } = rest;
       if (!target_id || !reason) return NextResponse.json({ error: "target_id and reason required" }, { status: 400 });
       if (target_id === profile.id) return NextResponse.json({ error: "Cannot report yourself" }, { status: 400 });
@@ -785,7 +794,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "create-session") {
-      if (!checkRate(ip, "create-session", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "create-session", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { title, description, type, rate, duration, skills, date, location, img } = rest;
       if (!title || !String(title).trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
       const { data, error } = await sb.from("muse_sessions").insert({
@@ -806,7 +815,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "connect") {
-      if (!checkRate(ip, "connect", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "connect", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { targetId } = rest;
       if (!targetId) return NextResponse.json({ error: "targetId required" }, { status: 400 });
       if (targetId === profile.id) return NextResponse.json({ error: "Cannot connect with yourself" }, { status: 400 });
@@ -834,7 +843,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "sync") {
-      if (!checkRate(ip, "sync", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "sync", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const results: string[] = [];
       if (rest.matches?.length) {
         for (const m of rest.matches) {
@@ -852,7 +861,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "create-album") {
-      if (!checkRate(ip, "create-album", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "create-album", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const vErr = validateInput(rest);
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
       const { title, description, cover_url, access_level, tags } = rest;
@@ -883,7 +892,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "delete-album") {
-      if (!checkRate(ip, "delete-album", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "delete-album", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { albumId } = rest;
       if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
       const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
@@ -894,7 +903,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "add-album-photo") {
-      if (!checkRate(ip, "add-album-photo", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "add-album-photo", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { albumId, img_url, caption } = rest;
       if (!albumId || !img_url) return NextResponse.json({ error: "albumId and img_url required" }, { status: 400 });
       // Reject any URL not on Muse's own storage. Every uploaded image is
@@ -913,7 +922,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "remove-album-photo") {
-      if (!checkRate(ip, "remove-album-photo", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "remove-album-photo", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { photoId } = rest;
       if (!photoId) return NextResponse.json({ error: "photoId required" }, { status: 400 });
       const { data: photo } = await sb.from("muse_album_photos").select("album_id").eq("id", photoId).maybeSingle();
@@ -954,7 +963,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "view-album") {
-      if (!checkRate(ip, "view-album", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "view-album", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { albumId } = rest;
       if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
       const { data: album } = await sb.from("muse_albums").select("view_count").eq("id", albumId).maybeSingle();
@@ -964,7 +973,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "like-album") {
-      if (!checkRate(ip, "like-album", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "like-album", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { albumId } = rest;
       if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
       const { data: album } = await sb.from("muse_albums").select("like_count").eq("id", albumId).maybeSingle();
@@ -984,7 +993,7 @@ export async function POST(req: NextRequest) {
     // ════════════════════════════════════════════════════════════════
 
     if (actionType === "rsvp") {
-      if (!checkRate(ip, "rsvp", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "rsvp", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { eventId } = rest;
       if (!eventId) return NextResponse.json({ error: "eventId required" }, { status: 400 });
       const { data: existing } = await sb.from("muse_rsvps").select("id").eq("event_id", eventId).eq("user_id", profile.id).maybeSingle();
@@ -995,7 +1004,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "cancel-rsvp") {
-      if (!checkRate(ip, "cancel-rsvp", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "cancel-rsvp", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { eventId } = rest;
       if (!eventId) return NextResponse.json({ error: "eventId required" }, { status: 400 });
       await sb.from("muse_rsvps").delete().eq("event_id", eventId).eq("user_id", profile.id);
@@ -1007,7 +1016,7 @@ export async function POST(req: NextRequest) {
     // ════════════════════════════════════════════════════════════════
 
     if (actionType === "create-disclosure") {
-      if (!checkRate(ip, "create-disclosure", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "create-disclosure", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const {
         responderId, bookingId,
         compensationAmount, compensationTiming, compensationMethod,
@@ -1257,7 +1266,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "complete-booking") {
-      if (!checkRate(ip, "complete-booking", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "complete-booking", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { bookingId } = rest;
       if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
       const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
@@ -1292,7 +1301,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "submit-review") {
-      if (!checkRate(ip, "submit-review", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "submit-review", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { bookingId, rating, body } = rest;
       if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
       const r = Number(rating);
@@ -1404,7 +1413,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "save-prompt-response") {
-      if (!checkRate(ip, "save-prompt-response", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "save-prompt-response", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { promptId, responseText, responseChoices } = rest;
       if (!promptId) return NextResponse.json({ error: "promptId required" }, { status: 400 });
       const { error } = await sb.from("muse_prompt_responses").upsert({
@@ -1452,7 +1461,7 @@ export async function POST(req: NextRequest) {
     // ════════════════════════════════════════════════════════════════
 
     if (actionType === "admin-brain") {
-      if (!checkRate(ip, "admin-brain", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "admin-brain", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
       if (!user.email || !admins.includes(user.email.toLowerCase())) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -1597,7 +1606,7 @@ export async function POST(req: NextRequest) {
 
     if (actionType === "admin-suspend-user") {
       // Admin-only (email-gated); higher limit so a moderation sweep doesn't bottleneck.
-      if (!checkRate(ip, "admin-suspend-user", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRate(ip, "admin-suspend-user", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
       if (!user.email || !admins.includes(user.email.toLowerCase())) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });

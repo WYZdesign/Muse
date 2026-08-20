@@ -35,16 +35,16 @@ export async function POST(req: NextRequest) {
 
     // Rate limit financial operations
     const ip = clientIp(req);
-    if (action === "create-account" && !checkRate(ip, "connect-create-account", 5)) {
+    if (action === "create-account" && !await checkRate(ip, "connect-create-account", 5)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
-    if (action === "create-payment" && !checkRate(ip, "connect-create-payment", 10)) {
+    if (action === "create-payment" && !await checkRate(ip, "connect-create-payment", 10)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
-    if (action === "account-status" && !checkRate(ip, "connect-account-status", 30)) {
+    if (action === "account-status" && !await checkRate(ip, "connect-account-status", 30)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
-    if (action === "transfer" && !checkRate(ip, "connect-transfer", 5)) {
+    if (action === "transfer" && !await checkRate(ip, "connect-transfer", 5)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 

@@ -12,7 +12,7 @@ const AGE_VERIFICATION_STATES = new Set([
 export async function GET(req: NextRequest) {
   // Nominatim requires ≤1 req/sec — rate limit to avoid IP ban.
   const ip = clientIp(req);
-  if (!checkRate(ip, "geocode", 45)) {
+  if (!await checkRate(ip, "geocode", 45)) {
     return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   }
 

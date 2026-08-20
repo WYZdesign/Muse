@@ -23,23 +23,23 @@ describe("clientIp", () => {
 });
 
 describe("checkRate", () => {
-  it("allows requests under the limit", () => {
+  it("allows requests under the limit", async () => {
     const ip = "test-ip-" + Math.random();
     for (let i = 0; i < 3; i++) {
-      expect(checkRate(ip, "action", 5)).toBe(true);
+      expect(await checkRate(ip, "action", 5)).toBe(true);
     }
   });
 
-  it("blocks requests over the limit", () => {
+  it("blocks requests over the limit", async () => {
     const ip = "test-ip-" + Math.random();
-    for (let i = 0; i < 2; i++) checkRate(ip, "action", 2);
-    expect(checkRate(ip, "action", 2)).toBe(false);
+    for (let i = 0; i < 2; i++) await checkRate(ip, "action", 2);
+    expect(await checkRate(ip, "action", 2)).toBe(false);
   });
 
-  it("is per-action and per-ip", () => {
+  it("is per-action and per-ip", async () => {
     const ip = "test-ip-" + Math.random();
-    checkRate(ip, "a", 1);
-    expect(checkRate(ip, "b", 1)).toBe(true); // different action
-    expect(checkRate(ip + "-other", "a", 1)).toBe(true); // different ip
+    await checkRate(ip, "a", 1);
+    expect(await checkRate(ip, "b", 1)).toBe(true); // different action
+    expect(await checkRate(ip + "-other", "a", 1)).toBe(true); // different ip
   });
 });

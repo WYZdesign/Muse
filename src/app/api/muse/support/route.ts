@@ -23,7 +23,7 @@ function fallbackAnswer(q: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    if (!checkRate(clientIp(req), "support", 10)) {
+    if (!await checkRate(clientIp(req), "support", 10)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 

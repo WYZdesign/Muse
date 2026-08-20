@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const ip = clientIp(req);
 
     if (action === "subscribe") {
-      if (!checkRate(ip, "push-subscribe", 10)) {
+      if (!await checkRate(ip, "push-subscribe", 10)) {
         return NextResponse.json({ success: false, error: "Rate limited" }, { status: 429 });
       }
       if (!endpoint || !p256dh || !auth) {
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "unsubscribe") {
-      if (!checkRate(ip, "push-unsubscribe", 10)) {
+      if (!await checkRate(ip, "push-unsubscribe", 10)) {
         return NextResponse.json({ success: false, error: "Rate limited" }, { status: 429 });
       }
       if (!endpoint) {

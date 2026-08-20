@@ -25,7 +25,7 @@ function profileEmbedText(p: Record<string, unknown>): string {
 
 export async function GET(req: NextRequest) {
   try {
-    if (!checkRate(clientIp(req), "match", 30)) {
+    if (!await checkRate(clientIp(req), "match", 30)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
     const header = req.headers.get("authorization") || "";

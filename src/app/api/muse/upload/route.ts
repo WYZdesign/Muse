@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
 
     // Rate limit uploads per user (generous: 60/min for normal photo workflow)
     const ip = clientIp(req);
-    if (!checkRate(ip, "upload", 60)) {
+    if (!await checkRate(ip, "upload", 60)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 

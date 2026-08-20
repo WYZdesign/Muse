@@ -10,7 +10,7 @@ import { embedText, cosineSimilarity, aiEnabled } from "@/lib/ai";
  */
 export async function POST(req: NextRequest) {
   try {
-    if (!checkRate(clientIp(req), "embeddings", 30)) {
+    if (!await checkRate(clientIp(req), "embeddings", 30)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 

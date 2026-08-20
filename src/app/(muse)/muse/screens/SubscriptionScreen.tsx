@@ -31,6 +31,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
   if (screen !== "subscription") return null;
 
   const [promo, setPromo] = useState("");
+  const [promoApplied, setPromoApplied] = useState(false);
 
   return (
     <div className="phone-wrap">
@@ -44,10 +45,13 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
             <div className="sub-title">Unlock Your Potential</div>
             <div className="sub-subtitle">Choose the plan for your creative journey</div>
           </div>
-          <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-            <input className="inp" placeholder="Promo code" value={promo} onChange={e => setPromo(e.target.value)} style={{ flex: 1, textTransform: "uppercase", letterSpacing: 1 }} />
-            <button className="btn btn-outline" style={{ padding: "0 16px" }} onClick={() => showToast(promo.trim() ? "Promo will apply at checkout" : "Enter a promo code first")}>Apply</button>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <input className="inp" placeholder="Promo code" value={promo} onChange={e => { setPromo(e.target.value); setPromoApplied(false); }} style={{ flex: 1, textTransform: "uppercase", letterSpacing: 1 }} />
+            <button className="btn btn-outline" style={{ padding: "0 16px" }} onClick={() => { const p = promo.trim().toUpperCase(); if (p === "MUSEBETA") { setPromoApplied(true); showToast("Muse Beta applied — $0/month"); } else if (p) { showToast("Invalid promo code"); } else { showToast("Enter a promo code first"); } }}>Apply</button>
           </div>
+          {promoApplied && (
+            <div style={{ padding: "8px 14px", marginBottom: 12, borderRadius: 12, background: "rgba(76,221,136,0.12)", border: "1px solid rgba(76,221,136,0.3)", fontSize: 12, fontWeight: 700, color: "#4cdd88" }}>✓ MUSEBETA applied — you won't be charged</div>
+          )}
           {currentUser.foundingTier && (
             <div style={{ padding: "12px 16px", borderRadius: 16, marginBottom: 14, background: currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.1)" : "rgba(212,165,255,0.1)", border: `1px solid ${currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.3)" : "rgba(212,165,255,0.3)"}` }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)" }}>{currentUser.foundingTier === "founding" ? "🏆 Founding Member, Lifetime Pro" : "⭐ Early Member, Free Pro"}</div>

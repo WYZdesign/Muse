@@ -29,7 +29,7 @@ async function generateQrSvg(url: string): Promise<string> {
 export async function GET(req: NextRequest) {
   const sb = getServiceClient();
   const ip = clientIp(req);
-  if (!checkRate(ip, "qr", 120)) {
+  if (!await checkRate(ip, "qr", 120)) {
     return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   }
   const url = req.nextUrl.searchParams.get("url");
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const sb = getServiceClient();
   const ip = clientIp(req);
-  if (!checkRate(ip, "qr-post", 60)) {
+  if (!await checkRate(ip, "qr-post", 60)) {
     return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   }
   const body = await req.json().catch(() => ({}));

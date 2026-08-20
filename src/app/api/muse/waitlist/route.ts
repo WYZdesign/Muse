@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   try {
     // Rate limit signups to prevent waitlist spam / DB abuse.
     const ip = clientIp(req);
-    if (!checkRate(ip, "waitlist", 10)) {
+    if (!await checkRate(ip, "waitlist", 10)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 

@@ -28,13 +28,13 @@ export async function POST(req: NextRequest) {
 
     // Rate limit referral operations to prevent abuse
     const ip = clientIp(req);
-    if (action === "generate" && !checkRate(ip, "referral-generate", 5)) {
+    if (action === "generate" && !await checkRate(ip, "referral-generate", 5)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
-    if (action === "apply" && !checkRate(ip, "referral-apply", 5)) {
+    if (action === "apply" && !await checkRate(ip, "referral-apply", 5)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
-    if (action === "redeem-reward" && !checkRate(ip, "referral-redeem", 5)) {
+    if (action === "redeem-reward" && !await checkRate(ip, "referral-redeem", 5)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 

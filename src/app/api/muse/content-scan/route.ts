@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   try {
     // Rate limit — Rekognition is a paid API; prevent cost abuse.
     const ip = clientIp(req);
-    if (!checkRate(ip, "content-scan", 20)) {
+    if (!await checkRate(ip, "content-scan", 20)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 

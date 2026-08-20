@@ -22,10 +22,10 @@ export async function POST(req: NextRequest) {
 
     // Rate limit verification sessions to prevent Stripe API abuse
     const ip = clientIp(req);
-    if (action === "create-verification-session" && !checkRate(ip, "verify-create", 5)) {
+    if (action === "create-verification-session" && !await checkRate(ip, "verify-create", 5)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
-    if (action === "create-age-gate-session" && !checkRate(ip, "verify-age-gate", 5)) {
+    if (action === "create-age-gate-session" && !await checkRate(ip, "verify-age-gate", 5)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 

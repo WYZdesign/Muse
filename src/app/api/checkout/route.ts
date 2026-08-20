@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   try {
     // Rate limit Stripe session creation to prevent API abuse / cost spikes.
     const ip = clientIp(req);
-    if (!checkRate(ip, "checkout", 10)) {
+    if (!await checkRate(ip, "checkout", 10)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 
