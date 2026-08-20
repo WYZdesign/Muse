@@ -311,6 +311,7 @@ export default function MuseLandingPage() {
   // the server always renders the gate, so the client must too, on first paint.
   const [gateGone, setGateGone] = useState(false);
   const [navScrolled, setNavScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
   const railFillRef = useRef<HTMLDivElement>(null);
   const railDotRef = useRef<HTMLDivElement>(null);
@@ -405,7 +406,19 @@ export default function MuseLandingPage() {
           <a href="#founding">Founding</a>
         </div>
         <a href="#join" className="muse-nav-cta">Join the Waitlist</a>
+        <button className="muse-nav-hamburger" onClick={() => setMobileMenuOpen(v => !v)} aria-label="Toggle menu">
+          <span /><span /><span />
+        </button>
       </nav>
+      {mobileMenuOpen && (
+        <div className="muse-mobile-menu" onClick={() => setMobileMenuOpen(false)}>
+          <a href="#features">Features</a>
+          <a href="#how">How It Works</a>
+          <a href="#safety">Safety</a>
+          <a href="#founding">Founding</a>
+          <a href="#join" className="muse-nav-cta" style={{ marginTop: 8 }}>Join the Waitlist</a>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="muse-hero" ref={heroParallax}>

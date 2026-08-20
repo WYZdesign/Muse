@@ -451,7 +451,19 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .muse-nav-links a:hover::after { width: 100%; }
 .muse-nav-cta { padding: 11px 22px; border-radius: 999px; border: 1px solid rgba(255, 215, 0, 0.4); color: var(--gold); font-size: 13px; letter-spacing: 0.1em; font-weight: 600; transition: background .25s, color .25s; }
 .muse-nav-cta:hover { background: var(--gold); color: #0a0612; }
-@media (max-width: 720px) { .muse-nav { padding: 18px 20px; } .muse-nav-links { display: none; } }
+.muse-nav-hamburger { display: none; background: none; border: none; cursor: pointer; padding: 8px; flex-direction: column; gap: 5px; z-index: 110; }
+.muse-nav-hamburger span { display: block; width: 22px; height: 2px; background: var(--gold); border-radius: 2px; transition: transform .3s, opacity .3s; }
+.muse-mobile-menu { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99; background: rgba(10, 6, 18, 0.95); backdrop-filter: blur(20px); flex-direction: column; align-items: center; justify-content: center; gap: 28px; animation: fadeIn .3s ease; }
+.muse-mobile-menu a { font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2); font-weight: 500; text-decoration: none; transition: color .25s; }
+.muse-mobile-menu a:hover { color: var(--gold); }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 720px) {
+  .muse-nav { padding: 18px 20px; }
+  .muse-nav-links { display: none; }
+  .muse-nav-cta { display: none; }
+  .muse-nav-hamburger { display: flex; }
+  .muse-mobile-menu { display: flex; }
+}
 
 /* ═══ HERO ═══ */
 .muse-hero {

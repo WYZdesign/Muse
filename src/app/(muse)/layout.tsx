@@ -5,8 +5,7 @@ import SplashScreen from "@/components/SplashScreen";
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
   themeColor: "#0a0612",
   viewportFit: "cover",
 };
