@@ -10,8 +10,9 @@ tsconfig.tsbuildinfo
 temp_screens/
 test-results/
 _AUDIT_SHOTS/
-_audit_artifacts/*.png
-_audit_artifacts/*.cjs
+_audit_artifacts/
+_STATE/
+playwright-report/
 scripts/capture_screens.mjs
 scripts/capture_regression.mjs
 scripts/diagnose.mjs

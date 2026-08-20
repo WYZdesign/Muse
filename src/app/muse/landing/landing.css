@@ -789,6 +789,8 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   .muse-steps { grid-template-columns: repeat(2, 1fr); }
   .muse-footer-grid { grid-template-columns: repeat(2, 1fr); }
   .muse-testimonials-grid { grid-template-columns: 1fr; }
+  /* 3 tiers into a 2-col grid leaves one stranded — span it full width */
+  .muse-tier-card.standard { grid-column: 1 / -1; }
 }
 @media (max-width: 620px) {
   .muse-features-grid, .muse-safety-grid, .muse-tiers, .muse-steps { grid-template-columns: 1fr; }

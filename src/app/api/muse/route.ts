@@ -14,24 +14,22 @@ function getAuthUser() {
   return supabase.auth.getUser();
 }
 
-// Graduated-enforcement ladder: number of active (non-overturned, non-warning)
-// strikes that escalates to automatic account suspension.
+// Graduated-enforcement ladder: number of active (non-overturned) strikes
+// that escalates to automatic account suspension.
 const STRIKE_SUSPENSION_THRESHOLD = 3;
 
 /**
- * Insert a strike and enforce the two-track enforcement ladder:
- *  - Track 2 (high-severity): a single strike with severity "suspension" or
- *    "permanent_ban" immediately suspends the account.
- *  - Track 1 (graduated): accumulated STANDARD strikes (severity "warning")
- *    escalate to suspension once STRIKE_SUSPENSION_THRESHOLD is reached.
+ * Insert a strike and enforce the unified enforcement ladder:
+ *  - Any strike with severity "suspension" or "permanent_ban" immediately
+ *    suspends the account (severe single incident → instant action).
+ *  - Otherwise, ALL strikes are combined and weighted equally regardless of
+ *    severity label — repeated violations of any kind escalate to suspension
+ *    once STRIKE_SUSPENSION_THRESHOLD total active strikes is reached.
  *
- * The graduated count deliberately counts ONLY "warning"-severity strikes,
- * never high-severity ones. Mixing severities would let one past suspension
- * plus two minor warnings re-suspend a user — a harsher policy than intended.
- * High-severity incidents are their own track (immediate action); the
- * graduated ladder measures repeated *standard* violations only.
+ * Policy (owner decision): strikes are NOT split into separate per-severity
+ * tracks. Every non-overturned strike counts the same toward the ladder.
  *
- * Returns the active standard-strike count and whether a suspension applied.
+ * Returns the active strike count and whether a suspension applied.
  */
 async function applyStrikeAndEscalate(
   sb: ReturnType<typeof getServiceClient>,
@@ -41,12 +39,11 @@ async function applyStrikeAndEscalate(
   const { error } = await sb.from("muse_strikes").insert({ user_id: userId, ...strike });
   if (error) return { inserted: false, activeCount: 0, suspended: false };
 
-  // Count only standard "warning" strikes (exclude overturned appeals). This
-  // keeps the graduated track independent of high-severity strikes.
+  // Count ALL active strikes (exclude overturned appeals), regardless of
+  // severity — every violation weighs equally toward the threshold.
   const { data: active, error: countErr } = await sb.from("muse_strikes")
     .select("id")
     .eq("user_id", userId)
-    .eq("severity", "warning")
     .neq("appeal_status", "overturned");
   if (countErr) return { inserted: true, activeCount: 0, suspended: false };
 

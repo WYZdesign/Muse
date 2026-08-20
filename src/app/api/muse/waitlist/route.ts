@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
-
+import { sendEmail, waitlistWelcome } from "@/lib/email";
 export async function POST(req: NextRequest) {
   const sb = getServiceClient();
   try {
@@ -53,6 +53,9 @@ export async function POST(req: NextRequest) {
         created_at: new Date().toISOString(),
       });
     }
+
+    // Send confirmation email (fail-open — never block signup on email).
+    sendEmail(waitlistWelcome(email.toLowerCase(), source)).catch(() => {});
 
     return NextResponse.json({ success: true, message: "You're on the list!" });
   } catch (error) {
