@@ -78,7 +78,9 @@ export default withSentryConfig(nextConfig, {
   silent: true,
   disableLogger: true,
   sourcemaps: {
-    disable: true,
+    // Production stack traces should map back to real source files. Enabled
+    // (disable: false) so Sentry reports aren't minified "chunk-abc123.js:1".
+    disable: false,
   },
   widenClientFileUpload: true,
 });

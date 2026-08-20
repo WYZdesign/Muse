@@ -1,7 +1,37 @@
 "use client";
 
-import React, { memo, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 import type { TutorialDef, TutorialStep } from "./tutorials";
+
+interface Rect { left: number; top: number; width: number; height: number; }
+
+// Real-element highlight: measure the target DOM node via querySelector so the
+// gold ring outlines the ACTUAL element on each screen (not a hardcoded guess
+// shaped to Discover's layout). Falls back to a generic centered band when the
+// selector isn't present.
+function useElementRect(step: TutorialStep): Rect | null {
+  const [rect, setRect] = useState<Rect | null>(null);
+
+  useEffect(() => {
+    const selector = step.selector;
+    if (!selector) { setRect(null); return; }
+    let el: Element | null = null;
+    try { el = document.querySelector(selector); } catch { el = null; }
+    if (!el) { setRect(null); return; }
+
+    const measure = () => {
+      const r = el!.getBoundingClientRect();
+      setRect({ left: r.left, top: r.top, width: r.width, height: r.height });
+    };
+    measure();
+    // Re-measure on resize and shortly after mount (layout settle).
+    const t = setTimeout(measure, 120);
+    window.addEventListener("resize", measure);
+    return () => { clearTimeout(t); window.removeEventListener("resize", measure); };
+  }, [step.selector]);
+
+  return rect;
+}
 
 export const TutorialOverlay = memo(function TutorialOverlay({
   tutorial,
@@ -13,23 +43,41 @@ export const TutorialOverlay = memo(function TutorialOverlay({
   const [idx, setIdx] = useState(0);
   const steps: TutorialStep[] = tutorial.steps;
   const step = steps[idx];
+  const rect = useElementRect(step);
 
   const next = () => {
     if (idx >= steps.length - 1) onDone();
     else setIdx(idx + 1);
   };
 
+  // A real measured element → ring it exactly.
+  const ring: Rect | null = rect;
+  // Generic fallback positions for screens where no selector matches.
+  const generic = (anchor: string): Rect => {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    switch (anchor) {
+      case "card": return { left: vw * 0.08, top: vh * 0.16, width: vw * 0.84, height: vh * 0.52 };
+      case "fab": return { left: vw - 106, top: vh - 184, width: 76, height: 76 };
+      case "nav": return { left: 0, top: vh - 88, width: vw, height: 88 };
+      case "header": return { left: 0, top: 0, width: vw, height: 96 };
+      case "center":
+      default: return { left: vw * 0.15, top: vh * 0.38, width: vw * 0.7, height: vh * 0.2 };
+    }
+  };
+  const target = ring || generic(step.anchor);
+  const isFab = step.anchor === "fab";
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, pointerEvents: "auto" }}>
       {/* dim backdrop — tap to advance */}
       <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(2px)" }} onClick={next} />
 
-      {/* highlight ring depending on anchor */}
-      {step.anchor === "card" && <div style={{ position: "absolute", top: "16%", left: "50%", transform: "translateX(-50%)", width: "84%", height: "52%", border: "2.5px solid var(--gold, #FFD700)", borderRadius: 22, boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)", pointerEvents: "none" }} />}
-      {step.anchor === "fab" && <div style={{ position: "absolute", bottom: 108, right: 30, width: 76, height: 76, border: "2.5px solid var(--gold, #FFD700)", borderRadius: "50%", boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)", pointerEvents: "none" }} />}
-      {step.anchor === "nav" && <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 88, border: "2.5px solid var(--gold, #FFD700)", borderRadius: 20, boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)", pointerEvents: "none" }} />}
-      {step.anchor === "header" && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 96, border: "2.5px solid var(--gold, #FFD700)", borderRadius: 20, boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)", pointerEvents: "none" }} />}
-      {step.anchor === "center" && <div style={{ position: "absolute", top: "38%", left: "50%", transform: "translateX(-50%)", width: "70%", height: "20%", border: "2.5px solid var(--gold, #FFD700)", borderRadius: 20, boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)", pointerEvents: "none" }} />}
+      {/* highlight ring at the measured element position */}
+      <div style={{
+        position: "absolute", left: target.left, top: target.top, width: target.width, height: target.height,
+        border: "2.5px solid var(--gold, #FFD700)", borderRadius: isFab ? "50%" : 18,
+        boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)", pointerEvents: "none", transition: "all .3s ease",
+      }} />
 
       {/* tooltip card */}
       <div style={{ position: "absolute", left: 20, right: 20, bottom: 120, background: "linear-gradient(135deg,#1a0a2e,#2d1b4e)", border: "1px solid rgba(255,215,0,0.25)", borderRadius: 20, padding: 22, boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>

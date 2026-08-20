@@ -1284,9 +1284,13 @@ export async function POST(req: NextRequest) {
       if (!isParty) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       if (booking.status !== "confirmed") return NextResponse.json({ error: "Only confirmed bookings can be completed" }, { status: 400 });
 
-      // Release escrow to the host if a held (manual-capture) payment exists
-      const { data: payment } = await sb.from("muse_booking_payments")
-        .select("id, stripe_payment_intent, status").eq("booking_id", bookingId).maybeSingle();
+      // Release escrow to the host if a held (manual-capture) payment exists.
+      // Use .limit(1) (not maybeSingle) so any historical duplicate rows can't
+      // error the query and silently block completion.
+      const { data: payments } = await sb.from("muse_booking_payments")
+        .select("id, stripe_payment_intent, status").eq("booking_id", bookingId)
+        .order("created_at", { ascending: false }).limit(1);
+      const payment = payments?.[0];
       if (payment?.stripe_payment_intent && payment.status !== "succeeded") {
         try {
           const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");

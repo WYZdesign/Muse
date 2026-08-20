@@ -236,11 +236,15 @@ export async function POST(req: NextRequest) {
         cancel_url: `${req.nextUrl.origin}/muse?payment=cancelled`,
       });
 
-      await sb.from("muse_booking_payments").insert({
+      // Upsert (idempotent) — a user who abandons checkout and pays again
+      // must reuse the same row, not create a duplicate that breaks
+      // complete-booking's maybeSingle() lookup. Requires the unique
+      // constraint from sql/MUSE_BOOKING_PAYMENT_UNIQUE_20260819.sql.
+      await sb.from("muse_booking_payments").upsert({
         booking_id: bookingId, payer_id: profile.id, payee_id: payeeId,
         stripe_payment_intent: "", amount_cents: amount, commission_cents: commission,
         net_amount_cents: netAmount, status: "pending",
-      });
+      }, { onConflict: "booking_id" });
 
       return NextResponse.json({ url: session.url, amountCents: amount, commissionCents: commission });
     }
