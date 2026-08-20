@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
@@ -30,6 +30,8 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
 }: SubscriptionScreenProps) {
   if (screen !== "subscription") return null;
 
+  const [promo, setPromo] = useState("");
+
   return (
     <div className="phone-wrap">
       <div className="phone" id="muse-app">
@@ -41,6 +43,10 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
           <div className="sub-header">
             <div className="sub-title">Unlock Your Potential</div>
             <div className="sub-subtitle">Choose the plan for your creative journey</div>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+            <input className="inp" placeholder="Promo code" value={promo} onChange={e => setPromo(e.target.value)} style={{ flex: 1, textTransform: "uppercase", letterSpacing: 1 }} />
+            <button className="btn btn-outline" style={{ padding: "0 16px" }} onClick={() => showToast(promo.trim() ? "Promo will apply at checkout" : "Enter a promo code first")}>Apply</button>
           </div>
           {currentUser.foundingTier && (
             <div style={{ padding: "12px 16px", borderRadius: 16, marginBottom: 14, background: currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.1)" : "rgba(212,165,255,0.1)", border: `1px solid ${currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.3)" : "rgba(212,165,255,0.3)"}` }}>
@@ -67,7 +73,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
                   onClick={async () => {
                     if (isCurrent) return;
                     if (tier.name === "Free") { showToast("You're on the Free plan"); return; }
-                    const url = await startSubscriptionCheckout(tierKey, authUser?.email, showToast);
+                    const url = await startSubscriptionCheckout(tierKey, authUser?.email, showToast, promo.trim() || undefined);
                     if (url) { window.location.href = url; }
                   }}
                 >

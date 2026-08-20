@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     if (!secret) return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
 
     const body = await req.json();
-    const { plan, email } = body as { plan?: string; email?: string };
+    const { plan, email, promo } = body as { plan?: string; email?: string; promo?: string };
 
     if (!plan || !PRICE_MAP[plan]) return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
 
@@ -41,6 +41,30 @@ export async function POST(req: NextRequest) {
     const userId = authData.user.id;
 
     const stripe = new Stripe(secret);
+
+    // ── 100%-off beta promo code ──────────────────────────────────────────
+    // Lets a real card pass through the full checkout + webhook + tier-unlock
+    // flow at $0 for closed-beta testing. A 100% coupon still creates the
+    // subscription and fires checkout.session.completed, so the tier flips to
+    // muse_pro — but no charge lands on the card.
+    const BETA_PROMO = process.env.MUSE_BETA_PROMO_CODE || "MUSEBETA";
+    let discountCouponId: string | null = null;
+    if (promo && String(promo).trim().toUpperCase() === BETA_PROMO.toUpperCase()) {
+      const couponId = `beta_${plan}_100off`;
+      try {
+        const existing = await stripe.coupons.retrieve(couponId);
+        discountCouponId = existing.id;
+      } catch {
+        const coupon = await stripe.coupons.create({
+          id: couponId,
+          percent_off: 100,
+          duration: "forever",
+          name: "Muse Beta — 100% off",
+        });
+        discountCouponId = coupon.id;
+      }
+    }
+    // ───────────────────────────────────────────────────────────────────────
 
     // Look up an existing price for this plan, or create one on the fly.
     let priceId: string | null = null;
@@ -77,6 +101,7 @@ export async function POST(req: NextRequest) {
       // Subscription metadata is separate from session metadata — propagate the
       // userId so the webhook can downgrade tier on cancellation.
       subscription_data: { metadata: { userId: userId || "" } },
+      ...(discountCouponId ? { discounts: [{ coupon: discountCouponId }] } : {}),
       success_url: `${req.nextUrl.origin}/muse?upgraded=${plan}`,
       cancel_url: `${req.nextUrl.origin}/muse/subscription`,
       allow_promotion_codes: true,
