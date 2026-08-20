@@ -443,3 +443,87 @@ The user's directive: drive every category to 10/10 except legal/compliance (whi
 3. `page.tsx` monolith split (~2400 lines).
 4. `zod` validation on API inputs.
 5. Delete superseded `DiscoverTutorial.tsx`.
+
+---
+
+## 22. SESSION UPDATE — 2026-08-19 (Stripe promo, landing hero gap, AI model review)
+
+### MUSEBETA promo code — DONE (`d5fafdd`, `4e1c407`)
+- Created a **100%-off `forever` coupon** (`MUSEBETA`) in the live Stripe account (via vault `STRIPE_SECRET_KEY`).
+- **In-app promo path:** SubscriptionScreen has a promo input; `startSubscriptionCheckout()` passes `promo`; `checkout/route.ts` reads `promo`, and when it matches `MUSEBETA` (or `MUSE_BETA_PROMO_CODE` env), auto-applies a 100%-off coupon via `discounts` on the Checkout Session. The subscription is created at $0 and `checkout.session.completed` still fires → tier flips to `muse_pro`.
+- **Stripe *native* promo field does NOT work** for `MUSEBETA`: the Vercel `STRIPE_SECRET_KEY` is a **restricted key** that cannot create `promotion_codes` (the API returned `parameter_unknown: coupon`). Confirmed by direct API diagnostic. This is why typing `MUSEBETA` in Stripe's own field said "invalid". **Use the in-app promo field instead** — it bypasses the restricted key by using `discounts` on the session, which only needs read scope on coupons.
+- For the live test: in-app Settings → Muse Pro → enter `MUSEBETA` in the promo field → "Select Muse Pro" → Stripe checkout shows $0 → use a real card. Free monthly (`duration: forever`).
+
+### Landing hero gap — DONE (`d5fafdd`)
+- `.muse-hero` `justify-content: center` → `flex-start`, and top padding `88px→76px` (mobile `90px→64px`). The first section now starts right below the nav; the glow/background no longer sits in a big empty gap.
+
+### Meta "Muse" models — INVESTIGATED, no code change (correct decision)
+- Meta's "Muse" is a **text-to-image** generation model, NOT an LLM — not relevant to the app's chat/moderation/matching AI.
+- Meta's LLM family is **Llama**, fully available on OpenRouter (which the app already uses via `lib/ai.ts`). Switching the chat model to a Meta Llama is a pure **env-var change** (`OPENROUTER_CHAT_MODEL=meta-llama/llama-3.3-70b-instruct`), no code.
+- Embedding model should stay `openai/text-embedding-3-small` (best RAG/matching quality; Meta has no strong embedding model).
+- **⚠️ Trademark flag:** if Meta genuinely ships a product named "Muse", that's a naming collision with this app — worth an attorney note, higher priority than any model integration.
+
+---
+
+## 23. EXPLICIT HANDOFF TO CLAUDE — READ THIS FIRST, THEN BE RUTHLESS
+
+> **Claude, here is what I need from you, stated directly: be critical at every turn.**
+> Do not wave anything through. Do not trust any score, claim, or "verified" label in this document at face value — including the ones I wrote. Your job is to find what is broken, half-done, gathering dust, or never actually audited. The entire point of this handover is adversarial review, not confirmation.
+
+### Where I specifically want you to dig (the "gathering dust" list)
+
+These are areas I believe have NOT been rigorously re-audited end-to-end, and I want you to actually verify each against real code, not accept prior notes:
+
+1. **The 11 tutorials** (`screens/tutorials.ts`) — do the anchors (`card`/`fab`/`nav`/`header`/`center`) actually align with real elements on each screen, or are they pointing at generic spots? The first-visit trigger in `page.tsx` uses a `useEffect` on `screen` — is there a race where it fires before the screen renders, or double-fires, or marks a tutorial "seen" that the user never saw?
+
+2. **The full booking loop** — I claim it's 10/10 but I have NOT re-traced create-session → complete-booking → submit-review in one continuous pass this session. Trace the actual action names, payloads, and read-backs. Look for dead ends, mismatched field names, or actions that exist in `route.ts` but are never called from any screen.
+
+3. **Forum / Collab (briefs) / Community** — same treatment. Write action → persist → read-back → visible. These three are the most likely place a real user hits a wall.
+
+4. **The referral lifecycle** — `generate` → `apply` → `redeem-reward`. I've verified the routes exist but not that a referral actually propagates from one account to another and issues a reward. Is there any UI that even shows the referrer their code, or is it backend-only?
+
+5. **The on-the-fly product/price creation in `checkout/route.ts`** — in LIVE mode this will create a *new* product/price if `price_muse_pro_monthly` isn't found. Does that duplicate the manual "Muse Pro" product already in the Dashboard? Could it create a product with a wrong/missing category and break Managed Payments? Verify the lookup-key behavior against what's actually in the live Stripe account.
+
+6. **`loadState`/`saveState`** — I fixed a tier leak by forcing `tier:"free"` on restore, but what ELSE is being persisted that shouldn't be (and vice versa)? Audit the full `muse_v1` payload for secrets, staleness, or fields that fight with server state.
+
+7. **The strike auto-escalation I added** (`applyStrikeAndEscalate`) — the report-threshold path issues a `severity:"warning"` strike on 3+ distinct reporters, and the helper counts ALL non-overturned strikes toward the threshold of 3. Verify the interaction: does a single high-severity disclosure block + two unrelated warnings = suspension? Is that intended, or should severity classes not mix? Is there an appeal path that actually un-suspends a user?
+
+8. **Rate limiting** — `checkRate` is in-memory. In serverless Vercel, is that per-instance (and therefore trivially bypassed across cold starts)? Verify whether `lib/rate-limit.ts` uses anything durable or is effectively a no-op in production.
+
+9. **The `email_confirm: true` change** — this removes email verification entirely. I flagged it as closed-beta-only. Confirm it's acceptable *today* and document the exact condition to revert it (real SMTP or a different verification path) before open beta.
+
+10. **Error-path consistency** — I hardened 7 routes' catch blocks, but grep *every* `catch` across `src/app/api/**` again and list any remaining route that returns a raw error message or leaks internals.
+
+### What I already know is NOT done (don't waste time re-finding, but do weigh in on priority)
+
+- **Live charge test** (human, needs a real card).
+- **Attorney review** of `_audit_artifacts/ATTORNEY_HANDOFF.md` (human).
+- **General liability insurance** (human, committed not obtained).
+- **Facebook App → Live** (human/config).
+- **NCMEC credentials** (human/config).
+- **`next/image` adoption** (code backlog — zero usage, real mobile perf cost).
+- **9 of 11 state hooks** (code backlog).
+- **`page.tsx` monolith split** (code backlog).
+- **`zod` validation** (code backlog).
+- **Delete superseded `DiscoverTutorial.tsx`** (code hygiene).
+- **Staging Supabase wiring** (config — staging project exists but not connected to Vercel preview).
+
+### The scorecard challenge
+
+The previous handover claimed 10/10 across 13 categories. **That is not credible, and I want you to say so.** Give me your own calibrated, evidence-based numbers. Do not round up. If you haven't verified something this session, say "unverified," not "10/10." I would rather get an honest 7/10 with a specific gap list than a confident 10/10 with nothing behind it.
+
+### Verification commands (run these, don't trust my word)
+
+```
+cd /home/claude/muse-repo && git pull origin main
+npx tsc --noEmit
+npm run build
+npx vitest run
+```
+Then actually read the files for the 10 areas above — `route.ts`, `screens/*.tsx`, `lib/rate-limit.ts`, `lib/api.ts`, `checkout/route.ts` — and report findings, not summaries.
+
+### Final state of this session
+
+- `git log` head: `4e1c407` (checkout promo robust), `d5fafdd` (promo + landing gap), `2214696` (handover 20-21), `01550ac` (checkout helper), `075d315` (upload/onboarding/tutorials).
+- Build clean, 46 unit tests pass, `tsc --noEmit` clean.
+- All pushed to `main`; Vercel auto-deploys.
