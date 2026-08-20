@@ -1,9 +1,25 @@
 # Muse App — Handover for Claude (opencode)
 
 **Date:** 2026-08-20  
-**Commits pushed:** `69cac88`, `51253c2`, `505331f`  
+**Commits pushed:** `69cac88`, `51253c2`, `505331f`, `f1c7c27`, `fccddf5`, `de9958d`, `11ee95e`  
 **Build status:** Clean (`tsc --noEmit` + `npm run build` both pass)  
 **Vercel:** Auto-deploys from `main`
+
+---
+
+## Owner Decisions (locked in 2026-08-20)
+
+| Topic | Decision |
+|-------|----------|
+| **Email** | Send email "any chance it gets" — consistent, transparent comms. Sender = `info@wyzdesign.com` (may change later). Provider = **Resend** (fail-open, no SDK dep). |
+| **Strikes** | Combine ALL strikes, weight equally. No per-severity tracks. 3 active strikes → suspension; `suspension`/`permanent_ban` severity still = instant action. |
+| **Vision audits** | Claude (Chrome) owns all visual/frontend audits — it navigates without screenshots and explains findings in detail so opencode fixes with full context. opencode does NOT run Playwright screenshot audits anymore. |
+| **Pricing layout** | Fixed — lone card now spans full width at ≤920px. |
+| **Debris** | Cleaned — audit scripts + stale reports removed, dirs gitignored. |
+| **Closed beta** | Starts at 150+ REAL landing signups (newsletter/email signups who actually register for the app). Not before. |
+| **Open beta** | ~1 month after closed beta (or after enough feedback), runs until ~500–1k users (TBD). |
+| **Founding cap** | 150 is the real cap. Count must reflect ACTUAL newsletter/app signups, not inflated. |
+| **Side job** | Claude is currently auditing all match-card profile images (attractive / centered / portrait). |
 
 ---
 
@@ -36,12 +52,12 @@
 - **§6 SQL catch-up migration** — ✅ VERIFIED applied. All 7 tables (`muse_waitlist`, `muse_landing_analytics`, `muse_qr_events`, `muse_verification_sessions`, `muse_rate_limits`, `muse_events_log`, `muse_ncmec_reports`) + 4 columns (`founding_tier`, `pro_expires_at`, `age_verified`, `suspended`) confirmed live via PostgREST (status 200).
 
 ### From HANDOVER_V3 (Chrome extension Claude) — still open
-1. **Waitlist confirmation email** — `/api/muse/waitlist` returns 200 OK but no confirmation email was received. Check email service logs. (Backend question, no code fix identified.)
+1. **Waitlist confirmation email** — ✅ CODE DONE. `sendEmail(waitlistWelcome(...))` now fires after signup. **BLOCKER: needs `RESEND_API_KEY` in Vercel + `wyzdesign.com` domain verified in Resend (SPF/DKIM DNS).** Until then it fail-opens silently (logs a warning, never breaks signup).
 2. **§4 Discover card "blank" appearance** — Downgraded to false alarm by Chrome Claude: card was fully loaded 1s later, lazy-load/render-timing artifact. No further action.
 
 ### Remaining
-3. **Onboarding full tab-by-tab visual audit** — Playwright walkthrough works through all 18 steps but only captures Discover after onboarding. Full screen-by-screen screenshot audit still pending.
-4. **Pricing section narrow-viewport (≤920px) layout** — 3-tier grid becomes 2+1, lone third card may look stranded. Needs a real ≤920px visual check.
+3. **Onboarding full tab-by-tab visual audit** — OWNED BY CHROME CLAUDE now (per owner decision). Not opencode's job anymore.
+4. **Pricing section narrow-viewport (≤920px) layout** — ✅ FIXED. Third `.muse-tier-card.standard` now spans full width at ≤920px.
 
 ---
 
@@ -84,6 +100,14 @@
 ### Stripe
 - **Muse account:** `acct_1U0n04AlrkQDEH7C`
 - **MUSEBETA promo code:** $0 checkout verified working
+
+### Email (Resend)
+- **Module:** `src/lib/email.ts` — single source of truth for all outbound email.
+- **Sender:** `Muse <info@wyzdesign.com>`
+- **Entry points:** `sendEmail(msg)` core; templates `waitlistWelcome()`, `betaAccess()`, `notify()`.
+- **Wired so far:** waitlist signup confirmation (`/api/muse/waitlist` → `sendEmail(waitlistWelcome(...))`).
+- **TO ACTIVATE:** set `RESEND_API_KEY` in Vercel + verify `wyzdesign.com` domain in Resend (SPF/DKIM DNS records). Until then all sends fail-open silently.
+- **Design rule:** email must NEVER block a user flow — every call is fail-open, fire-and-forget (`.catch(() => {})`).
 
 ### Run Audit
 ```bash
@@ -156,7 +180,7 @@ python _audit/run_audit.py
 | `cron/`, `webhooks/`, `backup/`, `health/` | Ops + webhooks |
 
 ### Shared libs (`src/lib/`)
-`supabase.ts` (Supabase clients + service role), `money.ts` (Stripe amount parsing), `rate-limit.ts` (durable rate limiting), `ai.ts` + `aiModeration.ts` + `aiDocs.ts` (AI pipeline), `contentScan.ts` (content scanning), `errorTracker.ts`, `http.ts`, `request-safety.ts`. Test files: `*.test.ts` (Vitest, 53 tests).
+`supabase.ts` (Supabase clients + service role), `money.ts` (Stripe amount parsing), `rate-limit.ts` (durable rate limiting), `email.ts` (Resend email — all outbound mail), `ai.ts` + `aiModeration.ts` + `aiDocs.ts` (AI pipeline), `contentScan.ts` (content scanning), `errorTracker.ts`, `http.ts`, `request-safety.ts`. Test files: `*.test.ts` (Vitest, 53 tests).
 
 ### Shared components (`src/components/`)
 `BackgroundScene.tsx` + `.css` (animated aurora/sunset background), `SplashScreen.tsx` (pre-login splash), `ErrorBoundary.tsx`, `CardPreloader.tsx`, `ScreenSkeleton.tsx`.
