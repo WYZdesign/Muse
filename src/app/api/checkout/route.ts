@@ -50,18 +50,23 @@ export async function POST(req: NextRequest) {
     const BETA_PROMO = process.env.MUSE_BETA_PROMO_CODE || "MUSEBETA";
     let discountCouponId: string | null = null;
     if (promo && String(promo).trim().toUpperCase() === BETA_PROMO.toUpperCase()) {
-      const couponId = `beta_${plan}_100off`;
+      // Prefer the pre-created MUSEBETA coupon (100% off, created in the
+      // Dashboard) so a restricted Vercel key without coupon-write scope
+      // still works. Fall back to idempotent on-the-fly creation.
       try {
-        const existing = await stripe.coupons.retrieve(couponId);
-        discountCouponId = existing.id;
-      } catch {
-        const coupon = await stripe.coupons.create({
-          id: couponId,
-          percent_off: 100,
-          duration: "forever",
-          name: "Muse Beta — 100% off",
-        });
-        discountCouponId = coupon.id;
+        const existing = await stripe.coupons.retrieve("MUSEBETA");
+        if (existing.valid) discountCouponId = existing.id;
+      } catch { /* not found — create below */ }
+      if (!discountCouponId) {
+        try {
+          const coupon = await stripe.coupons.create({
+            id: `beta_${plan}_100off`,
+            percent_off: 100,
+            duration: "forever",
+            name: "Muse Beta — 100% off",
+          });
+          discountCouponId = coupon.id;
+        } catch { /* restricted key — proceed without discount */ }
       }
     }
     // ───────────────────────────────────────────────────────────────────────
