@@ -89,3 +89,83 @@
 ```bash
 python _audit/run_audit.py
 ```
+
+---
+
+## Project Map — Paths, Files & Folders
+
+### Repo & root
+- **Local root:** `V:\Muse`
+- **Git remote:** `https://github.com/WYZdesign/Muse.git` (branch `main`)
+- **CI/CD:** Vercel auto-deploys from `main` (project `prj_JMdRLrJ57tAB1jTwJd2GqirZClvr`)
+- **Build tooling:** Next.js 16.3.1 (Turbopack), TypeScript, Vitest (unit tests), Playwright (E2E/audit), Capacitor (native wrappers)
+
+### Top-level directories
+| Path | Purpose |
+|------|---------|
+| `src/app/` | All Next.js routes (App Router) |
+| `src/components/` | Shared UI components |
+| `src/lib/` | Shared logic (Supabase, Stripe, rate-limit, AI) |
+| `sql/` | 33 migration SQL files (run manually against Supabase) |
+| `public/` | Static assets (icons, manifest, og-image) |
+| `scripts/` | Build/deploy helper scripts |
+| `tests/` | Test suites |
+| `.github/` | GitHub Actions workflows |
+| `.vercel/` | Vercel project config |
+| `android/`, `ios/` | Capacitor native shell projects |
+| `_audit_artifacts/`, `_AUDIT_SHOTS/`, `_STATE/`, `temp_screens/`, `test-results/` | Audit/debug debris — safe to delete |
+| `.next/` | Build output (generated, do not edit) |
+
+### Route structure (`src/app/`)
+| Path | Route | Notes |
+|------|-------|-------|
+| `(muse)/muse/page.tsx` | `/muse` | **Main SPA monolith** (~2459 lines) — all app state, routing, screens |
+| `(muse)/muse/muse.css` | — | All app styles |
+| `(muse)/muse/screens/` | — | 17 screen components (see below) |
+| `(muse)/muse/components/` | — | `Nav.tsx`, shared UI |
+| `(muse)/muse/hooks/`, `lib/` | — | App-specific hooks + helpers |
+| `(muse)/muse/admin/` | `/muse/admin` | Admin + moderation pages |
+| `(muse)/muse/profile/[id]/` | `/muse/profile/[id]` | Public profile pages |
+| `(muse)/muse/post/[id]/` | `/muse/post/[id]` | Public post pages |
+| `(muse)/muse/offline/`, `reset-password/` | — | Offline + reset-password pages |
+| `muse/landing/` | `/muse/landing` | **Landing page** (promo splash + waitlist) |
+| `muse/terms|privacy|pricing|faq|about|blog|careers|press|guidelines|safety/` | `/muse/*` | 10 legal/placeholder pages |
+| `muse/verify/` | `/muse/verify` | Verification page |
+| `terms/`, `privacy/`, `safety/`, `dmca/` | `/terms`, `/privacy`, `/safety`, `/dmca` | Top-level legal pages |
+| `layout.tsx`, `globals.css` | — | Root layout + global styles |
+| `sitemap.ts` | `/sitemap.xml` | SEO sitemap |
+
+### Screen components (`src/app/(muse)/muse/screens/`)
+`BtsScreen.tsx` (BTS/moments), `ChatScreen.tsx`, `CodexScreen.tsx`, `CollabScreen.tsx` (briefs), `CommunityScreen.tsx`, `DiscoverScreen.tsx`, `FeedScreen.tsx` (connections), `MenuModal.tsx` (hamburger panel), `MusesScreen.tsx` (matches), `NetworkScreen.tsx`, `PortfolioScreen.tsx`, `ProfileScreen.tsx`, `SessionsScreen.tsx` (bookings), `SettingsScreen.tsx`, `SubscriptionScreen.tsx` (Muse Pro), `TutorialOverlay.tsx`, `tutorials.ts` (tutorial definitions)
+
+### API routes (`src/app/api/`)
+| Path | Purpose |
+|------|---------|
+| `muse/route.ts` | **Main action dispatcher** (48+ actions) |
+| `muse/auth/` | Authentication |
+| `muse/waitlist/` | Landing waitlist signup (POST) |
+| `muse/landing-stats/` | Landing stats count (GET) |
+| `muse/checkout/` | Stripe Checkout session |
+| `muse/verification/` | Stripe Identity verification |
+| `muse/content-scan/`, `muse/embed/`, `muse/embeddings/` | AI moderation + vector embedding |
+| `muse/match/`, `muse/connect/`, `muse/referral/`, `muse/support/`, `muse/push/`, `muse/upload/` | Feature-specific endpoints |
+| `muse/cache-version/` | Cache versioning |
+| `checkout/` | Checkout (top-level) |
+| `qr/` | QR code generation |
+| `geocode/` | Mapbox geocoding |
+| `cron/`, `webhooks/`, `backup/`, `health/` | Ops + webhooks |
+
+### Shared libs (`src/lib/`)
+`supabase.ts` (Supabase clients + service role), `money.ts` (Stripe amount parsing), `rate-limit.ts` (durable rate limiting), `ai.ts` + `aiModeration.ts` + `aiDocs.ts` (AI pipeline), `contentScan.ts` (content scanning), `errorTracker.ts`, `http.ts`, `request-safety.ts`. Test files: `*.test.ts` (Vitest, 53 tests).
+
+### Shared components (`src/components/`)
+`BackgroundScene.tsx` + `.css` (animated aurora/sunset background), `SplashScreen.tsx` (pre-login splash), `ErrorBoundary.tsx`, `CardPreloader.tsx`, `ScreenSkeleton.tsx`.
+
+### SQL migrations (`sql/`)
+33 files. Key ones: `MUSE_CATCHUP_ALL_20260819.sql` (**APPLIED** — creates 7 tables + rate-limit RPC + founding trigger), `MUSE_SCHEMA_FULL_20260813.sql`, `MUSE_FOUNDING_MEMBERS_20260805.sql`, `MUSE_RATE_LIMIT_20260819.sql`, `MUSE_NCMEC_20260813.sql`, `MUSE_TRUST_SAFETY_20260803.sql`. Run manually via Supabase SQL editor — never via code.
+
+### Handover docs (root)
+`HANDOVER_APP.md` (this file), `HANDOVER_LANDING.md`, `HANDOVER_V3_UX_AUDIT.md`, `HANDOVER.md`, `CLAUDE_HANDOFF*.md`, `CLAUDE_VISUAL_AUDIT_HANDOVER.md`, `COMPLIANCE_HANDOFF.md`, `OPS_RUNBOOK.md`, `ROADMAP.md`, `STRATEGY.md`, `NCMEC_MANUAL_FALLBACK.md`.
+
+### Env vars (`.env.local` — NEVER commit)
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `OPENROUTER_API_KEY`, `OPENROUTER_EMBED_MODEL`, `OPENROUTER_CHAT_MODEL`, `NEXT_PUBLIC_MAPBOX_TOKEN`, `SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `AWS_*`, `ADMIN_EMAILS`, `CRON_SECRET`, `OLLAMA_URL`, `QDRANT_URL`.
