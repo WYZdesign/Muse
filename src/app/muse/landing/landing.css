@@ -456,7 +456,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 /* ═══ HERO ═══ */
 .muse-hero {
   position: relative; min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  padding: 76px 24px 80px; overflow: hidden;
+  padding: 20px 24px 80px; overflow: hidden;
 }
 .muse-hero-bg { position: absolute; inset: 0; pointer-events: none; }
 .muse-orb { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.45; animation: museFloat 14s ease-in-out infinite; }
@@ -782,7 +782,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   .muse-features-grid, .muse-safety-grid, .muse-tiers, .muse-steps { grid-template-columns: 1fr; }
   .muse-footer-grid { grid-template-columns: 1fr; }
   .muse-section { padding: 90px 20px; }
-  .muse-hero { padding: 64px 20px 80px; }
+  .muse-hero { padding: 12px 20px 80px; }
   .muse-hero-eyebrow { letter-spacing: 0.05em; padding: 8px 16px; border-radius: 20px; }
   .muse-form-row { flex-direction: column; gap: 10px; }
   .muse-cta-card { padding: 48px 24px; }
