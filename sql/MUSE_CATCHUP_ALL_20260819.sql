@@ -10,6 +10,8 @@
 --   3. muse_qr_events           → QR tracking broken
 --   4. muse_verification_sessions → Stripe Identity verification broken
 --   5. muse_rate_limits         → durable rate limiting not live
+--   6. muse_events_log          → analytics event logging broken
+--   7. muse_ncmec_reports       → CSAM escalation queue missing
 --
 -- Plus: founding_tier / pro_expires_at columns + the auto-claim
 -- trigger that grants founding members their lifetime Pro tier.
@@ -200,3 +202,51 @@ WHERE a.booking_id = b.booking_id
 ALTER TABLE muse_booking_payments
   ADD CONSTRAINT muse_booking_payments_booking_id_key
   UNIQUE (booking_id);
+
+-- ─────────────────────────────────────────────
+-- 6. EVENTS LOG (from muse_complete_schema.sql)
+-- ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS muse_events_log (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  props jsonb default '{}'::jsonb,
+  ua text default '',
+  ip text default '',
+  created_at timestamptz default now()
+);
+CREATE INDEX IF NOT EXISTS idx_muse_events_log_name ON muse_events_log(name);
+CREATE INDEX IF NOT EXISTS idx_muse_events_log_created ON muse_events_log(created_at DESC);
+ALTER TABLE muse_events_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_events_log_service_only" ON muse_events_log;
+CREATE POLICY "muse_events_log_service_only" ON muse_events_log
+  FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
+
+-- ─────────────────────────────────────────────
+-- 7. NCMEC CYBERTIPLINE QUEUE (from MUSE_NCMEC_20260813.sql)
+-- ─────────────────────────────────────────────
+ALTER TABLE muse_profiles
+  ADD COLUMN IF NOT EXISTS suspended BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS suspended_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS muse_ncmec_reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  file_name TEXT,
+  context TEXT,
+  flagged_categories JSONB DEFAULT '[]'::jsonb,
+  confidence NUMERIC DEFAULT 0,
+  report_type TEXT DEFAULT 'child_sexual_abuse_material',
+  incident_details JSONB DEFAULT '{}'::jsonb,
+  status TEXT DEFAULT 'pending_submission',
+  submitted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE muse_content_scans
+  ADD COLUMN IF NOT EXISTS is_csam BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS scanned BOOLEAN DEFAULT TRUE;
+
+ALTER TABLE muse_ncmec_reports ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "ncmec_service_only" ON muse_ncmec_reports;
+CREATE POLICY "ncmec_service_only" ON muse_ncmec_reports
+  FOR ALL USING (false);
