@@ -117,9 +117,13 @@ export async function POST(req: NextRequest) {
       // userId so the webhook can downgrade tier on cancellation.
       subscription_data: { metadata: { userId: userId || "" } },
       ...(discountCouponId ? { discounts: [{ coupon: discountCouponId }] } : {}),
+      // Stripe forbids sending `allow_promotion_codes` together with a
+      // `discounts` list — only expose the native promo field when no
+      // coupon is already pinned to the session (and omit it entirely,
+      // since passing `false` is still rejected by Stripe).
+      ...(discountCouponId ? {} : { allow_promotion_codes: true }),
       success_url: `${req.nextUrl.origin}/muse?upgraded=${plan}`,
       cancel_url: `${req.nextUrl.origin}/muse/subscription`,
-      allow_promotion_codes: true,
       billing_address_collection: "auto",
     });
 
