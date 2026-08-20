@@ -52,7 +52,7 @@ export const TUTORIALS: Record<string, TutorialDef> = {
     key: "briefs",
     title: "Collab",
     steps: [
-      { id: "briefs", title: "Briefs", anchor: "card", body: "Briefs are paid or unpaid collaboration listings. Creatives post projects they need help with, and you can apply or save them." },
+      { id: "briefs", title: "Briefs", anchor: "card", selector: ".brief-card", body: "Briefs are paid or unpaid collaboration listings. Creatives post projects they need help with, and you can apply or save them." },
       { id: "post", title: "Post a Brief", anchor: "fab", body: "Have a project? Post your own brief with a title, description, budget, and category so others can find you." },
       { id: "nav", title: "Navigate", anchor: "nav", selector: ".nav", body: "Switch between screens anytime using the bottom bar." },
     ],
@@ -88,7 +88,7 @@ export const TUTORIALS: Record<string, TutorialDef> = {
     key: "forum",
     title: "Forum",
     steps: [
-      { id: "forum", title: "Community Forum", anchor: "card", body: "The forum is where the community talks — ask questions, share tips, and discuss the craft. Upvote posts and leave replies." },
+      { id: "forum", title: "Community Forum", anchor: "card", selector: ".conn-card", body: "The forum is where the community talks — ask questions, share tips, and discuss the craft. Upvote posts and leave replies." },
       { id: "post", title: "Start a Thread", anchor: "fab", body: "Tap to create a new thread. Give it a title, write your post, and pick a category." },
     ],
   },
@@ -96,7 +96,7 @@ export const TUTORIALS: Record<string, TutorialDef> = {
     key: "sessions",
     title: "Bookings",
     steps: [
-      { id: "sessions", title: "Sessions", anchor: "card", body: "Book sessions with creatives here. Browse offerings, pick a time, and complete your booking with secure payments and escrow." },
+      { id: "sessions", title: "Sessions", anchor: "card", selector: ".conn-card", body: "Book sessions with creatives here. Browse offerings, pick a time, and complete your booking with secure payments and escrow." },
       { id: "book", title: "Book a Session", anchor: "center", body: "Open a session to see details and book. You may need to complete identity verification and a disclosure form first." },
       { id: "nav", title: "Navigate", anchor: "nav", selector: ".nav", body: "Use the bottom bar to move between screens." },
     ],
@@ -105,7 +105,7 @@ export const TUTORIALS: Record<string, TutorialDef> = {
     key: "community",
     title: "Community",
     steps: [
-      { id: "community", title: "Communities", anchor: "card", body: "Join communities around cities, crafts, and interests. Find events and connect with creatives near you." },
+      { id: "community", title: "Communities", anchor: "card", selector: ".conn-card", body: "Join communities around cities, crafts, and interests. Find events and connect with creatives near you." },
       { id: "events", title: "Events", anchor: "center", body: "Events are meetups, mixers, and shoots. RSVP to let others know you're coming." },
     ],
   },
@@ -113,7 +113,7 @@ export const TUTORIALS: Record<string, TutorialDef> = {
     key: "events",
     title: "Events",
     steps: [
-      { id: "events", title: "Events", anchor: "card", body: "Browse upcoming events and mixers. RSVP to save your spot and connect with attendees." },
+      { id: "events", title: "Events", anchor: "card", selector: ".conn-card", body: "Browse upcoming events and mixers. RSVP to save your spot and connect with attendees." },
     ],
   },
   settings: {

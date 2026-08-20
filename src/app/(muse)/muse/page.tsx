@@ -277,13 +277,16 @@ function MusePage() {
     const el = e.currentTarget;
     if (el.dataset.fallback) return;
     el.dataset.fallback = "1";
-    el.style.background = "linear-gradient(135deg, #FF6B9D 0%, #C86BFF 50%, #FFB366 100%)";
+    const initial = (el.alt || "").trim().charAt(0).toUpperCase();
+    el.style.background = "linear-gradient(135deg, #2a1a3e 0%, #1a0a2e 100%)";
     el.style.display = "flex";
     el.style.alignItems = "center";
     el.style.justifyContent = "center";
-    el.style.color = "#fff";
-    el.style.fontSize = "2em";
-    el.alt = el.alt?.charAt(0) || "👤";
+    el.style.color = "rgba(255,215,0,0.6)";
+    el.style.fontSize = initial ? "1.4em" : "1.8em";
+    el.style.fontWeight = "700";
+    el.style.fontFamily = "'Playfair Display', serif";
+    el.textContent = initial || "\uD83D\uDCF7";
     el.removeAttribute("src");
   }, []);
 
