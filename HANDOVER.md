@@ -780,3 +780,40 @@ Claude confirmed the suspicion: `card`/`fab`/`center` anchors were hardcoded fix
 
 ### Verification
 `npx tsc --noEmit` clean, `npm run build` clean, 53 unit tests pass. Pushed to `main` (`c587022`); Vercel auto-deploys.
+
+---
+
+## 30. CRITICAL FINDING — 2026-08-19 (5 missing live tables = 4 broken features)
+
+Claude found that `founding_tier` is read but never written by any API code — a real gap. Digging into *why* surfaced something far bigger: **several migrations exist in the repo but were never applied to the live database.**
+
+### Verified missing from live Supabase (via PostgREST 404 checks against the service role):
+
+| Table | Feature broken |
+|---|---|
+| `muse_waitlist` | **Landing-page waitlist signup returns 500** — every signup fails silently |
+| `muse_landing_analytics` | Landing stats/counters broken |
+| `muse_qr_events` | QR tracking broken |
+| `muse_verification_sessions` | **Stripe Identity verification broken** (age-gating can't persist) |
+| `muse_rate_limits` | Durable rate limiting not live (still in-memory fallback) |
+
+### Founding members — root cause + fix
+- The `founding_tier`/`pro_expires_at` columns and the `auto_claim_founding_trigger` trigger exist in `MUSE_FOUNDING_MEMBERS_20260805.sql` but were **never applied**, so no real user could ever receive the founding badge or lifetime Pro. The trigger claims tier based on `muse_waitlist` position (≤150 → `founding` lifetime Pro; ≤1000 → `early` 6 months), and sets `tier = 'muse_pro'` for free.
+- The only user with `founding_tier = 'founding'` in the live DB is the owner (`torree.marcel@gmail.com`), set by a hardcoded `isOwner` check — confirming nothing else ever writes it.
+
+### Fix — `sql/MUSE_CATCHUP_ALL_20260819.sql` (`7533590`)
+One consolidated, idempotent catch-up migration creating all 5 missing tables + their RLS policies, the `check_rate()` RPC, the founding-member columns + `claim_founding_status()` + the `auto_claim_founding_trigger`, and the booking-payment unique constraint. **⚠️ This one file must be applied in the Supabase SQL Editor — it supersedes the earlier separate migrations.**
+
+### ⚠️ IMPORTANT — process note
+The root cause of this whole class of bug is that **migrations are written but their application is never verified.** I only caught this by directly querying PostgREST for table existence. Going forward, every new `sql/*.sql` file must be followed by a live `select * limit 0` verification before the feature is declared "done."
+
+### Still open / next for Claude
+1. **Apply `sql/MUSE_CATCHUP_ALL_20260819.sql`** (blocked on Torreé — one file, covers everything).
+2. **Check pre-existing `muse_sessions` rows for unparseable rates** (created before the `810fe98` validation fix).
+3. Remaining speculative items from section 27 (items 4, 6-8, 10).
+4. **Policy confirmation from Torreé:** strike severity separation.
+5. Human-owned: live charge test, attorney review, insurance, Facebook App → Live, NCMEC creds.
+6. Code backlog: `next/image`, 9 of 11 hooks, `page.tsx` split.
+
+### Verification
+`npx tsc --noEmit` clean, `npm run build` clean, 53 unit tests pass. Pushed to `main` (`7533590`); Vercel auto-deploys.
