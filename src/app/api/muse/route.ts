@@ -5,6 +5,7 @@ import { checkRate, clientIp } from "@/lib/rate-limit";
 import { enforceRequestSafety, sanitizeText } from "@/lib/request-safety";
 import { askMuseAI } from "@/lib/aiDocs";
 import { screenText, moderateText } from "@/lib/aiModeration";
+import { parseRateToCents } from "@/lib/money";
 import Stripe from "stripe";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -797,12 +798,20 @@ export async function POST(req: NextRequest) {
       if (!await checkRate(ip, "create-session", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { title, description, type, rate, duration, skills, date, location, img } = rest;
       if (!title || !String(title).trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
+      // Validate the rate at creation time so a host can't create a session
+      // that is *unpayable* (ambiguous free-text like "$50-100/hr" would
+      // resolve to null at checkout and block payment). Rate is optional for
+      // free/TFP sessions — an empty rate is allowed, just not an ambiguous one.
+      const rawRate = String(rate || "").trim();
+      if (rawRate && parseRateToCents(rawRate) === null) {
+        return NextResponse.json({ error: "Rate must be a single dollar amount (e.g. \"$150\" or \"150\"). Remove ranges or extra text." }, { status: 400 });
+      }
       const { data, error } = await sb.from("muse_sessions").insert({
         host_id: profile.id,
         title: String(title).slice(0, 200),
         description: String(description || "").slice(0, 1000),
         type: String(type || "Photoshoot").slice(0, 50),
-        rate: String(rate || "").slice(0, 50),
+        rate: rawRate.slice(0, 50),
         duration: String(duration || "60 min").slice(0, 50),
         skills: Array.isArray(skills) ? skills.slice(0, 20).map((s: unknown) => String(s).slice(0, 50)) : [],
         date: String(date || "").slice(0, 100),
