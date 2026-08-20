@@ -60,6 +60,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
                   ? "You're locked in for life. Thanks for believing in Muse."
                   : currentUser.proExpiresAt ? `Free Pro until ${new Date(currentUser.proExpiresAt).toLocaleDateString()}. Then $9.99/mo or earn it via referrals.` : "Free Pro as an early believer."}
               </div>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>Browse plans below anytime — you won't be charged.</div>
             </div>
           )}
           {TIERS.map(tier => {
@@ -67,6 +68,9 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
             const isCurrent = tierKey === userTier || (tierKey === "muse_pro" && currentUser.tier === "muse_pro");
             return (
               <div key={tier.name} className={"tier-card" + (isCurrent ? " current" : "")} style={{ position: "relative" }}>
+                {isCurrent && (
+                  <div style={{ position: "absolute", top: -10, right: 12, padding: "4px 12px", borderRadius: 999, background: "linear-gradient(135deg, var(--gold), var(--lavender))", color: "#0a0612", fontSize: 11, fontWeight: 800, letterSpacing: 0.02, boxShadow: "0 4px 14px rgba(255,215,0,0.35)" }}>✓ You have this</div>
+                )}
                 <div className="tier-header">
                   <div className="tier-name">{tier.name}</div>
                   <div><span className="tier-price">{tier.price}</span><span className="tier-period">{tier.period}</span></div>

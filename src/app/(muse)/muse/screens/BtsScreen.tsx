@@ -123,15 +123,12 @@ export const BtsScreen = memo(function BtsScreen({
             ))}
             {stories.length === 0 && [1, 2, 3].map(i => (
               <div key={i} className="moments-card" style={{ opacity: 0.7 }}>
-                <div className="moments-card-img" style={{ background: "linear-gradient(135deg,rgba(255,20,147,0.15),rgba(255,217,61,0.1))", height: 220 }} />
+                <div className="moments-card-img" style={{ background: "linear-gradient(135deg,rgba(255,20,147,0.12),rgba(255,217,61,0.08))", height: 220, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  <FiCamera size={32} color="rgba(255,255,255,0.35)" />
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text2)" }}>No moments yet</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)" }}>Moments disappear after 24 hours</div>
+                </div>
                 <div className="moments-card-body">
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>No moments yet</div>
-                      <div style={{ fontSize: 11, color: "var(--muted)" }}>Moments disappear after 24 hours</div>
-                    </div>
-                  </div>
                   <div style={{ fontSize: 13, color: "var(--text2)" }}>Be the first to post a Moment and light up this feed!</div>
                 </div>
               </div>
