@@ -1602,7 +1602,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           </div>
         </div>
       ) : (
-<div className="phone-wrap">
+<div className={"phone-wrap"+((screen==="subscription"||screen==="settings")?" phone-wrap-standalone-hidden":"")}>
 <div className="phone" id="muse-app">
 <div className="notch" />
             <div className={"screen-el"+(screen==="onboard"?" active":"")}>

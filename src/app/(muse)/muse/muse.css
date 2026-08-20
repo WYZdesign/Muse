@@ -565,6 +565,7 @@ img{background-color:#1a0a2e}
 .back-link{display:block;text-align:center;font-size:14px;color:var(--muted);margin-top:14px;padding:8px;transition:color .2s;background:none;border:none;cursor:pointer;font-family:inherit}
 .back-link:hover{color:var(--gold)}
 .phone-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;width:100%;box-sizing:border-box}
+.phone-wrap-standalone-hidden{display:none!important}
 @media(min-width:768px){.phone-wrap{width:100vw}}
 @media(max-width:767px){.phone-wrap{min-height:100dvh}}
 @media(min-width:768px){
