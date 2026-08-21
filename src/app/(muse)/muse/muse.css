@@ -236,9 +236,24 @@ a{color:inherit;text-decoration:none}
 .hamburger-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)}
 .hamburger-panel{width:78%;max-width:340px;height:100%;background:linear-gradient(180deg,rgba(15,8,30,0.98) 0%,rgba(10,6,18,0.99) 100%);backdrop-filter:blur(40px);padding:calc(56px + env(safe-area-inset-top,0px)) 20px calc(32px + env(safe-area-inset-bottom,0px));overflow-y:auto;overflow-x:hidden;position:relative;border-left:1px solid rgba(212,165,255,0.08);animation:hamburgerSlide .35s cubic-bezier(.4,0,.2,1)}
 .hamburger-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:120px;background:linear-gradient(180deg,rgba(212,165,255,0.06) 0%,transparent 100%);pointer-events:none}
-.hamburger-close{position:absolute;top:56px;right:12px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:var(--text2);cursor:pointer;font-size:16px;transition:all .2s;z-index:1}
+.hamburger-close{position:absolute;top:56px;left:12px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:var(--text2);cursor:pointer;font-size:16px;transition:all .2s;z-index:1}
 .hamburger-close:hover{background:rgba(255,255,255,0.08);color:var(--text)}
+.hamburger-bell{position:absolute;top:56px;right:12px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:var(--text2);cursor:pointer;font-size:16px;transition:all .2s;z-index:1}
+.hamburger-bell:hover{background:rgba(255,255,255,0.08);color:var(--gold)}
+.hamburger-bell-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--coral);border:1.5px solid rgba(10,6,18,0.9)}
 .hamburger-title{font-size:20px;font-weight:800;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(135deg,var(--gold),var(--lavender));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:20px;letter-spacing:-0.3px}
+/* Muse Pro embedded banner — bedazzled, shiny, still clickable */
+.muse-pro-banner{position:relative;margin:10px 0 6px;padding:16px;border-radius:18px;cursor:pointer;overflow:hidden;background:linear-gradient(135deg,rgba(255,215,0,0.14) 0%,rgba(255,160,0,0.10) 40%,rgba(212,165,255,0.12) 100%);border:1px solid rgba(255,215,0,0.35);box-shadow:0 0 24px rgba(255,215,0,0.18), inset 0 0 18px rgba(255,215,0,0.08);transition:box-shadow .3s, transform .3s}
+.muse-pro-banner:hover{box-shadow:0 0 34px rgba(255,215,0,0.3), inset 0 0 22px rgba(255,215,0,0.14);transform:translateY(-1px)}
+.muse-pro-banner-shine{position:absolute;top:0;left:-80%;width:50%;height:100%;background:linear-gradient(105deg,transparent 0%,rgba(255,255,255,0.22) 50%,transparent 100%);animation:museProShine 2.8s ease-in-out infinite}
+@keyframes museProShine{0%{left:-80%}55%{left:130%}100%{left:130%}}
+.muse-pro-banner-content{position:relative;display:flex;align-items:center;gap:12px}
+.muse-pro-banner-icon{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#FFD700,#FFA000,#FF6F00);display:flex;align-items:center;justify-content:center;color:#0a0612;flex-shrink:0;box-shadow:0 2px 10px rgba(255,175,0,0.4)}
+.muse-pro-banner-text{flex:1}
+.muse-pro-banner-title{font-size:15px;font-weight:800;color:var(--gold);letter-spacing:0.02em}
+.muse-pro-banner-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.muse-pro-banner-cta{font-size:18px;color:var(--gold);animation:museProPulse 2s ease-in-out infinite}
+@keyframes museProPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.15)}}
 .hamburger-item{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);margin-bottom:6px;cursor:pointer;transition:all .25s;color:var(--text);position:relative;overflow:hidden}
 .hamburger-item::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(212,165,255,0.04),rgba(255,215,0,0.03));opacity:0;transition:opacity .25s}
 .hamburger-item:hover::before{opacity:1}
@@ -465,7 +480,7 @@ img{background-color:#1a0a2e}
 .conn-tab-sub{padding:6px 14px;border-radius:99px;font-size:12px;font-weight:600;color:var(--muted);background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:all .25s;white-space:nowrap;flex-shrink:0}
 .conn-tab-sub.active{color:var(--gold);border-color:rgba(255,215,0,0.3);background:rgba(255,215,0,0.08)}
 .conn-tag{display:inline-block;padding:4px 10px;border-radius:99px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.08);font-size:11px;font-weight:600;color:var(--gold)}
-.conn-card{margin:0 20px 14px;padding:18px;border-radius:20px;background:var(--glass);border:1px solid rgba(255,255,255,0.05);display:flex;gap:14px;align-items:flex-start;transition:all .3s;cursor:pointer;animation:cardIn .5s cubic-bezier(.22,1.2,.36,1) both}
+.conn-card{margin:0 0 14px;padding:18px;border-radius:20px;background:var(--glass);border:1px solid rgba(255,255,255,0.05);display:flex;gap:14px;align-items:flex-start;transition:all .3s;cursor:pointer;animation:cardIn .5s cubic-bezier(.22,1.2,.36,1) both}
 @keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 @supports (animation-timeline: view()){.conn-card{animation-timeline:view();animation-range:entry 0% entry 70%}}
 .conn-card:nth-child(2){animation-delay:.07s}.conn-card:nth-child(3){animation-delay:.14s}.conn-card:nth-child(4){animation-delay:.21s}.conn-card:nth-child(5){animation-delay:.28s}.conn-card:nth-child(6){animation-delay:.35s}.conn-card:nth-child(7){animation-delay:.42s}

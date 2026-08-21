@@ -260,7 +260,6 @@ export const DiscoverScreen = memo(function DiscoverScreen({
             {!discoverSearchOpen && (
               <>
                 <button className="hdr-btn" onClick={() => setShowDiscoveryPrefs(true)} style={{ width: 34, height: 34 }} aria-label="Discovery Preferences"><FiSettings size={16} /></button>
-                <button className="hdr-btn" onClick={() => setShowFilterModal(true)} style={{ width: 34, height: 34 }} aria-label="Filter"><FiFilter size={16} /></button>
                 <button className="hdr-btn" onClick={() => setMapView(v => !v)} title="Map View" style={{ width: 34, height: 34 }} aria-label="Map View"><FiCompass size={16} /></button>
                 <button className={"hdr-btn" + (boostActive ? " hdr-btn-glow" : "")} onClick={() => { if (!boostActive) { const end = Date.now() + 1800000; setBoostActive(true); setBoostEnd(end); try { safeSetItem?.("muse_boost", "" + end); } catch {} showToast("Boost on for 30 min!"); } else { setBoostActive(false); setBoostEnd(0); try { safeRemoveItem?.("muse_boost"); } catch {} showToast("Boost off"); } }} style={{ width: 34, height: 34 }} aria-label="Boost"><FiZap size={16} /></button>
               </>

@@ -67,20 +67,53 @@ export const TutorialOverlay = memo(function TutorialOverlay({
   const target = ring || generic(step.anchor);
   const isFab = step.anchor === "fab";
 
+  // ── Tooltip placement: put the explainer on the OPPOSITE side of the
+  // highlighted element so it never covers what it's describing. ──
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const targetCenterX = target.left + target.width / 2;
+  const targetCenterY = target.top + target.height / 2;
+  const horizontal = targetCenterX < vw * 0.5 ? "left" : "right";
+  const vertical = targetCenterY < vh * 0.5 ? "bottom" : "top";
+
+  const tooltipStyle: React.CSSProperties = {
+    position: "absolute",
+    width: 280,
+    background: "linear-gradient(135deg,#1a0a2e,#2d1b4e)",
+    border: "1px solid rgba(255,215,0,0.25)",
+    borderRadius: 20,
+    padding: 22,
+    boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+    transition: "all .3s ease",
+  };
+  if (vertical === "bottom") {
+    tooltipStyle.left = horizontal === "left" ? Math.max(12, target.left) : undefined;
+    tooltipStyle.right = horizontal === "right" ? Math.max(12, vw - target.left - target.width) : undefined;
+    tooltipStyle.top = target.top + target.height + 16;
+  } else {
+    tooltipStyle.left = horizontal === "left" ? Math.max(12, target.left) : undefined;
+    tooltipStyle.right = horizontal === "right" ? Math.max(12, vw - target.left - target.width) : undefined;
+    tooltipStyle.bottom = vh - target.top + 16;
+  }
+
+  const highlightRadius = isFab ? "50%" : Math.min(22, target.width / 3);
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, pointerEvents: "auto" }}>
       {/* dim backdrop — tap to advance */}
       <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(2px)" }} onClick={next} />
 
-      {/* highlight ring at the measured element position */}
+      {/* spotlight cutout: the target stays bright, everything else dark */}
       <div style={{
         position: "absolute", left: target.left, top: target.top, width: target.width, height: target.height,
-        border: "2.5px solid var(--gold, #FFD700)", borderRadius: isFab ? "50%" : 18,
-        boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)", pointerEvents: "none", transition: "all .3s ease",
+        borderRadius: highlightRadius,
+        boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)",
+        border: "2.5px solid var(--gold, #FFD700)",
+        pointerEvents: "none",
+        transition: "all .3s ease",
       }} />
 
-      {/* tooltip card */}
-      <div style={{ position: "absolute", left: 20, right: 20, bottom: 120, background: "linear-gradient(135deg,#1a0a2e,#2d1b4e)", border: "1px solid rgba(255,215,0,0.25)", borderRadius: 20, padding: 22, boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
+      {/* tooltip card — opposite side of the highlight */}
+      <div style={tooltipStyle} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg,#FFD700,#FF8A80,#D4A5FF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>✨</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{step.title}</div>

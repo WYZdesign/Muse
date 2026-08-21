@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const MAX_BODY_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_BODY_SIZE = 10 * 1024 * 1024; // 10MB (matches upload route limit)
 
 /**
  * Validates Content-Type and body size for state-changing requests.

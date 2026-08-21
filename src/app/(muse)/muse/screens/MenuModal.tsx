@@ -123,35 +123,32 @@ export const MenuModal = memo(function MenuModal({
         >
           <FiX size={18} />
         </div>
+        {!hamburgerScreen && (
+          <button
+            className="hamburger-bell"
+            onClick={() => { setShowHamburger(false); onOpenActivity?.(); }}
+            aria-label="Notifications"
+          >
+            <FiBell size={18} />
+            {unreadCount ? <span className="hamburger-bell-dot" /> : null}
+          </button>
+        )}
         {!hamburgerScreen ? (
           <>
-            <div className="hamburger-title">Menu</div>
-            <div
-              className="hamburger-item"
-              onClick={() => { setShowHamburger(false); onOpenActivity?.(); }}
-              style={{ marginBottom: 4 }}
-            >
-              <div className="hamburger-item-icon" style={{ background: "linear-gradient(135deg,#FFD700,#FF8C69)" }}><FiBell size={20} /></div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flex: 1 }}>
-                <div><div className="hamburger-item-label">Activity</div><div className="hamburger-item-desc">Matches, likes &amp; reminders</div></div>
-                {unreadCount ? <span style={{ background: "var(--coral)", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 10, padding: "2px 8px" }}>{unreadCount}</span> : null}
-              </div>
-            </div>
             {[
               { key: "community", icon: <FiUsers size={20} />, label: "Community", desc: "Channels, groups & events", grad: "linear-gradient(135deg,#FF8A80,#FF4757,#FFD700)" },
               { key: "sessions", icon: <FiCalendar size={20} />, label: "Sessions", desc: "Bookings & one-on-ones", grad: "linear-gradient(135deg,#E1BEE7,#9C27B0,#FF4081)" },
               { key: "network", icon: <FiShare2 size={20} />, label: "Network", desc: "Professionals & forum", grad: "linear-gradient(135deg,#B3E5FC,#64B5F6,#00BCD4)" },
               { key: "profile", icon: <FiUser size={20} />, label: "Profile", desc: "Edit profile & premium", grad: "linear-gradient(135deg,#FFD700,#FFB5C2,#B388FF)" },
               { key: "settings", icon: <FiSettings size={20} />, label: "Settings", desc: "Preferences, safety & help", grad: "linear-gradient(135deg,#CE93D8,#B388FF,#A5D6A7)" },
-              { key: "musepro", icon: <FiStar size={20} />, label: "Muse Pro", desc: "Subscription & premium features", grad: "linear-gradient(135deg,#FFD700,#FFA000,#FF6F00)" },
             ].map(item => (
               <div
                 key={item.key}
                 className="hamburger-item"
                 onClick={() => {
-                  if (item.key === "community" || item.key === "sessions" || item.key === "network" || item.key === "musepro") {
+                  if (item.key === "community" || item.key === "sessions" || item.key === "network") {
                     setShowHamburger(false);
-                    showScreen(item.key === "musepro" ? "subscription" : item.key as any);
+                    showScreen(item.key as any);
                   } else {
                     setHamburgerScreen(item.key);
                   }
@@ -161,11 +158,16 @@ export const MenuModal = memo(function MenuModal({
                 <div><div className="hamburger-item-label">{item.label}</div><div className="hamburger-item-desc">{item.desc}</div></div>
               </div>
             ))}
-            <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", margin: "12px 0 8px", paddingTop: 8 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", marginBottom: 8 }}>Legal</div>
-              {[{ label: "Terms of Service", href: "/terms" }, { label: "Privacy Policy", href: "/privacy" }, { label: "DMCA / Copyright", href: "/dmca" }, { label: "Community Guidelines", href: "/safety" }].map(l => (
-                <a key={l.href} href={l.href} onClick={() => setShowHamburger(false)} style={{ display: "block", padding: "8px 0", fontSize: 13, color: "var(--text2)", textDecoration: "none", transition: "color .15s" }} onMouseEnter={e => e.currentTarget.style.color = "#FFD700"} onMouseLeave={e => e.currentTarget.style.color = "var(--text2)"}>{l.label}</a>
-              ))}
+            <div className="muse-pro-banner" onClick={() => { setShowHamburger(false); showScreen("subscription"); }} role="button" aria-label="Muse Pro">
+              <div className="muse-pro-banner-shine" />
+              <div className="muse-pro-banner-content">
+                <div className="muse-pro-banner-icon"><FiStar size={16} /></div>
+                <div className="muse-pro-banner-text">
+                  <div className="muse-pro-banner-title">Muse Pro</div>
+                  <div className="muse-pro-banner-sub">Unlimited likes · superlikes · boosts</div>
+                </div>
+                <div className="muse-pro-banner-cta">✦</div>
+              </div>
             </div>
           </>
         ) : (
@@ -404,15 +406,22 @@ export const MenuModal = memo(function MenuModal({
                 <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Blocked Users</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{blockedUsers.length} blocked</div></div>
                 </div>
-                <button className="btn" style={{ width: "100%", marginTop: 12, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontSize: 13, fontWeight: 700 }} onClick={() => { setShowHamburger(false); showScreen("codex"); }}>📖 The Codex: Badges, Personality &amp; Matching Glossary</button>
-                <button className="btn" style={{ width: "100%", marginTop: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 13 }} onClick={async () => { try { const res = await authFetch("/api/muse?type=export"); if (!res.ok) { showToast("Export failed"); return; } const j = await res.json(); const blob = new Blob([JSON.stringify(j, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "muse-my-data.json"; a.click(); URL.revokeObjectURL(url); showToast("Data exported"); } catch (e) { showToast("Export failed"); } }}>Export My Data</button>
+                <button className="btn" style={{ width: "100%", marginTop: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 13 }} onClick={async () => { try { const res = await authFetch("/api/muse?type=export"); if (!res.ok) { showToast("Export failed"); return; } const j = await res.json(); const blob = new Blob([JSON.stringify(j, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "muse-my-data.json"; a.click(); URL.revokeObjectURL(url); showToast("Data exported"); } catch (e) { showToast("Export failed"); } }}>Export My Data</button>
+                <button className="btn" style={{ width: "100%", marginTop: 8, background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.3)", color: "var(--coral)", fontSize: 13 }} onClick={async () => { if (confirm("Delete your account? This cannot be undone.")) { try { const r = await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "delete-account" }) }); if (!r.ok) { showToast("Failed to delete account"); return; } showToast("Account deleted"); setTimeout(() => window.location.reload(), 1500); } catch { showToast("Failed to delete account"); } } }}>Delete Account</button>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", margin: "16px 0 4px" }}>Legal</div>
+                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 14, padding: "4px 14px" }}>
+                  {[{ label: "Terms of Service", href: "/terms" }, { label: "Privacy Policy", href: "/privacy" }, { label: "DMCA / Copyright", href: "/dmca" }, { label: "Community Guidelines", href: "/safety" }].map(l => (
+                    <a key={l.href} href={l.href} onClick={() => setShowHamburger(false)} style={{ display: "block", padding: "10px 0", fontSize: 13, color: "var(--text2)", textDecoration: "none", transition: "color .15s", borderBottom: "1px solid rgba(255,255,255,0.04)" }} onMouseEnter={e => e.currentTarget.style.color = "#FFD700"} onMouseLeave={e => e.currentTarget.style.color = "var(--text2)"}>{l.label}</a>
+                  ))}
+                  <button className="btn" style={{ width: "100%", margin: "8px 0", background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontSize: 13, fontWeight: 700 }} onClick={() => { setShowHamburger(false); showScreen("codex"); }}>📖 Glossary + Codex</button>
+                </div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Help &amp; Support</div>
                 {[
                   { q: "How does matching work?", a: "Swipe right on creators you'd like to connect with. If they swipe right back, it's a match! You can then message each other." },
                   { q: "What are Briefs?", a: "Briefs are creative opportunities posted by brands and clients. You can browse open briefs, apply to paid ones, or respond to vision briefs." },
                   { q: "How do I upgrade to Premium?", a: "Go to Settings → Muse Premium to see plan options." },
                   { q: "How do I report someone?", a: "Tap the ••• menu on any profile or post, then select Report. Choose a reason and we'll review it within 24 hours." },
-                  { q: "How do I delete my account?", a: "Go to Settings → Safety & Privacy → Delete Account. This permanently removes all your data." },
+                  { q: "How do I delete my account?", a: "Go to Settings → Privacy & Safety → Delete Account. This permanently removes all your data." },
                 ].map((faq, i) => (
                   <div key={i} style={{ marginBottom: 10, padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{faq.q}</div>
@@ -421,10 +430,6 @@ export const MenuModal = memo(function MenuModal({
                 ))}
                 <div style={{ marginTop: 12 }}>
                   <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => window.open("mailto:" + SUPPORT_EMAIL + "?subject=Muse%20Support%20Request")}>Email Support</button>
-                </div>
-                <div style={{ marginTop: 20 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "var(--coral)", marginBottom: 12 }}>Danger Zone</div>
-                  <button className="btn" style={{ width: "100%", background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.3)", color: "var(--coral)", fontSize: 13 }} onClick={async () => { if (confirm("Delete your account? This cannot be undone.")) { try { const r = await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "delete-account" }) }); if (!r.ok) { showToast("Failed to delete account"); return; } showToast("Account deleted"); setTimeout(() => window.location.reload(), 1500); } catch { showToast("Failed to delete account"); } } }}>Delete Account</button>
                 </div>
                 <button className="btn btn-gold" style={{ width: "100%", marginTop: 16, fontSize: 12, padding: "12px 0" }} onClick={doLogoutFull}>Log Out</button>
               </div>
