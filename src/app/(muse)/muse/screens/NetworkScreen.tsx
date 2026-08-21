@@ -105,12 +105,19 @@ export const NetworkScreen = memo(function NetworkScreen({
         {netTab === "forum" && (
           <>
             {showNewPost && (
-              <div className="conn-card" style={{ flexDirection: "column", padding: 14, marginBottom: 10 }}>
-                <input className="inp" placeholder="Title" value={newPostTitle} onChange={e => setNewPostTitle(e.target.value)} style={{ marginBottom: 8 }} />
-                <textarea className="inp" placeholder="What's on your mind?" rows={3} value={newPostBody} onChange={e => setNewPostBody(e.target.value)} style={{ marginBottom: 10, resize: "none" }} />
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button className="btn btn-gold" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={async () => { if (newPostTitle.trim()) { const title = newPostTitle.trim(); const body = newPostBody.trim(); setForumPosts(prev => [{ id: uid(), title, body, author: currentUser.name, avatar: currentUser.avatar, votes: 1, comments: [], cat: "General", time: "Just now", pinned: false }, ...prev]); setNewPostTitle(""); setNewPostBody(""); setShowNewPost(false); try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", title, body, userId: currentUser.id }) }); showToast("Posted!"); } catch { showToast("Failed to post"); } } }}>Post</button>
-                  <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={() => setShowNewPost(false)}>Cancel</button>
+              <div className="modal-overlay" style={{ position: "fixed", zIndex: 400 }}>
+                <div className="modal-header">
+                  <button className="modal-back" onClick={() => setShowNewPost(false)}><FiArrowLeft size={20} /></button>
+                  <div className="modal-title">New Post</div>
+                  <button className="modal-close" onClick={() => setShowNewPost(false)} aria-label="Close">✕</button>
+                </div>
+                <div className="modal-body" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                  <input className="inp" placeholder="Title" value={newPostTitle} onChange={e => setNewPostTitle(e.target.value)} style={{ marginBottom: 8 }} />
+                  <textarea className="inp" placeholder="What's on your mind?" rows={4} value={newPostBody} onChange={e => setNewPostBody(e.target.value)} style={{ marginBottom: 10, resize: "none" }} />
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="btn btn-gold" style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 700, borderRadius: 12 }} onClick={async () => { if (newPostTitle.trim()) { const title = newPostTitle.trim(); const body = newPostBody.trim(); setForumPosts(prev => [{ id: uid(), title, body, author: currentUser.name, avatar: currentUser.avatar, votes: 1, comments: [], cat: "General", time: "Just now", pinned: false }, ...prev]); setNewPostTitle(""); setNewPostBody(""); setShowNewPost(false); try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", title, body, userId: currentUser.id }) }); showToast("Posted!"); } catch { showToast("Failed to post"); } } }}>Post</button>
+                    <button className="btn btn-outline" style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 600, borderRadius: 12 }} onClick={() => setShowNewPost(false)}>Cancel</button>
+                  </div>
                 </div>
               </div>
             )}

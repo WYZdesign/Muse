@@ -73,28 +73,34 @@ export const CommunityScreen = memo(function CommunityScreen({
         ))}
       </div>
       {showCreate && (
-        <div className="conn-card" style={{ flexDirection: "column", margin: "0 0 10px" }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "var(--gold)", marginBottom: 12 }}>{commTab === "groups" ? "Create Group" : "Create Event"}</div>
-          {commTab === "groups" ? (
-            <>
-              <input className="inp" placeholder="Group name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} style={{ marginBottom: 8 }} />
-              <input className="inp" placeholder="Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} style={{ marginBottom: 8 }} />
-              <input className="inp" placeholder="Category (e.g. Photography, Fashion)" value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} style={{ marginBottom: 10 }} />
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text2)", marginBottom: 12, cursor: "pointer" }}>
-                <input type="checkbox" checked={form.isNsfw} onChange={e => setForm(p => ({ ...p, isNsfw: e.target.checked }))} /> 18+ / NSFW group
-              </label>
-            </>
-          ) : (
-            <>
-              <input className="inp" placeholder="Event title" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} style={{ marginBottom: 8 }} />
-              <input className="inp" placeholder="Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} style={{ marginBottom: 8 }} />
-              <input className="inp" placeholder="Date (e.g. Aug 28, 2026)" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={{ marginBottom: 8 }} />
-              <input className="inp" placeholder="Location" value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} style={{ marginBottom: 10 }} />
-            </>
-          )}
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn btn-gold" style={{ flex: 1, padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={submitCreate}>Create</button>
-            <button className="btn btn-outline" style={{ flex: 1, padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={() => setShowCreate(false)}>Cancel</button>
+        <div className="modal-overlay" style={{ position: "fixed", zIndex: 400 }}>
+          <div className="modal-header">
+            <button className="modal-back" onClick={() => setShowCreate(false)}><FiArrowLeft size={20} /></button>
+            <div className="modal-title">{commTab === "groups" ? "Create Group" : "Create Event"}</div>
+            <button className="modal-close" onClick={() => setShowCreate(false)} aria-label="Close">✕</button>
+          </div>
+          <div className="modal-body" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            {commTab === "groups" ? (
+              <>
+                <input className="inp" placeholder="Group name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} style={{ marginBottom: 8 }} />
+                <input className="inp" placeholder="Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} style={{ marginBottom: 8 }} />
+                <input className="inp" placeholder="Category (e.g. Photography, Fashion)" value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} style={{ marginBottom: 10 }} />
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text2)", marginBottom: 12, cursor: "pointer" }}>
+                  <input type="checkbox" checked={form.isNsfw} onChange={e => setForm(p => ({ ...p, isNsfw: e.target.checked }))} /> 18+ / NSFW group
+                </label>
+              </>
+            ) : (
+              <>
+                <input className="inp" placeholder="Event title" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} style={{ marginBottom: 8 }} />
+                <input className="inp" placeholder="Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} style={{ marginBottom: 8 }} />
+                <input className="inp" placeholder="Date (e.g. Aug 28, 2026)" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={{ marginBottom: 8 }} />
+                <input className="inp" placeholder="Location" value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} style={{ marginBottom: 10 }} />
+              </>
+            )}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn btn-gold" style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 700, borderRadius: 12 }} onClick={submitCreate}>Create</button>
+              <button className="btn btn-outline" style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 600, borderRadius: 12 }} onClick={() => setShowCreate(false)}>Cancel</button>
+            </div>
           </div>
         </div>
       )}

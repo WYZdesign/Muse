@@ -204,12 +204,22 @@ export const CONNECTIONS = [
   { name:"Prism Studio",type:"Studio",cat:"nsfw",img:"https://images.unsplash.com/photo-1520975916090-3105956dac38?w=200&h=120&fit=crop",desc:"Inclusive studio for body-positive fine art",tag:"Figure Art" },
 ];
 
-export function calcMatch(a: { styles: string[]; looking: string[]; zodiac?: string; chinese?: string; mbti?: string; lifePath?: number }, b: typeof PROFILES[number]): number {
+export function calcMatch(a: { type?: string; styles: string[]; looking: string[]; zodiac?: string; chinese?: string; mbti?: string; lifePath?: number }, b: typeof PROFILES[number]): number {
   let s = 40;
   const shared = a.styles.filter(x => b.styles.includes(x));
   s += Math.min(shared.length * 7, 21);
   if (a.looking.some(l => b.looking.some(bl => bl.toLowerCase().includes(l.toLowerCase()) || l.toLowerCase().includes(bl.toLowerCase())))) s += 15;
   if (a.looking.some(l => b.type.toLowerCase().includes(l.toLowerCase()))) s += 8;
+  // Complementary-side match — behind-camera ↔ front-camera is the core duality
+  // of Muse. A crew member and an on-camera talent pairing is a natural collab,
+  // so it gets a bonus on top of the role match.
+  if (a.type && CREATIVE_SIDE[a.type] && CREATIVE_SIDE[b.type] && CREATIVE_SIDE[a.type] !== CREATIVE_SIDE[b.type]) {
+    s += 6;
+    // Strong bonus when they're actively looking across the aisle for each other.
+    const aLooks = a.looking.some(l => b.type.toLowerCase().includes(l.toLowerCase()));
+    const bLooks = (b.looking || []).some((l: string) => (a.type || "").toLowerCase().includes(l.toLowerCase()));
+    if (aLooks && bLooks) s += 4;
+  }
   const zCompat: Record<string, string[]> = {"Aries":["Leo","Sagittarius","Gemini","Aquarius"],"Taurus":["Virgo","Capricorn","Cancer","Pisces"],"Gemini":["Libra","Aquarius","Aries","Leo"],"Cancer":["Scorpio","Pisces","Taurus","Virgo"],"Leo":["Aries","Sagittarius","Gemini","Libra"],"Virgo":["Taurus","Capricorn","Cancer","Scorpio"],"Libra":["Gemini","Aquarius","Aries","Sagittarius"],"Scorpio":["Cancer","Pisces","Taurus","Capricorn"],"Sagittarius":["Aries","Leo","Gemini","Libra"],"Capricorn":["Taurus","Virgo","Cancer","Scorpio"],"Aquarius":["Gemini","Libra","Aries","Sagittarius"],"Pisces":["Cancer","Scorpio","Taurus","Virgo"]};
   if (a.zodiac && b.zodiac) { if (a.zodiac === b.zodiac) s += 6; else if (zCompat[a.zodiac]?.includes(b.zodiac)) s += 4; }
   if (a.chinese && b.chinese && a.chinese === b.chinese) s += 6;
