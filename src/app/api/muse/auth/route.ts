@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { safeServerError } from "@/lib/http";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { enforceRequestSafety, sanitizeText } from "@/lib/request-safety";
+import { signupWelcome, sendEmail } from "@/lib/email";
 
 function validatePassword(pw: string): string | null {
   if (pw.length < 6) return "Password must be at least 6 characters";
@@ -65,6 +66,9 @@ export async function POST(req: NextRequest) {
         name: sanitizeText(name || email.split("@")[0], 60),
       });
       if (profileErr) return safeServerError(profileErr, "register profile");
+
+      // Welcome email (fail-open — never block signup on email).
+      sendEmail(signupWelcome(email.toLowerCase(), name)).catch(() => {});
 
       return NextResponse.json({ success: true, user: authUser.user });
     }

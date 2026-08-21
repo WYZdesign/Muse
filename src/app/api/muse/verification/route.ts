@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
+import { sendEmail, notify } from "@/lib/email";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
@@ -68,6 +69,8 @@ export async function POST(req: NextRequest) {
           await sb.from("muse_verification_sessions").update({ status, updated_at: new Date().toISOString() }).eq("id", session.id);
           if (status === "verified") {
             await sb.from("muse_profiles").update({ age_verified: true, age_verified_at: new Date().toISOString() }).eq("id", profile.id);
+            const { data: vp } = await sb.from("muse_profiles").select("email").eq("id", profile.id).maybeSingle();
+            if (vp?.email) sendEmail(notify(vp.email, "Identity verified ✦", "You're verified", "Your identity has been verified. You can now book paid sessions and access verified-only features.")).catch(() => {});
           }
         }
         return NextResponse.json({ status, verifiedOutputs: stripeSession.verified_outputs });

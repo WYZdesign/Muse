@@ -1,8 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getServiceClient } from "@/lib/supabase";
+import { sendEmail, notify } from "@/lib/email";
 
 export const runtime = "nodejs";
+
+/**
+ * Grant the double-sided referral reward (free month) when a referred user
+ * subscribes. Idempotent — skips referrals already marked reward_issued.
+ */
+async function grantReferralReward(sb: ReturnType<typeof getServiceClient>, authUserId: string) {
+  try {
+    const { data: profile } = await sb.from("muse_profiles").select("id, email, referred_by").eq("auth_id", authUserId).maybeSingle();
+    if (!profile || !profile.referred_by) return;
+
+    const { data: referral } = await sb.from("muse_referrals")
+      .select("*")
+      .eq("referee_id", profile.id)
+      .eq("referrer_id", profile.referred_by)
+      .maybeSingle();
+    if (!referral || referral.status === "reward_issued") return;
+
+    await sb.from("muse_referrals").update({
+      status: "reward_issued",
+      reward_issued_at: new Date().toISOString(),
+    }).eq("id", referral.id);
+
+    await sb.from("muse_referral_rewards").insert([
+      { referral_id: referral.id, reward_type: "free_month", recipient_id: referral.referrer_id, amount_cents: 0 },
+      { referral_id: referral.id, reward_type: "free_month", recipient_id: referral.referee_id, amount_cents: 0 },
+    ]);
+
+    await sb.from("muse_notifications").insert([
+      { user_id: referral.referrer_id, type: "referral_reward", body: "You earned a free month of Muse Pro for a successful referral!", read: false },
+      { user_id: referral.referee_id, type: "referral_reward", body: "You received a free month of Muse Pro thanks to a referral!", read: false },
+    ]);
+
+    const { data: rewardProfiles } = await sb.from("muse_profiles").select("id,email").in("id", [referral.referrer_id, referral.referee_id]);
+    for (const p of (rewardProfiles || [])) {
+      if (p?.email) sendEmail(notify(p.email, "Free month unlocked ✦", "You earned a free month", "A referral just went through — you've received a free month of Muse Pro.")).catch(() => {});
+    }
+  } catch (e: unknown) {
+    console.error("[webhook] referral reward failed:", e);
+  }
+}
 
 export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature");
@@ -42,6 +83,10 @@ export async function POST(req: NextRequest) {
         const plan = session.metadata?.plan && KNOWN_TIERS.has(session.metadata.plan) ? session.metadata.plan : "muse_pro";
         if (userId) {
           await sb.from("muse_profiles").update({ tier: plan }).eq("auth_id", userId);
+          // Referral reward: if the subscriber was referred, grant both parties a
+          // free month (the "both get a free month" loop). Idempotent — a referral
+          // that already earned a reward is skipped.
+          await grantReferralReward(sb, userId);
         }
         break;
       }

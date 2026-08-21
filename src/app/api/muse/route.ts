@@ -6,12 +6,23 @@ import { enforceRequestSafety, sanitizeText } from "@/lib/request-safety";
 import { askMuseAI } from "@/lib/aiDocs";
 import { screenText, moderateText } from "@/lib/aiModeration";
 import { parseRateToCents } from "@/lib/money";
+import { sendEmail, notify } from "@/lib/email";
+import { pushToProfile } from "@/lib/push";
 import Stripe from "stripe";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function getAuthUser() {
   return supabase.auth.getUser();
+}
+
+/** Fetch a profile's email and send them a notification email + push (fail-open). */
+async function emailProfile(sb: ReturnType<typeof getServiceClient>, profileId: string, subject: string, title: string, body: string, ctaLabel?: string, ctaUrl?: string) {
+  try {
+    const { data } = await sb.from("muse_profiles").select("email").eq("id", profileId).maybeSingle();
+    if (data?.email) sendEmail(notify(data.email, subject, title, body, ctaLabel, ctaUrl)).catch(() => {});
+  } catch { /* fail-open */ }
+  pushToProfile(profileId, title, body, ctaUrl).catch(() => {});
 }
 
 // Graduated-enforcement ladder: number of active (non-overturned) strikes
@@ -61,6 +72,9 @@ async function applyStrikeAndEscalate(
         : `Your account has been suspended after ${activeCount} community guideline violations.`,
       read: false,
     });
+    await emailProfile(sb, userId, "Your Muse account was suspended", "Account suspended", isHighSeverity
+      ? "Your account has been suspended for a severe policy violation."
+      : `Your account has been suspended after ${activeCount} community guideline violations.`, "Review guidelines", "https://muse.wyzdesign.com/muse/guidelines");
     return { inserted: true, activeCount, suspended: true };
   }
 
@@ -556,6 +570,7 @@ export async function POST(req: NextRequest) {
       );
       if (error) return safeServerError(error, "db op");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id } });
+      await emailProfile(sb, target_id, "Someone matched with you ✦", "New match on Muse", `${profile.name} matched with you. Open Muse to say hi.`, "See who it is", "https://muse.wyzdesign.com/muse");
       return NextResponse.json({ success: true });
     }
 
@@ -597,6 +612,7 @@ export async function POST(req: NextRequest) {
       // Treat duplicate client_msg_id as success (already persisted by retry).
       if (error && (error as { code?: string }).code !== "23505") return safeServerError(error, "message insert");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message", details: { to: toId } });
+      await emailProfile(sb, String(toId), "New message on Muse ✦", "You have a new message", `${profile.name} sent you a message.`, "Read it", "https://muse.wyzdesign.com/muse");
       return NextResponse.json({ success: true, match_id: matchId });
     }
 
@@ -688,6 +704,8 @@ export async function POST(req: NextRequest) {
       const { error } = await sb.from("muse_reports").insert({ reporter_id: profile.id, target_id, target_type: target_type || "user", reason, details: details || "", ai_classification: aiClassification });
       if (error) return safeServerError(error, "db op");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "report", details: { target_id, reason } });
+      // Ack email to the reporter — reassurance that we received it.
+      if (profile.email) sendEmail(notify(profile.email, "We received your report", "Report received", "Thanks for looking out for the community. Our safety team is reviewing your report.", "Muse Safety", "https://muse.wyzdesign.com/muse/safety")).catch(() => {});
 
       // Graduated enforcement: when a user accumulates 3+ reports from distinct
       // reporters, issue a standard strike (which escalates toward suspension
@@ -788,6 +806,7 @@ export async function POST(req: NextRequest) {
         { onConflict: "session_id,user_id", ignoreDuplicates: true }
       );
       await sb.from("muse_notifications").insert({ user_id: effectiveHostId || profile.id, from_id: profile.id, type: "booking", body: `${profile.name} requested to book a session`, read: false });
+      if (effectiveHostId) await emailProfile(sb, effectiveHostId, "New booking request ✦", "Someone wants to book you", `${profile.name} requested to book one of your sessions.`, "Review booking", "https://muse.wyzdesign.com/muse");
       return NextResponse.json({ success: true });
     }
 
@@ -829,6 +848,7 @@ export async function POST(req: NextRequest) {
       if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
       await sb.from("muse_connections").upsert({ user_id: profile.id, target_id: targetId, status: "pending" }, { onConflict: "user_id,target_id", ignoreDuplicates: true }).select();
       await sb.from("muse_notifications").insert({ user_id: targetId, from_id: profile.id, type: "connection", body: `${profile.name} wants to connect`, read: false });
+      await emailProfile(sb, targetId, "New connection request ✦", "Someone wants to connect", `${profile.name} sent you a connection request.`, "View request", "https://muse.wyzdesign.com/muse");
       return NextResponse.json({ success: true });
     }
 
@@ -845,6 +865,17 @@ export async function POST(req: NextRequest) {
       if (Object.keys(prefs).length === 0) return NextResponse.json({ error: "No valid preferences provided" }, { status: 400 });
       const { error } = await sb.from("muse_profiles").update({ preferences: prefs }).eq("id", profile.id);
       if (error) return safeServerError(error, "db op");
+      return NextResponse.json({ success: true });
+    }
+
+    if (actionType === "mark-read") {
+      const { notificationIds } = rest;
+      if (Array.isArray(notificationIds) && notificationIds.length > 0) {
+        const ids = notificationIds.slice(0, 100).filter((x: unknown) => typeof x === "string" && UUID_RE.test(String(x)));
+        if (ids.length > 0) {
+          await sb.from("muse_notifications").update({ read: true }).in("id", ids).eq("user_id", profile.id);
+        }
+      }
       return NextResponse.json({ success: true });
     }
 
@@ -1141,6 +1172,7 @@ export async function POST(req: NextRequest) {
           user_id: otherUserId, from_id: profile.id, type: "disclosure_confirmed",
           body: `${profile.name} confirmed the shoot disclosure`, read: false
         });
+        if (otherUserId) await emailProfile(sb, otherUserId, "Disclosure confirmed ✦", "Shoot disclosure confirmed", `${profile.name} confirmed the shoot disclosure. You're all set.`, "View details", "https://muse.wyzdesign.com/muse");
       }
       return NextResponse.json({ success: true });
     }
@@ -1232,6 +1264,7 @@ export async function POST(req: NextRequest) {
         user_id: booking.user_id, from_id: profile.id, type: "booking_update",
         body: `${profile.name} ${response === "accept" ? "accepted" : response === "decline" ? "declined" : "wants to reschedule"} your booking`, read: false
       });
+      if (booking.user_id) await emailProfile(sb, booking.user_id, "Booking update ✦", "Your booking was updated", `${profile.name} ${response === "accept" ? "accepted" : response === "decline" ? "declined" : "wants to reschedule"} your booking.`, "View booking", "https://muse.wyzdesign.com/muse");
       return NextResponse.json({ success: true });
     }
 

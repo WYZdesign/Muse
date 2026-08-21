@@ -180,6 +180,31 @@ export function betaAccess(email: string): EmailMessage {
   };
 }
 
+/** Fire-and-forget send — swallows errors so email never blocks a user flow. */
+export function trySend(msg: EmailMessage): void {
+  sendEmail(msg).catch(() => {});
+}
+
+/** Welcome sent immediately when a user creates an account (not waitlist). */
+export function signupWelcome(email: string, name?: string): EmailMessage {
+  const who = name && name.trim() ? name.trim() : "there";
+  const html = SHELL(`
+    <div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.3);border-radius:16px;padding:32px 28px;text-align:center;">
+      <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Welcome to Muse, ${who} ✦</h1>
+      <p style="font-size:15px;color:rgba(255,255,255,0.8);line-height:1.7;margin:0 0 20px;">
+        Your account is live. Set up your profile, pick what kind of work you're into, and start matching with creatives who get it.
+      </p>
+      <a href="https://muse.wyzdesign.com/muse" style="display:inline-block;padding:13px 28px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;">Finish your profile</a>
+    </div>
+  `);
+  return {
+    to: email,
+    subject: "Welcome to Muse ✦",
+    html,
+    text: "Welcome to Muse! Your account is live. Set up your profile and start matching with creatives: https://muse.wyzdesign.com/muse",
+  };
+}
+
 /** Generic notification for events: match, message, booking, verification, etc. */
 export function notify(email: string, subject: string, title: string, body: string, ctaLabel?: string, ctaUrl?: string): EmailMessage {
   const cta = ctaLabel && ctaUrl

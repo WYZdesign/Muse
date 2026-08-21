@@ -47,6 +47,10 @@ import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, AESTHETICS, CREATIVE_T
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL || "torree.marcel@gmail.com";
 
+// Demo scaffolding gate — when true, simulated chat replies + randomized
+// match inflation are active (for testing/demo). Set false for production.
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true" || false;
+
 const DEMO_MOMENTS: any[] = [
   { id: 9001, author: "Maya Chen", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800", time: "12m ago", text: "Golden hour setup for tonight's shoot. The light is unreal right now 🌅", likes: 87, comments: 12 },
   { id: 9002, author: "Jordan Rivera", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100", img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800", time: "28m ago", text: "Lens test on the new 85mm. Creamy bokeh for days 📷", likes: 143, comments: 21 },
@@ -349,12 +353,14 @@ function MusePage() {
       const matchPromise = token
         ? apiFetch("/api/muse/match?limit=50").then(r => r.ok ? r.json() : null).catch(() => null)
         : Promise.resolve(null);
-      const [matchData, briefs, feed, forum, events] = await Promise.all([
+      const [matchData, briefs, feed, forum, events, communities, sessions] = await Promise.all([
         matchPromise,
         apiFetch("/api/muse?type=briefs").then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch("/api/muse?type=feed").then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch("/api/muse?type=forum").then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch("/api/muse?type=events").then(r => r.ok ? r.json() : null).catch(() => null),
+        apiFetch("/api/muse?type=communities").then(r => r.ok ? r.json() : null).catch(() => null),
+        apiFetch("/api/muse?type=sessions").then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
       if (matchData?.profiles?.length) setLiveProfiles(matchData.profiles.map((p: any) => ({
         id: p.id, name: p.name || "Creative", img: p.avatar || "", type: p.type || "artist",
@@ -383,6 +389,8 @@ function MusePage() {
         })));
       }
       if (events?.events?.length) setLiveEvents(events.events);
+      if (communities?.communities?.length) setLiveCommunities(communities.communities);
+      if (sessions?.sessions?.length) setLiveSessions(sessions.sessions);
     } catch {}
     setBootstrapped(true);
   }, [apiFetch]);
@@ -969,7 +977,7 @@ function MusePage() {
       if (!userDefaultIntent) { setIntentProfile(p); setShowIntentPicker(true); swipeLocked.current = false; return; }
       const intent = dir === "super" ? "super" : userDefaultIntent;
       const matchScore = (p as any).matchScore ?? calcMatch({ styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath }, p);
-        const isMatch = matchScore > 55 || Math.random() < 0.3;
+        const isMatch = matchScore > 55 || (DEMO_MODE && Math.random() < 0.3);
       if (isMatch) {
         const newMatch: Match = { ...p, messages: [] };
         setMatches(prev => [...prev, newMatch]);
@@ -1130,7 +1138,6 @@ function MusePage() {
 
   const sanitizeInput = (text: string) => text.replace(/[<>]/g, '').slice(0, 500);
   const toggleSocial = (key: string) => { setObConnectedSocials(prev => { const nv = !prev[key]; showToast(nv ? "Connected!" : "Disconnected"); return {...prev, [key]: nv}; }); };
-
   const sendMsg = useCallback(async (overrideText?: string) => {
     const inputText = overrideText !== undefined ? overrideText : chatInput;
     if (!inputText.trim() || !chatTarget) return;
@@ -1158,7 +1165,8 @@ function MusePage() {
     const myId = authUser?.profile?.id || authUser?.id || "local";
     try { await persistMessage({ myId, theirId: targetId, text: clean }); } catch {}
     trackEvent("message_sent", { has_match: true });
-    // Show typing + simulated reply only when no real remote partner is present.
+    // Show typing + simulated reply only in demo mode (no real remote partner).
+    if (!DEMO_MODE) return;
     setTypingTarget(Number(chatTarget.id));
     setTimeout(() => {
       setTypingTarget(null);
@@ -1182,6 +1190,7 @@ function MusePage() {
     const myId = authUser?.profile?.id || authUser?.id || "local";
     try { await persistMessage({ myId, theirId: targetId, text: "", img: imgUrl }); } catch {}
     trackEvent("message_image_sent", { has_match: true });
+    if (!DEMO_MODE) return;
     setTypingTarget(Number(chatTarget.id));
     setTimeout(() => {
       setTypingTarget(null);
@@ -1561,7 +1570,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
           </div>
         </div>
       )}
-      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} onOpenActivity={() => { setShowActivityFeed(true); setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); }} unreadCount={unreadNotificationCount} />
+      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} onOpenActivity={() => { setShowActivityFeed(true); setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} />
       {screen === "auth" ? (
         <div className="phone-wrap">
           <div className="phone" id="muse-app">

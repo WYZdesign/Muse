@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { safeServerError } from "@/lib/http";
+import { sendEmail, notify } from "@/lib/email";
 import Stripe from "stripe";
 
 /**
@@ -89,6 +90,9 @@ export async function POST(req: NextRequest) {
         body: `${profile.name || "Someone"} joined Muse using your referral code! You'll get a free month when they subscribe.`,
         read: false,
       });
+      // Email the referrer (fail-open)
+      const { data: referrerFull } = await sb.from("muse_profiles").select("email").eq("id", referrer.id).maybeSingle();
+      if (referrerFull?.email) sendEmail(notify(referrerFull.email, "Someone joined via your referral ✦", "Your referral worked", `${profile.name || "Someone"} joined Muse using your referral code. You'll get a free month of Muse Pro when they subscribe.`)).catch(() => {});
 
       return NextResponse.json({ success: true, referrerName: referrer.name });
     }
@@ -170,6 +174,12 @@ export async function POST(req: NextRequest) {
         { user_id: referral.referrer_id, type: "referral_reward", body: "You earned a free month of Muse Pro for a successful referral!", read: false },
         { user_id: referral.referee_id, type: "referral_reward", body: "You received a free month of Muse Pro thanks to a referral!", read: false },
       ]);
+
+      // Email both parties (fail-open)
+      const { data: rewardProfiles } = await sb.from("muse_profiles").select("id,email").in("id", [referral.referrer_id, referral.referee_id]);
+      for (const p of (rewardProfiles || [])) {
+        if (p?.email) sendEmail(notify(p.email, "Free month unlocked ✦", "You earned a free month", "A referral just went through — you've received a free month of Muse Pro.")).catch(() => {});
+      }
 
       return NextResponse.json({ success: true, message: "Free month issued to both parties" });
     }
