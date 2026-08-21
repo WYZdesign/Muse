@@ -60,6 +60,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   uid,
 }: NetworkScreenProps) {
   const [netTab, setNetTab] = useState<"pros" | "forum">("pros");
+  const [flippedId, setFlippedId] = useState<number | null>(null);
 
   const filteredForum = useMemo(() => {
     return [...(liveForum?.length ? liveForum : FORUM_POSTS)]
@@ -85,19 +86,57 @@ export const NetworkScreen = memo(function NetworkScreen({
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
         {netTab === "pros" && PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
-          <div key={p.id} className="conn-card" style={{ position: "relative", flexDirection: "column", marginBottom: 14, padding: 0, overflow: "hidden", borderRadius: 16, minHeight: 360 }}>
-            <img loading="lazy" src={p.img} alt={p.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} onError={handleImgError} />
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top,rgba(10,6,18,0.85) 0%,rgba(10,6,18,0.2) 60%,rgba(10,6,18,0.1) 100%)" }} />
-            <div style={{ position: "relative", zIndex: 1, padding: "160px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "flex-end", minHeight: 360 }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>{p.name}</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--gold)", marginBottom: 4, textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>{p.type} · {p.loc}</div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>{p.exp}</div>
-              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
-                {(p.skills || []).map(s => <span key={s} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 6, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.8)" }}>{s}</span>)}
+          <div key={p.id} style={{ perspective: 1200, marginBottom: 14 }}>
+            <div
+              onClick={() => setFlippedId(f => f === p.id ? null : p.id)}
+              style={{ position: "relative", width: "100%", minHeight: 380, cursor: "pointer", transformStyle: "preserve-3d", transition: "transform 0.6s cubic-bezier(.4,0,.2,1)", transform: flippedId === p.id ? "rotateY(180deg)" : "rotateY(0deg)" }}
+            >
+              {/* FRONT — pic, name, location, badges */}
+              <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", borderRadius: 16, overflow: "hidden" }}>
+                <img loading="lazy" src={p.img} alt={p.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} onError={handleImgError} />
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top,rgba(10,6,18,0.88) 0%,rgba(10,6,18,0.25) 55%,rgba(10,6,18,0.1) 100%)" }} />
+                <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "20px", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>{p.name}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--gold)", textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>📍 {p.loc}</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 11, padding: "4px 12px", borderRadius: 99, background: "rgba(255,215,0,0.22)", border: "1px solid rgba(255,215,0,0.4)", color: "var(--gold)", fontWeight: 700 }}>{p.type}</span>
+                    <span style={{ fontSize: 11, padding: "4px 12px", borderRadius: 99, background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontWeight: 700 }}>{p.exp} exp</span>
+                    <span style={{ fontSize: 11, padding: "4px 12px", borderRadius: 99, background: "rgba(135,206,235,0.2)", border: "1px solid rgba(135,206,235,0.35)", color: "#b7e4f7", fontWeight: 700 }}>{p.openings} openings</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>Tap to see details ›</div>
+                </div>
               </div>
-              <div style={{ display: "flex", gap: 8, width: "100%" }}>
-                <button className="btn btn-gold" style={{ flex: 1, padding: "10px 0", fontSize: 13, fontWeight: 700, borderRadius: 10 }} onClick={async () => { try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "connect", targetId: p.id }) }); if (!r.ok) throw new Error("failed"); showToast("Connection request sent to " + p.name + "!"); } catch { showToast("Failed to send connection"); } }}>Connect</button>
-                <button style={{ flex: 1, padding: "10px 0", fontSize: 13, fontWeight: 600, borderRadius: 10, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.05)", color: "#fff", cursor: "pointer" }} onClick={() => { setViewProfile(p); showToast("Viewing " + p.name + "'s profile") }}>View Profile</button>
+              {/* BACK — full details on soft gradient */}
+              <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)", borderRadius: 16, overflow: "hidden", background: "linear-gradient(135deg,#1a0a2e 0%,#2d1b4e 50%,#1a0a2e 100%)", border: "1px solid rgba(255,215,0,0.2)" }}>
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg,rgba(255,215,0,0.08),rgba(212,165,255,0.08))" }} />
+                <div style={{ position: "relative", padding: "22px", display: "flex", flexDirection: "column", gap: 12, height: "100%" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{p.name}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--gold)" }}>{p.type}</div>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <div style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px", textAlign: "center" }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "var(--gold)" }}>{p.exp}</div>
+                      <div style={{ fontSize: 10, color: "var(--text2)" }}>Experience</div>
+                    </div>
+                    <div style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px", textAlign: "center" }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "var(--gold)" }}>{p.openings}</div>
+                      <div style={{ fontSize: 10, color: "var(--text2)" }}>Openings</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--muted)", marginBottom: 6 }}>Skills</div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {(p.skills || []).map(s => <span key={s} style={{ fontSize: 11, padding: "5px 12px", borderRadius: 99, background: "rgba(212,165,255,0.15)", border: "1px solid rgba(212,165,255,0.3)", color: "#e6d3ff", fontWeight: 600 }}>{s}</span>)}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--muted)", marginBottom: 6 }}>Location</div>
+                    <div style={{ fontSize: 14, color: "var(--text)" }}>{p.loc}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: "auto", paddingTop: 12 }}>
+                    <button className="btn btn-gold" style={{ flex: 1, padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={async (e) => { e.stopPropagation(); try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "connect", targetId: p.id }) }); if (!r.ok) throw new Error("failed"); showToast("Connection request sent to " + p.name + "!"); } catch { showToast("Failed to send connection"); } }}>Connect</button>
+                    <button className="btn btn-outline" style={{ flex: 1, padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={(e) => { e.stopPropagation(); setViewProfile(p); showToast("Viewing " + p.name + "'s profile"); }}>View Profile</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
