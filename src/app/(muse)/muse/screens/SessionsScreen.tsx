@@ -144,59 +144,19 @@ export const SessionsScreen = memo(function SessionsScreen({
         <div style={{ width: 36 }} />
       </div>
       <div className="conn-tabs" style={{ padding: "0 16px" }}>
-        {(["sessions", "requests"] as const).map(t => (
-          <div key={t} className={"conn-tab" + (sessTab === t ? " active" : "")} onClick={() => setSessTab(t)}>{t === "sessions" ? "My Bookings" : "Requests"}</div>
+        {(["sessions", "bookings", "requests"] as const).map(t => (
+          <div key={t} className={"conn-tab" + (sessTab === t ? " active" : "")} onClick={() => setSessTab(t)}>{t === "sessions" ? "Browse" : t === "bookings" ? "My Bookings" : "Requests"}</div>
         ))}
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
         {sessTab === "sessions" && (
           <>
-            {/* My Bookings (real) */}
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>My Bookings</div>
-            {myBookings.asBooker.length === 0 && (
-              <div style={{ textAlign: "center", padding: "24px 20px" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>No bookings yet</div>
-                <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>Book a session with a creative below. Your bookings will show up here.</div>
-              </div>
-            )}
-            {myBookings.asBooker.map(b => {
-              const host = b.host_id || {};
-              const sess = b.session_id || {};
-              const label = b.status === "pending" ? "Awaiting host" : b.status === "confirmed" ? "Confirmed" : b.status === "completed" ? "Completed" : "Cancelled";
-              const labelBg = b.status === "completed" ? "rgba(152,251,152,0.15)" : b.status === "confirmed" ? "rgba(255,215,0,0.15)" : b.status === "cancelled" ? "rgba(255,100,100,0.15)" : "rgba(255,255,255,0.08)";
-              const labelColor = b.status === "completed" ? "#98fb98" : b.status === "confirmed" ? "var(--gold)" : b.status === "cancelled" ? "#ff6464" : "var(--muted)";
-              return (
-                <div key={b.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
-                  <img loading="lazy" src={host.avatar || sess.img || ""} alt={host.name || "Host"} style={{ width: "25%", alignSelf: "stretch", minHeight: 120, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
-                  <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                      <div className="conn-name" style={{ fontSize: 15 }}>{host.name || "Host"}</div>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: labelBg, color: labelColor, whiteSpace: "nowrap" }}>{label}</span>
-                    </div>
-                    <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
-                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      {b.status === "confirmed" && (
-                        <>
-                          <button className="btn btn-gold" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={() => payBooking(b)}>Pay</button>
-                          <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete</button>
-                        </>
-                      )}
-                      {b.status === "completed" && (
-                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setReviewTarget(b)}>Leave Review</button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            <div style={{ height: 12 }} />
-            {/* Available Sessions */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "4px 0 10px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Available Sessions</div>
               <button className="btn btn-gold" style={{ fontSize: 12, fontWeight: 700, padding: "6px 14px", borderRadius: 99 }} onClick={() => setShowCreate(true)}>+ List a Session</button>
             </div>
-            {(liveSessions || SESSIONS).map(s => (
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Browse creatives offering sessions — pick one, book, and pay securely.</div>
+            {(liveSessions?.length ? liveSessions : SESSIONS).map(s => (
               <div key={s.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
                 <img loading="lazy" src={s.img} alt={s.name} style={{ width: "25%", alignSelf: "stretch", minHeight: 120, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
                 <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
@@ -235,6 +195,48 @@ export const SessionsScreen = memo(function SessionsScreen({
               </div>
             ))}
           </>
+        )}
+        {sessTab === "bookings" && (
+          <div style={{ padding: "0 0 20px" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>My Bookings</div>
+            {myBookings.asBooker.length === 0 && (
+              <div style={{ textAlign: "center", padding: "24px 20px" }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>No bookings yet</div>
+                <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>Book a session from the Browse tab. Your bookings will show up here.</div>
+              </div>
+            )}
+            {myBookings.asBooker.map(b => {
+              const host = b.host_id || {};
+              const sess = b.session_id || {};
+              const label = b.status === "pending" ? "Awaiting host" : b.status === "confirmed" ? "Confirmed" : b.status === "completed" ? "Completed" : "Cancelled";
+              const labelBg = b.status === "completed" ? "rgba(152,251,152,0.15)" : b.status === "confirmed" ? "rgba(255,215,0,0.15)" : b.status === "cancelled" ? "rgba(255,100,100,0.15)" : "rgba(255,255,255,0.08)";
+              const labelColor = b.status === "completed" ? "#98fb98" : b.status === "confirmed" ? "var(--gold)" : b.status === "cancelled" ? "#ff6464" : "var(--muted)";
+              return (
+                <div key={b.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
+                  <img loading="lazy" src={host.avatar || sess.img || ""} alt={host.name || "Host"} style={{ width: "25%", alignSelf: "stretch", minHeight: 120, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
+                  <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <div className="conn-name" style={{ fontSize: 15 }}>{host.name || "Host"}</div>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: labelBg, color: labelColor, whiteSpace: "nowrap" }}>{label}</span>
+                    </div>
+                    <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                      {b.status === "confirmed" && (
+                        <>
+                          <button className="btn btn-gold" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={() => payBooking(b)}>Pay</button>
+                          <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete</button>
+                        </>
+                      )}
+                      {b.status === "completed" && (
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setReviewTarget(b)}>Leave Review</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
         {sessTab === "requests" && (
           <div style={{ padding: "0 0 20px" }}>

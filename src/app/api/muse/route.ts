@@ -765,6 +765,11 @@ export async function POST(req: NextRequest) {
     if (actionType === "join-community") {
       const { communityId } = rest;
       if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
+      // Stub/demo communities use numeric ids (hardcoded in types.ts) and don't
+      // exist in the DB. Treat those as a local-only join (succeed without a DB
+      // write) so the UI can show "Joined" instead of a silent 400.
+      const isStub = !UUID_RE.test(String(communityId));
+      if (isStub) return NextResponse.json({ success: true, demo: true });
       const { data: community } = await sb.from("muse_communities").select("id").eq("id", communityId).maybeSingle();
       if (!community) return NextResponse.json({ error: "Community not found" }, { status: 400 });
       await sb.from("muse_community_members").upsert(
@@ -780,6 +785,8 @@ export async function POST(req: NextRequest) {
     if (actionType === "leave-community") {
       const { communityId } = rest;
       if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
+      const isStub = !UUID_RE.test(String(communityId));
+      if (isStub) return NextResponse.json({ success: true, demo: true });
       const { data: community } = await sb.from("muse_communities").select("id").eq("id", communityId).maybeSingle();
       if (!community) return NextResponse.json({ error: "Community not found" }, { status: 400 });
       await sb.from("muse_community_members").delete().eq("community_id", communityId).eq("user_id", profile.id);
