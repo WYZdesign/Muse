@@ -101,20 +101,63 @@ const SHELL = (inner: string) => `
 /** Confirmation sent immediately when someone joins the waitlist. */
 export function waitlistWelcome(email: string, source?: string): EmailMessage {
   const html = SHELL(`
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,215,0,0.2);border-radius:16px;padding:32px 28px;text-align:center;">
-      <h1 style="font-size:22px;color:#fff;margin:0 0 12px;">You're on the list ✦</h1>
-      <p style="font-size:15px;color:rgba(255,255,255,0.75);line-height:1.7;margin:0 0 20px;">
-        Thanks for joining Muse. You're now in line for early access.<br/>
-        We'll email you the moment your spot opens — no spam, ever.
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,215,0,0.2);border-radius:16px;padding:32px 28px;">
+      <h1 style="font-size:22px;color:#fff;margin:0 0 12px;text-align:center;">You're on the list ✦</h1>
+      <p style="font-size:15px;color:rgba(255,255,255,0.75);line-height:1.7;margin:0 0 24px;text-align:center;">
+        Thanks for joining. Your spot is reserved — we'll let you know the moment it's your turn.
       </p>
-      <div style="font-size:13px;color:rgba(255,255,255,0.5);">Joined with: ${email}</div>
+
+      <div style="margin:0 0 22px;">
+        <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">What Muse is</h2>
+        <p style="font-size:14px;color:rgba(255,255,255,0.72);line-height:1.7;margin:0;">
+          Muse is a creative professional network. Photographers, models, filmmakers, musicians, designers — people who make things — use it to find each other, collaborate, and book real work. Think of it as the place your portfolio meets the people who want to hire it.
+        </p>
+      </div>
+
+      <div style="margin:0 0 22px;">
+        <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">How it works</h2>
+        <p style="font-size:14px;color:rgba(255,255,255,0.72);line-height:1.7;margin:0;">
+          You build a profile, pick what kind of work you're into, and Muse matches you with the right people. Browse their work, message them, and book sessions — all in one place. No cold DMs, no endless scrolling through people who don't fit.
+        </p>
+      </div>
+
+      <div style="margin:0 0 22px;">
+        <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">What you'll do</h2>
+        <p style="font-size:14px;color:rgba(255,255,255,0.72);line-height:1.7;margin:0;">
+          When your spot opens, you'll create an account and set up your profile — your name, what you do, a few photos, and what kind of collaborations you're after. It takes a few minutes, and it's how matches get made.
+        </p>
+      </div>
+
+      <div style="margin:0 0 24px;">
+        <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">What you can expect from us</h2>
+        <p style="font-size:14px;color:rgba(255,255,255,0.72);line-height:1.7;margin:0;">
+          Safety is the foundation here — verified profiles, disclosure forms, and 24-hour check-ins for in-person work. No spam, ever. Just a note when it's time to join, and a community that takes your craft as seriously as you do.
+        </p>
+      </div>
+
+      <div style="text-align:center;">
+        <a href="https://muse.wyzdesign.com/muse?src=welcome_email" style="display:inline-block;padding:13px 30px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;font-size:14px;">Create your account</a>
+        <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:10px;">Signed up with ${email}</div>
+      </div>
     </div>
   `);
   return {
     to: email,
     subject: "You're on the Muse waitlist ✦",
     html,
-    text: "Thanks for joining Muse. You're now in line for early access. We'll email you the moment your spot opens.",
+    text: [
+      "Thanks for joining Muse — your spot is reserved.",
+      "",
+      "What Muse is: a creative professional network where photographers, models, filmmakers, musicians, and designers find each other, collaborate, and book real work.",
+      "",
+      "How it works: build a profile, pick what work you're into, and Muse matches you with the right people. Browse their work, message them, and book sessions — all in one place.",
+      "",
+      "When your spot opens you'll create an account and set up your profile — name, what you do, a few photos, and the collaborations you're after. It takes a few minutes.",
+      "",
+      "Safety is our foundation: verified profiles, disclosure forms, and 24-hour check-ins for in-person work. No spam, ever.",
+      "",
+      "Create your account: https://muse.wyzdesign.com/muse?src=welcome_email",
+    ].join("\n"),
   };
 }
 

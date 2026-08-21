@@ -671,6 +671,19 @@ export default function MuseLandingPage() {
           <div className="muse-footer-bottom"><p>© {new Date().getFullYear()} Muse. Built by WYZ Design.</p></div>
         </div>
       </footer>
+      {/* Footer ocean waves — matches splash screen */}
+      <div className="muse-footer-wave" aria-hidden="true">
+        <svg className="muse-footer-wave-svg" viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
+          <path className="fww fww-6" d="M0,8 C180,14 360,2 540,9 C720,16 900,2 1080,9 C1260,16 1380,6 1440,10 L1440,360 L0,360 Z" />
+          <path className="fww fww-7" d="M0,22 C180,30 360,10 540,24 C720,34 900,12 1080,26 C1260,36 1380,20 1440,26 L1440,360 L0,360 Z" />
+          <path className="fww fww-8" d="M0,40 C180,52 360,22 540,44 C720,60 900,26 1080,46 C1260,62 1380,38 1440,46 L1440,360 L0,360 Z" />
+          <path className="fww fww-1" d="M0,90 C180,108 360,60 540,96 C720,122 900,66 1080,98 C1260,124 1380,84 1440,98 L1440,360 L0,360 Z" />
+          <path className="fww fww-2" d="M0,140 C180,162 360,100 540,148 C720,184 900,108 1080,150 C1260,184 1380,128 1440,150 L1440,360 L0,360 Z" />
+          <path className="fww fww-3" d="M0,185 C200,215 380,135 560,196 C760,250 940,145 1120,200 C1260,236 1380,168 1440,196 L1440,360 L0,360 Z" />
+          <path className="fww fww-4" d="M0,228 C180,262 380,168 580,242 C780,302 980,176 1180,248 C1320,292 1400,210 1440,248 L1440,360 L0,360 Z" />
+          <path className="fww fww-5" d="M0,268 C220,312 420,198 640,282 C860,348 1060,206 1260,290 C1360,326 1410,252 1440,288 L1440,360 L0,360 Z" />
+        </svg>
+      </div>
       </div>
 
       {/* QR Modal */}
