@@ -7,6 +7,29 @@
 
 ---
 
+## CRITICAL — Stub Users Are Hardcoded, Not In the Database
+
+**Finding (confirmed 2026-08-20 by Chrome Claude + verified against repo):**
+The Discover deck profiles (ARCANA, MITRI, ASHONDI, AUDREY, CHER, etc. — ~68 profiles) are **NOT in Supabase**. They are hardcoded in `src/app/(muse)/muse/components/types.ts` in the `PROFILES` array (plus `BRIEFS`, `COMMUNITIES`, `EVENTS`, `SESSIONS`, `AESTHETICS`, `CREATIVE_TYPES`, `LOOKING_FOR`).
+
+**Implication for "remove stub users before beta":**
+This is a **code edit, not a database delete**. To remove stub users before beta:
+1. Edit/reduce the `PROFILES` array in `types.ts` (line 17 onward, ~90 entries)
+2. Do NOT go looking for `muse_profiles` DB rows to delete — they won't be there (only ~5 real audit accounts exist, mostly empty avatars)
+
+**How the deck is assembled** (`page.tsx` line 795):
+- `const base = [...PROFILES]` → shuffled → merged with real `liveProfiles` from Supabase
+- So the demo profiles render first, real users appended after
+
+**Image storage reality:**
+- Demo images: static files in `public/models/` (79 model folders, `.webp`)
+- Real user uploads: Supabase storage bucket `muse-uploads` (public, currently 0 objects)
+- `photoOrientation.ts` already tags every model image portrait/landscape (`PORTRAIT_IMG` map) — used to pick 3-5 portrait cards for swipe
+
+**Deck image paths live in these columns on `muse_profiles`:** `avatar`, `portfolio`, `photos` (currently mostly empty / Unsplash placeholder URLs).
+
+---
+
 ## Owner Decisions (locked in 2026-08-20)
 
 | Topic | Decision |
