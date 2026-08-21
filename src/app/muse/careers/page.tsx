@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Careers — Join Muse / WYZ Design",
+  description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design.",
+  alternates: { canonical: "https://muse.wyzdesign.com/muse/careers" },
+  openGraph: { title: "Careers — Join Muse / WYZ Design", description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design.", url: "https://muse.wyzdesign.com/muse/careers", siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "Careers — Join Muse / WYZ Design", description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design." },
+};
+
 export default function CareersPage() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "120px 24px 80px", fontFamily: "'Inter', sans-serif" }}>

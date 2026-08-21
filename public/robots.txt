@@ -3,8 +3,7 @@ Allow: /
 Disallow: /api/
 Disallow: /muse/admin
 Disallow: /muse/admin/moderation
-Disallow: /muse/profile/
-Disallow: /muse/post/
 Disallow: /muse/reset-password
+Disallow: /muse/verify
 
 Sitemap: https://muse.wyzdesign.com/sitemap.xml

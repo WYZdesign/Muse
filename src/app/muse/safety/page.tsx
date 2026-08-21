@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Safety Center — Muse",
+  description: "Muse's safety features: disclosure forms, 24-hour check-ins, trusted contacts, verified profiles, and block/report tools.",
+  alternates: { canonical: "https://muse.wyzdesign.com/muse/safety" },
+  openGraph: { title: "Safety Center — Muse", description: "Muse's safety features: disclosure forms, 24-hour check-ins, trusted contacts, verified profiles, and block/report tools.", url: "https://muse.wyzdesign.com/muse/safety", siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "Safety Center — Muse", description: "Muse's safety features: disclosure forms, 24-hour check-ins, trusted contacts, verified profiles, and block/report tools." },
+};
+
 export default function SafetyPage() {
   const features = [
     { title: "Disclosure Forms", desc: "Before any meet, both parties fill out disclosure forms — what they're planning, where, and who's involved." },

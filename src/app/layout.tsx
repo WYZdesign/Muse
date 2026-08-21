@@ -77,7 +77,45 @@ export const metadata: Metadata = {
   openGraph: { title: "Muse — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", url: "https://muse.wyzdesign.com", siteName: "Muse", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Muse — Where Creatives Connect" }] },
   twitter: { card: "summary_large_image", title: "Muse — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", images: ["/og-image.png"] },
   robots: { index: true, follow: true },
+  keywords: ["creative network", "photographers", "models", "filmmakers", "musicians", "designers", "book creative shoots", "creative collaboration", "hire creatives"],
+  alternates: { canonical: "https://muse.wyzdesign.com" },
 };
+
+const JSON_LD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Muse",
+    url: "https://muse.wyzdesign.com",
+    logo: "https://muse.wyzdesign.com/muse-icon.png",
+    sameAs: [],
+    contactPoint: {
+      "@type": "ContactPoint",
+      email: "info@wyzdesign.com",
+      contactType: "customer support",
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Muse",
+    url: "https://muse.wyzdesign.com",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: "https://muse.wyzdesign.com/muse?q={search_term_string}",
+      "query-input": "required name=search_term_string",
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "Muse",
+    url: "https://muse.wyzdesign.com/muse",
+    applicationCategory: "SocialNetworkingApplication",
+    operatingSystem: "Web",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  },
+];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -94,6 +132,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#0a0612" />
         <meta name="format-detection" content="telephone=no" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900" rel="stylesheet" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
         <script dangerouslySetInnerHTML={{ __html: BLANK_SCREEN_WATCHDOG }} />
       </head>
       <body>

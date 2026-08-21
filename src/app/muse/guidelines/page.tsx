@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Community Guidelines — Muse",
+  description: "Muse's community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network.",
+  alternates: { canonical: "https://muse.wyzdesign.com/muse/guidelines" },
+  openGraph: { title: "Community Guidelines — Muse", description: "Muse's community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network.", url: "https://muse.wyzdesign.com/muse/guidelines", siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "Community Guidelines — Muse", description: "Muse's community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network." },
+};
+
 export default function GuidelinesPage() {
   const rules = [
     { title: "Be respectful", desc: "Treat every member with professionalism and dignity. Creative work is personal — honor that." },

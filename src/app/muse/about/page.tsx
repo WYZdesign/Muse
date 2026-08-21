@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About Muse — The Creative Professional Network",
+  description: "Muse is a creative professional network by WYZ Design. We connect photographers, models, filmmakers, musicians, and designers for real collaboration, booking, and community.",
+  alternates: { canonical: "https://muse.wyzdesign.com/muse/about" },
+  openGraph: { title: "About Muse — The Creative Professional Network", description: "Muse is a creative professional network by WYZ Design. We connect photographers, models, filmmakers, musicians, and designers for real collaboration, booking, and community.", url: "https://muse.wyzdesign.com/muse/about", siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "About Muse — The Creative Professional Network", description: "Muse is a creative professional network by WYZ Design. We connect photographers, models, filmmakers, musicians, and designers for real collaboration, booking, and community." },
+};
+
 export default function AboutPage() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "120px 24px 80px", fontFamily: "'Inter', sans-serif" }}>

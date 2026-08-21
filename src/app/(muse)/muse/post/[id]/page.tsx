@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getServiceClient } from "@/lib/supabase";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,23 @@ async function fetchPost(id: string) {
     .eq("id", id)
     .maybeSingle();
   return data;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const post = await fetchPost(id);
+  if (!post) return { title: "Post not found — Muse" };
+  const author = (post as any).author_id as { name?: string } | null;
+  const authorName = author?.name || "Muse Creative";
+  const title = `${authorName} on Muse`;
+  const description = (post.text || "").slice(0, 160);
+  return {
+    title,
+    description,
+    alternates: { canonical: `https://muse.wyzdesign.com/muse/post/${post.id}` },
+    openGraph: { title, description, type: "article", url: `https://muse.wyzdesign.com/muse/post/${post.id}`, images: post.img ? [{ url: post.img, alt: description }] : undefined },
+    twitter: { card: "summary_large_image", title, description, images: post.img ? [post.img] : undefined },
+  };
 }
 
 export default async function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {

@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Blog — Muse",
+  description: "Updates, insights, and stories from the Muse creative community and WYZ Design.",
+  alternates: { canonical: "https://muse.wyzdesign.com/muse/blog" },
+  openGraph: { title: "Blog — Muse", description: "Updates, insights, and stories from the Muse creative community and WYZ Design.", url: "https://muse.wyzdesign.com/muse/blog", siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "Blog — Muse", description: "Updates, insights, and stories from the Muse creative community and WYZ Design." },
+};
+
 export default function BlogPage() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "120px 24px 80px", fontFamily: "'Inter', sans-serif" }}>

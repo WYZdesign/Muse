@@ -10,11 +10,32 @@ const faqs = [
   { q: "Who is Muse for?", a: "Photographers, models, filmmakers, musicians, designers, and any creative professional looking for real, verified collaboration opportunities." },
 ];
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "FAQ — Muse",
+  description: "Frequently asked questions about Muse: launch, verification, pricing, safety, and how it differs from other platforms.",
+  alternates: { canonical: "https://muse.wyzdesign.com/muse/faq" },
+  openGraph: { title: "FAQ — Muse", description: "Frequently asked questions about Muse: launch, verification, pricing, safety, and how it differs from other platforms.", url: "https://muse.wyzdesign.com/muse/faq", siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "FAQ — Muse", description: "Frequently asked questions about Muse: launch, verification, pricing, safety, and how it differs from other platforms." },
+};
+
 export default function FAQPage() {
   const [open, setOpen] = useState<number | null>(null);
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
+
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "120px 24px 80px", fontFamily: "'Inter', sans-serif" }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <h1 style={{ fontSize: "2rem", fontWeight: 700, marginBottom: 24, color: "#ffd700" }}>FAQ</h1>
       <div style={{ color: "rgba(255,255,255,0.75)", lineHeight: 1.8, fontSize: 15 }}>
         {faqs.map((faq, i) => (

@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Press — Muse",
+  description: "Press and media inquiries for Muse. Brand assets and contact information.",
+  alternates: { canonical: "https://muse.wyzdesign.com/muse/press" },
+  openGraph: { title: "Press — Muse", description: "Press and media inquiries for Muse. Brand assets and contact information.", url: "https://muse.wyzdesign.com/muse/press", siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "Press — Muse", description: "Press and media inquiries for Muse. Brand assets and contact information." },
+};
+
 export default function PressPage() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "120px 24px 80px", fontFamily: "'Inter', sans-serif" }}>

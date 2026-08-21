@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Terms of Service — Muse",
+  description: "The terms of service governing use of Muse, the creative professional network by WYZ Design.",
+  alternates: { canonical: "https://muse.wyzdesign.com/muse/terms" },
+  openGraph: { title: "Terms of Service — Muse", description: "The terms of service governing use of Muse, the creative professional network by WYZ Design.", url: "https://muse.wyzdesign.com/muse/terms", siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "Terms of Service — Muse", description: "The terms of service governing use of Muse, the creative professional network by WYZ Design." },
+};
+
 export default function TermsPage() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "120px 24px 80px", fontFamily: "'Inter', sans-serif" }}>

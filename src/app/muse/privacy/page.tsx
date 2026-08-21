@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy — Muse",
+  description: "How Muse collects, uses, and protects your personal information. Data security and your rights.",
+  alternates: { canonical: "https://muse.wyzdesign.com/muse/privacy" },
+  openGraph: { title: "Privacy Policy — Muse", description: "How Muse collects, uses, and protects your personal information. Data security and your rights.", url: "https://muse.wyzdesign.com/muse/privacy", siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "Privacy Policy — Muse", description: "How Muse collects, uses, and protects your personal information. Data security and your rights." },
+};
+
 export default function PrivacyPage() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "120px 24px 80px", fontFamily: "'Inter', sans-serif" }}>

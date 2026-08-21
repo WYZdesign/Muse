@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getServiceClient } from "@/lib/supabase";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,21 @@ async function fetchProfile(id: string) {
     .eq("id", id)
     .maybeSingle();
   return data;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const p = (await fetchProfile(id)) as any;
+  if (!p) return { title: "Profile not found — Muse" };
+  const title = `${p.name} — ${p.type || "Creative"} on Muse`;
+  const description = p.bio || `${p.name} is a ${p.type || "creative"} on Muse${p.loc ? `, based in ${p.loc}` : ""}. Discover and collaborate.`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `https://muse.wyzdesign.com/muse/profile/${p.id}` },
+    openGraph: { title, description, type: "profile", url: `https://muse.wyzdesign.com/muse/profile/${p.id}`, images: p.avatar ? [{ url: p.avatar, alt: p.name }] : undefined },
+    twitter: { card: "summary_large_image", title, description, images: p.avatar ? [p.avatar] : undefined },
+  };
 }
 
 export default async function ProfileDetailPage({ params }: { params: Promise<{ id: string }> }) {
