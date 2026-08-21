@@ -105,10 +105,10 @@ function MusePage() {
   const [discoverSearch, setDiscoverSearch] = useState("");
   const [mapView, setMapView] = useState(false);
   const [bootstrapped, setBootstrapped] = useState(false);
-  const [dailyLikes, setDailyLikes] = useState(999);
-  const [superLikes, setSuperLikes] = useState(999);
+  const [dailyLikes, setDailyLikes] = useState(10);
+  const [superLikes, setSuperLikes] = useState(3);
   const [screenFlash, setScreenFlash] = useState<string | null>(null);
-  const [showUnlimitedBadge, setShowUnlimitedBadge] = useState(true);
+  const [showUnlimitedBadge, setShowUnlimitedBadge] = useState(false);
   const [matchStreak, setMatchStreak] = useState(0);
   const [rewindStack, setRewindStack] = useState<number[]>([]);
   const [showLikeNote, setShowLikeNote] = useState(false);
@@ -777,7 +777,7 @@ function MusePage() {
           const mapped = list
             .filter(n => n && n.body && !existing.has(n.body))
             .map((n: any) => ({
-              id: uid(),
+              id: n.id ?? uid(),
               type: n.type || "info",
               from: "",
               avatar: "",
