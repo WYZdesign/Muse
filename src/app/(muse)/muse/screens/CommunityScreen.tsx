@@ -105,10 +105,12 @@ export const CommunityScreen = memo(function CommunityScreen({
             <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <div className="conn-name" style={{ fontSize: 15 }}>{c.name}</div>
               <div className="conn-meta" style={{ fontSize: 12 }}>{c.members} members · {c.desc}</div>
-              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                <button className="btn btn-gold" style={{ flex: 1, fontSize: 12, padding: "12px 0", fontWeight: 700, borderRadius: 12 }} onClick={async () => { try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "join-community", communityId: c.id }) }); if (!r.ok) throw new Error("failed"); showToast("Joined " + c.name + "!"); } catch { showToast("Failed to join"); } }}>{c.cat === "nsfw" ? "Join (18+)" : "Join"}</button>
-                <button className="btn btn-outline" style={{ flex: 1, fontSize: 12, padding: "12px 0", fontWeight: 600, borderRadius: 12 }} onClick={() => showToast(c.name + " community info opened!")}>Learn</button>
-                <button className="btn btn-outline" style={{ flex: 1, fontSize: 12, padding: "12px 0", fontWeight: 600, borderRadius: 12 }} onClick={() => { navigator.clipboard?.writeText("https://wyzdesign.com/muse/community/" + c.id); showToast("Link copied!"); }}>Share</button>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                <button className="btn btn-gold" style={{ width: "100%", fontSize: 13, padding: "13px 0", fontWeight: 700, borderRadius: 12 }} onClick={async () => { try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "join-community", communityId: c.id }) }); if (!r.ok) throw new Error("failed"); showToast("Joined " + c.name + "!"); } catch { showToast("Failed to join"); } }}>{c.cat === "nsfw" ? "Join (18+)" : "Join"}</button>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="btn btn-outline" style={{ flex: 1, fontSize: 12, padding: "11px 0", fontWeight: 600, borderRadius: 12 }} onClick={() => showToast(c.name + " community info opened!")}>Learn</button>
+                  <button className="btn btn-outline" style={{ flex: 1, fontSize: 12, padding: "11px 0", fontWeight: 600, borderRadius: 12 }} onClick={() => { navigator.clipboard?.writeText("https://wyzdesign.com/muse/community/" + c.id); showToast("Link copied!"); }}>Share</button>
+                </div>
               </div>
             </div>
           </div>

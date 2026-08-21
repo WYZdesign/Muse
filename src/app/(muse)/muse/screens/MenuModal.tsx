@@ -133,6 +133,7 @@ export const MenuModal = memo(function MenuModal({
             {unreadCount ? <span className="hamburger-bell-dot" /> : null}
           </button>
         )}
+        {!hamburgerScreen && <div className="hamburger-menu-title">Menu</div>}
         {!hamburgerScreen ? (
           <>
             {[

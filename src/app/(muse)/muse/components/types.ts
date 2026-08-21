@@ -152,8 +152,28 @@ export const TIERS = [
 ];
 
 export const AESTHETICS = ["Portrait","Editorial","Commercial","Music Video","Documentary","Branding","Body Art","Fine Art","Fashion","Experimental","Dark","Dreamy","Bold","Vintage","Abstract","Film"];
-export const CREATIVE_TYPES = ["Photographer","Model","Content Creator","Director","Editor","MUA","Stylist","Actor","Videographer","Writer","Producer","Designer"];
-export const LOOKING_FOR = ["Photographer","Videographer","Director","Editor","Musician","Writer","Designer","Producer"];
+
+// ═══ CREATIVE SIDES — the duality at the heart of Muse ═══
+// "behind" = the person making the work (crew / off-camera)
+// "front"  = the person in the work (talent / on-camera / audience-facing)
+export type CreativeSide = "behind" | "front";
+export const BEHIND_CAMERA = ["Photographer","Director","Videographer","Editor","Writer","Producer","Designer","MUA","Stylist"];
+export const IN_FRONT_CAMERA = ["Model","Actor","Content Creator","Influencer","Dancer","Musician"];
+export const CREATIVE_TYPES = [...BEHIND_CAMERA, ...IN_FRONT_CAMERA];
+export const CREATIVE_SIDE: Record<string, CreativeSide> = {
+  Photographer:"behind", Director:"behind", Videographer:"behind", Editor:"behind", Writer:"behind", Producer:"behind", Designer:"behind", MUA:"behind", Stylist:"behind",
+  Model:"front", Actor:"front", "Content Creator":"front", Influencer:"front", Dancer:"front", Musician:"front",
+};
+// When a behind-camera user picks what they're looking for → surface talent first.
+// When a front-camera user picks → surface crew first. Same-side collaboration is
+// always available as the second group.
+export function lookingForOptions(type: string): string[] {
+  const side = CREATIVE_SIDE[type];
+  if (side === "behind") return [...IN_FRONT_CAMERA, ...BEHIND_CAMERA];
+  if (side === "front") return [...BEHIND_CAMERA, ...IN_FRONT_CAMERA];
+  return CREATIVE_TYPES;
+}
+export const LOOKING_FOR = CREATIVE_TYPES;
 export const CONN_TYPES = ["friend","collab","mentor","partner"];
 export const ZODIAC = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
 export const ZE:Record<string,string> = {"Aries":"🔥 Bold pioneer","Taurus":"🌍 Grounded sensualist","Gemini":"💨 Curious connector","Cancer":"💧 Empathetic soul","Leo":"🔥 Creative star","Virgo":"🌍 Meticulous artisan","Libra":"💨 Balanced visionary","Scorpio":"💧 Intense transformer","Sagittarius":"🔥 Adventurous spirit","Capricorn":"🌍 Ambitious builder","Aquarius":"💨 Future thinker","Pisces":"💧 Dreamy mystic"};

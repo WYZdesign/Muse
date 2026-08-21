@@ -42,7 +42,7 @@ import PromptBankModal from "./components/PromptBankModal";
 import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
-import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, AESTHETICS, CREATIVE_TYPES, LOOKING_FOR, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
+import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, AESTHETICS, CREATIVE_TYPES, BEHIND_CAMERA, IN_FRONT_CAMERA, LOOKING_FOR, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
 
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL || "torree.marcel@gmail.com";
@@ -1644,11 +1644,24 @@ const isMatch=matchScore>55||Math.random()>0.5;
                 {obStep === 2 && (
                   <div className="onboard-content">
                     <div className="step-title">Creative Type</div>
-                    <div className="step-sub">What's your primary craft?</div>
-                    <div className="chips">
-                      {CREATIVE_TYPES.map(t => (
-                        <div key={t} className={"chip"+(obData.type===t?" sel":"")} onClick={()=>setObData(d=>({...d,type:t}))}><span>{t}</span></div>
-                      ))}
+                    <div className="step-sub">Where do you work — behind the camera or in front of it?</div>
+                    <div className="side-group">
+                      <div className="side-label">🎬 Behind the Camera</div>
+                      <div className="side-sub">You make the work — crew, direction, craft.</div>
+                      <div className="chips">
+                        {BEHIND_CAMERA.map(t => (
+                          <div key={t} className={"chip"+(obData.type===t?" sel":"")} onClick={()=>setObData(d=>({...d,type:t}))}><span>{t}</span></div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="side-group" style={{ marginTop: 16 }}>
+                      <div className="side-label">📸 In Front of the Camera</div>
+                      <div className="side-sub">You're the talent — on-camera, performing, audience-facing.</div>
+                      <div className="chips">
+                        {IN_FRONT_CAMERA.map(t => (
+                          <div key={t} className={"chip"+(obData.type===t?" sel":"")} onClick={()=>setObData(d=>({...d,type:t}))}><span>{t}</span></div>
+                        ))}
+                      </div>
                     </div>
                     <button className="btn btn-gold" disabled={!obData.type} style={!obData.type?{opacity:0.5}:undefined} onClick={()=>setObStep(3)}>Next</button>
                   </div>
@@ -1658,7 +1671,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
                     <div className="step-title">Looking For</div>
                     <div className="step-sub">What kind of connections interest you?</div>
                     <div className="chips">
-                      {LOOKING_FOR.map(l => (
+                      {lookingForOptions(obData.type || "").map(l => (
                         <div key={l} className={"chip"+((obData.looking||[]).includes(l)?" sel":"")} onClick={()=>{const arr=obData.looking||[];setObData(d=>({...d,looking:arr.includes(l)?arr.filter(x=>x!==l):[...arr,l]}))}}><span>{l}</span></div>
                       ))}
                     </div>
@@ -2205,7 +2218,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
       {showActivityFeed && (
         <div className="modal-overlay">
           <div className="modal-header">
-            <button className="modal-back" onClick={()=>setShowActivityFeed(false)}><FiArrowLeft size={20} /></button>
+            <button className="modal-back" onClick={()=>{setShowActivityFeed(false);setShowHamburger(true);}}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Activity</div>
             <button className="modal-close" onClick={()=>setShowActivityFeed(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
