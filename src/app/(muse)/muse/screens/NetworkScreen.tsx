@@ -85,10 +85,10 @@ export const NetworkScreen = memo(function NetworkScreen({
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
         {netTab === "pros" && PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
-          <div key={p.id} className="conn-card" style={{ position: "relative", flexDirection: "column", marginBottom: 14, padding: 0, overflow: "hidden", borderRadius: 16, minHeight: 300 }}>
+          <div key={p.id} className="conn-card" style={{ position: "relative", flexDirection: "column", marginBottom: 14, padding: 0, overflow: "hidden", borderRadius: 16, minHeight: 360 }}>
             <img loading="lazy" src={p.img} alt={p.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} onError={handleImgError} />
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top,rgba(10,6,18,0.85) 0%,rgba(10,6,18,0.2) 60%,rgba(10,6,18,0.1) 100%)" }} />
-            <div style={{ position: "relative", zIndex: 1, padding: "120px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "flex-end", minHeight: 300 }}>
+            <div style={{ position: "relative", zIndex: 1, padding: "160px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "flex-end", minHeight: 360 }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>{p.name}</div>
               <div style={{ fontSize: 14, fontWeight: 600, color: "var(--gold)", marginBottom: 4, textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>{p.type} · {p.loc}</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>{p.exp}</div>
