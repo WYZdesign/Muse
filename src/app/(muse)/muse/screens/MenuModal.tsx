@@ -54,6 +54,7 @@ export interface MenuModalProps {
   authUser: any;
   onOpenActivity?: () => void;
   unreadCount?: number;
+  activityFeed?: {id:number;from:string;avatar:string;text:string;time:string;read:boolean}[];
 }
 
 const SUPPORT_EMAIL = "info@wyzdesign.com";
@@ -106,6 +107,7 @@ export const MenuModal = memo(function MenuModal({
   authUser,
   onOpenActivity,
   unreadCount,
+  activityFeed = [],
 }: MenuModalProps) {
   if (!showHamburger) return null;
 
@@ -126,7 +128,7 @@ export const MenuModal = memo(function MenuModal({
         {!hamburgerScreen && (
           <button
             className="hamburger-bell"
-            onClick={() => { setShowHamburger(false); onOpenActivity?.(); }}
+            onClick={() => { onOpenActivity?.(); setHamburgerScreen("activity"); }}
             aria-label="Notifications"
           >
             <FiBell size={18} />
@@ -436,6 +438,22 @@ export const MenuModal = memo(function MenuModal({
                     <div style={{ padding: "8px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 12, color: "var(--text2)" }}>📍 {["Los Angeles", "Miami", "NYC", "Chicago", "Austin", "Portland"][i]}</span>
                       <button className="conn-btn conn-btn-primary" style={{ fontSize: 10, padding: "4px 10px" }} onClick={() => showToast("Story viewed!")}>View</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {hamburgerScreen === "activity" && (
+              <div className="conn-scroll">
+                <div style={{ textAlign: "center", fontSize: 13, color: "var(--gold)", fontWeight: 700, marginBottom: 14 }}>Your Activity</div>
+                {activityFeed.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No activity yet. Start swiping!</div>
+                ) : activityFeed.map(a => (
+                  <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1 }}>
+                    <img loading="lazy" src={a.avatar} alt="" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, color: "var(--text)" }}><strong>{a.from}</strong> {a.text}</div>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{a.time}</div>
                     </div>
                   </div>
                 ))}

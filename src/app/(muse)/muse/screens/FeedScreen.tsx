@@ -46,6 +46,7 @@ export interface FeedScreenProps {
   unreadNotificationCount?: number;
   setShowReport?: (v: boolean) => void;
   setReportTarget?: (t: any) => void;
+  setShareTarget?: (t: any) => void;
 }
 
 export const FeedScreen = memo(function FeedScreen({
@@ -87,6 +88,7 @@ export const FeedScreen = memo(function FeedScreen({
   unreadNotificationCount = 0,
   setShowReport = () => {},
   setReportTarget = () => {},
+  setShareTarget = () => {},
   authFetch,
 }: FeedScreenProps) {
   return (
@@ -248,7 +250,7 @@ export const FeedScreen = memo(function FeedScreen({
                 <div style={{ display: "flex", gap: 10, padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                   <button className={"feed-action-btn" + (post.liked ? " liked-pop" : "")} style={{ flex: 1, height: 42, background: post.liked ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.04)", border: post.liked ? "1.5px solid rgba(239,68,68,0.35)" : "1px solid rgba(255,255,255,0.08)", color: post.liked ? "#ff5c5c" : "#ff8a8a", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => { setFeedPosts(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: !p.liked }) : p)); if (feedPostsStatic.some(p => p.id === post.id)) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: !p.liked }) : p)); }}>♥ {post.likes + (post.liked ? 1 : 0)}</button>
                   <button className="feed-action-btn" style={{ flex: 1, height: 42, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#87CEEE", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}>💬 {post.comments}</button>
-                  <button className="feed-action-btn" style={{ flex: 1, height: 42, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "var(--gold)", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => { navigator.clipboard?.writeText("https://wyzdesign.com/muse/post/" + post.id); showToast("Link copied!"); }}>↗ {post.shares}</button>
+                  <button className="feed-action-btn" style={{ flex: 1, height: 42, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "var(--gold)", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => { setShareTarget({ id: post.id, text: post.text || "", img: post.img || "", author: post.author }); }}>↗ Share</button>
                 </div>
                 {replyingTo === post.id && (
                   <div style={{ display: "flex", gap: 8, padding: "10px 18px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
