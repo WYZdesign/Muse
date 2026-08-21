@@ -1,7 +1,7 @@
 # Muse App — Handover for Claude (opencode)
 
 **Date:** 2026-08-20  
-**Commits pushed:** `69cac88`, `51253c2`, `505331f`, `f1c7c27`, `fccddf5`, `de9958d`, `11ee95e`, `bf2d2ce`, `0501c03`, `0fe7f13`  
+**Commits pushed:** `69cac88`, `51253c2`, `505331f`, `f1c7c27`, `fccddf5`, `de9958d`, `11ee95e`, `bf2d2ce`, `0501c03`, `0fe7f13`, `015b8ac`  
 **Build status:** Clean (`tsc --noEmit` passes)  
 **Vercel:** Auto-deploys from `main`
 
@@ -67,6 +67,23 @@ This is a **code edit, not a database delete**. To remove stub users before beta
 | **Open beta** | ~1 month after closed beta (or after enough feedback), runs until ~500–1k users (TBD). |
 | **Founding cap** | 150 is the real cap. Count must reflect ACTUAL newsletter/app signups, not inflated. |
 | **Side job** | Claude is auditing ALL profile images (every photo in every user profile — portrait, no blur, centered). Will report exact replacements. |
+
+---
+
+## External Integrations — Status (2026-08-20)
+
+| Integration | Status | Notes |
+|-------------|--------|-------|
+| Google OAuth | ✅ Live | `google` provider |
+| X/Twitter OAuth | ✅ Live | `x` provider (NOT `twitter`) |
+| **Facebook OAuth** | ✅ **Live** | App published 2026-08-20. Requests only `email` + `public_profile` (Standard Access, no App Review gauntlet). Redirect URI: `https://ejbwjmzrazfgtisqsamf.supabase.co/auth/v1/callback` |
+| Stripe | ✅ Live | Muse account + WYZ Design account |
+| Resend (email) | ✅ Live | `wyzdesign.com` domain verified, waitlist confirmation fires |
+| Supabase | ✅ Live | Migration applied, 7 tables live |
+| AWS Rekognition | ✅ Configured | Keys in vault + Vercel |
+| NCMEC CyberTipline | ⏳ Post-launch | Code queues to DB; manual web form works now; API registration before scale |
+
+**Remaining external (owner-owned):** attorney review of Terms/Privacy, NCMEC ESP registration (post-launch), 18 replacement profile photos (Claude's audit).
 
 ---
 
