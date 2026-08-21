@@ -786,6 +786,46 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    if (actionType === "create-community") {
+      if (!await checkRate(ip, "create-community", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const { name, description, category, isNsfw } = rest;
+      const cleanName = String(name || "").trim().slice(0, 80);
+      if (!cleanName) return NextResponse.json({ error: "name required" }, { status: 400 });
+      const { data, error } = await sb.from("muse_communities").insert({
+        name: cleanName,
+        description: String(description || "").slice(0, 500),
+        img: String(rest.img || "").slice(0, 500),
+        category: String(category || "general").slice(0, 40),
+        is_nsfw: Boolean(isNsfw),
+        member_count: 1,
+      }).select().single();
+      if (error) return safeServerError(error, "db op");
+      // Creator auto-joins their community.
+      await sb.from("muse_community_members").upsert(
+        { community_id: data.id, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar },
+        { onConflict: "community_id,user_id", ignoreDuplicates: true }
+      );
+      return NextResponse.json({ success: true, community: data });
+    }
+
+    if (actionType === "create-event") {
+      if (!await checkRate(ip, "create-event", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const { title, description, date, location, category } = rest;
+      const cleanTitle = String(title || "").trim().slice(0, 120);
+      if (!cleanTitle) return NextResponse.json({ error: "title required" }, { status: 400 });
+      const { data, error } = await sb.from("muse_events").insert({
+        title: cleanTitle,
+        description: String(description || "").slice(0, 500),
+        date: String(date || "").slice(0, 100),
+        location: String(location || "").slice(0, 200),
+        category: String(category || "General").slice(0, 40),
+        img: String(rest.img || "").slice(0, 500),
+        attendees: 0,
+      }).select().single();
+      if (error) return safeServerError(error, "db op");
+      return NextResponse.json({ success: true, event: data });
+    }
+
     if (actionType === "book-session") {
       const { sessionId, hostId } = rest;
       if (!sessionId) return NextResponse.json({ error: "sessionId required" }, { status: 400 });
