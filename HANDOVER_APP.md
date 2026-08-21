@@ -1,9 +1,33 @@
 # Muse App — Handover for Claude (opencode)
 
 **Date:** 2026-08-20  
-**Commits pushed:** `69cac88`, `51253c2`, `505331f`, `f1c7c27`, `fccddf5`, `de9958d`, `11ee95e`  
-**Build status:** Clean (`tsc --noEmit` + `npm run build` both pass)  
+**Commits pushed:** `69cac88`, `51253c2`, `505331f`, `f1c7c27`, `fccddf5`, `de9958d`, `11ee95e`, `bf2d2ce`, `0501c03`, `0fe7f13`  
+**Build status:** Clean (`tsc --noEmit` passes)  
 **Vercel:** Auto-deploys from `main`
+
+---
+
+## Beta Launch Flow (locked 2026-08-20)
+
+1. **Landing page** = email-only waitlist (no account creation on the page — keeps it simple, avoids duplicating onboarding).
+2. **Welcome email** fires automatically on submit — full Muse overview (what it is, how it works, what you'll do, what to expect) + single CTA `https://muse.wyzdesign.com/muse?src=welcome_email`.
+3. **Counter = `muse_profiles` count** (real accounts created), NOT waitlist emails. `landing-stats` route reads `muse_profiles`. Counter shows "150 - X spots left".
+4. **Closed beta** = `email_confirm: true` gate. **Open beta** = flip it off (web app — App Store/Play are a separate later effort, NOT coupled to open beta).
+5. **App store** = eventual goal (web stores), but open beta runs as web/PWA first. No per-user "unlocking" — accounts created during beta simply persist.
+
+---
+
+## Discover Card Image Audit — Status (Claude's report applied)
+
+**16 swaps DONE** (commit `0fe7f13`): DEKETRA, FARREN_BODYPAINT, MARISSA, MARSHAWNA, SYETA, BROOKE, DRAKE, EBONY, FARREN, LAUREN, NAKIA(id62), NICO+DRACO, PRADIA, CHHAVI, SIMONE, CITLALI (NSFW → clean). All verified portrait via `photoOrientation.ts`.
+
+**18 profiles STILL PENDING** — need NEW image files from Google Drive (can't be fixed by code alone):
+- **5 need manual pick/crop** (portrait exists but off-center): PEYTON, CORI, DARRYL, MALIKA, ODU
+- **13 are 100% landscape** (no portrait in pool): JEREMY, ADRIENNE, AECH DOT, BROCK, CLAUDIA, CRISTINA, DOT, HANNAH, JANELLE, KAYLEN, KIDLYN, LORIE, MAYA
+
+When Torreé/Claude provide replacement filenames, the fix is a one-line `img:` edit per profile in `types.ts`.
+
+**32 profiles** — no change needed.
 
 ---
 
@@ -42,7 +66,7 @@ This is a **code edit, not a database delete**. To remove stub users before beta
 | **Closed beta** | Starts at 150+ REAL landing signups (newsletter/email signups who actually register for the app). Not before. |
 | **Open beta** | ~1 month after closed beta (or after enough feedback), runs until ~500–1k users (TBD). |
 | **Founding cap** | 150 is the real cap. Count must reflect ACTUAL newsletter/app signups, not inflated. |
-| **Side job** | Claude is currently auditing all match-card profile images (attractive / centered / portrait). |
+| **Side job** | Claude is auditing ALL profile images (every photo in every user profile — portrait, no blur, centered). Will report exact replacements. |
 
 ---
 
