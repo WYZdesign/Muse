@@ -58,6 +58,7 @@ export interface SettingsScreenProps {
   setShowBlockedUsers?: (v: boolean | ((p: boolean) => boolean)) => void;
   setScreen?: (s: Screen) => void;
   setObStep?: (s: number) => void;
+  apiFetch?: (url: string, opts?: any) => Promise<any>;
 }
 
 export const SettingsScreen = memo(function SettingsScreen({
@@ -113,6 +114,7 @@ export const SettingsScreen = memo(function SettingsScreen({
   setShowBlockedUsers = () => {},
   setScreen = () => {},
   setObStep = () => {},
+  apiFetch,
 }: SettingsScreenProps) {
   if (screen !== "settings") return null;
 
@@ -210,7 +212,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                   blockedUsers.map(uid => (
                     <div key={uid} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                       <span style={{ fontSize: 14, color: "var(--text)" }}>{uid}</span>
-                      <button className="btn btn-outline" style={{ padding: "4px 12px", fontSize: 12 }} onClick={() => setBlockedUsers(blockedUsers.filter(b => b !== uid))}>Unblock</button>
+                      <button className="btn btn-outline" style={{ padding: "4px 12px", fontSize: 12 }} onClick={() => { setBlockedUsers(blockedUsers.filter(b => b !== uid)); if (apiFetch) { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unblock", target_id: uid }) }).catch(() => {}); } }}>Unblock</button>
                     </div>
                   ))
                 )}

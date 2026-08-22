@@ -569,6 +569,21 @@ function MusePage() {
               if (d.profile.preferences?.filterScore != null && typeof d.profile.preferences.filterScore === "number") {
                 setFilterScore(d.profile.preferences.filterScore);
               }
+              // Restore Discovery Preferences (age range/distance/gender) from
+              // server — previously localStorage-only despite the Save button
+              // claiming to save them, so a new device or cleared storage always
+              // reset to the 18-50/50mi/all defaults.
+              {
+                const dp = d.profile.preferences;
+                if (dp && (typeof dp.ageMin === "number" || typeof dp.ageMax === "number" || typeof dp.distance === "number" || typeof dp.gender === "string")) {
+                  setDiscoveryPrefs(prev => ({
+                    ageMin: typeof dp.ageMin === "number" ? dp.ageMin : prev.ageMin,
+                    ageMax: typeof dp.ageMax === "number" ? dp.ageMax : prev.ageMax,
+                    distance: typeof dp.distance === "number" ? dp.distance : prev.distance,
+                    gender: typeof dp.gender === "string" ? dp.gender : prev.gender,
+                  }));
+                }
+              }
               if (d.profile.preferences?.savedBriefs && Array.isArray(d.profile.preferences.savedBriefs)) {
                 setSavedBriefs(d.profile.preferences.savedBriefs);
               }
@@ -1462,6 +1477,27 @@ function MusePage() {
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
 
+  // ═══ BLOCKS: fetch real blocked-user ids (replaces localStorage-only list) ═══
+  // `blockedUsers` was only ever populated from localStorage — the Block
+  // confirmation modal calls the real `block` action server-side but never
+  // added the target to this array, and Settings' "Blocked Users" list was
+  // never cross-checked against the real muse_blocks table (GET actionType
+  // "get-blocks" existed but nothing called it). Fetch the real list on
+  // login so Settings shows what's actually enforced server-side, not a
+  // stale/empty local array.
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    let cancelled = false;
+    apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "get-blocks" }) })
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled || !Array.isArray(d.blocked)) return;
+        setBlockedUsers(prev => Array.from(new Set([...prev, ...d.blocked])));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [authUser?.profile?.id]);
+
   // ═══ BOOKINGS: fetch real bookings (booker + host) ═══
   useEffect(() => {
     if (!authUser?.profile?.id) return;
@@ -2161,7 +2197,7 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
       {/* SUBSCRIPTION SCREEN */}
       {screen === "subscription" && <SubscriptionScreen screen={screen} showScreen={showScreen} currentUser={currentUser} authUser={authUser} userTier={userTier} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} />}
       {/* SETTINGS SCREEN */}
-      {screen === "settings" && <SettingsScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} showNsfw={showNsfw} setShowNsfw={setShowNsfw} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} blockedUsers={blockedUsers} setBlockedUsers={setBlockedUsers} obConnectedSocials={obConnectedSocials} toggleSocial={toggleSocial} theme={theme} setTheme={setTheme} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} doLogout={doLogout} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setShowNotificationsSettings={setShowNotificationsSettings} showNotificationsSettings={showNotificationsSettings} setShowConnectedAccounts={setShowConnectedAccounts} showConnectedAccounts={showConnectedAccounts} pushEnabled={pushEnabled} setPushEnabled={setPushEnabled} subscribeToMusePush={subscribeToMusePush} unsubscribeFromMusePush={unsubscribeFromMusePush} setShowTerms={setShowTerms} setShowPrivacy={setShowPrivacy} setShowGuidelines={setShowGuidelines} setShowDeleteConfirm={setShowDeleteConfirm} isUnlimited={isUnlimited} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} promptResponses={promptResponses} promptBankData={promptBankData} myGeo={myGeo} setShowAgeGate={setShowAgeGate} setPendingNsfw={setPendingNsfw} setShowAgeVerification={setShowAgeVerification} setScreen={setScreen} setObStep={setObStep} />}
+      {screen === "settings" && <SettingsScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} showNsfw={showNsfw} setShowNsfw={setShowNsfw} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} blockedUsers={blockedUsers} setBlockedUsers={setBlockedUsers} obConnectedSocials={obConnectedSocials} toggleSocial={toggleSocial} theme={theme} setTheme={setTheme} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} doLogout={doLogout} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setShowNotificationsSettings={setShowNotificationsSettings} showNotificationsSettings={showNotificationsSettings} setShowConnectedAccounts={setShowConnectedAccounts} showConnectedAccounts={showConnectedAccounts} pushEnabled={pushEnabled} setPushEnabled={setPushEnabled} subscribeToMusePush={subscribeToMusePush} unsubscribeFromMusePush={unsubscribeFromMusePush} setShowTerms={setShowTerms} setShowPrivacy={setShowPrivacy} setShowGuidelines={setShowGuidelines} setShowDeleteConfirm={setShowDeleteConfirm} isUnlimited={isUnlimited} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} promptResponses={promptResponses} promptBankData={promptBankData} myGeo={myGeo} setShowAgeGate={setShowAgeGate} setPendingNsfw={setPendingNsfw} setShowAgeVerification={setShowAgeVerification} setScreen={setScreen} setObStep={setObStep} apiFetch={apiFetch} />}
 
       {/* REPORT MODAL */}
       {showReport && (
@@ -2349,7 +2385,16 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
                 ))}
               </div>
             </div>
-            <button className="btn btn-gold" style={{width:"100%"}} onClick={()=>{setShowDiscoveryPrefs(false);showToast("Preferences saved!")}}>Save</button>
+            <button className="btn btn-gold" style={{width:"100%"}} onClick={()=>{
+              setShowDiscoveryPrefs(false);
+              showToast("Preferences saved!");
+              // Was local-state-only despite the toast claiming it saved — ageMin/
+              // ageMax/distance/gender are already whitelisted server-side (unlike
+              // filterStyles/filterScore, which do have their own persistence
+              // effect), they just were never sent. Persist on this explicit Save
+              // click rather than debouncing every slider tick.
+              apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: discoveryPrefs }) }).catch(() => {});
+            }}>Save</button>
           </div>
         </div>
       )}
@@ -2385,7 +2430,7 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
             <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Block {blockTarget.name}?</div>
             <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>They won&apos;t be able to see your profile, message you, or match with you again. This cannot be undone.</div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <button className="btn btn-gold" style={{width:"100%",background:"linear-gradient(135deg,#ff4444,#8b0000)",borderColor:"#ff4444"}} onClick={async()=>{const t=blockTarget;setMatches(prev=>prev.filter(m=>m.name!==t.name));setBlockTarget(null);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"block",target_id:t.id})});}catch{}showScreen("matches");showToast(t.name+" blocked")}}>Block</button>
+              <button className="btn btn-gold" style={{width:"100%",background:"linear-gradient(135deg,#ff4444,#8b0000)",borderColor:"#ff4444"}} onClick={async()=>{const t=blockTarget;setMatches(prev=>prev.filter(m=>m.name!==t.name));setBlockTarget(null);setBlockedUsers(prev=>prev.includes(String(t.id))?prev:[...prev,String(t.id)]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"block",target_id:t.id})});}catch{}showScreen("matches");showToast(t.name+" blocked")}}>Block</button>
               <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setBlockTarget(null)}>Cancel</button>
             </div>
           </div>

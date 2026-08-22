@@ -43,6 +43,16 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
 
   const pending = checkins.filter(c => c.status === "pending");
   const completed = checkins.filter(c => c.status !== "pending");
+  // Share tab operates on the most relevant upcoming shoot — the booking
+  // behind the first pending check-in, falling back to the most recent
+  // completed one. onShareDetails accepts an empty bookingId (the backend
+  // stores it as nullable), so this degrades gracefully with no bookings.
+  const shareBookingId = pending[0]?.booking_id?.id || completed[0]?.booking_id?.id || "";
+  const [sharing, setSharing] = useState<string | null>(null);
+  const handleShare = async (method: string) => {
+    setSharing(method);
+    try { await onShareDetails(shareBookingId, method); } finally { setSharing(null); }
+  };
 
   const handleConfirm = async (id: string) => {
     setLoading(true);
@@ -207,14 +217,14 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
             </div>
 
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-              <button style={{ flex: 1, padding: "12px 0", borderRadius: 10, background: "rgba(78,205,196,0.15)", border: "1px solid rgba(78,205,196,0.3)", color: "#4ecdc4", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                📱 Send via SMS
+              <button disabled={sharing !== null} onClick={() => handleShare("sms")} style={{ flex: 1, padding: "12px 0", borderRadius: 10, background: "rgba(78,205,196,0.15)", border: "1px solid rgba(78,205,196,0.3)", color: "#4ecdc4", fontSize: 12, fontWeight: 600, cursor: sharing !== null ? "default" : "pointer", opacity: sharing !== null && sharing !== "sms" ? 0.5 : 1 }}>
+                📱 {sharing === "sms" ? "Sharing…" : "Send via SMS"}
               </button>
-              <button style={{ flex: 1, padding: "12px 0", borderRadius: 10, background: "rgba(100,149,237,0.15)", border: "1px solid rgba(100,149,237,0.3)", color: "#6495ed", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                📧 Send via Email
+              <button disabled={sharing !== null} onClick={() => handleShare("email")} style={{ flex: 1, padding: "12px 0", borderRadius: 10, background: "rgba(100,149,237,0.15)", border: "1px solid rgba(100,149,237,0.3)", color: "#6495ed", fontSize: 12, fontWeight: 600, cursor: sharing !== null ? "default" : "pointer", opacity: sharing !== null && sharing !== "email" ? 0.5 : 1 }}>
+                📧 {sharing === "email" ? "Sharing…" : "Send via Email"}
               </button>
-              <button style={{ flex: 1, padding: "12px 0", borderRadius: 10, background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "#ffd700", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                🔗 Copy Link
+              <button disabled={sharing !== null} onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/muse?safetyShare=${shareBookingId}`).catch(() => {}); handleShare("link"); }} style={{ flex: 1, padding: "12px 0", borderRadius: 10, background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "#ffd700", fontSize: 12, fontWeight: 600, cursor: sharing !== null ? "default" : "pointer", opacity: sharing !== null && sharing !== "link" ? 0.5 : 1 }}>
+                🔗 {sharing === "link" ? "Copying…" : "Copy Link"}
               </button>
             </div>
 

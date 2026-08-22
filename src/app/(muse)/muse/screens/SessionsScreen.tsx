@@ -228,6 +228,9 @@ export const SessionsScreen = memo(function SessionsScreen({
                           <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete</button>
                         </>
                       )}
+                      {(b.status === "pending" || b.status === "confirmed") && (
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, borderColor: "rgba(255,100,100,0.2)", color: "#ff6464" }} onClick={async () => { try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "cancel-booking", bookingId: b.id }) }); setMyBookings(prev => ({ ...prev, asBooker: prev.asBooker.map(x => x.id === b.id ? { ...x, status: "cancelled" } : x) })); showToast("Booking cancelled"); } catch { showToast("Failed to cancel"); } }}>Cancel</button>
+                      )}
                       {b.status === "completed" && (
                         <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setReviewTarget(b)}>Leave Review</button>
                       )}

@@ -98,6 +98,27 @@ Torree asked for a swipe-feel pass + dark/light-mode fix + tutorial overlay + se
 |-----|------|-------------|
 | BTS page: BeReal/Snapchat integration | `BtsScreen.tsx` | Dual camera prompt, 2-minute window, grid layout, reactions, real-time feel. |
 
+### Session 8 (Claude, 2026-08-22) — Full site wiring audit
+Torree asked for a full pass: every button/form/action across the whole app, cross-referenced frontend↔backend. Used parallel sub-agents to enumerate all 120+ backend handlers (all 21 route files) and every frontend trigger (all ~37 client files), then matched them by hand. Full report delivered to Torree as `muse_site_wiring_audit.md` — summary here for the loop.
+
+**Headline: the app is overwhelmingly well-wired** — 100+ confirmed call sites match a real handler exactly (swipe/match, chat, briefs, forum, feed, communities, events, bookings, payments, albums, disclosures, safety check-ins, referrals, admin tools, data export, account deletion, push). The items below are the exceptions found, not the norm.
+
+**Fixed this session:**
+
+| Fix | File | What changed |
+|-----|------|-------------|
+| Discovery Preferences "Save" did nothing | `page.tsx` | ageMin/ageMax/distance/gender were 100% local state — Save just closed the modal + toasted "saved". Backend already whitelists these in `save-preferences` (unlike filterStyles/filterScore, which already had persistence). Wired Save to actually POST, added restore-on-login. |
+| Unblock didn't actually unblock server-side | `page.tsx`, `SettingsScreen.tsx` | Block modal never added the target to local `blockedUsers`; Settings' Unblock button only spliced the (already-wrong) local list, never called the real `unblock` action. Since block enforcement is live (session 3), this meant a "successfully unblocked" user was still actually blocked underneath. Block now updates local state, a new effect fetches the real list via the previously-uncalled `get-blocks` endpoint on login, Unblock calls the real action. |
+| Safety Center "Share Details" tab fully dead | `SafetyCheckinModal.tsx` | Three buttons (SMS/Email/Copy Link) had zero `onClick` at all, despite a fully working `onShareDetails` callback already built in `page.tsx` (real backend call + toast). Wired all three, defaulting to the most relevant booking. |
+
+**Found, NOT fixed — flagging for next round (see full report for detail):**
+- "Send Like + Note" — the note text never actually sends as a real message (like itself registers, note doesn't). Data-loss-flavored, worth prioritizing.
+- "Unmatch" — local-only, no backend `unmatch` action exists at all (would need a new endpoint, unlike block/unblock which are already a pair).
+- CollabScreen "Book" button (paid briefs) — stub, toast only.
+- MenuModal (hamburger submenu) has three dead spots: "Learn" (community, toast-only — CommunityScreen's own version works), "Online Status" toggle (no onClick at all, permanently shown on), "View" on BTS submenu (that whole submenu is 6 hardcoded fake stories, unrelated to the real working BtsScreen).
+- Connected Accounts toggles (IG/FB/Spotify/SoundCloud) are fully fake — no OAuth backend exists at all. Possibly intentional placeholder pending a real integration decision, not clearly a "bug" to fix blindly.
+- Checked and confirmed NOT a bug: Subscription promo code — client-side check looked like a bypass but `/api/checkout` independently re-validates server-side.
+
 **Compile status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
 
 **Dark spot #1 (`profileViews`) — gated:** `DEMO_MODE` flag controls fake data. The "who viewed you" screen is gated behind `muse_pro` tier.
