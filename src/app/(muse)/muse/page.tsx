@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
-import { persistMessage, subscribeToConversation, getGeolocation, distanceMiles } from "@/app/muse-realtime";
+import { persistMessage, subscribeToConversation, fetchConversationHistory, getGeolocation, distanceMiles } from "@/app/muse-realtime";
 import { trackError } from "@/lib/errorTracker";
 import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2, FiShield, FiGift, FiDollarSign } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
@@ -420,7 +420,7 @@ function MusePage() {
       const now = Date.now();
       if (now - lastSyncRef.current > 30000) {
         lastSyncRef.current = now;
-        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs }) }).catch(() => {});
+        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs, stats: currentUser.stats }) }).catch(() => {});
       }
     } catch(e) {}
   }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,connFilter,authUser,chatTarget]);
@@ -502,7 +502,19 @@ function MusePage() {
             if (d.profile) {
               const isOwner = d.user.email === OWNER_EMAIL;
               const effTier = isOwner ? "muse_pro" : (d.profile.tier || "free");
-              setCurrentUser(prev => ({ ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, type: d.profile.type || prev.type, foundingTier: isOwner ? "founding" : (d.profile.founding_tier || ""), proExpiresAt: isOwner ? "" : (d.profile.pro_expires_at || ""), tier: effTier }));
+              setCurrentUser(prev => {
+                // Merge server-persisted stats (source of truth across devices) with
+                // whatever's already in local state, taking the max per field so an
+                // active session's in-progress count is never clobbered backwards by
+                // a slightly-stale server value.
+                const serverStats = (d.profile.stats && typeof d.profile.stats === "object") ? d.profile.stats : {};
+                const mergedStats = { ...prev.stats };
+                for (const k of Object.keys(prev.stats) as (keyof typeof prev.stats)[]) {
+                  const sv = serverStats[k];
+                  if (typeof sv === "number" && sv > (mergedStats[k] || 0)) mergedStats[k] = sv;
+                }
+                return { ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, type: d.profile.type || prev.type, foundingTier: isOwner ? "founding" : (d.profile.founding_tier || ""), proExpiresAt: isOwner ? "" : (d.profile.pro_expires_at || ""), tier: effTier, stats: mergedStats };
+              });
               if (effTier) setUserTier(effTier);
               if (d.profile.age_verified) setAgeVerified(true);
               setScreen(prev => (prev === "auth" || prev === "onboard") ? (d.profile.name && d.profile.type ? "discover" : "onboard") : prev);
@@ -1228,6 +1240,34 @@ function MusePage() {
     });
     sendTypingRef.current = sub.sendTyping;
     return sub.unsubscribe;
+  }, [chatTarget?.id, authUser?.id]);
+
+  // Load persisted conversation history when a chat is opened -- the realtime
+  // subscription above only catches messages that arrive *after* it connects,
+  // so without this a returning user (new device, cleared storage, or just a
+  // missed message) would only ever see whatever happens to be in local state.
+  // Server history is treated as canonical; any local-only messages (e.g. an
+  // optimistic send not yet reflected server-side) are appended after it.
+  useEffect(() => {
+    if (!chatTarget || !authUser?.profile?.id) return;
+    const myId = authUser.profile.id;
+    const theirId = String(chatTarget.id);
+    let cancelled = false;
+    fetchConversationHistory({ myId, theirId }).then(history => {
+      if (cancelled || !history.length) return;
+      const seen = new Set(history.map(h => h.text + "|" + (h.img || "")));
+      setChatTarget(prev => {
+        if (!prev || String(prev.id) !== theirId) return prev;
+        const localOnly = (prev.messages || []).filter((m: any) => !seen.has((m.text || "") + "|" + (m.img || "")));
+        return { ...prev, messages: [...history, ...localOnly] };
+      });
+      setMatches(prev => prev.map(m => {
+        if (String(m.id) !== theirId) return m;
+        const localOnly = (m.messages || []).filter((mm: any) => !seen.has((mm.text || "") + "|" + (mm.img || "")));
+        return { ...m, messages: [...history, ...localOnly] };
+      }));
+    }).catch(() => {});
+    return () => { cancelled = true; };
   }, [chatTarget?.id, authUser?.id]);
 
   // ═══ SAFETY: fetch check-ins and safety profile on mount ═══

@@ -665,7 +665,13 @@ export async function POST(req: NextRequest) {
       if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
       const cleanTitle = sanitizeText(String(title).trim(), 200);
       if (!cleanTitle) return NextResponse.json({ error: "title required" }, { status: 400 });
-      const { error } = await sb.from("muse_briefs").insert({ author_id: profile.id, title: cleanTitle, description: sanitizeText(String(desc || ""), 2000), budget: budget || "Negotiable", category: cat || "concept", tags: tags || [], paid: paid || false, rate: rate || "" });
+      const cleanDesc = sanitizeText(String(desc || ""), 2000);
+      const briefScreen = screenText(`${cleanTitle} ${cleanDesc}`);
+      if (briefScreen.block) {
+        await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "brief_blocked", details: { categories: briefScreen.categories } });
+        return NextResponse.json({ error: "Brief blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
+      }
+      const { error } = await sb.from("muse_briefs").insert({ author_id: profile.id, title: cleanTitle, description: cleanDesc, budget: budget || "Negotiable", category: cat || "concept", tags: tags || [], paid: paid || false, rate: rate || "" });
       if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
@@ -689,6 +695,11 @@ export async function POST(req: NextRequest) {
       const { title, body: forumBody, text, cat, type: forumType, postId } = rest;
       if (forumType === "reply") {
         const cleanText = sanitizeText(String(text || ""), 2000);
+        const replyScreen = screenText(cleanText);
+        if (replyScreen.block) {
+          await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "forum_reply_blocked", details: { categories: replyScreen.categories } });
+          return NextResponse.json({ error: "Reply blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
+        }
         const { error } = await sb.from("muse_forum_replies").insert({ post_id: postId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, text: cleanText });
         if (error) return safeServerError(error, "db op");
         return NextResponse.json({ success: true });
@@ -696,7 +707,13 @@ export async function POST(req: NextRequest) {
       if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
       const cleanTitle = sanitizeText(String(title).trim(), 200);
       if (!cleanTitle) return NextResponse.json({ error: "title required" }, { status: 400 });
-      const { error } = await sb.from("muse_forum_posts").insert({ author_id: profile.id, title: cleanTitle, body: sanitizeText(String(forumBody || ""), 5000), category: cat || "General" });
+      const cleanBody = sanitizeText(String(forumBody || ""), 5000);
+      const postScreen = screenText(`${cleanTitle} ${cleanBody}`);
+      if (postScreen.block) {
+        await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "forum_post_blocked", details: { categories: postScreen.categories } });
+        return NextResponse.json({ error: "Post blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
+      }
+      const { error } = await sb.from("muse_forum_posts").insert({ author_id: profile.id, title: cleanTitle, body: cleanBody, category: cat || "General" });
       if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
@@ -950,6 +967,24 @@ export async function POST(req: NextRequest) {
           );
         }
         results.push("matches");
+      }
+      // Engagement stats (likes/superlikes/passes given) were previously
+      // local-only -- swiping on a new device or after clearing storage reset
+      // them to zero. Persist them alongside matches so `muse_profiles.stats`
+      // is the source of truth across devices/sessions.
+      if (rest.stats && typeof rest.stats === "object") {
+        const allowedStatKeys = ["likes", "superLikes", "passes", "bookingsCompleted", "matchesReceived", "messagesSent"];
+        const cleanStats: Record<string, number> = {};
+        for (const k of allowedStatKeys) {
+          const v = (rest.stats as Record<string, unknown>)[k];
+          if (typeof v === "number" && Number.isFinite(v) && v >= 0) cleanStats[k] = Math.floor(v);
+        }
+        if (Object.keys(cleanStats).length > 0) {
+          const { data: existing } = await sb.from("muse_profiles").select("stats").eq("id", profile.id).maybeSingle();
+          const merged = { ...(existing?.stats || {}), ...cleanStats };
+          await sb.from("muse_profiles").update({ stats: merged }).eq("id", profile.id);
+          results.push("stats");
+        }
       }
       // Feed/forum "sync" was a no-op (client-authored posts are persisted via
       // the feed/forum actions already). Drop the misleading branches entirely

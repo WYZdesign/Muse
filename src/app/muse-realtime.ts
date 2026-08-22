@@ -52,6 +52,41 @@ export async function persistMessage(opts: {
 }
 
 /**
+ * Fetch the persisted history of a conversation from the server (muse_messages,
+ * oldest-first). Used when a chat is opened so a returning user -- new device,
+ * cleared storage, or a message that arrived while they weren't subscribed --
+ * sees the real thread instead of only whatever happens to be in local state.
+ * Never throws; returns [] on any failure so callers can just no-op on empty.
+ */
+export async function fetchConversationHistory(opts: {
+  myId: string;
+  theirId: string;
+  limit?: number;
+}): Promise<{ from: "me" | "them"; text: string; img?: string; time: string }[]> {
+  if (!opts.myId || opts.myId === "local" || !opts.theirId) return [];
+  const convo = convoIdFor(opts.myId, opts.theirId);
+  try {
+    const res = await authFetch(
+      `/api/muse?type=messages&match_id=${encodeURIComponent(convo)}&limit=${opts.limit || 200}`
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const rows = Array.isArray(data.messages) ? data.messages : [];
+    return rows.map((r: any) => ({
+      from: String(r.sender_id) === String(opts.myId) ? ("me" as const) : ("them" as const),
+      text: r.text || "",
+      img: r.img || undefined,
+      time: r.created_at
+        ? new Date(r.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : "",
+    }));
+  } catch (err) {
+    trackError("fetchConversationHistory_failed", { convo, err: String(err) });
+    return [];
+  }
+}
+
+/**
  * Subscribe to realtime inserts on muse_messages for a conversation.
  * `onMessage` fires with the remote sender id + text. Returns an unsubscribe fn.
  */
