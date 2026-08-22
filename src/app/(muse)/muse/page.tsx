@@ -1220,7 +1220,18 @@ function MusePage() {
     setChatInput("");
     setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
     const myId = authUser?.profile?.id || authUser?.id || "local";
-    try { await persistMessage({ myId, theirId: targetId, text: clean }); } catch {}
+    let sent = true;
+    try { sent = await persistMessage({ myId, theirId: targetId, text: clean }); } catch { sent = false; }
+    // persistMessage returns false (never throws) on a real failure — safety
+    // block, rate limit, or a block between the two of you. The bubble was
+    // already shown optimistically above; without this the sender would see
+    // "sent" even when the message never reached the other person at all.
+    if (!sent && myId !== "local") {
+      setChatTarget(prev => prev ? { ...prev, messages: prev.messages.filter(m => m !== userMsg) } : prev);
+      setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: m.messages.filter(mm => mm !== userMsg) } : m));
+      showToast("Message couldn't be sent");
+      return;
+    }
     trackEvent("message_sent", { has_match: true });
     // Show typing + simulated reply only in demo mode (no real remote partner).
     if (!DEMO_MODE) return;
@@ -1245,7 +1256,14 @@ function MusePage() {
     setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, userMsg] } : m));
     setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
     const myId = authUser?.profile?.id || authUser?.id || "local";
-    try { await persistMessage({ myId, theirId: targetId, text: "", img: imgUrl }); } catch {}
+    let sent = true;
+    try { sent = await persistMessage({ myId, theirId: targetId, text: "", img: imgUrl }); } catch { sent = false; }
+    if (!sent && myId !== "local") {
+      setChatTarget(prev => prev ? { ...prev, messages: prev.messages.filter(m => m !== userMsg) } : prev);
+      setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: m.messages.filter(mm => mm !== userMsg) } : m));
+      showToast("Image couldn't be sent");
+      return;
+    }
     trackEvent("message_image_sent", { has_match: true });
     if (!DEMO_MODE) return;
     setTypingTarget(Number(chatTarget.id));
@@ -1371,9 +1389,46 @@ function MusePage() {
           likes: m.likes || 0,
           comments: m.comments || 0,
         }));
-        setStories(mapped);
+        // Only replace the demo fallback once there's real content to show —
+        // otherwise this unconditionally overwrote the seeded DEMO_MOMENTS
+        // (set by loadState when nothing was persisted yet) with an empty
+        // array the instant auth resolved, which is almost immediately — so
+        // BTS looked like a dead ghost-town feature for every user even
+        // though the fallback logic itself was correct.
+        if (mapped.length) setStories(mapped);
       })
       .catch((err) => { trackError("fetch_moments", { err: String(err) }); });
+    return () => { cancelled = true; };
+  }, [authUser?.profile?.id]);
+
+  // ═══ MATCHES: fetch real matches (replaces demo fallback) ═══
+  // loadState() seeds `matches` from PROFILES.slice(0,6) whenever nothing was
+  // in localStorage — a reasonable cold-start fallback — but nothing ever
+  // followed up by checking whether the account actually has real matches in
+  // muse_matches (GET type=matches was never called anywhere). A returning
+  // user with genuine matches, or the same user on a new device, would only
+  // ever see the 6 fake demo ones. Runs once at session start (not on every
+  // `matches` change), so it can't clobber a match made later in the session.
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    let cancelled = false;
+    authFetch("/api/muse?type=matches")
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled || !Array.isArray(d.matches) || !d.matches.length) return;
+        const real: Match[] = d.matches
+          .map((m: any) => {
+            const t = m.target_id || {};
+            if (!t.id) return null;
+            // Real presence (last_seen_at, touched on every session check),
+            // not the seed-data/coin-flip the demo fallback uses.
+            const online = !!t.last_seen_at && (Date.now() - new Date(t.last_seen_at).getTime()) < 5 * 60 * 1000;
+            return { id: t.id, name: t.name || "Unknown", img: t.avatar || "", type: t.type || "", bio: t.bio || "", location: t.loc || "", booked: false, online, messages: [] } as Match;
+          })
+          .filter((m: any): m is Match => m !== null);
+        if (real.length) setMatches(real);
+      })
+      .catch((err) => { trackError("fetch_matches", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
 

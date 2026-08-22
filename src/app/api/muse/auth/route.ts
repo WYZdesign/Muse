@@ -130,6 +130,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Account suspended", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
       }
 
+      // Presence heartbeat — every "online" badge elsewhere was previously
+      // fake (hardcoded seed data or Math.random()); this is the one real
+      // signal of activity available (session checks fire on login and app
+      // resume). Fire-and-forget: a failed/slow touch shouldn't block the
+      // session response.
+      if (profile?.id) {
+        sb.from("muse_profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", profile.id).then(() => {}, () => {});
+      }
+
       return NextResponse.json({ success: true, user, profile });
     }
 

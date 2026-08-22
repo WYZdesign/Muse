@@ -154,8 +154,18 @@ export async function GET(req: NextRequest) {
 
     if (type === "profiles") {
       const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, photos").limit(100);
+      // Blocks were write-only until now — muse_blocks was never consulted
+      // anywhere, so a blocked user could still show up in Discover, match,
+      // and message the person who blocked them. Filter both directions:
+      // people I've blocked, and people who've blocked me.
+      let blockedIds = new Set<string>();
+      if (profileId) {
+        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+      }
       const visible = (data || []).filter((p: any) => {
         if (profileId && String(p.id) === String(profileId)) return false;
+        if (blockedIds.has(String(p.id))) return false;
         const hasAvatar = typeof p.avatar === "string" && p.avatar.trim().length > 0;
         const hasPhotos = Array.isArray(p.photos) && p.photos.length > 0;
         return hasAvatar || hasPhotos;
@@ -164,7 +174,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "matches" && profileId) {
-      const { data } = await sb.from("muse_matches").select("id, user_id, target_id(id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path)").eq("user_id", profileId);
+      const { data } = await sb.from("muse_matches").select("id, user_id, target_id(id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path, last_seen_at)").eq("user_id", profileId);
       return NextResponse.json({ matches: data || [] });
     }
 
@@ -570,6 +580,10 @@ export async function POST(req: NextRequest) {
       }
       const { data: target } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
       if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
+      // Blocks were never enforced anywhere — check both directions before
+      // allowing a match to form.
+      const { data: matchBlock } = await sb.from("muse_blocks").select("id").or(`and(user_id.eq.${profile.id},target_id.eq.${target_id}),and(user_id.eq.${target_id},target_id.eq.${profile.id})`).limit(1).maybeSingle();
+      if (matchBlock) return NextResponse.json({ error: "Unable to match with this user" }, { status: 403 });
       const { error } = await sb.from("muse_matches").upsert(
         { user_id: profile.id, target_id },
         { onConflict: "user_id,target_id", ignoreDuplicates: true }
@@ -588,6 +602,13 @@ export async function POST(req: NextRequest) {
       const { toId, text, image_url, img, client_msg_id } = rest;
       if (!text?.trim()) return NextResponse.json({ error: "text required" }, { status: 400 });
       if (!toId) return NextResponse.json({ error: "toId required" }, { status: 400 });
+      // Blocks were never enforced anywhere — a blocked user could still
+      // message the person who blocked them (or vice versa). Check both
+      // directions before the message is written.
+      if (UUID_RE.test(String(toId))) {
+        const { data: msgBlock } = await sb.from("muse_blocks").select("id").or(`and(user_id.eq.${profile.id},target_id.eq.${toId}),and(user_id.eq.${toId},target_id.eq.${profile.id})`).limit(1).maybeSingle();
+        if (msgBlock) return NextResponse.json({ error: "Unable to message this user" }, { status: 403 });
+      }
       const cleanText = sanitizeText(String(text).trim());
       if (!cleanText) return NextResponse.json({ error: "text required" }, { status: 400 });
       const screen = screenText(cleanText);
