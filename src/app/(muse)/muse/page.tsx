@@ -1678,8 +1678,8 @@ function MusePage() {
                   const p = intentProfile;
                   setIntentProfile(null);
                   if(!p) return;
-                  const matchScore = (p as any).matchScore ?? calcMatch({styles:obData.styles||[],looking:obData.looking||[],zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,lifePath:obData.lifePath},p);
-const isMatch=matchScore>55||Math.random()>0.5;
+                   const matchScore = (p as any).matchScore ?? calcMatch({styles:obData.styles||[],looking:obData.looking||[],zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,lifePath:obData.lifePath},p);
+const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
                    if(isMatch){
                      const newMatch:Match={...p,messages:[],intent};
                      setMatches(prev=>[...prev,newMatch]);
