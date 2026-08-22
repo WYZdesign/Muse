@@ -50,6 +50,27 @@ Patch applied via `git am`. Claude had no push access (known Anthropic sandbox b
 
 **SQL Migration Required:** Run `sql/MUSE_LAST_SEEN_20260822.sql` in Supabase Dashboard.
 
+### Session 4 (2026-08-22) — Sunrise Theme
+| Fix | File | What changed |
+|-----|------|-------------|
+| Light mode theme | `muse.css`, `page.tsx`, `SettingsScreen.tsx` | Added "sunrise" theme: cream `--bg: #fdf4ec`, gold `--gold: #e8a84c`, coral accents, 25+ light-mode CSS overrides, swatch gradient, type union, settings grid. |
+
+### Session 5 (2026-08-22) — Dark Spot Fixes
+| Fix | File | What changed |
+|-----|------|-------------|
+| iPhone 13 notch fix | `BtsScreen.tsx`, `CodexScreen.tsx`, `MusesScreen.tsx` | Replaced inline `padding: "12px 18px"` with `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` to respect iPhone notch safe area. |
+| Forum vote API | `route.ts:730`, `NetworkScreen.tsx:173`, `MenuModal.tsx:296` | `forumType === "vote"` handler wired. Client calls `action: "forum", type: "vote"` on ▲/▼ clicks. |
+| Feed like API | `route.ts:666`, `FeedScreen.tsx:251` | `like-feed-post` action handler + client wiring with optimistic toggle. |
+
+### Session 6 (2026-08-22) — Final Wiring
+| Fix | File | What changed |
+|-----|------|-------------|
+| filterStyles/filterScore cross-device | `page.tsx:520-527`, `route.ts:939` | Debounced 2s useEffect saves to `preferences` JSONB. Restored on session load. Added to `ALLOWED_PREFS`. |
+| BtsScreen moments like | `BtsScreen.tsx:19,31,127`, `route.ts:693-703` | Added `apiFetch` prop. Wired like button to call `like-moment` action. New route handler updates `muse_moments.likes`. |
+| savedBriefs cross-device | `page.tsx:567-570`, `CollabScreen.tsx:182-190`, `route.ts:939` | Bookmark button calls `save-preferences` with `savedBriefs` array. Restored from `preferences.savedBriefs` on session load. Added to `ALLOWED_PREFS`. |
+
+**Compile status:** Clean (exit 0) — `95de36c` on `main`.
+
 ---
 
 ## THE DARK SPOTS — What's Left to Explore
@@ -71,67 +92,39 @@ Patch applied via `git am`. Claude had no push access (known Anthropic sandbox b
 - **Backend exists:** `muse_activity_log` table (inserted on `match`, `message`, `brief_apply` events via route.ts)
 - **Fix:** Read from `muse_activity_log` on session load instead of building fake entries client-side. The `GET /api/muse?type=activity` endpoint may already exist — check.
 
-#### 3. `stories` / `muse_moments` — ✅ FIXED (Session 3)
-- **Root cause:** A separate effect unconditionally called `setStories(mapped)` including when `mapped` was `[]`, wiping `DEMO_MOMENTS` fallback. Fixed to only overwrite when `mapped.length > 0`.
-
-#### 4. `savedBriefs` / `appliedBriefs` — Need Verification
-- **Location:** `page.tsx` lines 452-453
-- **Problem:** These may be localStorage-only. Check if they sync to `muse_briefs` table properly.
-- **Check:** The `save-brief` and `apply-brief` actions exist in route.ts — verify the client actually calls them.
-
-#### 5. `rsvpdEvents` — Need Verification
-- **Location:** `page.tsx` line 459
-- **Problem:** May be localStorage-only. Check if RSVPs sync to `muse_rsvps` table.
-- **Check:** `rsvp-event` action exists in route.ts — verify client calls it.
-
-#### 6. `forumPosts` / `liveForum` — Need Verification
-- **Location:** `page.tsx` lines 460, 386-392
-- **Problem:** Forum posts loaded from server on bootstrap (`d.forum?.posts`), but check if creation/voting/comments work end-to-end.
-
-#### 7. `feedPosts` — Need Verification
-- **Location:** `page.tsx` line 461
-- **Problem:** Feed posts loaded from server on bootstrap, but check if creation/likes/comments work end-to-end.
-
 ### MEDIUM PRIORITY — Potential Issues
 
-#### 8. `blockedUsers` — ✅ FIXED (Session 3)
-- Server-side enforcement added: blocked/blocking users filtered from `type=profiles`, and `match`/`message` actions return 403 if either side has a block record.
-
-#### 9. `notifPrefs` Toggle Immediate Feedback
+#### 3. `notifPrefs` Toggle Immediate Feedback
 - **Location:** `SettingsScreen.tsx:147-148`, `MenuModal.tsx:374-375`
 - **Problem:** Toggle switches update local state immediately (good), but server save is debounced 2s. If user closes settings before 2s, save may not fire. Consider saving on close/blur as well.
 
-#### 10. `filterStyles` / `filterScore` — Discovery Filter State
-- **Location:** `page.tsx` lines 415-416
-- **Problem:** These control style/score filtering in discover. Check if they're persisted and restored properly.
-
-#### 11. `chatImages` — Image Cache
+#### 4. `chatImages` — Image Cache
 - **Location:** `page.tsx` line 415
 - **Problem:** Chat image cache stored in localStorage. Check if it's bounded (last 20 entries per chat) and doesn't bloat storage.
 
-#### 12. `testLevels` / `obSelects` — Onboarding Test State
+#### 5. `testLevels` / `obSelects` — Onboarding Test State
 - **Location:** `page.tsx` lines 462-463
 - **Problem:** Test results and onboarding selections. Check if they sync to server properly.
 
 ### LOW PRIORITY — Enhancement Opportunities
 
-#### 13. `connect` / `connections` System
+#### 6. `connect` / `connections` System
 - **Location:** `ConnectionsScreen.tsx`, `route.ts` connections actions
 - **Problem:** Connection requests/acceptances — verify end-to-end flow works.
 
-#### 14. `sessions` / `bookings` System
+#### 7. `sessions` / `bookings` System
 - **Location:** `SessionsScreen.tsx`, `route.ts` booking actions
 - **Problem:** Session booking/payments — verify Stripe integration works.
 
-#### 15. `communities` System
+#### 8. `communities` System
 - **Location:** `CommunitiesScreen.tsx`, `route.ts` community actions
 - **Problem:** Community creation/joining/posts — verify end-to-end.
 
-#### 16. `safety` / `verification` System
+#### 9. `safety` / `verification` System
 - **Location:** `SafetyScreen.tsx`, `route.ts` safety actions
 - **Problem:** Age verification, ID verification — verify flow works.
 
-#### 17. `codex` / `refer` Systems
+#### 10. `codex` / `refer` Systems
 - **Location:** `CodexScreen.tsx`, `ReferralPanel.tsx`
 - **Problem:** Knowledge base and referral system — verify functionality.
 
@@ -197,9 +190,11 @@ Use vision to check:
 ## SESSION STATE
 
 - **Build status:** Clean (tsc exit 0)
-- **Last compile:** 2026-08-21
+- **Last compile:** 2026-08-22
+- **Last commit:** `95de36c` — savedBriefs cross-device
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** muse_profiles, muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
+- **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)
 
 ---
 
