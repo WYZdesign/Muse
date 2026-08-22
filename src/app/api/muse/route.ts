@@ -749,6 +749,26 @@ export async function POST(req: NextRequest) {
       const vErr = validateInput(rest);
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
       const { title, body: forumBody, text, cat, type: forumType, postId } = rest;
+      if (forumType === "get-replies") {
+        // FeedScreen's comment expansion sends action:"forum", type:"get-replies"
+        // — previously fell through to the post-creation path (missing `title`)
+        // and silently failed, so replies could never be loaded. Return the
+        // stored replies for this post, newest first, matching the shape the
+        // frontend maps into postReplies.
+        const { data: replies, error: replErr } = await sb.from("muse_forum_replies")
+          .select("id, user_name, user_avatar, text, created_at")
+          .eq("post_id", postId)
+          .order("created_at", { ascending: false })
+          .limit(100);
+        if (replErr) return safeServerError(replErr, "db op");
+        const mapped = (replies || []).map((r: any) => ({
+          author: r.user_name || "User",
+          avatar: r.user_avatar || "",
+          text: r.text || "",
+          time: r.created_at ? new Date(r.created_at).toLocaleString() : "Just now",
+        }));
+        return NextResponse.json({ success: true, replies: mapped });
+      }
       if (forumType === "reply") {
         const cleanText = sanitizeText(String(text || ""), 2000);
         const replyScreen = screenText(cleanText);
@@ -790,8 +810,15 @@ export async function POST(req: NextRequest) {
       const { target_id, target_type, reason, details } = rest;
       if (!target_id || !reason) return NextResponse.json({ error: "target_id and reason required" }, { status: 400 });
       if (target_id === profile.id) return NextResponse.json({ error: "Cannot report yourself" }, { status: 400 });
-      const { data: targetProfile } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
-      if (!targetProfile) return NextResponse.json({ error: "Target not found" }, { status: 400 });
+      // Only user/match targets need a profile lookup to verify existence.
+      // feed_post / forum_post targets are post ids (not profile ids) and are
+      // reported without a profile resolution — the id is stored verbatim so
+      // moderators can trace back to the offending post.
+      const isPostTarget = target_type === "feed_post" || target_type === "forum_post";
+      if (!isPostTarget) {
+        const { data: targetProfile } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
+        if (!targetProfile) return NextResponse.json({ error: "Target not found" }, { status: 400 });
+      }
       // AI triage: classify the report text to help moderators prioritize.
       let aiClassification: unknown = null;
       try {

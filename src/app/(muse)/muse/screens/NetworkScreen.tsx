@@ -41,6 +41,8 @@ export interface NetworkScreenProps {
   setForumSort: (s: "hot" | "new" | "top") => void;
   forumCategory: string;
   uid: () => any;
+  setShowReport?: (v: boolean) => void;
+  setReportTarget?: (t: any) => void;
 }
 
 const SKILL_COLORS = [
@@ -91,6 +93,8 @@ export const NetworkScreen = memo(function NetworkScreen({
   setForumSort,
   forumCategory,
   uid,
+  setShowReport = () => {},
+  setReportTarget = () => {},
 }: NetworkScreenProps) {
   const [netTab, setNetTab] = useState<"pros" | "forum">("pros");
   const [proDetail, setProDetail] = useState<any | null>(null);
@@ -614,7 +618,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                           gap: 4,
                           cursor: "pointer",
                         }}
-                        onClick={() => showToast("Reported")}
+                        onClick={() => { setReportTarget({ id: post.id, type: "forum_post", name: post.author }); setShowReport(true); }}
                       >
                         <FiFlag size={12} /> Report
                       </button>

@@ -276,4 +276,53 @@ You have the same tools as the previous agent — bash (PowerShell), read, edit,
 
 **Be bold.** The previous agents have established a safe pattern: gate fake data behind DEMO_MODE, wire real backends where they exist, add debounce for persistence. Follow that pattern.
 
+### Session 10 — Deep Audit Findings (WYZMIND, 2026-08-22)
+
+Ran a deeper sweep beyond the surface-level button audit. Found these NEW gaps that Sessions 8-9 missed:
+
+**Critical (data loss / trust-safety broken):**
+1. **FeedScreen "get-replies" has NO backend handler** (`FeedScreen.tsx:262`) — clicking to expand comments on feed posts sends `action:"forum", type:"get-replies"` but route.ts only handles `forumType === "reply"` (insert) and `"vote"`. The request silently fails. Users can never see replies on feed posts. **Fix:** Add a `"get-replies"` branch in the forum handler that queries `muse_forum_replies` by `post_id`.
+2. **NetworkScreen Report button does nothing** (`NetworkScreen.tsx:617`) — `onClick={() => showToast("Reported")}` with no API call, no `target_id`, no `reason`. Users think they reported someone but nothing happened. Trust/safety feature is broken. **Fix:** Wire to `apiFetch("/api/muse", { action: "report", ... })` like page.tsx:2224 does.
+
+**Medium (misleading UX / incomplete features):**
+3. **SubscriptionScreen MUSEBETA promo is client-only** (`SubscriptionScreen.tsx:50`) — sets `promoApplied = true` and shows "Muse Beta applied — $0/month" toast, but never sends the code to the server. User thinks they got free Pro but their tier in DB is still "free". **Fix:** Send promo code to server, validate, update profile tier if valid.
+4. **`get-disclosures` has no frontend caller** (`route.ts:1355`) — backend returns the user's disclosures but no screen ever fetches them. Users can create/confirm disclosures but can't see a list of pending/completed ones. **Fix:** Add a disclosures list to the Safety screen or Settings.
+5. **`appeal-strike` has no frontend caller** (`route.ts:1371`) — strikes can be issued but users have no UI to view or contest them. **Fix:** Add a strikes/appeals section to the Safety screen.
+
+**Low (dead code / cosmetic):**
+6. **`showUnlimitedBadge` state never used** (`page.tsx:112`) — declared, never set or read.
+7. **SessionsScreen "View Profile" shows redundant toast** (`SessionsScreen.tsx:192`) — opens profile correctly but also toasts unnecessarily.
+
+### Instructions for Claude — Double-Check + Go Deeper
+
+**Phase 1: Verify my findings above.** Don't trust my grep — some of these are complex enough that I might have missed a caller or misread the flow. For each of the 7 findings:
+- Confirm the dead handler / missing caller by grepping ALL .tsx files
+- Check if there's a different code path I missed
+- If confirmed, fix it
+
+**Phase 2: Go up the ladder of discovery.** The button audit is surface-level. Now dig into:
+
+1. **Data flow integrity** — For each screen, trace the full lifecycle of its data: where it's fetched, how it's stored, what mutations exist, and whether the mutations actually persist. Look for screens that fetch data but never save changes, or save changes that never get fetched.
+
+2. **Race conditions** — The app uses optimistic UI everywhere (update local state first, then API call). Look for places where:
+   - Two rapid clicks could duplicate an action (double-book, double-like, double-join)
+   - A failed API call doesn't roll back correctly
+   - Local state diverges from server state after a sync
+
+3. **Auth/permission gaps** — Check if any screen exposes data or actions that should be gated behind `muse_pro` tier or age verification. The `isUnlimited` prop exists but might not be checked everywhere it should be.
+
+4. **Edge cases in the new wiring** — The session 8-9 fixes added a lot of new code. Stress-test it mentally:
+   - What happens if `get-blocks` returns a 500? Does the app crash or degrade gracefully?
+   - What happens if `unmatch` fails after the optimistic UI already removed the match?
+   - What happens if `save-preferences` fails after the toast says "saved"?
+   - Are there any new useEffects with missing cleanup functions that could cause state updates on unmounted components?
+
+5. **SQL injection / input validation** — The new `unmatch` action takes `target_id` from the request body and passes it directly to `.eq("target_id", target_id)`. Verify that `UUID_RE` validation is sufficient and that no string could bypass it.
+
+6. **The BTS submenu fake stories** — Session 8 flagged this but didn't fix it. Make a product decision: either delete the duplicate submenu entirely (since `BtsScreen.tsx` is the real feature) or wire it to real data. Don't leave it as-is.
+
+**Phase 3: Write your own audit.** After fixing the above, run the same deep sweep I did above but on YOUR changes. Look for the same categories of bugs. Add your findings to this HANDOVER.md.
+
+**Phase 4: Commit + push everything.**
+
 Good luck. 🎮
