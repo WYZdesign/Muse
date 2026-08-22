@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
         if (status !== session.status) {
           await sb.from("muse_verification_sessions").update({ status, updated_at: new Date().toISOString() }).eq("id", session.id);
           if (status === "verified") {
-            await sb.from("muse_profiles").update({ age_verified: true, age_verified_at: new Date().toISOString() }).eq("id", profile.id);
+            await sb.from("muse_profiles").update({ age_verified: true, age_verified_at: new Date().toISOString(), verified: true }).eq("id", profile.id);
             const { data: vp } = await sb.from("muse_profiles").select("email").eq("id", profile.id).maybeSingle();
             if (vp?.email) sendEmail(notify(vp.email, "Identity verified ✦", "You're verified", "Your identity has been verified. You can now book paid sessions and access verified-only features.")).catch(() => {});
           }

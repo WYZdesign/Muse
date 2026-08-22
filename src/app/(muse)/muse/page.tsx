@@ -835,6 +835,16 @@ function MusePage() {
       const distMi = myGeo && geo ? distanceMiles(myGeo, geo) : null;
       let boosted = geo ? { ...p, lat: geo.lat, lng: geo.long } : { ...p };
       if (distMi !== null) (boosted as any).distanceMi = distMi;
+      // Recompute live match % from the user's current type/looking (the duality
+      // change). calcMatch is source-of-truth; static seed score is a floor only
+      // when the user hasn't set a type yet.
+      try {
+        const liveScore = calcMatch(
+          { type: obData.type || "", styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath },
+          p as any,
+        );
+        if (obData.type) boosted.score = Math.min(99, Math.max(boosted.score, liveScore));
+      } catch {}
       if (boosted.badges?.length) {
         const badgeBoost = boosted.badges.reduce((acc: number, b: any) => {
           if (b.name === "Verified Pro") return acc + 5;
@@ -849,7 +859,7 @@ function MusePage() {
       return boosted;
     });
     return enriched;
-  }, [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch]);
+  }, [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch, obData.type, obData.looking, obData.styles]);
 
   useEffect(() => {
     const profile = filteredProfiles[currentIdx];

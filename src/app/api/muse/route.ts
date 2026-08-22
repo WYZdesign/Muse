@@ -934,13 +934,20 @@ export async function POST(req: NextRequest) {
         "nsfw", "showOnline", "showDistance", "notifications", "emailNotifications",
         "pushNotifications", "soundEffects", "darkMode", "distance", "ageRange",
         "openToTravel", "autoReply", "privacy", "visibility", "tags",
+        // discovery-preference fields the client sends nested under `preferences`
+        "ageMin", "ageMax", "gender",
       ]);
+      // Accept both a flat payload and the client's nested `{ preferences: {...} }` shape.
+      const source = (rest.preferences && typeof rest.preferences === "object") ? rest.preferences : rest;
       const prefs: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(rest)) {
+      for (const [k, v] of Object.entries(source)) {
         if (ALLOWED_PREFS.has(k)) prefs[k] = v;
       }
       if (Object.keys(prefs).length === 0) return NextResponse.json({ error: "No valid preferences provided" }, { status: 400 });
-      const { error } = await sb.from("muse_profiles").update({ preferences: prefs }).eq("id", profile.id);
+      // Merge (not overwrite) so a partial save preserves prior prefs.
+      const { data: existing } = await sb.from("muse_profiles").select("preferences").eq("id", profile.id).maybeSingle();
+      const merged = { ...(existing?.preferences || {}), ...prefs };
+      const { error } = await sb.from("muse_profiles").update({ preferences: merged }).eq("id", profile.id);
       if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
