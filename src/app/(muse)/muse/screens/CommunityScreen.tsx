@@ -98,7 +98,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                 <input className="inp" placeholder="Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} style={{ marginBottom: 8 }} />
                 <input className="inp" placeholder="Category (e.g. Photography, Fashion)" value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} style={{ marginBottom: 10 }} />
                 <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text2)", marginBottom: 12, cursor: "pointer" }}>
-                  <input type="checkbox" checked={form.isNsfw} onChange={e => setForm(p => ({ ...p, isNsfw: e.target.checked }))} /> 18+ / NSFW group
+                  <input type="checkbox" checked={form.isNsfw} onChange={e => setForm(p => ({ ...p, isNsfw: e.target.checked }))} style={{ accentColor: "#ffd700", width: 16, height: 16 }} /> 18+ / NSFW group
                 </label>
               </>
             ) : (

@@ -132,7 +132,6 @@ export const SettingsScreen = memo(function SettingsScreen({
               { icon: <FiLink size={18} />, label: "Connected Accounts", desc: "Instagram, Spotify, etc.", action: () => setShowConnectedAccounts(!showConnectedAccounts) },
               { icon: <FiStar size={18} />, label: "Personality Profile", desc: "Zodiac, MBTI, Life Path", action: () => { setScreen("onboard"); setObStep(7); } },
               { icon: <FiUsers size={18} />, label: "Creative Profile", desc: "Type, styles, looking for", action: () => { setScreen("onboard"); setObStep(4); } },
-              ...(isUnlimited ? [{ icon: <FiShield size={18} />, label: "Admin Dashboard", desc: "Analytics & moderation", action: () => { window.open("/muse/admin", "_self"); } }] : []),
             ].map(item => (
               <div key={item.label} className="settings-item" onClick={item.action}>
                 <div className="settings-item-left"><div className="settings-icon">{item.icon}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>
@@ -193,7 +192,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             </div>
           </div>
           <div className="settings-group">
-            <div className="settings-group-title">Privacy</div>
+            <div className="settings-group-title">Discovery</div>
             {[
               { icon: <FiEye size={18} />, label: "NSFW Content", desc: myGeo?.requiresIdVerification ? "ID verification required in your state" : "Show or hide 18+ content", action: () => { if (!showNsfw) { if (myGeo?.requiresIdVerification) { setShowAgeVerification(true); } else { setShowAgeGate(true); setPendingNsfw(true); } } else { setShowNsfw(false); } } },
               { icon: <FiMoreHorizontal size={18} />, label: "Blocked Users", desc: "Manage blocked profiles", action: () => setShowBlockedUsers(!showBlockedUsers) },
@@ -219,14 +218,35 @@ export const SettingsScreen = memo(function SettingsScreen({
             )}
           </div>
           <div className="settings-group">
-            <div className="settings-group-title">Support</div>
+            <div className="settings-group-title">Payments & Subscription</div>
             {[
               { icon: <FiZap size={18} />, label: "Subscription", desc: "Manage your plan", action: () => showScreen("subscription") },
               { icon: <FiDollarSign size={18} />, label: "Marketplace Payments", desc: "Connect Stripe to receive bookings", action: () => setShowConnect(true) },
               { icon: <FiDollarSign size={18} />, label: "Payment History", desc: "View earnings and transactions", action: () => setShowPaymentHistory(true) },
               { icon: <FiGift size={18} />, label: "Referral Program", desc: "Invite friends, earn free months", action: () => setShowReferral(true) },
+            ].map(item => (
+              <div key={item.label} className="settings-item" onClick={item.action}>
+                <div className="settings-item-left"><div className="settings-icon">{item.icon}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>
+                <div className="settings-arrow">→</div>
+              </div>
+            ))}
+          </div>
+          <div className="settings-group">
+            <div className="settings-group-title">Safety & Profile</div>
+            {[
               { icon: <FiShield size={18} />, label: "Safety Center", desc: "Check-ins, emergency contacts, trusted friends", action: () => setShowSafetyCheckin(true) },
-              { icon: <FiStar size={18} />, label: "Profile Completion", desc: `${Math.round((promptResponses.length / Math.max(promptBankData.length, 1)) * 100)}% answered. Fill in prompts to improve matches`, action: () => setShowPromptBank(true) },
+              { icon: <FiStar size={18} />, label: "Prompt Bank", desc: `${Math.round((promptResponses.length / Math.max(promptBankData.length, 1)) * 100)}% completed`, action: () => setShowPromptBank(true) },
+              ...(isUnlimited ? [{ icon: <FiShield size={18} />, label: "Admin Dashboard", desc: "Analytics & moderation", action: () => { window.open("/muse/admin", "_self"); } }] : []),
+            ].map(item => (
+              <div key={item.label} className="settings-item" onClick={item.action}>
+                <div className="settings-item-left"><div className="settings-icon">{item.icon}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>
+                <div className="settings-arrow">→</div>
+              </div>
+            ))}
+          </div>
+          <div className="settings-group">
+            <div className="settings-group-title">Legal</div>
+            {[
               { icon: <FiFile size={18} />, label: "Terms of Service", desc: "Legal terms", action: () => setShowTerms(true) },
               { icon: <FiFile size={18} />, label: "Privacy Policy", desc: "How we handle your data", action: () => setShowPrivacy(true) },
               { icon: <FiFile size={18} />, label: "Community Guidelines", desc: "Standards & expectations", action: () => setShowGuidelines(true) },

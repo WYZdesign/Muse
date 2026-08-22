@@ -1139,14 +1139,12 @@ function MusePage() {
       const scroller = target.closest('.card-info-scroll') as HTMLElement;
       if (scroller && scroller.scrollTop > 5) return;
     }
-    if (target.closest && (target.closest('.card-action-btn') || target.closest('.card-portfolio-btn') || target.closest('.card-photo-thumb') || target.closest('.card-photo-zone') || target.closest('button') || target.closest('a'))) return;
+    if (target.closest && (target.closest('.card-action-btn') || target.closest('.card-portfolio-btn') || target.closest('.card-photo-thumb') || target.closest('button') || target.closest('a'))) return;
     const card = e.currentTarget as HTMLElement;
     const cardTop = card.getBoundingClientRect().top;
-    const cardHeight = card.getBoundingClientRect().height;
-    // Only bottom half of card scrolls — top half is swipe zone
     const relY = e.clientY - cardTop;
     dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY, startTime: Date.now(), el: card, axis: null };
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
@@ -1165,6 +1163,11 @@ function MusePage() {
         dragValuesRef.current.x = dx;
         dragValuesRef.current.opacity = Math.min(absDx / 100, 1);
       }
+    } else if (dragRef.current.axis === "y") {
+      if (dy < -5) {
+        dragValuesRef.current.y = dy;
+        dragValuesRef.current.opacity = Math.min(Math.abs(dy) / 100, 1);
+      }
     }
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => {
@@ -1176,6 +1179,7 @@ function MusePage() {
       el.style.transform = `translate(${v.x}px, ${v.y}px) rotate(${rot}deg)`;
       if (likeLabelRef.current) likeLabelRef.current.style.opacity = (dragRef.current.axis === "x" && v.x > 25) ? String(v.opacity) : "0";
       if (nopeLabelRef.current) nopeLabelRef.current.style.opacity = (dragRef.current.axis === "x" && v.x < -25) ? String(v.opacity) : "0";
+      if (superLabelRef.current) superLabelRef.current.style.opacity = (dragRef.current.axis === "y" && v.y < -25) ? String(v.opacity) : "0";
     });
   }, []);
 
@@ -1183,8 +1187,11 @@ function MusePage() {
     if (!dragRef.current.active) return;
     dragRef.current.active = false;
     const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
     if (dragRef.current.axis === "x" && Math.abs(dx) > 80) {
       doSwipe(dx > 0 ? "right" : "left");
+    } else if (dragRef.current.axis === "y" && dy < -80) {
+      doSwipe("super");
     }
     const el = dragRef.current.el;
     if (el) {

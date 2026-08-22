@@ -61,6 +61,7 @@ export const viewport: Viewport = {
   themeColor: "#0a0612",
   viewportFit: "cover",
   interactiveWidget: "overlays-content",
+  colorScheme: "dark",
 };
 
 export const metadata: Metadata = {

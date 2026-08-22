@@ -174,6 +174,7 @@ export interface DiscoverScreenProps {
   heroRef?: React.RefObject<HTMLDivElement | null>;
   likeLabelRef?: React.RefObject<HTMLDivElement | null>;
   nopeLabelRef?: React.RefObject<HTMLDivElement | null>;
+  superLabelRef?: React.RefObject<HTMLDivElement | null>;
   cardScrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -238,6 +239,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   heroRef,
   likeLabelRef,
   nopeLabelRef,
+  superLabelRef,
   cardScrollRef,
 }: DiscoverScreenProps) {
   const [badgeInfo, setBadgeInfo] = useState<{ name: string; desc: string; icon: string; color: string } | null>(null);
@@ -358,6 +360,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                             <>
                               <div ref={likeLabelRef as any} className="label label-like">LIKE</div>
                               <div ref={nopeLabelRef as any} className="label label-nope">NOPE</div>
+                              <div ref={superLabelRef as any} className="label label-super">SUPER</div>
                             </>
                           )}
                           <div className="card-info-scroll" ref={cardScrollRef as any} onScroll={(e) => { if (isTop) { const scrollY = (e.target as HTMLElement)?.scrollTop || 0; setCardScrolled?.(scrollY > 10); } }}>
