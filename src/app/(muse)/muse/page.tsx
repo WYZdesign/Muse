@@ -410,8 +410,8 @@ function MusePage() {
         currentUser, obData, obStep, matches: matches.slice(-MAX_ITEMS), dailyLikes, superLikes,
         savedBriefs, appliedBriefs, userBriefs: userBriefs.slice(-MAX_ITEMS), blockedUsers, notifPrefs,
         obConnectedSocials, showNsfw, rsvpdEvents, forumPosts: forumPosts.slice(-MAX_ITEMS), feedPosts: feedPosts.slice(-MAX_ITEMS),
-        testLevels, obSelects, obProfilePic, obPortfolioItems, likedBy: likedBy.slice(-MAX_ITEMS),
-        profileViews, profileViewers: profileViewers.slice(-20), stories: stories.slice(-20), theme, activityFeed: activityFeed.slice(-MAX_ITEMS),
+        testLevels, obSelects, obProfilePic, obPortfolioItems,         likedBy: likedBy.slice(-MAX_ITEMS),
+        profileViews: DEMO_MODE ? profileViews : 0, profileViewers: DEMO_MODE ? profileViewers.slice(-20) : [], stories: stories.slice(-20), theme, activityFeed: activityFeed.slice(-MAX_ITEMS),
         discoveryPrefs, chatImages: Object.fromEntries(Object.entries(chatImages).slice(-20).map(([k,v]) => [k, v.slice(-20)])), screen, filterStyles, filterScore,
         searchQuery, connTab, museCat, connFilter, authUser, chatTarget
       };
@@ -464,8 +464,10 @@ function MusePage() {
       if (d.obProfilePic) setObProfilePic(d.obProfilePic);
       if (d.obPortfolioItems) setObPortfolioItems(d.obPortfolioItems);
       if (d.likedBy) setLikedBy(d.likedBy);
-      if (d.profileViews) setProfileViews(d.profileViews);
-      if (d.profileViewers) setProfileViewers(d.profileViewers);
+      if (DEMO_MODE) {
+        if (d.profileViews) setProfileViews(d.profileViews);
+        if (d.profileViewers) setProfileViewers(d.profileViewers);
+      }
       if (d.stories && d.stories.length) setStories(d.stories);
       else setStories(DEMO_MOMENTS);
       if (d.theme) setTheme((["lasunset","deepspace","nebula","villa","deepsea","sunrise"].includes(d.theme) ? d.theme : "lasunset"));
