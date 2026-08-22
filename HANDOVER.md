@@ -121,6 +121,31 @@ Torree asked for a full pass: every button/form/action across the whole app, cro
 
 **Compile status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
 
+### Session 9 (Claude, 2026-08-22) — Continued wiring audit, cleared most of Session 8's backlog
+
+Extended the audit to the public marketing pages (`src/app/muse/*`, separate from the app at `src/app/(muse)/muse/*`), then worked through Session 8's "found, not fixed" backlog.
+
+**New gaps found (public marketing pages, previously unaudited):**
+- QR code source attribution — `source` param was only embedded inside the encoded target URL, backend never read it (always defaulted to "default"). Fixed: sent as its own query param.
+- Hero waitlist form silently swallowed non-OK responses. Fixed: added `heroError` state, parses and surfaces real error message.
+- Pricing page had no CTA at all. Fixed: added "Join the Waitlist" button pointing at the landing page's real `#join` waitlist form.
+
+**Session 8 backlog cleared:**
+
+| Fix | File(s) | What changed |
+|-----|---------|--------------|
+| "Send Like + Note" note never sent | `page.tsx` | Note now goes through `persistMessage` (real message-send path), with optimistic UI + rollback + toast on failure. |
+| "Unmatch" was local-only | `route.ts`, `page.tsx`, `MatchCard.tsx`, `useChatState.ts` | Added real `unmatch` backend action (deletes `muse_matches` row in both directions). `unmatchTarget` changed from bare name to `{id, name}` across 4 call sites. Confirmation modal calls real action with rollback on failure. |
+| CollabScreen "Book" button (paid briefs) | `CollabScreen.tsx` | Opens a real chat with the brief's author instead of fake toast. |
+| MenuModal "Learn" (community submenu) | `MenuModal.tsx` | Navigates to real CommunityScreen instead of faking a toast. |
+| MenuModal "Online Status" toggle | `page.tsx`, `MenuModal.tsx` | Wired to new `showOnline` state, persisted via `save-preferences` (field already whitelisted but unused). |
+| "IG" share button fallback | `page.tsx` | Copies profile link with "paste in IG bio/story" toast instead of opening instagram.com. |
+
+**Still open — genuinely bigger scope than a wiring fix:**
+- MenuModal "View" on BTS/Moments submenu — 6 hardcoded fake story cards, stale duplicate of real `BtsScreen.tsx`. Needs product call.
+- Connected Accounts toggles (IG/FB/Spotify/SoundCloud) — fully fake, no OAuth backend exists. Product decision needed.
+- `get-strikes` / `appeal-strike` / `admin-resolve-appeal` — backend actions exist with zero frontend callers. Missing feature, not wiring miss.
+
 **Dark spot #1 (`profileViews`) — gated:** `DEMO_MODE` flag controls fake data. The "who viewed you" screen is gated behind `muse_pro` tier.
 
 **Dark spot #2 (`activityFeed`) — already wired:** `page.tsx` notifications-merge effect reads real rows from `muse_notifications` table (not `muse_activity_log`), deduped by body text.
@@ -229,8 +254,8 @@ Use vision to check:
 ## SESSION STATE
 
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
-- **Last compile:** 2026-08-22
-- **Last commit:** `65dd6ec` — swipe-up/dark-mode/settings reorg + tutorial overlay fix on `main`
+- **Last compile:** 2026-08-22 (Session 9)
+- **Last commit:** `5418a1a` — Session 9 continued wiring audit (QR/hero-form/pricing fixes + Unmatch/CollabBook/MenuLearn/OnlineStatus/IG-share) on `main`
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** muse_profiles, muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
 - **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)
