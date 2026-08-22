@@ -187,7 +187,7 @@ export const SettingsScreen = memo(function SettingsScreen({
           <div className="settings-group">
             <div className="settings-group-title">Appearance</div>
             <div className="theme-grid" style={{ margin: "12px 0 4px" }}>
-              {(["lasunset", "deepspace", "nebula", "villa", "deepsea"] as const).map(t => (
+              {(["lasunset", "deepspace", "nebula", "villa", "deepsea", "sunrise"] as const).map(t => (
                 <div key={t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} onClick={() => setTheme(t)} style={{ textTransform: "capitalize" }}>{theme === t ? "✓" : t.slice(0, 3)}</div>
               ))}
             </div>

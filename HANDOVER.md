@@ -1,5 +1,5 @@
 # MUSE APP — Agent Handover
-## Session: 2026-08-20 → 2026-08-21
+## Session: 2026-08-20 → 2026-08-22
 
 ---
 
@@ -37,6 +37,19 @@ We're playing a **"dark spots" game** — like Diablo fog-of-war. The MUSE app i
 
 **Compile status:** Clean (exit 0)
 
+### Session 3 (Claude, 2026-08-22) — Fixes Applied
+Patch applied via `git am`. Claude had no push access (known Anthropic sandbox bug).
+
+| Fix | File | What changed |
+|-----|------|-------------|
+| Block enforcement (dark spot #8) | `route.ts` — `type=profiles`, `match`, `message` | `muse_blocks` was write-only. Now: blocked users filtered from Discover, `match`/`message` return 403 if blocked. |
+| Message-send lying UI | `page.tsx` — `sendMsg`, `sendChatImg` | `persistMessage()` return was discarded — showed "sent" even on failure. Now rolls back optimistic bubble + toasts on failure. |
+| Real online presence | `auth/route.ts`, `sql/MUSE_LAST_SEEN_20260822.sql` | Added `last_seen_at` heartbeat on session check. Run the SQL migration in Supabase Dashboard. |
+| Real matches fetch | `page.tsx` — new `MATCHES: fetch real matches` effect | `GET type=matches` was never called from client — always showed demo fallback. Now fetches real matches on login, computes online from `last_seen_at`. |
+| BTS regression fix | `page.tsx` — `MOMENTS: fetch real BTS moments` effect | Unconditional `setStories(mapped)` wiped demo fallback with empty array. Now only overwrites when `mapped.length > 0`. |
+
+**SQL Migration Required:** Run `sql/MUSE_LAST_SEEN_20260822.sql` in Supabase Dashboard.
+
 ---
 
 ## THE DARK SPOTS — What's Left to Explore
@@ -58,10 +71,8 @@ We're playing a **"dark spots" game** — like Diablo fog-of-war. The MUSE app i
 - **Backend exists:** `muse_activity_log` table (inserted on `match`, `message`, `brief_apply` events via route.ts)
 - **Fix:** Read from `muse_activity_log` on session load instead of building fake entries client-side. The `GET /api/muse?type=activity` endpoint may already exist — check.
 
-#### 3. `stories` / `muse_moments` — Partially Disconnected
-- **Location:** `page.tsx` lines 469-470, `MomentsScreen.tsx`
-- **Problem:** `DEMO_MOMENTS` is seeded as fallback. The `muse_moments` table exists. Check if stories are loaded from server and if creation/deletion works end-to-end.
-- **Check:** Does `GET /api/muse?type=moments` exist? Does `create-moment` action work?
+#### 3. `stories` / `muse_moments` — ✅ FIXED (Session 3)
+- **Root cause:** A separate effect unconditionally called `setStories(mapped)` including when `mapped` was `[]`, wiping `DEMO_MOMENTS` fallback. Fixed to only overwrite when `mapped.length > 0`.
 
 #### 4. `savedBriefs` / `appliedBriefs` — Need Verification
 - **Location:** `page.tsx` lines 452-453
@@ -83,10 +94,8 @@ We're playing a **"dark spots" game** — like Diablo fog-of-war. The MUSE app i
 
 ### MEDIUM PRIORITY — Potential Issues
 
-#### 8. ` blockedUsers` — localStorage Only
-- **Location:** `page.tsx` line 455
-- **Problem:** `blockedUsers` array is only in localStorage. No server-side block enforcement. Blocked users can still see/message you.
-- **Check:** Is there a `block-user` action in route.ts? Is it enforced in discovery/messages queries?
+#### 8. `blockedUsers` — ✅ FIXED (Session 3)
+- Server-side enforcement added: blocked/blocking users filtered from `type=profiles`, and `match`/`message` actions return 403 if either side has a block record.
 
 #### 9. `notifPrefs` Toggle Immediate Feedback
 - **Location:** `SettingsScreen.tsx:147-148`, `MenuModal.tsx:374-375`

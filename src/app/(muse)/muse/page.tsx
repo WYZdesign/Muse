@@ -220,7 +220,7 @@ function MusePage() {
     {id:505,author:"Avery Nguyen",avatar:"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",type:"photo",text:"Golden hour at the pier. Sometimes the best shots are the simplest.",likes:98,comments:15,shares:6,time:"8h ago",img:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600"},
   ]);
   const [showStory, setShowStory] = useState<number|null>(null);
-  const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"villa"|"deepsea">("lasunset");
+  const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"villa"|"deepsea"|"sunrise">("lasunset");
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
   const [discoveryPrefs, setDiscoveryPrefs] = useState<{ageMin:number;ageMax:number;distance:number;gender:string}>({ageMin:18,ageMax:50,distance:50,gender:"all"});
   const [myGeo, setMyGeo] = useState<{lat:number;long:number;city:string;state:string;requiresIdVerification:boolean}|null>(null);
@@ -468,7 +468,7 @@ function MusePage() {
       if (d.profileViewers) setProfileViewers(d.profileViewers);
       if (d.stories && d.stories.length) setStories(d.stories);
       else setStories(DEMO_MOMENTS);
-      if (d.theme) setTheme((["lasunset","deepspace","nebula","villa","deepsea"].includes(d.theme) ? d.theme : "lasunset"));
+      if (d.theme) setTheme((["lasunset","deepspace","nebula","villa","deepsea","sunrise"].includes(d.theme) ? d.theme : "lasunset"));
       if (d.activityFeed) setActivityFeed(d.activityFeed);
       if (d.discoveryPrefs) setDiscoveryPrefs(d.discoveryPrefs);
       if (d.chatImages) setChatImages(d.chatImages);
