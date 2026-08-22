@@ -13,7 +13,7 @@ export interface MatchCardProps {
     showScreen: (s: any) => void;
     setReportTarget: (v: any) => void;
     setShowReport: (v: boolean) => void;
-    setUnmatchTarget: (v: string) => void;
+    setUnmatchTarget: (v: { id: string; name: string }) => void;
     setBlockTarget: (v: { id: string; name: string } | null) => void;
     handleImgError: (e: any) => void;
     getIcebreaker: (type: string, seed?: string) => string;
@@ -78,7 +78,7 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
     if (isHorizontalRef.current) {
       if (dragOffset < -SWIPE_THRESHOLD) {
         // Swipe Left -> Unmatch
-        setUnmatchTarget(m.name);
+        setUnmatchTarget({ id: mid, name: m.name });
       } else if (dragOffset > SWIPE_THRESHOLD) {
         // Swipe Right -> Report
         setReportTarget({ id: m.id, type: "match", name: m.name });
@@ -88,7 +88,7 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
 
     setDragOffset(0);
     isHorizontalRef.current = null;
-  }, [isDragging, dragOffset, m.id, m.name, setUnmatchTarget, setReportTarget, setShowReport]);
+  }, [isDragging, dragOffset, m.id, m.name, mid, setUnmatchTarget, setReportTarget, setShowReport]);
 
   const leftActive = dragOffset < -20;
   const rightActive = dragOffset > 20;
@@ -241,7 +241,7 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
                 style={{ flex: 1, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", color: "#ff5c5c" }}
                 onClick={() => {
                   setExpandedMatchId(null);
-                  setUnmatchTarget(m.name);
+                  setUnmatchTarget({ id: mid, name: m.name });
                 }}
               >
                 <FiUserX size={13} style={{ marginRight: 4 }} /> Unmatch

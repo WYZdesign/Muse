@@ -45,6 +45,8 @@ export interface MenuModalProps {
   notifPrefs: Record<string, boolean>;
   setNotifPrefs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   setShowNsfw: React.Dispatch<React.SetStateAction<boolean>>;
+  showOnline?: boolean;
+  setShowOnline?: React.Dispatch<React.SetStateAction<boolean>>;
   blockedUsers: string[];
   setScreen: (s: Screen) => void;
   setShowAgeVerification: (v: boolean) => void;
@@ -98,6 +100,8 @@ export const MenuModal = memo(function MenuModal({
   notifPrefs,
   setNotifPrefs,
   setShowNsfw,
+  showOnline = true,
+  setShowOnline,
   blockedUsers,
   setScreen,
   setShowAgeVerification,
@@ -188,7 +192,7 @@ export const MenuModal = memo(function MenuModal({
                       <div className="conn-meta">{c.members} members · {c.desc}</div>
                       <div className="conn-actions" style={{ marginTop: 8, display: "flex", gap: 8, flexDirection: "column" }}>
                         <button className="btn btn-gold" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={async () => { try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "join-community", communityId: c.id }) }); if (!r.ok) throw new Error("failed"); showToast("Joined " + c.name + "!"); } catch { showToast("Failed to join"); } }}>{c.cat === "nsfw" ? "Join (18+)" : "Join"}</button>
-                        <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={() => showToast(c.name + " community opened!")}>Learn</button>
+                        <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={() => { setShowHamburger(false); showScreen("community"); }}>Learn</button>
                         <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={() => { const url = "https://wyzdesign.com/muse/community/" + c.id; if (navigator.share) { navigator.share({ title: c.name, url }).catch(() => {}); } else { navigator.clipboard?.writeText(url); showToast("Link copied!"); } }}>Share</button>
                       </div>
                     </div>
@@ -377,7 +381,7 @@ export const MenuModal = memo(function MenuModal({
                     </div>
                   ))}
                 </div>
-                <button className="btn btn-gold" style={{ width: "100%", fontSize: 12 }} onClick={async () => { try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { ...discoveryPrefs, notifications: notifPrefs } }) }); showToast("Preferences saved!"); } catch { showToast("Failed to save"); } }}>Save Preferences</button>
+                <button className="btn btn-gold" style={{ width: "100%", fontSize: 12 }} onClick={async () => { try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { ...discoveryPrefs, notifications: notifPrefs, showOnline } }) }); showToast("Preferences saved!"); } catch { showToast("Failed to save"); } }}>Save Preferences</button>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Safety &amp; Privacy</div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Show Distance</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Display your approximate location</div></div>
@@ -387,8 +391,8 @@ export const MenuModal = memo(function MenuModal({
                 </div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Online Status</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Show when you're active</div></div>
-                  <div style={{ width: 44, height: 24, borderRadius: 12, background: "rgba(255,215,0,0.3)", cursor: "pointer", position: "relative" }}>
-                    <div style={{ width: 20, height: 20, borderRadius: "50%", background: "var(--gold)", position: "absolute", top: 2, left: 22, transition: "all .25s" }} />
+                  <div onClick={() => { const next = !showOnline; setShowOnline?.(next); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showOnline: next } }) }).catch(() => {}); }} style={{ width: 44, height: 24, borderRadius: 12, background: showOnline ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "all .25s" }}>
+                    <div style={{ width: 20, height: 20, borderRadius: "50%", background: showOnline ? "var(--gold)" : "var(--muted)", position: "absolute", top: 2, left: showOnline ? 22 : 2, transition: "all .25s" }} />
                   </div>
                 </div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>

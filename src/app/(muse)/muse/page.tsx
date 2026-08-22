@@ -95,6 +95,7 @@ function MusePage() {
     const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setShowMatchMenu, unmatchTarget, setUnmatchTarget, chatImages, setChatImages, typingTarget, setTypingTarget, themTyping, setThemTyping } = useChatState();
     const [connFilter, setConnFilter] = useState("all");
   const [showNsfw, setShowNsfw] = useState(false);
+  const [showOnline, setShowOnline] = useState(true);
   const [showMatchOverlay, setShowMatchOverlay] = useState<Match | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [swipeDir, setSwipeDir] = useState<"left"|"right"|null>(null);
@@ -409,7 +410,7 @@ function MusePage() {
         v: STATE_VERSION,
         currentUser, obData, obStep, matches: matches.slice(-MAX_ITEMS), dailyLikes, superLikes,
         savedBriefs, appliedBriefs, userBriefs: userBriefs.slice(-MAX_ITEMS), blockedUsers, notifPrefs,
-        obConnectedSocials, showNsfw, rsvpdEvents, forumPosts: forumPosts.slice(-MAX_ITEMS), feedPosts: feedPosts.slice(-MAX_ITEMS),
+        obConnectedSocials, showNsfw, showOnline, rsvpdEvents, forumPosts: forumPosts.slice(-MAX_ITEMS), feedPosts: feedPosts.slice(-MAX_ITEMS),
         testLevels, obSelects, obProfilePic, obPortfolioItems,         likedBy: likedBy.slice(-MAX_ITEMS),
         profileViews: DEMO_MODE ? profileViews : 0, profileViewers: DEMO_MODE ? profileViewers.slice(-20) : [], stories: stories.slice(-20), theme, activityFeed: activityFeed.slice(-MAX_ITEMS),
         discoveryPrefs, chatImages: Object.fromEntries(Object.entries(chatImages).slice(-20).map(([k,v]) => [k, v.slice(-20)])), screen, filterStyles, filterScore,
@@ -423,7 +424,7 @@ function MusePage() {
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs, stats: currentUser.stats }) }).catch(() => {});
       }
     } catch(e) {}
-  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,connFilter,authUser,chatTarget]);
+  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,connFilter,authUser,chatTarget]);
 
   const loadState = useCallback(async () => {
     try {
@@ -456,6 +457,7 @@ function MusePage() {
       if (d.notifPrefs) setNotifPrefs(d.notifPrefs);
       if (d.obConnectedSocials) setObConnectedSocials(d.obConnectedSocials);
       if (d.showNsfw!=null) setShowNsfw(d.showNsfw);
+      if (d.showOnline!=null) setShowOnline(d.showOnline);
       if (d.rsvpdEvents) setRsvpdEvents(d.rsvpdEvents);
       if (d.forumPosts) setForumPosts(d.forumPosts);
       if (d.feedPosts) setFeedPosts(d.feedPosts);
@@ -586,6 +588,9 @@ function MusePage() {
               }
               if (d.profile.preferences?.savedBriefs && Array.isArray(d.profile.preferences.savedBriefs)) {
                 setSavedBriefs(d.profile.preferences.savedBriefs);
+              }
+              if (typeof d.profile.preferences?.showOnline === "boolean") {
+                setShowOnline(d.profile.preferences.showOnline);
               }
               setScreen(prev => (prev === "auth" || prev === "onboard") ? (d.profile.name && d.profile.type ? "discover" : "onboard") : prev);
             } else {
@@ -1784,7 +1789,7 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
           </div>
         </div>
       )}
-      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} />
+      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} showOnline={showOnline} setShowOnline={setShowOnline} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} />
       {screen === "auth" ? (
         <div className="phone-wrap">
           <div className="phone" id="muse-app">
@@ -2246,17 +2251,28 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
             </div>
             <textarea className="inp" placeholder="Send a note with your like…" rows={4} value={likeNoteText} onChange={e=>setLikeNoteText(e.target.value)} style={{fontSize:14,resize:"none",borderRadius:12}} />
             <div style={{fontSize:12,color:"var(--muted)",textAlign:"right"}}>{likeNoteText.length}/200</div>
-            <button className="btn btn-gold" onClick={()=>{
+            <button className="btn btn-gold" onClick={async ()=>{
               if (!noteTargetProfile) return;
+              const target = noteTargetProfile;
               doSwipe("right");
-              if (likeNoteText.trim()) {
-                const msg = likeNoteText.trim().slice(0,200);
-                setMatches(prev => prev.map(m => m.id === noteTargetProfile.id ? { ...m, messages: [...(m.messages||[]), { from: currentUser.name, text: msg, time: "Just now" }] } : m));
-                showToast("Liked + note sent!");
-              }
+              const note = likeNoteText.trim();
               setShowLikeNote(false);
               setLikeNoteText("");
               setNoteTargetProfile(null);
+              if (note) {
+                const msg = note.slice(0,200);
+                const userMsg = { from: "me", text: msg, time: "Just now" };
+                setMatches(prev => prev.map(m => m.id === target.id ? { ...m, messages: [...(m.messages||[]), userMsg] } : m));
+                const myId = authUser?.profile?.id || authUser?.id || "local";
+                let sent = true;
+                try { sent = await persistMessage({ myId, theirId: String(target.id), text: msg }); } catch { sent = false; }
+                if (!sent && myId !== "local") {
+                  setMatches(prev => prev.map(m => m.id === target.id ? { ...m, messages: m.messages.filter(mm => mm !== userMsg) } : m));
+                  showToast("Liked, but the note couldn't be sent");
+                } else {
+                  showToast("Liked + note sent!");
+                }
+              }
             }} style={{width:"100%",padding:"14px"}}>
               ♥ Send Like & Note
             </button>
@@ -2409,10 +2425,24 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
           </div>
           <div className="modal-body" style={{textAlign:"center"}}>
             <div style={{fontSize:48,marginBottom:16}}>💔</div>
-            <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Unmatch with {unmatchTarget}?</div>
+            <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Unmatch with {unmatchTarget.name}?</div>
             <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>This will remove them from your matches and delete all messages. This cannot be undone.</div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <button className="btn btn-gold" style={{width:"100%",background:"linear-gradient(135deg,var(--coral),#ff4444)",borderColor:"var(--coral)"}} onClick={()=>{setMatches(prev=>prev.filter(m=>m.name!==unmatchTarget));setUnmatchTarget(null);showScreen("matches");showToast("Unmatched")}}>Unmatch</button>
+              <button className="btn btn-gold" style={{width:"100%",background:"linear-gradient(135deg,var(--coral),#ff4444)",borderColor:"var(--coral)"}} onClick={async()=>{
+                const t=unmatchTarget;
+                const prevMatches=matches;
+                setMatches(prev=>prev.filter(m=>m.name!==t.name));
+                setUnmatchTarget(null);
+                showScreen("matches");
+                showToast("Unmatched");
+                try{
+                  const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"unmatch",target_id:t.id})});
+                  if(!r.ok) throw new Error("unmatch failed");
+                }catch{
+                  setMatches(prevMatches);
+                  showToast("Couldn't unmatch — try again");
+                }
+              }}>Unmatch</button>
               <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setUnmatchTarget(null)}>Cancel</button>
             </div>
           </div>
@@ -2602,7 +2632,7 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
             <div className="share-options">
               <div className="share-opt" onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/profile/"+(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"));setShowShareProfile(false)}}><span className="share-opt-icon"><FiLink size={24} /></span><span className="share-opt-label">Copy</span></div>
               <div className="share-opt" onClick={()=>{window.open("https://twitter.com/intent/tweet?text=Check%20out%20my%20Muse%20profile!&url="+encodeURIComponent("https://wyzdesign.com/muse"),"blank")}}><span className="share-opt-icon"><FiTwitter size={24} /></span><span className="share-opt-label">Twitter</span></div>
-              <div className="share-opt" onClick={()=>{const url="https://wyzdesign.com/muse/profile/"+(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase());if(navigator.share){navigator.share({title:"My Muse Profile",text:"Check out my Muse profile!",url}).catch(()=>{});}else{window.open("https://www.instagram.com/");}setShowShareProfile(false)}}><span className="share-opt-icon"><FiInstagram size={24} /></span><span className="share-opt-label">IG</span></div>
+              <div className="share-opt" onClick={()=>{const url="https://wyzdesign.com/muse/profile/"+(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase());if(navigator.share){navigator.share({title:"My Muse Profile",text:"Check out my Muse profile!",url}).catch(()=>{});}else{navigator.clipboard?.writeText(url).then(()=>showToast("Link copied! Paste it in your IG bio or story")).catch(()=>window.open("https://www.instagram.com/"));}setShowShareProfile(false)}}><span className="share-opt-icon"><FiInstagram size={24} /></span><span className="share-opt-label">IG</span></div>
             </div>
             <div className="share-link"><span className="share-link-text">{"wyzdesign.com/muse/profile/"+(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())}</span><button className="share-link-copy" onClick={()=>{navigator.clipboard?.writeText("https://wyzdesign.com/muse/profile/"+(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"))}}>Copy</button></div>
             <button className="btn btn-outline" style={{marginTop:16,width:"100%"}} onClick={()=>setShowShareProfile(false)}>Close</button>

@@ -174,7 +174,7 @@ export const CollabScreen = memo(function CollabScreen({
                   </button>
                 )}
                 {brief.cat === "paid" && (
-                  <button className="brief-btn-apply" style={{ background: "rgba(212,165,255,0.1)", borderColor: "rgba(212,165,255,0.2)", color: "var(--lavender)", padding: "8px 14px", fontSize: 12 }} onClick={() => { showToast("Sent to Sessions!"); }}>Book</button>
+                  <button className="brief-btn-apply" style={{ background: "rgba(212,165,255,0.1)", borderColor: "rgba(212,165,255,0.2)", color: "var(--lavender)", padding: "8px 14px", fontSize: 12 }} onClick={() => { setChatTarget({ id: brief.id, name: brief.author, type: "Creative", img: brief.authorImg, messages: [] }); showScreen("chat"); showToast("Message " + brief.author + " to book this paid brief"); }}>Book</button>
                 )}
                 <button
                   className={"brief-btn-save" + (savedBriefs.includes(brief.id) ? " saved" : "")}

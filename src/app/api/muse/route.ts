@@ -595,6 +595,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    if (actionType === "unmatch") {
+      const { target_id } = rest;
+      if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
+      if (UUID_RE.test(String(target_id))) {
+        await sb.from("muse_matches").delete().eq("user_id", profile.id).eq("target_id", target_id);
+        await sb.from("muse_matches").delete().eq("user_id", target_id).eq("target_id", profile.id);
+        await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "unmatch", details: { target_id } });
+      }
+      return NextResponse.json({ success: true });
+    }
+
     if (actionType === "message") {
       if (!await checkRate(ip, "message", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const vErr = validateInput(rest);

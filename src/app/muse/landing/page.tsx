@@ -302,6 +302,7 @@ export default function MuseLandingPage() {
   const [heroEmail, setHeroEmail] = useState("");
   const [heroSubmitting, setHeroSubmitting] = useState(false);
   const [heroDone, setHeroDone] = useState(false);
+  const [heroError, setHeroError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string } | null>(null);
   const [gateClosing, setGateClosing] = useState(false);
@@ -346,7 +347,7 @@ export default function MuseLandingPage() {
   const generateQrCode = async (source: keyof typeof QR_SOURCES) => {
     const url = `https://wyzdesign.com/muse/landing${QR_SOURCES[source] || ""}`;
     try {
-      const res = await fetch(`/api/qr?url=${encodeURIComponent(url)}`);
+      const res = await fetch(`/api/qr?url=${encodeURIComponent(url)}&source=${encodeURIComponent(source)}`);
       const blob = await res.blob();
       setQrDataUrl(URL.createObjectURL(blob));
     } catch { setQrDataUrl(""); }
@@ -360,7 +361,11 @@ export default function MuseLandingPage() {
     try {
       const res = await fetch("/api/muse/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: heroEmail.trim(), source: selectedSource }) });
       if (res.ok) { setHeroDone(true); setSignupCount(c => c + 1); }
-    } catch { /* noop */ }
+      else {
+        const j = await res.json().catch(() => ({}));
+        setHeroError(j.error || "Something went wrong — please try again.");
+      }
+    } catch { setHeroError("Something went wrong — please try again."); }
     finally { setHeroSubmitting(false); }
   };
 
@@ -442,10 +447,13 @@ export default function MuseLandingPage() {
             <Magnetic><a href="#features" className="muse-btn ghost">Explore Features</a></Magnetic>
           </div>
           {!heroDone ? (
-            <form onSubmit={handleHeroSubmit} className="muse-hero-email" data-depth="-0.3">
-              <input type="email" placeholder="Enter your email for early access" value={heroEmail} onChange={e => setHeroEmail(e.target.value)} required aria-label="Email address" />
-              <button type="submit" disabled={heroSubmitting}>{heroSubmitting ? <span className="muse-spinner" style={{ borderTopColor: "#0a0612", borderColor: "rgba(10,6,18,0.25)" }} /> : "Join"}</button>
-            </form>
+            <>
+              <form onSubmit={handleHeroSubmit} className="muse-hero-email" data-depth="-0.3">
+                <input type="email" placeholder="Enter your email for early access" value={heroEmail} onChange={e => { setHeroEmail(e.target.value); if (heroError) setHeroError(""); }} required aria-label="Email address" />
+                <button type="submit" disabled={heroSubmitting}>{heroSubmitting ? <span className="muse-spinner" style={{ borderTopColor: "#0a0612", borderColor: "rgba(10,6,18,0.25)" }} /> : "Join"}</button>
+              </form>
+              {heroError && <div style={{ color: "#ff8a80", fontSize: 13, marginTop: 8 }} role="alert">{heroError}</div>}
+            </>
           ) : (
             <div className="muse-hero-email-done" data-depth="-0.3">✓ You're on the list, we'll notify you at launch</div>
           )}

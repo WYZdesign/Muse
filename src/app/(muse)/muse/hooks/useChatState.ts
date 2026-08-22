@@ -11,7 +11,7 @@ export function useChatState() {
   const [chatTarget, setChatTarget] = useState<Match | null>(null);
   const [chatInput, setChatInput] = useState("");
   const [showMatchMenu, setShowMatchMenu] = useState(false);
-  const [unmatchTarget, setUnmatchTarget] = useState<string | null>(null);
+  const [unmatchTarget, setUnmatchTarget] = useState<{ id: string | number; name: string } | null>(null);
   const [chatImages, setChatImages] = useState<Record<number, string[]>>({});
   const [typingTarget, setTypingTarget] = useState<number | null>(null);
   const [themTyping, setThemTyping] = useState(false);
