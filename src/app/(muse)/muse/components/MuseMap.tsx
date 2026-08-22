@@ -38,6 +38,12 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
     if (w.mapboxgl) {
       init();
     } else {
+      // Mapbox GL requires BOTH the CSS and JS — CSS is what makes markers
+      // position/scale correctly (without it the map renders blank/markerless).
+      const css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css";
+      document.head.appendChild(css);
       const s = document.createElement("script");
       s.src = "https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js";
       s.async = true;

@@ -21,6 +21,8 @@ export interface ProfileScreenProps {
   setEditBio: (v: string) => void;
   setEditLoc: (v: string) => void;
   setEditAvatar: (v: string) => void;
+  setEditType: (v: string) => void;
+  setEditLooking: (v: string[]) => void;
   showToast: (msg: string) => void;
   promptResponses: any[];
   promptBankData: any[];
@@ -65,6 +67,8 @@ export const ProfileScreen = memo(function ProfileScreen({
   setEditBio,
   setEditLoc,
   setEditAvatar,
+  setEditType,
+  setEditLooking,
   showToast,
   promptResponses,
   promptBankData,
@@ -102,7 +106,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         </div>
         <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>Your Profile</div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="hdr-btn" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setShowEditProfile(true); }} aria-label="Edit Profile"><FiEdit2 size={18} /></button>
+          <button className="hdr-btn" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setShowEditProfile(true); }} aria-label="Edit Profile"><FiEdit2 size={18} /></button>
         </div>
       </div>
       <div className="profile-scroll">
@@ -284,7 +288,7 @@ export const ProfileScreen = memo(function ProfileScreen({
             )}
           </div>
         </div>
-        <div className="profile-btn"><button className="btn btn-outline" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setShowEditProfile(true); }}>Edit Profile</button></div>
+        <div className="profile-btn"><button className="btn btn-outline" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setShowEditProfile(true); }}>Edit Profile</button></div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => setScreen("settings")}><FiSettings size={16} style={{ marginRight: 6 }} /> Account Settings</button></div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => setShowShareProfile(true)}>Share Profile</button></div>
         <div className="profile-btn"><button className="btn btn-outline" style={{ borderColor: "rgba(255,138,128,0.2)", color: "var(--coral)" }} onClick={doLogout}>Log Out</button></div>

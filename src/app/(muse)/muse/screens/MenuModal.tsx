@@ -333,7 +333,7 @@ export const MenuModal = memo(function MenuModal({
                 </button>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "20px 0 10px" }}>Statistics</div>
                 <div className="stats-row" style={{ marginTop: 8 }}>
-                  <div className="stat"><div className="stat-num">{currentUser.stats?.matches || 0}</div><div className="stat-label">Matches</div></div>
+                  <div className="stat"><div className="stat-num">{matches.length || 0}</div><div className="stat-label">Matches</div></div>
                   <div className="stat"><div className="stat-num">{currentUser.stats?.likes || 0}</div><div className="stat-label">Likes</div></div>
                   <div className="stat"><div className="stat-num">{currentUser.stats?.bookingsCompleted || 0}</div><div className="stat-label">Bookings</div></div>
                 </div>

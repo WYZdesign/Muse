@@ -562,6 +562,12 @@ export async function POST(req: NextRequest) {
       const { target_id } = rest;
       if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
       if (target_id === profile.id) return NextResponse.json({ error: "Cannot match yourself" }, { status: 400 });
+      // Stub/demo profiles use numeric ids (hardcoded in types.ts) — treat as
+      // local-only match so the UI can record it instead of a silent 400.
+      if (!UUID_RE.test(String(target_id))) {
+        await sb.from("muse_notifications").insert({ user_id: profile.id, type: "match", body: "You matched with a new creative!", read: false });
+        return NextResponse.json({ success: true, demo: true });
+      }
       const { data: target } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
       if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
       const { error } = await sb.from("muse_matches").upsert(
@@ -570,6 +576,7 @@ export async function POST(req: NextRequest) {
       );
       if (error) return safeServerError(error, "db op");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id } });
+      await sb.from("muse_notifications").insert({ user_id: target_id, from_id: profile.id, type: "match", body: `${profile.name} matched with you!`, read: false });
       await emailProfile(sb, target_id, "Someone matched with you ✦", "New match on Muse", `${profile.name} matched with you. Open Muse to say hi.`, "See who it is", "https://muse.wyzdesign.com/muse");
       return NextResponse.json({ success: true });
     }
@@ -612,6 +619,9 @@ export async function POST(req: NextRequest) {
       // Treat duplicate client_msg_id as success (already persisted by retry).
       if (error && (error as { code?: string }).code !== "23505") return safeServerError(error, "message insert");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message", details: { to: toId } });
+      if (UUID_RE.test(String(toId))) {
+        await sb.from("muse_notifications").insert({ user_id: String(toId), from_id: profile.id, type: "message", body: `${profile.name} sent you a message`, read: false });
+      }
       await emailProfile(sb, String(toId), "New message on Muse ✦", "You have a new message", `${profile.name} sent you a message.`, "Read it", "https://muse.wyzdesign.com/muse");
       return NextResponse.json({ success: true, match_id: matchId });
     }
@@ -663,6 +673,9 @@ export async function POST(req: NextRequest) {
     if (actionType === "brief-apply") {
       const { briefId } = rest;
       if (!briefId) return NextResponse.json({ error: "briefId required" }, { status: 400 });
+      // Stub/demo briefs use numeric ids (hardcoded in types.ts) — treat as
+      // local-only apply so the UI can show "Applied" instead of a silent 500.
+      if (!UUID_RE.test(String(briefId))) return NextResponse.json({ success: true, demo: true });
       const { error } = await sb.from("muse_brief_applications").insert({ brief_id: briefId, user_id: profile.id });
       if (error) return safeServerError(error, "db op");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "brief_apply", details: { brief_id: briefId } });

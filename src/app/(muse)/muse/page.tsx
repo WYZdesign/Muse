@@ -146,6 +146,8 @@ function MusePage() {
   const [editBio, setEditBio] = useState("");
   const [editLoc, setEditLoc] = useState("");
   const [editAvatar, setEditAvatar] = useState("");
+  const [editType, setEditType] = useState("");
+  const [editLooking, setEditLooking] = useState<string[]>([]);
   const [showShareProfile, setShowShareProfile] = useState(false);
   const [shareTarget, setShareTarget] = useState<{id:number|string;text:string;img:string;author:string} | null>(null);
   const [showReport, setShowReport] = useState(false);
@@ -1371,8 +1373,8 @@ function MusePage() {
   }, [authUser?.profile?.id]);
 
   const saveProfileEdits = useCallback(async () => {
-    setCurrentUser(prev => ({ ...prev, name: editName || prev.name, avatar: editAvatar || prev.avatar }));
-    setObData(prev => ({ ...prev, bio: editBio, loc: editLoc }));
+    setCurrentUser(prev => ({ ...prev, name: editName || prev.name, avatar: editAvatar || prev.avatar, type: editType || prev.type }));
+    setObData(prev => ({ ...prev, bio: editBio, loc: editLoc, type: editType || prev.type, looking: editLooking.length ? editLooking : prev.looking }));
     let geo: { lat: number; long: number; city?: string } | null = null;
     try { geo = await getGeolocation(); } catch {}
     setShowEditProfile(false);
@@ -1385,12 +1387,14 @@ function MusePage() {
           bio: editBio,
           loc: editLoc,
           avatar: editAvatar,
+          type: editType,
+          looking: editLooking,
           ...(geo ? { lat: geo.lat, long: geo.long, city: geo.city } : {}),
         }),
       });
     } catch {}
     showToast("Saved!");
-  }, [editName, editBio, editLoc, editAvatar, showToast]);
+  }, [editName, editBio, editLoc, editAvatar, editType, editLooking, showToast]);
 
   const toggleObSelect = (key: string, val: string | number) => {
     setObData(prev => ({ ...prev, [key]: val }));
@@ -1974,7 +1978,7 @@ const isMatch=matchScore>55||Math.random()>0.5;
 
             <NetworkScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} />
             <PortfolioScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} />
-            <ProfileScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={setSelectedPortfolio} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} />
+            <ProfileScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditType={setEditType} setEditLooking={setEditLooking} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={setSelectedPortfolio} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} />
           </div>
         </div>
       )}
@@ -2349,6 +2353,25 @@ const isMatch=matchScore>55||Math.random()>0.5;
             <input className="inp" placeholder="Display Name" value={editName} onChange={e=>setEditName(e.target.value)} />
             <textarea className="inp" placeholder="Bio" rows={3} value={editBio} onChange={e=>setEditBio(e.target.value)} />
             <input className="inp" placeholder="Location" value={editLoc} onChange={e=>setEditLoc(e.target.value)} />
+            <div style={{ marginBottom: 12 }}>
+              <div className="side-label">Creative Type</div>
+              <div className="side-sub" style={{ marginBottom: 6 }}>🎬 Behind the Camera</div>
+              <div className="chips" style={{ marginBottom: 8 }}>
+                {BEHIND_CAMERA.map(t => <div key={t} className={"chip"+(editType===t?" sel":"")} onClick={()=>setEditType(t)}><span>{t}</span></div>)}
+              </div>
+              <div className="side-sub" style={{ marginBottom: 6 }}>📸 In Front of the Camera</div>
+              <div className="chips">
+                {IN_FRONT_CAMERA.map(t => <div key={t} className={"chip"+(editType===t?" sel":"")} onClick={()=>setEditType(t)}><span>{t}</span></div>)}
+              </div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <div className="side-label">Looking For</div>
+              <div className="chips">
+                {lookingForOptions(editType || currentUser.type || "").map(l => (
+                  <div key={l} className={"chip"+((editLooking.length?editLooking:obData.looking||[]).includes(l)?" sel":"")} onClick={()=>{const cur = editLooking.length?editLooking:(obData.looking||[]); setEditLooking(cur.includes(l)?cur.filter(x=>x!==l):[...cur,l]);}}><span>{l}</span></div>
+                ))}
+              </div>
+            </div>
             <button className="btn btn-gold" style={{width:"100%"}} onClick={saveProfileEdits}>Save</button>
           </div>
         </div>
