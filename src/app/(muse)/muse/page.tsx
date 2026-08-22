@@ -567,6 +567,9 @@ function MusePage() {
               if (d.profile.preferences?.filterScore != null && typeof d.profile.preferences.filterScore === "number") {
                 setFilterScore(d.profile.preferences.filterScore);
               }
+              if (d.profile.preferences?.savedBriefs && Array.isArray(d.profile.preferences.savedBriefs)) {
+                setSavedBriefs(d.profile.preferences.savedBriefs);
+              }
               setScreen(prev => (prev === "auth" || prev === "onboard") ? (d.profile.name && d.profile.type ? "discover" : "onboard") : prev);
             } else {
               setScreen(prev => (prev === "auth") ? "onboard" : prev);

@@ -180,13 +180,15 @@ export const CollabScreen = memo(function CollabScreen({
                   className={"brief-btn-save" + (savedBriefs.includes(brief.id) ? " saved" : "")}
                   style={{ padding: "8px 14px", fontSize: 12 }}
                   onClick={() => {
-                    if (savedBriefs.includes(brief.id)) {
+                    const isSaved = savedBriefs.includes(brief.id);
+                    if (isSaved) {
                       setSavedBriefs(savedBriefs.filter(x => x !== brief.id));
                       showToast("Unsaved");
                     } else {
                       setSavedBriefs([...savedBriefs, brief.id]);
                       showToast("Saved!");
                     }
+                    apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { savedBriefs: isSaved ? savedBriefs.filter(x => x !== brief.id) : [...savedBriefs, brief.id] } }) }).catch(() => {});
                   }}
                 >
                   {savedBriefs.includes(brief.id) ? "Saved" : "Save"}

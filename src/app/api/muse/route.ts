@@ -996,6 +996,8 @@ export async function POST(req: NextRequest) {
         "onboardingStep",
         // discovery filters
         "filterStyles", "filterScore",
+        // saved briefs (bookmarks)
+        "savedBriefs",
       ]);
       // Accept both a flat payload and the client's nested `{ preferences: {...} }` shape.
       const source = (rest.preferences && typeof rest.preferences === "object") ? rest.preferences : rest;
