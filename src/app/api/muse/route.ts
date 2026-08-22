@@ -690,6 +690,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, moment: data });
     }
 
+    if (actionType === "like-moment") {
+      if (!await checkRate(ip, "like-moment", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const { momentId, liked } = rest;
+      if (!momentId) return NextResponse.json({ error: "momentId required" }, { status: 400 });
+      const { data: moment } = await sb.from("muse_moments").select("likes").eq("id", momentId).maybeSingle();
+      if (!moment) return NextResponse.json({ error: "Moment not found" }, { status: 404 });
+      const newLikes = (moment.likes || 0) + (liked ? 1 : -1);
+      const { error: updErr } = await sb.from("muse_moments").update({ likes: Math.max(0, newLikes) }).eq("id", momentId);
+      if (updErr) return safeServerError(updErr, "db op");
+      return NextResponse.json({ success: true, likes: Math.max(0, newLikes) });
+    }
+
     if (actionType === "brief") {
       if (!await checkRate(ip, "brief", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const vErr = validateInput(rest);
@@ -982,6 +994,8 @@ export async function POST(req: NextRequest) {
         "ageMin", "ageMax", "gender",
         // cross-device onboarding resume
         "onboardingStep",
+        // discovery filters
+        "filterStyles", "filterScore",
       ]);
       // Accept both a flat payload and the client's nested `{ preferences: {...} }` shape.
       const source = (rest.preferences && typeof rest.preferences === "object") ? rest.preferences : rest;

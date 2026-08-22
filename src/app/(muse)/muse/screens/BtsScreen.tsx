@@ -15,6 +15,7 @@ export interface BtsScreenProps {
   showToast: (msg: string) => void;
   setShowStory: (idx: number) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
+  apiFetch: (url: string, opts?: any) => Promise<any>;
 }
 
 export const BtsScreen = memo(function BtsScreen({
@@ -27,6 +28,7 @@ export const BtsScreen = memo(function BtsScreen({
   showToast,
   setShowStory,
   handleImgError,
+  apiFetch,
 }: BtsScreenProps) {
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
   return (
@@ -114,7 +116,7 @@ export const BtsScreen = memo(function BtsScreen({
                 </div>
                 <div className="moments-card-body" style={{ paddingTop: 10 }}>
                   <div className="moments-card-stats">
-                    <button className={"moments-action-btn" + (s.liked ? " liked" : "")} onClick={() => { setStories(prev => prev.map(item => item.id === s.id ? { ...item, liked: !item.liked, likes: (item.likes || 0) + (item.liked ? -1 : 1) } : item)); }}>♥ {s.likes || 0}</button>
+                    <button className={"moments-action-btn" + (s.liked ? " liked" : "")} onClick={() => { const newLiked = !s.liked; setStories(prev => prev.map(item => item.id === s.id ? { ...item, liked: newLiked, likes: (item.likes || 0) + (newLiked ? 1 : -1) } : item)); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "like-moment", momentId: s.id, liked: newLiked }) }).catch(() => {}); }}>♥ {s.likes || 0}</button>
                     <button className="moments-action-btn" onClick={() => { showScreen("connections"); showToast("Open feed to comment"); }}>💬 {s.comments || 0}</button>
                     <button className="moments-action-btn" onClick={() => { navigator.clipboard?.writeText("https://wyzdesign.com/muse/post/" + s.id); showToast("Moment link copied!"); }}>↗ Share</button>
                   </div>
