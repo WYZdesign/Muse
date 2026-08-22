@@ -442,7 +442,7 @@ function MusePage() {
       if (!d.matches || d.matches.length === 0) {
         const demoMatches = PROFILES.slice(0, 6).map((p: any) => ({
           id: p.id, name: p.name, img: p.img, type: p.type,
-          bio: p.bio, location: p.loc, booked: false, online: Math.random() > 0.5,
+          bio: p.bio, location: p.loc, booked: false, online: !!p.online,
           messages: []
         }));
         setMatches(demoMatches);
@@ -487,6 +487,30 @@ function MusePage() {
 
   useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{safeRemoveItem("muse_boost");}catch{}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd]);
 
+  // ─── CROSS-DEVICE: Persist obStep to server (debounced) ───
+  const obStepRef = useRef(obStep);
+  const obStepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    obStepRef.current = obStep;
+    if (!authUser) return;
+    if (obStepTimerRef.current) clearTimeout(obStepTimerRef.current);
+    obStepTimerRef.current = setTimeout(() => {
+      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { onboardingStep: obStepRef.current } }) }).catch(() => {});
+    }, 2000);
+    return () => { if (obStepTimerRef.current) clearTimeout(obStepTimerRef.current); };
+  }, [obStep, authUser]);
+
+  // ─── CROSS-DEVICE: Persist notifPrefs to server (debounced) ───
+  const notifPrefsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!authUser) return;
+    if (notifPrefsTimerRef.current) clearTimeout(notifPrefsTimerRef.current);
+    notifPrefsTimerRef.current = setTimeout(() => {
+      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { notifications: notifPrefs } }) }).catch(() => {});
+    }, 2000);
+    return () => { if (notifPrefsTimerRef.current) clearTimeout(notifPrefsTimerRef.current); };
+  }, [notifPrefs, authUser]);
+
   const applySession = useCallback((accessToken: string, refreshToken?: string, attempt = 0) => {
     if (accessToken) {
       supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || "" }).catch(() => {});
@@ -517,6 +541,14 @@ function MusePage() {
               });
               if (effTier) setUserTier(effTier);
               if (d.profile.age_verified) setAgeVerified(true);
+              // Restore notifPrefs from server (source of truth across devices)
+              if (d.profile.preferences?.notifications && typeof d.profile.preferences.notifications === "object") {
+                setNotifPrefs(prev => ({ ...prev, ...d.profile.preferences.notifications }));
+              }
+              // Restore obStep from server (cross-device onboarding resume)
+              if (d.profile.preferences?.onboardingStep && typeof d.profile.preferences.onboardingStep === "number") {
+                setObStep(d.profile.preferences.onboardingStep);
+              }
               setScreen(prev => (prev === "auth" || prev === "onboard") ? (d.profile.name && d.profile.type ? "discover" : "onboard") : prev);
             } else {
               setScreen(prev => (prev === "auth") ? "onboard" : prev);
@@ -1019,7 +1051,7 @@ function MusePage() {
         }, 450);
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id, intent }) }).catch(() => { /* silently handled */ });
       }
-      if (Math.random() > 0.4 && !likedBy.find(l => l.id === p.id)) {
+      if (DEMO_MODE && Math.random() > 0.4 && !likedBy.find(l => l.id === p.id)) {
         setLikedBy(prev => [...prev, p]);
         setActivityFeed(prev => [{id:uid(),type:"like",from:p.name,avatar:p.img,text:p.name+" liked your profile!",time:"Just now",read:false},...prev]);
       }
@@ -1586,10 +1618,10 @@ const isMatch=matchScore>55||Math.random()>0.5;
                      }, 450);
                      apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"match",target_id:p.id,intent})}).catch(()=>{});
                    }
-                  if(Math.random()>0.4&&!likedBy.find(l=>l.id===p.id)){
-                    setLikedBy(prev=>[...prev,p]);
-                    setActivityFeed(prev=>[{id:uid(),type:"like",from:p.name,avatar:p.img,text:p.name+" liked your profile!",time:"Just now",read:false},...prev]);
-                  }
+                   if(DEMO_MODE&&Math.random()>0.4&&!likedBy.find(l=>l.id===p.id)){
+                     setLikedBy(prev=>[...prev,p]);
+                     setActivityFeed(prev=>[{id:uid(),type:"like",from:p.name,avatar:p.img,text:p.name+" liked your profile!",time:"Just now",read:false},...prev]);
+                   }
                   setDailyLikes(prev=>Math.max(0,prev-1));
                   setCurrentUser(prev=>({...prev,stats:{...prev.stats,likes:prev.stats.likes+1}}));
                   setRewindStack(prev=>[...prev,currentIdx]);

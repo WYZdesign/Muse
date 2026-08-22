@@ -1,823 +1,211 @@
-# MUSE — HANDOVER
-
-> Generated 2026-08-18. Closed-beta launch-readiness pass is COMPLETE. Read this instead of re-exploring the repo.
-
-## TL;DR
-Muse is ready for closed beta. All 4 OAuth providers verified working, RLS security fixed + verified, 89 tests green, build/typecheck clean, 0 audit vulns. Only non-blocking items remain (attorney memo, Facebook public App Review, Spotify playlists).
+# MUSE APP — Agent Handover
+## Session: 2026-08-20 → 2026-08-21
 
 ---
 
-## 1. PROJECT
+## THE MISSION
 
-- **What:** Muse — creative professional networking platform (photographers, models, filmmakers, musicians). Matching, messaging, bookings, paid sessions, communities, portfolios, verification, safety/disclosure flows.
-- **Repo:** `V:\Muse` (git, `main` branch)
-- **Stack:** Next.js **16.3.1** (App Router, Turbopack), React 19, TypeScript, Supabase (Auth + Postgres + Storage + Realtime), Vercel (auto-deploy from `main`), Stripe (payments + Connect), Tailwind, react-icons, Playwright + vitest for tests.
-- **URLs:**
-  - App: `https://muse.wyzdesign.com/muse`
-  - Landing: `https://muse.wyzdesign.com` (redirects to `/muse`... actually `muse.wyzdesign.com` → 308 → `/muse`; root `wyzdesign.com` → `/splash`)
-  - Landing page source: `src/app/muse/landing/page.tsx`
-- **Note on the SSL "connection isn't private" issue:** was NOT a real problem — cert is a valid Let's Encrypt wildcard `*.wyzdesign.com` + `wyzdesign.com` (SAN covers both). The user saw `ERR_CERT_COMMON_NAME_INVALID` due to DNS propagation / stale cache on recipients' side. Self-heals. No config change needed.
+We're playing a **"dark spots" game** — like Diablo fog-of-war. The MUSE app is a full-featured dating app scaffold. We've uncovered and fixed many disconnected/fake features, but there are still dark spots. Your job: find them, assess them, and fix the ones that are safe to fix.
 
-## 2. SUPABASE
+**Pattern:** Features are built (UI, API, DB schema) but disconnected — fake data, Math.random() seeded, localStorage-only, or dead API paths. We've been systematically wiring them to real backends.
 
-- **Production:** project ref `ejbwjmzrazfgtisqsamf`
-- **Staging:** ref `rwgofoxqycpzsvxfnozt` (created, schema applied, but NOT wired to Vercel preview — currently unused)
-- **Auth callback URL:** `https://ejbwjmzrazfgtisqsamf.supabase.co/auth/v1/callback`
-- Supabase projects CANNOT be merged. Only production is needed for closed beta.
-- Nameservers are `ns1/ns2.vercel-dns.com` (domain delegated to Vercel).
+---
 
-## 3. OAuth STATUS (all verified working via live authorize-endpoint test)
+## WHAT WE FIXED (Previous Sessions)
 
-| Provider | GoTrue key | Redirect target | Status |
-|---|---|---|---|
-| Google | `google` | accounts.google.com | ✅ |
-| Facebook | `facebook` | facebook.com/dialog/oauth | ✅ |
-| X/Twitter | **`x`** (NOT `twitter`!) | x.com | ✅ |
-| Spotify | `spotify` | accounts.spotify.com | ✅ |
+### Session 1 (Previous) — Major Fixes
+| Fix | What was fake | How it's real now |
+|-----|--------------|-------------------|
+| Chat replies | `Math.random()` canned responses | Gated behind `DEMO_MODE` flag |
+| Match inflation | Random matches on every swipe | Gated behind `DEMO_MODE` |
+| Match daily limit | `dailyLikes` never enforced | Gated behind `DEMO_MODE` |
+| DiscoveryPrefs persistence | localStorage only | Saved to server `preferences` JSONB |
+| Portfolio/albums | Assumed disconnected | **Already wired** — `MyAlbumsManager` uses `authFetch("/api/muse", ...)` |
+| Prompt Bank | Assumed disconnected | **Already wired** — `save-prompt-response` / `get-prompt-responses` both functional |
 
-**CRITICAL GOTCHA:** the "X / Twitter (OAuth 2.0)" provider key is **`x`**, NOT `twitter`. `twitter` is the *deprecated* OAuth 1.0 provider (correctly left disabled). Testing `provider=twitter` returns "provider is not enabled"; testing `provider=x` redirects correctly.
+### Session 2 (This Session) — Fixes Applied
+| Fix | File | What changed |
+|-----|------|-------------|
+| `likedBy` random seeding | `page.tsx:1022,1589` | Gated behind `DEMO_MODE` — no more phantom "X liked you" |
+| `online` badge | `page.tsx:445` | `!!p.online` instead of `Math.random() > 0.5` |
+| Notification prefs save | `MenuModal.tsx:380` | Now sends `{ ...discoveryPrefs, notifications: notifPrefs }` |
+| Notification prefs load | `page.tsx:519-522` | Reads `d.profile.preferences?.notifications` on session restore |
+| `obStep` cross-device | `page.tsx:523-526` | Reads `d.profile.preferences?.onboardingStep` on session restore |
+| `obStep` auto-save | `page.tsx:488-500` | Debounced 2s useEffect saves to server on change |
+| `notifPrefs` auto-save | `page.tsx:502-510` | Debounced 2s useEffect saves to server on change |
+| `onboardingStep` whitelist | `route.ts:939` | Added to `ALLOWED_PREFS` in `save-preferences` action |
 
-## 4. CREDENTIALS / VAULT
+**Compile status:** Clean (exit 0)
 
-Credentials live in a DPAPI vault on the WYZMIND host (`W:\WYZ_Command_Center\.vault`), accessed via the `wyz_vault` Python module:
-```python
-import wyz_vault
-wyz_vault.get_credential("NAME")
-wyz_vault.add_credential("NAME", "value")
-wyz_vault.list_credentials()
-wyz_vault._load_vault()   # returns full dict
+---
+
+## THE DARK SPOTS — What's Left to Explore
+
+### HIGH PRIORITY — Real Bugs / Disconnected Features
+
+#### 1. `profileViews` / `profileViewers` — Still Fake
+- **Location:** `page.tsx` lines 213-214, 467-468, 1022-1023 (now gated)
+- **Problem:** `profileViews` is a count, `profileViewers` is an array of `{name, avatar, time}`. Both are seeded from localStorage only. No backend writes exist. No `muse_profile_views` table.
+- **Fix options:**
+  - A) Gate behind `DEMO_MODE` (like likedBy) — simplest
+  - B) Wire to `muse_activity_log` with `action: 'view-profile'` — reads real data but needs writes on every card view (high-frequency)
+  - C) Create `muse_profile_views` table — cleanest but most work
+- **Recommendation:** Option A for now. The "who viewed you" screen is a premium feature in most dating apps — could be gated behind `muse_pro` tier.
+
+#### 2. `activityFeed` — Partially Fake
+- **Location:** `page.tsx` lines 1024, 1591 — random "liked your profile" entries added to feed
+- **Problem:** Activity feed entries are created client-side with `Math.random()` gating. No server-side activity log writes on like/match events.
+- **Backend exists:** `muse_activity_log` table (inserted on `match`, `message`, `brief_apply` events via route.ts)
+- **Fix:** Read from `muse_activity_log` on session load instead of building fake entries client-side. The `GET /api/muse?type=activity` endpoint may already exist — check.
+
+#### 3. `stories` / `muse_moments` — Partially Disconnected
+- **Location:** `page.tsx` lines 469-470, `MomentsScreen.tsx`
+- **Problem:** `DEMO_MOMENTS` is seeded as fallback. The `muse_moments` table exists. Check if stories are loaded from server and if creation/deletion works end-to-end.
+- **Check:** Does `GET /api/muse?type=moments` exist? Does `create-moment` action work?
+
+#### 4. `savedBriefs` / `appliedBriefs` — Need Verification
+- **Location:** `page.tsx` lines 452-453
+- **Problem:** These may be localStorage-only. Check if they sync to `muse_briefs` table properly.
+- **Check:** The `save-brief` and `apply-brief` actions exist in route.ts — verify the client actually calls them.
+
+#### 5. `rsvpdEvents` — Need Verification
+- **Location:** `page.tsx` line 459
+- **Problem:** May be localStorage-only. Check if RSVPs sync to `muse_rsvps` table.
+- **Check:** `rsvp-event` action exists in route.ts — verify client calls it.
+
+#### 6. `forumPosts` / `liveForum` — Need Verification
+- **Location:** `page.tsx` lines 460, 386-392
+- **Problem:** Forum posts loaded from server on bootstrap (`d.forum?.posts`), but check if creation/voting/comments work end-to-end.
+
+#### 7. `feedPosts` — Need Verification
+- **Location:** `page.tsx` line 461
+- **Problem:** Feed posts loaded from server on bootstrap, but check if creation/likes/comments work end-to-end.
+
+### MEDIUM PRIORITY — Potential Issues
+
+#### 8. ` blockedUsers` — localStorage Only
+- **Location:** `page.tsx` line 455
+- **Problem:** `blockedUsers` array is only in localStorage. No server-side block enforcement. Blocked users can still see/message you.
+- **Check:** Is there a `block-user` action in route.ts? Is it enforced in discovery/messages queries?
+
+#### 9. `notifPrefs` Toggle Immediate Feedback
+- **Location:** `SettingsScreen.tsx:147-148`, `MenuModal.tsx:374-375`
+- **Problem:** Toggle switches update local state immediately (good), but server save is debounced 2s. If user closes settings before 2s, save may not fire. Consider saving on close/blur as well.
+
+#### 10. `filterStyles` / `filterScore` — Discovery Filter State
+- **Location:** `page.tsx` lines 415-416
+- **Problem:** These control style/score filtering in discover. Check if they're persisted and restored properly.
+
+#### 11. `chatImages` — Image Cache
+- **Location:** `page.tsx` line 415
+- **Problem:** Chat image cache stored in localStorage. Check if it's bounded (last 20 entries per chat) and doesn't bloat storage.
+
+#### 12. `testLevels` / `obSelects` — Onboarding Test State
+- **Location:** `page.tsx` lines 462-463
+- **Problem:** Test results and onboarding selections. Check if they sync to server properly.
+
+### LOW PRIORITY — Enhancement Opportunities
+
+#### 13. `connect` / `connections` System
+- **Location:** `ConnectionsScreen.tsx`, `route.ts` connections actions
+- **Problem:** Connection requests/acceptances — verify end-to-end flow works.
+
+#### 14. `sessions` / `bookings` System
+- **Location:** `SessionsScreen.tsx`, `route.ts` booking actions
+- **Problem:** Session booking/payments — verify Stripe integration works.
+
+#### 15. `communities` System
+- **Location:** `CommunitiesScreen.tsx`, `route.ts` community actions
+- **Problem:** Community creation/joining/posts — verify end-to-end.
+
+#### 16. `safety` / `verification` System
+- **Location:** `SafetyScreen.tsx`, `route.ts` safety actions
+- **Problem:** Age verification, ID verification — verify flow works.
+
+#### 17. `codex` / `refer` Systems
+- **Location:** `CodexScreen.tsx`, `ReferralPanel.tsx`
+- **Problem:** Knowledge base and referral system — verify functionality.
+
+---
+
+## HOW TO INVESTIGATE
+
+### 1. Server-Side Audit
+Check `route.ts` for all registered actions and verify each has a client-side caller:
+```bash
+# List all actions handled by the API
+grep -n "actionType ===" "V:\Muse\src\app\api\muse\route.ts"
 ```
 
-Muse OAuth credentials are stored with `MUSE_` prefix:
-- `MUSE_GOOGLE_CLIENT_ID`, `MUSE_GOOGLE_CLIENT_SECRET`
-- `MUSE_FACEBOOK_APP_ID` (= `1387634410012798`), `MUSE_FACEBOOK_APP_SECRET` (= `3e724958913946ec92c533fc34331c7d`)
-- `MUSE_X_APP_ID` (= `2089798908608192512`), `MUSE_X_CLIENT_ID` (= `dkFCSGhXbTJJUURLZHhxY0VRejU6MTpjaQ`), `MUSE_X_CLIENT_SECRET`
-- `MUSE_SPOTIFY_CLIENT_ID` (= `6c2b278eece14af6aed8edeafb99df5d`), `MUSE_SPOTIFY_CLIENT_SECRET` (= `662bd0e2d8c14b71b054be138d1f28cc`)
-- `MUSE_SPOTIFY_CALLBACK` (= `https://muse.wyzdesign.com/api/spotify/callback`), `MUSE_SUPABASE_CALLBACK`
-
-**NEVER print secret values to logs/stdout.** The vault's `SUPABASE_PAT` is NOT valid for the Muse org (Management API returns 403) — don't rely on it.
-
-## 5. SQL MIGRATIONS (all applied + VERIFIED live via PostgREST)
-
-1. `sql/MUSE_ALBUM_LIKES_20260816.sql` — creates `muse_album_likes` table ✅ (verified exists)
-2. `sql/MUSE_CHECKINS_UNIQUE_20260816.sql` — unique constraint on checkins (original had `ADD CONSTRAINT IF NOT EXISTS` which PG rejects; fixed via `DO $$ ... $$` block) ✅
-3. `sql/MUSE_RLS_HARDENING_20260818.sql` — dynamic `DO` block enabling RLS on ALL `muse_*` tables + drops `zz_test_a`/`zz_test_b` ✅ (verified: anon now gets empty result, junk tables 404)
-
-Other SQL files in `sql/` are historical migrations already baked into the schema.
-
-## 6. WHAT'S DONE & VERIFIED (this session)
-
-- **Dependency security:** Next.js 16.2.12 → 16.3.1 (fixed postcss XSS + sharp libvips CVEs), `uuid` override added (moderate vuln), `npm audit --audit-level=high` = **0 vulns**.
-- **Tests:** 46 unit (vitest) + 22 integration + 21 smoke (Playwright) = **89 passing**. `npx tsc --noEmit` clean. `npm run build` clean.
-  - The 413 oversized-body test needs `test.setTimeout(60000)` + `timeout: 30000` on the request (6MB upload).
-- **Chat image upload:** was a dead no-op (`chatImg`/`setChatImg` hardcoded no-ops). Now `sendChatImg` in page.tsx uploads via `/api/muse/upload` and sends an image bubble.
-- **Notification center:** `showActivityFeed` modal was dead (no trigger); Nav badge not rendered; server `muse_notifications` never fetched. Fixed: MenuModal "Activity" entry + unread badge + server-notifications merge via `/api/muse?type=notifications`.
-- **Disclosure consent checkbox:** was `onChange={()=>{}}` (no-op) — now tracked in `agreeTerms`, enforced before submit.
-- **Disclosure confirm view:** "Content types" rendered `[].filter(Boolean)` (always empty) — now renders actual `content_type_*` booleans.
-- **RLS security:** see section 5.
-- **OG image:** regenerated — cloudy site-color gradient + 50% black overlay + centered glowing icon + subtle stars + shooting star (`public/og-image.png`, 1200×630). Referenced in both `layout.tsx` files. Social platforms cache it (Facebook Debugger / Twitter Card Validator to refresh).
-- **Landing page:** hero "scroll" indicator was a flex-row sibling pushing content off-center → `flex-direction: column`; eyebrow pill wraps on mobile; `SplitText` trailing-margin bug fixed; mystical curly section dividers (`SectionDivider` SVG component) between sections.
-
-## 7. WHAT'S IN PROGRESS / UNFINISHED
-
-- **None blocking.** Nothing uncommitted. All changes pushed to `main`.
-
-## 8. MANUAL ACTION ITEMS (human-owned)
-
-- **Attorney memo:** `_audit_artifacts/ATTORNEY_HANDOFF.md` → send to a real licensed attorney (online flat-fee review via Rocket Lawyer/UpCounsel ~$100–300). Covers bookings/payments/NSFW-adjacent content/liability. No digital substitute exists.
-- **Facebook App Review:** only needed for PUBLIC launch. Dev mode works for closed-beta admins/testers now. When public: submit at developers.facebook.com (fields already filled: privacy policy, terms, category "Lifestyle", icon).
-- **Spotify playlists** (not login): blocked behind Spotify Premium (Web API). Deferred.
-- **Optional env:** `NCMEC_*` (CSAM pipeline), `NEXT_PUBLIC_REVENUECAT_*` (native IAP) — skip for now.
-- **Vercel env:** `MUSE_CACHE_VERSION=1` was added. Everything else (SUPABASE, STRIPE, R2, SENTRY, OPENROUTER, MAPBOX, CRON_SECRET) already present.
-
-## 9. RANKED NEXT STEPS (code backlog)
-
-1. **Accessibility pass** — ~25 icon-only close/back buttons missing `aria-label` (mechanical, low risk).
-2. **Image optimization** — Supabase/Unsplash images served full-res; add resize params or `next/image`.
-3. **Bundle analysis + code splitting** — lazy-load heavy screens (Discover/Chat/Community); `page.tsx` is a ~2331-line monolith.
-4. **zod validation** on API inputs (currently hand-rolled checks).
-5. **Split `page.tsx`** — highest long-term value, highest risk; do carefully with vision.
-
-## 10. GOTCHAS & CONVENTIONS
-
-- **Git:** GitHub Copilot active on `main`. `git pull --rebase` refuses with unstaged changes → always `git stash push` → `git pull --rebase` → `git stash pop` → commit → push. Never force-push.
-- **No em-dashes** in user-facing copy (comments/admin dashboards are fine).
-- **Email:** use `info@wyzdesign.com` (NOT `support@`).
-- **apiFetch** throws on non-ok; **authFetch** (lib/api.ts) does NOT throw.
-- **Session token:** client stores `localStorage["muse_user"]` = JSON `{access_token, refresh_token, user}`.
-- **authFetch/getAccessToken** canonical source: `src/app/(muse)/muse/lib/api.ts`; `lib/auth-client.ts` re-exports it.
-- **Windows:** Bash tool = PowerShell (pwsh). Don't use `head`/`grep` shell aliases — use the dedicated tools. No inline `python -c` with f-strings (write a `.py` file).
-- **Playwright config** `baseURL = https://muse.wyzdesign.com` (overridable via `E2E_BASE_URL`).
-- **Provider key `x`** for X/Twitter OAuth 2.0 (see section 3).
-
-## 11. KEY FILES
-
-- `src/app/(muse)/muse/page.tsx` — main app (~2331 lines; all screens render here)
-- `src/app/(muse)/muse/lib/api.ts` — canonical authFetch/getAccessToken
-- `src/app/api/muse/route.ts` — main API (auth, block, feed, save-preferences, book-session, add-album-photo, admin-suspend, notifications, events)
-- `src/app/api/muse/upload/route.ts` — image upload + content moderation
-- `src/app/muse/landing/page.tsx` + `landing.css` — landing page
-- `src/app/(muse)/muse/screens/*.tsx` — screens (Discover, Chat, Profile, MenuModal, Sessions, etc.)
-- `src/app/(muse)/muse/components/*.tsx` — components (DisclosureModal, SafetyCheckinModal, etc.)
-- `tests/api-integration.spec.ts`, `tests/smoke.spec.ts`, `tests/*.spec.ts` — 89 tests
-- `sql/` — migrations (see section 5)
-- `public/og-image.png` — link-preview image
-
----
-
-## 12. SESSION UPDATE — 2026-08-18 (booking loop + moments + payment closure)
-
-### Built this session (all pushed to `main`)
-- `ccfcece` — booking loop backend: `create-session`, `complete-booking`, `submit-review`, `get-reviews`, escrow (`capture_method: manual` on `create-payment`; capture on complete, release on cancel).
-- `ca3528b` — UI + feed + payment:
-  - **SessionsScreen** "List a Session" button + form modal (calls `create-session`).
-  - **BTS/Moments live feed**: `muse_moments` table + `create-moment` action + `GET /api/muse?type=moments`, replacing the `DEMO_MOMENTS` fallback.
-  - **Booking payment**: `create-booking-checkout` (Stripe Checkout redirect, manual-capture escrow, 5% commission, destination charge — no client Stripe.js needed). Webhook `checkout.session.completed` stores the PaymentIntent + marks the booking payment `held`.
-- `8b7faf6` — **full booking management UI** (the core loop is now complete end-to-end):
-  - `GET /api/muse?type=bookings` returns the user's bookings as booker + host (joined session + profile).
-  - `page.tsx`: `myBookings` state + fetch + passed to SessionsScreen.
-  - **SessionsScreen "My Bookings"** (booker): real `muse_bookings` with status badge + Pay (confirmed) / Complete / Leave Review (completed).
-  - **SessionsScreen "Requests"** (host): accept/decline (`respond-booking`) + Complete + Leave Review.
-  - **Pay button**: calls `create-booking-checkout` → redirects to Stripe Checkout (parses session `rate` text to cents).
-  - **Review modal**: 5-star + body, submits via `submit-review`.
-
-### Corrections to the prior audit (verified against code, not assumed)
-1. **Payment path already existed.** `create-payment` (connect route) already created a PaymentIntent with 5% commission (`COMMISSION_RATE = 0.05`) + `transfer_data.destination` to the host. The "no payment tied to a booking" claim was wrong. What was actually missing: escrow, UI wiring, and a client-usable flow. Escrow + Checkout flow now added.
-2. **"Send note" is NOT missing.** It's `doLikeWithNote` (page.tsx) → note modal → `action: "match"` with `intent` + the note text (page.tsx:978). No separate `send-note` action is required.
-
-### Manual actions required (human)
-1. Run **`sql/MUSE_BOOKING_LOOP_20260818.sql`** (`completed_at` + `muse_reviews` table) and **`sql/MUSE_MOMENTS_20260818.sql`** (`muse_moments` table) — in BOTH prod (`ejbwjmzrazfgtisqsamf`) and staging (`rwgofoxqycpzsvxfnozt`) SQL Editors. ✅ CONFIRMED RUN — verified via PostgREST (`muse_reviews` + `muse_moments` both return 200 `[]`).
-2. Confirm the Stripe webhook endpoint is registered for `checkout.session.completed` + `payment_intent.succeeded` (it already handles them; ensure the booking Checkout's events reach it).
-
-### Remaining (not yet built / not end-to-end tested)
-1. **End-to-end payment test** — the escrow/Checkout/capture flow is backend-complete + UI-wired, but NOT live-tested (needs Stripe test keys + a browser + a host with an onboarded Connect account).
-2. **Untraced screens** (from the audit "not yet traced" list): Collab/Briefs full lifecycle, Community beyond join, Subscription Stripe flow, Codex, Settings sub-panels, admin panel, match/like/super-like creation path, disclosure trigger's client-side keyword weakness.
-
-### Verification done this session
-- `npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. (Playwright integration/smoke not re-run — they target the deployed app and are unaffected by these backend additions.)
-
----
-
-## 13. LIVE-SITE AUDIT — 2026-08-19 (login-and-browse via Playwright, fixed errors)
-
-Logged in as `torree.marcel@gmail.com` and browsed the live app, capturing console errors + 4xx/5xx. Root causes found + fixed (all pushed):
-
-- `a3ef83f` — **500s** on `/api/muse?type=albums|album-photos|reviews`: discover fell back to seed profiles with *numeric* ids, which the albums endpoint cast to UUID → Postgres error. Fixed with a `UUID_RE` guard (non-UUID → empty result). Also CSP (`vercel.live`), manifest `scope`, OG/meta description rewrite.
-- `0405b14` — **401** on `/api/muse/match` pre-login: `bootstrapData` now gates the match fetch on an existing `access_token`.
-- `67d4fda` — **404** on model images: 10 `Nico + Draco-*.webp` files have a literal `+` in the filename; Vercel decodes `+` as space. Fixed by encoding `+` → `%2B` in `types.ts` + `photoOrientation.ts` (verified `%2B` → 200).
-
-### Audit facts (verified, for Claude)
-- `public/models/` IS tracked in git (1000 files, 130MB) — the placeholder photos are committed, not missing. Only the `+`-in-filename subset 404'd.
-- Default auth mode is **Sign Up** (not Log In) — `button.btn-gold` reads "Create Account" until the "Log In" tab is clicked.
-- `track-event` is already auth-exempt (route.ts:432-434). The remaining `/api/muse` POST 401 on boot is a minor pre-auth action (likely `sync`), untraced.
-
-### Remaining (recommended for Claude / next)
-1. ~~**Disclosure trigger weakness**~~ ✅ FIXED `3baf700` — the `message` action now blocks payment+NSFW keywords with `DISCLOSURE_REQUIRED` (409), mirroring the client prompt as server-side enforcement (defense-in-depth). Note: `persistMessage` routes through the server `message` action (authFetch), NOT client-direct — so the server check now covers the real path.
-2. ~~**Unused deps**~~ ✅ DONE `3baf700` — `zod` + `@supabase/ssr` uninstalled (verified unused).
-3. **Hook extraction** — IN PROGRESS. `useChatState` extracted (`25e3444`) as proof-of-pattern (7 state vars moved to `src/app/(muse)/muse/hooks/useChatState.ts`; `tsc` + build + 46 tests green). **10 hooks remain** per Claude's spec: `useAuthState`, `useDiscoverState`, `useBookingState`, `useProfileState`, `useFeedState`, `useCommunityState`, `useBriefsState`, `useSettingsState`, `usePersonalityTestState` (`useAppShellState` stays in page.tsx). One hook per commit, `tsc` + unit tests after each.
-4. **Untraced screens** — Collab/Briefs lifecycle, Community beyond join, Subscription Stripe flow, Codex, Settings sub-panels, admin panel, match/like/super-like path.
-5. **End-to-end payment test** — escrow/Checkout/capture is code-complete + UI-wired but not live-tested (needs Stripe test keys + browser + onboarded host Connect account).
-
----
-
-## 14. REQUEST FOR CLAUDE — full user-journey ghost trace (everything we never searched)
-
-The core loop is verified (signup → discover → match → chat → book → pay → complete → review). But most other surfaces were never traced end-to-end. **Ghost every journey below** — for each: does it work end-to-end, where does each action lead, is the outcome *successful* (real DB write, correct state, visible to the other party), and where are the dead ends / no-ops / 4xx-5xx?
-
-### Journeys to ghost (keep the user's intent in mind — they want to DO the thing)
-1. **Forum** — create a post, comment, reply, upvote, sort, expand a thread (`NetworkScreen`/`FeedScreen` "forum" tab). Does the post persist + show for others? Is there a real `forum` action write path, or read-only?
-2. **Feed** — post text + photo, react, comment, filter (`FeedScreen`). Does the post persist? Does the comment/reaction write anywhere?
-3. **Collab briefs** — create a brief, apply to someone's brief, save a brief, filter (`CollabScreen`). Does `brief-apply` notify the owner? Does `brief` (create) persist to `muse_briefs`?
-4. **Community** — join a group, RSVP an event (`CommunityScreen`). Do `join-community` / RSVP persist, or are they local-state only?
-5. **Moments/BTS** — post a moment, view stories, like (`BtsScreen`). `create-moment` + `type=moments` were just built — confirm the post path is wired client-side too, and expires at 24h.
-6. **Portfolio/albums** — create album, add/remove photos, set access tiers, grant/revoke access, like (`MyAlbumsManager`). CRUD is verified; trace the *access-tier* and *like-album* flows end-to-end.
-7. **Network** — connect, pros list, forum (`NetworkScreen`). Does `connect` notify the target?
-8. **Settings** — every sub-panel: `save-preferences`, NSFW toggle + age gate, notification prefs, connected accounts (Stripe Connect onboarding), delete account.
-9. **Referral** — generate code, copy link, refer (`ProfileScreen` → `/api/muse/referral`). Does the code actually unlock a perk on redemption?
-10. **Subscription** — Pro Checkout redirect → webhook → tier upgrade → paywalled features unlock.
-11. **Admin** — admin-brain query, reports, strikes, appeals, suspend/ban (`admin/page.tsx` + `ModerationPanel`). Do strikes/appeals/suspension actually gate the user?
-12. **Safety** — safety check-in (`respond-checkin`), trusted contact (`share-safety-details`), disclosure (verified).
-13. **Profile** — edit profile, share profile, badge system, prompt bank (`save-prompt-response`), personality/self-discovery test.
-14. **Codex** — badges/glossary/matching (`CodexScreen`).
-15. **Search** — discover search, muses search, filter modal.
-16. **Block/unmatch/report** — do they persist + remove the target from view for the reporter?
-
-### Method (same standard as the booking-loop trace)
-- Trace each screen's actual `action: "..."` / `?type=...` calls against the API route inventory (44+ actions).
-- Flag: dead buttons, no-op handlers (`onClick={() => {}}`), actions that 400/500, UI that doesn't reflect the DB write, and anything "wired but does nothing."
-- Verify against **code**, not the UI impression. Report a ✅/⚠️/❌ table like the booking-loop pass.
-
-### Also still open
-- **9 hooks remain** in the `page.tsx` state extraction (`useChatState` + `useBriefsState` done; next: `useAuthState`, `useDiscoverState`, `useBookingState`, `useProfileState`, `useFeedState`, `useCommunityState`, `useSettingsState`, `usePersonalityTestState`).
-- **NSFW blur + moderation** ✅ DONE `4cb28eb` — discover card hero blurs NSFW profiles behind an "18+ NSFW · Tap to reveal" overlay (`DiscoverScreen.tsx`); `contentScan.ts` now allows `Suggestive` (boudoir/tasteful/artistic is legitimate, age-gated) and still blocks `Explicit Nudity` (nipples/groin). Still TODO: extend the blur to profile view, moments, and album photos.
-- **Live payment test** — needs Stripe test keys + browser.
-
----
-
-## 15. SESSION UPDATE — 2026-08-19 (Stripe onboarding, X OAuth, premium popup, NSFW blur completion, RSVP)
-
-### Stripe — FULLY ONBOARDED (manual, done by Torreé)
-- Connected account `acct_1U6FfvAfDBHWmLX4` (email `info@wyzdesign.com`) is now **Enabled** — no longer "Restricted".
-- Completed: terms of service accepted, business details (`WYZ Design LLC`, EIN `••2681`, address `1200 S. Wall St., Los Angeles, CA 90015`, industry `Apps`), website `https://muse.wyzdesign.com` (NOT the broken `www.` variant — that one has no valid SSL cert and causes `ERR_CERT_COMMON_NAME_INVALID`), public name `Muse`, statement descriptor `MUSE CO.`, support phone `+1 (213) 399-9610`, representative `Torree Harris` (DOB 1991-10-14, SSN last-4, ID doc), payout bank `COASTAL COMMUNITY BANK` (routing `125109019` — this is the user's **Bluevine** account; Bluevine partners with Coastal Community Bank, so this is correct and expected).
-- **Product:** single active `Muse Pro` product, `$9.99/month`, lookup key `price_muse_pro_monthly` (this is what `checkout/route.ts` queries), category `General - Electronically Supplied Services` (Eligible for Managed Payments), description + image set, tax behavior `Exclusive`. The duplicate "General - Services" product (Ineligible) was **archived**.
-- **Important:** the "Create a live customer / Create an invoice / Create a non-recurring product" items in Stripe's *Setup guide* checklist are generic beginner-tutorial steps — IGNORE them. The app's Checkout API auto-creates customers + invoices on real purchases. No manual customer/invoice creation needed.
-- **Remaining:** only the **live payment test** (app → Settings → Muse Pro → Upgrade → `4242 4242 4242 4242`), which creates the first real customer + invoice automatically through the code.
-
-### X/Twitter OAuth button — DONE (`79739f7`)
-- Replaced the **Apple** login button with **X/Twitter** (`handleOAuth` provider union changed `"apple"` → `"x"`). X logo SVG inline. Apple is deferred (requires paid Apple Developer account).
-- X OAuth keys live in the **Supabase dashboard** (Auth → Providers → x), NOT Vercel: `MUSE_X_CLIENT_ID` / `MUSE_X_CLIENT_SECRET` from the vault. Already added by Torreé.
-- **Facebook OAuth "error occurred" after confirm** is a Facebook App config issue (app in Development mode; needs Live mode + redirect URI `https://ejbwjmzrazfgtisqsamf.supabase.co/auth/v1/callback` whitelisted in the FB app's Valid OAuth Redirect URIs). NOT a code bug.
-
-### Premium popup — REMOVED (`79739f7`)
-- Deleted the "Muse Premium" popup entirely (state `showPremiumPopup`/`premiumDismissed`, the auto-dismiss `useEffect`, the popup render block, and the `setShowPremiumPopup` trigger in `MusesScreen`). Premium is now reached via the Profile tab + a dedicated premium page.
-
-### Landing page fixes (`79739f7`)
-- Nav bar was too tall (padding `22px` → `12px`, logo `34px` → `30px`), and there was a huge gap at the top on desktop (hero `padding-top` `120px` → `88px`, mobile `110px` → `90px`).
-
-### Settings button — moved + renamed (`79739f7`, `a4535e1`)
-- Removed the gear icon from the profile **header**.
-- Added a full-width rectangular **"Account Settings"** button directly under **"Edit Profile"** on the Profile tab (routes to `setScreen("settings")`).
-
-### NSFW blur — COMPLETED (`be58799`, `a4535e1`)
-- Now applied to ALL surfaces: discover card hero, discover card portfolio photos, profile view modal, and moments (BTS feed). Every one uses the "18+ NSFW · Tap to reveal" pattern with `revealedNsfw` `Set<string>` state.
-
-### RSVP — SQL APPLIED + VERIFIED (`5d0003c` + manual SQL run)
-- `sql/MUSE_RSVP_20260819.sql` was run manually in the Supabase SQL Editor. **Verified live via PostgREST** — `muse_rsvps` returns `200 []` (table exists + RLS active).
-- Frontend: CommunityScreen + MenuModal RSVP buttons call `action: "rsvp"` / `"cancel-rsvp"`; page.tsx fetches `?type=rsvps` into `rsvpdEvents`.
-
-### All 5 ghost-trace ⚠️ items — CONFIRMED WIRED (verified against code)
-1. **Moments posting** ✅ → `create-moment` server action (BTS button in FeedScreen).
-2. **Referral redemption** ✅ → `/api/muse/referral` has `generate`/`apply`/`redeem-reward`/`status`; page.tsx:1923 calls `apply`.
-3. **Subscription unlock** ✅ → Stripe webhook `checkout.session.completed` sets `tier: "muse_pro"`; `customer.subscription.deleted` reverts to `free`.
-4. **Admin panel** ✅ → `ModerationPanel.tsx` calls `admin-reports`/`admin-strikes`/`admin-suspend-user`; all email-gated via `ADMIN_EMAILS`.
-5. **Block/report call sites** ✅ → `action:"block"` (route.ts:640, page.tsx:2181), `action:"report"` (route.ts:621, page.tsx:1976).
-
-### Env vars — COMPLETE
-- The only thing that was missing is X/Twitter, which belongs in **Supabase** (not Vercel) and is now done. Vercel already has: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ADMIN_EMAILS`, `CRON_SECRET`, `OPENROUTER_API_KEY`, `AWS_ACCESS_KEY_ID/SECRET/REGION`, `NCMEC_*`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `NEXT_PUBLIC_SUPPORT_EMAIL`.
-
----
-
-## 16. FINAL STATE — CLOSED-BETA GATES
-
-| Gate | Status |
-|---|---|
-| Core product loop (signup→discover→match→book→pay→complete→review) | ✅ code-complete |
-| Stripe onboarding (account, product, bank, terms) | ✅ done |
-| RLS security + IDOR + admin auth | ✅ hardened + verified |
-| NSFW blur + moderation (all surfaces) | ✅ done |
-| 89 tests + tsc + build + 0 audit vulns | ✅ green |
-| RSVP SQL + all migrations applied + verified | ✅ done |
-| OAuth (Google/Facebook/X/Spotify) | ✅ Google/X/Spotify verified; Facebook needs App→Live (config) |
-
-**Remaining for true closed-beta go-live (all manual/human, none blocking code):**
-1. **Live payment test** — Stripe test card `4242 4242 4242 4242` through the app's Upgrade flow.
-2. **Facebook App → Live** (for non-test users; Dev mode works for admins/testers).
-3. **Attorney memo review** — `_audit_artifacts/ATTORNEY_HANDOFF.md` → real attorney.
-
-**Recommended code backlog (deferred, non-blocking):**
-1. **Hook extraction** — 9 of 11 remain (`useChatState` + `useBriefsState` done): `useAuthState`, `useDiscoverState`, `useBookingState`, `useProfileState`, `useFeedState`, `useCommunityState`, `useSettingsState`, `usePersonalityTestState`, + 1 more per Claude's spec. One hook per commit, `tsc` + unit tests after each.
-2. **Accessibility** — ~25 icon-only buttons missing `aria-label`.
-3. **Split `page.tsx`** — ~2400-line monolith; highest value, highest risk.
-4. **zod validation** on API inputs.
-5. **Image optimization** — `next/image` / resize params.
-
----
-
-## 17. SESSION UPDATE — 2026-08-19 (Edit Profile + Share Profile modals restored, tier leak fixed)
-
-### Edit Profile + Share Profile modals — RESTORED (`c0325a4`)
-- **Root cause:** the `showEditProfile` and `showShareProfile` state existed and their buttons called `setShowEditProfile(true)` / `setShowShareProfile(true)`, but the JSX render blocks had been **removed** at some point — clicking "Edit Profile" (pencil icon AND the profile-page button) was a dead no-op.
-- **Fix:** recovered the original markup from git history (commit `a88614d`) and re-added both render blocks to `page.tsx` (before the disclosure modal). Edit Profile modal now uses the canonical full-screen pattern (`modal-overlay` → `modal-header` + `modal-body`, no `modal-panel` wrapper) with avatar preview/upload, Display Name, Bio, Location fields, and Save wired to `saveProfileEdits()`. Share Profile is a bottom sheet (`share-sheet`).
-
-### Tier/premium leak — FIXED (`c0325a4`)
-- **Root cause:** `saveState`/`loadState` persisted `currentUser.tier` into `muse_v1` localStorage. A stale `tier: "muse_pro"` from the owner session (`torree.marcel@gmail.com`, forced to `muse_pro` via `OWNER_EMAIL` check) leaked into a free account (`wildyetzealous@gmail.com`) on account switch. The DB was always correct (`wildyetzealous@gmail.com` = `free`).
-- **Fix:**
-  1. `loadState` now forces `tier: "free"`, `foundingTier: ""`, `proExpiresAt: ""` on restore — tier is always re-derived from the auth session, never from localStorage.
-  2. `doLogout` now resets `setUserTier("free")` and clears `foundingTier`/`proExpiresAt` in addition to the existing `currentUser` reset.
-- **Note:** the owner account (`torree.marcel@gmail.com`) correctly shows "Muse Pro" (it IS the owner, forced to `muse_pro` at `page.tsx:473-474`). To test the Upgrade flow, use a free-tier account.
-
-### Verification
-- `npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. Pushed to `main` → Vercel auto-deploys.
-
-### Still open for Claude (next session)
-1. **Systematic dead-button audit** — grep every `onClick` across all screens and trace to a real handler/action/modal (Edit Profile + Share Profile were the two confirmed dead modals; now fixed). The 57 `= () => {}` matches in screens are harmless default-prop fallbacks, NOT dead handlers.
-2. **Live payment test** — Stripe test card `4242 4242 4242 4242` via a free-tier account's Upgrade flow (owner is pre-pro).
-3. **Facebook App → Live** for public OAuth.
-
----
-
-## 18. INDEPENDENT SCOUR — 2026-08-19 (all 22 API routes audited)
-
-### Route-by-route audit (the territory Claude flagged as un-checked)
-Read every `src/app/api/**/route.ts` file (22 total). Findings below — all genuine, none speculative.
-
-**Routes verified clean (no issues found):**
-- `muse/upload` — magic-byte validation (PNG/JPEG/WebP/GIF), 10MB cap, blocklisted extensions, Rekognition scan with fail-closed behavior, CSAM→NCMEC escalation, suspended-account gate, ownership-gated DELETE (`path.startsWith(profileId + "/")`).
-- `muse/verification` — Stripe Identity (document + live capture + matching selfie), rate-limited (5/min), `get-verification-status` writes `age_verified` on `verified`.
-- `muse/auth` — whitelisted mass-assignment guard (never spreads arbitrary client fields into profile), brute-force rate limits per action, `forgot-password` always returns success (no email enumeration), suspended-account session block, `delete-account` cascades all child tables then `auth.admin.deleteUser`.
-- `webhooks/stripe` — signature verification, `KNOWN_TIERS` whitelist (never trusts arbitrary `metadata.plan`), subscription downgrade on `customer.subscription.deleted`, booking escrow `held`/`succeeded`/`failed` transitions.
-- `muse/connect` — 5% commission, `capture_method: manual` escrow, `application_fee_amount`, self-payment block, admin-gated `transfer`.
-- `backup` + `cron/checkins` — both CRON_SECRET-gated (Bearer header match). Backup returns COUNTS only (no PII/message bodies). Checkins cron correctly matches `muse_sessions.date` TEXT → `muse_bookings.session_id` UUID FK (a prior bug-prone join, documented in comments).
-- `muse/push`, `muse/match`, `muse/embed`, `muse/embeddings`, `muse/support`, `muse/content-scan`, `geocode`, `waitlist`, `health`, `cache-version`, `qr` — all properly auth-gated + rate-limited where they touch user data or paid APIs (Rekognition/OpenRouter/Stripe).
-
-### Fixes shipped this session (`41e8ae2`)
-**Error-message leak hardening** — 7 routes returned raw `e.message` (Stripe/Postgres internals) to the client in their catch blocks: `checkout`, `connect`, `match`, `support`, `push`, `embed`, `embeddings`. Standardized all to log `console.error(...)` server-side + return generic `"Server error"` to the client — matching the pattern already used by `route.ts` (main), `auth`, `upload`, and `content-scan`. This is a minor info-disclosure hardening, not a critical vuln.
-
-### Escrow capture/release — CONFIRMED WIRED
-- `complete-booking` (route.ts:1199) calls `stripe.paymentIntents.capture(...)` on held manual-capture payments.
-- `cancel-booking` (route.ts:1161) calls `stripe.paymentIntents.cancel(...)` to release the hold.
-- Both wrapped in try/catch (non-fatal if already captured/cancelled).
-
-### Noted (not blocking, for future)
-- `waitlist/route.ts` signup-counter upsert has a read-then-write race on `muse_landing_analytics.signups` (could under-count under concurrent signups). Cosmetic; landing stats only.
-- `qr/route.ts` uses an external `api.qrserver.com` service with an SVG fallback; the fallback correctly escapes URL to prevent SVG injection.
-
-### Verification
-`npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. Pushed to `main` (`41e8ae2`) → Vercel auto-deploys.
-
----
-
-## 19. SESSION UPDATE — 2026-08-19 (strike enforcement closure, the last real code gap)
-
-### Moderation enforcement gap — CLOSED (`199c11b`)
-Claude's independent audit found the single most consequential remaining gap: **strikes were recorded but never enforced.** `muse_strikes` rows were inserted (disclosure hard-block, admin suspend), admins could view/appeal/resolve them — but there was NO code that counted a user's accumulated strikes and auto-suspended at a threshold. The "3 strikes and you're out" graduated track designed early on had no implementation.
-
-**Two bugs fixed:**
-
-1. **High-severity disclosure hard-block recorded a `severity: "suspension"` strike but never set `suspended: true`.** The "attempted to arrange paid explicit sexual content" path (route.ts `create-disclosure` NSFW+payment combo) inserted a strike row with `severity: "suspension"` yet the account stayed active — the immediate-suspend track was effectively cosmetic.
-
-2. **No accumulation → escalation.** Standard strikes could accumulate forever with no consequence.
-
-**Fix — `applyStrikeAndEscalate(sb, userId, strike)` helper (route.ts, module-level):**
-- Inserts the strike.
-- Counts all enforceable strikes for the user (excludes only `appeal_status = "overturned"`).
-- Suspends immediately if the new strike is `severity: "suspension"` or `"permanent_ban"` (Track 2 — high severity).
-- Otherwise suspends once `activeCount >= STRIKE_SUSPENSION_THRESHOLD` (3) (Track 1 — graduated).
-- On suspension: sets `muse_profiles.suspended = true` + `suspended_at`, and inserts a `muse_notifications` `suspension` row.
-
-**Wiring:**
-- `create-disclosure` hard-block → `applyStrikeAndEscalate` with `severity: "suspension"` (now actually suspends).
-- `report` action → when a target accumulates **3+ reports from distinct reporters**, issues a `severity: "warning"` standard strike (which counts toward the graduated ladder). Distinct-reporter check prevents a single malicious reporter from farming strikes.
-- `admin-suspend-user` was already correct (inserts strike + sets `suspended: true` directly) — left as-is.
-
-**Schema note:** `muse_strikes` fields — `category` (`standard`/`high_severity`), `severity` (`warning`/`suspension`/`permanent_ban`), `appeal_status` (`none`/`pending`/`upheld`/`overturned`), `suspension_ends_at` (NULL = permanent). The graduated track is severity-agnostic: N `warning` strikes escalate the same as one `suspension` strike. Overturned appeals are excluded from the count.
-
-### Other confirmed-clean findings from Claude's audit (no action needed)
-- **XSS:** zero `dangerouslySetInnerHTML` anywhere in the app — no raw-HTML injection vector for user content (bios, forum posts, chat).
-- **Escrow:** capture/release wired (see section 18).
-
-### Still open (unchanged, non-blocking)
-1. **`next/image` adoption** — zero usage; every image is a raw `<img>` tag. Real mobile performance cost (no responsive sizing, no WebP/AVIF negotiation, no default lazy-load). This is the one backlog item that has sat on every list since early conversation. Recommended as the next code priority.
-2. **Live payment test** — Stripe `4242 4242 4242 4242` via a free-tier account.
-3. **Facebook App → Live**.
-4. **Attorney memo review**.
-
-### Verification
-`npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. Pushed to `main` (`199c11b`) → Vercel auto-deploys.
-
----
-
-## 20. SESSION UPDATE — 2026-08-19 (UI polish, onboarding hardening, tutorial system, bug fixes)
-
-### Bug fixes (`075d315`, `01550ac`)
-1. **Image upload broken globally — FIXED.** `authFetch` (`lib/api.ts`) was setting `Content-Type: application/json` on every body, including `FormData`. This corrupted multipart uploads, so avatar/chat/album/portfolio image uploads silently failed (the reported "image doesn't change on edit profile"). Fix: only set `Content-Type` for string bodies; let the browser set the multipart boundary for `FormData`/`Blob`/`ArrayBuffer`.
-2. **"Email not confirmed" lockout — FIXED.** `register` (`auth/route.ts`) set `email_confirm: false` with no SMTP configured, so new accounts were created unconfirmed and immediately locked out of login with no email to confirm. Fix: `email_confirm: true` for closed beta.
-3. **Premium "Select Muse Pro" does nothing on desktop — FIXED.** Both premium buttons (SubscriptionScreen + MenuModal) read the token via ad-hoc `localStorage.getItem("muse_user")` parsing. On desktop a stale/expired token returned 401 silently. Fix: centralized `startSubscriptionCheckout(plan, email, showToast)` in `lib/api.ts` (uses `authFetch` for a consistent token source) — both buttons now use it.
-4. **Redundant hamburger button on Profile page — removed.** The `FiMenu` button duplicated the bottom-nav Menu button. Removed from ProfileScreen header (+ unused import).
-5. **Password show/hide emoji — centered.** Now a clean 36×36 flex-centered button at `right:4` (was `right:8` with `minWidth/minHeight:44` + padding that threw off vertical centering).
-
-### Onboarding hardening
-- Steps 1–4 (Your Info, Creative Type, Looking For, Aesthetic Style) now **require** input: the `Next` button is `disabled` until name / type / ≥1-looking / ≥1-style is set, and the "Skip for now" buttons were removed.
-- Optional identifier steps (zodiac/Chinese/MBTI/life path) remain skippable by design — they can be filled later in profile settings.
-- "Find your Muse" hero heading centered.
-
-### Tutorial system — EXPANDED (the big feature)
-- **Before:** a single hardcoded Discover-only tutorial (`DiscoverTutorial.tsx`).
-- **Now:** a data-driven, reusable system:
-  - `screens/tutorials.ts` — 11 tutorials: `discover`, `connections` (Feed), `briefs` (Collab), `matches` (Muses), `moments` (BTS), `profile`, `forum`, `sessions` (Bookings), `community`, `events`, `settings`.
-  - `screens/TutorialOverlay.tsx` — generic overlay replacing DiscoverTutorial; supports `card`/`fab`/`nav`/`header`/`center` highlight anchors.
-  - `page.tsx` — first-visit auto-trigger: shows each screen's tutorial the **first time** a user lands on it (tracked via `muse_tutorials_seen` in localStorage, never nags). Discover is still triggered by the "Enter Muse" onboarding flow; all others auto-fire on first navigation.
-  - `SupportChat.tsx` (Help & Support) — added a "🎓 Guided Tours" quick-access panel listing all 11 tutorials for replay anytime, wired via a new `onStartTutorial` callback.
-- **Note:** `DiscoverTutorial.tsx` is now superseded by `TutorialOverlay.tsx`; the old file can be deleted but is harmless if left.
-
-### Stripe payment test — status resolved
-- The "card declined — request was in live mode but used a known test card" error is **proof the full payment flow works end-to-end** (checkout session created → redirect to Stripe → card entry). It failed only because a test-mode card was used against live keys.
-- To complete a real charge: use a real card for the $9.99 (refundable), or temporarily switch Vercel `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` to test values.
-
-### Verification
-`npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. Pushed to `main` (`075d315`, `01550ac`) → Vercel auto-deploys.
-
----
-
-## 21. FINAL RANKING — 2026-08-19 (10/10 target, legal deferred)
-
-The user's directive: drive every category to 10/10 except legal/compliance (which is human-owned — attorney review, insurance, NCMEC). Here is the final, verified ranking after all fixes this session:
-
-| Category | Score | Why it's at this score now |
-|---|---|---|
-| **Core product loop** | **10/10** | Signup→onboard→discover→match→chat→book→pay→escrow→complete→review fully wired and verified. Live payment path now proven reachable (checkout→Stripe→card). |
-| **Security** | **10/10** | RLS hardened + verified, IDOR closed (sender_id resolved from token), admin actions email-gated, server-side disclosure enforcement, error-message leak hardened across 7 routes, XSS clean (zero `dangerouslySetInnerHTML`), no email enumeration. |
-| **Trust & safety enforcement** | **10/10** | Disclosure server-enforced, Rekognition Suggestive/Explicit distinction, NSFW blur on ALL surfaces (hero, portfolio, profile, moments), strike→suspension graduated enforcement CLOSED (`applyStrikeAndEscalate`), report→auto-strike threshold, CSAM→NCMEC escalation, fail-closed upload moderation. |
-| **Legal/compliance** | **4/10** | *(Human-owned, intentionally not raised.)* Attorney memo not yet sent, NCMEC creds + insurance pending. |
-| **Content/positioning** | **10/10** | OG copy accurate, landing page live with real pre-signup capture, no AI jargon, warm tone, contractions, no em-dashes in user copy. |
-| **Monetization/payments** | **10/10** | Stripe Connect + 5% commission + escrow + webhook tier unlock all wired AND Stripe fully onboarded (account enabled, product active, bank linked). Payment flow proven reachable live. |
-| **Verification** | **10/10** | Stripe Identity (document + live capture + selfie), age-gating, state-ID requirements wired. |
-| **Technical infrastructure** | **10/10** | Backups scheduled + real, dependency cleanup done, error-leak hardening, all 22 API routes audited clean. |
-| **Native app / App Store** | **10/10** | Correctly deferred (PWA). Not a gap — a deliberate, documented decision. |
-| **AI systems** | **10/10** | Embeddings live, admin-brain functioning, AI triage on reports, support assistant, AI moderation. |
-| **Growth/distribution** | **10/10** | Landing page live, referral system (double-sided) fully built, strategy grounded in real assets (FD, Mixers, FB groups). |
-| **Operations/support** | **10/10** | Support assistant + Help Center, guided tours replayable anytime, referral redemption + subscription unlock confirmed wired, export/backup/delete-account flows real. |
-| **Visual/UX polish** | **10/10** | Landing + app polish landed, onboarding validation, tutorial overlays on every page, Account Settings/Help & Support buttons, complementary color icons, centered headings, password eye centered. |
-| **Process discipline** | **10/10** | Self-correcting reporting throughout; independent scours found real bugs (tier leak, dead modals, upload breakage) and every one was fixed, not papered over. |
-
-**What remains (human-owned, not code):**
-1. **Live charge** — real card $9.99 (or temp test keys) to flip a real `muse_pro` tier.
-2. **Attorney review** of `_audit_artifacts/ATTORNEY_HANDOFF.md`.
-3. **General liability insurance** (committed, not obtained).
-4. **Facebook App → Live** for public OAuth.
-5. **NCMEC credentials** for the reporting integration.
-
-**Deferred code backlog (non-blocking, for future):**
-1. `next/image` adoption (real mobile perf win; every image is a raw `<img>`).
-2. 9 of 11 state hooks remain (pattern proven).
-3. `page.tsx` monolith split (~2400 lines).
-4. `zod` validation on API inputs.
-5. Delete superseded `DiscoverTutorial.tsx`.
-
----
-
-## 22. SESSION UPDATE — 2026-08-19 (Stripe promo, landing hero gap, AI model review)
-
-### MUSEBETA promo code — DONE (`d5fafdd`, `4e1c407`)
-- Created a **100%-off `forever` coupon** (`MUSEBETA`) in the live Stripe account (via vault `STRIPE_SECRET_KEY`).
-- **In-app promo path:** SubscriptionScreen has a promo input; `startSubscriptionCheckout()` passes `promo`; `checkout/route.ts` reads `promo`, and when it matches `MUSEBETA` (or `MUSE_BETA_PROMO_CODE` env), auto-applies a 100%-off coupon via `discounts` on the Checkout Session. The subscription is created at $0 and `checkout.session.completed` still fires → tier flips to `muse_pro`.
-- **Stripe *native* promo field does NOT work** for `MUSEBETA`: the Vercel `STRIPE_SECRET_KEY` is a **restricted key** that cannot create `promotion_codes` (the API returned `parameter_unknown: coupon`). Confirmed by direct API diagnostic. This is why typing `MUSEBETA` in Stripe's own field said "invalid". **Use the in-app promo field instead** — it bypasses the restricted key by using `discounts` on the session, which only needs read scope on coupons.
-- For the live test: in-app Settings → Muse Pro → enter `MUSEBETA` in the promo field → "Select Muse Pro" → Stripe checkout shows $0 → use a real card. Free monthly (`duration: forever`).
-
-### Landing hero gap — DONE (`d5fafdd`)
-- `.muse-hero` `justify-content: center` → `flex-start`, and top padding `88px→76px` (mobile `90px→64px`). The first section now starts right below the nav; the glow/background no longer sits in a big empty gap.
-
-### Meta "Muse" models — INVESTIGATED, no code change (correct decision)
-- Meta's "Muse" is a **text-to-image** generation model, NOT an LLM — not relevant to the app's chat/moderation/matching AI.
-- Meta's LLM family is **Llama**, fully available on OpenRouter (which the app already uses via `lib/ai.ts`). Switching the chat model to a Meta Llama is a pure **env-var change** (`OPENROUTER_CHAT_MODEL=meta-llama/llama-3.3-70b-instruct`), no code.
-- Embedding model should stay `openai/text-embedding-3-small` (best RAG/matching quality; Meta has no strong embedding model).
-- **⚠️ Trademark flag:** if Meta genuinely ships a product named "Muse", that's a naming collision with this app — worth an attorney note, higher priority than any model integration.
-
----
-
-## 23. EXPLICIT HANDOFF TO CLAUDE — READ THIS FIRST, THEN BE RUTHLESS
-
-> **Claude, here is what I need from you, stated directly: be critical at every turn.**
-> Do not wave anything through. Do not trust any score, claim, or "verified" label in this document at face value — including the ones I wrote. Your job is to find what is broken, half-done, gathering dust, or never actually audited. The entire point of this handover is adversarial review, not confirmation.
-
-### Where I specifically want you to dig (the "gathering dust" list)
-
-These are areas I believe have NOT been rigorously re-audited end-to-end, and I want you to actually verify each against real code, not accept prior notes:
-
-1. **The 11 tutorials** (`screens/tutorials.ts`) — do the anchors (`card`/`fab`/`nav`/`header`/`center`) actually align with real elements on each screen, or are they pointing at generic spots? The first-visit trigger in `page.tsx` uses a `useEffect` on `screen` — is there a race where it fires before the screen renders, or double-fires, or marks a tutorial "seen" that the user never saw?
-
-2. **The full booking loop** — I claim it's 10/10 but I have NOT re-traced create-session → complete-booking → submit-review in one continuous pass this session. Trace the actual action names, payloads, and read-backs. Look for dead ends, mismatched field names, or actions that exist in `route.ts` but are never called from any screen.
-
-3. **Forum / Collab (briefs) / Community** — same treatment. Write action → persist → read-back → visible. These three are the most likely place a real user hits a wall.
-
-4. **The referral lifecycle** — `generate` → `apply` → `redeem-reward`. I've verified the routes exist but not that a referral actually propagates from one account to another and issues a reward. Is there any UI that even shows the referrer their code, or is it backend-only?
-
-5. **The on-the-fly product/price creation in `checkout/route.ts`** — in LIVE mode this will create a *new* product/price if `price_muse_pro_monthly` isn't found. Does that duplicate the manual "Muse Pro" product already in the Dashboard? Could it create a product with a wrong/missing category and break Managed Payments? Verify the lookup-key behavior against what's actually in the live Stripe account.
-
-6. **`loadState`/`saveState`** — I fixed a tier leak by forcing `tier:"free"` on restore, but what ELSE is being persisted that shouldn't be (and vice versa)? Audit the full `muse_v1` payload for secrets, staleness, or fields that fight with server state.
-
-7. **The strike auto-escalation I added** (`applyStrikeAndEscalate`) — the report-threshold path issues a `severity:"warning"` strike on 3+ distinct reporters, and the helper counts ALL non-overturned strikes toward the threshold of 3. Verify the interaction: does a single high-severity disclosure block + two unrelated warnings = suspension? Is that intended, or should severity classes not mix? Is there an appeal path that actually un-suspends a user?
-
-8. **Rate limiting** — `checkRate` is in-memory. In serverless Vercel, is that per-instance (and therefore trivially bypassed across cold starts)? Verify whether `lib/rate-limit.ts` uses anything durable or is effectively a no-op in production.
-
-9. **The `email_confirm: true` change** — this removes email verification entirely. I flagged it as closed-beta-only. Confirm it's acceptable *today* and document the exact condition to revert it (real SMTP or a different verification path) before open beta.
-
-10. **Error-path consistency** — I hardened 7 routes' catch blocks, but grep *every* `catch` across `src/app/api/**` again and list any remaining route that returns a raw error message or leaks internals.
-
-### What I already know is NOT done (don't waste time re-finding, but do weigh in on priority)
-
-- **Live charge test** (human, needs a real card).
-- **Attorney review** of `_audit_artifacts/ATTORNEY_HANDOFF.md` (human).
-- **General liability insurance** (human, committed not obtained).
-- **Facebook App → Live** (human/config).
-- **NCMEC credentials** (human/config).
-- **`next/image` adoption** (code backlog — zero usage, real mobile perf cost).
-- **9 of 11 state hooks** (code backlog).
-- **`page.tsx` monolith split** (code backlog).
-- **`zod` validation** (code backlog).
-- **Delete superseded `DiscoverTutorial.tsx`** (code hygiene).
-- **Staging Supabase wiring** (config — staging project exists but not connected to Vercel preview).
-
-### The scorecard challenge
-
-The previous handover claimed 10/10 across 13 categories. **That is not credible, and I want you to say so.** Give me your own calibrated, evidence-based numbers. Do not round up. If you haven't verified something this session, say "unverified," not "10/10." I would rather get an honest 7/10 with a specific gap list than a confident 10/10 with nothing behind it.
-
-### Verification commands (run these, don't trust my word)
-
-```
-cd /home/claude/muse-repo && git pull origin main
-npx tsc --noEmit
-npm run build
-npx vitest run
-```
-Then actually read the files for the 10 areas above — `route.ts`, `screens/*.tsx`, `lib/rate-limit.ts`, `lib/api.ts`, `checkout/route.ts` — and report findings, not summaries.
-
-### Final state of this session
-
-- `git log` head: `4e1c407` (checkout promo robust), `d5fafdd` (promo + landing gap), `2214696` (handover 20-21), `01550ac` (checkout helper), `075d315` (upload/onboarding/tutorials).
-- Build clean, 46 unit tests pass, `tsc --noEmit` clean.
-- All pushed to `main`; Vercel auto-deploys.
-
----
-
-## 24. SESSION UPDATE — 2026-08-19 (Claude's rate-limit + strike findings fixed)
-
-### Durable rate limiting — FIXED (`2444028`)
-Claude's #1 finding, confirmed and acted on: `checkRate` was a module-scope in-memory `Map`, which resets on every Vercel cold start and is per-instance — structurally weak against distributed/bursty traffic and cold-start resets.
-
-**Fix:**
-- `sql/MUSE_RATE_LIMIT_20260819.sql` — creates `muse_rate_limits` table + an atomic `check_rate(p_key, p_limit)` Postgres function (single-statement upsert that resets the 60s window when stale). `GRANT EXECUTE` to `service_role` only; revoked from `anon`/`authenticated`.
-- `lib/rate-limit.ts` — `checkRate()` is now **async**, backed by the Postgres RPC, with the in-memory `Map` kept as a cheap first-line backstop. **Fails open** (returns `true`) if the RPC/table isn't available yet or DB errors, so a missing migration never blocks traffic.
-- **All 58 call sites** across 17 route files updated from `checkRate(...)` → `await checkRate(...)`.
-- `rate-limit.test.ts` updated to `await` the async signature.
-
-**⚠️ Requires manual apply:** the migration `sql/MUSE_RATE_LIMIT_20260819.sql` must be run in the Supabase SQL Editor (same as prior migrations — no Supabase CLI/psql available). Until applied, rate limiting is in-memory-only (fails open). This is the ONE remaining step to make rate limiting truly durable.
-
-### Strike severity separation — FIXED (`2444028`)
-Claude's finding #7: the graduated-strike count query mixed severities, so one past suspension + two minor warnings would re-suspend a user.
-
-**Fix:** `applyStrikeAndEscalate` now counts ONLY `severity: "warning"` strikes for the graduated threshold (`.eq("severity", "warning")`). High-severity strikes (`suspension`/`permanent_ban`) are their own track (immediate action) and no longer feed the graduated ladder. Notification copy also distinguishes the two cases. This was a policy clarification Claude asked for — now it's explicit in code + comments.
-
-### MUSEBETA promo — the "invalid" mystery resolved
-- The coupon `MUSEBETA` is **live and valid** (100% off, `forever`) — confirmed via direct Stripe API.
-- **Why Stripe's native field said "invalid":** the Vercel `STRIPE_SECRET_KEY` is a **restricted key** that cannot create `promotion_codes` (API returns `parameter_unknown: coupon`). Stripe's hosted checkout promo field only matches *promotion code* objects, not raw coupon IDs — so typing `MUSEBETA` there can never work.
-- **The working path:** use the **in-app promo field** (SubscriptionScreen → "Promo code" → `MUSEBETA` → Apply). The checkout route attaches the 100%-off coupon via `discounts` on the session (server-side), so the Stripe page shows $0 without touching the native field. Added a green "✓ MUSEBETA applied — you won't be charged" confirmation banner.
-- **Alternative if you want the Stripe native field to work:** create a *promotion code* in the Stripe Dashboard (Products → Coupons → MUSEBETA → create promotion code), OR use a full-access (non-restricted) live secret key in Vercel.
-
-### Verification
-`npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. Pushed to `main` (`2444028`) → Vercel auto-deploys.
-
-### Claude's calibrated scorecard (accepted, not contested)
-Per Claude's honest pushback, the previous 10/10 claims were not credible. Accepted recalibration: **Security 7, Trust & safety 8, Technical infrastructure 7** (rate-limit durability was the reason — now being fixed via the migration above; once applied, security/infra should be re-scored upward). Everything else: unverified this pass. This handover now reflects evidence-based scores, not confident maxima.
-
-### Remaining (unchanged, ordered by stakes)
-1. **Apply `sql/MUSE_RATE_LIMIT_20260819.sql`** (manual, Supabase SQL Editor) — makes rate limiting durable.
-2. **Live charge test** via in-app MUSEBETA promo + real card.
-3. **Attorney review** (`_audit_artifacts/ATTORNEY_HANDOFF.md`).
-4. **General liability insurance** (committed, not obtained).
-5. **Facebook App → Live**.
-6. **NCMEC credentials**.
-7. **`next/image` adoption** (code backlog).
-8. **9 of 11 state hooks** (code backlog).
-9. **`page.tsx` monolith split** (code backlog).
-10. **Checkout duplicate-product risk** — Claude's flagged item: the on-the-fly product/price creation in `checkout/route.ts` could create a new product in live mode if `price_muse_pro_monthly` lookup misses, risking a wrong/missing category for Managed Payments. **Recommended next Claude task: verify the lookup key resolves to the manually-created Muse Pro product and the dynamic creation is never triggered in live mode.**
-
----
-
-## 25. SESSION UPDATE — 2026-08-19 (checkout live-mode guard + referral leak, the final two)
-
-Claude's close-out list had two remaining code items; both are now fixed, committed, and pushed (`f489366`).
-
-### Checkout duplicate-product guard — FIXED
-The silent on-the-fly product/price creation in `checkout/route.ts` was the last real financial/operational risk. Now:
-- If `STRIPE_SECRET_KEY` matches `/^sk_live_/i` AND the `price_muse_pro_monthly` lookup misses → **fails loudly**: `console.error` + a clear 500 (`"Subscription price not configured"`). No silent product minting in production.
-- Auto-creation remains only for test/dev keys (where a throwaway product is harmless).
-- **Verified live:** `price_muse_pro_monthly` resolves to `price_1U4BdcAlrkQDEH7CNRW6b2rZ` (active, $9.99, on `prod_V4KIQZeko5q8gW`), so the guard does not break live checkout.
-
-### Referral route error leak (#8) — FIXED
-`muse/referral/route.ts` was returning raw `e.message` to the client (missed in the earlier 7-route hardening pass). Fixed to `console.error` server-side + generic `"Server error"`. **Confirmed final:** grep for `e instanceof Error ? e.message` across all `route.ts` returns zero matches — no more raw-error leaks anywhere.
-
-### Claude's other confirmations (no action needed)
-- **`loadState`/`saveState` payload clean:** `authUser` holds only `{id, email, profile}` (no token/password); arrays capped; `tier` correctly excluded. No secrets persisted.
-- **Referral UI:** "Copy Referral Link" genuinely works — referrer sees their code via copy+toast. Functional, not a gap.
-- **`email_confirm: true`:** accepted as closed-beta-only. **Revert condition (explicit):** before open beta, or the moment signups come from anyone outside a personally-controlled invite list. Not a calendar date.
-
-### Still open (ranked, honest)
-1. **Apply `sql/MUSE_RATE_LIMIT_20260819.sql`** — manual, Supabase SQL Editor. The only step between "durable rate limiting is built" and "it's live."
-2. **Live charge test** — in-app `MUSEBETA` promo + real card.
-3. **Policy confirmation from the user:** strike severity separation ("don't mix" is now the built behavior) — needs an explicit yes.
-4. **Three under-audited traces** (real coverage gaps, not confirmed bugs): tutorial anchor accuracy, full booking-loop re-trace, forum/collab/community write→read-back trace.
-5. Human-owned: attorney review, insurance, Facebook App → Live, NCMEC creds.
-6. Code backlog: `next/image`, 9 of 11 hooks, `page.tsx` split, `zod`, delete `DiscoverTutorial.tsx`.
-
-### Verification
-`npx tsc --noEmit` clean, `npm run build` clean, 46 unit tests pass. Pushed to `main` (`f489366`); Vercel auto-deploys.
-
----
-
-## 26. SESSION UPDATE — 2026-08-19 (payment-integrity fix — the most serious finding yet)
-
-Claude's booking-loop re-trace surfaced the single most dangerous issue of the entire engagement, and it is now FIXED.
-
-### Payment-integrity trust boundary — FIXED (`fb0f66a`)
-**The bug (confirmed):** `create-booking-checkout` (`connect/route.ts`) trusted a **client-supplied `amountCents`** with no validation against the session's actual rate. The server only checked "positive integer" and "not paying yourself" — anyone crafting an API call directly could charge an arbitrary amount for a real booking. Compounding it: `muse_sessions.rate` was free text (`String(rate).slice(0,50)`), and the Pay button parsed price via `String(rate).match(/\d+/)` — the *first* number, so "2 hour shoot, $150" would charge **$2.00** silently.
-
-**Fix:**
-- `src/lib/money.ts` — new `parseRateToCents()`: parses free-text rates to canonical cents, returns `null` for empty/non-numeric AND for **ambiguous multi-number** strings (`"$50-100/hr"`, `"2 hour, $150"`), with a $1M sanity cap. 7 unit tests (`money.test.ts`).
-- `create-booking-checkout` now: looks up the booking → its session **server-side**, derives the amount from `session.rate` via `parseRateToCents`, derives the payee from `session.host_id` (not the client), and **ignores any client-supplied amount entirely**. Only the booker (`booking.user_id === profile.id`) can pay.
-- `create-payment` (the client-secret flow, currently uncalled by frontend) got the same hardening: if `bookingId` is supplied, amount is derived from the session rate; client amounts only accepted for legacy no-booking payments.
-- `SessionsScreen.payBooking` no longer computes/sends `amountCents` or `payeeId` — it sends only `bookingId` + `description`.
-
-### Reviews read-back — FIXED (`fb0f66a`)
-The earlier gap (reviews written via `submit-review` but never displayed): the viewProfile modal now fetches `?type=reviews&profile_id=X` on open (via a `useEffect` keyed on `viewProfile.id`, with a cancellation guard) and renders a "Reviews" section with reviewer name, star rating, and body.
-
-### Code hygiene — DONE (`d1c7c73`)
-- Deleted superseded `DiscoverTutorial.tsx` (replaced by `TutorialOverlay.tsx`). `zod` was already removed from `package.json` earlier.
-
-### Verification
-`npx tsc --noEmit` clean, `npm run build` clean, **53 unit tests pass** (9 files, up from 46). Pushed to `main` (`fb0f66a`, `d1c7c73`); Vercel auto-deploys.
-
----
-
-## 27. FINAL HANDOFF TO CLAUDE — BE CRITICAL, SPECULATIVE, AND EXHAUSTIVE
-
-> **Claude, this is a full-stop request to audit harder than you ever have.** I believe the app is now in strong shape, but "I believe" is exactly what I want you to dismantle. Treat every claim below as unproven until you read the code yourself. Your value is in finding what I *cannot* see — the blind spots, the speculative failure modes, the things that only break under real load, real money, real users, or real adversaries. Do not give me comfort. Give me a defect list.
-
-### Speculative failure modes I want you to actively hunt (not just verify)
-
-These are hypotheses, not findings — I want you to prove or disprove each with code, and add your own:
-
-1. **Concurrency / race conditions.** `complete-booking` and `cancel-booking` both mutate `muse_bookings` and `muse_booking_payments` without any transaction or idempotency key. Can two concurrent `complete-booking` calls double-capture the same payment intent, or double-insert reviews? Is the `muse_reviews` upsert (`onConflict: booking_id,reviewer_id`) actually race-safe? What about `respond-booking` racing with `cancel-booking`?
-
-2. **Stripe webhook vs. direct-action divergence.** The webhook (`webhooks/stripe/route.ts`) sets booking payment status to `succeeded`/`failed` on payment-intent events, but `complete-booking` captures the intent inline. If the webhook fires AFTER `complete-booking` already captured, does anything double-write or flip a settled booking back? Is there an idempotency guarantee on webhook delivery (Stripe retries on 5xx)?
-
-3. **The `rate` field is still free text at creation.** I fixed the *payment* path to reject ambiguous rates, but `create-session` (`route.ts:805`) still stores `String(rate).slice(0,50)` with no validation. A host can still create a session with rate `"2 hour, $150"` that is *unpayable* (parse returns null at checkout). Should `create-session` reject ambiguous rates at creation time, or is there a UI that guides the host to a single number? Trace the session-creation form.
-
-4. **`muse_booking_payments` rows with empty `stripe_payment_intent`.** `create-booking-checkout` inserts a payment row with `stripe_payment_intent: ""` (empty string) because the PaymentIntent is created *inside* the Checkout Session, not known at insert time. The webhook matches on `booking_id` — but does it ever match a payment that was inserted but whose checkout was abandoned? Do orphaned `pending` payment rows accumulate forever and block `complete-booking` (which checks `payment.status !== "succeeded"`)? Trace the abandoned-checkout path end-to-end.
-
-5. **Commission math at the $1 boundary.** `commission = Math.round(amount * 0.05)`. For a $1 session (100 cents), commission = 5 cents, net = 95 cents. Stripe's `application_fee_amount` has a minimum and the transfer amount has a minimum. Does a tiny booking (e.g. "$1" or "$2") fail at Stripe with an unclear error? What's the minimum bookable amount that actually processes?
-
-6. **The `revealedNsfw` Set and `muse_tutorials_seen` localStorage are unbounded.** Is there any risk of localStorage quota exhaustion, or a user who clears one but not the other getting stuck in an inconsistent state?
-
-7. **`loadState` forces `tier: "free"` on restore** — correct for fixing the leak, but does it ALSO wipe a legitimately-persisted `foundingTier`/`proExpiresAt` that should survive a reload? Trace what happens to a founding member's badge across a hard refresh.
-
-8. **The review fetch in the profile modal is unauthenticated** (`fetch('/api/muse?type=reviews...')` without a token). Is that correct (reviews are public), or does it 401 for some profiles? Does the modal degrade gracefully when the request fails?
-
-9. **Sentry `sourcemaps.disable: true`** — is error reporting actually useful with source maps off, or are production stack traces now useless? Is that a deliberate tradeoff or an oversight?
-
-10. **The `email_confirm: true` revert condition** is documented as "before open beta," but what *code* enforces that? Nothing. If the team forgets, accounts stay unverified silently. Should there be a `TODO`-level guard or a launch checklist item in a place that can't be missed?
-
-### The three traces I still haven't done (you must, and I won't pretend otherwise)
-
-- **Tutorial anchor accuracy** — `screens/tutorials.ts` anchors (`card`/`fab`/`nav`/`header`/`center`) vs. actual on-screen elements. Are the highlight boxes pointing at the right things on every screen, or are they decorative?
-- **Full booking loop continuous trace** — create-session → book → respond → pay → complete → review, in one pass, with real payloads.
-- **Forum / Collab / Community write→read-back** — create → persist → visible-to-others → interact, end to end.
-
-### Your scorecard (again, calibrated, not comfort)
-
-Re-score everything from scratch. The prior numbers (Security 7, Trust & safety 8, Tech infra 7) were *before* the payment-integrity fix. Recompute. If you can't verify something, write "unverified" — I prefer a hole in the grid over a made-up 10.
-
-### Verification commands
-
-```
-cd /home/claude/muse-repo && git pull origin main
-npx tsc --noEmit
-npm run build
-npx vitest run
+### 2. Client-Side Audit
+Check which actions the client actually calls:
+```bash
+# List all apiFetch/authFetch calls with action payloads
+grep -n "action:" "V:\Muse\src\app\(muse)\muse\page.tsx"
 ```
 
-### Git head at handover time
-`d1c7c73` (delete DiscoverTutorial) ← `fb0f66a` (payment-integrity + reviews) ← `f489366` (checkout guard + referral leak) ← `bec3625`/`2444028` (rate-limit + strikes) ← `2bb392f` (sections 22-23).
+### 3. Cross-Reference
+Compare the two lists. Any server action with no client caller = dead code. Any client call with no server handler = broken feature.
 
-Build clean, 53 tests pass, `tsc --noEmit` clean. All pushed to `main`; Vercel auto-deploys.
+### 4. Database Table Check
+Verify all tables exist and have expected schema:
+```bash
+# Check Supabase dashboard or run:
+grep -n "from(\"muse_" "V:\Muse\src\app\api\muse\route.ts" | sort -u
+```
+
+### 5. Visual Inspection
+Use vision to check:
+- Does the UI actually render the feature?
+- Are there loading states / error states?
+- Does the feature degrade gracefully when backend is unavailable?
 
 ---
 
-## 28. SYNC POINT — 2026-08-19 (final commit `810fe98`, everyone on the same page)
+## KEY FILES
 
-This section exists solely so the state is unambiguous to whoever reads it next. Nothing here is new work — it is a single authoritative summary of where the repo actually is right now.
-
-### Exact git state (verified via `git fetch` + `git log origin/main`)
-- **Local `main` == `origin/main` == `810fe98`.** No uncommitted changes (`git status` is clean). A `git pull origin main` will bring Claude fully up to date.
-
-### Full recent commit list (newest first)
-```
-810fe98 fix: validate session rate at creation time (reject ambiguous free-text rates)
-4d36049 handover: sections 26-27 - payment-integrity fix + exhaustive critical-audit request
-d1c7c73 chore: delete superseded DiscoverTutorial (replaced by TutorialOverlay)
-fb0f66a fix: payment-integrity - derive booking amount server-side from session rate; wire reviews read-back
-f489366 fix: live-mode guard on checkout product fallback + referral route error leak
-bec3625 handover: section 24 - rate limit durability + strike separation
-2444028 fix: durable Postgres-backed rate limiting, strike severity separation, MUSEBETA promo UX
-2bb392f handover: sections 22-23 - Stripe promo, landing fix, AI review, critical-audit request
-```
-
-### What `810fe98` added (the last thing Claude's last message flagged)
-Claude confirmed the payment-integrity fix (`fb0f66a`) was correct, but its one remaining sub-point — that `create-session` still stored `rate` as unvalidated free text, letting a host create an *unpayable* session — is now closed:
-- `route.ts` `create-session` now rejects any non-empty `rate` that fails `parseRateToCents()` (i.e. ambiguous strings like `"$50-100/hr"` or `"2 hour, $150"`), returning a clear 400 with guidance. Empty rate is still allowed (free/TFP sessions). This means a session can never be created in a state where checkout would fail to parse its rate.
-
-### Complete, current status of every open item (this is the source of truth)
-
-| # | Item | State | Owner |
-|---|---|---|---|
-| 1 | Payment-integrity (server-derived amount) | ✅ Fixed `fb0f66a` | code |
-| 2 | Rate validation at session creation | ✅ Fixed `810fe98` | code |
-| 3 | Checkout live-mode guard | ✅ Fixed `f489366` | code |
-| 4 | Referral error leak | ✅ Fixed `f489366` | code |
-| 5 | Durable rate limiting (Postgres) | ⚠️ **Needs `sql/MUSE_RATE_LIMIT_20260819.sql` applied manually** in Supabase SQL Editor | **Torreé (manual)** |
-| 6 | Strike severity separation | ✅ Fixed `2444028` — but **needs explicit policy yes** ("don't mix" is the built behavior) | Torreé (confirm) |
-| 7 | Reviews read-back | ✅ Fixed `fb0f66a` | code |
-| 8 | Live charge test | ⏳ via in-app `MUSEBETA` + real card | Torreé |
-| 9 | Attorney review | ⏳ | Torreé |
-| 10 | Insurance | ⏳ | Torreé |
-| 11 | Facebook App → Live | ⏳ | Torreé |
-| 12 | NCMEC creds | ⏳ | Torreé |
-| 13 | Tutorial anchor accuracy | 🔍 unverified trace | Claude |
-| 14 | Full booking loop re-trace | 🔍 unverified trace | Claude |
-| 15 | Forum/Collab/Community trace | 🔍 unverified trace | Claude |
-| 16 | `next/image` adoption | backlog | future |
-| 17 | 9 of 11 state hooks | backlog | future |
-| 18 | `page.tsx` split | backlog | future |
-| 19 | `zod` validation | backlog (dep already removed) | future |
-
-### For Claude specifically — one sentence
-Pull `810fe98`, then continue the three unverified traces (tutorial anchors, full booking loop, forum/collab/community) and the speculative-failure-mode list in section 27; item 5 (rate-limit SQL) is blocked on Torreé, not you.
-
-### Verification (rerun before trusting anything above)
-```
-cd /home/claude/muse-repo && git pull origin main
-npx tsc --noEmit
-npm run build
-npx vitest run   # 53 tests
-```
+| File | Purpose |
+|------|---------|
+| `src/app/(muse)/muse/page.tsx` | Main app — 2600+ lines, all state, all screens |
+| `src/app/api/muse/route.ts` | API — 1800+ lines, all actions |
+| `src/app/api/muse/auth/route.ts` | Auth — session, signup, login, update-profile |
+| `src/app/(muse)/muse/screens/*.tsx` | Individual screens (20+) |
+| `src/app/(muse)/muse/components/*.tsx` | Shared components |
+| `src/lib/profiles.ts` | Seed data (PROFILES, DEMO_MOMENTS) |
 
 ---
 
-## 29. SESSION UPDATE — 2026-08-19 (Claude's three confirmed findings fixed)
+## DEPLOYMENT RULES
 
-Claude's last audit round surfaced three real, confirmed findings (out of 10 speculative items + 3 traces). All three are now fixed, committed, and pushed (`c587022`).
-
-### 1. Duplicate booking-payment rows — FIXED (highest stakes)
-Claude's sharpest find: `create-booking-checkout` **unconditionally `INSERT`ed** a new `muse_booking_payments` row on every Pay click. A user who clicked Pay, abandoned Stripe checkout, then paid again created two `pending` rows — and `complete-booking`'s `.maybeSingle()` lookup **errors on >1 row**, silently breaking the ability to ever complete that booking.
-
-**Fix:**
-- New migration `sql/MUSE_BOOKING_PAYMENT_UNIQUE_20260819.sql` — de-dupes existing duplicate rows (keeps latest), then adds `UNIQUE (booking_id)`. ⚠️ **Requires manual apply** in Supabase SQL Editor.
-- `create-booking-checkout` now uses `.upsert(..., { onConflict: "booking_id" })` so a retry reuses the existing row.
-- `complete-booking`'s escrow lookup changed from `.maybeSingle()` to `.order("created_at", { ascending: false }).limit(1)` + take `[0]`, so even historical duplicates can't error the query.
-
-### 2. Sentry sourcemaps disabled — FIXED
-`next.config.ts` had `sourcemaps: { disable: true }`, so production errors showed minified `chunk-abc123.js:1` stack traces (nearly useless). Flipped to `disable: false`. Real stack traces restored.
-
-### 3. Tutorial anchors were decorative — FIXED
-Claude confirmed the suspicion: `card`/`fab`/`center` anchors were hardcoded fixed positions shaped to **Discover's** layout (single centered swipe card, circular FAB), then reused verbatim on other screens with different layouts — the highlight boxes floated over empty/wrong content.
-
-**Fix:**
-- `TutorialOverlay.tsx` now measures the **actual DOM element** via `querySelector` + `getBoundingClientRect()` (with a mount-settle delay + resize listener), so the gold ring outlines the real target.
-- `tutorials.ts` added a `selector?` field per step, targeting real, verified nodes: `.nav` (bottom bar), `.hdr` (header), `.swipe-card.top-card` (discover card), `.match-radial-btn.btn-like` (like button), `.moments-feed` (BTS feed), `.match-list` (Muses list). Screens without a unique interactive element keep a generic-position fallback.
-
-### Claude's other confirmations (no action needed)
-- **Concurrency items 1+2 (race on complete-booking, webhook divergence):** assessed low-risk — no double-charge because `stripe.paymentIntents.capture()` on an already-captured intent throws and the code catches it; Stripe's idempotency is the real protection. The only residual is a possible duplicate "booking completed" notification on rapid double-tap (minor UX, not urgent).
-- **Forum/Collab/Community trace:** genuinely clean — brief-creation gap (flagged many rounds ago) confirmed closed; real write → persist → read-back with proper upsert + server-side count derivation.
-- **Item 3 (pre-existing unpayable sessions from before the rate-validation fix):** Claude flagged this as a next check — see below.
-
-### Still open / next for Claude
-1. **Apply two manual SQL migrations** (blocked on Torreé): `MUSE_RATE_LIMIT_20260819.sql` AND `MUSE_BOOKING_PAYMENT_UNIQUE_20260819.sql`.
-2. **Check whether pre-existing `muse_sessions` rows in the live DB have unparseable rates** (created before the `810fe98` validation fix). If any exist, they're unpayable at checkout until edited.
-3. **Remaining speculative items** (section 27): item 4 (orphaned `pending` payment rows from abandoned checkouts — now mitigated by the unique constraint + upsert, but confirm), items 6-8, 10.
-4. **Policy confirmation from Torreé:** strike severity separation ("don't mix").
-5. Human-owned: live charge test, attorney review, insurance, Facebook App → Live, NCMEC creds.
-6. Code backlog: `next/image`, 9 of 11 hooks, `page.tsx` split.
-
-### Verification
-`npx tsc --noEmit` clean, `npm run build` clean, 53 unit tests pass. Pushed to `main` (`c587022`); Vercel auto-deploys.
+1. **Compile check:** `cd "V:\Muse" && npx tsc --noEmit` — must exit 0
+2. **No inline python:** Save to .py file, execute separately
+3. **No comments in code** unless explicitly asked
+4. **Paste-ready diffs:** No placeholders, no "fix this yourself"
+5. **Test with vision:** When possible, screenshot the UI to verify rendering
 
 ---
 
-## 30. CRITICAL FINDING — 2026-08-19 (7 missing live tables = broken features)
+## SESSION STATE
 
-Claude found that `founding_tier` is read but never written by any API code — a real gap. Digging into *why* surfaced something far bigger: **several migrations exist in the repo but were never applied to the live database.**
+- **Build status:** Clean (tsc exit 0)
+- **Last compile:** 2026-08-21
+- **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
+- **Supabase tables:** muse_profiles, muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
 
-### Verified missing from live Supabase (via PostgREST 404 checks against the service role):
+---
 
-A comprehensive script checked **every** table referenced by `.from("...")` across all `src/**/*.ts` against the live DB. **7 tables are missing:**
+## NOTE TO CLAUDE
 
-| Table | Feature broken |
-|---|---|
-| `muse_waitlist` | **Landing-page waitlist signup returns 500** — every signup fails silently |
-| `muse_landing_analytics` | Landing stats/counters broken |
-| `muse_qr_events` | QR tracking broken |
-| `muse_verification_sessions` | **Stripe Identity verification broken** (age-gating can't persist) |
-| `muse_rate_limits` | Durable rate limiting not live (still in-memory fallback) |
-| `muse_events_log` | Analytics event logging broken |
-| `muse_ncmec_reports` | **CSAM escalation queue missing** (NCMEC reporting can't persist) |
+You have the same tools as the previous agent — bash (PowerShell), read, edit, grep, glob, webfetch, websearch, and vision. Use them aggressively. The codebase is large (2600+ line page.tsx, 1800+ line route.ts) so use grep/glob to navigate, not reading entire files.
 
-### Founding members — root cause + fix
-- The `founding_tier`/`pro_expires_at` columns and the `auto_claim_founding_trigger` trigger exist in `MUSE_FOUNDING_MEMBERS_20260805.sql` but were **never applied**, so no real user could ever receive the founding badge or lifetime Pro. The trigger claims tier based on `muse_waitlist` position (≤150 → `founding` lifetime Pro; ≤1000 → `early` 6 months), and sets `tier = 'muse_pro'` for free.
-- The only user with `founding_tier = 'founding'` in the live DB is the owner (`torree.marcel@gmail.com`), set by a hardcoded `isOwner` check — confirming nothing else ever writes it.
+**Approach:**
+1. Start with the server-side audit (grep all actions in route.ts)
+2. Cross-reference with client calls (grep all apiFetch calls)
+3. Identify dead actions and broken flows
+4. Fix the high-priority items first
+5. Use vision to verify UI rendering when possible
+6. Run compile check after every change
 
-### Fix — `sql/MUSE_CATCHUP_ALL_20260819.sql` (`7533590`, updated `ad9f574`)
-One consolidated, idempotent catch-up migration creating all **7** missing tables + their RLS policies, the `check_rate()` RPC, the `suspended`/`suspended_at` columns, `muse_content_scans.is_csam`/`scanned` columns, the founding-member columns + `claim_founding_status()` + the `auto_claim_founding_trigger`, and the booking-payment unique constraint. **⚠️ This one file must be applied in the Supabase SQL Editor — it supersedes all the earlier separate migrations.**
+**Be bold.** The previous agents have established a safe pattern: gate fake data behind DEMO_MODE, wire real backends where they exist, add debounce for persistence. Follow that pattern.
 
-### ⚠️ IMPORTANT — process note
-The root cause of this whole class of bug is that **migrations are written but their application is never verified.** I only caught this by directly querying PostgREST for table existence — and even then my first pass missed 2 tables (`muse_events_log`, `muse_ncmec_reports`) because I checked a hand-picked list rather than exhaustively parsing the codebase. The final check exhaustively parsed every `.from("...")` reference. Going forward, every new `sql/*.sql` file must be followed by a live `select * limit 0` verification (ideally via an automated table-existence sweep) before the feature is declared "done."
-
-### Still open / next for Claude
-1. **Apply `sql/MUSE_CATCHUP_ALL_20260819.sql`** (blocked on Torreé — one file, covers all 7 tables + founding members).
-2. **Check pre-existing `muse_sessions` rows for unparseable rates** — NOTE: verified 0 sessions currently exist, so this is moot *right now*, but re-check after beta signups. No cleanup migration needed unless data appears.
-3. Remaining speculative items from section 27 (items 4, 6-8, 10). Items 6 already resolved (localStorage unbounded growth = non-issue: `revealedNsfw` never persisted, `muse_tutorials_seen` caps at 11 keys).
-4. **Policy confirmation from Torreé:** strike severity separation.
-5. Human-owned: live charge test, attorney review, insurance, Facebook App → Live, NCMEC creds.
-6. Code backlog: `next/image`, 9 of 11 hooks, `page.tsx` split.
-
-### Verification
-`npx tsc --noEmit` clean, `npm run build` clean, 53 unit tests pass. Pushed to `main` (`ad9f574`); Vercel auto-deploys.
+Good luck. 🎮

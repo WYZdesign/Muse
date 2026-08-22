@@ -936,6 +936,8 @@ export async function POST(req: NextRequest) {
         "openToTravel", "autoReply", "privacy", "visibility", "tags",
         // discovery-preference fields the client sends nested under `preferences`
         "ageMin", "ageMax", "gender",
+        // cross-device onboarding resume
+        "onboardingStep",
       ]);
       // Accept both a flat payload and the client's nested `{ preferences: {...} }` shape.
       const source = (rest.preferences && typeof rest.preferences === "object") ? rest.preferences : rest;
