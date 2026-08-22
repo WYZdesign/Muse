@@ -665,6 +665,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    if (actionType === "like-feed-post") {
+      if (!await checkRate(ip, "like-feed-post", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const { postId: feedPostId, liked } = rest;
+      if (!feedPostId) return NextResponse.json({ error: "postId required" }, { status: 400 });
+      const { data: feedPost } = await sb.from("muse_feed_posts").select("likes").eq("id", feedPostId).maybeSingle();
+      if (!feedPost) return NextResponse.json({ error: "Post not found" }, { status: 404 });
+      const newLikes = (feedPost.likes || 0) + (liked ? 1 : -1);
+      const { error: updErr } = await sb.from("muse_feed_posts").update({ likes: Math.max(0, newLikes) }).eq("id", feedPostId);
+      if (updErr) return safeServerError(updErr, "db op");
+      return NextResponse.json({ success: true, likes: Math.max(0, newLikes) });
+    }
+
     if (actionType === "create-moment") {
       if (!await checkRate(ip, "create-moment", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { text, img } = rest;
@@ -724,6 +736,17 @@ export async function POST(req: NextRequest) {
         const { error } = await sb.from("muse_forum_replies").insert({ post_id: postId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, text: cleanText });
         if (error) return safeServerError(error, "db op");
         return NextResponse.json({ success: true });
+      }
+      if (forumType === "vote") {
+        const { direction } = rest;
+        if (!postId) return NextResponse.json({ error: "postId required" }, { status: 400 });
+        const delta = direction === "down" ? -1 : 1;
+        const { data: post } = await sb.from("muse_forum_posts").select("votes").eq("id", postId).maybeSingle();
+        if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
+        const newVotes = (post.votes || 0) + delta;
+        const { error: updErr } = await sb.from("muse_forum_posts").update({ votes: newVotes }).eq("id", postId);
+        if (updErr) return safeServerError(updErr, "db op");
+        return NextResponse.json({ success: true, votes: newVotes });
       }
       if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
       const cleanTitle = sanitizeText(String(title).trim(), 200);

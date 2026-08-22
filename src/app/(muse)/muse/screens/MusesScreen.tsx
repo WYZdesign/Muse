@@ -63,7 +63,7 @@ export const MusesScreen = memo(function MusesScreen({
 }: MusesScreenProps) {
   return (
     <div className={"screen-el" + (screen === "matches" ? " active" : "")}>
-      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: "12px 18px" }}>
+      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         <div
           className="logo-link"

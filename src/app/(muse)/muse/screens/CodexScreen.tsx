@@ -50,7 +50,7 @@ export const CodexScreen = memo(function CodexScreen({
 
   return (
     <div className={"screen-el" + (screen === "codex" ? " active" : "")}>
-      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: "12px 18px" }}>
+      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("profile")}><FiArrowLeft size={20} /></button>
         <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 22, fontWeight: 800, color: "var(--gold)", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}><FiBookOpen size={18} /> Glossary + Codex</div>
         <div style={{ width: 34 }} />
