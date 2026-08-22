@@ -119,8 +119,8 @@ export const SettingsScreen = memo(function SettingsScreen({
   return (
     <div className="phone-wrap">
       <div className="phone" id="muse-app">
-        <div className="hdr">
-          <div className="logo-link" style={{ fontSize: 32, WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }}>Profile</div>
+        <div className="hdr" style={{ background: "linear-gradient(135deg,rgba(156,39,176,0.12),rgba(186,104,200,0.08),rgba(129,199,132,0.1))", borderBottom: "1px solid rgba(186,104,200,0.15)" }}>
+          <div className="logo-link" style={{ fontSize: 32, background: "linear-gradient(90deg,#CE93D8,#B388FF,#A5D6A7)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }}>Settings</div>
           <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
         </div>
         <div className="settings-scroll">

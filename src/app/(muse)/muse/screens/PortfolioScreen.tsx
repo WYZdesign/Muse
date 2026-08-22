@@ -32,6 +32,7 @@ export const PortfolioScreen = memo(function PortfolioScreen({
       <div className="hdr">
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{ fontSize: 32, WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }}>Portfolio</div>
+        <div style={{ width: 42 }} />
       </div>
       <div className="portfolio-scroll">
         <MyAlbumsManager

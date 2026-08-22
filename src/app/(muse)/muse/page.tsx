@@ -1626,7 +1626,13 @@ function MusePage() {
       <a href="#muse-main" className="sr-only" style={{zIndex:99999}} onFocus={(e)=>{e.currentTarget.style.cssText="position:fixed;top:0;left:0;padding:8px 16px;background:var(--gold);color:#0a0612;fontWeight:700;borderRadius:0 0 8px 0;width:auto;height:auto;clip:auto;overflow:visible;margin:0"}} onBlur={(e)=>{e.currentTarget.removeAttribute("style")}}>Skip to main content</a>
       <CardPreloader currentIdx={currentIdx} profiles={filteredProfiles} />
       <Confetti active={showConfetti} />
-      {activeTutorial && TUTORIALS[activeTutorial] && <TutorialOverlay tutorial={TUTORIALS[activeTutorial]} onDone={() => setActiveTutorial(null)} />}
+      {activeTutorial && TUTORIALS[activeTutorial] && (
+        <TutorialOverlay
+          tutorial={TUTORIALS[activeTutorial]}
+          onDone={() => setActiveTutorial(null)}
+          onStepSelector={(sel) => setShowMatchMenu(sel === ".match-radial-btn.btn-like")}
+        />
+      )}
       {swipeDir && <SwipeParticles active dir={swipeDir} />}
       <BackgroundScene flash={screenFlash} />
       {showMatchOverlay && (

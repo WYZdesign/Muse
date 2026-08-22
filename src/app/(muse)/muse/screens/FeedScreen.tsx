@@ -1,7 +1,7 @@
 "use client";
 
-import React, { memo } from "react";
-import { FiArrowLeft, FiImage, FiX, FiMoreHorizontal } from "react-icons/fi";
+import React, { memo, useState } from "react";
+import { FiArrowLeft, FiImage, FiX, FiMoreHorizontal, FiFlag } from "react-icons/fi";
 import Nav from "../components/Nav";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
 import type { Screen } from "../components/types";
@@ -91,6 +91,8 @@ export const FeedScreen = memo(function FeedScreen({
   setShareTarget = () => {},
   authFetch,
 }: FeedScreenProps) {
+  const [postReplies, setPostReplies] = useState<Record<number, any[]>>({});
+
   return (
     <div className={"screen-el" + (screen === "connections" ? " active" : "")}>
       <div className="hdr">
@@ -105,11 +107,11 @@ export const FeedScreen = memo(function FeedScreen({
             backgroundClip: "text",
             WebkitTextFillColor: "transparent",
             color: "transparent",
+            fontWeight: 800,
+            animation: "shimmer 8s ease-in-out infinite",
           }}
-        >
-          Feed
-        </div>
-        <div style={{ width: 36 }} />
+        >Feed</div>
+        <div style={{ width: 42 }} />
       </div>
       <div className="conn-scroll" style={{ padding: "0 0 80px" }}>
         <div style={{ display: "flex", gap: 6, margin: "0 20px 10px" }}>
@@ -243,19 +245,57 @@ export const FeedScreen = memo(function FeedScreen({
                     })}
                   </div>
                   <div style={{ display: "flex", gap: 4 }}>
-                    {post.comments > 0 && <span style={{ fontSize: 12, color: "var(--muted)" }}>{post.comments} comments</span>}
+                    {post.comments > 0 && (
+                      <span style={{ fontSize: 12, color: "var(--muted)", cursor: "pointer" }} onClick={() => {
+                        if (replyingTo !== post.id) setReplyingTo(post.id);
+                      }}>
+                        {post.comments} comments{(postReplies[post.id]?.length || 0) > 0 ? ` · ${postReplies[post.id].length} shown` : ""}
+                      </span>
+                    )}
                     {post.shares > 0 && <span style={{ fontSize: 12, color: "var(--muted)" }}>{post.shares} shares</span>}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 10, padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                  <button className={"feed-action-btn" + (post.liked ? " liked-pop" : "")} style={{ flex: 1, height: 42, background: post.liked ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.04)", border: post.liked ? "1.5px solid rgba(239,68,68,0.35)" : "1px solid rgba(255,255,255,0.08)", color: post.liked ? "#ff5c5c" : "#ff8a8a", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => { const newLiked = !post.liked; setFeedPosts(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); if (feedPostsStatic.some(p => p.id === post.id)) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "like-feed-post", postId: post.id, liked: newLiked }) }).catch(() => {}); }}>♥ {post.likes + (post.liked ? 1 : 0)}</button>
-                  <button className="feed-action-btn" style={{ flex: 1, height: 42, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#87CEEE", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}>💬 {post.comments}</button>
-                  <button className="feed-action-btn" style={{ flex: 1, height: 42, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "var(--gold)", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => { setShareTarget({ id: post.id, text: post.text || "", img: post.img || "", author: post.author }); }}>↗ Share</button>
+                  <button className={"feed-action-btn" + (post.liked ? " liked-pop" : "")} style={{ flex: 1.05, height: 42, background: post.liked ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.04)", border: post.liked ? "1.5px solid rgba(239,68,68,0.35)" : "1px solid rgba(255,255,255,0.08)", color: post.liked ? "#ff5c5c" : "#ff8a8a", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => { const newLiked = !post.liked; setFeedPosts(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); if (feedPostsStatic.some(p => p.id === post.id)) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "like-feed-post", postId: post.id, liked: newLiked }) }).catch(() => {}); }}>♥ {post.likes + (post.liked ? 1 : 0)}</button>
+                  <button className="feed-action-btn" style={{ flex: 1.05, height: 42, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#87CEEE", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => {
+                    if (replyingTo !== post.id && !postReplies[post.id]) {
+                      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "get-replies", postId: post.id }) })
+                        .then((r: any) => r.json?.()).then((data: any) => {
+                          if (data?.replies?.length) setPostReplies(prev => ({ ...prev, [post.id]: data.replies }));
+                        }).catch(() => {});
+                    }
+                    setReplyingTo(replyingTo === post.id ? null : post.id);
+                  }}>💬 {post.comments}</button>
+                  <button className="feed-action-btn" style={{ flex: 1.05, height: 42, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#ff8a8a", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => { setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }}>⚑ Report</button>
                 </div>
                 {replyingTo === post.id && (
-                  <div style={{ display: "flex", gap: 8, padding: "10px 18px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-                    <input className="inp" placeholder="Write a reply..." value={commentText} onChange={e => setCommentText(e.target.value)} onKeyDown={async e => { if (e.key === "Enter" && commentText.trim()) { const txt = commentText.trim(); setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); setCommentText(""); setReplyingTo(null); try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "reply", postId: post.id, text: txt }) }); showToast("Reply posted!"); } catch { showToast("Failed to post reply"); } } }} style={{ flex: 1, margin: 0 }} />
-                    <button className="btn btn-gold" style={{ width: "100%", padding: "10px 0", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={async () => { if (commentText.trim()) { const txt = commentText.trim(); setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); setCommentText(""); setReplyingTo(null); try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "reply", postId: post.id, text: txt }) }); showToast("Reply posted!"); } catch { showToast("Failed to post reply"); } } }}>Send</button>
+                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                    {(postReplies[post.id] || []).map((reply: any, i: number) => (
+                      <div key={i} style={{ display: "flex", gap: 10, padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                        <img loading="lazy" src={reply.avatar || currentUser.avatar} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700 }}>{reply.author || "User"}</div>
+                          <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5 }}>{reply.text}</div>
+                          <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>{reply.time || "Just now"}</div>
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ display: "flex", padding: "10px 16px" }}>
+                      <div style={{ flex: 1, display: "flex", alignItems: "center", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "0 4px 0 14px", height: 42 }}>
+                        <input
+                          className="inp"
+                          placeholder="Write a reply..."
+                          value={commentText}
+                          onChange={e => setCommentText(e.target.value)}
+                          onKeyDown={async e => { if (e.key === "Enter" && commentText.trim()) { const txt = commentText.trim(); setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "reply", postId: post.id, text: txt }) }); showToast("Reply posted!"); } catch { showToast("Failed to post reply"); } } }}
+                          style={{ flex: 1, margin: 0, border: "none", background: "transparent", padding: "10px 0", fontSize: 13 }}
+                        />
+                        <button
+                          onClick={async () => { if (commentText.trim()) { const txt = commentText.trim(); setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "reply", postId: post.id, text: txt }) }); showToast("Reply posted!"); } catch { showToast("Failed to post reply"); } } }}
+                          style={{ flexShrink: 0, width: 56, height: 34, borderRadius: 10, border: "none", background: commentText.trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: commentText.trim() ? "#fff" : "rgba(255,255,255,0.25)", fontWeight: 700, fontSize: 12, cursor: commentText.trim() ? "pointer" : "default", transition: "all .2s", marginRight: 4 }}
+                        >Post</button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

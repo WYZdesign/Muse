@@ -117,13 +117,13 @@ export const MenuModal = memo(function MenuModal({
       <div className="hamburger-panel">
         <div
           className="hamburger-close"
-          onClick={() => setShowHamburger(false)}
+          onClick={() => { if (hamburgerScreen) setHamburgerScreen(null as any); else setShowHamburger(false); }}
           role="button"
-          aria-label="Close menu"
+          aria-label={hamburgerScreen ? "Back to menu" : "Close menu"}
           tabIndex={0}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setShowHamburger(false); }}
+          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { if (hamburgerScreen) setHamburgerScreen(null as any); else setShowHamburger(false); } }}
         >
-          <FiX size={18} />
+          {hamburgerScreen ? <FiArrowLeft size={18} /> : <FiX size={18} />}
         </div>
         {!hamburgerScreen && (
           <button
@@ -189,7 +189,7 @@ export const MenuModal = memo(function MenuModal({
                       <div className="conn-actions" style={{ marginTop: 8, display: "flex", gap: 8, flexDirection: "column" }}>
                         <button className="btn btn-gold" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={async () => { try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "join-community", communityId: c.id }) }); if (!r.ok) throw new Error("failed"); showToast("Joined " + c.name + "!"); } catch { showToast("Failed to join"); } }}>{c.cat === "nsfw" ? "Join (18+)" : "Join"}</button>
                         <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={() => showToast(c.name + " community opened!")}>Learn</button>
-                        <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={() => { navigator.clipboard?.writeText("https://wyzdesign.com/muse/community/" + c.id); showToast("Link copied!"); }}>Share</button>
+                        <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={() => { const url = "https://wyzdesign.com/muse/community/" + c.id; if (navigator.share) { navigator.share({ title: c.name, url }).catch(() => {}); } else { navigator.clipboard?.writeText(url); showToast("Link copied!"); } }}>Share</button>
                       </div>
                     </div>
                   </div>
@@ -202,7 +202,7 @@ export const MenuModal = memo(function MenuModal({
                     <div style={{ fontSize: 13, color: "var(--text2)", margin: "4px 0 8px", lineHeight: 1.5 }}>{ev.desc}</div>
                     <div style={{ display: "flex", gap: 8, width: "100%", flexDirection: "column" }}>
                       <button className={"btn " + (rsvpdEvents.includes(ev.id) ? "btn-outline" : "btn-gold")} style={{ width: "100%", padding: "14px 0", fontSize: 14, fontWeight: 700, borderRadius: 12 }} onClick={async () => { const isRsvpd = rsvpdEvents.includes(ev.id); try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: isRsvpd ? "cancel-rsvp" : "rsvp", eventId: ev.id }) }); setRsvpdEvents(prev => isRsvpd ? prev.filter((x) => x !== ev.id) : [...prev, ev.id]); showToast(isRsvpd ? "RSVP cancelled" : "RSVP confirmed!"); } catch { showToast("Failed to update RSVP"); } }}>{rsvpdEvents.includes(ev.id) ? "Going" : "RSVP"}</button>
-                      <button className="btn btn-outline" style={{ width: "100%", padding: "14px 0", fontSize: 14, fontWeight: 600, borderRadius: 12 }} onClick={() => { navigator.clipboard?.writeText("https://wyzdesign.com/muse/event/" + ev.id); showToast("Event link copied!"); }}>Share</button>
+                      <button className="btn btn-outline" style={{ width: "100%", padding: "14px 0", fontSize: 14, fontWeight: 600, borderRadius: 12 }} onClick={() => { const url = "https://wyzdesign.com/muse/event/" + ev.id; if (navigator.share) { navigator.share({ title: ev.title, url }).catch(() => {}); } else { navigator.clipboard?.writeText(url); showToast("Event link copied!"); } }}>Share</button>
                     </div>
                   </div>
                 ))}
@@ -268,7 +268,7 @@ export const MenuModal = memo(function MenuModal({
                       <div className="conn-actions" style={{ marginTop: 8, display: "flex", gap: 8, flexDirection: "column" }}>
                         <button className="btn btn-gold" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={async () => { try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "connect", targetId: p.id }) }); if (!r.ok) throw new Error("failed"); showToast("Connection request sent to " + p.name + "!"); } catch { showToast("Failed to send connection"); } }}>Connect</button>
                         <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={() => { setViewProfile(p); showToast("Viewing " + p.name + "'s profile"); }}>View Profile</button>
-                        <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={() => { navigator.clipboard?.writeText("https://wyzdesign.com/muse/pro/" + p.id + "?ref=" + currentUser.name.replace(/\s+/g, "-").toLowerCase()); showToast("Shared " + p.name + "'s profile!"); }}>Share Your Profile</button>
+                        <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={() => { const url = "https://wyzdesign.com/muse/pro/" + p.id + "?ref=" + currentUser.name.replace(/\s+/g, "-").toLowerCase(); if (navigator.share) { navigator.share({ title: p.name + " on Muse", url }).catch(() => {}); } else { navigator.clipboard?.writeText(url); showToast("Shared " + p.name + "'s profile!"); } }}>Share Your Profile</button>
                       </div>
                     </div>
                   </div>

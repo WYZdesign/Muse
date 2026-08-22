@@ -94,10 +94,10 @@ export const CollabScreen = memo(function CollabScreen({
             backgroundClip: "text",
             WebkitTextFillColor: "transparent",
             color: "transparent",
+            fontWeight: 800,
+            animation: "shimmer 8s ease-in-out infinite",
           }}
-        >
-          Collab
-        </div>
+        >Collab</div>
         <button className="hdr-btn" onClick={() => setShowPostBrief(true)} aria-label="Create Brief"><FiPlus size={18} /></button>
       </div>
       <div className="conn-tabs" style={{ padding: "0 12px" }}>

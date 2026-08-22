@@ -3,12 +3,8 @@
 import React, { memo, useEffect, useState } from "react";
 import type { TutorialDef, TutorialStep } from "./tutorials";
 
-interface Rect { left: number; top: number; width: number; height: number; }
+interface Rect { left: number; top: number; width: number; height: number; anchor?: string; }
 
-// Real-element highlight: measure the target DOM node via querySelector so the
-// gold ring outlines the ACTUAL element on each screen (not a hardcoded guess
-// shaped to Discover's layout). Falls back to a generic centered band when the
-// selector isn't present.
 function useElementRect(step: TutorialStep): Rect | null {
   const [rect, setRect] = useState<Rect | null>(null);
 
@@ -21,13 +17,14 @@ function useElementRect(step: TutorialStep): Rect | null {
 
     const measure = () => {
       const r = el!.getBoundingClientRect();
+      if (r.width < 4 || r.height < 4) { setRect(null); return; }
       setRect({ left: r.left, top: r.top, width: r.width, height: r.height });
     };
     measure();
-    // Re-measure on resize and shortly after mount (layout settle).
-    const t = setTimeout(measure, 120);
+    const t1 = setTimeout(measure, 120);
+    const t2 = setTimeout(measure, 650);
     window.addEventListener("resize", measure);
-    return () => { clearTimeout(t); window.removeEventListener("resize", measure); };
+    return () => { clearTimeout(t1); clearTimeout(t2); window.removeEventListener("resize", measure); };
   }, [step.selector]);
 
   return rect;
@@ -36,23 +33,26 @@ function useElementRect(step: TutorialStep): Rect | null {
 export const TutorialOverlay = memo(function TutorialOverlay({
   tutorial,
   onDone,
+  onStepSelector,
 }: {
   tutorial: TutorialDef;
   onDone: () => void;
+  onStepSelector?: (selector: string | undefined) => void;
 }) {
   const [idx, setIdx] = useState(0);
   const steps: TutorialStep[] = tutorial.steps;
   const step = steps[idx];
   const rect = useElementRect(step);
 
+  useEffect(() => { onStepSelector?.(step.selector); }, [step.selector, onStepSelector]);
+  useEffect(() => () => onStepSelector?.(undefined), [onStepSelector]);
+
   const next = () => {
     if (idx >= steps.length - 1) onDone();
     else setIdx(idx + 1);
   };
 
-  // A real measured element → ring it exactly.
   const ring: Rect | null = rect;
-  // Generic fallback positions for screens where no selector matches.
   const generic = (anchor: string): Rect => {
     const vw = window.innerWidth, vh = window.innerHeight;
     switch (anchor) {
@@ -65,19 +65,23 @@ export const TutorialOverlay = memo(function TutorialOverlay({
     }
   };
   const target = ring || generic(step.anchor);
-  const isFab = step.anchor === "fab";
 
-  // ── Tooltip placement: put the explainer on the OPPOSITE side of the
-  // highlighted element so it never covers what it's describing. ──
   const vw = window.innerWidth, vh = window.innerHeight;
+  const TOOLTIP_WIDTH = 280;
+  const MARGIN = 12;
+  const RESERVED_HEIGHT = 260;
+
   const targetCenterX = target.left + target.width / 2;
-  const targetCenterY = target.top + target.height / 2;
+  const spaceAbove = target.top;
+  const spaceBelow = vh - (target.top + target.height);
+  const vertical = spaceAbove > spaceBelow ? "top" : "bottom";
   const horizontal = targetCenterX < vw * 0.5 ? "left" : "right";
-  const vertical = targetCenterY < vh * 0.5 ? "bottom" : "top";
 
   const tooltipStyle: React.CSSProperties = {
     position: "absolute",
-    width: 280,
+    width: TOOLTIP_WIDTH,
+    maxHeight: `calc(100vh - ${MARGIN * 2}px)`,
+    overflowY: "auto",
     background: "linear-gradient(135deg,#1a0a2e,#2d1b4e)",
     border: "1px solid rgba(255,215,0,0.25)",
     borderRadius: 20,
@@ -85,39 +89,33 @@ export const TutorialOverlay = memo(function TutorialOverlay({
     boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
     transition: "all .3s ease",
   };
+
+  const rawLeft = horizontal === "left" ? target.left : target.left + target.width - TOOLTIP_WIDTH;
+  tooltipStyle.left = Math.min(Math.max(rawLeft, MARGIN), Math.max(MARGIN, vw - TOOLTIP_WIDTH - MARGIN));
+
   if (vertical === "bottom") {
-    tooltipStyle.left = horizontal === "left" ? Math.max(12, target.left) : undefined;
-    tooltipStyle.right = horizontal === "right" ? Math.max(12, vw - target.left - target.width) : undefined;
-    tooltipStyle.top = target.top + target.height + 16;
+    tooltipStyle.top = Math.min(target.top + target.height + 16, Math.max(MARGIN, vh - RESERVED_HEIGHT));
   } else {
-    tooltipStyle.left = horizontal === "left" ? Math.max(12, target.left) : undefined;
-    tooltipStyle.right = horizontal === "right" ? Math.max(12, vw - target.left - target.width) : undefined;
-    tooltipStyle.bottom = vh - target.top + 16;
+    tooltipStyle.bottom = Math.min(vh - target.top + 16, Math.max(MARGIN, vh - RESERVED_HEIGHT));
   }
 
-  const highlightRadius = isFab ? "50%" : Math.min(22, target.width / 3);
+  const highlightRadius = target.anchor === "fab" ? "50%" : Math.min(22, target.width / 3);
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, pointerEvents: "auto" }}>
-      {/* dim backdrop — tap to advance */}
-      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(2px)" }} onClick={next} />
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.88)" }} onClick={next} />
 
-      {/* spotlight cutout: the target stays bright, everything else dark */}
       <div style={{
         position: "absolute", left: target.left, top: target.top, width: target.width, height: target.height,
         borderRadius: highlightRadius,
-        boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)",
-        border: "2.5px solid var(--gold, #FFD700)",
+        boxShadow: "0 0 0 9999px rgba(0,0,0,0.75)",
+        border: "2px solid var(--gold, #FFD700)",
         pointerEvents: "none",
         transition: "all .3s ease",
       }} />
 
-      {/* tooltip card — opposite side of the highlight */}
       <div style={tooltipStyle} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg,#FFD700,#FF8A80,#D4A5FF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>✨</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{step.title}</div>
-        </div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 8 }}>{step.title}</div>
         <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6, marginBottom: 16 }}>{step.body}</div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", gap: 6 }}>

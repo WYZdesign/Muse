@@ -100,11 +100,11 @@ export const ProfileScreen = memo(function ProfileScreen({
 }: ProfileScreenProps) {
   return (
     <div className={"screen-el" + (screen === "profile" ? " active" : "")}>
-      <div className="hdr" style={{ justifyContent: "space-between" }}>
+      <div className="hdr" style={{ justifyContent: "space-between", background: "linear-gradient(135deg,rgba(255,215,0,0.12),rgba(233,30,99,0.08),rgba(186,104,200,0.1))", borderBottom: "1px solid rgba(255,215,0,0.15)" }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         </div>
-        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>Your Profile</div>
+        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 18, fontWeight: 800, background: "linear-gradient(90deg,#FFD700,#F48FB1,#CE93D8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Your Profile</div>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="hdr-btn" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setShowEditProfile(true); }} aria-label="Edit Profile"><FiEdit2 size={18} /></button>
         </div>

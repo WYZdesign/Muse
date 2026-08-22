@@ -71,26 +71,44 @@ Patch applied via `git am`. Claude had no push access (known Anthropic sandbox b
 
 **Compile status:** Clean (exit 0) — `95de36c` on `main`.
 
+### Session 7 (Claude + Torree, 2026-08-22)
+Torree asked for a swipe-feel pass + dark/light-mode fix + tutorial overlay + settings reorg. Multiple patches applied across sessions 7a-7d.
+
+| Fix | File | What changed |
+|-----|------|-------------|
+| Swipe feel (touch-action race) | `muse.css` | `.swipe-card` was `touch-action:pan-y`, which hands vertical touch movement to the browser's native scroll handler first. Set to `none` so JS has uncontested control. |
+| Swipe-up (super like) was dead | `page.tsx`, `DiscoverScreen.tsx` | Fully wired: y-axis tracking, upward-release threshold calling `doSwipe("super")`, missing `.label-super` div rendered. |
+| Photo-nav zones blocked gesture | `page.tsx` | `.card-photo-zone` removed from block list — drag starts anywhere on card. |
+| Pointer capture on wrong element | `page.tsx` | `setPointerCapture` on `e.currentTarget` not `e.target`. |
+| Dark/light-mode native controls | `globals.css`, both `layout.tsx` | `color-scheme: dark` set globally. |
+| NSFW checkbox accent | `CommunityScreen.tsx` | `accentColor: "#ffd700"` added. |
+| Tutorial overlay: invisible ring | `TutorialOverlay.tsx`, `page.tsx` | `onStepSelector` callback forces radial menu open. Rects <4x4px fall back to generic. |
+| Tutorial overlay: off-screen tooltip | `TutorialOverlay.tsx` | Space-based placement, viewport clamping, `maxHeight`+`overflowY:auto`. |
+| Settings reorganization | `SettingsScreen.tsx` | 4 groups → 6 groups: Account, Appearance, Discovery, Payments, Safety, Legal. |
+| Activity panel back button | `MenuModal.tsx` | ← arrow when inside sub-screens, X on main menu. |
+| Notch-safe headers | `CollabScreen.tsx`, `FeedScreen.tsx`, `PortfolioScreen.tsx` | Right-side spacer added so titles stay left-aligned. |
+| Feed comment input | `FeedScreen.tsx` | Post button embedded inside input field. Action buttons widened to `flex: 1.05`. |
+| CommunityScreen rewrite | `CommunityScreen.tsx` | Event/group cards open detail modals. RSVP/Join/Share all working with toasts + loading states. Web Share API. |
+| NetworkScreen rewrite | `NetworkScreen.tsx` | Gradient header (blue→cyan). Pro cards tap to open profile modal. Connect button graceful error handling. Forum comments expand inline. |
+| Match logic bug fix | `page.tsx:1682` | `Math.random()>0.5` → `DEMO_MODE&&Math.random()<0.3` in intent picker. |
+| SQL migration done | Supabase Dashboard | `muse_profiles.last_seen_at` column added. |
+
+### Session 8 (Claude, continued)
+| Fix | File | What changed |
+|-----|------|-------------|
+| BTS page: BeReal/Snapchat integration | `BtsScreen.tsx` | Dual camera prompt, 2-minute window, grid layout, reactions, real-time feel. |
+
+**Compile status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
+
+**Dark spot #1 (`profileViews`) — gated:** `DEMO_MODE` flag controls fake data. The "who viewed you" screen is gated behind `muse_pro` tier.
+
+**Dark spot #2 (`activityFeed`) — already wired:** `page.tsx` notifications-merge effect reads real rows from `muse_notifications` table (not `muse_activity_log`), deduped by body text.
+
 ---
 
 ## THE DARK SPOTS — What's Left to Explore
 
-### HIGH PRIORITY — Real Bugs / Disconnected Features
-
-#### 1. `profileViews` / `profileViewers` — Still Fake
-- **Location:** `page.tsx` lines 213-214, 467-468, 1022-1023 (now gated)
-- **Problem:** `profileViews` is a count, `profileViewers` is an array of `{name, avatar, time}`. Both are seeded from localStorage only. No backend writes exist. No `muse_profile_views` table.
-- **Fix options:**
-  - A) Gate behind `DEMO_MODE` (like likedBy) — simplest
-  - B) Wire to `muse_activity_log` with `action: 'view-profile'` — reads real data but needs writes on every card view (high-frequency)
-  - C) Create `muse_profile_views` table — cleanest but most work
-- **Recommendation:** Option A for now. The "who viewed you" screen is a premium feature in most dating apps — could be gated behind `muse_pro` tier.
-
-#### 2. `activityFeed` — Partially Fake
-- **Location:** `page.tsx` lines 1024, 1591 — random "liked your profile" entries added to feed
-- **Problem:** Activity feed entries are created client-side with `Math.random()` gating. No server-side activity log writes on like/match events.
-- **Backend exists:** `muse_activity_log` table (inserted on `match`, `message`, `brief_apply` events via route.ts)
-- **Fix:** Read from `muse_activity_log` on session load instead of building fake entries client-side. The `GET /api/muse?type=activity` endpoint may already exist — check.
+No HIGH PRIORITY items open — #1 gated, #2 already wired. Next up is MEDIUM.
 
 ### MEDIUM PRIORITY — Potential Issues
 
@@ -189,9 +207,9 @@ Use vision to check:
 
 ## SESSION STATE
 
-- **Build status:** Clean (tsc exit 0)
+- **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
 - **Last compile:** 2026-08-22
-- **Last commit:** `95de36c` — savedBriefs cross-device
+- **Last commit:** `65dd6ec` — swipe-up/dark-mode/settings reorg + tutorial overlay fix on `main`
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** muse_profiles, muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
 - **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)

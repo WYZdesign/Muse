@@ -5,10 +5,6 @@ export interface TutorialStep {
   title: string;
   body: string;
   anchor: "card" | "fab" | "nav" | "header" | "center";
-  // Optional CSS selector for the real DOM element to highlight. When present,
-  // the overlay measures it with getBoundingClientRect so the ring outlines the
-  // ACTUAL element on that screen. When absent, a generic anchor position is
-  // used as a fallback.
   selector?: string;
 }
 
@@ -18,42 +14,32 @@ export interface TutorialDef {
   steps: TutorialStep[];
 }
 
-// One tutorial per primary screen. `key` maps to the Screen value so the
-// first-visit trigger + the Help Center replay share a single source of truth.
-//
-// Anchor selectors target real, stable DOM nodes shared across the app:
-//   .nav        → the bottom navigation bar (Nav.tsx)
-//   .hdr        → the screen header bar (every screen renders one)
-//   .screen-el  → the active screen container (the main content region)
-// For screens without a unique interactive element, steps fall back to a
-// generic anchor position (still visually grounded, not pointing at a
-// Discover-specific card).
 export const TUTORIALS: Record<string, TutorialDef> = {
   discover: {
     key: "discover",
     title: "Discover",
     steps: [
-      { id: "card", title: "Discover Cards", anchor: "card", selector: ".swipe-card.top-card", body: "Here's your deck of creatives. Tap the left or right side of the photo to browse their images, and scroll down to read their full profile, prompts, styles, and portfolio." },
-      { id: "fab", title: "Match Actions", anchor: "fab", selector: ".match-radial-btn.btn-like", body: "This is the Like button. Around the card you'll also find Rewind, Pass, Super Like, and Like + Note." },
-      { id: "swipe", title: "Swipe to Decide", anchor: "center", body: "Swipe right to like and left to pass, or tap the round buttons. Every like gets you closer to a match." },
-      { id: "nav", title: "Navigation", anchor: "nav", selector: ".nav", body: "Use the bottom bar to move between Discover, Feed, Collab, Muses, and BTS. The menu button opens everything else, like your profile and settings." },
+      { id: "card", title: "Profile Card", anchor: "card", selector: ".swipe-card.top-card", body: "Tap left/right edges of the photo to browse images. Scroll down for bio, prompts, styles, and portfolio." },
+      { id: "swipe", title: "Swipe or Tap", anchor: "center", body: "Swipe right to like, left to pass. Drag up to Super Like. Or tap the round buttons below." },
+      { id: "fab", title: "Action Buttons", anchor: "fab", selector: ".match-radial-btn.btn-like", body: "Rewind, Pass, Super Like, Like, and Like + Note. Each match earns a free DM." },
+      { id: "nav", title: "Navigation", anchor: "nav", selector: ".nav", body: "Bottom bar switches screens. Menu button opens profile, settings, and marketplace." },
     ],
   },
   connections: {
     key: "connections",
     title: "Feed",
     steps: [
-      { id: "post", title: "Your Feed", anchor: "card", selector: ".screen-el", body: "This is where creatives share work, updates, and behind-the-scenes moments. Scroll to see what your community is up to." },
-      { id: "compose", title: "Post Something", anchor: "fab", body: "Tap the compose button to share your own work. Add a caption, attach photos, and post to your network." },
-      { id: "nav", title: "Move Around", anchor: "nav", selector: ".nav", body: "The bottom bar takes you between Discover, Feed, Collab, Muses, and BTS at any time." },
+      { id: "post", title: "Community Posts", anchor: "card", selector: ".screen-el", body: "Photos, updates, and work-in-progress from your network. Double-tap or tap the heart to like." },
+      { id: "compose", title: "Share Work", anchor: "fab", body: "Post photos with a caption. Tag creatives, add location, and set visibility." },
+      { id: "nav", title: "Quick Switch", anchor: "nav", selector: ".nav", body: "Badges show new matches and messages. Tap any icon to jump screens." },
     ],
   },
   briefs: {
     key: "briefs",
     title: "Collab",
     steps: [
-      { id: "briefs", title: "Briefs", anchor: "card", selector: ".brief-card", body: "Briefs are paid or unpaid collaboration listings. Creatives post projects they need help with, and you can apply or save them." },
-      { id: "post", title: "Post a Brief", anchor: "fab", body: "Have a project? Post your own brief with a title, description, budget, and category so others can find you." },
+      { id: "briefs", title: "Open Briefs", anchor: "card", selector: ".brief-card", body: "Paid and unpaid gigs. Tap a brief to see budget, deadline, and requirements. Save or apply." },
+      { id: "post", title: "Post a Brief", anchor: "fab", body: "Create a listing with title, description, category, budget, and deadline. It goes live instantly." },
       { id: "nav", title: "Navigate", anchor: "nav", selector: ".nav", body: "Switch between screens anytime using the bottom bar." },
     ],
   },
@@ -61,67 +47,64 @@ export const TUTORIALS: Record<string, TutorialDef> = {
     key: "matches",
     title: "Muses",
     steps: [
-      { id: "matches", title: "Your Muses", anchor: "card", selector: ".match-list", body: "People you've matched with appear here. Tap one to open a chat, view their profile, or manage the connection." },
-      { id: "chat", title: "Start Talking", anchor: "center", body: "Open a match to send messages, share images, and plan your next collaboration." },
-      { id: "nav", title: "Navigate", anchor: "nav", selector: ".nav", body: "Use the bottom bar to move between screens." },
+      { id: "matches", title: "Match List", anchor: "card", selector: ".match-list", body: "Your connections. Tap a match to open chat, view their profile, or unmatch." },
+      { id: "chat", title: "Messaging", anchor: "center", body: "Send text, photos, and voice notes. Free DMs after a match; unlimited with Pro." },
     ],
   },
   moments: {
     key: "moments",
     title: "BTS",
     steps: [
-      { id: "moments", title: "Behind the Scenes", anchor: "card", selector: ".moments-feed", body: "BTS is a live feed of short moments from creatives — set photos, gear shots, on-location snaps. They disappear after a while, so check back often." },
-      { id: "post", title: "Share a Moment", anchor: "fab", body: "Tap to post your own behind-the-scenes moment. It goes out to your network instantly." },
-      { id: "nav", title: "Navigate", anchor: "nav", selector: ".nav", body: "The bottom bar moves you between all your screens." },
+      { id: "moments", title: "Live Moments", anchor: "card", selector: ".moments-feed", body: "Behind-the-scenes clips from creatives. Set photos, gear shots, location snaps. They expire after a while." },
+      { id: "post", title: "Post a Moment", anchor: "fab", body: "Share a quick BTS snap to your network. Photos and short video only." },
     ],
   },
   profile: {
     key: "profile",
     title: "Your Profile",
     steps: [
-      { id: "profile", title: "Your Profile", anchor: "header", selector: ".hdr", body: "This is how other creatives see you. Your photo, type, bio, stats, and portfolio all live here." },
-      { id: "edit", title: "Edit Profile", anchor: "center", body: "Tap Edit Profile (or the pencil icon) to update your name, bio, location, and photo. Tap Account Settings for privacy, notifications, and security." },
-      { id: "portfolio", title: "Portfolio", anchor: "center", body: "Build your portfolio with albums and photos so potential collaborators can see your best work at a glance." },
+      { id: "profile", title: "Public Profile", anchor: "header", selector: ".hdr", body: "This is what others see — photo, type, bio, styles, portfolio, and stats." },
+      { id: "edit", title: "Edit Profile", anchor: "center", body: "Tap Edit to change name, bio, location, and avatar. Add portfolio albums and prompt responses." },
+      { id: "settings", title: "Settings", anchor: "center", body: "Account Settings has privacy, notifications, themes, NSFW, and subscription management." },
     ],
   },
   forum: {
     key: "forum",
     title: "Forum",
     steps: [
-      { id: "forum", title: "Community Forum", anchor: "card", selector: ".conn-card", body: "The forum is where the community talks — ask questions, share tips, and discuss the craft. Upvote posts and leave replies." },
-      { id: "post", title: "Start a Thread", anchor: "fab", body: "Tap to create a new thread. Give it a title, write your post, and pick a category." },
+      { id: "forum", title: "Threads", anchor: "card", selector: ".conn-card", body: "Community discussions. Upvote useful posts, reply to help others, sort by recent or top." },
+      { id: "post", title: "New Thread", anchor: "fab", body: "Start a discussion with a title, body, and category. Others can reply and upvote." },
     ],
   },
   sessions: {
     key: "sessions",
     title: "Bookings",
     steps: [
-      { id: "sessions", title: "Sessions", anchor: "card", selector: ".conn-card", body: "Book sessions with creatives here. Browse offerings, pick a time, and complete your booking with secure payments and escrow." },
-      { id: "book", title: "Book a Session", anchor: "center", body: "Open a session to see details and book. You may need to complete identity verification and a disclosure form first." },
-      { id: "nav", title: "Navigate", anchor: "nav", selector: ".nav", body: "Use the bottom bar to move between screens." },
+      { id: "sessions", title: "Session Listings", anchor: "card", selector: ".conn-card", body: "Browse or list creative sessions. Each shows price, duration, and availability." },
+      { id: "book", title: "Book Now", anchor: "center", body: "Tap a session to see details, pick a date, and pay. Identity verification and disclosure may be required first." },
     ],
   },
   community: {
     key: "community",
     title: "Community",
     steps: [
-      { id: "community", title: "Communities", anchor: "card", selector: ".conn-card", body: "Join communities around cities, crafts, and interests. Find events and connect with creatives near you." },
-      { id: "events", title: "Events", anchor: "center", body: "Events are meetups, mixers, and shoots. RSVP to let others know you're coming." },
+      { id: "community", title: "Groups", anchor: "card", selector: ".conn-card", body: "City-based, craft-based, and interest-based communities. Join to see members, events, and discussions." },
+      { id: "events", title: "Events", anchor: "center", body: "Meetups, mixers, and shoots. RSVP to save your spot and notify attendees." },
     ],
   },
   events: {
     key: "events",
     title: "Events",
     steps: [
-      { id: "events", title: "Events", anchor: "card", selector: ".conn-card", body: "Browse upcoming events and mixers. RSVP to save your spot and connect with attendees." },
+      { id: "events", title: "Upcoming Events", anchor: "card", selector: ".conn-card", body: "Browse events by date, location, or type. RSVP to confirm attendance and see who else is going." },
     ],
   },
   settings: {
     key: "settings",
     title: "Settings",
     steps: [
-      { id: "settings", title: "Settings", anchor: "header", selector: ".hdr", body: "Everything you can control lives here — discovery preferences, notifications, connected accounts, theme, and more." },
-      { id: "premium", title: "Muse Premium", anchor: "center", body: "Upgrade to Muse Pro for unlimited likes, advanced filters, read receipts, and priority discover." },
+      { id: "settings", title: "Settings Groups", anchor: "header", selector: ".hdr", body: "Account, Appearance, Discovery, Payments, Safety, and Legal — everything organized in one place." },
+      { id: "premium", title: "Go Pro", anchor: "center", body: "Unlimited likes, advanced filters, read receipts, and priority discover. Manage subscription here." },
     ],
   },
 };
