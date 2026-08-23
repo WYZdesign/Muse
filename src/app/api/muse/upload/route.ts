@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
     if (error) return safeServerError(error, "upload POST");
 
     const { data: urlData } = sb.storage.from("muse-uploads").getPublicUrl(data.path);
-    return NextResponse.json({ success: true, url: urlData.publicUrl, path: data.path });
+    return NextResponse.json({ success: true, url: urlData.publicUrl, path: data.path, moderation: isVideo ? "skipped-video" : "scanned" });
   } catch (e: unknown) {
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
