@@ -6,6 +6,7 @@ import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 import { CODEX_ZODIAC, CODEX_CHINESE, CODEX_LIFE_PATH, CODEX_MBTI, CODEX_TYPES, CODEX_AESTHETICS } from "../components/codexData";
 import * as icons from "react-icons/gi";
+import { FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiBookOpen, FiHeart } from "react-icons/fi";
 
 export interface CodexScreenProps {
   screen: Screen;
@@ -15,6 +16,20 @@ export interface CodexScreenProps {
 }
 
 // ── BADGE MASTER GLOSSARY ────────────────────────────────────────────────────
+const GI = icons as Record<string, any>;
+const FI: Record<string, any> = { FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiBookOpen, FiHeart };
+function IconGlyph({ name, size = 20 }: { name: string; size?: number }) {
+  if (name.startsWith("Gi")) {
+    const C = GI[name];
+    if (C) return <C size={size} />;
+  }
+  if (name.startsWith("Fi")) {
+    const C = FI[name];
+    if (C) return <C size={size} />;
+  }
+  return <>{name}</>;
+}
+
 interface BadgeDef { name: string; icon: string; color: string; short: string; long: string; tier: "trust" | "achievement" | "engagement" | "community"; }
 const BADGES: BadgeDef[] = [
   { name: "Verified Pro", icon: "✓", color: "#FFD700", tier: "trust", short: "Identity verified by Muse", long: "We checked this member's government ID and professional credentials. A Verified Pro is a confirmed real person with a real creative identity, and it's the strongest trust signal on the platform." },
@@ -22,22 +37,22 @@ const BADGES: BadgeDef[] = [
   { name: "Creative Sage", icon: "◊", color: "#FFB5C2", tier: "achievement", short: "47+ collaborations completed", long: "Earned after 47+ completed collaborations. Creative Sages are trusted veterans with deep experience, the step between Rising Star and Top Creator." },
   { name: "Super Collab", icon: "♥", color: "#FF69B4", tier: "engagement", short: "High match compatibility", long: "This profile scores really well against your own compatibility, whether it's shared styles, complementary roles, aligned personality, or shared interests. A Super Collab is a strong nudge to say hi." },
   { name: "Match Magnet", icon: "♥", color: "#FF69B4", tier: "engagement", short: "10+ matches this month", long: "Got 10 or more matches this month. Match Magnets are in demand right now, so expect a busy inbox and quick replies." },
-  { name: "Quick Responder", icon: "⚡", color: "#FFD700", tier: "engagement", short: "Responds within 2 hours", long: "This member replies within 2 hours on average. A Quick Responder badge means fast, reliable communication, perfect when you're on a deadline." },
+  { name: "Quick Responder", icon: "FiZap", color: "#FFD700", tier: "engagement", short: "Responds within 2 hours", long: "This member replies within 2 hours on average. A Quick Responder badge means fast, reliable communication, perfect when you're on a deadline." },
   { name: "Style Icon", icon: "✦", color: "#D4A5FF", tier: "community", short: "Recognized for outstanding style", long: "The community has spotlighted their portfolio for standout aesthetic, composition, or a distinctive voice. A Style Icon is someone worth studying." },
-  { name: "Local Legend", icon: "📍", color: "#87CEEB", tier: "community", short: "Top creative in their city", long: "Ranked among the most active and highest-rated creatives in their city. Local Legends are the go-to collaborators in their market." },
+  { name: "Local Legend", icon: "FiMapPin", color: "#87CEEB", tier: "community", short: "Top creative in their city", long: "Ranked among the most active and highest-rated creatives in their city. Local Legends are the go-to collaborators in their market." },
   { name: "Rising Star", icon: "✦", color: "#98FB98", tier: "achievement", short: "New to Muse, gaining traction", long: "New to Muse and already picking up steam, whether that's 100+ matches or quick early traction. Rising Stars are fresh energy, so connect early." },
-  { name: "Full Moon", icon: "🌕", color: "#C0C0FF", tier: "achievement", short: "1 year on Muse", long: "Earned after a full year on the platform. A Full Moon member has been a steady part of the Muse community." },
-  { name: "Golden Hour", icon: "☀️", color: "#FFD700", tier: "achievement", short: "50+ shoots completed", long: "Completed 50+ shoots through Muse bookings. Golden Hour creators have delivered at scale and are proven on set." },
-  { name: "Collab King", icon: "👑", color: "#FFD700", tier: "achievement", short: "10+ bookings completed", long: "Completed 10+ bookings through Muse. A Collab King has shown they can turn a match into real, paid, finished work." },
-  { name: "Social Butterfly", icon: "🦋", color: "#FF69B4", tier: "engagement", short: "500+ messages", long: "Sent 500+ messages on Muse. Social Butterflies are deeply active conversationalists and networkers." },
+  { name: "Full Moon", icon: "GiFullMoon", color: "#C0C0FF", tier: "achievement", short: "1 year on Muse", long: "Earned after a full year on the platform. A Full Moon member has been a steady part of the Muse community." },
+  { name: "Golden Hour", icon: "FiSun", color: "#FFD700", tier: "achievement", short: "50+ shoots completed", long: "Completed 50+ shoots through Muse bookings. Golden Hour creators have delivered at scale and are proven on set." },
+  { name: "Collab King", icon: "GiCrown", color: "#FFD700", tier: "achievement", short: "10+ bookings completed", long: "Completed 10+ bookings through Muse. A Collab King has shown they can turn a match into real, paid, finished work." },
+  { name: "Social Butterfly", icon: "GiButterfly", color: "#FF69B4", tier: "engagement", short: "500+ messages", long: "Sent 500+ messages on Muse. Social Butterflies are deeply active conversationalists and networkers." },
 ];
 
 // ── CONNECTION TYPE GLOSSARY ─────────────────────────────────────────────────
 const CONN_TYPES = [
-  { name: "Collaborator", icon: "🤝", color: "#FFD700", desc: "You want to make work together, like a project, a shoot, or a commission." },
-  { name: "Friend", icon: "👥", color: "#87CEEB", desc: "You're looking for creative community and genuine friendship, not just work." },
-  { name: "Mentor", icon: "🎓", color: "#98FB98", desc: "You want guidance, teaching, or someone to learn from (or to be that for others)." },
-  { name: "Partner", icon: "💞", color: "#FF69B4", desc: "You're open to a deeper romantic or creative-life partnership." },
+  { name: "Collaborator", icon: "FiBriefcase", color: "#FFD700", desc: "You want to make work together, like a project, a shoot, or a commission." },
+  { name: "Friend", icon: "FiUsers", color: "#87CEEB", desc: "You're looking for creative community and genuine friendship, not just work." },
+  { name: "Mentor", icon: "FiBookOpen", color: "#98FB98", desc: "You want guidance, teaching, or someone to learn from (or to be that for others)." },
+  { name: "Partner", icon: "FiHeart", color: "#FF69B4", desc: "You're open to a deeper romantic or creative-life partnership." },
 ];
 
 export const CodexScreen = memo(function CodexScreen({
@@ -76,7 +91,7 @@ export const CodexScreen = memo(function CodexScreen({
                 {BADGES.filter(b => b.tier === tier).map(b => (
                   <button key={b.name} onClick={() => setOpenBadge(openBadge === b.name ? null : b.name)} style={{ width: "100%", textAlign: "left", marginBottom: 8, padding: "14px 16px", borderRadius: 16, background: "rgba(255,255,255,0.025)", border: `1px solid ${openBadge === b.name ? b.color : "rgba(255,255,255,0.06)"}`, cursor: "pointer", transition: "all .25s" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, background: `${b.color}20`, border: `1px solid ${b.color}40`, color: b.color, flexShrink: 0 }}>{b.icon}</div>
+                      <div style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: `${b.color}20`, border: `1px solid ${b.color}40`, color: b.color, flexShrink: 0 }}><IconGlyph name={b.icon} size={20} /></div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{b.name}</div>
                         <div style={{ fontSize: 12, color: "var(--text2)" }}>{b.short}</div>
@@ -92,7 +107,7 @@ export const CodexScreen = memo(function CodexScreen({
               {CODEX_TYPES.map(t => <Expandable key={t.name} icon={t.icon} name={t.name} short={t.long.split(". ")[0] + "."} long={t.long} color="#FFD700" />)}
             </Section>
             <Section title="Aesthetics / Styles" subtitle="The visual and creative styles you work in.">
-              {CODEX_AESTHETICS.map(a => <Expandable key={a.name} icon="🎨" name={a.name} short={a.long.split(". ")[0] + "."} long={a.long} color="#FFB5C2" />)}
+              {CODEX_AESTHETICS.map(a => <Expandable key={a.name} icon="GiPaintBrush" name={a.name} short={a.long.split(". ")[0] + "."} long={a.long} color="#FFB5C2" />)}
             </Section>
             <Section title="Connection Types" subtitle="What you're looking for in a match.">
               {CONN_TYPES.map(c => <Expandable key={c.name} icon={c.icon} name={c.name} short={c.desc} long={c.desc} color={c.color} />)}
@@ -155,13 +170,9 @@ function Section({ title, subtitle, howTo, why, children }: { title: string; sub
 
 function Expandable({ icon, name, short, long, color }: { icon: string; name: string; short: string; long: string; color: string }) {
   const [open, setOpen] = useState(false);
-  // `icon` is either a typographic glyph (♈, 🔢) or a react-icons/gi
-  // component name (GiRat…) — resolve the latter to a real vector.
-  const GiIcons = icons as Record<string, any>;
-  const GiIcon = icon.startsWith("Gi") ? GiIcons[icon] : null;
   return (
     <button onClick={() => setOpen(o => !o)} style={{ width: "100%", textAlign: "left", display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 14px", marginBottom: 8, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: `1px solid ${open ? color + "40" : "rgba(255,255,255,0.06)"}`, cursor: "pointer", transition: "all .25s" }}>
-      <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, background: `${color}20`, border: `1px solid ${color}40`, flexShrink: 0 }}>{GiIcon ? <GiIcon size={20} /> : icon}</div>
+      <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: `${color}20`, border: `1px solid ${color}40`, flexShrink: 0 }}><IconGlyph name={icon} size={18} /></div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", flex: 1 }}>{name}</div>
