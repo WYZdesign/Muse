@@ -287,12 +287,28 @@ Claude now has full agentic browsing with vision. This unlocks live verification
 
 3. **`showDistance` server-side withholding** — Session 10 flagged that the toggle now *saves* but nothing server-side actually withholds `distanceMi` when a user sets `showDistance:false`. Live-verify: set it off on one account, view that account from another, confirm distance is still leaking. If so, that's a real follow-up fix (match/discover query needs to check the viewed user's preference).
 
+### Session 13 (Claude, 2026-08-23) — first live browser+vision audit, real click-through of the deployed app
+
+Verified the merged `7fb92c5`/`8e71c66` state on `muse.wyzdesign.com` end-to-end via live browser automation (not just code review) — Discover swipe/filters, Muses matches + chat send/receive, Feed like/comment rollback, BTS like, Collab "Book"→chat, Settings toggles + reload persistence, Sessions browse. Two real behavior bugs found and fixed this way (neither visible from code review alone — needed to actually click):
+
+**Fixed:**
+1. **Discover "Pass" dead end once out of daily likes** (`page.tsx` `doSwipe`) — the `dailyLikes<=0` gate used `dir !== "super"`, which also blocked `dir === "left"` (Pass); Pass also *consumed* a daily like. Once a free user hit 0/10 likes, clicking Pass silently did nothing (no request, no toast, card frozen). Fixed by gating to `dir === "right"` only and removing the like-decrement from the Pass branch — Pass is now free/unlimited, matching every other swipe app and the `limit-bars` UI.
+2. **`showDistance` privacy toggle was pure decoration — now actually withholds distance.** `/api/muse/match` didn't `select("preferences")`, so the client had no way to know a candidate's preference. Now: `match/route.ts` selects `preferences` and returns a derived `showDistance` boolean (not the raw blob), `page.tsx`'s `filteredProfiles` enrichment skips computing `distanceMi` when the target's `showDistance` is false. One gating point covers Discover cards, profile detail, and MatchCard.
+
+**Also fixed (discretionary — flag for review):** Discover's "All caught up!" Reset button silently refilled `dailyLikes`→10 and `superLikes`→3 for any user, unconditionally (one-click paywall bypass). Now only resets `currentIdx`. Easy to revert if it was a demo/testing convenience.
+
+**Verified working (no change needed):** chat send/receive + history persistence; Feed like rollback-on-failure; BTS like; Collab "Book" opens real chat; Settings toggle persistence across reload; Discovery Preferences save/persist.
+
+**Not tested live:** two-account realtime-reconnect drop/recover (Session 12 ask); Stripe Checkout past "Book Session".
+
+**Observation, not a bug:** `/api/muse` returned occasional bare 404s (~2 of ~15 POSTs), always absorbed by rollback-on-failure. Worth a server-log check for route-not-found on an existing route.
+
 ---
 
 ## SESSION STATE
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
-- **Last compile:** 2026-08-23 (Session 12)
-- **Last commit:** Session 12 — realtime chat reconnect/backoff in `muse-realtime.ts`, on top of Session 11 (rate-limits + push-toggle sync + Feed/BTS/Network rollback fixes) on `main`
+- **Last compile:** 2026-08-23 (Session 13)
+- **Last commit:** Session 13 — Discover Pass dead-end fix, showDistance privacy wiring (match endpoint + client enrichment), Reset-button paywall-bypass fix, on top of Session 12 on `main`
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** muse_profiles, muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
 - **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)

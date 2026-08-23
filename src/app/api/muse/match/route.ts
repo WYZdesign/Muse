@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
 
     // Fetch candidates WITH their stored embeddings (single read, no token cost).
     const { data: allProfiles } = await sb.from("muse_profiles")
-      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, photos, collabs, verified, tier, profile_completion_pct, embedding")
+      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, photos, collabs, verified, tier, profile_completion_pct, embedding, preferences")
       .limit(200);
 
     const candidates = (allProfiles || []).filter((p: any) => {
@@ -117,6 +117,11 @@ export async function GET(req: NextRequest) {
       return {
         ...c,
         embedding: undefined,
+        // Respect the candidate's own "Show Distance" privacy preference —
+        // don't leak their full preferences blob, just the one derived flag
+        // the client needs to decide whether to render a distance figure.
+        preferences: undefined,
+        showDistance: c.preferences?.showDistance !== false,
         rulesScore: rules,
         cosineScore: cosineNorm,
         matchScore: Math.min(combined, 99),

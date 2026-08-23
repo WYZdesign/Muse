@@ -374,6 +374,7 @@ function MusePage() {
         zodiac: p.zodiac || "", chinese: p.chinese || "", mbti: p.mbti || "", lifePath: p.life_path || "",
         photos: Array.isArray(p.photos) ? p.photos : [], collabs: p.collabs || 0, verified: !!p.verified,
         matchScore: p.matchScore, rulesScore: p.rulesScore, cosineScore: p.cosineScore,
+        showDistance: p.showDistance !== false,
       })));
       if (briefs?.briefs?.length) setLiveBriefs(briefs.briefs);
       if (feed?.posts?.length) {
@@ -929,7 +930,11 @@ function MusePage() {
     }
     const enriched = list.map(p => {
       const geo = CITY_GEO[p.loc];
-      const distMi = myGeo && geo ? distanceMiles(myGeo, geo) : null;
+      // Static demo profiles have no showDistance flag (default true); live
+      // profiles carry the target's own privacy preference from /api/muse/match —
+      // don't compute/attach a distance figure for someone who opted out.
+      const targetAllowsDistance = (p as any).showDistance !== false;
+      const distMi = myGeo && geo && targetAllowsDistance ? distanceMiles(myGeo, geo) : null;
       let boosted = geo ? { ...p, lat: geo.lat, lng: geo.long } : { ...p };
       if (distMi !== null) (boosted as any).distanceMi = distMi;
       // Recompute live match % from the user's current type/looking (the duality
@@ -1090,7 +1095,7 @@ function MusePage() {
     setTimeout(() => { swipeLocked.current = false; }, 500);
     setSwipeDir(dir === "left" ? "left" : "right");
     setTimeout(() => setSwipeDir(null), 800);
-    if (!isUnlimited && dailyLikes <= 0 && dir !== "super") { showToast("No likes left today!"); return; }
+    if (!isUnlimited && dailyLikes <= 0 && dir === "right") { showToast("No likes left today!"); return; }
     const p = filteredProfiles[currentIdx];
     if (!p) return;
     if (!isUnlimited && dir === "super" && superLikes <= 0) { showToast("No super likes left!"); return; }
@@ -1124,7 +1129,7 @@ function MusePage() {
       else { if (!isUnlimited) { setDailyLikes(prev => Math.max(0, prev - 1)); } }
       setCurrentUser(prev => ({ ...prev, stats: { ...prev.stats, likes: prev.stats.likes + 1 } }));
     } else {
-      if (!isUnlimited) { setDailyLikes(prev => Math.max(0, prev - 1)); }
+      // Passing costs nothing — only Like/Super Like are metered by dailyLikes/superLikes.
       setCurrentUser(prev => ({ ...prev, stats: { ...prev.stats, passes: prev.stats.passes + 1 } }));
     }
     setRewindStack(prev => [...prev, currentIdx]);

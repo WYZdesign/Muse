@@ -483,7 +483,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                   <div className="empty-icon"><FiCompass size={48} /></div>
                   <div className="empty-title">All caught up!</div>
                   <div className="empty-sub">Check back later for more creatives</div>
-                  <button className="btn btn-gold" onClick={() => { setCurrentIdx(0); setDailyLikes(10); setSuperLikes(3); }}>Reset</button>
+                  <button className="btn btn-gold" onClick={() => { setCurrentIdx(0); }}>Reset</button>
                 </div>
               )}
             </div>
