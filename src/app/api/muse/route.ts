@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
-import { checkRate, clientIp } from "@/lib/rate-limit";
+import { checkRate, checkRateUser, clientIp } from "@/lib/rate-limit";
 import { enforceRequestSafety, sanitizeText } from "@/lib/request-safety";
 import { askMuseAI } from "@/lib/aiDocs";
 import { screenText, moderateText } from "@/lib/aiModeration";
@@ -219,36 +219,6 @@ export async function GET(req: NextRequest) {
       if (!profileId) return NextResponse.json({ rsvps: [] });
       const { data } = await sb.from("muse_rsvps").select("event_id").eq("user_id", profileId);
       return NextResponse.json({ rsvps: (data || []).map((r: any) => r.event_id) });
-    }
-
-    if (type === "admin") {
-      // Require a verified session token, not just a matching email param.
-      const token = bearerTokenFromReq(req);
-      if (!token) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      const sbAuth = supabase;
-      const { data: authData, error: authErr } = await sbAuth.auth.getUser(token);
-      const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (authErr || !authData.user?.email || !admins.includes(authData.user.email.toLowerCase())) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-      const { count: totalUsers } = await sb.from("muse_profiles").select("*", { count: "exact", head: true });
-      const { count: totalMatches } = await sb.from("muse_matches").select("*", { count: "exact", head: true });
-      const { count: totalMessages } = await sb.from("muse_messages").select("*", { count: "exact", head: true });
-      const { count: totalFeed } = await sb.from("muse_feed_posts").select("*", { count: "exact", head: true });
-      const { count: totalBriefs } = await sb.from("muse_briefs").select("*", { count: "exact", head: true });
-      const { count: totalForum } = await sb.from("muse_forum_posts").select("*", { count: "exact", head: true });
-      const { data: recentActivity } = await sb.from("muse_activity_log").select("*").order("created_at", { ascending: false }).limit(20);
-      return NextResponse.json({
-        stats: {
-          users: totalUsers || 0,
-          matches: totalMatches || 0,
-          messages: totalMessages || 0,
-          feedPosts: totalFeed || 0,
-          briefs: totalBriefs || 0,
-          forumPosts: totalForum || 0,
-        },
-        activity: recentActivity || [],
-      });
     }
 
     if (type === "export") {
@@ -634,7 +604,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "message") {
-      if (!await checkRate(ip, "message", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRateUser(profile.id, "message", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const vErr = validateInput(rest);
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
       const { toId, text, image_url, img, client_msg_id } = rest;
@@ -836,7 +806,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "report") {
-      if (!await checkRate(ip, "report", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRateUser(profile.id, "report", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { target_id, target_type, reason, details } = rest;
       if (!target_id || !reason) return NextResponse.json({ error: "target_id and reason required" }, { status: 400 });
       if (target_id === profile.id) return NextResponse.json({ error: "Cannot report yourself" }, { status: 400 });
@@ -988,7 +958,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "book-session") {
-      if (!await checkRate(ip, "book-session", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRateUser(profile.id, "book-session", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { sessionId, hostId } = rest;
       if (!sessionId) return NextResponse.json({ error: "sessionId required" }, { status: 400 });
       // Stripe Identity enforcement — paid bookings require verified 18+ identity
@@ -1084,7 +1054,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "apply-promo") {
-      if (!await checkRate(ip, "apply-promo", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRateUser(profile.id, "apply-promo", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const code = String(rest.code || "").trim().toUpperCase();
       if (!code) return NextResponse.json({ error: "Promo code required" }, { status: 400 });
       // Single known beta promo for now — grants Muse Pro at no charge.
@@ -1389,7 +1359,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "confirm-disclosure") {
-      if (!await checkRate(ip, "confirm-disclosure", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRateUser(profile.id, "confirm-disclosure", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { disclosureId } = rest;
       if (!disclosureId) return NextResponse.json({ error: "disclosureId required" }, { status: 400 });
       const { data: disc } = await sb.from("muse_disclosures").select("*").eq("id", disclosureId).maybeSingle();
@@ -1615,7 +1585,7 @@ export async function POST(req: NextRequest) {
     // ════════════════════════════════════════════════════════════════
 
     if (actionType === "respond-checkin") {
-      if (!await checkRate(ip, "respond-checkin", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      if (!await checkRateUser(profile.id, "respond-checkin", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { checkinId, response, sharedWithContact } = rest; // response: 'confirmed' | 'cancelled'
       if (!checkinId || !response) return NextResponse.json({ error: "checkinId and response required" }, { status: 400 });
       const { data: checkin } = await sb.from("muse_safety_checkins").select("*").eq("id", checkinId).maybeSingle();

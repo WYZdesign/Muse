@@ -188,6 +188,17 @@ function MusePage() {
   const [forumPosts, setForumPosts] = useState<{id:number;title:string;body:string;author:string;avatar:string;votes:number;comments:{author:string;text:string}[];cat:string;time:string;pinned:boolean}[]>([]);
   const [commTab, setCommTab] = useState<"groups"|"events">("groups");
   const [sessTab, setSessTab] = useState<"sessions"|"bookings"|"requests">(() => viewerSide(currentUser?.type) === "industry" ? "bookings" : "sessions");
+  // The lazy init above runs before the server profile arrives (type starts
+  // as the "Photographer" placeholder), so re-align once when the real type
+  // lands — duality Phase 0's role-aware default.
+  const sessTypeRef = useRef(currentUser?.type);
+  useEffect(() => {
+    const t = currentUser?.type;
+    if (t && t !== sessTypeRef.current) {
+      sessTypeRef.current = t;
+      setSessTab(viewerSide(t) === "industry" ? "bookings" : "sessions");
+    }
+  }, [currentUser?.type]);
   const [netTab, setNetTab] = useState<"pros"|"forum">("pros");
   const [forumSort, setForumSort] = useState<"hot"|"new"|"top">("hot");
   const [forumCategory, setForumCategory] = useState<string>("all");

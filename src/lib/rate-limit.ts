@@ -45,6 +45,12 @@ export async function checkRate(ip: string, action: string, maxPerMin: number): 
   }
 }
 
+// User-keyed variant for authenticated handlers — immune to IP rotation and
+// shared-NAT collisions. Use wherever `profile.id` is already resolved.
+export async function checkRateUser(userId: string, action: string, maxPerMin: number): Promise<boolean> {
+  return checkRate(`u:${userId}`, action, maxPerMin);
+}
+
 export function clientIp(req: { headers: { get(name: string): string | null } }): string {
   const real = req.headers.get("x-real-ip");
   if (real) return real.trim();
