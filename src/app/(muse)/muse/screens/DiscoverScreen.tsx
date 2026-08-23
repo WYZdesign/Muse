@@ -379,6 +379,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 </div>
                               )}
                               {profile.bio && <div className="card-section"><div className="card-section-title">About</div><div className="card-section-text">{profile.bio}</div></div>}
+                              {(profile as any).side === "industry" && <div className="card-section"><div className="card-section-title">Hiring</div><div className="card-section-tags"><span className="tag" style={{ borderColor: "rgba(100,181,246,0.4)", color: "#90caf9" }}>Industry — can book &amp; pay you</span></div></div>}
                               {profile.looking.length > 0 && <div className="card-section"><div className="card-section-title">Looking for</div><div className="card-section-text">{profile.looking.join(", ")}</div></div>}
                               <div className="card-section"><div className="card-section-title">Creative Style</div>
                                 <div className="card-section-tags">{profile.styles.map(s => <button key={s} className="tag" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: s, desc: STYLE_FULL[s] || "A creative style this member works in.", icon: "🎨", color: "#FFD700" }); }} style={{ cursor: "pointer" }}>{s}</button>)}</div>

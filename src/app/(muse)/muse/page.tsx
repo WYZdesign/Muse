@@ -70,7 +70,7 @@ export default function MusePageWrapper() {
   return <ErrorBoundary><MusePage /></ErrorBoundary>;
 }
 
-import { viewerSide } from "./lib/role";
+import { viewerSide } from "@/lib/role";
 
 // Deterministic per-user gradient-initials avatar (data URI, no network) —
 // used when a live profile has no uploaded photo, so Discover cards never
@@ -422,6 +422,7 @@ function MusePage() {
         photos: Array.isArray(p.photos) ? p.photos : [], collabs: p.collabs || 0, verified: !!p.verified,
         matchScore: p.matchScore, rulesScore: p.rulesScore, cosineScore: p.cosineScore,
         showDistance: p.showDistance !== false,
+        side: (p as any).side || viewerSide(p.type),
       })));
       if (briefs?.briefs?.length) setLiveBriefs(briefs.briefs);
       if (feed?.posts?.length) {

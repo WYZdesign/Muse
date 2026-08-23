@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
+import { isIndustryType } from "@/lib/role";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { embedText, cosineSimilarity, aiEnabled } from "@/lib/ai";
 
@@ -122,6 +123,10 @@ export async function GET(req: NextRequest) {
         // the client needs to decide whether to render a distance figure.
         preferences: undefined,
         showDistance: c.preferences?.showDistance !== false,
+        // Duality P2 — which side of the marketplace this candidate is on,
+        // so the client can orient discovery (industry = hiring, creative =
+        // for-hire/collab) without exposing the raw type taxonomy.
+        side: isIndustryType(c.type) ? "industry" : "creative",
         rulesScore: rules,
         cosineScore: cosineNorm,
         matchScore: Math.min(combined, 99),

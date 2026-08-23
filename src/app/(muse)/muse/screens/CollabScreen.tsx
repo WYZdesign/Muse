@@ -5,7 +5,7 @@ import { FiArrowLeft, FiPlus } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen, Brief } from "../components/types";
 import { BRIEFS } from "../components/types";
-import { viewerSide } from "../lib/role";
+import { viewerSide } from "@/lib/role";
 
 export interface CollabScreenProps {
   screen: Screen;
