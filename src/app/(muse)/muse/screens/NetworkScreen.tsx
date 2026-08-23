@@ -11,6 +11,7 @@ import {
   FiMessageCircle,
   FiChevronDown,
   FiChevronUp,
+  FiUserPlus,
 } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import { PROFESSIONALS, FORUM_POSTS } from "../components/types";
@@ -108,6 +109,9 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [proHiringOnly, setProHiringOnly] = useState(false);
   const [proSearch, setProSearch] = useState("");
   const [forumSearch, setForumSearch] = useState("");
+  const [proSkill, setProSkill] = useState<string | null>(null);
+  const [proRateBand, setProRateBand] = useState<"all" | "lt100" | "100to150" | "gt150">("all");
+  const [proLooking, setProLooking] = useState<string>("all");
   const [threadId, setThreadId] = useState<number | null>(null);
   const [threadSort, setThreadSort] = useState<"best" | "new">("best");
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -134,6 +138,16 @@ export const NetworkScreen = memo(function NetworkScreen({
           (p.looking || []).some((l: string) => l.toLowerCase().includes(q))
       );
     }
+    if (proSkill) list = list.filter((p) => p.skills.includes(proSkill));
+    if (proRateBand !== "all") {
+      list = list.filter((p) => {
+        const r = parseRate(p.rate);
+        if (proRateBand === "lt100") return r > 0 && r < 100;
+        if (proRateBand === "100to150") return r >= 100 && r <= 150;
+        return r > 150;
+      });
+    }
+    if (proLooking !== "all") list = list.filter((p) => (p.looking || []).some((l: string) => l === proLooking));
     const arr = [...list];
     if (proSort === "expDesc") arr.sort((a, b) => parseYrs(b.exp) - parseYrs(a.exp));
     else if (proSort === "expAsc") arr.sort((a, b) => parseYrs(a.exp) - parseYrs(b.exp));
@@ -348,6 +362,36 @@ export const NetworkScreen = memo(function NetworkScreen({
               <option value="rateAsc">Rate: low to high</option>
               <option value="openings">Most openings</option>
             </select>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+              <div className={"conn-tab-sub" + (proRateBand === "all" ? " active" : "")} onClick={() => setProRateBand("all")} style={{ cursor: "pointer" }}>Any rate</div>
+              <div className={"conn-tab-sub" + (proRateBand === "lt100" ? " active" : "")} onClick={() => setProRateBand("lt100")} style={{ cursor: "pointer" }}>Under $100</div>
+              <div className={"conn-tab-sub" + (proRateBand === "100to150" ? " active" : "")} onClick={() => setProRateBand("100to150")} style={{ cursor: "pointer" }}>$100–150</div>
+              <div className={"conn-tab-sub" + (proRateBand === "gt150" ? " active" : "")} onClick={() => setProRateBand("gt150")} style={{ cursor: "pointer" }}>$150+</div>
+            </div>
+            {(() => {
+              const allSkills = [...new Set(PROFESSIONALS.flatMap((p) => p.skills))];
+              const allLooking = [...new Set(PROFESSIONALS.flatMap((p) => p.looking || []))];
+              return (
+                <>
+                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, marginBottom: 10, scrollbarWidth: "none" }}>
+                    <div className={"conn-tab-sub" + (!proSkill ? " active" : "")} onClick={() => setProSkill(null)} style={{ cursor: "pointer", flexShrink: 0 }}>All skills</div>
+                    {allSkills.map((s) => (
+                      <div key={s} className={"conn-tab-sub" + (proSkill === s ? " active" : "")} onClick={() => setProSkill(proSkill === s ? null : s)} style={{ cursor: "pointer", flexShrink: 0 }}>{s}</div>
+                    ))}
+                  </div>
+                  {allLooking.length > 0 && (
+                    <select
+                      value={proLooking}
+                      onChange={(e) => setProLooking(e.target.value)}
+                      style={{ width: "100%", marginBottom: 12, padding: "9px 12px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 12 }}
+                    >
+                      <option value="all">Looking for: anyone</option>
+                      {allLooking.map((l) => <option key={l} value={l}>Seeking {l}</option>)}
+                    </select>
+                  )}
+                </>
+              );
+            })()}
             {proList.length === 0 && (
               <div style={{ textAlign: "center", padding: 24, color: "var(--muted)", fontSize: 13 }}>
                 No professionals match those filters.
@@ -460,7 +504,31 @@ export const NetworkScreen = memo(function NetworkScreen({
                   >
                     {p.openings} openings
                   </span>
+                  {p.rate && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        padding: "4px 12px",
+                        borderRadius: 99,
+                        background: "rgba(76,221,136,0.15)",
+                        border: "1px solid rgba(76,221,136,0.35)",
+                        color: "#4cdd88",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {p.rate}
+                    </span>
+                  )}
                 </div>
+                {(p.looking || []).length > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", fontSize: 11, color: "rgba(255,255,255,0.65)" }}>
+                    <FiUserPlus size={12} style={{ color: "var(--lavender)" }} />
+                    <span>Seeking:</span>
+                    {p.looking.map((l: string) => (
+                      <span key={l} style={{ padding: "2px 8px", borderRadius: 99, background: "rgba(212,165,255,0.14)", border: "1px solid rgba(212,165,255,0.3)", color: "#e6d3ff", fontWeight: 600 }}>{l}</span>
+                    ))}
+                  </div>
+                )}
                 {/* BADGES ROW */}
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                   {(() => {
