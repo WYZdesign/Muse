@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { FiArrowLeft, FiSearch } from "react-icons/fi";
+import { FiArrowLeft, FiSearch, FiGrid, FiList } from "react-icons/fi";
 import MatchCard from "../components/MatchCard";
 import Nav from "../components/Nav";
 import type { Screen, Match, Profile } from "../components/types";
@@ -86,7 +86,7 @@ export const MusesScreen = memo(function MusesScreen({
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <button className="hdr-btn" style={{ width: 34, height: 34, borderRadius: 10 }} onClick={() => setSearchOpen(!searchOpen)} aria-label="Search"><FiSearch size={16} /></button>
           {!showLikesYou && (
-            <button className="hdr-btn" style={{ width: 34, height: 34, borderRadius: 10, fontSize: 12, fontWeight: 700 }} onClick={() => setMatchesView(v => v === "list" ? "grid" : "list")} aria-label="Toggle view">{matchesView === "list" ? "⊞" : "☰"}</button>
+            <button className="hdr-btn" style={{ width: 34, height: 34, borderRadius: 10 }} onClick={() => setMatchesView(v => v === "list" ? "grid" : "list")} aria-label="Toggle view">{matchesView === "list" ? <FiGrid size={21} /> : <FiList size={21} />}</button>
           )}
         </div>
       </div>

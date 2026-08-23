@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useState, useEffect, useCallback } from "react";
-import { FiArrowLeft, FiCamera, FiClock, FiImage, FiRepeat } from "react-icons/fi";
+import { FiArrowLeft, FiCamera, FiClock, FiImage, FiGrid, FiList } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 
@@ -206,7 +206,7 @@ export const BtsScreen = memo(function BtsScreen({
           }}
           aria-label="Toggle view"
         >
-          <FiRepeat size={16} />
+          {feedView === "grid" ? <FiList size={20} /> : <FiGrid size={20} />}
         </button>
       </div>
 

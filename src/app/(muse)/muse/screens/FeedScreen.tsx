@@ -376,7 +376,7 @@ export const FeedScreen = memo(function FeedScreen({
                     }
                     setReplyingTo(replyingTo === post.id ? null : post.id);
                   }}>💬 {post.comments}</button>
-                  <button className="feed-action-btn" style={{ flex: 0.9, height: 42, background: "transparent", border: "none", color: "#ff8a8a", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => { setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }}>⚑ Report</button>
+                  <button className="feed-action-btn" style={{ flex: 0.9, height: 42, background: "transparent", border: "none", color: "#ff8a8a", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 14, transition: "all .2s ease", whiteSpace: "nowrap", flexShrink: 0 }} onClick={() => { setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }}>⚑ Report</button>
                 </div>
                 {replyingTo === post.id && (
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>

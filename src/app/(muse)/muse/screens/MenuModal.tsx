@@ -505,10 +505,10 @@ export const MenuModal = memo(function MenuModal({
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Help &amp; Support</div>
                 {[
                   { q: "How does matching work?", a: "Swipe right on creators you'd like to connect with. If they swipe right back, it's a match! You can then message each other." },
-                  { q: "What are Briefs?", a: "Briefs are creative opportunities posted by brands and clients. You can browse open briefs, apply to paid ones, or respond to vision briefs." },
-                  { q: "How do I upgrade to Premium?", a: "Go to Settings → Muse Premium to see plan options." },
-                  { q: "How do I report someone?", a: "Tap the ••• menu on any profile or post, then select Report. Choose a reason and we'll review it within 24 hours." },
-                  { q: "How do I delete my account?", a: "Go to Settings → Privacy & Safety → Delete Account. This permanently removes all your data." },
+                  { q: "What are Briefs?", a: "Briefs are creative opportunities posted by brands and clients. Find them under Collab — apply to paid ones, or respond to vision briefs. Track everything you've applied to or saved in Menu → Your Activity." },
+                  { q: "How do I upgrade to Premium?", a: "Go to Menu → Settings → Payments & Subscription → Subscription to see plan options." },
+                  { q: "How do I report someone?", a: "Tap the ⚑ Report button on any feed or forum post, the ••• menu on a match, or Report inside a chat conversation. Choose a reason and we'll review it — track your reports in Menu → Your Activity → Reports." },
+                  { q: "How do I delete my account?", a: "Go to Menu → Settings → Safety & Privacy → Delete Account. This permanently removes all your data." },
                 ].map((faq, i) => (
                   <div key={i} style={{ marginBottom: 10, padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{faq.q}</div>
