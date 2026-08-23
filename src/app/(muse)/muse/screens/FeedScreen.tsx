@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useState } from "react";
+import React, { memo, useState, useRef, useEffect } from "react";
 import { FiArrowLeft, FiImage, FiX, FiMoreHorizontal, FiFlag } from "react-icons/fi";
 import Nav from "../components/Nav";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
@@ -93,6 +93,118 @@ export const FeedScreen = memo(function FeedScreen({
 }: FeedScreenProps) {
   const [postReplies, setPostReplies] = useState<Record<number, any[]>>({});
   const [detailPostId, setDetailPostId] = useState<number | null>(null);
+
+  // ── Camera capture (photo + video) → posts to Feed AND BTS ──
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [camMode, setCamMode] = useState<"photo" | "video">("photo");
+  const [camError, setCamError] = useState("");
+  const [recording, setRecording] = useState(false);
+  const [recSecs, setRecSecs] = useState(0);
+  const [capturing, setCapturing] = useState(false);
+
+  const stopStream = () => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+  };
+  const closeCamera = () => {
+    try { recorderRef.current?.state !== "inactive" && recorderRef.current?.stop(); } catch {}
+    recorderRef.current = null;
+    setRecording(false); setRecSecs(0);
+    stopStream();
+    setCameraOpen(false);
+    setCamError("");
+  };
+  useEffect(() => { if (!cameraOpen) return; return () => stopStream(); }, [cameraOpen]);
+  useEffect(() => {
+    if (!recording) return;
+    const t = setInterval(() => setRecSecs(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [recording]);
+
+  const openCamera = async (mode: "photo" | "video") => {
+    setCamMode(mode);
+    setCameraOpen(true);
+    setCamError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1080 } }, audio: mode === "video" });
+      streamRef.current = stream;
+      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play().catch(() => {}); }
+    } catch (err: any) {
+      setCamError(err?.name === "NotAllowedError" ? "Camera access denied — allow it in your browser settings" : err?.name === "NotFoundError" ? "No camera found on this device" : "Couldn't start the camera");
+    }
+  };
+
+  const handleCaptured = async (blob: Blob, kind: "image/jpeg" | "video/webm") => {
+    if (!blob.size) { showToast("Capture failed — try again"); return; }
+    setCapturing(true);
+    showToast(kind === "video/webm" ? "Uploading clip…" : "Uploading photo…");
+    try {
+      const isVid = kind === "video/webm";
+      const file = new File([blob], `bts-${Date.now()}.${isVid ? "webm" : "jpg"}`, { type: kind });
+      const url = await uploadImage(file, "feed");
+      if (!url) throw new Error("upload failed");
+      const type = isVid ? "video" : "photo";
+      // FEED
+      setFeedPosts(prev => [{ id: uid(), author: currentUser.name, avatar: currentUser.avatar, type, text: "", likes: 0, comments: 0, shares: 0, time: "Just now", img: url, media: [url], liked: false, saved: false, reactions: {} }, ...prev]);
+      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed", text: "", media: [url], userId: currentUser.id }) }).catch(() => {});
+      // BTS
+      const momentId = uid();
+      setStories(prev => [{ id: momentId, author: currentUser.name, avatar: currentUser.avatar, type, text: "", img: url, media: [url], time: "Just now" }, ...prev]);
+      try {
+        const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-moment", text: "", img: url }) });
+        if (!r.ok) throw new Error("failed");
+        showToast("Shared to Feed & BTS ✨");
+      } catch {
+        setStories(prev => prev.filter(s => s.id !== momentId));
+        showToast("Went to your Feed, but BTS sync failed");
+      }
+      closeCamera();
+    } catch {
+      showToast("Upload failed — check connection and retry");
+    } finally { setCapturing(false); }
+  };
+
+  const capturePhoto = () => {
+    const v = videoRef.current;
+    if (!v || !v.videoWidth) { showToast("Camera still warming up…"); return; }
+    const canvas = document.createElement("canvas");
+    canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+    canvas.getContext("2d")?.drawImage(v, 0, 0);
+    canvas.toBlob(b => b && handleCaptured(b, "image/jpeg"), "image/jpeg", 0.92);
+  };
+
+  const toggleRecord = () => {
+    if (!streamRef.current) return;
+    if (recording) {
+      recorderRef.current?.stop();
+      return;
+    }
+    const mime = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find(m => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(m));
+    if (!mime || typeof MediaRecorder === "undefined") { showToast("Video recording isn't supported in this browser"); return; }
+    try {
+      const rec = new MediaRecorder(streamRef.current, { mimeType: mime });
+      chunksRef.current = [];
+      rec.ondataavailable = e => { if ((e as any).data?.size) chunksRef.current.push((e as any).data); };
+      rec.onstop = () => {
+        setRecording(false);
+        const blob = new Blob(chunksRef.current, { type: "video/webm" });
+        recorderRef.current = null;
+        if (blob.size) handleCaptured(blob, "video/webm");
+      };
+      recorderRef.current = rec;
+      rec.start();
+      setRecording(true);
+      setRecSecs(0);
+      setTimeout(() => { try { if (recorderRef.current === rec && rec.state !== "inactive") rec.stop(); } catch {} }, 30000);
+    } catch {
+      showToast("Couldn't start recording");
+    }
+  };
 
   const openPostDetail = (id: number) => {
     setDetailPostId(id);
@@ -191,25 +303,9 @@ export const FeedScreen = memo(function FeedScreen({
               <button
                 className="btn btn-outline"
                 style={{ flex: 1, padding: "10px 0", fontSize: 13, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap" }}
-                onClick={async () => {
-                  if (feedText.trim() || feedMedia.length) {
-                    const txt = feedText.trim();
-                    setFeedText("");
-                    setFeedMedia([]);
-                    const moment = { id: uid(), author: currentUser.name, avatar: currentUser.avatar, type: feedMedia.length ? "photo" : "text", text: txt, img: feedMedia[0] || undefined, media: [...feedMedia], time: "Just now" };
-                    setStories(prev => [moment, ...prev]);
-                    try {
-                      const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-moment", text: txt, img: feedMedia[0] || "" }) });
-                      if (!r.ok) throw new Error("failed");
-                      showToast("Moment posted!");
-                    } catch {
-                      setStories(prev => prev.filter(s => s.id !== moment.id));
-                      showToast("Failed to post moment — try again");
-                    }
-                  }
-                }}
+                onClick={() => openCamera("photo")}
               >
-                BTS
+                📷 BTS
               </button>
             </div>
             {showEmojiPicker && (
@@ -389,6 +485,60 @@ export const FeedScreen = memo(function FeedScreen({
           </div>
         );
       })()}
+      {cameraOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "#000", display: "flex", flexDirection: "column" }}>
+          <video ref={videoRef} autoPlay playsInline muted style={{ flex: 1, width: "100%", objectFit: "cover" }} />
+          {camError && (
+            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: 30, background: "#000" }}>
+              <div style={{ fontSize: 40 }}>📷</div>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", textAlign: "center", lineHeight: 1.6 }}>{camError}</div>
+              <button className="btn btn-gold" style={{ padding: "10px 28px", borderRadius: 99 }} onClick={closeCamera}>Close</button>
+            </div>
+          )}
+          {/* Top bar */}
+          <div style={{ position: "absolute", top: "calc(14px + env(safe-area-inset-top,0px))", left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 18px" }}>
+            <button onClick={closeCamera} aria-label="Close camera" style={{ width: 38, height: 38, borderRadius: "50%", background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            <div style={{ display: "flex", background: "rgba(0,0,0,0.55)", borderRadius: 999, padding: 3, border: "1px solid rgba(255,255,255,0.15)" }}>
+              {(["photo", "video"] as const).map(m => (
+                <button key={m} disabled={recording} onClick={() => setCamMode(m)} style={{ padding: "7px 16px", borderRadius: 999, border: "none", background: camMode === m ? "var(--gold)" : "transparent", color: camMode === m ? "#0a0612" : "rgba(255,255,255,0.8)", fontWeight: 700, fontSize: 12, cursor: recording ? "default" : "pointer", textTransform: "capitalize" }}>{m}</button>
+              ))}
+            </div>
+            <div style={{ width: 38 }} />
+          </div>
+          {/* Recording timer */}
+          {recording && (
+            <div style={{ position: "absolute", top: "calc(70px + env(safe-area-inset-top,0px))", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 7, background: "rgba(0,0,0,0.6)", borderRadius: 999, padding: "5px 14px" }}>
+              <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#ff4444", animation: "pulse 1s infinite" }} />
+              <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>{String(Math.floor(recSecs / 60)).padStart(2, "0")}:{String(recSecs % 60).padStart(2, "0")} · max 30s</span>
+            </div>
+          )}
+          {/* Shutter bar */}
+          <div style={{ position: "absolute", bottom: "calc(26px + env(safe-area-inset-bottom,0px))", left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: 6 }}>
+            {camMode === "photo" ? (
+              <button
+                onClick={capturePhoto}
+                disabled={capturing || !!camError}
+                aria-label="Take photo"
+                style={{ width: 76, height: 76, borderRadius: "50%", background: capturing ? "rgba(255,215,0,0.4)" : "#fff", border: "5px solid rgba(255,215,0,0.9)", cursor: capturing ? "wait" : "pointer", boxShadow: "0 4px 24px rgba(0,0,0,0.5)", transition: "transform .12s" }}
+              />
+            ) : (
+              <button
+                onClick={toggleRecord}
+                disabled={!!camError}
+                aria-label={recording ? "Stop recording" : "Start recording"}
+                style={{ width: 76, height: 76, borderRadius: "50%", background: recording ? "#ff4444" : "rgba(255,68,68,0.25)", border: recording ? "5px solid rgba(255,255,255,0.95)" : "5px solid #ff4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 24px rgba(0,0,0,0.5)", transition: "all .15s" }}
+              >
+                {recording ? <span style={{ width: 26, height: 26, borderRadius: 6, background: "#fff" }} /> : <span style={{ width: 54, height: 54, borderRadius: "50%", background: "#ff4444" }} />}
+              </button>
+            )}
+          </div>
+          {capturing && (
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)" }}>
+              <div style={{ color: "#FFD700", fontSize: 15, fontWeight: 700 }}>Uploading…</div>
+            </div>
+          )}
+        </div>
+      )}
       <Nav active="connections" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );

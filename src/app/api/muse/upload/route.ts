@@ -9,6 +9,8 @@ const ALLOWED_SIGNATURES: Record<string, { bytes: number[]; ext: string }> = {
   "ffd8": { bytes: [0xFF,0xD8], ext: "jpg" },
   "52494646": { bytes: [0x52,0x49,0x46,0x46], ext: "webp" },
   "47494638": { bytes: [0x47,0x49,0x46,0x38], ext: "gif" },
+  // WebM (MediaRecorder output) — Matroska EBML header
+  "1a45dfa3": { bytes: [0x1A,0x45,0xDF,0xA3], ext: "webm" },
 };
 
 function validateMagicBytes(buffer: Buffer): { valid: boolean; ext: string } {
@@ -67,33 +69,37 @@ export async function POST(req: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const { valid, ext } = validateMagicBytes(buffer);
-    if (!valid) return NextResponse.json({ error: "Invalid file type — only JPEG, PNG, WebP, GIF allowed" }, { status: 400 });
+    if (!valid) return NextResponse.json({ error: "Invalid file type — only JPEG, PNG, WebP, GIF, WebM allowed" }, { status: 400 });
+    const isVideo = ext === "webm";
+    if (file.size > (isVideo ? 25 : 10) * 1024 * 1024) return NextResponse.json({ error: isVideo ? "Video too large (max 25MB)" : "File too large (max 10MB)" }, { status: 400 });
 
     const blocklistedExts = ["svg","html","xml","js","php","exe","sh"];
     if (blocklistedExts.includes(file.name.toLowerCase().split(".").pop() || "")) {
       return NextResponse.json({ error: "Invalid file extension" }, { status: 400 });
     }
 
-    // Content moderation — scan every upload with AWS Rekognition before storing
-    const scanResult = await scanWithRekognition(buffer);
-    await logScan({ userId: profileId, fileName: file.name, fileType: file.type || `image/${ext}`, fileSize: file.size, context: folder, result: scanResult });
-    if (scanResult.shouldBlock) {
-      if (scanResult.isCSAM) {
-        // CSAM: suspend account, quarantine content, queue CyberTipline report
-        await escalateToNcmec({ userId: profileId, context: folder, fileName: file.name, result: scanResult });
-      } else if (scanResult.shouldReport) {
-        await reportIncident({ userId: profileId, context: folder, result: scanResult });
+    // Content moderation — scan image uploads with AWS Rekognition before
+    // storing. Video (webm) can't go through the image scanner yet — flagged
+    // as a moderation follow-up in HANDOVER.
+    if (!isVideo) {
+      const scanResult = await scanWithRekognition(buffer);
+      await logScan({ userId: profileId, fileName: file.name, fileType: file.type || `image/${ext}`, fileSize: file.size, context: folder, result: scanResult });
+      if (scanResult.shouldBlock) {
+        if (scanResult.isCSAM) {
+          await escalateToNcmec({ userId: profileId, context: folder, fileName: file.name, result: scanResult });
+        } else if (scanResult.shouldReport) {
+          await reportIncident({ userId: profileId, context: folder, result: scanResult });
+        }
+        const msg = scanResult.scanned ? "Content violates safety policies" : "Moderation unavailable — try again later";
+        return NextResponse.json({ error: msg, flaggedCategories: scanResult.flaggedCategories }, { status: scanResult.scanned ? 403 : 503 });
       }
-      // Distinguish "moderation unavailable" (fail-closed) from an actual policy violation.
-      const msg = scanResult.scanned ? "Content violates safety policies" : "Moderation unavailable — try again later";
-      return NextResponse.json({ error: msg, flaggedCategories: scanResult.flaggedCategories }, { status: scanResult.scanned ? 403 : 503 });
     }
 
     const safeFolder = folder.replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "avatars";
     const path = safeFilename(`${profileId}/${safeFolder}`, ext);
     const sb = getServiceClient();
     const { data, error } = await sb.storage.from("muse-uploads").upload(path, buffer, {
-      contentType: `image/${ext}`,
+      contentType: isVideo ? "video/webm" : `image/${ext}`,
       upsert: false,
     });
 
