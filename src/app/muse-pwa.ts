@@ -138,3 +138,6 @@ export async function ensureMusePushRegistered(): Promise<void> {
     console.error("[muse-pwa] ensureMusePushRegistered failed", e);
   }
 }
+
+// Prevent browser scroll restoration from leaving the app shell shifted
+if (typeof window !== "undefined") { try { history.scrollRestoration = "manual"; } catch {} }

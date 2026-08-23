@@ -984,7 +984,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               onClick={() => setProDetail(null)}
               style={{
                 position: "absolute",
-                top: "calc(14px + env(safe-area-inset-top, 0px))",
+                top: "calc(48px + env(safe-area-inset-top, 0px))",
                 right: 16,
                 zIndex: 10,
                 background: "rgba(0,0,0,0.5)",
@@ -1003,7 +1003,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               {"\u2715"}
             </button>
 
-            <div style={{ position: "relative", height: 340, flexShrink: 0 }}>
+            <div style={{ position: "relative", height: 300, flexShrink: 0 }}>
               <img
                 src={proDetail.img}
                 alt={proDetail.name}

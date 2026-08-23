@@ -77,6 +77,12 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .sunset-shooting-star.ss-3 { top: 5%; left: 52%; animation: shootC 8.5s linear infinite 6.5s; }
 .sunset-shooting-star.ss-4 { top: 17%; left: 12%; animation: shootD 10s linear infinite 2.8s; }
 .sunset-shooting-star.ss-5 { top: 9%; right: 6%; animation: shootE 11s linear infinite 8.2s; }
+/* Varied tail lengths — never too long */
+.sunset-shooting-star.ss-1 { width: 74px; }
+.sunset-shooting-star.ss-2 { width: 108px; }
+.sunset-shooting-star.ss-3 { width: 60px; }
+.sunset-shooting-star.ss-4 { width: 118px; }
+.sunset-shooting-star.ss-5 { width: 88px; }
 
 /* Down-right stars — constant linear velocity through the fade */
 @keyframes shootA {
@@ -128,13 +134,13 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 
 /* Sun + Horizon glow — half-circle setting into the ocean horizon */
 .sunset-sun-glow {
-  position: absolute; left: 50%; bottom: 14%; transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: 18%; transform: translateX(-50%);
   width: 58vw; height: 32vw; border-radius: 58vw 58vw 0 0;
   background: radial-gradient(ellipse at 50% 100%, rgba(255,200,90,0.8) 0%, rgba(255,140,60,0.4) 45%, transparent 75%);
   filter: blur(16px); animation: sunsetSunPulse 5s ease-in-out infinite; z-index: 1;
 }
 .sunset-sun {
-  position: absolute; left: 50%; bottom: 24.2%; transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: 31.5%; transform: translateX(-50%);
   width: 16vw; min-width: 110px; max-width: 180px;
   height: 8vw; min-height: 55px; max-height: 90px;
   border-radius: 180px 180px 0 0;
@@ -221,7 +227,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 }
 
 /* Ocean + Shimmering Sun Reflection with perspective funnel */
-.sunset-ocean { position: absolute; left: 0; right: 0; bottom: 0; height: 24.8%; z-index: 1; }
+.sunset-ocean { position: absolute; left: 0; right: 0; bottom: 0; height: 32%; z-index: 1; }
 .sunset-reflection {
   position: absolute; left: 50%; top: 0; transform: translateX(-50%);
   width: 32vw; min-width: 220px; max-width: 440px; height: 100%;
@@ -328,7 +334,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   color: rgba(255,255,255,0.45); margin-top: 4px; font-weight: 500;
 }
 .muse-enter-prompt {
-  margin-top: auto; margin-bottom: 9vh; display: inline-flex; align-items: center; gap: 10px;
+  margin-top: auto; margin-bottom: 16vh; display: inline-flex; align-items: center; gap: 10px;
   padding: 15px 36px; border-radius: 999px;
   background: linear-gradient(135deg, rgba(255,215,0,0.18), rgba(255,138,128,0.14));
   border: 1.5px solid rgba(255,215,0,0.6); color: #FFD700;
@@ -357,7 +363,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 
 /* ═══ SCROLLBAR ═══ */
 .muse-landing ::-webkit-scrollbar { width: 0; }
-.muse-landing { scrollbar-width: none; }
+.muse-landing { scrollbar-width: none; scrollbar-gutter: stable; }
 
 /* ═══ NOISE OVERLAY ═══ */
 .muse-noise {
@@ -439,10 +445,10 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .muse-nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 40px; transition: background .3s ease, padding .3s ease;
+  padding: 12px 40px; transition: background .3s ease;
 }
-.muse-nav.scrolled { background: rgba(10, 6, 18, 0.72); backdrop-filter: blur(14px); padding: 10px 40px; border-bottom: 1px solid var(--line); }
-.muse-nav-logo { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 800; letter-spacing: 1px; }
+.muse-nav.scrolled { background: rgba(10, 6, 18, 0.72); backdrop-filter: blur(14px); padding: 12px 40px; border-bottom: 1px solid var(--line); }
+.muse-nav-logo { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 800; letter-spacing: 1px; margin-right: auto; }
 .muse-nav-logo .accent { color: var(--gold); }
 .muse-nav-links { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 34px; }
 .muse-nav-links a { font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text2); font-weight: 500; position: relative; transition: color .25s; }
@@ -673,6 +679,11 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .fww-3 { fill: rgba(11,112,154,0.6); animation: waveRise3 7.0s ease-in-out infinite -4.3s alternate; }
 .fww-4 { fill: rgba(8,84,130,0.6); animation: waveRise4 9.8s ease-in-out infinite -1.5s alternate; }
 .fww-5 { fill: rgba(5,58,102,0.6); animation: waveRise5 11.2s ease-in-out infinite -3.8s alternate; }
+
+/* Distant mountain silhouettes behind the waves */
+.fwm { will-change: opacity; }
+.fwm-1 { fill: rgba(64,48,104,0.42); }
+.fwm-2 { fill: rgba(38,27,72,0.62); }
 
 /* ═══ QR MODAL ═══ */
 .muse-modal-overlay { position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.78); display: flex; align-items: center; justify-content: center; padding: 24px; backdrop-filter: blur(6px); }

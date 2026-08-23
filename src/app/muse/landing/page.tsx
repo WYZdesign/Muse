@@ -268,11 +268,7 @@ const TIERS = [
   { cls: "standard", badge: "Standard", name: "Everyone Else", perks: ["Free Tier Forever", "Pro at $9.99/mo", "Earn Pro via Referrals"] },
 ];
 
-const TESTIMONIALS = [
-  { quote: "Finally a place where creatives actually get booked instead of ghosted. Found my last three shoots here.", name: "Maya Chen", role: "Fashion Photographer, LA" },
-  { quote: "The disclosure forms alone are worth it. I've never felt safer walking into a collab with someone new.", name: "Jordan Rivera", role: "Cinematographer, NYC" },
-  { quote: "Posted a TFP brief on a Tuesday, had a full crew by Friday. This is how collabs should work.", name: "Avery Nguyen", role: "Art Director, SF" },
-];
+
 
 const FAQS = [
   { q: "When does Muse launch?", a: "We're onboarding the first 150 founding members now, then rolling out to the full waitlist. Founding members get in first." },
@@ -558,19 +554,23 @@ export default function MuseLandingPage() {
       <section className="muse-section">
         <div className="muse-container">
           <Reveal className="muse-section-head">
-            <span className="muse-kicker">Early Voices</span>
-            <h2 className="muse-section-title">Creatives Are <span className="accent">Already In</span></h2>
+            <span className="muse-kicker">Why Muse</span>
+            <h2 className="muse-section-title">Built for <span className="accent">Working Creatives</span></h2>
           </Reveal>
           <div className="muse-testimonials-grid">
-            {TESTIMONIALS.map((t, i) => (
-              <Reveal key={t.name} delay={i * 0.1}>
+            {[
+              { h: "Safety that isn't optional", p: "Structured content disclosures, pre-shoot check-ins, and verified identity on every paid booking — built in from day one." },
+              { h: "Book and get paid, escrowed", p: "Stripe-backed payments hold funds until the shoot wraps. No invoices, no chasing, no ghosting on either side." },
+              { h: "Matched by craft and vibe", p: "Discovery weighs your styles, looking-for, zodiac, MBTI and life path — so briefs and collabs find the right people." },
+            ].map((t) => (
+              <Reveal key={t.h}>
                 <figure className="muse-testimonial">
-                  <blockquote>{t.quote}</blockquote>
-                  <figcaption><strong>{t.name}</strong><span>{t.role}</span></figcaption>
+                  <blockquote style={{ fontStyle: "normal" }}><strong style={{ display: "block", color: "var(--gold)", marginBottom: 10 }}>{t.h}</strong>{t.p}</blockquote>
                 </figure>
               </Reveal>
             ))}
           </div>
+          <p style={{ textAlign: "center", marginTop: 18, fontSize: "0.8rem", color: "var(--muted)" }}>Muse is in early access — real member stories will live here as the community grows.</p>
         </div>
       </section>
 
@@ -682,6 +682,8 @@ export default function MuseLandingPage() {
       {/* Footer ocean waves — matches splash screen */}
       <div className="muse-footer-wave" aria-hidden="true">
         <svg className="muse-footer-wave-svg" viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
+          <path className="fwm fwm-1" d="M0,150 L110,92 L235,138 L370,66 L520,128 L650,84 L810,132 L950,72 L1110,126 L1250,88 L1360,120 L1440,96 L1440,360 L0,360 Z" />
+          <path className="fwm fwm-2" d="M0,196 L90,150 L210,192 L330,140 L470,188 L600,148 L760,194 L900,146 L1060,190 L1200,152 L1330,186 L1440,158 L1440,360 L0,360 Z" />
           <path className="fww fww-1" d="M0,130 C120,70 240,190 360,130 C480,70 600,190 720,130 C840,70 960,190 1080,130 C1200,70 1320,190 1440,130 L1440,360 L0,360 Z" />
           <path className="fww fww-2" d="M0,165 C120,100 260,230 400,165 C540,100 680,230 820,165 C960,100 1100,230 1240,165 C1320,120 1400,130 1440,160 L1440,360 L0,360 Z" />
           <path className="fww fww-3" d="M0,185 C200,215 380,135 560,196 C760,250 940,145 1120,200 C1260,236 1380,168 1440,196 L1440,360 L0,360 Z" />

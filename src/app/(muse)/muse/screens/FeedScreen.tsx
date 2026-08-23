@@ -257,7 +257,7 @@ export const FeedScreen = memo(function FeedScreen({
                     {post.shares > 0 && <span style={{ fontSize: 12, color: "var(--muted)" }}>{post.shares} shares</span>}
                   </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                <div style={{ display: "flex", gap: 8, padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                   <button className={"feed-action-btn" + (post.liked ? " liked-pop" : "")} style={{ flex: 1.25, height: 42, background: post.liked ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.04)", border: post.liked ? "1.5px solid rgba(239,68,68,0.35)" : "1px solid rgba(255,255,255,0.08)", color: post.liked ? "#ff5c5c" : "#ff8a8a", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => { const newLiked = !post.liked; setFeedPosts(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); if (feedPostsStatic.some(p => p.id === post.id)) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "like-feed-post", postId: post.id, liked: newLiked }) }).then(r => { if (!r.ok) throw new Error("failed"); }).catch(() => { setFeedPosts(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: !newLiked }) : p)); if (feedPostsStatic.some(p => p.id === post.id)) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: !newLiked }) : p)); showToast("Failed to update like"); }); }}>♥ {post.likes + (post.liked ? 1 : 0)}</button>
                   <button className="feed-action-btn" style={{ flex: 1.25, height: 42, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#87CEEE", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => {
                     if (replyingTo !== post.id && !postReplies[post.id]) {
@@ -268,7 +268,7 @@ export const FeedScreen = memo(function FeedScreen({
                     }
                     setReplyingTo(replyingTo === post.id ? null : post.id);
                   }}>💬 {post.comments}</button>
-                  <button className="feed-action-btn" style={{ flex: 1.25, height: 42, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#ff8a8a", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => { setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }}>⚑ Report</button>
+                  <button className="feed-action-btn" style={{ flex: 0.9, height: 42, background: "transparent", border: "none", color: "#ff8a8a", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => { setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }}>⚑ Report</button>
                 </div>
                 {replyingTo === post.id && (
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
@@ -282,9 +282,8 @@ export const FeedScreen = memo(function FeedScreen({
                         </div>
                       </div>
                     ))}
-                    <div style={{ display: "flex", padding: "10px 16px" }}>
-                      <div style={{ flex: 1, display: "flex", alignItems: "center", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "0 4px 0 14px", height: 42 }}>
-                        <input
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "10px 16px 14px" }}>
+                      <input
                           className="inp"
                           placeholder="Write a reply..."
                           value={commentText}
@@ -296,7 +295,6 @@ export const FeedScreen = memo(function FeedScreen({
                           onClick={async () => { if (commentText.trim()) { const txt = commentText.trim(); setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "reply", postId: post.id, text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: Math.max(0, p.comments - 1) } : p)); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
                           style={{ width: "100%", height: 38, borderRadius: 10, border: "none", background: commentText.trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: commentText.trim() ? "#fff" : "rgba(255,255,255,0.25)", fontWeight: 700, fontSize: 12, cursor: commentText.trim() ? "pointer" : "default", transition: "all .2s" }}
                         >Post</button>
-                      </div>
                     </div>
                   </div>
                 )}
