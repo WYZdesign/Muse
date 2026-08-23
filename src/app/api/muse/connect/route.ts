@@ -48,6 +48,9 @@ export async function POST(req: NextRequest) {
     if (action === "transfer" && !await checkRate(ip, "connect-transfer", 5)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
+    if (action === "create-booking-checkout" && !await checkRate(ip, "connect-create-booking-checkout", 10)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
 
     // ═══ CREATE-ACCOUNT: Onboard user as Stripe Connect account ═══
     if (action === "create-account") {

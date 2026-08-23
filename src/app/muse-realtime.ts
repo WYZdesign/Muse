@@ -92,6 +92,12 @@ export async function fetchConversationHistory(opts: {
  */
 export type RealtimeStatus = "connecting" | "connected" | "disconnected";
 
+// Reconnect backoff schedule (ms) for a dropped/failed channel. A chat left
+// open for a while shouldn't hammer Supabase, but should recover quickly
+// from a brief network blip. Capped at 30s; retries indefinitely until
+// unsubscribe() is called (component unmount / chat closed).
+const RECONNECT_DELAYS_MS = [1000, 2000, 5000, 10000, 20000, 30000];
+
 export function subscribeToConversation(opts: {
   myId: string;
   theirId: string;
@@ -101,44 +107,81 @@ export function subscribeToConversation(opts: {
 }): { unsubscribe: () => void; sendTyping: () => void } {
   if (!opts.myId || opts.myId === "local") return { unsubscribe: () => {}, sendTyping: () => {} };
   const convo = convoIdFor(opts.myId, opts.theirId);
-  const channel = supabase
-    .channel("muse-msg-" + convo)
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "muse_messages",
-        filter: `match_id=eq.${convo}`,
-      },
-      (payload: any) => {
-        const row = payload.new;
-        if (!row) return;
-        const sender = row.sender_id;
-        const text = row.text;
-        if (sender === opts.myId) return; // ignore our own echo
-        opts.onMessage(sender, text);
-      }
-    )
-    .on("broadcast", { event: "typing" }, () => {
-      if (opts.onTyping) opts.onTyping();
-    })
-    .subscribe((status: string) => {
-      // status: SUBSCRIBED | CHANNEL_ERROR | TIMED_OUT | CLOSED
-      if (opts.onStatus) {
-        if (status === "SUBSCRIBED") opts.onStatus("connected");
-        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") opts.onStatus("disconnected");
-        else if (status === "CLOSED") opts.onStatus("disconnected");
-      }
-    });
-  return {
-    unsubscribe: () => {
+
+  let disposed = false;
+  let attempt = 0;
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  let channel: ReturnType<typeof supabase.channel> | null = null;
+
+  function teardown() {
+    if (channel) {
       try { supabase.removeChannel(channel); } catch (err) {
         trackError("realtime_unsubscribe_failed", { convo, err: String(err) });
       }
+      channel = null;
+    }
+  }
+
+  function scheduleReconnect() {
+    if (disposed || retryTimer) return;
+    const delay = RECONNECT_DELAYS_MS[Math.min(attempt, RECONNECT_DELAYS_MS.length - 1)];
+    attempt++;
+    retryTimer = setTimeout(() => {
+      retryTimer = null;
+      if (!disposed) connect();
+    }, delay);
+  }
+
+  function connect() {
+    teardown();
+    // Fresh channel name per attempt — reusing a channel name Supabase has
+    // already torn down after CHANNEL_ERROR/CLOSED can get stuck rejoining
+    // the same broken state instead of establishing a clean connection.
+    channel = supabase
+      .channel(`muse-msg-${convo}-${Date.now()}-${attempt}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "muse_messages",
+          filter: `match_id=eq.${convo}`,
+        },
+        (payload: any) => {
+          const row = payload.new;
+          if (!row) return;
+          const sender = row.sender_id;
+          const text = row.text;
+          if (sender === opts.myId) return; // ignore our own echo
+          opts.onMessage(sender, text);
+        }
+      )
+      .on("broadcast", { event: "typing" }, () => {
+        if (opts.onTyping) opts.onTyping();
+      })
+      .subscribe((status: string) => {
+        // status: SUBSCRIBED | CHANNEL_ERROR | TIMED_OUT | CLOSED
+        if (disposed) return;
+        if (status === "SUBSCRIBED") {
+          attempt = 0; // reset backoff once a connection actually succeeds
+          opts.onStatus?.("connected");
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          opts.onStatus?.("disconnected");
+          scheduleReconnect();
+        }
+      });
+  }
+
+  connect();
+
+  return {
+    unsubscribe: () => {
+      disposed = true;
+      if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+      teardown();
     },
     sendTyping: () => {
-      try { channel.send({ type: "broadcast", event: "typing", payload: {} }); } catch (err) {
+      try { channel?.send({ type: "broadcast", event: "typing", payload: {} }); } catch (err) {
         trackError("realtime_typing_failed", { convo, err: String(err) });
       }
     },

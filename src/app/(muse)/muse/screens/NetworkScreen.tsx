@@ -195,15 +195,32 @@ export const NetworkScreen = memo(function NetworkScreen({
   function addComment(postId: number) {
     const text = (commentTexts[postId] || "").trim();
     if (!text) return;
+    const newComment = { author: currentUser.name || "You", text };
     setForumPosts((prev) =>
       prev.map((p) =>
         p.id === postId
-          ? { ...p, comments: [...p.comments, { author: currentUser.name || "You", text }] }
+          ? { ...p, comments: [...p.comments, newComment] }
           : p
       )
     );
     setCommentTexts((prev) => ({ ...prev, [postId]: "" }));
-    showToast("Comment added");
+    apiFetch("/api/muse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "forum", type: "reply", postId, text }),
+    }).then((r: any) => {
+      if (!r.ok) throw new Error("failed");
+      showToast("Comment added");
+    }).catch(() => {
+      setForumPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? { ...p, comments: p.comments.filter((c: any) => c !== newComment) }
+            : p
+        )
+      );
+      showToast("Failed to post comment");
+    });
   }
 
   return (

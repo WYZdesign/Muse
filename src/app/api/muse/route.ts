@@ -958,6 +958,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "book-session") {
+      if (!await checkRate(ip, "book-session", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { sessionId, hostId } = rest;
       if (!sessionId) return NextResponse.json({ error: "sessionId required" }, { status: 400 });
       // Stripe Identity enforcement — paid bookings require verified 18+ identity
@@ -1346,6 +1347,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "confirm-disclosure") {
+      if (!await checkRate(ip, "confirm-disclosure", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { disclosureId } = rest;
       if (!disclosureId) return NextResponse.json({ error: "disclosureId required" }, { status: 400 });
       const { data: disc } = await sb.from("muse_disclosures").select("*").eq("id", disclosureId).maybeSingle();
@@ -1571,6 +1573,7 @@ export async function POST(req: NextRequest) {
     // ════════════════════════════════════════════════════════════════
 
     if (actionType === "respond-checkin") {
+      if (!await checkRate(ip, "respond-checkin", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { checkinId, response, sharedWithContact } = rest; // response: 'confirmed' | 'cancelled'
       if (!checkinId || !response) return NextResponse.json({ error: "checkinId and response required" }, { status: 400 });
       const { data: checkin } = await sb.from("muse_safety_checkins").select("*").eq("id", checkinId).maybeSingle();

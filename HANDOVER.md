@@ -261,12 +261,28 @@ Chrome vision access came back this session, so a few screens were visually spot
 
 **Still flagged (not fixed):** onboarding Portfolio step fully fake (hardcoded stock photos, never sent to server); Connect Your World OAuth stubs; double-payment guard needs independent review; "Pay" button doesn't hide after paid (bookings query doesn't join `muse_booking_payments`); no user-facing strikes/appeal UI (`get-strikes`/`appeal-strike`); legacy `type === "admin"` stats endpoint looks dead.
 
+### Session 11 (Claude, 2026-08-23) — rate-limit gaps, push-toggle sync, Feed/BTS/Network rollback
+
+Answered Session 10's follow-up asks (rate-limit audit, Feed/BTS/Network/Codex). Codex turned out to be a fully static local glossary — nothing to wire.
+
+**Fixed:** `create-booking-checkout` had no rate limit (now 10/min); `book-session` email-bomb risk (now 15/min); `confirm-disclosure` + `respond-checkin` safety actions (10 & 15/min); upload `DELETE` matched to its `POST` sibling (60/min). Settings push toggle now syncs to the browser's real subscription state on load (was always "off"). Feed BTS/moment composer no longer claims "posted locally" on failure — rolls back the optimistic insert. Feed/BTS like buttons + Feed reply box roll back optimistic state on failed request. NetworkScreen's forum comment box (`addComment`) was a pure local stub with zero backend call — wired to the real `forum`/`reply` endpoint.
+
+**Left open (deliberately):** realtime layer has no reconnect/backoff (flagged as top pick for next round); message dedup keys on `text+"|"+img` not id; dead push-notification code paths (`usePushNotifications.ts`, `useWebPush()`); `checkRate` keys by IP not user (systemic).
+
+### Session 12 (Claude, 2026-08-23) — realtime reconnect with backoff
+
+Took Session 11's top pick. `subscribeToConversation` reported `disconnected` on `CHANNEL_ERROR`/`TIMED_OUT`/`CLOSED` but never retried — a dropped Supabase channel mid-chat silently missed new messages until navigating away/back. Rewrote it to own an internal reconnect loop: exponential backoff (1s→2s→5s→10s→20s→30s, capped, retries until `unsubscribe()`), resets backoff on `SUBSCRIBED`, fresh channel name per attempt. Fully self-contained in `muse-realtime.ts` — no `page.tsx` changes.
+
+**Caveat:** NOT tested against a real dropped connection. Recommend manual test: open chat, kill/restore network, confirm messages catch up without navigating away.
+
+**Still open:** message-dedup-by-content fix (needs `client_msg_id` threaded through send path); everything else from Session 11's "left open" list.
+
 ---
 
 ## SESSION STATE
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
-- **Last compile:** 2026-08-22 (Session 10)
-- **Last commit:** `b65b0be` — get-replies backend handler + NetworkScreen report wiring + report post-target support on `main`
+- **Last compile:** 2026-08-23 (Session 12)
+- **Last commit:** Session 12 — realtime chat reconnect/backoff in `muse-realtime.ts`, on top of Session 11 (rate-limits + push-toggle sync + Feed/BTS/Network rollback fixes) on `main`
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** muse_profiles, muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
 - **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)

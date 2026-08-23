@@ -540,6 +540,18 @@ function MusePage() {
           setAuthUser(userObj);
           safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken || "", user: userObj }));
           ensureMusePushRegistered();
+          // Sync the Settings toggle with the browser's actual push
+          // subscription state — previously always initialized to false
+          // even when push was already active from a prior session.
+          (async () => {
+            try {
+              if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+                const reg = await navigator.serviceWorker.getRegistration();
+                const sub = await reg?.pushManager.getSubscription();
+                if (sub) setPushEnabled(true);
+              }
+            } catch {}
+          })();
             if (d.profile) {
               const isOwner = d.user.email === OWNER_EMAIL;
               const effTier = isOwner ? "muse_pro" : (d.profile.tier || "free");

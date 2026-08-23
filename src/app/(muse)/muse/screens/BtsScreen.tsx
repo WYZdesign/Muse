@@ -97,9 +97,18 @@ export const BtsScreen = memo(function BtsScreen({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "like-moment", momentId: s.id, liked: newLiked }),
-      }).catch(() => {});
+      }).then((r: any) => { if (!r.ok) throw new Error("failed"); }).catch(() => {
+        setStories((prev) =>
+          prev.map((item) =>
+            item.id === s.id
+              ? { ...item, liked: !newLiked, likes: (item.likes || 0) + (newLiked ? -1 : 1) }
+              : item
+          )
+        );
+        showToast("Failed to update like");
+      });
     },
-    [apiFetch, setStories]
+    [apiFetch, setStories, showToast]
   );
 
   const handleShare = useCallback(

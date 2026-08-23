@@ -111,6 +111,10 @@ export async function DELETE(req: NextRequest) {
     const profileId = await authedProfileId(req);
     if (profileId === "__SUSPENDED__") return NextResponse.json({ error: "Account suspended", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
     if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    const ip = clientIp(req);
+    if (!await checkRate(ip, "upload-delete", 60)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
 
     const { path } = await req.json();
     if (!path) return NextResponse.json({ error: "No path" }, { status: 400 });
