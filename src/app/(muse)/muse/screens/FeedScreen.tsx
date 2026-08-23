@@ -92,6 +92,17 @@ export const FeedScreen = memo(function FeedScreen({
   authFetch,
 }: FeedScreenProps) {
   const [postReplies, setPostReplies] = useState<Record<number, any[]>>({});
+  const [detailPostId, setDetailPostId] = useState<number | null>(null);
+
+  const openPostDetail = (id: number) => {
+    setDetailPostId(id);
+    if (!postReplies[id]) {
+      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "get-replies", postId: id }) })
+        .then((r: any) => r.json?.())
+        .then((data: any) => { if (data?.replies?.length) setPostReplies(prev => ({ ...prev, [id]: data.replies })); })
+        .catch(() => {});
+    }
+  };
 
   return (
     <div className={"screen-el" + (screen === "connections" ? " active" : "")}>
@@ -224,15 +235,15 @@ export const FeedScreen = memo(function FeedScreen({
             const totalReactions = ["❤️", "🔥", "😍", "😂", "😢", "😡"].reduce((s, r) => s + (feedReactionArr.filter(x => x === r).length || 0), (post.liked ? 1 : 0));
             return (
               <div key={post.id} className="conn-card" style={{ flexDirection: "column", margin: "0 20px 14px", padding: 0, overflow: "hidden" }}>
-                <div style={{ padding: "14px 18px 0", display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ padding: "14px 18px 0", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => openPostDetail(post.id)}>
                   <img loading="lazy" src={post.avatar} alt="" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} onError={handleImgError} />
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700 }}>{post.author}</div>
                     <div style={{ fontSize: 11, color: "var(--muted)" }}>{post.time}</div>
                   </div>
-                  <button style={{ marginLeft: "auto", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 16 }} onClick={() => { setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }} aria-label="More options"><FiMoreHorizontal size={16} /></button>
+                  <button style={{ marginLeft: "auto", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 16 }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }} aria-label="More options"><FiMoreHorizontal size={16} /></button>
                 </div>
-                <div style={{ padding: "10px 18px", fontSize: 14, color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{post.text}</div>
+                <div style={{ padding: "10px 18px", fontSize: 14, color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-wrap", cursor: "pointer" }} onClick={() => openPostDetail(post.id)}>{post.text}</div>
                 {post.img && (
                   <div style={{ position: "relative" }}>
                     <img loading="lazy" src={post.img} alt="" style={{ width: "100%", maxHeight: 360, objectFit: "cover", display: "block" }} onError={handleImgError} />
@@ -303,6 +314,81 @@ export const FeedScreen = memo(function FeedScreen({
           })
         )}
       </div>
+      {(() => {
+        const dp = detailPostId != null ? [...feedPostsStatic, ...feedPosts].find(p => p.id === detailPostId) : null;
+        if (!dp) return null;
+        const replies = postReplies[dp.id] || [];
+        const sendDetailReply = async () => {
+          const txt = commentText.trim();
+          if (!txt) return;
+          const optimistic = { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" };
+          setPostReplies(prev => ({ ...prev, [dp.id]: [...(prev[dp.id] || []), optimistic] }));
+          setFeedPosts(prev => prev.map(p => p.id === dp.id ? { ...p, comments: p.comments + 1 } : p));
+          setCommentText("");
+          try {
+            const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "reply", postId: dp.id, text: txt }) });
+            if (!r.ok) throw new Error("failed");
+            showToast("Reply posted!");
+          } catch {
+            setPostReplies(prev => ({ ...prev, [dp.id]: (prev[dp.id] || []).filter(x => !(x.text === txt && x.author === currentUser.name)) }));
+            setFeedPosts(prev => prev.map(p => p.id === dp.id ? { ...p, comments: Math.max(0, p.comments - 1) } : p));
+            showToast("Failed to post reply");
+          }
+        };
+        return (
+          <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
+            <div className="modal-header">
+              <button className="modal-back" onClick={() => setDetailPostId(null)}><FiArrowLeft size={20} /></button>
+              <div className="modal-title">Post</div>
+              <button className="modal-close" onClick={() => setDetailPostId(null)} aria-label="Close">✕</button>
+            </div>
+            <div className="modal-body">
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                <img loading="lazy" src={dp.avatar} alt="" style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e" }} onError={handleImgError} />
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800 }}>{dp.author}</div>
+                  <div style={{ fontSize: 12, color: "var(--muted)" }}>{dp.time}</div>
+                </div>
+              </div>
+              {dp.text && <div style={{ fontSize: 16, lineHeight: 1.6, whiteSpace: "pre-wrap", marginBottom: dp.img ? 14 : 18 }}>{dp.text}</div>}
+              {dp.img && <img loading="lazy" src={dp.img} alt="" style={{ width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 16, marginBottom: 14, display: "block" }} onError={handleImgError} />}
+              <div style={{ display: "flex", gap: 18, padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 14, fontSize: 13, color: "var(--muted)" }}>
+                <span>♥ {dp.likes + (dp.liked ? 1 : 0)} likes</span>
+                <span>💬 {dp.comments} replies</span>
+                {dp.shares > 0 && <span>↗ {dp.shares} shares</span>}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10 }}>Replies</div>
+              {replies.length === 0 && (
+                <div style={{ textAlign: "center", padding: "16px 0", color: "var(--muted)", fontSize: 12, fontStyle: "italic" }}>No replies yet — be the first.</div>
+              )}
+              {replies.map((reply: any, i: number) => (
+                <div key={i} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <img loading="lazy" src={reply.avatar || currentUser.avatar} alt="" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>{reply.author || "User"} <span style={{ fontWeight: 400, color: "var(--muted)", fontSize: 11 }}>· {reply.time || "now"}</span></div>
+                    <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5 }}>{reply.text}</div>
+                  </div>
+                </div>
+              ))}
+              <div style={{ marginTop: 14 }}>
+                <input
+                  className="inp"
+                  placeholder="Post your reply…"
+                  value={commentText}
+                  onChange={e => setCommentText(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") sendDetailReply(); }}
+                  style={{ width: "100%", marginBottom: 8 }}
+                />
+                <button
+                  className="btn btn-gold"
+                  style={{ width: "100%", height: 40, borderRadius: 10, border: "none", background: commentText.trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: commentText.trim() ? "#fff" : "rgba(255,255,255,0.25)", fontWeight: 700, fontSize: 13, cursor: commentText.trim() ? "pointer" : "default", transition: "all .2s" }}
+                  onClick={sendDetailReply}
+                >Reply</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       <Nav active="connections" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );

@@ -494,6 +494,7 @@ export const BtsScreen = memo(function BtsScreen({
                   {isNsfw && (
                     <button
                       onClick={() => toggleNsfw(String(s.id))}
+                      onPointerDown={(e) => e.stopPropagation()}
                       style={{
                         position: "absolute",
                         inset: 0,
