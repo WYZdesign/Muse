@@ -197,6 +197,17 @@ export async function POST(req: NextRequest) {
         .eq("id", booking.session_id).maybeSingle();
       if (!sessionRec) return NextResponse.json({ error: "Session not found" }, { status: 404 });
 
+      // Guard against double payment: if a prior checkout for this booking
+      // already reached "held" (authorized) or "succeeded" (captured), don't
+      // let a second Checkout Session get created — that would authorize a
+      // second charge for the same booking. A "pending"/"failed"/missing row
+      // (abandoned or failed checkout) is still fine to retry.
+      const { data: existingPayment } = await sb.from("muse_booking_payments")
+        .select("status").eq("booking_id", bookingId).maybeSingle();
+      if (existingPayment && (existingPayment.status === "held" || existingPayment.status === "succeeded")) {
+        return NextResponse.json({ error: "This booking has already been paid for" }, { status: 409 });
+      }
+
       // Authoritative amount from the host's declared rate.
       const amount = parseRateToCents(sessionRec.rate);
       if (amount === null) {

@@ -72,6 +72,17 @@ export default function AdminModerationPanel() {
     }
   };
 
+  const [resolvingAppeal, setResolvingAppeal] = useState<string | null>(null);
+  const resolveAppeal = async (strikeId: string, resolution: "upheld" | "overturned") => {
+    setResolvingAppeal(strikeId);
+    try {
+      const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-resolve-appeal", strikeId, resolution }) });
+      if (r.ok) {
+        setStrikes(s => s.map(st => st.id === strikeId ? { ...st, appeal_status: resolution, ...(resolution === "overturned" ? { severity: "warning" } : {}) } : st));
+      }
+    } finally { setResolvingAppeal(null); }
+  };
+
   const box: React.CSSProperties = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 20 };
 
   return (
@@ -141,6 +152,12 @@ export default function AdminModerationPanel() {
                   Severity: {s.severity} {s.suspension_ends_at ? `— until ${new Date(s.suspension_ends_at).toLocaleDateString()}` : ""}
                   {s.appeal_status !== "none" ? ` — Appeal: ${s.appeal_status}` : ""}
                 </div>
+                {s.appeal_status === "pending" && (
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    <button disabled={resolvingAppeal === s.id} onClick={() => resolveAppeal(s.id, "overturned")} style={{ fontSize: 11, fontWeight: 700, padding: "6px 12px", borderRadius: 8, background: "rgba(120,255,150,0.12)", border: "1px solid rgba(120,255,150,0.3)", color: "#78ff96", cursor: resolvingAppeal === s.id ? "default" : "pointer", opacity: resolvingAppeal === s.id ? 0.5 : 1 }}>Overturn (downgrade to warning)</button>
+                    <button disabled={resolvingAppeal === s.id} onClick={() => resolveAppeal(s.id, "upheld")} style={{ fontSize: 11, fontWeight: 700, padding: "6px 12px", borderRadius: 8, background: "rgba(255,80,80,0.12)", border: "1px solid rgba(255,80,80,0.3)", color: "#ff6b6b", cursor: resolvingAppeal === s.id ? "default" : "pointer", opacity: resolvingAppeal === s.id ? 0.5 : 1 }}>Uphold Strike</button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

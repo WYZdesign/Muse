@@ -47,6 +47,8 @@ export interface MenuModalProps {
   setShowNsfw: React.Dispatch<React.SetStateAction<boolean>>;
   showOnline?: boolean;
   setShowOnline?: React.Dispatch<React.SetStateAction<boolean>>;
+  showDistance?: boolean;
+  setShowDistance?: React.Dispatch<React.SetStateAction<boolean>>;
   blockedUsers: string[];
   setScreen: (s: Screen) => void;
   setShowAgeVerification: (v: boolean) => void;
@@ -102,6 +104,8 @@ export const MenuModal = memo(function MenuModal({
   setShowNsfw,
   showOnline = true,
   setShowOnline,
+  showDistance = true,
+  setShowDistance,
   blockedUsers,
   setScreen,
   setShowAgeVerification,
@@ -381,12 +385,12 @@ export const MenuModal = memo(function MenuModal({
                     </div>
                   ))}
                 </div>
-                <button className="btn btn-gold" style={{ width: "100%", fontSize: 12 }} onClick={async () => { try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { ...discoveryPrefs, notifications: notifPrefs, showOnline } }) }); showToast("Preferences saved!"); } catch { showToast("Failed to save"); } }}>Save Preferences</button>
+                <button className="btn btn-gold" style={{ width: "100%", fontSize: 12 }} onClick={async () => { try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { ...discoveryPrefs, notifications: notifPrefs, showOnline, showDistance } }) }); showToast("Preferences saved!"); } catch { showToast("Failed to save"); } }}>Save Preferences</button>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Safety &amp; Privacy</div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Show Distance</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Display your approximate location</div></div>
-                  <div onClick={() => setShowNsfw(p => !p)} style={{ width: 44, height: 24, borderRadius: 12, background: showNsfw ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "all .25s" }}>
-                    <div style={{ width: 20, height: 20, borderRadius: "50%", background: showNsfw ? "var(--gold)" : "var(--muted)", position: "absolute", top: 2, left: showNsfw ? 22 : 2, transition: "all .25s" }} />
+                  <div onClick={() => { const next = !showDistance; setShowDistance?.(next); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showDistance: next } }) }).catch(() => {}); }} style={{ width: 44, height: 24, borderRadius: 12, background: showDistance ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "all .25s" }}>
+                    <div style={{ width: 20, height: 20, borderRadius: "50%", background: showDistance ? "var(--gold)" : "var(--muted)", position: "absolute", top: 2, left: showDistance ? 22 : 2, transition: "all .25s" }} />
                   </div>
                 </div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>

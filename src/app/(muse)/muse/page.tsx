@@ -96,6 +96,7 @@ function MusePage() {
     const [connFilter, setConnFilter] = useState("all");
   const [showNsfw, setShowNsfw] = useState(false);
   const [showOnline, setShowOnline] = useState(true);
+  const [showDistance, setShowDistance] = useState(true);
   const [showMatchOverlay, setShowMatchOverlay] = useState<Match | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [swipeDir, setSwipeDir] = useState<"left"|"right"|null>(null);
@@ -410,7 +411,7 @@ function MusePage() {
         v: STATE_VERSION,
         currentUser, obData, obStep, matches: matches.slice(-MAX_ITEMS), dailyLikes, superLikes,
         savedBriefs, appliedBriefs, userBriefs: userBriefs.slice(-MAX_ITEMS), blockedUsers, notifPrefs,
-        obConnectedSocials, showNsfw, showOnline, rsvpdEvents, forumPosts: forumPosts.slice(-MAX_ITEMS), feedPosts: feedPosts.slice(-MAX_ITEMS),
+        obConnectedSocials, showNsfw, showOnline, showDistance, rsvpdEvents, forumPosts: forumPosts.slice(-MAX_ITEMS), feedPosts: feedPosts.slice(-MAX_ITEMS),
         testLevels, obSelects, obProfilePic, obPortfolioItems,         likedBy: likedBy.slice(-MAX_ITEMS),
         profileViews: DEMO_MODE ? profileViews : 0, profileViewers: DEMO_MODE ? profileViewers.slice(-20) : [], stories: stories.slice(-20), theme, activityFeed: activityFeed.slice(-MAX_ITEMS),
         discoveryPrefs, chatImages: Object.fromEntries(Object.entries(chatImages).slice(-20).map(([k,v]) => [k, v.slice(-20)])), screen, filterStyles, filterScore,
@@ -424,7 +425,7 @@ function MusePage() {
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs, stats: currentUser.stats }) }).catch(() => {});
       }
     } catch(e) {}
-  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,connFilter,authUser,chatTarget]);
+  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,connFilter,authUser,chatTarget]);
 
   const loadState = useCallback(async () => {
     try {
@@ -458,6 +459,7 @@ function MusePage() {
       if (d.obConnectedSocials) setObConnectedSocials(d.obConnectedSocials);
       if (d.showNsfw!=null) setShowNsfw(d.showNsfw);
       if (d.showOnline!=null) setShowOnline(d.showOnline);
+      if (d.showDistance!=null) setShowDistance(d.showDistance);
       if (d.rsvpdEvents) setRsvpdEvents(d.rsvpdEvents);
       if (d.forumPosts) setForumPosts(d.forumPosts);
       if (d.feedPosts) setFeedPosts(d.feedPosts);
@@ -592,6 +594,9 @@ function MusePage() {
               if (typeof d.profile.preferences?.showOnline === "boolean") {
                 setShowOnline(d.profile.preferences.showOnline);
               }
+              if (typeof d.profile.preferences?.showDistance === "boolean") {
+                setShowDistance(d.profile.preferences.showDistance);
+              }
               setScreen(prev => (prev === "auth" || prev === "onboard") ? (d.profile.name && d.profile.type ? "discover" : "onboard") : prev);
             } else {
               setScreen(prev => (prev === "auth") ? "onboard" : prev);
@@ -700,6 +705,11 @@ function MusePage() {
     // Handle Stripe Connect onboarding return
     const connected = params.get("connected");
     if (connected === "true") showToast("Stripe account connected! You can now receive payments. 💰");
+
+    // Handle booking-checkout return (create-booking-checkout success_url/cancel_url)
+    const paymentResult = params.get("payment");
+    if (paymentResult === "success") showToast("Payment successful! Your session is booked. 🎉");
+    else if (paymentResult === "cancelled") showToast("Payment cancelled");
 
     // Handle referral code from URL
     const refCode = params.get("ref");
@@ -1587,7 +1597,7 @@ function MusePage() {
     try { geo = await getGeolocation(); } catch {}
     setShowEditProfile(false);
     try {
-      await authFetch("/api/muse/auth", {
+      const r = await authFetch("/api/muse/auth", {
         method: "POST",
         body: JSON.stringify({
           action: "update-profile",
@@ -1600,8 +1610,11 @@ function MusePage() {
           ...(geo ? { lat: geo.lat, long: geo.long, city: geo.city } : {}),
         }),
       });
-    } catch {}
-    showToast("Saved!");
+      if (!r.ok) throw new Error("save failed");
+      showToast("Saved!");
+    } catch {
+      showToast("Failed to save — try again");
+    }
   }, [editName, editBio, editLoc, editAvatar, editType, editLooking, showToast]);
 
   const toggleObSelect = (key: string, val: string | number) => {
@@ -1789,7 +1802,7 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
           </div>
         </div>
       )}
-      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} showOnline={showOnline} setShowOnline={setShowOnline} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} />
+      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} />
       {screen === "auth" ? (
         <div className="phone-wrap">
           <div className="phone" id="muse-app">
@@ -2159,16 +2172,22 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
                       setCurrentUser(prev=>({...prev,name:obData.name||prev.name,type:obData.type||prev.type,avatar:obProfilePic||prev.avatar}));
                       const geo = await getGeolocation();
                       if(authUser?.id){
-                        try{await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"update-profile",auth_id:authUser.id,updates:{
-                          name:obData.name,loc:obData.loc,bio:obData.bio,type:obData.type,
-                          looking:obData.looking,styles:obData.styles,
-                          zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,life_path:obData.lifePath,
-                          avatar:obProfilePic,
-                          ...(geo ? { lat: geo.lat, long: geo.long, city: geo.city } : {})
-                        }})});}catch(e){}
+                        try{
+                          const r = await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"update-profile",
+                            name:obData.name,loc:obData.loc,bio:obData.bio,type:obData.type,
+                            looking:obData.looking,styles:obData.styles,
+                            zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,life_path:obData.lifePath,
+                            avatar:obProfilePic,
+                            ...(geo ? { lat: geo.lat, long: geo.long, city: geo.city } : {})
+                          })});
+                          if (!r.ok) showToast("Profile saved locally — sync will retry");
+                        }catch(e){ showToast("Profile saved locally — sync will retry"); }
                         // Apply referral code if entered
                         if (obData.referralCode) {
-                          try { await authFetch("/api/muse/referral", { method: "POST", body: JSON.stringify({ action: "apply", referralCode: obData.referralCode.trim().toUpperCase() }) }); } catch {}
+                          try {
+                            const rr = await authFetch("/api/muse/referral", { method: "POST", body: JSON.stringify({ action: "apply", referralCode: obData.referralCode.trim().toUpperCase() }) });
+                            if (!rr.ok) showToast("Referral code couldn't be applied");
+                          } catch { showToast("Referral code couldn't be applied"); }
                         }
                       }
                       setScreen("discover");showToast("Welcome to Muse!");setActiveTutorial("discover")

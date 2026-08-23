@@ -251,11 +251,22 @@ Use vision to check:
 
 ---
 
-## SESSION STATE
+### Session 10 (Claude, 2026-08-22) — Deeper pass, one severe bug found
 
+Chrome vision access came back this session, so a few screens were visually spot-checked against production (e.g. "Show Distance" really rendered permanently off and "Online Status" permanently on, matching code-level predictions). Ran 4 parallel sub-agents over admin/moderation, onboarding, Settings/Profile/Portfolio, and Sessions/booking/payment.
+
+**The big one:** Onboarding's final profile save has been silently failing for every user. The "Enter Muse" button POSTed `{action:"update-profile", auth_id, updates:{...}}` but the backend reads fields flat off the body (`body.name`, `body.type`, etc), never from a nested `updates` object. Every submission hit `Object.keys(updates).length === 0` → 400 → swallowed by empty `catch{}`. Name/type/bio/styles/looking/zodiac/etc never reached the server; only local state/localStorage held them, so device-switch or storage-clear showed an incomplete profile. Fixed by flattening the payload + adding a failure toast.
+
+**Also fixed:** `update-profile` allowlist missing `zodiac`/`chinese`/`mbti`/`life_path` (now added); hamburger "Show Distance" toggle was bound to `setShowNsfw` (bypassing age-verification) — gave it a real `showDistance` preference; "Edit Profile" no longer shows "Saved!" on failure; referral-code apply failure now toasts; double-payment guard on `create-booking-checkout` (409 if payment already `held`/`succeeded`); `?payment=success`/`cancelled` redirect toasts; admin appeal-resolve UI (Uphold/Overturn); booker "Cancel booking" control.
+
+**Still flagged (not fixed):** onboarding Portfolio step fully fake (hardcoded stock photos, never sent to server); Connect Your World OAuth stubs; double-payment guard needs independent review; "Pay" button doesn't hide after paid (bookings query doesn't join `muse_booking_payments`); no user-facing strikes/appeal UI (`get-strikes`/`appeal-strike`); legacy `type === "admin"` stats endpoint looks dead.
+
+---
+
+## SESSION STATE
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
-- **Last compile:** 2026-08-22 (Session 9)
-- **Last commit:** `5418a1a` — Session 9 continued wiring audit (QR/hero-form/pricing fixes + Unmatch/CollabBook/MenuLearn/OnlineStatus/IG-share) on `main`
+- **Last compile:** 2026-08-22 (Session 10)
+- **Last commit:** `b65b0be` — get-replies backend handler + NetworkScreen report wiring + report post-target support on `main`
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** muse_profiles, muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
 - **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)
