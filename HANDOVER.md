@@ -152,6 +152,34 @@ Extended the audit to the public marketing pages (`src/app/muse/*`, separate fro
 
 ---
 
+### SESSION 19 AUDIT MATRIX — Claude's full browser pass must cover EVERY row below
+
+For each row: exercise the interaction as a real user, watch the network tab for the expected API call, confirm correct success AND failure UX (toast now renders — bottom pill above nav; failures must roll back optimistic state).
+
+**Auth & Onboarding:** signup→email verify→login · logout · session restore on reload · password reset · onboarding steps 1-16 incl. profile photo upload, **Portfolio slots (file picker → upload → "Enter Muse" creates 'My Portfolio' album — verify album appears in Portfolio screen)**, personality tests, Connect-Your-World (expected: local-only stub), referral code apply (+invalid-code toast) · age gate + NSFW age-verification flow · account deletion + data export.
+**Discover:** swipe left/right (Pass free/unlimited at 0 likes — verify no like decrement), ★ radial super-like still works & consumes count, daily-limit block toast at 0 likes for right-swipes, Like+Note modal (note arrives as real message post-match), filters (age/distance/gender/styles/score) save+persist across reload, distance hidden when target showDistance=false, NSFW veil ONLY on true 18+ profiles + tap-to-reveal works on hero AND album photos, match overlay/confetti on mutual match, rewind.
+**Muses/Matches list:** real matches load from server, online dot from last_seen_at, unmatch (row deleted both directions + rollback on fail), report, open chat.
+**Chat:** send text/image (rollback on fail), clientMsgId dedup (send identical text twice — two bubbles survive reload), typing indicator, read receipts, history persistence across reload, **realtime reconnect: two accounts, kill/restore network mid-chat, messages catch up WITHOUT navigating away (Session 12 fix — still never live-tested)**.
+**Feed:** composer text/photo/video-post, emoji picker, **📷 BTS button opens camera — capture photo AND record ≤30s video; each lands in BOTH feed and BTS moments**, feed filter chips, like toggle + rollback-on-failure, 💬 inline replies + **post detail view (tap author/text): stats, reply thread, composer w/ rollback**, Report (no bubble), share counts.
+**BTS screen:** grid/list toggle, reactions, time badges, dual-capture window copy, NSFW reveal tap.
+**Collab:** brief filters, apply (applied state persists), save bookmark (persists via prefs), post-a-brief flow, paid-brief Book → opens chat with author.
+**Community:** groups/events tabs, badges (cat/Joined/Going/18+), detail modals, Join (server-persisted), RSVP/cancel-rsvp, share links, create group/event form (centered lightbox + close btn).
+**Network — Professionals:** search, exp bands (Rising<8/Established 8-11/Veteran 12+), Hiring-now, rate bands ($/<100/100-150/150+), skill rail, Looking-for select, sort ×6, card shows rate/openings/Seeking-chips, detail modal (X position, image not clipped), Connect flow w/ error handling.
+**Network — Forum:** hot/new/top sorts, category filter, **search bar**, create post (safety-block toast path), vote up/down persist, expand inline replies, **thread detail (tap title/body): votes, Best/New comment sort, per-comment ▲▼, @mention reply prefill chip, composer rollback**, share, report.
+**Sessions:** Browse (Book Session / Waitlist / View Profile no-toast), identity-gate toast when booking paid unverified, List-a-Session CTA below list + create form, My Bookings (status chips, Pay hides once payment_status held/succeeded, Complete, Cancel w/ confirm), Requests accept/decline, review submit, Stripe Checkout redirect toasts (?payment=success/cancelled) — **complete one real test-mode payment if possible**.
+**Portfolio:** MyAlbumsManager — create/edit/delete album, add/remove photos (real storage URLs only), access-grant, likes; onboarding-created album visible here.
+**Profile:** edit profile save/fail toasts, share sheet (copy/Twitter/IG-fallback), unlimited badge shows for Pro + dismissible, prompt bank responses save/load.
+**Settings:** all six groups render; notification toggles persist; theme switcher incl sunrise light mode; connected accounts (known OAuth stubs); blocked users list reflects real muse_blocks (block from anywhere → appears here → Unblock actually unblocks); safety check-in entry; strikes/disclosures tab populated.
+**Subscription:** MUSEBETA apply → server grants tier (verify DB tier=muse_pro + UI badge), invalid code toast, checkout promo revalidation.
+**Safety Center modal (4 tabs):** Check-ins confirm/cancel; Safety Profile save; Share Details SMS/email/link; **Strikes & Disclosures tab loads real data, appeal submits → status pending**.
+**Codex/Glossary:** static content renders, badges modal.
+**MenuModal:** main menu items route correctly, bell → Activity, sub-screen back arrow (top-left) works, Settings submenu toggles (Show Distance ≠ NSFW!, Online Status) persist instantly, Save Preferences includes showOnline/showDistance.
+**Admin panel:** reports queue, strike issue, appeals Uphold/Overturn, analytics.
+**Public pages:** landing (hero waitlist errors surface, QR source param, mountains behind waves, comets varied, nav icon static on scroll, footer waves only), pricing CTA, FAQ marquee dup-text bug (KNOWN OPEN), gallery images (KNOWN OPEN), blog CSP images (KNOWN OPEN), brands copy (KNOWN OPEN).
+**Cross-cutting:** every modal centered x/y + has close ✕ · toasts fire on EVERY mutating action (now that they render!) · offline/PWA shell · push subscribe/unsubscribe syncs toggle · deep-link ?ref= processing · 404-spike on /api/muse (check Vercel logs).
+
+---
+
 ## THE DARK SPOTS — What's Left to Explore
 
 No HIGH PRIORITY items open — #1 gated, #2 already wired. Next up is MEDIUM.

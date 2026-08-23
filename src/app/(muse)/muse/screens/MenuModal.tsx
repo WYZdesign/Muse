@@ -44,7 +44,10 @@ export interface MenuModalProps {
   setDiscoveryPrefs: React.Dispatch<React.SetStateAction<any>>;
   notifPrefs: Record<string, boolean>;
   setNotifPrefs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-  setShowNsfw: React.Dispatch<React.SetStateAction<boolean>>;
+   setShowNsfw: React.Dispatch<React.SetStateAction<boolean>>;
+  appliedBriefs?: number[];
+  savedBriefs?: number[];
+  bookingsForHub?: { asBooker: any[]; asHost: any[] };
   showOnline?: boolean;
   setShowOnline?: React.Dispatch<React.SetStateAction<boolean>>;
   showDistance?: boolean;
@@ -101,7 +104,10 @@ export const MenuModal = memo(function MenuModal({
   setDiscoveryPrefs,
   notifPrefs,
   setNotifPrefs,
-  setShowNsfw,
+   setShowNsfw,
+  appliedBriefs = [],
+  savedBriefs = [],
+  bookingsForHub,
   showOnline = true,
   setShowOnline,
   showDistance = true,
@@ -431,18 +437,85 @@ export const MenuModal = memo(function MenuModal({
             )}
             {hamburgerScreen === "activity" && (
               <div className="conn-scroll">
-                <div style={{ textAlign: "center", fontSize: 13, color: "var(--gold)", fontWeight: 700, marginBottom: 14 }}>Your Activity</div>
-                {activityFeed.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No activity yet. Start swiping!</div>
-                ) : activityFeed.map(a => (
-                  <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1 }}>
-                    <img loading="lazy" src={a.avatar} alt="" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, color: "var(--text)" }}><strong>{a.from}</strong> {a.text}</div>
-                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{a.time}</div>
-                    </div>
-                  </div>
-                ))}
+                {(() => {
+                  const [hubTab, setHubTab] = React.useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
+                  const [myReports, setMyReports] = React.useState<any[] | null>(null);
+                  React.useEffect(() => {
+                    if (hubTab === "reports" && myReports === null && authFetch) {
+                      authFetch("/api/muse?type=my-reports").then(r => r.json()).then(d => setMyReports(d.reports || [])).catch(() => setMyReports([]));
+                    }
+                  }, [hubTab]);
+                  const tabBtn = (key: any, label: string) => (
+                    <div key={key} className={"conn-tab-sub" + (hubTab === key ? " active" : "")} onClick={() => setHubTab(key)} style={{ cursor: "pointer", fontSize: 11, padding: "5px 10px", flexShrink: 0 }}>{label}</div>
+                  );
+                  return (
+                    <>
+                      <div style={{ textAlign: "center", fontSize: 13, color: "var(--gold)", fontWeight: 700, margin: "2px 0 10px" }}>Your Activity</div>
+                      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
+                        {tabBtn("notif", "Notifications")}
+                        {tabBtn("applied", `Applied (${appliedBriefs.length})`)}
+                        {tabBtn("saved", `Saved (${savedBriefs.length})`)}
+                        {tabBtn("bookings", `Bookings (${(bookingsForHub?.asBooker || []).length + (bookingsForHub?.asHost || []).length})`)}
+                        {tabBtn("reports", "Reports")}
+                      </div>
+                      {hubTab === "notif" && (activityFeed.length === 0
+                        ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No activity yet. Start swiping!</div>
+                        : activityFeed.map(a => (
+                          <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1 }}>
+                            <img loading="lazy" src={a.avatar} alt="" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 14, color: "var(--text)" }}><strong>{a.from}</strong> {a.text}</div>
+                              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{a.time}</div>
+                            </div>
+                          </div>
+                        )))}
+                      {(hubTab === "applied" || hubTab === "saved") && (() => {
+                        const ids = hubTab === "applied" ? appliedBriefs : savedBriefs;
+                        if (!ids.length) return <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>{hubTab === "applied" ? "You haven't applied to any briefs yet." : "No saved briefs yet."}</div>;
+                        return (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            {ids.map((id, i) => (
+                              <div key={`${id}-${i}`} style={{ padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Brief #{id}</span>
+                                <button className="btn btn-outline" style={{ fontSize: 11, padding: "5px 12px", borderRadius: 99 }} onClick={() => { setShowHamburger(false); showScreen("briefs"); }}>View in Collab</button>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                      {hubTab === "bookings" && (() => {
+                        const b = bookingsForHub || { asBooker: [], asHost: [] };
+                        if (!b.asBooker.length && !b.asHost.length) return <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No bookings yet.</div>;
+                        const row = (x: any, role: string) => (
+                          <div key={x.id} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.04)", borderRadius: 12, marginBottom: 8 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{x.session_id?.title || "Session"}</span>
+                              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "capitalize", color: x.status === "completed" ? "#98fb98" : x.status === "confirmed" ? "var(--gold)" : x.status === "cancelled" ? "#ff6464" : "var(--muted)" }}>{x.status}</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 3 }}>{role} · {new Date(x.created_at).toLocaleDateString()}</div>
+                          </div>
+                        );
+                        return (<>
+                          {b.asBooker.map(x => row(x, "Booked by you"))}
+                          {b.asHost.map(x => row(x, "You're hosting"))}
+                        </>);
+                      })()}
+                      {hubTab === "reports" && (myReports === null
+                        ? <div style={{ textAlign: "center", padding: 30, color: "var(--muted)", fontSize: 13 }}>Loading…</div>
+                        : myReports.length === 0
+                          ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>You haven't reported anything.</div>
+                          : myReports.map(r => (
+                            <div key={r.id} style={{ padding: "10px 12px", background: "rgba(255,100,100,0.05)", borderRadius: 12, border: "1px solid rgba(255,100,100,0.12)", marginBottom: 8 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                                <span style={{ fontWeight: 700, textTransform: "capitalize", color: "#ff8a80" }}>{String(r.target_type).replace("_", " ")}</span>
+                                <span style={{ color: "var(--muted)", fontSize: 11 }}>{new Date(r.created_at).toLocaleDateString()}</span>
+                              </div>
+                              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 3 }}>{r.reason}</div>
+                            </div>
+                          )))}
+                    </>
+                  );
+                })()}
               </div>
             )}
           </>

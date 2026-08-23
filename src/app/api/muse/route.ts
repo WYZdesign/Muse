@@ -345,6 +345,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ asBooker: withPaymentStatus(asBooker), asHost: withPaymentStatus(asHost) });
     }
 
+    if (type === "my-reports" && user) {
+      const { data: myReports } = await sb.from("muse_reports")
+        .select("id, target_type, reason, status, created_at")
+        .eq("reporter_id", profileId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return NextResponse.json({ reports: myReports || [] });
+    }
+
     if (type === "notifications" && user) {
       const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ notifications: [] });
