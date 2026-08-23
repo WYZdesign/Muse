@@ -161,9 +161,8 @@ export const SessionsScreen = memo(function SessionsScreen({
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
         {sessTab === "sessions" && (
           <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "4px 0 10px" }}>
+            <div style={{ margin: "4px 0 10px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Available Sessions</div>
-              <button className="btn btn-gold" style={{ fontSize: 12, fontWeight: 700, padding: "6px 14px", borderRadius: 99 }} onClick={() => setShowCreate(true)}>+ List a Session</button>
             </div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Browse creatives offering sessions — pick one, book, and pay securely.</div>
             {(liveSessions?.length ? liveSessions : SESSIONS).map(s => (
@@ -204,6 +203,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                 </div>
               </div>
             ))}
+            <button className="btn btn-gold" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, marginTop: 6 }} onClick={() => setShowCreate(true)}>+ List a Session</button>
           </>
         )}
         {sessTab === "bookings" && (

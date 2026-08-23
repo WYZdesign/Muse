@@ -183,7 +183,6 @@ export const MenuModal = memo(function MenuModal({
           </>
         ) : (
           <>
-            <div className="hamburger-back" onClick={() => setHamburgerScreen("")}><FiArrowLeft size={16} /> Back</div>
             {hamburgerScreen === "community" && (
               <div className="conn-scroll">
                 <div className="hamburger-title">Community</div>

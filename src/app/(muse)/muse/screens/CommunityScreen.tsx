@@ -199,7 +199,11 @@ export const CommunityScreen = memo(function CommunityScreen({
               <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                 <div className="conn-name" style={{ fontSize: 15 }}>{c.name}</div>
                 <div className="conn-meta" style={{ fontSize: 12 }}>{c.members} members</div>
-                {c.cat && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontWeight: 600, marginTop: 6, alignSelf: "flex-start" }}>{c.cat}</span>}
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                  {c.cat && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontWeight: 600 }}>{c.cat}</span>}
+                  {joinedIds.has(c.id) && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: "rgba(76,221,136,0.12)", border: "1px solid rgba(76,221,136,0.3)", color: "#4cdd88", fontWeight: 700 }}>✓ Joined</span>}
+                  {c.nsfw && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: "rgba(255,69,0,0.15)", border: "1px solid rgba(255,69,0,0.3)", color: "#ff6b6b", fontWeight: 700 }}>18+</span>}
+                </div>
                 <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>Tap to view details ›</div>
               </div>
             </div>
@@ -216,6 +220,10 @@ export const CommunityScreen = memo(function CommunityScreen({
             {ev.img && <img loading="lazy" src={ev.img} alt={ev.title} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} onError={handleImgError} />}
             <div style={{ padding: 16 }}>
               <div className="conn-name" style={{ fontSize: 15 }}>{ev.title}</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                {rsvpdEvents.includes(ev.id) && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: "rgba(76,221,136,0.12)", border: "1px solid rgba(76,221,136,0.3)", color: "#4cdd88", fontWeight: 700 }}>✓ Going</span>}
+                {ev.nsfw && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: "rgba(255,69,0,0.15)", border: "1px solid rgba(255,69,0,0.3)", color: "#ff6b6b", fontWeight: 700 }}>18+</span>}
+              </div>
               <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text2)" }}><FiCalendar size={12} /> {ev.date}</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text2)" }}><FiMapPin size={12} /> {ev.loc}</span>

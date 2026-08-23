@@ -183,11 +183,11 @@ export const MBTI = ["INTJ","INTP","ENTJ","ENTP","INFJ","INFP","ENFJ","ENFP","IS
 export const LIFE_PATHS = [1,2,3,4,5,6,7,8,9,11,22,33];
 export const PC = ["#FFD700","#FF6B6B","#D4A5FF","#98FB98","#FFDAB9","#87CEEB","#FF8A80","#FFD1A4","#FFB5C2","#FFE4B5","#FF9A56","#E6E6FA"];
 export const PROFESSIONALS = [
-  {id:1,name:"Elena Voss",type:"Casting Director",img:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200",loc:"Los Angeles, CA",exp:"8 years",openings:3,skills:["Fashion","Commercial","Editorial"],nsfw:false},
-  {id:2,name:"Marcus Webb",type:"Producer",img:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",loc:"New York, NY",exp:"12 years",openings:5,skills:["Music Video","Commercial","Film"],nsfw:false},
-  {id:3,name:"Simone Hart",type:"Art Buyer",img:"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200",loc:"San Francisco, CA",exp:"6 years",openings:2,skills:["Fine Art","Fashion","Editorial"],nsfw:false},
-  {id:4,name:"Dante Cruz",type:"Fine Art Agent",img:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200",loc:"Miami, FL",exp:"10 years",openings:7,skills:["Body Art","Fine Art","Fashion"],nsfw:true},
-  {id:5,name:"Lena Park",type:"Creative Director",img:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",loc:"Austin, TX",exp:"15 years",openings:4,skills:["Branding","Commercial","Experimental"],nsfw:false},
+  {id:1,name:"Elena Voss",type:"Casting Director",img:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200",loc:"Los Angeles, CA",exp:"8 years",openings:3,rate:"$95/hr",skills:["Fashion","Commercial","Editorial"],looking:["Photographers","Stylists"],nsfw:false},
+  {id:2,name:"Marcus Webb",type:"Producer",img:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",loc:"New York, NY",exp:"12 years",openings:5,rate:"$140/hr",skills:["Music Video","Commercial","Film"],looking:["Editors","DPs"],nsfw:false},
+  {id:3,name:"Simone Hart",type:"Art Buyer",img:"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200",loc:"San Francisco, CA",exp:"6 years",openings:2,rate:"$80/hr",skills:["Fine Art","Fashion","Editorial"],looking:["Painters","Printmakers"],nsfw:false},
+  {id:4,name:"Dante Cruz",type:"Fine Art Agent",img:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200",loc:"Miami, FL",exp:"10 years",openings:7,rate:"$110/hr",skills:["Body Art","Fine Art","Fashion"],looking:["Figure Models","Body Painters"],nsfw:true},
+  {id:5,name:"Lena Park",type:"Creative Director",img:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",loc:"Austin, TX",exp:"15 years",openings:4,rate:"$160/hr",skills:["Branding","Commercial","Experimental"],looking:["Motion Designers","Copywriters"],nsfw:false},
 ];
 export const CONNECTIONS = [
   { name:"Creative Mornings LA",type:"Community",cat:"community",img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=200&h=120&fit=crop",desc:"Weekly creative networking events in LA",tag:"Events" },

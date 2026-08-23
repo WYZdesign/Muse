@@ -103,6 +103,41 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [expandedPostId, setExpandedPostId] = useState<number | null>(null);
   const [commentTexts, setCommentTexts] = useState<Record<number, string>>({});
   const [votedPosts, setVotedPosts] = useState<Record<number, "up" | "down" | null>>({});
+  const [proExp, setProExp] = useState<"all" | "rising" | "established" | "veteran">("all");
+  const [proSort, setProSort] = useState<"match" | "expDesc" | "expAsc" | "rateDesc" | "rateAsc" | "openings">("match");
+  const [proHiringOnly, setProHiringOnly] = useState(false);
+  const [proSearch, setProSearch] = useState("");
+  const [forumSearch, setForumSearch] = useState("");
+
+  const parseYrs = (e: string) => parseInt(e, 10) || 0;
+  const parseRate = (r?: string) => parseInt(String(r || "").replace(/[^0-9]/g, ""), 10) || 0;
+  const expBand = (e: string): "rising" | "established" | "veteran" => {
+    const y = parseYrs(e);
+    return y >= 12 ? "veteran" : y >= 8 ? "established" : "rising";
+  };
+
+  const proList = (() => {
+    let list = PROFESSIONALS.filter((p) => showNsfw || !p.nsfw);
+    if (proExp !== "all") list = list.filter((p) => expBand(p.exp) === proExp);
+    if (proHiringOnly) list = list.filter((p) => p.openings > 0);
+    const q = proSearch.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.type.toLowerCase().includes(q) ||
+          p.skills.some((s) => s.toLowerCase().includes(q)) ||
+          (p.looking || []).some((l: string) => l.toLowerCase().includes(q))
+      );
+    }
+    const arr = [...list];
+    if (proSort === "expDesc") arr.sort((a, b) => parseYrs(b.exp) - parseYrs(a.exp));
+    else if (proSort === "expAsc") arr.sort((a, b) => parseYrs(a.exp) - parseYrs(b.exp));
+    else if (proSort === "rateDesc") arr.sort((a, b) => parseRate(b.rate) - parseRate(a.rate));
+    else if (proSort === "rateAsc") arr.sort((a, b) => parseRate(a.rate) - parseRate(b.rate));
+    else if (proSort === "openings") arr.sort((a, b) => b.openings - a.openings);
+    return arr;
+  })();
 
   const filteredForum = useMemo(() => {
     return [...(liveForum?.length ? liveForum : FORUM_POSTS)]
@@ -266,8 +301,52 @@ export const NetworkScreen = memo(function NetworkScreen({
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
-        {netTab === "pros" &&
-          PROFESSIONALS.filter((p) => showNsfw || !p.nsfw).map((p) => (
+        {netTab === "pros" && (
+          <>
+            <input
+              className="inp"
+              placeholder="Search pros — name, craft, skills, who they're looking for…"
+              value={proSearch}
+              onChange={(e) => setProSearch(e.target.value)}
+              style={{ margin: "0 0 10px", fontSize: 13 }}
+            />
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+              {(["all", "rising", "established", "veteran"] as const).map((b) => (
+                <div
+                  key={b}
+                  className={"conn-tab-sub" + (proExp === b ? " active" : "")}
+                  onClick={() => setProExp(b)}
+                  style={{ textTransform: "capitalize", cursor: "pointer" }}
+                >
+                  {b === "all" ? "All levels" : b}
+                </div>
+              ))}
+              <div
+                className={"conn-tab-sub" + (proHiringOnly ? " active" : "")}
+                onClick={() => setProHiringOnly(!proHiringOnly)}
+                style={{ cursor: "pointer" }}
+              >
+                Hiring now
+              </div>
+            </div>
+            <select
+              value={proSort}
+              onChange={(e) => setProSort(e.target.value as any)}
+              style={{ width: "100%", marginBottom: 12, padding: "9px 12px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 12 }}
+            >
+              <option value="match">Sort: Featured</option>
+              <option value="expDesc">Most experienced</option>
+              <option value="expAsc">Least experienced</option>
+              <option value="rateDesc">Rate: high to low</option>
+              <option value="rateAsc">Rate: low to high</option>
+              <option value="openings">Most openings</option>
+            </select>
+            {proList.length === 0 && (
+              <div style={{ textAlign: "center", padding: 24, color: "var(--muted)", fontSize: 13 }}>
+                No professionals match those filters.
+              </div>
+            )}
+            {proList.map((p) => (
             <div
               key={p.id}
               onClick={() => openProProfile(p)}
@@ -409,6 +488,8 @@ export const NetworkScreen = memo(function NetworkScreen({
               </div>
             </div>
           ))}
+          </>
+        )}
 
         {netTab === "forum" && (
           <>
@@ -527,7 +608,24 @@ export const NetworkScreen = memo(function NetworkScreen({
               </button>
             </div>
 
-            {filteredForum.map((post) => (
+            <input
+              className="inp"
+              placeholder="Search the forum…"
+              value={forumSearch}
+              onChange={(e) => setForumSearch(e.target.value)}
+              style={{ margin: "0 20px 10px", fontSize: 13 }}
+            />
+            {filteredForum
+              .filter((post) => {
+                const q = forumSearch.trim().toLowerCase();
+                if (!q) return true;
+                return (
+                  post.title.toLowerCase().includes(q) ||
+                  post.body.toLowerCase().includes(q) ||
+                  post.author.toLowerCase().includes(q)
+                );
+              })
+              .map((post) => (
               <div
                 key={post.id}
                 className="conn-card"
@@ -681,7 +779,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                             </div>
                           </div>
                         ))}
-                        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
                           <input
                             className="inp"
                             placeholder="Write a reply..."
@@ -692,12 +790,13 @@ export const NetworkScreen = memo(function NetworkScreen({
                             onKeyDown={(e) => {
                               if (e.key === "Enter") addComment(post.id);
                             }}
-                            style={{ flex: 1, fontSize: 12, padding: "8px 12px" }}
+                            style={{ width: "100%", fontSize: 12, padding: "9px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "var(--text)" }}
                           />
                           <button
                             className="btn btn-gold"
                             style={{
-                              padding: "8px 16px",
+                              width: "100%",
+                              padding: "10px 0",
                               fontSize: 11,
                               fontWeight: 700,
                               borderRadius: 10,
@@ -744,7 +843,8 @@ export const NetworkScreen = memo(function NetworkScreen({
               position: "relative",
               width: "100%",
               maxWidth: 480,
-              maxHeight: "92vh",
+              maxHeight: "calc(92vh - env(safe-area-inset-top, 0px) - 16px)",
+              marginTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
               background: "linear-gradient(135deg,#0d0520,#1a0a2e,#0d0520)",
               borderRadius: "24px 24px 0 0",
               overflow: "hidden",
@@ -756,7 +856,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               onClick={() => setProDetail(null)}
               style={{
                 position: "absolute",
-                top: 16,
+                top: "calc(14px + env(safe-area-inset-top, 0px))",
                 right: 16,
                 zIndex: 10,
                 background: "rgba(0,0,0,0.5)",
