@@ -337,12 +337,30 @@ Closed out the item flagged open since Session 11. The chat history-merge effect
 ### Files touched Session 16
 `src/app/muse-realtime.ts`, `src/app/(muse)/muse/page.tsx`
 
+### Session 17 (Claude, 2026-08-23) — onboarding Portfolio step now uploads real photos and creates a real album
+
+**The bug:** portfolio slots during onboarding injected hardcoded Unsplash stock URLs (no file picker), and `obPortfolioItems` only ever lived in localStorage — the debounced server sync never included it, so even fake picks vanished on a new device. The real Portfolio system (`MyAlbumsManager`, `muse_albums`) was never touched by this step.
+
+**Fixed:** slot click opens a real file picker → uploads via existing `uploadImage(file,"portfolio")`; on "Enter Muse", uploaded photos create a real album ("My Portfolio") via the same `create-album`/`add-album-photo` actions MyAlbumsManager uses. Non-blocking on failure. Note: server-side `add-album-photo` already rejects non-Muse-storage URLs — the old stock URLs would have been rejected outright.
+
+### Files touched Session 17
+`src/app/(muse)/muse/page.tsx`
+
+### Session 18 (wyzmind, 2026-08-23) — applied S17 patch + duplicate-avatar fix + BTS camera shipped
+
+Applied Claude's Session 17 patch onto wyzmind's diverged tree (manual apply — base had advanced through `e691bab`). Also this round from wyzmind: **BTS camera capture** (feed's BTS button opens full-screen camera; photo via canvas→JPEG, video via MediaRecorder up to 30s→WebM; one capture fans out to Feed AND BTS with independent rollback). Upload endpoint gained WebM support (EBML magic bytes, video/webm content-type, 25MB cap); **Rekognition scan gated to images only — video moderation is an open follow-up**.
+
+**Duplicate Discover avatars fixed:** live profiles map `img: p.avatar || ""` — every avatarless user collapsed to one shared fallback image on cards. Added deterministic per-user gradient-initials SVG data-URI (`initialsAvatarUrl(name,id)`) as the fallback — unique hue/initials per profile, no network requests, CSP-safe.
+
+### Files touched Session 18
+`src/app/(muse)/muse/page.tsx`, `src/app/api/muse/upload/route.ts`
+
 ---
 
 ## SESSION STATE
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
-- **Last compile:** 2026-08-23 (Session 16)
-- **Last commit:** Session 16 — message-dedup now id-based (clientMsgId threaded from send-time through to history-merge), closing the item flagged open since Session 11, on top of Session 15 on `main`
+- **Last compile:** 2026-08-23 (Session 18)
+- **Last commit:** Session 18 — onboarding Portfolio real uploads+album, duplicate-avatar fix, BTS camera capture (photo/video → Feed+BTS), WebM upload support, on top of Session 16's `8397def` on `main`
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** muse_profiles, muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
 - **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)

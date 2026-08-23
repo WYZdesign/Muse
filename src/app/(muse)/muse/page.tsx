@@ -70,6 +70,20 @@ export default function MusePageWrapper() {
   return <ErrorBoundary><MusePage /></ErrorBoundary>;
 }
 
+// Deterministic per-user gradient-initials avatar (data URI, no network) —
+// used when a live profile has no uploaded photo, so Discover cards never
+// collapse into one shared fallback image.
+function initialsAvatarUrl(name: string, key: string | number): string {
+  const n = (name || "M").trim();
+  const letters = encodeURIComponent((n.split(/\s+/).slice(0, 2).map(w => w[0] || "").join("") || "M").toUpperCase());
+  const s = String(key) + n;
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  const c1 = `hsl(${h % 360},68%,52%)`;
+  const c2 = `hsl(${(h * 7 + 40) % 360},62%,34%)`;
+  return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='${c1}'/><stop offset='1' stop-color='${c2}'/></linearGradient></defs><rect width='200' height='200' fill='url(%23g)'/><text x='100' y='102' font-family='Inter,Arial,sans-serif' font-size='82' font-weight='700' fill='white' text-anchor='middle' dominant-baseline='central'>${letters}</text></svg>`;
+}
+
 function MusePage() {
   const [screen, setScreen] = useState<Screen>("auth");
   const [authMode, setAuthMode] = useState<"login"|"signup">("signup");
@@ -213,6 +227,8 @@ function MusePage() {
   const [obProfilePic, setObProfilePic] = useState<string | null>(null);
   const [obConnectedSocials, setObConnectedSocials] = useState<Record<string, boolean>>({});
   const [obPortfolioItems, setObPortfolioItems] = useState<{img:string;title:string}[]>([]);
+  const portfolioInputRef = useRef<HTMLInputElement>(null);
+  const [obPortfolioSlot, setObPortfolioSlot] = useState<number | null>(null);
   const [likedBy, setLikedBy] = useState<Profile[]>([]);
   const [showLikesYou, setShowLikesYou] = useState(false);
   const [matchesView, setMatchesView] = useState<"list"|"grid">("list");
@@ -372,7 +388,7 @@ function MusePage() {
         apiFetch("/api/muse?type=sessions").then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
       if (matchData?.profiles?.length) setLiveProfiles(matchData.profiles.map((p: any) => ({
-        id: p.id, name: p.name || "Creative", img: p.avatar || "", type: p.type || "artist",
+        id: p.id, name: p.name || "Creative", img: p.avatar || initialsAvatarUrl(p.name || "Creative", p.id), type: p.type || "artist",
         bio: p.bio || "", loc: p.loc || "Unknown", styles: Array.isArray(p.styles) ? p.styles : [],
         score: p.matchScore || 70, nsfw: !!p.nsfw, looking: Array.isArray(p.looking) ? p.looking : [],
         zodiac: p.zodiac || "", chinese: p.chinese || "", mbti: p.mbti || "", lifePath: p.life_path || "",
@@ -2144,14 +2160,30 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
                   <div className="onboard-content">
                     <div className="step-title">Your Portfolio</div>
                     <div className="step-sub">Show off your best work</div>
+                    <input ref={portfolioInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={async (e)=>{
+                      const f=e.target.files?.[0];
+                      const slot=obPortfolioSlot;
+                      if(e.target) e.target.value="";
+                      if(f && slot!=null){
+                        showToast("Uploading...");
+                        const url=await uploadImage(f,"portfolio");
+                        if(url){
+                          setObPortfolioItems(prev => {
+                            const next=[...prev];
+                            next[slot]={img:url,title:"Work "+(slot+1)};
+                            return next;
+                          });
+                          showToast("Work added!");
+                        } else {
+                          showToast("Upload failed — try again");
+                        }
+                      }
+                    }} />
                     <div className="ob-portfolio-grid">
                       {[0,1,2,3,4,5].map(i => (
                         <div key={i} className="ob-portfolio-slot" onClick={() => {
-                          const sampleImgs = ["https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=400&fit=crop","https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=300&h=400&fit=crop","https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=300&h=400&fit=crop","https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=400&fit=crop","https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=400&fit=crop","https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=300&h=400&fit=crop"];
-                          if (obPortfolioItems.length <= i) {
-                            setObPortfolioItems(prev => [...prev, {img: sampleImgs[i % sampleImgs.length], title:"Work "+(i+1)}]);
-                            showToast("Work added!");
-                          }
+                          setObPortfolioSlot(i);
+                          portfolioInputRef.current?.click();
                         }}>
                           {obPortfolioItems[i] ? <img loading="lazy" src={obPortfolioItems[i].img} alt="Work" /> : <div className="ob-portfolio-plus">+</div>}
                         </div>
@@ -2222,6 +2254,20 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
                             const rr = await authFetch("/api/muse/referral", { method: "POST", body: JSON.stringify({ action: "apply", referralCode: obData.referralCode.trim().toUpperCase() }) });
                             if (!rr.ok) showToast("Referral code couldn't be applied");
                           } catch { showToast("Referral code couldn't be applied"); }
+                        }
+                        // Turn the onboarding portfolio step's uploads into a real
+                        // album so they actually show up in Portfolio afterward.
+                        const realPortfolioPhotos = obPortfolioItems.filter(Boolean);
+                        if (realPortfolioPhotos.length) {
+                          try {
+                            const ar = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "create-album", title: "My Portfolio", access_level: "public" }) });
+                            const ad = await ar.json();
+                            if (ad?.success && ad?.album?.id) {
+                              for (const item of realPortfolioPhotos) {
+                                try { await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "add-album-photo", albumId: ad.album.id, img_url: item.img }) }); } catch {}
+                              }
+                            }
+                          } catch {}
                         }
                       }
                       setScreen("discover");showToast("Welcome to Muse!");setActiveTutorial("discover")
