@@ -374,7 +374,7 @@ function MusePage() {
       if (matchData?.profiles?.length) setLiveProfiles(matchData.profiles.map((p: any) => ({
         id: p.id, name: p.name || "Creative", img: p.avatar || "", type: p.type || "artist",
         bio: p.bio || "", loc: p.loc || "Unknown", styles: Array.isArray(p.styles) ? p.styles : [],
-        score: p.matchScore || 70, nsfw: !!p.show_nsfw, looking: Array.isArray(p.looking) ? p.looking : [],
+        score: p.matchScore || 70, nsfw: !!p.nsfw, looking: Array.isArray(p.looking) ? p.looking : [],
         zodiac: p.zodiac || "", chinese: p.chinese || "", mbti: p.mbti || "", lifePath: p.life_path || "",
         photos: Array.isArray(p.photos) ? p.photos : [], collabs: p.collabs || 0, verified: !!p.verified,
         matchScore: p.matchScore, rulesScore: p.rulesScore, cosineScore: p.cosineScore,

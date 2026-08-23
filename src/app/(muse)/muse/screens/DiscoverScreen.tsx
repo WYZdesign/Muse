@@ -317,10 +317,10 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               onError={handleImgError}
                               style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: heroPortrait ? "center top" : "center", background: "linear-gradient(160deg,#1a0a2e,#0a0612)", position: "absolute", top: 0, left: 0, transition: "transform 0.15s ease-out, filter 0.3s ease", transformStyle: "preserve-3d", filter: (profile as any).nsfw && !revealedNsfw.has(String(profile.id)) ? "blur(26px) brightness(0.7)" : "none" }}
                             />
-                            {(profile as any).nsfw && !revealedNsfw.has(String(profile.id)) && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); }}
-                                style={{ position: "absolute", inset: 0, zIndex: 5, background: "rgba(10,6,18,0.45)", border: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer" }}
+                                        {(profile as any).nsfw && !revealedNsfw.has(String(profile.id)) && (
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); }}
+                                            style={{ position: "absolute", inset: 0, zIndex: 5, background: "rgba(10,6,18,0.45)", border: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer" }}
                               >
                                 <div style={{ fontSize: 30, fontWeight: 800, color: "#ff8a80" }}>18+</div>
                                 <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", letterSpacing: 0.03 }}>NSFW content</div>
