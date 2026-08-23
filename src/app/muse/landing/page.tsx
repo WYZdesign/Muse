@@ -682,9 +682,6 @@ export default function MuseLandingPage() {
       {/* Footer ocean waves — matches splash screen */}
       <div className="muse-footer-wave" aria-hidden="true">
         <svg className="muse-footer-wave-svg" viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
-          <path className="fww fww-6" d="M0,40 C90,10 180,70 270,40 C360,10 450,70 540,40 C630,10 720,70 810,40 C900,10 990,70 1080,40 C1170,10 1260,70 1350,40 C1400,25 1430,25 1440,35 L1440,360 L0,360 Z" />
-          <path className="fww fww-7" d="M0,70 C100,30 200,110 300,70 C400,30 500,110 600,70 C700,30 800,110 900,70 C1000,30 1100,110 1200,70 C1300,30 1400,100 1440,70 L1440,360 L0,360 Z" />
-          <path className="fww fww-8" d="M0,100 C110,50 220,150 330,100 C440,50 550,150 660,100 C770,50 880,150 990,100 C1100,50 1210,150 1320,100 C1380,70 1420,80 1440,95 L1440,360 L0,360 Z" />
           <path className="fww fww-1" d="M0,130 C120,70 240,190 360,130 C480,70 600,190 720,130 C840,70 960,190 1080,130 C1200,70 1320,190 1440,130 L1440,360 L0,360 Z" />
           <path className="fww fww-2" d="M0,165 C120,100 260,230 400,165 C540,100 680,230 820,165 C960,100 1100,230 1240,165 C1320,120 1400,130 1440,160 L1440,360 L0,360 Z" />
           <path className="fww fww-3" d="M0,185 C200,215 380,135 560,196 C760,250 940,145 1120,200 C1260,236 1380,168 1440,196 L1440,360 L0,360 Z" />

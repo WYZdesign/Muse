@@ -134,7 +134,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   filter: blur(16px); animation: sunsetSunPulse 5s ease-in-out infinite; z-index: 1;
 }
 .sunset-sun {
-  position: absolute; left: 50%; bottom: 23.3%; transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: 24.2%; transform: translateX(-50%);
   width: 16vw; min-width: 110px; max-width: 180px;
   height: 8vw; min-height: 55px; max-height: 90px;
   border-radius: 180px 180px 0 0;
@@ -286,9 +286,9 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 
 /* Enter Gate Content Layout */
 .muse-enter-content {
-  position: relative; z-index: 10; text-align: center;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 20px; margin-top: -10vh;
+  position: absolute; inset: 0; z-index: 10; text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 13vh 20px 0; margin-top: 0;
 }
 .muse-enter-icon-wrap {
   position: relative; margin-bottom: 0px;
@@ -328,7 +328,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   color: rgba(255,255,255,0.45); margin-top: 4px; font-weight: 500;
 }
 .muse-enter-prompt {
-  margin-top: 52px; display: inline-flex; align-items: center; gap: 10px;
+  margin-top: auto; margin-bottom: 9vh; display: inline-flex; align-items: center; gap: 10px;
   padding: 15px 36px; border-radius: 999px;
   background: linear-gradient(135deg, rgba(255,215,0,0.18), rgba(255,138,128,0.14));
   border: 1.5px solid rgba(255,215,0,0.6); color: #FFD700;

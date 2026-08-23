@@ -108,6 +108,10 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [proHiringOnly, setProHiringOnly] = useState(false);
   const [proSearch, setProSearch] = useState("");
   const [forumSearch, setForumSearch] = useState("");
+  const [threadId, setThreadId] = useState<number | null>(null);
+  const [threadSort, setThreadSort] = useState<"best" | "new">("best");
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [commentVotes, setCommentVotes] = useState<Record<string, "up" | "down" | null>>({});
 
   const parseYrs = (e: string) => parseInt(e, 10) || 0;
   const parseRate = (r?: string) => parseInt(String(r || "").replace(/[^0-9]/g, ""), 10) || 0;
@@ -226,6 +230,9 @@ export const NetworkScreen = memo(function NetworkScreen({
       body: JSON.stringify({ action: "forum", type: "vote", postId, direction }),
     }).catch(() => {});
   }
+
+  const threadPost =
+    threadId != null ? filteredForum.find((p) => p.id === threadId) || null : null;
 
   function addComment(postId: number) {
     const text = (commentTexts[postId] || "").trim();
@@ -670,13 +677,19 @@ export const NetworkScreen = memo(function NetworkScreen({
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
+                    <div
+                      style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4, cursor: "pointer" }}
+                      onClick={() => { setThreadId(post.id); setReplyTo(null); }}
+                    >
                       {post.title}
                     </div>
                     <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 6 }}>
                       {post.author} · {post.time}
                     </div>
-                    <div style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.4 }}>
+                    <div
+                      style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.4, cursor: "pointer" }}
+                      onClick={() => { setThreadId(post.id); setReplyTo(null); }}
+                    >
                       {post.body.slice(0, 120)}
                       {post.body.length > 120 ? "..." : ""}
                     </div>
@@ -814,9 +827,124 @@ export const NetworkScreen = memo(function NetworkScreen({
             ))}
           </>
         )}
-      </div>
 
-      {/* ─── PRO DETAIL MODAL ─── */}
+        {/* ─── THREAD DETAIL (Reddit-style) ─── */}
+        {threadPost && (
+          <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
+            <div className="modal-header">
+              <button className="modal-back" onClick={() => { setThreadId(null); setReplyTo(null); }}>
+                <FiArrowLeft size={20} />
+              </button>
+              <div className="modal-title">Thread</div>
+              <button className="modal-close" onClick={() => { setThreadId(null); setReplyTo(null); }} aria-label="Close">{"\u2715"}</button>
+            </div>
+            <div className="modal-body">
+              {/* FULL POST */}
+              <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, minWidth: 40, paddingTop: 2 }}>
+                  <button
+                    style={{ background: "none", border: "none", color: votedPosts[threadPost.id] === "up" ? "#FFD700" : "var(--muted)", cursor: "pointer", fontSize: 20, padding: 0 }}
+                    onClick={() => handleVote(threadPost.id, "up")}
+                  >
+                    ▲
+                  </button>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text)" }}>{threadPost.votes}</span>
+                  <button
+                    style={{ background: "none", border: "none", color: votedPosts[threadPost.id] === "down" ? "#ff6b6b" : "var(--muted)", cursor: "pointer", fontSize: 20, padding: 0 }}
+                    onClick={() => handleVote(threadPost.id, "down")}
+                  >
+                    ▼
+                  </button>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {threadPost.cat && (
+                    <span style={{ display: "inline-block", fontSize: 10, padding: "3px 10px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "var(--gold)", fontWeight: 700, marginBottom: 8 }}>{threadPost.cat}</span>
+                  )}
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", lineHeight: 1.3, marginBottom: 6 }}>{threadPost.title}</div>
+                  <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 10 }}>{threadPost.author} · {threadPost.time}</div>
+                  <div style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{threadPost.body}</div>
+                  <div style={{ display: "flex", gap: 16, marginTop: 14 }}>
+                    <button style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 12, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }} onClick={() => handlePostShare(threadPost)}>
+                      <FiShare2 size={13} /> Share
+                    </button>
+                    <button style={{ background: "none", border: "none", color: "#ff6b6b", fontSize: 12, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }} onClick={() => { setReportTarget({ id: threadPost.id, type: "forum_post", name: threadPost.author }); setShowReport(true); }}>
+                      <FiFlag size={13} /> Report
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* COMMENTS */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 12, marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)" }}>{threadPost.comments.length} {threadPost.comments.length === 1 ? "comment" : "comments"}</div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {(["best", "new"] as const).map((s) => (
+                    <div key={s} className={"conn-tab-sub" + (threadSort === s ? " active" : "")} onClick={() => setThreadSort(s)} style={{ cursor: "pointer", fontSize: 11, padding: "4px 10px" }}>
+                      {s === "best" ? "Best" : "New"}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {(threadSort === "new" ? [...threadPost.comments].reverse() : threadPost.comments).map((c: any, i: number) => {
+                const key = `${threadPost.id}:${threadSort === "new" ? threadPost.comments.length - 1 - i : i}`;
+                const cv = commentVotes[key];
+                return (
+                  <div key={key} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "10px 12px", marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <div style={{ width: 22, height: 22, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "#0a0612" }}>
+                        {(c.author || "?").charAt(0).toUpperCase()}
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text2)" }}>{c.author}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
+                        <button style={{ background: "none", border: "none", color: cv === "up" ? "#FFD700" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [key]: p[key] === "up" ? null : "up" }))}>▲</button>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>{cv === "up" ? 2 : cv === "down" ? 0 : 1}</span>
+                        <button style={{ background: "none", border: "none", color: cv === "down" ? "#ff6b6b" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [key]: p[key] === "down" ? null : "down" }))}>▼</button>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5, marginBottom: 6 }}>{c.text}</div>
+                    <button
+                      style={{ background: "none", border: "none", color: "var(--gold)", fontSize: 11, fontWeight: 700, cursor: "pointer", padding: 0 }}
+                      onClick={() => {
+                        setReplyTo(c.author);
+                        setCommentTexts((prev) => ({ ...prev, [threadPost.id]: prev[threadPost.id] || `@${c.author} ` }));
+                      }}
+                    >
+                      Reply
+                    </button>
+                  </div>
+                );
+              })}
+              {threadPost.comments.length === 0 && (
+                <div style={{ textAlign: "center", padding: "20px 0", color: "var(--muted)", fontSize: 12, fontStyle: "italic" }}>
+                  No comments yet — start the conversation.
+                </div>
+              )}
+
+              {/* COMPOSER */}
+              <div style={{ marginTop: 14 }}>
+                {replyTo && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", borderRadius: 8, padding: "6px 10px", marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, color: "var(--gold)" }}>Replying to @{replyTo}</span>
+                    <button style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12 }} onClick={() => setReplyTo(null)}>✕</button>
+                  </div>
+                )}
+                <input
+                  className="inp"
+                  placeholder="Add a comment…"
+                  value={commentTexts[threadPost.id] || ""}
+                  onChange={(e) => setCommentTexts((prev) => ({ ...prev, [threadPost.id]: e.target.value }))}
+                  onKeyDown={(e) => { if (e.key === "Enter") addComment(threadPost.id); }}
+                  style={{ width: "100%", fontSize: 13, padding: "10px 12px", marginBottom: 8 }}
+                />
+                <button className="btn btn-gold" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 10 }} onClick={() => addComment(threadPost.id)}>
+                  Comment
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
       {proDetail && (
         <div
           style={{
