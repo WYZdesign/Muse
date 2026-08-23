@@ -16,6 +16,7 @@ import {
 } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import { PROFESSIONALS, FORUM_POSTS } from "../components/types";
+import { viewerSide } from "@/lib/role";
 import Nav from "../components/Nav";
 
 export interface NetworkScreenProps {
@@ -117,6 +118,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [threadSort, setThreadSort] = useState<"best" | "new">("best");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [commentVotes, setCommentVotes] = useState<Record<string, "up" | "down" | null>>({});
+  const iAmIndustry = viewerSide(currentUser?.type) === "industry";
 
   const parseYrs = (e: string) => parseInt(e, 10) || 0;
   const parseRate = (r?: string) => parseInt(String(r || "").replace(/[^0-9]/g, ""), 10) || 0;
@@ -326,6 +328,11 @@ export const NetworkScreen = memo(function NetworkScreen({
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
         {netTab === "pros" && (
           <>
+            <div style={{ margin: "0 0 10px", fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
+              {iAmIndustry
+                ? "Your industry peers — network, co-hire, and trade talent across markets."
+                : "Industry professionals who can book, pay, and launch your career."}
+            </div>
             <input
               className="inp"
               placeholder="Search pros — name, craft, skills, who they're looking for…"
@@ -1292,7 +1299,9 @@ export const NetworkScreen = memo(function NetworkScreen({
                       ? "\u2713 Requested"
                       : connectLoading === proDetail.id
                         ? "Sending..."
-                        : "Connect"}
+                        : iAmIndustry
+                          ? "Network"
+                          : "Connect"}
                   </button>
                   <button
                     style={{
