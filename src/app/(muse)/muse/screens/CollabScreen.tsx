@@ -5,6 +5,7 @@ import { FiArrowLeft, FiPlus } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen, Brief } from "../components/types";
 import { BRIEFS } from "../components/types";
+import { viewerSide } from "../lib/role";
 
 export interface CollabScreenProps {
   screen: Screen;
@@ -120,6 +121,14 @@ export const CollabScreen = memo(function CollabScreen({
             ...(liveBriefs?.length ? liveBriefs : BRIEFS),
           ];
           const filtered = museCat === "all" ? allBriefs : allBriefs.filter(b => b.cat === museCat);
+          // Duality P1 — industry (hiring) sees their own briefs first so
+          // applicants stay front-of-mind; creatives browse others' work with
+          // their own posts pushed to the end.
+          const side = viewerSide(currentUser?.type);
+          const ownIds = new Set(userBriefs.map(b => b.id));
+          const ordered = side === "industry"
+            ? [...filtered.filter(b => ownIds.has(b.id)), ...filtered.filter(b => !ownIds.has(b.id))]
+            : [...filtered.filter(b => !ownIds.has(b.id)), ...filtered.filter(b => ownIds.has(b.id))];
           if (filtered.length === 0) {
             return (
               <div className="empty-state">
@@ -129,7 +138,7 @@ export const CollabScreen = memo(function CollabScreen({
               </div>
             );
           }
-          return filtered.map(brief => (
+          return ordered.map(brief => (
             <div key={brief.id} className="brief-card">
               <div className="brief-header" style={{ flexWrap: "wrap", gap: 6 }}>
                 <img loading="lazy" src={brief.authorImg} alt={brief.author} className="brief-avatar" />
@@ -201,7 +210,7 @@ export const CollabScreen = memo(function CollabScreen({
       {showPostBrief && (
         <div className="modal-overlay" onClick={() => setShowPostBrief(false)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 20 }}>
-            <div className="modal-title" style={{ marginBottom: 4 }}>Post a Brief</div>
+            <div className="modal-title" style={{ marginBottom: 4 }}>{viewerSide(currentUser?.type) === "industry" ? "Post a Brief — find talent" : "Post a Brief"}</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Share a project, collab, or open call.</div>
             <input className="inp" placeholder="Title" value={briefTitle} onChange={e => setBriefTitle(e.target.value)} style={{ marginBottom: 8 }} />
             <textarea className="inp" placeholder="Describe the project" rows={3} value={briefDesc} onChange={e => setBriefDesc(e.target.value)} style={{ marginBottom: 8, resize: "none" }} />
@@ -214,7 +223,7 @@ export const CollabScreen = memo(function CollabScreen({
                 <option value="opencall">Open Call</option>
               </select>
             </div>
-            <button className="btn btn-gold" style={{ width: "100%", fontWeight: 700 }} onClick={submitBrief}>Post Brief</button>
+            <button className="btn btn-gold" style={{ width: "100%", fontWeight: 700 }} onClick={submitBrief}>{viewerSide(currentUser?.type) === "industry" ? "Post Brief" : "Share It"}</button>
           </div>
         </div>
       )}

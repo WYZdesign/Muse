@@ -6,7 +6,7 @@ import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 import { CODEX_ZODIAC, CODEX_CHINESE, CODEX_LIFE_PATH, CODEX_MBTI, CODEX_TYPES, CODEX_AESTHETICS } from "../components/codexData";
 import * as icons from "react-icons/gi";
-import { FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiHeart } from "react-icons/fi";
+import { FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiHeart, FiTarget, FiCpu, FiTrendingUp, FiEdit3, FiEye, FiFeather, FiSmile, FiCheckSquare, FiShield, FiPlay, FiTool, FiMusic, FiFlag, FiCompass, FiSearch, FiGlobe, FiLayers, FiAward } from "react-icons/fi";
 
 export interface CodexScreenProps {
   screen: Screen;
@@ -17,7 +17,19 @@ export interface CodexScreenProps {
 
 // ── BADGE MASTER GLOSSARY ────────────────────────────────────────────────────
 const GI = icons as Record<string, any>;
-const FI: Record<string, any> = { FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiBookOpen, FiHeart };
+const FI: Record<string, any> = {
+  FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiBookOpen, FiHeart,
+  // MBTI — one glyph per type
+  INTJ: FiTarget ?? null, INTP: FiCpu ?? null, ENTJ: FiTrendingUp ?? null, ENTP: FiEdit3 ?? null,
+  INFJ: FiEye ?? null, INFP: FiFeather ?? null, ENFJ: FiUsers ?? null, ENFP: FiSmile ?? null,
+  ISTJ: FiCheckSquare ?? null, ISFJ: FiShield ?? null, ESTJ: FiBriefcase ?? null, ESFJ: FiHeart ?? null,
+  ESTP: FiPlay ?? null, ISTP: FiTool ?? null, ESFP: FiMusic ?? null,
+  // Life Path — by archetype
+  L1: FiFlag ?? null, L2: FiUsers ?? null, L3: FiFeather ?? null, L4: FiTool ?? null,
+  L5: FiCompass ?? null, L6: FiHeart ?? null, L7: FiSearch ?? null, L8: FiZap ?? null,
+  L9: FiGlobe ?? null, L11: FiEye ?? null, L22: FiLayers ?? null, L33: FiAward ?? null,
+};
+const LP_ICONS: Record<number, string> = { 1: "L1", 2: "L2", 3: "L3", 4: "L4", 5: "L5", 6: "L6", 7: "L7", 8: "L8", 9: "L9", 11: "L11", 22: "L22", 33: "L33" };
 function IconGlyph({ name, size = 20 }: { name: string; size?: number }) {
   if (name.startsWith("Gi")) {
     const C = GI[name];
@@ -68,7 +80,7 @@ export const CodexScreen = memo(function CodexScreen({
     <div className={"screen-el" + (screen === "codex" ? " active" : "")}>
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("profile")}><FiArrowLeft size={20} /></button>
-        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 22, fontWeight: 800, color: "var(--gold)", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}><FiBookOpen size={18} /> Glossary + Codex</div>
+        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 22, fontWeight: 800, color: "var(--gold)", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}> Glossary + Codex</div>
         <div style={{ width: 34 }} />
       </div>
 
@@ -125,10 +137,10 @@ export const CodexScreen = memo(function CodexScreen({
               {CODEX_CHINESE.map(c => <Expandable key={c.name} icon={c.icon} name={c.name} short={c.short} long={c.long} color="#FF8A80" />)}
             </Section>
             <Section title="MBTI (16 Personality Types)" subtitle="A framework of 16 types built on 4 dimensions: Introversion/Extraversion, Sensing/Intuition, Thinking/Feeling, and Judging/Perceiving." howTo="Find yours: take a free personality assessment. It's a self-report questionnaire, not a scientific test." why="Why it matters: it shows how you think, communicate, create, and collaborate, and which types you naturally work best with.">
-              {CODEX_MBTI.map(m => <Expandable key={m.code} icon="🧠" name={`${m.code}, ${m.tag}`} short={m.short} long={`${m.long} You'll click best with ${m.best}.`} color="#D4A5FF" />)}
+              {CODEX_MBTI.map(m => <Expandable key={m.code} icon={m.code} name={`${m.code}, ${m.tag}`} short={m.short} long={`${m.long} You'll click best with ${m.best}.`} color="#D4A5FF" />)}
             </Section>
             <Section title="🔢 Life Path Numbers" subtitle="Derived from your full birth date by reducing each part to a single digit and adding them up. A core numerology concept." howTo="Find yours: add every digit of your birth date (month + day + year) and reduce to one digit, except the Master Numbers 11, 22, and 33." why="Why it matters: it's your life's blueprint, your strengths, challenges, and purpose, and it feeds match compatibility.">
-              {CODEX_LIFE_PATH.map(n => <Expandable key={n.n} icon="🔢" name={`Life Path ${n.n}, ${n.title}`} short={n.title} long={n.long} color="#98FB98" />)}
+              {CODEX_LIFE_PATH.map(n => <Expandable key={n.n} icon={LP_ICONS[n.n] || `L${n.n}`} name={`Life Path ${n.n}, ${n.title}`} short={n.title} long={n.long} color="#98FB98" />)}
             </Section>
             <Section title="How Match % Works" subtitle="The compatibility score on every profile.">
               <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 16, fontSize: 13, color: "var(--text2)", lineHeight: 1.7 }}>

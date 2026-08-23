@@ -500,7 +500,7 @@ export const MenuModal = memo(function MenuModal({
                   {[{ label: "Terms of Service", href: "/terms" }, { label: "Privacy Policy", href: "/privacy" }, { label: "DMCA / Copyright", href: "/dmca" }, { label: "Community Guidelines", href: "/safety" }].map(l => (
                     <a key={l.href} href={l.href} onClick={() => setShowHamburger(false)} style={{ display: "block", padding: "10px 0", fontSize: 13, color: "var(--text2)", textDecoration: "none", transition: "color .15s", borderBottom: "1px solid rgba(255,255,255,0.04)" }} onMouseEnter={e => e.currentTarget.style.color = "#FFD700"} onMouseLeave={e => e.currentTarget.style.color = "var(--text2)"}>{l.label}</a>
                   ))}
-                  <button className="btn" style={{ width: "100%", margin: "8px 0", background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontSize: 13, fontWeight: 700 }} onClick={() => { setShowHamburger(false); showScreen("codex"); }}>📖 Glossary + Codex</button>
+                  <button className="btn" style={{ width: "100%", margin: "8px 0", background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontSize: 13, fontWeight: 700 }} onClick={() => { setShowHamburger(false); showScreen("codex"); }}>Glossary + Codex</button>
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Help &amp; Support</div>
                 {[
