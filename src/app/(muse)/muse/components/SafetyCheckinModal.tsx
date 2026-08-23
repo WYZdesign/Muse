@@ -23,17 +23,56 @@ type SafetyProfile = {
   auto_share_enabled: boolean;
 };
 
+type StrikeData = {
+  id: string;
+  reason: string;
+  category: string;
+  severity: string;
+  appeal_status: string;
+  appeal_text?: string;
+  suspension_ends_at?: string | null;
+  created_at: string;
+};
+
+type DisclosureData = {
+  id: string;
+  status: string;
+  created_at: string;
+  proposer_id?: { name?: string } | null;
+  responder_id?: { name?: string } | null;
+};
+
 type Props = {
   checkins: CheckinData[];
   safetyProfile: SafetyProfile | null;
   onRespond: (checkinId: string, response: string, sharedWithContact: boolean, reason?: string) => Promise<void>;
   onSaveSafetyProfile: (profile: SafetyProfile) => Promise<void>;
   onShareDetails: (bookingId: string, method: string) => Promise<void>;
+  onFetchStrikes: () => Promise<StrikeData[]>;
+  onFetchDisclosures: () => Promise<DisclosureData[]>;
+  onAppealStrike: (strikeId: string, text: string) => Promise<boolean>;
   onClose: () => void;
 };
 
-export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond, onSaveSafetyProfile, onShareDetails, onClose }: Props) {
-  const [tab, setTab] = useState<"checkins" | "safety" | "share">("checkins");
+export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond, onSaveSafetyProfile, onShareDetails, onFetchStrikes, onFetchDisclosures, onAppealStrike, onClose }: Props) {
+  const [tab, setTab] = useState<"checkins" | "safety" | "share" | "account">("checkins");
+  const [strikes, setStrikes] = useState<StrikeData[]>([]);
+  const [disclosures, setDisclosures] = useState<DisclosureData[]>([]);
+  const [accountLoaded, setAccountLoaded] = useState(false);
+  const [appealText, setAppealText] = useState<string>("");
+  const [appealingId, setAppealingId] = useState<string | null>(null);
+  const [accountMsg, setAccountMsg] = useState<string>("");
+
+  const loadAccount = async () => {
+    setAccountLoaded(false);
+    setAccountMsg("");
+    try {
+      const [s, d] = await Promise.all([onFetchStrikes(), onFetchDisclosures()]);
+      setStrikes(s || []);
+      setDisclosures(d || []);
+    } catch { setAccountMsg("Couldn't load account status"); }
+    setAccountLoaded(true);
+  };
   const [loading, setLoading] = useState(false);
   const [sp, setSp] = useState<SafetyProfile>(safetyProfile || {
     emergency_contact_name: "", emergency_contact_phone: "", emergency_contact_relation: "",
@@ -82,8 +121,8 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: 3 }}>
-          {[["checkins", `Check-ins (${pending.length})`], ["safety", "Safety Profile"], ["share", "Share Details"]].map(([key, label]) => (
-            <button key={key} onClick={() => setTab(key as any)} style={{ flex: 1, padding: "8px 0", borderRadius: 8, background: tab === key ? "rgba(255,215,0,0.15)" : "transparent", border: "none", color: tab === key ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
+          {[["checkins", `Check-ins (${pending.length})`], ["safety", "Safety Profile"], ["share", "Share Details"], ["account", "Strikes & Disclosures"]].map(([key, label]) => (
+            <button key={key} onClick={() => { setTab(key as any); if (key === "account") loadAccount(); }} style={{ flex: 1, padding: "8px 0", borderRadius: 8, background: tab === key ? "rgba(255,215,0,0.15)" : "transparent", border: "none", color: tab === key ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
               {label}
             </button>
           ))}
@@ -234,6 +273,81 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
                 The easiest and most protective thing you can do is make it simple to back out. If something feels off, trust your instincts. You can cancel anytime without explanation. No shoot is worth compromising your comfort.
               </div>
             </div>
+          </div>
+        )}
+
+        {/* STRIKES & DISCLOSURES TAB */}
+        {tab === "account" && (
+          <div>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
+              Your account standing: any moderation strikes on your account, and the disclosures you&apos;ve been part of.
+            </p>
+
+            {accountMsg && <div style={{ padding: 10, marginBottom: 12, borderRadius: 8, background: "rgba(255,100,100,0.1)", border: "1px solid rgba(255,100,100,0.25)", fontSize: 12, color: "#ff8a80" }}>{accountMsg}</div>}
+
+            {!accountLoaded && <div style={{ textAlign: "center", padding: 20, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Loading…</div>}
+
+            {accountLoaded && (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#ffd700", marginBottom: 8 }}>Moderation Strikes</div>
+                {strikes.length === 0 && (
+                  <div style={{ padding: 12, background: "rgba(255,255,255,0.03)", borderRadius: 8, fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
+                    ✓ No strikes — your account is in good standing.
+                  </div>
+                )}
+                {strikes.map(s => (
+                  <div key={s.id} style={{ padding: 12, background: "rgba(255,100,100,0.05)", borderRadius: 8, border: "1px solid rgba(255,100,100,0.15)", marginBottom: 10, fontSize: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                      <span style={{ fontWeight: 700, color: "#ff8a80", textTransform: "capitalize" }}>{s.severity}</span>
+                      <span style={{ color: "rgba(255,255,255,0.4)" }}>{new Date(s.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <div style={{ color: "rgba(255,255,255,0.6)", marginBottom: 4 }}>{s.reason}</div>
+                    {s.suspension_ends_at && <div style={{ fontSize: 11, color: "#ff8a80" }}>Suspended until {new Date(s.suspension_ends_at).toLocaleDateString()}</div>}
+                    {s.appeal_status === "none" && (
+                      <div style={{ marginTop: 8 }}>
+                        <textarea
+                          value={appealText}
+                          onChange={e => setAppealText(e.target.value)}
+                          placeholder="Explain why this strike should be reconsidered…"
+                          rows={3}
+                          style={{ width: "100%", padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 12, resize: "none" }}
+                        />
+                        <button
+                          disabled={appealingId !== null || !appealText.trim()}
+                          onClick={async () => {
+                            setAppealingId(s.id);
+                            const ok = await onAppealStrike(s.id, appealText.trim());
+                            setAppealingId(null);
+                            if (ok) { setAppealText(""); setStrikes(prev => prev.map(x => x.id === s.id ? { ...x, appeal_status: "pending", appeal_text: appealText.trim() } : x)); }
+                          }}
+                          style={{ marginTop: 6, padding: "6px 12px", borderRadius: 8, background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "#ffd700", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+                        >
+                          {appealingId === s.id ? "Submitting…" : "Appeal Strike"}
+                        </button>
+                      </div>
+                    )}
+                    {s.appeal_status === "pending" && <div style={{ marginTop: 6, fontSize: 11, color: "#ffd700" }}>Appeal pending review</div>}
+                    {s.appeal_status === "upheld" && <div style={{ marginTop: 6, fontSize: 11, color: "#ff8a80" }}>Appeal upheld — strike stands</div>}
+                    {s.appeal_status === "overturned" && <div style={{ marginTop: 6, fontSize: 11, color: "#78ff96" }}>Appeal overturned — downgraded to warning</div>}
+                  </div>
+                ))}
+
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#ffd700", margin: "16px 0 8px" }}>Disclosures</div>
+                {disclosures.length === 0 && (
+                  <div style={{ padding: 12, background: "rgba(255,255,255,0.03)", borderRadius: 8, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+                    No disclosures yet.
+                  </div>
+                )}
+                {disclosures.map(d => (
+                  <div key={d.id} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 8, borderBottom: "1px solid rgba(255,255,255,0.05)", marginBottom: 6, fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ color: "rgba(255,255,255,0.7)" }}>
+                      {d.proposer_id?.name || "You"} ↔ {d.responder_id?.name || "Creative"}
+                    </span>
+                    <span style={{ color: d.status === "confirmed" ? "#4ecdc4" : d.status === "rejected" ? "#ff8a80" : "rgba(255,255,255,0.4)", textTransform: "capitalize" }}>{d.status}</span>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         )}
       </div>

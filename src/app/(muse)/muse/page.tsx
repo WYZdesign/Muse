@@ -2779,6 +2779,20 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
             await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "share-safety-details", bookingId, shareMethod: method }) });
             setToastMsg("Details shared with trusted contact");
           }}
+          onFetchStrikes={async () => {
+            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-strikes" }) });
+            const d = await r.json();
+            return d.strikes || [];
+          }}
+          onFetchDisclosures={async () => {
+            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-disclosures" }) });
+            const d = await r.json();
+            return d.disclosures || [];
+          }}
+          onAppealStrike={async (strikeId, text) => {
+            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "appeal-strike", strikeId, appealText: text }) });
+            return r.ok;
+          }}
           onClose={() => setShowSafetyCheckin(false)}
         />
       )}
