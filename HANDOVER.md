@@ -176,7 +176,7 @@ For each row: exercise the interaction as a real user, watch the network tab for
 **MenuModal:** main menu items route correctly, bell → Activity, sub-screen back arrow (top-left) works, Settings submenu toggles (Show Distance ≠ NSFW!, Online Status) persist instantly, Save Preferences includes showOnline/showDistance.
 **Admin panel:** reports queue, strike issue, appeals Uphold/Overturn, analytics.
 **Public pages:** landing (hero waitlist errors surface, QR source param, mountains behind waves, comets varied, nav icon static on scroll, footer waves only), pricing CTA, FAQ marquee dup-text bug (KNOWN OPEN), gallery images (KNOWN OPEN), blog CSP images (KNOWN OPEN), brands copy (KNOWN OPEN).
-**Cross-cutting:** every modal centered x/y + has close ✕ · toasts fire on EVERY mutating action (now that they render!) · offline/PWA shell · push subscribe/unsubscribe syncs toggle · deep-link ?ref= processing · 404-spike on /api/muse (check Vercel logs).
+**Cross-cutting:** every modal centered x/y + has close ✕ *(swept & confirmed: 24/24 modal-headers have close buttons across page/screens; SafetyCheckin/PromptBank/Referral panels all wire onClose to visible ✕/FiX — zero stragglers found)* · toasts fire on EVERY mutating action (now that they render!) · offline/PWA shell · push subscribe/unsubscribe syncs toggle · deep-link ?ref= processing · 404-spike on /api/muse (check Vercel logs).
 
 ---
 
