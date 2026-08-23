@@ -324,6 +324,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ reports: myReports || [] });
     }
 
+    if (type === "my-stats" && user) {
+      const { count: likesReceived } = await sb.from("muse_matches")
+        .select("*", { count: "exact", head: true })
+        .eq("target_id", profileId);
+      const { data: me } = await sb.from("muse_profiles").select("views_count").eq("id", profileId).maybeSingle();
+      return NextResponse.json({ views: (me as any)?.views_count || 0, likesReceived: likesReceived || 0 });
+    }
+
     if (type === "notifications" && user) {
       const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ notifications: [] });
@@ -600,6 +608,21 @@ export async function POST(req: NextRequest) {
         await sb.from("muse_matches").delete().eq("user_id", target_id).eq("target_id", profile.id);
         await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "unmatch", details: { target_id } });
       }
+      return NextResponse.json({ success: true });
+    }
+
+    if (actionType === "track-view") {
+      if (!await checkRateUser(profile.id, "track-view", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const { target_id } = rest;
+      if (!target_id || target_id === profile.id) return NextResponse.json({ success: true });
+      if (!UUID_RE.test(String(target_id))) return NextResponse.json({ success: true, demo: true });
+      // Read-modify-write is fine here: client dedupes per session per profile,
+      // so contention on a single row is minimal and exact precision isn't
+      // required for a social-proof counter.
+      const { data: cur } = await sb.from("muse_profiles").select("views_count").eq("id", target_id).maybeSingle();
+      const next = ((cur as any)?.views_count || 0) + 1;
+      const { error } = await sb.from("muse_profiles").update({ views_count: next }).eq("id", target_id);
+      if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
     }
 

@@ -162,6 +162,7 @@ function MusePage() {
   const [liveCommunities, setLiveCommunities] = useState<typeof COMMUNITIES | null>(null);
   const [liveSessions, setLiveSessions] = useState<typeof SESSIONS | null>(null);
   const [myBookings, setMyBookings] = useState<{ asBooker: any[]; asHost: any[] }>({ asBooker: [], asHost: [] });
+  const [myStats, setMyStats] = useState<{ views: number; likes: number } | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
@@ -291,7 +292,21 @@ function MusePage() {
     } catch {}
   }, []);
 
-  const [viewProfile, setViewProfile] = useState<any>(null);
+  const [viewProfile, setViewProfileRaw] = useState<any>(null);
+  // Tracked wrapper — counts one view per real profile per session (duality
+  // stats plumbing); demo/numeric ids are skipped server-side anyway.
+  const viewedSessionRef = useRef<Set<string>>(new Set());
+  const setViewProfile = useCallback((p: any) => {
+    setViewProfileRaw(p);
+    try {
+      const id = String(p?.id ?? "");
+      if (!id || !authUser) return;
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(id)) return;
+      if (viewedSessionRef.current.has(id)) return;
+      viewedSessionRef.current.add(id);
+      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-view", target_id: id }) }).catch(() => {});
+    } catch {}
+  }, [authUser]);
   const [viewProfileReviews, setViewProfileReviews] = useState<any[]>([]);
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
@@ -1573,6 +1588,17 @@ function MusePage() {
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
 
+  // ═══ STATS: real profile views + likes received (tiles in Your Profile) ═══
+  useEffect(() => {
+    if (!authUser?.profile?.id) return;
+    let cancelled = false;
+    apiFetch("/api/muse?type=my-stats")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d) setMyStats({ views: d.views || 0, likes: d.likesReceived || 0 }); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [authUser?.profile?.id]);
+
   // ═══ BOOKINGS: fetch real bookings (booker + host) ═══
   useEffect(() => {
     if (!authUser?.profile?.id) return;
@@ -1867,7 +1893,7 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
           {toastMsg}
         </div>
       )}
-      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} isUnlimited={isUnlimited} profileViews={profileViews} likesReceived={likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} />
+      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} />
       {screen === "auth" ? (
         <div className="phone-wrap">
           <div className="phone" id="muse-app">
