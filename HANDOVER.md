@@ -316,12 +316,33 @@ Picked up two of Session 10's "medium" findings that were still open after Sessi
 ### Files touched Session 14
 `src/app/api/muse/route.ts`, `src/app/(muse)/muse/page.tsx`, `src/app/(muse)/muse/screens/SubscriptionScreen.tsx`, `src/app/(muse)/muse/screens/SessionsScreen.tsx`
 
+### Session 15 (Claude, 2026-08-23) — dead-code cleanup: unreachable BTS submenu, a badge that could never show
+
+Note: per Torree, audit findings now live only here in HANDOVER.md going forward — no more separate `muse_site_wiring_audit.md` deliverable. This file is the single source of truth.
+
+**Fixed:**
+1. **Session 8's "BTS submenu — delete or wire?" was actually neither, it was already dead.** The hamburger menu's item list has no "moments"/BTS entry at all — an earlier round removed the menu item but not the render branch (`hamburgerScreen === "moments"`, 6 hardcoded fake story cards, a "View" button that just toasted "Story viewed!"). 100% unreachable — deleted the dead branch, zero risk.
+2. **`showUnlimitedBadge` could never appear.** State defaulted `false` and its only setter call also set `false` (the badge's own dismiss button), so it was permanently stuck off. Default changed to `true` so it displays for `isUnlimited` users and can be dismissed. Judgment call: if the intent was a one-time "welcome to Pro" moment, this makes it recurring per-visit since dismissal isn't persisted.
+3. **SessionsScreen "View Profile" redundant toast** (Session 10 finding #7) — removed `showToast(s.name + "'s profile")`; the profile view already shows the name.
+
+### Files touched Session 15
+`src/app/(muse)/muse/screens/MenuModal.tsx`, `src/app/(muse)/muse/page.tsx`, `src/app/(muse)/muse/screens/SessionsScreen.tsx`
+
+### Session 16 (Claude, 2026-08-23) — message-dedup-by-id (the last item on the "left open" list since Session 11)
+
+Closed out the item flagged open since Session 11. The chat history-merge effect deduped locally-held optimistic messages against fetched server history by `text+"|"+img` content alone — two distinct messages sent close together with identical text collapsed into one bubble on merge.
+
+**The fix:** the backend already stored/returned `client_msg_id` per message; it just never reached the client. Threaded through: `fetchConversationHistory` now returns `clientMsgId`; all three send sites (`sendMsg`, `sendChatImg`, like-with-note) generate one id up front used for both the optimistic bubble and `persistMessage`; the merge effect dedupes by `clientMsgId` when present, falling back to content match only for pre-fix messages. No backend change needed.
+
+### Files touched Session 16
+`src/app/muse-realtime.ts`, `src/app/(muse)/muse/page.tsx`
+
 ---
 
 ## SESSION STATE
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
-- **Last compile:** 2026-08-23 (Session 14)
-- **Last commit:** Session 14 — real MUSEBETA promo (server-validated tier grant), Pay-button-after-payment fix (bookings now carry payment_status), on top of Session 13 on `main`
+- **Last compile:** 2026-08-23 (Session 16)
+- **Last commit:** Session 16 — message-dedup now id-based (clientMsgId threaded from send-time through to history-merge), closing the item flagged open since Session 11, on top of Session 15 on `main`
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** muse_profiles, muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
 - **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)

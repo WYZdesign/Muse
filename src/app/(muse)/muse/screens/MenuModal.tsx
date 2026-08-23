@@ -430,27 +430,6 @@ export const MenuModal = memo(function MenuModal({
                 <button className="btn btn-gold" style={{ width: "100%", marginTop: 16, fontSize: 12, padding: "12px 0" }} onClick={doLogoutFull}>Log Out</button>
               </div>
             )}
-            {hamburgerScreen === "moments" && (
-              <div className="conn-scroll">
-                <div className="hamburger-title">BTS</div>
-                <div style={{ textAlign: "center", padding: 8, fontSize: 13, color: "var(--gold)", fontWeight: 700, marginBottom: 12 }}>Snapshots from creatives near you</div>
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="conn-card" style={{ flexDirection: "column", margin: "0 0 10px", padding: 0, overflow: "hidden" }}>
-                    <div style={{ position: "relative", height: 160, background: `linear-gradient(135deg,${["#FF6B6B", "#4ECDC4", "#FFD93D", "#A78BFA", "#FF8A80", "#6BCB77"][i]},#0a0612)` }}>
-                      <div style={{ position: "absolute", top: 10, left: 10, display: "flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,0.5)", borderRadius: 99, padding: "4px 10px" }}>
-                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--gold)", border: "2px solid #fff" }} />
-                        <span style={{ fontSize: 12, color: "#fff", fontWeight: 600 }}>creative_{100 + i}</span>
-                      </div>
-                      <div style={{ position: "absolute", bottom: 10, right: 10, fontSize: 10, color: "#fff", background: "rgba(0,0,0,0.5)", borderRadius: 8, padding: "3px 10px" }}>{["5m", "12m", "28m", "1h", "2h", "3h"][i]} ago</div>
-                    </div>
-                    <div style={{ padding: "8px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 12, color: "var(--text2)" }}>📍 {["Los Angeles", "Miami", "NYC", "Chicago", "Austin", "Portland"][i]}</span>
-                      <button className="conn-btn conn-btn-primary" style={{ fontSize: 10, padding: "4px 10px" }} onClick={() => showToast("Story viewed!")}>View</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
             {hamburgerScreen === "activity" && (
               <div className="conn-scroll">
                 <div style={{ textAlign: "center", fontSize: 13, color: "var(--gold)", fontWeight: 700, marginBottom: 14 }}>Your Activity</div>

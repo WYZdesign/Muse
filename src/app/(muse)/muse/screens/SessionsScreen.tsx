@@ -199,7 +199,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                     >
                       {s.available ? "Book Session" : "Waitlist"}
                     </button>
-                    <button className="btn btn-outline" style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap" }} onClick={() => { setViewProfile(s); showToast(s.name + "'s profile"); }}>View Profile</button>
+                    <button className="btn btn-outline" style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap" }} onClick={() => setViewProfile(s)}>View Profile</button>
                   </div>
                 </div>
               </div>

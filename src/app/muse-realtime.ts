@@ -62,7 +62,7 @@ export async function fetchConversationHistory(opts: {
   myId: string;
   theirId: string;
   limit?: number;
-}): Promise<{ from: "me" | "them"; text: string; img?: string; time: string }[]> {
+}): Promise<{ from: "me" | "them"; text: string; img?: string; time: string; clientMsgId?: string }[]> {
   if (!opts.myId || opts.myId === "local" || !opts.theirId) return [];
   const convo = convoIdFor(opts.myId, opts.theirId);
   try {
@@ -79,6 +79,10 @@ export async function fetchConversationHistory(opts: {
       time: r.created_at
         ? new Date(r.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         : "",
+      // Threaded through so callers can dedup against locally-held optimistic
+      // messages by id instead of by text+img content — two distinct messages
+      // sent close together with identical text shouldn't collapse into one.
+      clientMsgId: r.client_msg_id || undefined,
     }));
   } catch (err) {
     trackError("fetchConversationHistory_failed", { convo, err: String(err) });

@@ -110,7 +110,11 @@ function MusePage() {
   const [dailyLikes, setDailyLikes] = useState(10);
   const [superLikes, setSuperLikes] = useState(3);
   const [screenFlash, setScreenFlash] = useState<string | null>(null);
-  const [showUnlimitedBadge, setShowUnlimitedBadge] = useState(false);
+  // Defaults true — this is a dismissible "you have unlimited likes" badge
+  // gated behind isUnlimited at the render site, not a modal that should
+  // start hidden. Starting it false meant the badge (and its dismiss button)
+  // could never actually appear for any Pro user.
+  const [showUnlimitedBadge, setShowUnlimitedBadge] = useState(true);
   const [matchStreak, setMatchStreak] = useState(0);
   const [rewindStack, setRewindStack] = useState<number[]>([]);
   const [showLikeNote, setShowLikeNote] = useState(false);
@@ -1290,15 +1294,20 @@ function MusePage() {
       return; // Don't send the raw message — disclosure replaces it
     }
 
-    const userMsg = { from: "me", text: clean, time: now };
+    const myId = authUser?.profile?.id || authUser?.id || "local";
+    // Generated once and threaded through to both the optimistic bubble and
+    // the server insert so history-merge can dedup by id instead of content —
+    // two distinct messages with identical text sent close together used to
+    // get collapsed into one.
+    const clientMsgId = `${myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const userMsg = { from: "me", text: clean, time: now, clientMsgId };
     const targetId = String(chatTarget.id);
     setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, userMsg] } : prev);
     setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, userMsg] } : m));
     setChatInput("");
     setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
-    const myId = authUser?.profile?.id || authUser?.id || "local";
     let sent = true;
-    try { sent = await persistMessage({ myId, theirId: targetId, text: clean }); } catch { sent = false; }
+    try { sent = await persistMessage({ myId, theirId: targetId, text: clean, clientMsgId }); } catch { sent = false; }
     // persistMessage returns false (never throws) on a real failure — safety
     // block, rate limit, or a block between the two of you. The bubble was
     // already shown optimistically above; without this the sender would see
@@ -1327,14 +1336,15 @@ function MusePage() {
   const sendChatImg = useCallback(async (imgUrl: string) => {
     if (!imgUrl || !chatTarget) return;
     const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    const userMsg = { from: "me" as const, text: "", img: imgUrl, time: now };
+    const myId = authUser?.profile?.id || authUser?.id || "local";
+    const clientMsgId = `${myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const userMsg = { from: "me" as const, text: "", img: imgUrl, time: now, clientMsgId };
     const targetId = String(chatTarget.id);
     setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, userMsg] } : prev);
     setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, userMsg] } : m));
     setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
-    const myId = authUser?.profile?.id || authUser?.id || "local";
     let sent = true;
-    try { sent = await persistMessage({ myId, theirId: targetId, text: "", img: imgUrl }); } catch { sent = false; }
+    try { sent = await persistMessage({ myId, theirId: targetId, text: "", img: imgUrl, clientMsgId }); } catch { sent = false; }
     if (!sent && myId !== "local") {
       setChatTarget(prev => prev ? { ...prev, messages: prev.messages.filter(m => m !== userMsg) } : prev);
       setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: m.messages.filter(mm => mm !== userMsg) } : m));
@@ -1392,15 +1402,22 @@ function MusePage() {
     let cancelled = false;
     fetchConversationHistory({ myId, theirId }).then(history => {
       if (cancelled || !history.length) return;
-      const seen = new Set(history.map(h => h.text + "|" + (h.img || "")));
+      // Prefer id-based dedup (clientMsgId, threaded through from send time)
+      // over content matching — two distinct messages sent close together
+      // with identical text+img used to collapse into one under the old
+      // text+"|"+img key. Fall back to content matching only for messages
+      // that predate this fix and never got a clientMsgId.
+      const seenIds = new Set(history.map(h => h.clientMsgId).filter(Boolean));
+      const seenContent = new Set(history.map(h => h.text + "|" + (h.img || "")));
+      const isDupe = (m: any) => m.clientMsgId ? seenIds.has(m.clientMsgId) : seenContent.has((m.text || "") + "|" + (m.img || ""));
       setChatTarget(prev => {
         if (!prev || String(prev.id) !== theirId) return prev;
-        const localOnly = (prev.messages || []).filter((m: any) => !seen.has((m.text || "") + "|" + (m.img || "")));
+        const localOnly = (prev.messages || []).filter((m: any) => !isDupe(m));
         return { ...prev, messages: [...history, ...localOnly] };
       });
       setMatches(prev => prev.map(m => {
         if (String(m.id) !== theirId) return m;
-        const localOnly = (m.messages || []).filter((mm: any) => !seen.has((mm.text || "") + "|" + (mm.img || "")));
+        const localOnly = (m.messages || []).filter((mm: any) => !isDupe(mm));
         return { ...m, messages: [...history, ...localOnly] };
       }));
     }).catch(() => {});
@@ -2297,11 +2314,12 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
               setNoteTargetProfile(null);
               if (note) {
                 const msg = note.slice(0,200);
-                const userMsg = { from: "me", text: msg, time: "Just now" };
-                setMatches(prev => prev.map(m => m.id === target.id ? { ...m, messages: [...(m.messages||[]), userMsg] } : m));
                 const myId = authUser?.profile?.id || authUser?.id || "local";
+                const clientMsgId = `${myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                const userMsg = { from: "me", text: msg, time: "Just now", clientMsgId };
+                setMatches(prev => prev.map(m => m.id === target.id ? { ...m, messages: [...(m.messages||[]), userMsg] } : m));
                 let sent = true;
-                try { sent = await persistMessage({ myId, theirId: String(target.id), text: msg }); } catch { sent = false; }
+                try { sent = await persistMessage({ myId, theirId: String(target.id), text: msg, clientMsgId }); } catch { sent = false; }
                 if (!sent && myId !== "local") {
                   setMatches(prev => prev.map(m => m.id === target.id ? { ...m, messages: m.messages.filter(mm => mm !== userMsg) } : m));
                   showToast("Liked, but the note couldn't be sent");
