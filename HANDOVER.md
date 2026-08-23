@@ -277,6 +277,16 @@ Took Session 11's top pick. `subscribeToConversation` reported `disconnected` on
 
 **Still open:** message-dedup-by-content fix (needs `client_msg_id` threaded through send path); everything else from Session 11's "left open" list.
 
+### NOTE TO CLAUDE — you now have browser + vision (new capability, use it)
+
+Claude now has full agentic browsing with vision. This unlocks live verification that prior rounds couldn't do. **Prioritize these live tests before the next round of code-only audit:**
+
+1. **Realtime reconnect (Session 12) — top priority, still unverified.** The reconnect/backoff fix in `muse-realtime.ts` has never been tested against a real dropped connection. Live test: open a conversation between two accounts, kill/restore the network (or pause the Supabase realtime socket via devtools), send a message from the other side while "disconnected," and confirm the recipient's chat catches up automatically WITHOUT navigating away from the chat screen. If it doesn't, that's a real bug to fix now that it can actually be observed.
+
+2. **Visual re-verification of every UI bug confirmed only at code level.** With vision, screenshot-and-confirm (or disprove) the fixes already landed: the "Show Distance" / "Online Status" toggles now render correctly, the onboarding final-save actually persists (register a fresh account, complete onboarding, hard-reload, confirm name/type/bio/styles survive — the severe bug Session 10 fixed), and the NetworkScreen forum comment + Feed reply box actually persist to the server on reload.
+
+3. **`showDistance` server-side withholding** — Session 10 flagged that the toggle now *saves* but nothing server-side actually withholds `distanceMi` when a user sets `showDistance:false`. Live-verify: set it off on one account, view that account from another, confirm distance is still leaking. If so, that's a real follow-up fix (match/discover query needs to check the viewed user's preference).
+
 ---
 
 ## SESSION STATE
