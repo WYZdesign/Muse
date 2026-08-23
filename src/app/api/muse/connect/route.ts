@@ -121,6 +121,17 @@ export async function POST(req: NextRequest) {
         const parsed = sessionRec ? parseRateToCents(sessionRec.rate) : null;
         if (parsed === null) return NextResponse.json({ error: "Session has no valid single rate set" }, { status: 400 });
         amount = parsed;
+        // Guard against double payment: same check create-booking-checkout
+        // uses below. This action currently has no client caller (the app
+        // only calls create-booking-checkout), but it's still a live,
+        // reachable endpoint that creates a real PaymentIntent — leaving it
+        // unguarded would let a second call for the same booking authorize a
+        // second charge if this action is ever wired up or called directly.
+        const { data: existingPayment } = await sb.from("muse_booking_payments")
+          .select("status").eq("booking_id", bookingId).maybeSingle();
+        if (existingPayment && (existingPayment.status === "held" || existingPayment.status === "succeeded")) {
+          return NextResponse.json({ error: "This booking has already been paid for" }, { status: 409 });
+        }
       } else {
         // No booking — legacy/standalone payment. Still validate the shape.
         amount = Number(amountCents);
