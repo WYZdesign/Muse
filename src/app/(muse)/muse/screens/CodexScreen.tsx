@@ -6,7 +6,7 @@ import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 import { CODEX_ZODIAC, CODEX_CHINESE, CODEX_LIFE_PATH, CODEX_MBTI, CODEX_TYPES, CODEX_AESTHETICS } from "../components/codexData";
 import * as icons from "react-icons/gi";
-import { FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiBookOpen, FiHeart } from "react-icons/fi";
+import { FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiHeart } from "react-icons/fi";
 
 export interface CodexScreenProps {
   screen: Screen;
