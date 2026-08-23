@@ -416,12 +416,26 @@ This retroactively explains why the Session-10 "get-replies missing" finding kep
 
 **Verified working live:** Discover gestures incl. 0-like gate, feed compose + detail view, BTS camera graceful degradation, Sessions identity gate (403 VERIFICATION_REQUIRED), Strikes & Disclosures tab loads. Noted visual-only: Feed "⚑ Report" label clips at desktop widths.
 
+### Sessions 20–21 (Claude, Fold-5 viewport audit) — applied by wyzmind
+- `.chat-inp{min-width:0}` — chat send button was pushed 33px off-screen at 344px width (flex min-width:auto trap)
+- Toast given `fill-mode:forwards` — one-shot enter-and-stay must pin end state; **real-device toast check still owed** (Claude's frozen-animation reading was likely an automation artifact)
+- Punch-list status: dual-Surfaces DONE (`fc0fc60` merged into hamburger); double-payment guard already independently verified vs webhook state machine; open: OAuth, legacy admin endpoint, user-keyed rate limits, push dead-code
+
+### Session 22 (wyzmind) — DUALITY Phase 0 landed
+
+New `lib/role.ts`: `viewerSide(type)` splits INDUSTRY (Casting Director, Art Buyer, Fine Art Agent, Producer, Creative Director, Brand, Agency) vs CREATIVE (Director, Videographer, Editor, Photographer, Actor, Model, Content Creator, Designer, Stylist, Musician, Writer, MUA, Composer). First consumer: **Sessions landing tab defaults to bookings for industry, browse for creatives.**
+
+**Roadmap:** P1 briefs default-tab + composer framing per side · P2 discovery hiring-vs-looking orientation · P3 pros page client/peer views · P4 onboarding role picker writing an explicit `audience` column · P5 pricing split.
+
+### Files touched Session 22
+`lib/role.ts` (new), `page.tsx`, `muse.css`
+
 ---
 
 ## SESSION STATE
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
-- **Last compile:** 2026-08-23 (Session 19)
-- **Last commit:** Session 19 — forum sub-action routing fix (action/type field-priority collision), on top of Session 18 on `main`
+- **Last compile:** 2026-08-23 (Session 22)
+- **Last commit:** Session 22 — duality Phase 0 (role detection + role-aware Sessions tab) + Claude's S20/21 viewport fixes
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** muse_profiles, muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
 - **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)

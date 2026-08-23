@@ -447,7 +447,7 @@ img{background-color:#1a0a2e}
 .msg-time{font-size:10px;color:var(--muted);margin-top:5px}
 .msg-time-me{color:rgba(10,6,18,0.35)}
 .chat-input-wrap{display:flex;align-items:flex-end;padding:12px 14px;border-top:1px solid rgba(255,255,255,0.05);background:rgba(10,6,18,0.85);backdrop-filter:blur(30px);gap:10px}
-.chat-inp{flex:1;background:var(--glass);border:1.5px solid rgba(255,255,255,0.06);border-radius:99px;padding:12px 20px;font-size:15px;color:var(--text);font-family:inherit;transition:all .3s}
+.chat-inp{flex:1;min-width:0;background:var(--glass);border:1.5px solid rgba(255,255,255,0.06);border-radius:99px;padding:12px 20px;font-size:15px;color:var(--text);font-family:inherit;transition:all .3s}
 .chat-inp:focus{border-color:var(--gold);box-shadow:0 0 20px rgba(255,215,0,0.08)}
 .chat-inp{font-size:16px}.chat-inp::placeholder{color:rgba(255,255,255,0.55)}
 .send-btn{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--amber));color:#0a0612;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;transition:all .3s;box-shadow:0 4px 18px rgba(255,215,0,0.15)}

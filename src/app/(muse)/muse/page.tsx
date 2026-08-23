@@ -70,11 +70,12 @@ export default function MusePageWrapper() {
   return <ErrorBoundary><MusePage /></ErrorBoundary>;
 }
 
+import { viewerSide } from "./lib/role";
+
 // Deterministic per-user gradient-initials avatar (data URI, no network) —
 // used when a live profile has no uploaded photo, so Discover cards never
 // collapse into one shared fallback image.
-function initialsAvatarUrl(name: string, key: string | number): string {
-  const n = (name || "M").trim();
+function initialsAvatarUrl(name: string, key: string | number): string {  const n = (name || "M").trim();
   const letters = encodeURIComponent((n.split(/\s+/).slice(0, 2).map(w => w[0] || "").join("") || "M").toUpperCase());
   const s = String(key) + n;
   let h = 0;
@@ -186,7 +187,7 @@ function MusePage() {
   const [portfolioTab, setPortfolioTab] = useState<"all"|"portrait"|"landscape"|"sets">("all");
   const [forumPosts, setForumPosts] = useState<{id:number;title:string;body:string;author:string;avatar:string;votes:number;comments:{author:string;text:string}[];cat:string;time:string;pinned:boolean}[]>([]);
   const [commTab, setCommTab] = useState<"groups"|"events">("groups");
-  const [sessTab, setSessTab] = useState<"sessions"|"bookings"|"requests">("sessions");
+  const [sessTab, setSessTab] = useState<"sessions"|"bookings"|"requests">(() => viewerSide(currentUser?.type) === "industry" ? "bookings" : "sessions");
   const [netTab, setNetTab] = useState<"pros"|"forum">("pros");
   const [forumSort, setForumSort] = useState<"hot"|"new"|"top">("hot");
   const [forumCategory, setForumCategory] = useState<string>("all");
@@ -1851,7 +1852,7 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
         </div>
       )}
       {toastMsg && (
-        <div style={{ position: "fixed", left: "50%", bottom: "calc(84px + env(safe-area-inset-bottom,0px))", transform: "translateX(-50%)", zIndex: 4000, background: "rgba(20,12,34,0.92)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(255,215,0,0.28)", color: "#f5f0ff", padding: "10px 18px", borderRadius: 999, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", boxShadow: "0 6px 24px rgba(0,0,0,0.5)", pointerEvents: "none", animation: "museToastIn .22s ease-out" }}>
+        <div style={{ position: "fixed", left: "50%", bottom: "calc(84px + env(safe-area-inset-bottom,0px))", transform: "translateX(-50%)", zIndex: 4000, background: "rgba(20,12,34,0.92)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(255,215,0,0.28)", color: "#f5f0ff", padding: "10px 18px", borderRadius: 999, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", boxShadow: "0 6px 24px rgba(0,0,0,0.5)", pointerEvents: "none", animation: "museToastIn .22s ease-out forwards" }}>
           {toastMsg}
         </div>
       )}
