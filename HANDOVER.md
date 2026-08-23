@@ -303,12 +303,25 @@ Verified the merged `7fb92c5`/`8e71c66` state on `muse.wyzdesign.com` end-to-end
 
 **Observation, not a bug:** `/api/muse` returned occasional bare 404s (~2 of ~15 POSTs), always absorbed by rollback-on-failure. Worth a server-log check for route-not-found on an existing route.
 
+### Session 14 (Claude, 2026-08-23) — MUSEBETA promo now real, Pay button hides after payment
+
+Picked up two of Session 10's "medium" findings that were still open after Session 13's live audit.
+
+**Fixed:**
+1. **`SubscriptionScreen` MUSEBETA promo was 100% client-only.** Typing `MUSEBETA` and hitting Apply flipped a local `promoApplied` boolean and showed a "you won't be charged" badge — nothing was ever sent to the server, so the user's `tier` stayed `"free"` while the UI told them they had Pro. Added a real `apply-promo` action (`route.ts`) that validates the code server-side and sets `tier: "muse_pro"`; `SubscriptionScreen` now calls it and only shows the applied badge on a real 200. `setUserTier`/`apiFetch` threaded down from `page.tsx`.
+2. **Sessions "Pay" button never hid after payment.** The bookings list returned `status` (session-confirmation) but never joined `muse_booking_payments`, so a `confirmed` booking kept showing "Pay" forever. `type=bookings` now attaches `payment_status` per booking; Pay only renders when it isn't `held`/`succeeded`. "Complete" split into its own conditional.
+
+**Deliberately not touched:** `get-disclosures`/`appeal-strike` still have zero frontend callers — both need a genuinely new UI surface (product/design call), out of scope for a no-design-touch pass.
+
+### Files touched Session 14
+`src/app/api/muse/route.ts`, `src/app/(muse)/muse/page.tsx`, `src/app/(muse)/muse/screens/SubscriptionScreen.tsx`, `src/app/(muse)/muse/screens/SessionsScreen.tsx`
+
 ---
 
 ## SESSION STATE
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
-- **Last compile:** 2026-08-23 (Session 13)
-- **Last commit:** Session 13 — Discover Pass dead-end fix, showDistance privacy wiring (match endpoint + client enrichment), Reset-button paywall-bypass fix, on top of Session 12 on `main`
+- **Last compile:** 2026-08-23 (Session 14)
+- **Last commit:** Session 14 — real MUSEBETA promo (server-validated tier grant), Pay-button-after-payment fix (bookings now carry payment_status), on top of Session 13 on `main`
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** muse_profiles, muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
 - **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)

@@ -232,11 +232,11 @@ export const SessionsScreen = memo(function SessionsScreen({
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                      {b.status === "confirmed" && b.payment_status !== "held" && b.payment_status !== "succeeded" && (
+                        <button className="btn btn-gold" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={() => payBooking(b)}>Pay</button>
+                      )}
                       {b.status === "confirmed" && (
-                        <>
-                          <button className="btn btn-gold" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={() => payBooking(b)}>Pay</button>
-                          <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete</button>
-                        </>
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete</button>
                       )}
                       {(b.status === "pending" || b.status === "confirmed") && (
                         <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, borderColor: "rgba(255,100,100,0.2)", color: "#ff6464" }} onClick={() => cancelBooking(b.id)}>Cancel</button>

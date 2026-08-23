@@ -331,7 +331,18 @@ export async function GET(req: NextRequest) {
       const { data: asHost } = await sb.from("muse_bookings")
         .select("id, status, created_at, completed_at, session_id(id, title, type, rate, duration, img), user_id(id, name, avatar, type)")
         .eq("host_id", profileId).order("created_at", { ascending: false });
-      return NextResponse.json({ asBooker: asBooker || [], asHost: asHost || [] });
+      // The "Pay" button (client) needs to know whether a booking has already
+      // been paid for (held in escrow or fully captured) so it can hide once
+      // paid, rather than staying visible forever since a booking's own
+      // `status` tracks session confirmation, not payment.
+      const bookingIds = [...(asBooker || []), ...(asHost || [])].map((b: any) => b.id);
+      let paymentStatusByBooking: Record<string, string> = {};
+      if (bookingIds.length) {
+        const { data: payments } = await sb.from("muse_booking_payments").select("booking_id, status").in("booking_id", bookingIds);
+        for (const p of payments || []) paymentStatusByBooking[String((p as any).booking_id)] = (p as any).status;
+      }
+      const withPaymentStatus = (rows: any[] | null) => (rows || []).map(b => ({ ...b, payment_status: paymentStatusByBooking[String(b.id)] || null }));
+      return NextResponse.json({ asBooker: withPaymentStatus(asBooker), asHost: withPaymentStatus(asHost) });
     }
 
     if (type === "notifications" && user) {
@@ -1051,6 +1062,18 @@ export async function POST(req: NextRequest) {
       const { error } = await sb.from("muse_profiles").update({ preferences: merged }).eq("id", profile.id);
       if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true });
+    }
+
+    if (actionType === "apply-promo") {
+      if (!await checkRate(ip, "apply-promo", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      const code = String(rest.code || "").trim().toUpperCase();
+      if (!code) return NextResponse.json({ error: "Promo code required" }, { status: 400 });
+      // Single known beta promo for now — grants Muse Pro at no charge.
+      // Not stackable with an existing paid subscription; re-applying is a harmless no-op.
+      if (code !== "MUSEBETA") return NextResponse.json({ error: "Invalid promo code" }, { status: 404 });
+      const { error } = await sb.from("muse_profiles").update({ tier: "muse_pro" }).eq("id", profile.id);
+      if (error) return safeServerError(error, "db op");
+      return NextResponse.json({ success: true, tier: "muse_pro" });
     }
 
     if (actionType === "mark-read") {

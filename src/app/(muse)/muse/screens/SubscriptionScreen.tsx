@@ -11,27 +11,32 @@ export interface SubscriptionScreenProps {
   screen: Screen;
   currentUser: any;
   userTier: string;
+  setUserTier?: (t: string) => void;
   authUser: any;
   showScreen: (s: Screen) => void;
   openHamburger: () => void;
   unreadNotificationCount: number;
   showToast: (msg: string) => void;
+  apiFetch?: (url: string, opts?: any) => Promise<Response>;
 }
 
 export const SubscriptionScreen = memo(function SubscriptionScreen({
   screen,
   currentUser,
   userTier,
+  setUserTier,
   authUser,
   showScreen,
   openHamburger,
   unreadNotificationCount,
   showToast,
+  apiFetch,
 }: SubscriptionScreenProps) {
   if (screen !== "subscription") return null;
 
   const [promo, setPromo] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
+  const [applyingPromo, setApplyingPromo] = useState(false);
 
   return (
     <div className="phone-wrap">
@@ -47,7 +52,25 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
           </div>
           <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
             <input className="inp" placeholder="Promo code" value={promo} onChange={e => { setPromo(e.target.value); setPromoApplied(false); }} style={{ flex: 1, textTransform: "uppercase", letterSpacing: 1 }} />
-            <button className="btn btn-outline" style={{ padding: "0 16px" }} onClick={() => { const p = promo.trim().toUpperCase(); if (p === "MUSEBETA") { setPromoApplied(true); showToast("Muse Beta applied — $0/month"); } else if (p) { showToast("Invalid promo code"); } else { showToast("Enter a promo code first"); } }}>Apply</button>
+            <button className="btn btn-outline" style={{ padding: "0 16px", opacity: applyingPromo ? 0.6 : 1 }} disabled={applyingPromo} onClick={async () => {
+              const p = promo.trim().toUpperCase();
+              if (!p) { showToast("Enter a promo code first"); return; }
+              if (!apiFetch) { showToast("Can't apply promo right now"); return; }
+              setApplyingPromo(true);
+              try {
+                const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "apply-promo", code: p }) });
+                if (r.ok) {
+                  setPromoApplied(true);
+                  setUserTier?.("muse_pro");
+                  showToast("Muse Beta applied — $0/month");
+                } else if (r.status === 404) {
+                  showToast("Invalid promo code");
+                } else {
+                  showToast("Couldn't apply promo code — try again");
+                }
+              } catch { showToast("Couldn't apply promo code — try again"); }
+              setApplyingPromo(false);
+            }}>Apply</button>
           </div>
           {promoApplied && (
             <div style={{ padding: "8px 14px", marginBottom: 12, borderRadius: 12, background: "rgba(76,221,136,0.12)", border: "1px solid rgba(76,221,136,0.3)", fontSize: 12, fontWeight: 700, color: "#4cdd88" }}>✓ MUSEBETA applied — you won't be charged</div>
