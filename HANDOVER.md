@@ -383,12 +383,25 @@ Applied Claude's Session 17 patch onto wyzmind's diverged tree (manual apply —
 ### Files touched Session 18
 `src/app/(muse)/muse/page.tsx`, `src/app/api/muse/upload/route.ts`
 
+### Session 19 (Claude, live browser audit) — CRITICAL: forum sub-actions were unreachable; two diverging Settings UIs flagged
+
+Live click-through on production found **every forum vote, forum reply, and feed-post reply silently failing** (400 "Unknown action type") across Feed detail, Network Forum, and MenuModal — a double bug in the POST dispatcher:
+
+1. `actionType = rawType || rawAction` — calls sending BOTH `{action:"forum", type:"vote"}` resolved actionType to "vote", matching no branch. Fixed: `rawAction || rawType` (safe — no other call site sends both).
+2. The forum block re-destructured `type` from `rest`, which never has it (`type` is extracted as `rawType` above). `forumType` was permanently undefined. Fixed: read `rawType` directly.
+
+This retroactively explains why the Session-10 "get-replies missing" finding kept resurfacing — the handler was always correct, just unreachable.
+
+**Flagged for product decision — two parallel Settings surfaces:** bottom-nav → Menu → Settings (MenuModal panel) lacks Payments & Subscription, Prompt Bank, Safety Center strikes/disclosures, and Admin Dashboard — all of which exist only in `SettingsScreen.tsx`, reachable solely via Profile → "Account Settings". Reconciling changes navigation structure; awaiting Torreé's call.
+
+**Verified working live:** Discover gestures incl. 0-like gate, feed compose + detail view, BTS camera graceful degradation, Sessions identity gate (403 VERIFICATION_REQUIRED), Strikes & Disclosures tab loads. Noted visual-only: Feed "⚑ Report" label clips at desktop widths.
+
 ---
 
 ## SESSION STATE
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
-- **Last compile:** 2026-08-23 (Session 18)
-- **Last commit:** Session 18 — onboarding Portfolio real uploads+album, duplicate-avatar fix, BTS camera capture (photo/video → Feed+BTS), WebM upload support, on top of Session 16's `8397def` on `main`
+- **Last compile:** 2026-08-23 (Session 19)
+- **Last commit:** Session 19 — forum sub-action routing fix (action/type field-priority collision), on top of Session 18 on `main`
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** muse_profiles, muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
 - **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)

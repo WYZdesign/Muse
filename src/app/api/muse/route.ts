@@ -522,7 +522,14 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { type: rawType, action: rawAction, ...rest } = body;
-    const actionType = rawType || rawAction;
+    // `action` takes priority over `type` when both are present. The forum
+    // sub-actions (get-replies/reply/vote) send both — {action:"forum",
+    // type:"<verb>"} — expecting "forum" to route here and "<verb>" to be
+    // read as the sub-verb below. The reverse priority made actionType
+    // resolve to "reply"/"vote"/"get-replies" directly, matching no
+    // top-level branch ("Unknown action type" on every forum reply/vote).
+    // Every other call site sends exactly one of the two fields.
+    const actionType = rawAction || rawType;
 
     const ip = clientIp(req);
 
@@ -768,7 +775,10 @@ export async function POST(req: NextRequest) {
       if (!await checkRate(ip, "forum", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const vErr = validateInput(rest);
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
-      const { title, body: forumBody, text, cat, type: forumType, postId } = rest;
+      const { title, body: forumBody, text, cat, postId } = rest;
+      // `type` was already pulled out of `body` above (as rawType) — `rest`
+      // never has it, so reading it here always yielded undefined. Use rawType.
+      const forumType = rawType;
       if (forumType === "get-replies") {
         // FeedScreen's comment expansion sends action:"forum", type:"get-replies"
         // — previously fell through to the post-creation path (missing `title`)
