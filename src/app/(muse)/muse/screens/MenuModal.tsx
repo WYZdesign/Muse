@@ -48,6 +48,14 @@ export interface MenuModalProps {
   appliedBriefs?: number[];
   savedBriefs?: number[];
   bookingsForHub?: { asBooker: any[]; asHost: any[] };
+  setShowSafetyCheckin?: (v: boolean) => void;
+  setShowPromptBank?: (v: boolean) => void;
+  setShowConnect?: (v: boolean) => void;
+  setShowPaymentHistory?: (v: boolean) => void;
+  setShowReferral?: (v: boolean) => void;
+  isUnlimited?: boolean;
+  profileViews?: number;
+  likesReceived?: number;
   showOnline?: boolean;
   setShowOnline?: React.Dispatch<React.SetStateAction<boolean>>;
   showDistance?: boolean;
@@ -55,6 +63,7 @@ export interface MenuModalProps {
   blockedUsers: string[];
   setScreen: (s: Screen) => void;
   setShowAgeVerification: (v: boolean) => void;
+  setObStep?: (v: number) => void;
   apiFetch: (url: string, opts?: any) => Promise<any>;
   authFetch: (url: string, opts?: any) => Promise<any>;
   uid: () => any;
@@ -108,6 +117,15 @@ export const MenuModal = memo(function MenuModal({
   appliedBriefs = [],
   savedBriefs = [],
   bookingsForHub,
+  setShowSafetyCheckin,
+  setShowPromptBank,
+  setShowConnect,
+  setShowPaymentHistory,
+  setShowReferral,
+  isUnlimited = false,
+  profileViews = 0,
+  likesReceived = 0,
+  setObStep = () => {},
   showOnline = true,
   setShowOnline,
   showDistance = true,
@@ -350,7 +368,38 @@ export const MenuModal = memo(function MenuModal({
                   <div className="stat"><div className="stat-num">{currentUser.stats?.likes || 0}</div><div className="stat-label">Likes</div></div>
                   <div className="stat"><div className="stat-num">{currentUser.stats?.bookingsCompleted || 0}</div><div className="stat-label">Bookings</div></div>
                 </div>
-                <button className="btn btn-gold" style={{ width: "100%", marginTop: 24, fontSize: 12, padding: "12px 0" }} onClick={doLogoutFull}>Log Out</button>
+                {/* PROFILE STATS — full transparency, no cap on what's visible */}
+                {(() => {
+                  const myForumPosts = (liveForum || []).filter((p: any) => p.author === currentUser?.name).length;
+                  const stats: { label: string; value: string | number }[] = [
+                    { label: "Profile views", value: profileViews ?? 0 },
+                    { label: "Likes received", value: likesReceived ?? 0 },
+                    { label: "Matches", value: matches.length },
+                    { label: "Collabs", value: (currentUser as any)?.stats?.collabs ?? (currentUser as any)?.collabs ?? 0 },
+                    { label: "Briefs applied", value: appliedBriefs.length },
+                    { label: "Briefs saved", value: savedBriefs.length },
+                    { label: "Bookings", value: (bookingsForHub?.asBooker || []).length + (bookingsForHub?.asHost || []).length },
+                    { label: "Forum posts", value: myForumPosts },
+                  ];
+                  const memberSince = (authUser as any)?.created_at || (authUser as any)?.user?.created_at;
+                  return (
+                    <>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                        {stats.map(s => (
+                          <div key={s.label} style={{ padding: "12px 10px", borderRadius: 14, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", textAlign: "center" }}>
+                            <div style={{ fontSize: 20, fontWeight: 800, color: "var(--gold)" }}>{s.value}</div>
+                            <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {memberSince && (
+                        <div style={{ marginTop: 10, fontSize: 11, color: "var(--muted)", textAlign: "center" }}>
+                          Member since {new Date(memberSince).toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
             {hamburgerScreen === "settings" && (
@@ -390,6 +439,29 @@ export const MenuModal = memo(function MenuModal({
                     </div>
                   ))}
                 </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Account</div>
+                {[
+                  { label: "Edit Profile", desc: "Name, bio, photos", go: () => { setShowHamburger(false); showScreen("profile"); } },
+                  { label: "Personality Profile", desc: "Zodiac, MBTI, Life Path", go: () => { setScreen("onboard"); setObStep(7); } },
+                  { label: "Creative Profile", desc: "Type, styles, looking for", go: () => { setScreen("onboard"); setObStep(4); } },
+                ].map(r => (
+                  <div key={r.label} onClick={() => { setShowHamburger(false); r.go(); }} style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
+                    <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{r.label}</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{r.desc}</div></div>
+                    <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
+                  </div>
+                ))}
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Payments &amp; Subscription</div>
+                {[
+                  { label: "Subscription", desc: "Manage your plan — Muse Pro", go: () => { setShowHamburger(false); showScreen("subscription"); } },
+                  ...(setShowConnect ? [{ label: "Marketplace Payments", desc: "Connect Stripe to receive bookings", go: () => { setShowHamburger(false); setShowConnect(true); } }] : []),
+                  ...(setShowPaymentHistory ? [{ label: "Payment History", desc: "Your charges and payouts", go: () => { setShowHamburger(false); setShowPaymentHistory(true); } }] : []),
+                  ...(setShowReferral ? [{ label: "Referral Program", desc: "Invite friends, earn rewards", go: () => { setShowHamburger(false); setShowReferral(true); } }] : []),
+                ].map(r => (
+                  <div key={r.label} onClick={() => r.go()} style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
+                    <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{r.label}</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{r.desc}</div></div>
+                    <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
+                  </div>
+                ))}
                 <button className="btn btn-gold" style={{ width: "100%", fontSize: 12 }} onClick={async () => { try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { ...discoveryPrefs, notifications: notifPrefs, showOnline, showDistance } }) }); showToast("Preferences saved!"); } catch { showToast("Failed to save"); } }}>Save Preferences</button>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Safety &amp; Privacy</div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -404,9 +476,23 @@ export const MenuModal = memo(function MenuModal({
                     <div style={{ width: 20, height: 20, borderRadius: "50%", background: showOnline ? "var(--gold)" : "var(--muted)", position: "absolute", top: 2, left: showOnline ? 22 : 2, transition: "all .25s" }} />
                   </div>
                 </div>
+                <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => { setShowHamburger(false); setShowSafetyCheckin?.(true); }}>
+                  <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Safety Center</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Check-ins · Strikes &amp; Disclosures</div></div>
+                  <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
+                </div>
+                <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => { setShowHamburger(false); setShowPromptBank?.(true); }}>
+                  <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Prompt Bank</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Personality prompts &amp; answers</div></div>
+                  <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
+                </div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Blocked Users</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{blockedUsers.length} blocked</div></div>
                 </div>
+                {isUnlimited && (
+                  <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => { setShowHamburger(false); window.open("/muse/admin", "_self"); }}>
+                    <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--gold)" }}>Admin Dashboard</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Analytics &amp; moderation</div></div>
+                    <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
+                  </div>
+                )}
                 <button className="btn" style={{ width: "100%", marginTop: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 13 }} onClick={async () => { try { const res = await authFetch("/api/muse?type=export"); if (!res.ok) { showToast("Export failed"); return; } const j = await res.json(); const blob = new Blob([JSON.stringify(j, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "muse-my-data.json"; a.click(); URL.revokeObjectURL(url); showToast("Data exported"); } catch (e) { showToast("Export failed"); } }}>Export My Data</button>
                 <button className="btn" style={{ width: "100%", marginTop: 8, background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.3)", color: "var(--coral)", fontSize: 13 }} onClick={async () => { if (confirm("Delete your account? This cannot be undone.")) { try { const r = await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "delete-account" }) }); if (!r.ok) { showToast("Failed to delete account"); return; } showToast("Account deleted"); setTimeout(() => window.location.reload(), 1500); } catch { showToast("Failed to delete account"); } } }}>Delete Account</button>
                 <div style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", margin: "16px 0 4px" }}>Legal</div>

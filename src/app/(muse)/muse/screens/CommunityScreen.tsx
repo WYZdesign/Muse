@@ -107,7 +107,7 @@ export const CommunityScreen = memo(function CommunityScreen({
     <div className={"screen-el" + (screen === "community" ? " active" : "")}>
       <div className="hdr">
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
-        <span style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>Community</span>
+        <div className="logo-link" style={{ fontSize: 32, backgroundImage: "linear-gradient(120deg,var(--gold),#FF8A80,#D4A5FF,var(--gold))", backgroundSize: "300% 300%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", fontWeight: 900 }}>Community</div>
         <button className="hdr-btn" onClick={() => setShowCreate(v => !v)} aria-label="Create" style={{ width: 34, height: 34 }}>+</button>
       </div>
       <div className="conn-tabs" style={{ padding: "0 16px" }}>
@@ -196,16 +196,27 @@ export const CommunityScreen = memo(function CommunityScreen({
           <div key={c.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "column", cursor: "pointer" }} onClick={() => openGroupDetail(c)}>
             <div style={{ display: "flex", alignItems: "stretch", width: "100%" }}>
               <img loading="lazy" src={c.img} alt={c.name} style={{ width: "30%", minHeight: 120, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
-              <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
                 <div className="conn-name" style={{ fontSize: 15 }}>{c.name}</div>
                 <div className="conn-meta" style={{ fontSize: 12 }}>{c.members} members</div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
-                  {c.cat && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontWeight: 600 }}>{c.cat}</span>}
-                  {joinedIds.has(c.id) && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: "rgba(76,221,136,0.12)", border: "1px solid rgba(76,221,136,0.3)", color: "#4cdd88", fontWeight: 700 }}>✓ Joined</span>}
-                  {c.nsfw && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: "rgba(255,69,0,0.15)", border: "1px solid rgba(255,69,0,0.3)", color: "#ff6b6b", fontWeight: 700 }}>18+</span>}
-                </div>
-                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>Tap to view details ›</div>
               </div>
+            </div>
+            <div style={{ padding: "10px 14px 4px", width: "100%", position: "relative", zIndex: 1 }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginBottom: 8 }}>
+                {(() => {
+                  const badges: { t: string; bg: string; bd: string; c: string }[] = [];
+                  const cat = c.cat || "Community";
+                  const gold = { t: cat.charAt(0).toUpperCase() + cat.slice(1), bg: "rgba(255,215,0,0.12)", bd: "rgba(255,215,0,0.25)", c: "var(--gold)" };
+                  badges.push(gold);
+                  if ((c.members || 0) >= 500) badges.push({ t: "Large", bg: "rgba(100,181,246,0.12)", bd: "rgba(100,181,246,0.3)", c: "#90caf9" });
+                  else if ((c.members || 0) >= 100) badges.push({ t: "Growing", bg: "rgba(100,181,246,0.12)", bd: "rgba(100,181,246,0.3)", c: "#90caf9" });
+                  else badges.push({ t: "Intimate", bg: "rgba(100,181,246,0.12)", bd: "rgba(100,181,246,0.3)", c: "#90caf9" });
+                  if (joinedIds.has(c.id)) badges.push({ t: "✓ Joined", bg: "rgba(76,221,136,0.12)", bd: "rgba(76,221,136,0.3)", c: "#4cdd88" });
+                  if (c.nsfw) badges.push({ t: "18+", bg: "rgba(255,69,0,0.15)", bd: "rgba(255,69,0,0.3)", c: "#ff6b6b" });
+                  return badges.map(b => <span key={b.t} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 600 }}>{b.t}</span>);
+                })()}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", marginTop: 2 }}>Tap to view details ›</div>
             </div>
             <div style={{ padding: "0 14px 14px", width: "100%", position: "relative", zIndex: 1 }}>
               <div style={{ display: "flex", gap: 8 }}>
@@ -218,17 +229,28 @@ export const CommunityScreen = memo(function CommunityScreen({
         {commTab === "events" && events.map((ev: any) => (
           <div key={ev.id} className="conn-card" style={{ flexDirection: "column", marginBottom: 10, padding: 0, overflow: "hidden", borderRadius: 16, cursor: "pointer" }} onClick={() => openEventDetail(ev)}>
             {ev.img && <img loading="lazy" src={ev.img} alt={ev.title} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} onError={handleImgError} />}
-            <div style={{ padding: 16 }}>
+            <div style={{ padding: 16, textAlign: "center" }}>
               <div className="conn-name" style={{ fontSize: 15 }}>{ev.title}</div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
-                {rsvpdEvents.includes(ev.id) && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: "rgba(76,221,136,0.12)", border: "1px solid rgba(76,221,136,0.3)", color: "#4cdd88", fontWeight: 700 }}>✓ Going</span>}
-                {ev.nsfw && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: "rgba(255,69,0,0.15)", border: "1px solid rgba(255,69,0,0.3)", color: "#ff6b6b", fontWeight: 700 }}>18+</span>}
-              </div>
-              <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+              <div style={{ display: "flex", gap: 10, marginTop: 6, justifyContent: "center" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text2)" }}><FiCalendar size={12} /> {ev.date}</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text2)" }}><FiMapPin size={12} /> {ev.loc}</span>
               </div>
-              <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5, marginTop: 8, marginBottom: 12 }}>{ev.desc?.slice(0, 80)}{ev.desc?.length > 80 ? "..." : ""}</div>
+              <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5, marginTop: 8 }}>{ev.desc?.slice(0, 80)}{ev.desc?.length > 80 ? "..." : ""}</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginTop: 10, marginBottom: 12 }}>
+                {(() => {
+                  const badges: { t: string; bg: string; bd: string; c: string }[] = [];
+                  const d = String(ev.date || "").toLowerCase();
+                  if (/today|tonight/.test(d)) badges.push({ t: "Today", bg: "rgba(255,215,0,0.15)", bd: "rgba(255,215,0,0.3)", c: "var(--gold)" });
+                  else if (/this week|tomorrow|mon|tue|wed|thu|fri|sat|sun/.test(d)) badges.push({ t: "This week", bg: "rgba(255,215,0,0.15)", bd: "rgba(255,215,0,0.3)", c: "var(--gold)" });
+                  else badges.push({ t: "Upcoming", bg: "rgba(255,255,255,0.06)", bd: "rgba(255,255,255,0.12)", c: "var(--muted)" });
+                  if (/online|virtual|zoom/i.test(String(ev.loc))) badges.push({ t: "Online", bg: "rgba(100,181,246,0.12)", bd: "rgba(100,181,246,0.3)", c: "#90caf9" });
+                  else badges.push({ t: "In person", bg: "rgba(100,181,246,0.12)", bd: "rgba(100,181,246,0.3)", c: "#90caf9" });
+                  if (rsvpdEvents.includes(ev.id)) badges.push({ t: "✓ Going", bg: "rgba(76,221,136,0.12)", bd: "rgba(76,221,136,0.3)", c: "#4cdd88" });
+                  else badges.push({ t: "RSVP open", bg: "rgba(212,165,255,0.14)", bd: "rgba(212,165,255,0.3)", c: "#e6d3ff" });
+                  if (ev.nsfw) badges.push({ t: "18+", bg: "rgba(255,69,0,0.15)", bd: "rgba(255,69,0,0.3)", c: "#ff6b6b" });
+                  return badges.map(b => <span key={b.t} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 600 }}>{b.t}</span>);
+                })()}
+              </div>
             </div>
             <div style={{ display: "flex", gap: 8, padding: "0 16px 16px", width: "100%", position: "relative", zIndex: 1 }}>
               <button className={"btn " + (rsvpdEvents.includes(ev.id) ? "btn-outline" : "btn-gold")} style={{ flex: 1, padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, opacity: rsvpLoading === ev.id ? 0.6 : 1 }} onClick={(e) => { e.stopPropagation(); handleRsvp(ev); }} disabled={rsvpLoading === ev.id}>{rsvpdEvents.includes(ev.id) ? "✓ Going" : "RSVP"}</button>

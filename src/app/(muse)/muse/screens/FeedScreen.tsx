@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo, useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FiArrowLeft, FiImage, FiX, FiMoreHorizontal, FiFlag } from "react-icons/fi";
 import Nav from "../components/Nav";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
@@ -431,7 +432,7 @@ export const FeedScreen = memo(function FeedScreen({
             showToast("Failed to post reply");
           }
         };
-        return (
+        return createPortal(
           <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
             <div className="modal-header">
               <button className="modal-back" onClick={() => setDetailPostId(null)}><FiArrowLeft size={20} /></button>
@@ -482,8 +483,7 @@ export const FeedScreen = memo(function FeedScreen({
                 >Reply</button>
               </div>
             </div>
-          </div>
-        );
+          </div>, document.body);
       })()}
       {cameraOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "#000", display: "flex", flexDirection: "column" }}>

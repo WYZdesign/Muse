@@ -150,7 +150,7 @@ export const SessionsScreen = memo(function SessionsScreen({
     <div className={"screen-el" + (screen === "sessions" ? " active" : "")}>
       <div className="hdr" style={{ background: "linear-gradient(135deg,rgba(156,39,176,0.12),rgba(233,30,99,0.08),rgba(186,104,200,0.1))", borderBottom: "1px solid rgba(233,30,99,0.15)" }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
-        <span style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 18, fontWeight: 800, background: "linear-gradient(90deg,#CE93D8,#F48FB1,#BA68C8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Sessions</span>
+        <div className="logo-link" style={{ fontSize: 32, backgroundImage: "linear-gradient(120deg,#CE93D8,#F48FB1,#BA68C8,#CE93D8)", backgroundSize: "300% 300%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", fontWeight: 900 }}>Sessions</div>
         <div style={{ width: 42 }} />
       </div>
       <div className="conn-tabs" style={{ padding: "0 16px" }}>

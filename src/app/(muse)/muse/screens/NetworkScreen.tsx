@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, memo } from "react";
+import { createPortal } from "react-dom";
 import {
   FiArrowLeft,
   FiShare2,
@@ -109,7 +110,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [proHiringOnly, setProHiringOnly] = useState(false);
   const [proSearch, setProSearch] = useState("");
   const [forumSearch, setForumSearch] = useState("");
-  const [proSkill, setProSkill] = useState<string | null>(null);
+  const [proSkill, setProSkill] = useState<string[]>([]);
   const [proRateBand, setProRateBand] = useState<"all" | "lt100" | "100to150" | "gt150">("all");
   const [proLooking, setProLooking] = useState<string>("all");
   const [threadId, setThreadId] = useState<number | null>(null);
@@ -138,7 +139,7 @@ export const NetworkScreen = memo(function NetworkScreen({
           (p.looking || []).some((l: string) => l.toLowerCase().includes(q))
       );
     }
-    if (proSkill) list = list.filter((p) => p.skills.includes(proSkill));
+    if (proSkill.length) list = list.filter((p) => proSkill.every((s) => p.skills.includes(s)));
     if (proRateBand !== "all") {
       list = list.filter((p) => {
         const r = parseRate(p.rate);
@@ -292,20 +293,21 @@ export const NetworkScreen = memo(function NetworkScreen({
         <button className="chat-back" onClick={() => showScreen("discover")}>
           <FiArrowLeft size={20} />
         </button>
-        <span
+        <div
+          className="logo-link"
           style={{
-            fontFamily: "'Playfair Display',serif",
-            fontStyle: "italic",
-            fontSize: 18,
-            fontWeight: 800,
-            background: "linear-gradient(90deg,#B3E5FC,#64B5F6,#00BCD4)",
+            fontSize: 32,
+            backgroundImage: "linear-gradient(120deg,#B3E5FC,#64B5F6,#00BCD4,#B3E5FC)",
+            backgroundSize: "300% 300%",
             WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
             backgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            color: "transparent",
+            fontWeight: 900,
           }}
         >
           Network
-        </span>
+        </div>
         <div style={{ width: 42 }} />
       </div>
 
@@ -331,7 +333,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               onChange={(e) => setProSearch(e.target.value)}
               style={{ margin: "0 0 10px", fontSize: 13 }}
             />
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+            <div className="chip-scroll">
               {(["all", "rising", "established", "veteran"] as const).map((b) => (
                 <div
                   key={b}
@@ -362,7 +364,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               <option value="rateAsc">Rate: low to high</option>
               <option value="openings">Most openings</option>
             </select>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+            <div className="chip-scroll">
               <div className={"conn-tab-sub" + (proRateBand === "all" ? " active" : "")} onClick={() => setProRateBand("all")} style={{ cursor: "pointer" }}>Any rate</div>
               <div className={"conn-tab-sub" + (proRateBand === "lt100" ? " active" : "")} onClick={() => setProRateBand("lt100")} style={{ cursor: "pointer" }}>Under $100</div>
               <div className={"conn-tab-sub" + (proRateBand === "100to150" ? " active" : "")} onClick={() => setProRateBand("100to150")} style={{ cursor: "pointer" }}>$100–150</div>
@@ -373,10 +375,10 @@ export const NetworkScreen = memo(function NetworkScreen({
               const allLooking = [...new Set(PROFESSIONALS.flatMap((p) => p.looking || []))];
               return (
                 <>
-                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, marginBottom: 10, scrollbarWidth: "none" }}>
-                    <div className={"conn-tab-sub" + (!proSkill ? " active" : "")} onClick={() => setProSkill(null)} style={{ cursor: "pointer", flexShrink: 0 }}>All skills</div>
+                  <div className="chip-scroll">
+                    <div className={"conn-tab-sub" + (!proSkill.length ? " active" : "")} onClick={() => setProSkill([])} style={{ cursor: "pointer" }}>All skills</div>
                     {allSkills.map((s) => (
-                      <div key={s} className={"conn-tab-sub" + (proSkill === s ? " active" : "")} onClick={() => setProSkill(proSkill === s ? null : s)} style={{ cursor: "pointer", flexShrink: 0 }}>{s}</div>
+                      <div key={s} className={"conn-tab-sub" + (proSkill.includes(s) ? " active" : "")} onClick={() => setProSkill(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])} style={{ cursor: "pointer" }}>{s}</div>
                     ))}
                   </div>
                   {allLooking.length > 0 && (
@@ -407,7 +409,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 overflow: "hidden",
                 cursor: "pointer",
                 position: "relative",
-                height: 380,
+                height: 570,
               }}
             >
               <img
@@ -897,7 +899,7 @@ export const NetworkScreen = memo(function NetworkScreen({
         )}
 
         {/* ─── THREAD DETAIL (Reddit-style) ─── */}
-        {threadPost && (
+        {threadPost && createPortal(
           <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
             <div className="modal-header">
               <button className="modal-back" onClick={() => { setThreadId(null); setReplyTo(null); }}>
@@ -1010,8 +1012,8 @@ export const NetworkScreen = memo(function NetworkScreen({
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          </div>, document.body)
+        }
       </div>
       {proDetail && (
         <div

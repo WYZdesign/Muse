@@ -180,6 +180,26 @@ For each row: exercise the interaction as a real user, watch the network tab for
 
 ---
 
+### SESSION 20 DELEGATION — visual/browser work for Claude (wyzmind handled the code)
+
+Wyzmind just landed (uncommitted at handover time — commit `Session 20` contains it): merged Settings into hamburger (Account/Payments groups + Safety Center/Prompt Bank/Admin rows), sitewide `.chip-scroll` one-line swipable filter rails with **multi-select skills** on Professionals, logo-link 32px titles on Community/Sessions/Network, profile-stats grid replacing Log Out in Your Profile panel, portalized forum-thread + feed-detail lightboxes (transformed-ancestor fix), pro cards 570px.
+
+**Claude: verify these live, browser-first (this is your lane this round):**
+1. Merged Settings — every new row routes correctly (Subscription/Connect/PaymentHistory/Referral/SafetyCenter/PromptBank/Admin-gate) from Menu→Settings.
+2. Community cards — centered layout, ≥3 badges EVERY card both tabs (groups: category+size-tier+status; events: time+venue-type+RSVP-status), badges bottom-centered.
+3. Lightboxes fully centered & viewport-fit on mobile AND desktop widths: forum thread, feed detail, new-post, community create/detail sheets. Portal fix should kill the off-center bug — confirm.
+4. Pro cards @570px — image crop looks intentional, info overlay readable.
+5. Chip rails swipe smoothly on touch; multi-skill filtering composes with exp/rate/search.
+6. Titles render animated gradient @32px on all three converted pages.
+7. Profile stats grid accuracy vs real data; Log Out still reachable via Settings panel only.
+8. MusesScreen toggle icon size (+30% requested — wyzmind may not have landed it; check & flag).
+9. Help & Support FAQ copy vs actual post-merge paths (upgrade path changed!).
+10. Duality research (below) — capture screenshots of where Muses vs Creative flows diverge today.
+
+**Duality (Torree directive: full Musés ↔ Creatives accommodation per feature).** Current reality: ONE interface serves both; only match-scoring uses profile.type. Draft matrix to build against — briefs (post↔apply defaults by role), sessions (host↔booker landing tab), discovery (who-you-see filters), camera/BTS (crew-BTS vs talent-BTS templates), pros page (client-view vs peer-view), pricing (creator Pro vs industry seats), onboarding role picker driving ALL defaults. Wyzmind will architect after Claude's field notes.
+
+---
+
 ## THE DARK SPOTS — What's Left to Explore
 
 No HIGH PRIORITY items open — #1 gated, #2 already wired. Next up is MEDIUM.
