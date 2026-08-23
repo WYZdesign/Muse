@@ -140,4 +140,12 @@ export async function ensureMusePushRegistered(): Promise<void> {
 }
 
 // Prevent browser scroll restoration from leaving the app shell shifted
-if (typeof window !== "undefined") { try { history.scrollRestoration = "manual"; } catch {} }
+if (typeof window !== "undefined") { try {
+  history.scrollRestoration = "manual";
+  // Hard-reassert top position after layout settles — some loads restore a
+  // stale scroll offset leaving the app shell shifted up with a bottom gap.
+  const snapTop = () => { try { window.scrollTo(0, 0); } catch {} };
+  window.addEventListener("load", snapTop);
+  setTimeout(snapTop, 0);
+  requestAnimationFrame(() => requestAnimationFrame(snapTop));
+} catch {} }

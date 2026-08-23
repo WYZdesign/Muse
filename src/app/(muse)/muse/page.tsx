@@ -1222,18 +1222,20 @@ function MusePage() {
     const absDy = Math.abs(dy);
       if (dragRef.current.axis === null) {
       if (absDx < 5 && absDy < 5) return;
-      dragRef.current.axis = absDx > absDy ? "x" : "y";
+      if (absDy > absDx) {
+        // Vertical gesture — no swipe-up actions. Release the card so the
+        // browser's native pan-y scrolling takes over.
+        dragRef.current.active = false;
+        (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+        return;
+      }
+      dragRef.current.axis = "x";
     }
     dragValuesRef.current = { x: 0, y: 0, opacity: 0 };
     if (dragRef.current.axis === "x") {
       if (absDx > 5) {
         dragValuesRef.current.x = dx;
         dragValuesRef.current.opacity = Math.min(absDx / 100, 1);
-      }
-    } else if (dragRef.current.axis === "y") {
-      if (dy < -5) {
-        dragValuesRef.current.y = dy;
-        dragValuesRef.current.opacity = Math.min(Math.abs(dy) / 100, 1);
       }
     }
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -1246,7 +1248,6 @@ function MusePage() {
       el.style.transform = `translate(${v.x}px, ${v.y}px) rotate(${rot}deg)`;
       if (likeLabelRef.current) likeLabelRef.current.style.opacity = (dragRef.current.axis === "x" && v.x > 25) ? String(v.opacity) : "0";
       if (nopeLabelRef.current) nopeLabelRef.current.style.opacity = (dragRef.current.axis === "x" && v.x < -25) ? String(v.opacity) : "0";
-      if (superLabelRef.current) superLabelRef.current.style.opacity = (dragRef.current.axis === "y" && v.y < -25) ? String(v.opacity) : "0";
     });
   }, []);
 
@@ -1254,11 +1255,8 @@ function MusePage() {
     if (!dragRef.current.active) return;
     dragRef.current.active = false;
     const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
     if (dragRef.current.axis === "x" && Math.abs(dx) > 80) {
       doSwipe(dx > 0 ? "right" : "left");
-    } else if (dragRef.current.axis === "y" && dy < -80) {
-      doSwipe("super");
     }
     const el = dragRef.current.el;
     if (el) {
