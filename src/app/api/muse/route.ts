@@ -272,6 +272,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ sessions: data || [] });
     }
 
+    if (type === "professionals") {
+      const { data } = await sb.from("muse_professionals").select("*").order("created_at", { ascending: false }).limit(50);
+      return NextResponse.json({ professionals: data || [] });
+    }
+
     if (type === "reviews") {
       const targetProfileId = req.nextUrl.searchParams.get("profile_id") || (profileId || "");
       if (!targetProfileId) return NextResponse.json({ error: "profile_id required" }, { status: 400 });

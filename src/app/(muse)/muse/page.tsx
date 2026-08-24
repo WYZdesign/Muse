@@ -161,6 +161,7 @@ function MusePage() {
   const [liveEvents, setLiveEvents] = useState<any[] | null>(null);
   const [liveCommunities, setLiveCommunities] = useState<typeof COMMUNITIES | null>(null);
   const [liveSessions, setLiveSessions] = useState<typeof SESSIONS | null>(null);
+  const [liveProfessionals, setLiveProfessionals] = useState<any[] | null>(null);
   const [myBookings, setMyBookings] = useState<{ asBooker: any[]; asHost: any[] }>({ asBooker: [], asHost: [] });
   const [myStats, setMyStats] = useState<{ views: number; likes: number } | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -405,7 +406,7 @@ function MusePage() {
       const matchPromise = token
         ? apiFetch("/api/muse/match?limit=50").then(r => r.ok ? r.json() : null).catch(() => null)
         : Promise.resolve(null);
-      const [matchData, briefs, feed, forum, events, communities, sessions] = await Promise.all([
+      const [matchData, briefs, feed, forum, events, communities, sessions, professionals] = await Promise.all([
         matchPromise,
         apiFetch("/api/muse?type=briefs").then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch("/api/muse?type=feed").then(r => r.ok ? r.json() : null).catch(() => null),
@@ -413,6 +414,7 @@ function MusePage() {
         apiFetch("/api/muse?type=events").then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch("/api/muse?type=communities").then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch("/api/muse?type=sessions").then(r => r.ok ? r.json() : null).catch(() => null),
+        apiFetch("/api/muse?type=professionals").then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
       if (matchData?.profiles?.length) setLiveProfiles(matchData.profiles.map((p: any) => ({
         id: p.id, name: p.name || "Creative", img: p.avatar || initialsAvatarUrl(p.name || "Creative", p.id), type: p.type || "artist",
@@ -445,6 +447,7 @@ function MusePage() {
       if (events?.events?.length) setLiveEvents(events.events);
       if (communities?.communities?.length) setLiveCommunities(communities.communities);
       if (sessions?.sessions?.length) setLiveSessions(sessions.sessions);
+      if (professionals?.professionals?.length) setLiveProfessionals(professionals.professionals);
     } catch {}
     setBootstrapped(true);
   }, [apiFetch]);
@@ -2336,7 +2339,7 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
 
             <SessionsScreen screen={screen} showScreen={showScreen} sessTab={sessTab} setSessTab={setSessTab} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} uid={uid} currentUser={currentUser} setShowAgeVerification={setShowAgeVerification} liveSessions={liveSessions || undefined} myBookings={myBookings} setMyBookings={setMyBookings} setDisclosureTarget={setDisclosureTarget} setDisclosureBookingId={setDisclosureBookingId} setShowDisclosureModal={setShowDisclosureModal} setViewProfile={setViewProfile} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
 
-            <NetworkScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} setLiveForum={setLiveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} setShowReport={setShowReport} setReportTarget={setReportTarget} />
+            <NetworkScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} setLiveForum={setLiveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} setShowReport={setShowReport} setReportTarget={setReportTarget} liveProfessionals={liveProfessionals} />
             <PortfolioScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} />
             <ProfileScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditType={setEditType} setEditLooking={setEditLooking} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={setSelectedPortfolio} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} />
           </div>

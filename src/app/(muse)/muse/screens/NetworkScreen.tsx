@@ -47,6 +47,7 @@ export interface NetworkScreenProps {
   uid: () => any;
   setShowReport?: (v: boolean) => void;
   setReportTarget?: (t: any) => void;
+  liveProfessionals: any[] | null;
 }
 
 const SKILL_COLORS = [
@@ -100,6 +101,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   uid,
   setShowReport = () => {},
   setReportTarget = () => {},
+  liveProfessionals,
 }: NetworkScreenProps) {
   const [netTab, setNetTab] = useState<"pros" | "forum">("pros");
   const [proDetail, setProDetail] = useState<any | null>(null);
@@ -130,7 +132,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   };
 
   const proList = (() => {
-    let list = PROFESSIONALS.filter((p) => showNsfw || !p.nsfw);
+    let list = (liveProfessionals?.length ? liveProfessionals : PROFESSIONALS).filter((p) => showNsfw || !p.nsfw);
     if (proExp !== "all") list = list.filter((p) => expBand(p.exp) === proExp);
     if (proHiringOnly) list = list.filter((p) => p.openings > 0);
     const q = proSearch.trim().toLowerCase();
@@ -139,7 +141,7 @@ export const NetworkScreen = memo(function NetworkScreen({
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.type.toLowerCase().includes(q) ||
-          p.skills.some((s) => s.toLowerCase().includes(q)) ||
+          p.skills.some((s: string) => s.toLowerCase().includes(q)) ||
           (p.looking || []).some((l: string) => l.toLowerCase().includes(q))
       );
     }
@@ -375,8 +377,9 @@ export const NetworkScreen = memo(function NetworkScreen({
               <div className={"conn-tab-sub" + (proRateBand === "gt150" ? " active" : "")} onClick={() => setProRateBand("gt150")} style={{ cursor: "pointer" }}>$150+</div>
             </div>
             {(() => {
-              const allSkills = [...new Set(PROFESSIONALS.flatMap((p) => p.skills))];
-              const allLooking = [...new Set(PROFESSIONALS.flatMap((p) => p.looking || []))];
+              const proSource = liveProfessionals?.length ? liveProfessionals : PROFESSIONALS;
+              const allSkills = [...new Set(proSource.flatMap((p) => p.skills))];
+              const allLooking = [...new Set(proSource.flatMap((p) => p.looking || []))];
               return (
                 <>
                   <div className="chip-scroll">
