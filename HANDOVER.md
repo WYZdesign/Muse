@@ -715,6 +715,16 @@ Any FAIL gets: screenshot, console output at time of failure, expected vs actual
 
 ---
 
+### Session 30 (wyzmind) — vision check + code-quality final pass
+
+**audience backfill status:** `viewerSideOf()` in `src/lib/role.ts:21-25` gracefully falls back to `type` inference when `audience` is null — existing industry-type users who onboarded before P4 are still correctly classified as "industry" via their `type` field. Backfill migration is nice-to-have, not blocking.
+
+**TypeScript quality:** 40 `as any` casts across page.tsx + screens. Only 1 is on server response data (`j.notifications || [] as any[]` at page.tsx:934 — untyped API response, expected). The rest are on DOM refs, component props, and library interop — not data-handling paths. No type-safety regressions introduced by our patches.
+
+**Net assessment:** Code-side work is complete. Every audit category has been swept and passed. The remaining verification requires visual testing (Claude's 120+ check items) and product decisions (OAuth providers, Stripe cleanup, video moderation).
+
+---
+
 ## SESSION STATE
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
 - **Last compile:** 2026-08-24 (Session 26)
