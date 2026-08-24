@@ -259,7 +259,7 @@ export const CommunityScreen = memo(function CommunityScreen({
           </div>
         ))}
       </div>
-      <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
+      <Nav active="community" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );
 });

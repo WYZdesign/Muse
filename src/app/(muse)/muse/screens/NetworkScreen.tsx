@@ -1354,7 +1354,7 @@ export const NetworkScreen = memo(function NetworkScreen({
         </div>
       )}
 
-      <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
+      <Nav active="network" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );
 });

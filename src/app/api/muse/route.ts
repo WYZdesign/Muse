@@ -1271,6 +1271,8 @@ export async function POST(req: NextRequest) {
       if (!await checkRate(ip, "rsvp", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { eventId } = rest;
       if (!eventId) return NextResponse.json({ error: "eventId required" }, { status: 400 });
+      const isStub = !UUID_RE.test(String(eventId));
+      if (isStub) return NextResponse.json({ success: true, demo: true });
       const { data: existing } = await sb.from("muse_rsvps").select("id").eq("event_id", eventId).eq("user_id", profile.id).maybeSingle();
       if (existing) return NextResponse.json({ success: true, alreadyRsvpd: true });
       const { error } = await sb.from("muse_rsvps").insert({ event_id: eventId, user_id: profile.id });
@@ -1282,6 +1284,8 @@ export async function POST(req: NextRequest) {
       if (!await checkRate(ip, "cancel-rsvp", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { eventId } = rest;
       if (!eventId) return NextResponse.json({ error: "eventId required" }, { status: 400 });
+      const isStub = !UUID_RE.test(String(eventId));
+      if (isStub) return NextResponse.json({ success: true, demo: true });
       await sb.from("muse_rsvps").delete().eq("event_id", eventId).eq("user_id", profile.id);
       return NextResponse.json({ success: true });
     }

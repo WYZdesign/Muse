@@ -330,7 +330,7 @@ export const SessionsScreen = memo(function SessionsScreen({
           </div>
         </div>
       )}
-      <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
+      <Nav active="sessions" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );
 });
