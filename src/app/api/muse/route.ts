@@ -845,6 +845,7 @@ export async function POST(req: NextRequest) {
       // moderators can trace back to the offending post.
       const isPostTarget = target_type === "feed_post" || target_type === "forum_post";
       if (!isPostTarget) {
+        if (!UUID_RE.test(String(target_id))) return NextResponse.json({ success: true, demo: true });
         const { data: targetProfile } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
         if (!targetProfile) return NextResponse.json({ error: "Target not found" }, { status: 400 });
       }
@@ -995,6 +996,7 @@ export async function POST(req: NextRequest) {
       if (!booker?.age_verified) {
         return NextResponse.json({ error: "Identity verification required", code: "VERIFICATION_REQUIRED" }, { status: 403 });
       }
+      if (!UUID_RE.test(String(sessionId))) return NextResponse.json({ success: true, demo: true });
       const { data: session } = await sb.from("muse_sessions").select("id, host_id").eq("id", sessionId).maybeSingle();
       if (!session) return NextResponse.json({ error: "Session not found" }, { status: 400 });
       const effectiveHostId = hostId || (session as any).host_id || null;
@@ -1045,6 +1047,7 @@ export async function POST(req: NextRequest) {
       const { targetId } = rest;
       if (!targetId) return NextResponse.json({ error: "targetId required" }, { status: 400 });
       if (targetId === profile.id) return NextResponse.json({ error: "Cannot connect with yourself" }, { status: 400 });
+      if (!UUID_RE.test(String(targetId))) return NextResponse.json({ success: true, demo: true });
       const { data: target } = await sb.from("muse_profiles").select("id").eq("id", targetId).maybeSingle();
       if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
       await sb.from("muse_connections").upsert({ user_id: profile.id, target_id: targetId, status: "pending" }, { onConflict: "user_id,target_id", ignoreDuplicates: true }).select();

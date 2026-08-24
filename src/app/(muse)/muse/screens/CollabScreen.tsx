@@ -197,7 +197,7 @@ export const CollabScreen = memo(function CollabScreen({
                       setSavedBriefs([...savedBriefs, brief.id]);
                       showToast("Saved!");
                     }
-                    apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { savedBriefs: isSaved ? savedBriefs.filter(x => x !== brief.id) : [...savedBriefs, brief.id] } }) }).catch(() => {});
+                    apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { savedBriefs: isSaved ? savedBriefs.filter(x => x !== brief.id) : [...savedBriefs, brief.id] } }) }).catch(() => showToast(isSaved ? "Couldn't unsave — try again" : "Couldn't save — try again"));
                   }}
                 >
                   {savedBriefs.includes(brief.id) ? "Saved" : "Save"}
