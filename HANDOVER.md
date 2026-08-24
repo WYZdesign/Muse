@@ -493,6 +493,228 @@ Also cross-referenced every `actionType === "X"` handler against frontend call s
 
 ---
 
+### SESSION 29 — CLAUDE'S FULL VISUAL VERIFICATION DIRECTIVE (execute every row, report pass/fail per item)
+
+Torreé says: test everything, miss nothing, cross-reference with code. Every row below = one thing to verify visually. Report PASS/FAIL/N/A per row with screenshots for any FAIL.
+
+**SETUP:** Test at 320×788 (Fold 5), 375×812 (iPhone), 768×1024 (tablet), 1440×900 (desktop). Open devtools Network tab on every page. Console must be clean on load unless noted.
+
+---
+
+**1. AUTH FLOW**
+- [ ] Signup with new email → onboarding starts at step 1
+- [ ] Onboarding Creative Type step: role picker ("work & collaborate" / "hire & book") is visible, tappable, gold-highlighted when selected
+- [ ] Role picker persists after navigating back a step and forward again
+- [ ] Complete all 16 onboarding steps including Portfolio upload (real file picker opens)
+- [ ] Enter Muse → lands on Discover → check Supabase that `audience` column matches picker choice
+- [ ] Logout → login → profile data survives (name, type, bio, styles, audience)
+- [ ] Session restore: close tab, reopen → auto-login to Discover (not auth)
+
+**2. DISCOVER**
+- [ ] Cards render with unique images (no two cards share same photo or fallback gradient)
+- [ ] Swipe left (Pass): card animates left, next card appears, NO daily-like decrement
+- [ ] Swipe right (Like) with likes remaining: match check fires, `POST /api/muse` with `action:"match"` visible in network tab
+- [ ] Swipe right at 0 likes: toast "No likes left today!", no API call, card stays
+- [ ] Swipe up: page scrolls vertically (no super-like gesture, no card animation)
+- [ ] ★ button: super-like works, consumes superLikes count
+- [ ] Industry-side candidate shows "Hiring — can book & pay you" section in expanded card details
+- [ ] NSFW veil: only on profiles with `nsfw:true`, tap-to-reveal removes blur, tap target not swallowed by swipe gesture
+- [ ] Discovery filters modal: age/distance/gender sliders work, Save persists across reload
+- [ ] Like+Note: note text arrives as first message in chat after mutual match
+- [ ] Match overlay + confetti fires on mutual match
+
+**3. MUSES / MATCHES LIST**
+- [ ] Real matches load from server (not demo PROFILES)
+- [ ] Online dot reflects `last_seen_at` (green if active <15min)
+- [ ] Grid/list toggle icons render as FiGrid/FiList vectors, correctly swap layout
+- [ ] Tap match → opens chat
+- [ ] Unmatch: confirmation modal → real API call → match removed from list → rollback if server fails
+- [ ] Report: opens report modal with reason selection → submits successfully
+
+**4. CHAT**
+- [ ] Send text message: optimistic bubble appears instantly, persists after reload
+- [ ] Send identical text twice rapidly: BOTH messages appear (clientMsgId dedup working)
+- [ ] Image attach: file picker opens, uploads, image bubble renders
+- [ ] Typing indicator appears when other person types (needs two accounts)
+- [ ] Read receipts show on sent messages
+- [ ] **Realtime reconnect: open chat on account A, kill network on account B, B sends message while disconnected, restore network → message appears WITHOUT leaving chat screen** ← CRITICAL, never tested live
+- [ ] Chat input doesn't overflow on narrow viewports (min-width:0 fix)
+
+**5. FEED**
+- [ ] Composer: text post creates feed post, appears immediately
+- [ ] Photo upload: file picker → upload → media post with image
+- [ ] 📷 BTS button opens camera (or graceful "no camera" error on desktop)
+- [ ] Camera photo capture → posts to BOTH Feed AND BTS moments
+- [ ] Camera video record (≤30s) → posts to BOTH Feed AND BTS
+- [ ] Feed filter chips: All/Photos/Videos filter correctly, one-line horizontal scroll
+- [ ] Like button: toggles heart, count updates, rolls back on server failure
+- [ ] Comment: inline reply box, Post button BELOW input (not inside), reply appears optimistically
+- [ ] ⚑ Report: label doesn't clip, opens report modal
+- [ ] **Tap post author/text → detail view opens centered**: full body, image, stats, reply thread, composer
+- [ ] Detail view reply: optimistic append, persists after reload
+- [ ] Seed posts (Maya Chen etc): like/reply succeed locally without 404/revert/toast
+
+**6. BTS SCREEN**
+- [ ] Moments render in grid layout by default
+- [ ] List/grid toggle switches layouts correctly, FiGrid/FiList icons render
+- [ ] Like button on REAL moment (UUID id): count updates, persists after reload
+- [ ] Like button on SEED moment (numeric id 501-505): local-only update, no failure toast
+- [ ] NSFW reveal: blur overlay, tap-to-reveal works
+- [ ] Time badges display correctly
+- [ ] Dual-capture prompt appears when no recent BTS post exists
+
+**7. COLLAB**
+- [ ] Briefs list renders (live from server if any exist, else FORUM_POSTS-style seed)
+- [ ] Category tabs: All/TFP/Paid/Open Call/Concept filter correctly
+- [ ] Industry user: own briefs pinned FIRST in list; default category = Paid
+- [ ] Creative user: own briefs LAST in list; default category = All
+- [ ] Apply button: optimistic state change ("Applied"), persists after reload
+- [ ] Save bookmark: persists via save-preferences, failure shows toast (not silent)
+- [ ] Post brief composer: title framed by side ("Post a Brief — find talent" for industry)
+- [ ] Paid brief Book button → opens chat with brief author
+- [ ] Vision brief Respond button → opens chat
+
+**8. COMMUNITY**
+- [ ] Groups tab: cards centered, ≥3 badges per group (category + size-tier + status), bottom-aligned
+- [ ] Events tab: cards centered, ≥3 badges per event (timing + venue-type + RSVP state), bottom-aligned
+- [ ] Join community: button changes to "✓ Joined", persists after reload
+- [ ] RSVP event: button changes to "✓ Going", persists after reload
+- [ ] Demo events (numeric ids): RSVP succeeds locally without 404/error toast
+- [ ] Detail modals open for both groups and events
+- [ ] Create group/event forms are centered lightboxes with ✕ close button
+- [ ] Nav highlight: Community does NOT light up Discover tab in bottom nav
+
+**9. NETWORK — PROFESSIONALS TAB**
+- [ ] Section framing text differs by role (creative sees "book/pay/launch"; industry sees "peers/network/co-hire")
+- [ ] Search filters by name/craft/skills/looking-for
+- [ ] Experience band chips: All levels/Rising/Established/Veteran filter correctly
+- [ ] Rate band chips: Any/Under $100/$100–150/$150+ filter correctly
+- [ ] Skill rail scrolls horizontally, multi-select composes AND logic
+- [ ] Looking-for select filters correctly
+- [ ] Sort dropdown: Featured/Most experienced/Least experienced/Rate high-low/Rate low-high/Most openings
+- [ ] Cards show: rate chip, openings chip, Seeking chips, exp badge
+- [ ] Card height ~570px, image fills top portion
+- [ ] Tap card → detail modal opens centered (not clipped), X button positioned below notch
+- [ ] Connect button reads "Network" for industry viewer, "Connect" for creative
+- [ ] Nav highlight: Network does NOT light up Discover tab
+
+**10. NETWORK — FORUM TAB**
+- [ ] Posts render from liveForum (real data) or FORUM_POSTS fallback
+- [ ] Sort tabs: Hot/New/Top reorder correctly
+- [ ] Category filter works
+- [ ] Search bar filters posts by title/body/author in real-time
+- [ ] Vote ▲/▼: count updates IMMEDIATELY on screen (liveForum fix), persists after reload
+- [ ] Expand inline: chevron toggles comment section
+- [ ] Reply inline: comment appears optimistically, persists after reload
+- [ ] **Tap post title/body → thread detail view opens centered**: votes, full body, comment list, Best/New sort, @mention reply prefill
+- [ ] Thread detail: vote arrows update count, per-comment ▲▼ toggle
+- [ ] Thread detail: Reply on a comment prefills @name with dismissible chip
+- [ ] Thread detail: composer sends reply, optimistic append, persists
+- [ ] New post: create form is centered lightbox, new post appears in list with real ID after re-fetch
+- [ ] Nav highlight: Network does NOT light up Discover tab
+
+**11. SESSIONS**
+- [ ] Browse tab: sessions render, Book Session button visible
+- [ ] Book Session: identity gate toast if unverified (403 VERIFICATION_REQUIRED)
+- [ ] "+ List a Session" button below the list (not in header)
+- [ ] My Sessions tab: bookings list with status chips
+- [ ] Pay button hides once payment_status is held/succeeded
+- [ ] Cancel booking link with confirmation dialog
+- [ ] Requests tab: accept/decline buttons work
+- [ ] Nav highlight: Sessions does NOT light up Discover tab
+- [ ] Demo sessions: booking returns clean local success (isStub guard)
+
+**12. PORTFOLIO**
+- [ ] Albums render from muse_albums
+- [ ] Onboarding-created "My Portfolio" album appears here
+- [ ] Create album, add photos, delete photos, grant access
+- [ ] Album photos use real Supabase storage URLs (not stock images)
+
+**13. PROFILE**
+- [ ] Stats grid: views, likes received, matches, collabs, briefs applied/saved, bookings, forum posts, member-since
+- [ ] Stats read real data when signed in (views_count from DB, likesReceived from muse_matches count)
+- [ ] Log Out NOT in profile panel (moved to Settings)
+- [ ] Edit Profile save/failure toasts work
+- [ ] Share sheet: Copy/Twitter/IG fallback all functional
+- [ ] Unlimited badge shows for Pro users, dismissible
+- [ ] Prompt Bank responses save/load
+- [ ] Badges render from checkProfileBadges
+
+**14. SETTINGS (hamburger → Settings)**
+- [ ] Account group: Edit Profile routes to ProfileScreen, Personality/Creative Profile route to onboarding steps
+- [ ] Payments & Subscription group: Subscription/Marketplace Payments/Payment History/Referral Program all route correctly
+- [ ] Safety & Privacy: Show Distance toggle ≠ NSFW (independent), Online Status toggle persists, Blocked Users count matches real muse_blocks rows
+- [ ] Safety Center: routes to SafetyCheckinModal with 4 tabs
+- [ ] Prompt Bank: opens modal
+- [ ] Admin Dashboard: visible only for isUnlimited users, routes to admin panel
+- [ ] Legal links: Terms/Privacy/Guidelines modals open
+- [ ] Save Preferences: includes discoveryPrefs + notifications + showOnline + showDistance
+- [ ] Log Out: works, clears session
+- [ ] Help & Support: FAQ answers match actual navigation paths (post-merge)
+
+**15. SAFETY CENTER MODAL (4 tabs)**
+- [ ] Check-ins tab: pending/completed lists, confirm/cancel buttons
+- [ ] Safety Profile tab: trusted friend fields, auto-share toggle, save works
+- [ ] Share Details tab: SMS/Email/Copy Link all wired to onShareDetails callback
+- [ ] Strikes & Disclosures tab: loads real data from get-strikes/get-disclosures, appeal form submits for unappealed strikes
+
+**16. SUBSCRIPTION**
+- [ ] Feature copy differs by role (creative sees likes/boost language; industry sees brief-response/talent-pool language)
+- [ ] MUSEBETA promo: apply → server grants tier → UI shows applied badge → tier persists after reload
+- [ ] Invalid promo code: "Invalid promo code" toast
+- [ ] Checkout flow: redirects to Stripe (don't complete payment, just verify redirect URL)
+
+**17. CODEX / GLOSSARY**
+- [ ] Tab switcher: Glossary/Codex tabs work, no emoji in labels
+- [ ] Glossary badges: all render with vector icons (FiZap/FiCrown/GiButterfly/etc), zero emojis
+- [ ] Connection types: vector icons (FiBriefcase/FiUsers/FiBookOpen/FiHeart)
+- [ ] MBTI: all 16 types have distinct Fi glyphs
+- [ ] Life Path: all 12 have archetype glyphs
+- [ ] Chinese zodiac: all 12 have Gi animal vectors
+- [ ] Western zodiac: typographic ♈–♓ glyphs render
+- [ ] Expandable items: tap to expand/collapse smoothly
+
+**18. HAMBURGER MENU**
+- [ ] Main menu items all route correctly
+- [ ] Bell icon opens Activity hub with 5 tabs (Notifications/Applied/Saved/Bookings/Reports)
+- [ ] Applied/Saved counts match actual data
+- [ ] Bookings tab shows both booker and host roles
+- [ ] Reports tab loads real muse_reports data
+- [ ] Sub-screen back arrow (top-left) navigates back to main menu
+- [ ] No Log Out button in Your Profile panel (it's in Settings now)
+- [ ] Stats grid shows 8 tiles with real values
+
+**19. CROSS-CUTTING CHECKS (every page)**
+- [ ] Console: zero errors, zero warnings on initial load of every screen
+- [ ] Toasts fire on EVERY mutating action and auto-dismiss
+- [ ] All lightboxes/modals: centered x/y axis, ✕ close button present
+- [ ] Images: no broken images (all load or show initials-gradient fallback)
+- [ ] Safe-area insets respected on iPhone (notch/dynamic island)
+- [ ] Pull-to-refresh doesn't break scroll position
+- [ ] Back gesture/button navigation works consistently
+- [ ] Loading states appear during async operations (no blank content flashes)
+
+**20. PERFORMANCE**
+- [ ] Initial page load <3s on production
+- [ ] Screen transitions feel instant (<100ms perceived)
+- [ ] No visible jank when scrolling long lists (Feed, Forum, Discover stack)
+- [ ] Images lazy-load (check Network tab: images below fold don't load until scrolled near)
+- [ ] Memory: navigate between all screens 5× rapidly, check Chrome Task Manager for runaway memory growth
+
+---
+
+**REPORT FORMAT:** For each numbered section, output a table:
+```
+| Check | Viewport | Result | Notes |
+|-------|----------|--------|-------|
+| 2.1 Cards unique images | 320px | PASS | |
+| 2.5 Swipe up scrolls | 320px | FAIL | Card animates instead of scrolling |
+```
+
+Any FAIL gets: screenshot, console output at time of failure, expected vs actual behavior, and which code file you suspect. Wyzmind will root-cause and fix.
+
+---
+
 ## SESSION STATE
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
 - **Last compile:** 2026-08-24 (Session 26)
