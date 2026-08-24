@@ -460,6 +460,16 @@ New `lib/role.ts`: `viewerSide(type)` splits INDUSTRY (Casting Director, Art Buy
 
 ---
 
+### Session 24 (wyzmind, 2026-08-24) — dead-state-write audit + orphaned-action audit: both CLEAN
+
+**Dead-state-write audit:** Grepped every screen/component for `setX` calls where `X` is never read in that file. Result: only cross-component props (state lives in page.tsx, read there for rendering). No new instances of the forumPosts pattern. Claude's forumPosts was the only one.
+
+**Orphaned-action audit:** Cross-referenced every `actionType === "X"` handler in route.ts against every frontend call site. All ~65 actions have at least one frontend caller. `track-error` is called from `muse-realtime.ts` (internal logging), not from screens — correctly wired.
+
+**Zero wiring gaps remain.**
+
+---
+
 ## SESSION STATE
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
 - **Last compile:** 2026-08-23 (Session 22)
