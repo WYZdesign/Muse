@@ -470,12 +470,25 @@ New `lib/role.ts`: `viewerSide(type)` splits INDUSTRY (Casting Director, Art Buy
 
 ---
 
+### Session 26 (Claude, live audit on production) — applied by wyzmind
+
+Live click-through confirmed forum/BTS fixes were real bugs on unpatched production. Two fixes applied in `1094389`:
+
+1. **RSVP on demo events failed every time** — `rsvp`/`cancel-rsvp` never got the `isStub` numeric-id guard that `join-community` already had. Added identical guard.
+2. **Hamburger screens lit up wrong Nav tab** — Community/Network/Sessions were hardcoded to `active="discover"`. Changed to non-matching values.
+
+**Also landed (wyzmind, same commit):** Camera Feed sync failure + Show Distance/Online Status toggle persistence failure now toast instead of silent catch.
+
+**Follow-up flagged:** grep route.ts for other stub-content actions missing the `isStub`/`UUID_RE` guard — `like-moment` and forum `vote`/`reply` currently rely on frontend-only skips. The RSVP gap shows frontend-only guards can slip through.
+
+---
+
 ## SESSION STATE
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
-- **Last compile:** 2026-08-23 (Session 22)
-- **Last commit:** Session 22 — duality Phase 0 (role detection + role-aware Sessions tab) + Claude's S20/21 viewport fixes
+- **Last compile:** 2026-08-24 (Session 26)
+- **Last commit:** `1094389` — Nav highlight fix + RSVP isStub guard + silent-catch toasts
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
-- **Supabase tables:** muse_profiles, muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
+- **Supabase tables:** muse_profiles (+ views_count, audience), muse_messages, muse_matches, muse_briefs, muse_forum_posts, muse_feed_posts, muse_connections, muse_community_members, muse_bookings, muse_notifications, muse_activity_log, muse_moments, muse_blocks, muse_rsvps, muse_albums, muse_album_photos, muse_album_access, muse_album_likes, muse_prompt_responses, muse_prompts, muse_safety_profiles, muse_push_tokens
 - **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)
 
 ---
