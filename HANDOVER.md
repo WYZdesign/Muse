@@ -748,6 +748,23 @@ Picked up Session 26's own follow-up flag (RSVP gap showed frontend-only guards 
 
 **Next up:** Session 29's exhaustive visual-verification directive (20 sections, 120+ checks) — starting on that next, will report PASS/FAIL per row as instructed rather than a prose summary.
 
+### Session 31 (wyzmind) — Professionals backend shipped
+
+Claude's flagged dark spot (Session 30) is closed. NetworkScreen's Professionals tab now has a real backend:
+
+1. **SQL migration** `sql/MUSE_PROFESSIONALS_20260824.sql` — `muse_professionals` table with RLS (public read, user-scoped write), unique constraint on `user_id`, index on `type`. **Run in Supabase SQL Editor.**
+2. **API action** `get-professionals` in `route.ts` — queries `muse_professionals`, returns up to 50 rows ordered by `created_at DESC`.
+3. **page.tsx** — `liveProfessionals` state + bootstrap fetch + prop to NetworkScreen.
+4. **NetworkScreen** — `(liveProfessionals?.length ? liveProfessionals : PROFESSIONALS)` pattern for list, skills chip source, and looking-for chip source.
+
+When the table is empty (before anyone runs the migration or signs up as industry), the hardcoded PROFESSIONALS array still renders. Once real industry users onboard and create professional profiles, they appear live.
+
+**Remaining items needing Torreé:**
+- Run the SQL migration in Supabase
+- OAuth providers (Connect Your World)
+- Stripe account cleanup
+- Video moderation decision
+
 ---
 
 ## SESSION STATE
