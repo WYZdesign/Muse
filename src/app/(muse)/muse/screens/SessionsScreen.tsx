@@ -3,6 +3,7 @@
 import React, { memo, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import Nav from "../components/Nav";
+import { BADGE_COLORS } from "../components/badgeColors";
 import type { Screen, Match } from "../components/types";
 import { SESSIONS } from "../components/types";
 
@@ -148,7 +149,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   };
   return (
     <div className={"screen-el" + (screen === "sessions" ? " active" : "")}>
-      <div className="hdr" style={{ background: "linear-gradient(135deg,rgba(156,39,176,0.12),rgba(233,30,99,0.08),rgba(186,104,200,0.1))", borderBottom: "1px solid rgba(233,30,99,0.15)" }}>
+      <div className="hdr" style={{ borderBottom: "1px solid rgba(233,30,99,0.15)" }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{ fontSize: 32, backgroundImage: "linear-gradient(120deg,#CE93D8,#F48FB1,#BA68C8,#CE93D8)", backgroundSize: "300% 300%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", fontWeight: 900 }}>Sessions</div>
         <div style={{ width: 42 }} />
@@ -220,15 +221,20 @@ export const SessionsScreen = memo(function SessionsScreen({
               const host = b.host_id || {};
               const sess = b.session_id || {};
               const label = b.status === "pending" ? "Awaiting host" : b.status === "confirmed" ? "Confirmed" : b.status === "completed" ? "Completed" : "Cancelled";
-              const labelBg = b.status === "completed" ? "rgba(152,251,152,0.15)" : b.status === "confirmed" ? "rgba(255,215,0,0.15)" : b.status === "cancelled" ? "rgba(255,100,100,0.15)" : "rgba(255,255,255,0.08)";
-              const labelColor = b.status === "completed" ? "#98fb98" : b.status === "confirmed" ? "var(--gold)" : b.status === "cancelled" ? "#ff6464" : "var(--muted)";
+              const statusColors: Record<string, { bg: string; bd: string; c: string }> = {
+                completed: BADGE_COLORS.green,
+                confirmed: BADGE_COLORS.gold,
+                cancelled: BADGE_COLORS.red,
+                pending: BADGE_COLORS.muted,
+              };
+              const sc = statusColors[b.status] || BADGE_COLORS.muted;
               return (
                 <div key={b.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
                   <img loading="lazy" src={host.avatar || sess.img || ""} alt={host.name || "Host"} style={{ width: "25%", alignSelf: "stretch", minHeight: 120, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
                   <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                       <div className="conn-name" style={{ fontSize: 15 }}>{host.name || "Host"}</div>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: labelBg, color: labelColor, whiteSpace: "nowrap" }}>{label}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: sc.bg, color: sc.c, border: `1px solid ${sc.bd}`, whiteSpace: "nowrap" }}>{label}</span>
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>

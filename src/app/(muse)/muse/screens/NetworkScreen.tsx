@@ -13,9 +13,11 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiUserPlus,
+  FiSearch,
 } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import { PROFESSIONALS, FORUM_POSTS } from "../components/types";
+import { BADGE_COLORS } from "../components/badgeColors";
 import { viewerSide } from "@/lib/role";
 import Nav from "../components/Nav";
 
@@ -115,6 +117,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [proHiringOnly, setProHiringOnly] = useState(false);
   const [proSearch, setProSearch] = useState("");
   const [forumSearch, setForumSearch] = useState("");
+  const [forumSearchOpen, setForumSearchOpen] = useState(false);
   const [proSkill, setProSkill] = useState<string[]>([]);
   const [proRateBand, setProRateBand] = useState<"all" | "lt100" | "100to150" | "gt150">("all");
   const [proLooking, setProLooking] = useState<string>("all");
@@ -286,8 +289,6 @@ export const NetworkScreen = memo(function NetworkScreen({
       <div
         className="hdr"
         style={{
-          background:
-            "linear-gradient(135deg,rgba(179,229,252,0.12),rgba(0,188,212,0.08),rgba(100,181,246,0.1))",
           borderBottom: "1px solid rgba(100,181,246,0.15)",
         }}
       >
@@ -324,7 +325,7 @@ export const NetworkScreen = memo(function NetworkScreen({
         ))}
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
+      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "0 16px 80px" }}>
         {netTab === "pros" && (
           <>
             <div style={{ margin: "0 0 10px", fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
@@ -339,24 +340,27 @@ export const NetworkScreen = memo(function NetworkScreen({
               onChange={(e) => setProSearch(e.target.value)}
               style={{ margin: "0 0 10px", fontSize: 13 }}
             />
-            <div className="chip-scroll">
-              {(["all", "rising", "established", "veteran"] as const).map((b) => (
-                <div
-                  key={b}
-                  className={"conn-tab-sub" + (proExp === b ? " active" : "")}
-                  onClick={() => setProExp(b)}
-                  style={{ textTransform: "capitalize", cursor: "pointer" }}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+              {([
+                { k: "all", label: "All levels", color: "var(--muted)" },
+                { k: "rising", label: "Rising", color: "#90caf9" },
+                { k: "established", label: "Established", color: "var(--gold)" },
+                { k: "veteran", label: "Veteran", color: "#e6d3ff" },
+              ] as const).map((b) => (
+                <span
+                  key={b.k}
+                  onClick={() => setProExp(b.k)}
+                  style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proExp === b.k ? b.color : "var(--muted)", opacity: proExp === b.k ? 1 : 0.6, transition: "all 0.15s", borderBottom: proExp === b.k ? `2px solid ${b.color}` : "2px solid transparent", paddingBottom: 2 }}
                 >
-                  {b === "all" ? "All levels" : b}
-                </div>
+                  {b.label}
+                </span>
               ))}
-              <div
-                className={"conn-tab-sub" + (proHiringOnly ? " active" : "")}
+              <span
                 onClick={() => setProHiringOnly(!proHiringOnly)}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proHiringOnly ? "#4cdd88" : "var(--muted)", opacity: proHiringOnly ? 1 : 0.6, transition: "all 0.15s", borderBottom: proHiringOnly ? "2px solid #4cdd88" : "2px solid transparent", paddingBottom: 2 }}
               >
                 Hiring now
-              </div>
+              </span>
             </div>
             <select
               value={proSort}
@@ -370,11 +374,21 @@ export const NetworkScreen = memo(function NetworkScreen({
               <option value="rateAsc">Rate: low to high</option>
               <option value="openings">Most openings</option>
             </select>
-            <div className="chip-scroll">
-              <div className={"conn-tab-sub" + (proRateBand === "all" ? " active" : "")} onClick={() => setProRateBand("all")} style={{ cursor: "pointer" }}>Any rate</div>
-              <div className={"conn-tab-sub" + (proRateBand === "lt100" ? " active" : "")} onClick={() => setProRateBand("lt100")} style={{ cursor: "pointer" }}>Under $100</div>
-              <div className={"conn-tab-sub" + (proRateBand === "100to150" ? " active" : "")} onClick={() => setProRateBand("100to150")} style={{ cursor: "pointer" }}>$100–150</div>
-              <div className={"conn-tab-sub" + (proRateBand === "gt150" ? " active" : "")} onClick={() => setProRateBand("gt150")} style={{ cursor: "pointer" }}>$150+</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+              {([
+                { k: "all", label: "Any rate", color: "var(--muted)" },
+                { k: "lt100", label: "Under $100", color: "#90caf9" },
+                { k: "100to150", label: "$100–150", color: "var(--gold)" },
+                { k: "gt150", label: "$150+", color: "#e6d3ff" },
+              ] as const).map((b) => (
+                <span
+                  key={b.k}
+                  onClick={() => setProRateBand(b.k)}
+                  style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proRateBand === b.k ? b.color : "var(--muted)", opacity: proRateBand === b.k ? 1 : 0.6, transition: "all 0.15s", borderBottom: proRateBand === b.k ? `2px solid ${b.color}` : "2px solid transparent", paddingBottom: 2 }}
+                >
+                  {b.label}
+                </span>
+              ))}
             </div>
             {(() => {
               const proSource = liveProfessionals?.length ? liveProfessionals : PROFESSIONALS;
@@ -382,10 +396,21 @@ export const NetworkScreen = memo(function NetworkScreen({
               const allLooking = [...new Set(proSource.flatMap((p) => p.looking || []))];
               return (
                 <>
-                  <div className="chip-scroll">
-                    <div className={"conn-tab-sub" + (!proSkill.length ? " active" : "")} onClick={() => setProSkill([])} style={{ cursor: "pointer" }}>All skills</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                    <span
+                      onClick={() => setProSkill([])}
+                      style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: !proSkill.length ? "#90caf9" : "var(--muted)", opacity: !proSkill.length ? 1 : 0.6, transition: "all 0.15s", borderBottom: !proSkill.length ? "2px solid #90caf9" : "2px solid transparent", paddingBottom: 2 }}
+                    >
+                      All skills
+                    </span>
                     {allSkills.map((s) => (
-                      <div key={s} className={"conn-tab-sub" + (proSkill.includes(s) ? " active" : "")} onClick={() => setProSkill(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])} style={{ cursor: "pointer" }}>{s}</div>
+                      <span
+                        key={s}
+                        onClick={() => setProSkill(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
+                        style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proSkill.includes(s) ? "#90caf9" : "var(--muted)", opacity: proSkill.includes(s) ? 1 : 0.6, transition: "all 0.15s", borderBottom: proSkill.includes(s) ? "2px solid #90caf9" : "2px solid transparent", paddingBottom: 2 }}
+                      >
+                        {s}
+                      </span>
                     ))}
                   </div>
                   {allLooking.length > 0 && (
@@ -541,20 +566,20 @@ export const NetworkScreen = memo(function NetworkScreen({
                 {/* BADGES ROW */}
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                   {(() => {
-                    const badges: { icon: string; label: string; color: string; bg: string; border: string }[] = [];
+                    const badges: { icon: string; label: string; c: string; bg: string; bd: string }[] = [];
                     const yrs = parseInt(p.exp, 10) || 0;
-                    if (yrs >= 10) badges.push({ icon: "🏅", label: "Pro", color: "#FFD700", bg: "rgba(255,215,0,0.15)", border: "rgba(255,215,0,0.3)" });
-                    else if (yrs >= 5) badges.push({ icon: "⭐", label: "Experienced", color: "#FFBF00", bg: "rgba(255,191,0,0.12)", border: "rgba(255,191,0,0.25)" });
-                    else badges.push({ icon: "🌱", label: "Rising", color: "#A5D6A7", bg: "rgba(165,214,167,0.12)", border: "rgba(165,214,167,0.25)" });
-                    if (p.openings >= 5) badges.push({ icon: "🔥", label: "Hiring", color: "#FF6B6B", bg: "rgba(255,107,107,0.12)", border: "rgba(255,107,107,0.25)" });
-                    if (p.skills?.includes("Fashion") || p.skills?.includes("Editorial")) badges.push({ icon: "👗", label: "Fashion", color: "#F48FB1", bg: "rgba(244,143,177,0.12)", border: "rgba(244,143,177,0.25)" });
-                    if (p.skills?.includes("Commercial") || p.skills?.includes("Branding")) badges.push({ icon: "💼", label: "Commercial", color: "#FFCC80", bg: "rgba(255,204,128,0.12)", border: "rgba(255,204,128,0.25)" });
-                    if (p.skills?.includes("Music Video") || p.skills?.includes("Film")) badges.push({ icon: "🎬", label: "Film", color: "#EF9A9A", bg: "rgba(239,154,154,0.12)", border: "rgba(239,154,154,0.25)" });
-                    if (p.skills?.includes("Fine Art") || p.skills?.includes("Body Art")) badges.push({ icon: "🎨", label: "Fine Art", color: "#CE93D8", bg: "rgba(206,147,216,0.12)", border: "rgba(206,147,216,0.25)" });
-                    if (p.skills?.includes("Experimental")) badges.push({ icon: "🧪", label: "Experimental", color: "#80DEEA", bg: "rgba(128,222,234,0.12)", border: "rgba(128,222,234,0.25)" });
-                    if (p.skills?.includes("Photography") || p.skills?.includes("Editorial")) badges.push({ icon: "📸", label: "Photo", color: "#90CAF9", bg: "rgba(144,202,249,0.12)", border: "rgba(144,202,249,0.25)" });
+                    if (yrs >= 10) badges.push({ icon: "🏅", label: "Pro", ...BADGE_COLORS.gold });
+                    else if (yrs >= 5) badges.push({ icon: "⭐", label: "Experienced", ...BADGE_COLORS.lavender });
+                    else badges.push({ icon: "🌱", label: "Rising", ...BADGE_COLORS.blue });
+                    if (p.openings >= 5) badges.push({ icon: "🔥", label: "Hiring", ...BADGE_COLORS.red });
+                    if (p.skills?.includes("Fashion") || p.skills?.includes("Editorial")) badges.push({ icon: "👗", label: "Fashion", ...BADGE_COLORS.lavender });
+                    if (p.skills?.includes("Commercial") || p.skills?.includes("Branding")) badges.push({ icon: "💼", label: "Commercial", ...BADGE_COLORS.gold });
+                    if (p.skills?.includes("Music Video") || p.skills?.includes("Film")) badges.push({ icon: "🎬", label: "Film", ...BADGE_COLORS.red });
+                    if (p.skills?.includes("Fine Art") || p.skills?.includes("Body Art")) badges.push({ icon: "🎨", label: "Fine Art", ...BADGE_COLORS.lavender });
+                    if (p.skills?.includes("Experimental")) badges.push({ icon: "🧪", label: "Experimental", ...BADGE_COLORS.blue });
+                    if (p.skills?.includes("Photography") || p.skills?.includes("Editorial")) badges.push({ icon: "📸", label: "Photo", ...BADGE_COLORS.blue });
                     return badges.slice(0, 5).map((b) => (
-                      <span key={b.label} style={{ fontSize: 10, padding: "3px 9px", borderRadius: 99, background: b.bg, border: `1px solid ${b.border}`, color: b.color, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
+                      <span key={b.label} style={{ fontSize: 10, padding: "3px 9px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
                         {b.icon} {b.label}
                       </span>
                     ));
@@ -672,41 +697,53 @@ export const NetworkScreen = memo(function NetworkScreen({
               </div>
             )}
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                margin: "0 20px 10px",
-              }}
-            >
-              <div style={{ display: "flex", gap: 6 }}>
-                {(["hot", "new", "top"] as const).map((s) => (
-                  <div
-                    key={s}
-                    className={"conn-tab-sub" + (forumSort === s ? " active" : "")}
-                    onClick={() => setForumSort(s)}
-                  >
-                    {s.charAt(0).toUpperCase() + s.slice(1)}
-                  </div>
-                ))}
+            <div style={{ display: "flex", gap: 6, alignItems: "center", margin: "0 20px 10px", flexWrap: "nowrap" }}>
+              {!forumSearchOpen && (
+                <>
+                  {(["hot", "new", "top"] as const).map((s) => (
+                    <div
+                      key={s}
+                      className={"conn-tab-sub" + (forumSort === s ? " active" : "")}
+                      onClick={() => setForumSort(s)}
+                    >
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </div>
+                  ))}
+                </>
+              )}
+              {forumSearchOpen && (
+                <input
+                  className="inp"
+                  placeholder="Search the forum…"
+                  value={forumSearch}
+                  onChange={(e) => setForumSearch(e.target.value)}
+                  onBlur={() => { if (!forumSearch.trim()) setForumSearchOpen(false); }}
+                  autoFocus
+                  style={{ flex: 1, fontSize: 13, margin: 0 }}
+                />
+              )}
+              <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                <FiSearch
+                  size={18}
+                  style={{ cursor: "pointer", color: forumSearchOpen ? "var(--gold)" : "var(--muted)", flexShrink: 0 }}
+                  onClick={() => {
+                    if (forumSearchOpen) {
+                      if (!forumSearch.trim()) setForumSearch("");
+                      setForumSearchOpen(false);
+                    } else {
+                      setForumSearchOpen(true);
+                    }
+                  }}
+                />
+                <button
+                  className="conn-btn conn-btn-primary"
+                  style={{ fontSize: 12, padding: "6px 14px" }}
+                  onClick={() => setShowNewPost(!showNewPost)}
+                >
+                  + Post
+                </button>
               </div>
-              <button
-                className="conn-btn conn-btn-primary"
-                style={{ fontSize: 12, padding: "6px 14px" }}
-                onClick={() => setShowNewPost(!showNewPost)}
-              >
-                + Post
-              </button>
             </div>
-
-            <input
-              className="inp"
-              placeholder="Search the forum…"
-              value={forumSearch}
-              onChange={(e) => setForumSearch(e.target.value)}
-              style={{ margin: "0 20px 10px", fontSize: 13 }}
-            />
             {filteredForum
               .filter((post) => {
                 const q = forumSearch.trim().toLowerCase();
@@ -1037,14 +1074,15 @@ export const NetworkScreen = memo(function NetworkScreen({
             inset: 0,
             zIndex: 500,
             display: "flex",
-            alignItems: "flex-end",
+            alignItems: "flex-start",
             justifyContent: "center",
+            overflowY: "auto",
           }}
           onClick={() => setProDetail(null)}
         >
           <div
             style={{
-              position: "absolute",
+              position: "fixed",
               inset: 0,
               background: "rgba(0,0,0,0.6)",
               backdropFilter: "blur(8px)",
@@ -1056,13 +1094,13 @@ export const NetworkScreen = memo(function NetworkScreen({
               position: "relative",
               width: "100%",
               maxWidth: 480,
-              maxHeight: "calc(92vh - env(safe-area-inset-top, 0px) - 16px)",
-              marginTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
+              marginTop: "env(safe-area-inset-top, 0px)",
               background: "linear-gradient(135deg,#0d0520,#1a0a2e,#0d0520)",
-              borderRadius: "24px 24px 0 0",
+              borderRadius: "0 0 24px 24px",
               overflow: "hidden",
               display: "flex",
               flexDirection: "column",
+              marginBottom: 16,
             }}
           >
             <button

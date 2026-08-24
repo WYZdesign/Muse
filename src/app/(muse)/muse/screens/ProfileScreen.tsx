@@ -100,7 +100,7 @@ export const ProfileScreen = memo(function ProfileScreen({
 }: ProfileScreenProps) {
   return (
     <div className={"screen-el" + (screen === "profile" ? " active" : "")}>
-      <div className="hdr" style={{ justifyContent: "space-between", background: "linear-gradient(135deg,rgba(255,215,0,0.12),rgba(233,30,99,0.08),rgba(186,104,200,0.1))", borderBottom: "1px solid rgba(255,215,0,0.15)" }}>
+      <div className="hdr" style={{ justifyContent: "space-between", borderBottom: "1px solid rgba(255,215,0,0.15)" }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         </div>
