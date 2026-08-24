@@ -164,7 +164,6 @@ export const TIERS_BY_SIDE: Record<"creative" | "industry", typeof TIERS> = {
     { name:"Muse Pro",price:"$9.99",period:"/month",features:["Unlimited brief responses — hire at scale","See who's interested before they apply","Advanced talent filters (skills, experience, rate)","Read receipts on every message","Talent-pool boost (×1/week) — front page","Incognito mode — scout discreetly","Priority placement in talent search"] },
   ],
 };
-];
 
 export const AESTHETICS = ["Portrait","Editorial","Commercial","Music Video","Documentary","Branding","Body Art","Fine Art","Fashion","Experimental","Dark","Dreamy","Bold","Vintage","Abstract","Film"];
 
