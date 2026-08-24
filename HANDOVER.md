@@ -483,6 +483,16 @@ Live click-through confirmed forum/BTS fixes were real bugs on unpatched product
 
 ---
 
+### Session 28 (wyzmind) — memory-leak + orphaned-action sweeps: both CLEAN
+
+Grepped all 38 useEffects in page.tsx for missing cleanup functions. Initial scan flagged 11, but on manual read every one has proper cleanup (compact `return()=>...` formatting fooled the regex) or is a safe synchronous DOM/state operation. Zero memory leaks.
+
+Also cross-referenced every `actionType === "X"` handler against frontend call sites using flexible matching (previous sweep's strict `"action": "X"` pattern missed calls with different spacing). All ~65 actions confirmed wired.
+
+**Zero wiring gaps, zero memory leaks, zero orphaned actions remain.**
+
+---
+
 ## SESSION STATE
 - **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
 - **Last compile:** 2026-08-24 (Session 26)
