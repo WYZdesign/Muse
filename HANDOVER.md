@@ -430,6 +430,34 @@ New `lib/role.ts`: `viewerSide(type)` splits INDUSTRY (Casting Director, Art Buy
 ### Files touched Session 22
 `lib/role.ts` (new), `page.tsx`, `muse.css`
 
+### Session 23 (Claude, live Fold-5 audit + forum fix) — applied by wyzmind
+
+**Critical fix:** every forum vote, comment, and new-post across NetworkScreen and MenuModal was writing to `setForumPosts` — a dead state that starts empty and is never read for display. The rendered list uses `liveForum`, but `setLiveForum` was never threaded down. Fixed by adding it as a prop to both screens and rewriting all handlers to update liveForum. New-post re-fetches GET type=forum after create (response has no id). BTS seed-moment likes skip server for numeric ids.
+
+**Also fixed:** Feed seed posts (401-404) like/reply 404'd and reverted — same pattern, same fix.
+
+**Claude's toast investigation closed with evidence:** `visibilityState:"hidden"` + `hasFocus():false` in automation tab = compositor never delivers paint tick = animation frozen. Not an app bug.
+
+### Files touched Session 23
+`page.tsx`, `screens/BtsScreen.tsx`, `screens/NetworkScreen.tsx`, `screens/MenuModal.tsx`
+
+### SESSION 24 DIVISION OF LABOR (standing directive from Torreé)
+
+**Claude gets everything doable via agentic browsing + real-time vision:**
+- Live click-through testing of every screen at multiple viewports (320px, 375px, 768px, 1440px)
+- Visual verification of every shipped fix
+- Console error/warning monitoring on every page load
+- Cross-browser rendering checks · UX flow validation · new visual bug discovery
+
+**Wyzmind gets everything code-side:**
+- Backend logic, data plumbing, API routes, schema migrations
+- Architecture decisions, bug root-causing, feature implementation
+- Applying Claude's patches and pushing to production
+
+**Torreé gets decisions:**
+- Product direction, OAuth providers, feature prioritization
+- External account access (Stripe dashboard, Supabase SQL editor)
+
 ---
 
 ## SESSION STATE
