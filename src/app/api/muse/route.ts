@@ -700,6 +700,7 @@ export async function POST(req: NextRequest) {
       if (!await checkRate(ip, "like-feed-post", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { postId: feedPostId, liked } = rest;
       if (!feedPostId) return NextResponse.json({ error: "postId required" }, { status: 400 });
+      if (typeof feedPostId === "number" || !UUID_RE.test(String(feedPostId))) return NextResponse.json({ success: true, demo: true });
       const { data: feedPost } = await sb.from("muse_feed_posts").select("likes").eq("id", feedPostId).maybeSingle();
       if (!feedPost) return NextResponse.json({ error: "Post not found" }, { status: 404 });
       const newLikes = (feedPost.likes || 0) + (liked ? 1 : -1);
@@ -725,6 +726,7 @@ export async function POST(req: NextRequest) {
       if (!await checkRate(ip, "like-moment", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { momentId, liked } = rest;
       if (!momentId) return NextResponse.json({ error: "momentId required" }, { status: 400 });
+      if (typeof momentId === "number" || !UUID_RE.test(String(momentId))) return NextResponse.json({ success: true, demo: true });
       const { data: moment } = await sb.from("muse_moments").select("likes").eq("id", momentId).maybeSingle();
       if (!moment) return NextResponse.json({ error: "Moment not found" }, { status: 404 });
       const newLikes = (moment.likes || 0) + (liked ? 1 : -1);
@@ -799,6 +801,8 @@ export async function POST(req: NextRequest) {
           await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "forum_reply_blocked", details: { categories: replyScreen.categories } });
           return NextResponse.json({ error: "Reply blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
         }
+        const isStubPost = typeof postId === "number" || !UUID_RE.test(String(postId));
+        if (isStubPost) return NextResponse.json({ success: true, demo: true });
         const { error } = await sb.from("muse_forum_replies").insert({ post_id: postId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, text: cleanText });
         if (error) return safeServerError(error, "db op");
         return NextResponse.json({ success: true });
@@ -806,6 +810,8 @@ export async function POST(req: NextRequest) {
       if (forumType === "vote") {
         const { direction } = rest;
         if (!postId) return NextResponse.json({ error: "postId required" }, { status: 400 });
+        const isStubVote = typeof postId === "number" || !UUID_RE.test(String(postId));
+        if (isStubVote) return NextResponse.json({ success: true, demo: true });
         const delta = direction === "down" ? -1 : 1;
         const { data: post } = await sb.from("muse_forum_posts").select("votes").eq("id", postId).maybeSingle();
         if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
