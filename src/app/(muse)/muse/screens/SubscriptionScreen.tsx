@@ -4,7 +4,8 @@ import React, { memo, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
-import { TIERS } from "../components/types";
+import { TIERS, TIERS_BY_SIDE } from "../components/types";
+import { viewerSideOf } from "@/lib/role";
 import { startSubscriptionCheckout } from "../lib/api";
 
 export interface SubscriptionScreenProps {
@@ -86,7 +87,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
               <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>Browse plans below anytime — you won't be charged.</div>
             </div>
           )}
-          {TIERS.map(tier => {
+          {(TIERS_BY_SIDE[viewerSideOf(currentUser) as "creative" | "industry"] || TIERS).map(tier => {
             const tierKey = tier.name.toLowerCase().replace(" ", "_");
             const isCurrent = tierKey === userTier || (tierKey === "muse_pro" && currentUser.tier === "muse_pro");
             return (

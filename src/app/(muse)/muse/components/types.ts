@@ -151,6 +151,21 @@ export const TIERS = [
   { name:"Muse Pro",price:"$9.99",period:"/month",features:["Unlimited likes","See who likes you","Advanced filters","Read receipts","Profile boost (x1/week)","Incognito mode","Priority discover"] },
 ];
 
+// Duality P5 — role-aware feature framing for the subscription screen.
+// The tier structure and pricing stay the same; only the feature list
+// changes to speak to what each side actually cares about.
+export const TIERS_BY_SIDE: Record<"creative" | "industry", typeof TIERS> = {
+  creative: [
+    { name:"Free",price:"$0",period:"forever",features:["10 likes/day","Basic profile","Chat with matches","Standard discover"],current:true },
+    { name:"Muse Pro",price:"$9.99",period:"/month",features:["Unlimited likes — never wait for a reset","See who liked you before you swipe","Advanced discovery filters (styles, distance, vibe)","Read receipts on every message","Profile boost (×1/week) — top of the stack","Incognito mode — browse without being seen","Priority placement in Discover"] },
+  ],
+  industry: [
+    { name:"Free",price:"$0",period:"forever",features:["10 brief responses/day","Basic company profile","Chat with matched talent","Standard talent search"],current:true },
+    { name:"Muse Pro",price:"$9.99",period:"/month",features:["Unlimited brief responses — hire at scale","See who's interested before they apply","Advanced talent filters (skills, experience, rate)","Read receipts on every message","Talent-pool boost (×1/week) — front page","Incognito mode — scout discreetly","Priority placement in talent search"] },
+  ],
+};
+];
+
 export const AESTHETICS = ["Portrait","Editorial","Commercial","Music Video","Documentary","Branding","Body Art","Fine Art","Fashion","Experimental","Dark","Dreamy","Bold","Vintage","Abstract","Film"];
 
 // ═══ CREATIVE SIDES — the duality at the heart of Muse ═══
