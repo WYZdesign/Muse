@@ -33,6 +33,7 @@ export interface NetworkScreenProps {
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   openChat: (m: any) => void;
   liveForum: any[] | null;
+  setLiveForum?: React.Dispatch<React.SetStateAction<any[] | null>>;
   showNewPost: boolean;
   setShowNewPost: (v: boolean) => void;
   newPostTitle: string;
@@ -85,6 +86,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   handleImgError,
   openChat,
   liveForum,
+  setLiveForum,
   showNewPost,
   setShowNewPost,
   newPostTitle,
@@ -225,22 +227,24 @@ export const NetworkScreen = memo(function NetworkScreen({
   function handleVote(postId: number, direction: "up" | "down") {
     const current = votedPosts[postId];
     setVotedPosts((prev) => ({ ...prev, [postId]: current === direction ? null : direction }));
-    setForumPosts((prev) =>
-      prev.map((p) => {
-        if (p.id !== postId) return p;
-        let delta = 0;
-        if (direction === "up") {
-          if (current === "up") delta = -1;
-          else if (current === "down") delta = 2;
-          else delta = 1;
-        } else {
-          if (current === "down") delta = 1;
-          else if (current === "up") delta = -2;
-          else delta = -1;
-        }
-        return { ...p, votes: p.votes + delta };
-      })
-    );
+    const applyDelta = (p: any) => {
+      if (p.id !== postId) return p;
+      let delta = 0;
+      if (direction === "up") {
+        if (current === "up") delta = -1;
+        else if (current === "down") delta = 2;
+        else delta = 1;
+      } else {
+        if (current === "down") delta = 1;
+        else if (current === "up") delta = -2;
+        else delta = -1;
+      }
+      return { ...p, votes: p.votes + delta };
+    };
+    // liveForum, not forumPosts, is what's rendered — updating forumPosts was a dead write
+    setLiveForum?.((prev) => (prev ? prev.map(applyDelta) : prev));
+    setForumPosts((prev) => prev.map(applyDelta));
+    if (typeof postId === "number" && !liveForum?.length) return;
     apiFetch("/api/muse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -255,14 +259,12 @@ export const NetworkScreen = memo(function NetworkScreen({
     const text = (commentTexts[postId] || "").trim();
     if (!text) return;
     const newComment = { author: currentUser.name || "You", text };
-    setForumPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? { ...p, comments: [...p.comments, newComment] }
-          : p
-      )
-    );
+    const addC = (p: any) => (p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p);
+    const removeC = (p: any) => (p.id === postId ? { ...p, comments: p.comments.filter((c: any) => c !== newComment) } : p);
+    setLiveForum?.((prev) => (prev ? prev.map(addC) : prev));
+    setForumPosts((prev) => prev.map(addC));
     setCommentTexts((prev) => ({ ...prev, [postId]: "" }));
+    if (typeof postId === "number" && !liveForum?.length) { showToast("Comment added"); return; }
     apiFetch("/api/muse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -271,13 +273,8 @@ export const NetworkScreen = memo(function NetworkScreen({
       if (!r.ok) throw new Error("failed");
       showToast("Comment added");
     }).catch(() => {
-      setForumPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId
-            ? { ...p, comments: p.comments.filter((c: any) => c !== newComment) }
-            : p
-        )
-      );
+      setLiveForum?.((prev) => (prev ? prev.map(removeC) : prev));
+      setForumPosts((prev) => prev.map(removeC));
       showToast("Failed to post comment");
     });
   }
@@ -626,6 +623,14 @@ export const NetworkScreen = memo(function NetworkScreen({
                             showToast(d.code === "SAFETY_BLOCK" ? "Post blocked by safety policy" : "Failed to post");
                             return;
                           }
+                          // Create response doesn't echo the new row's real id —
+                          // re-fetch so filteredForum renders it and votes/comments
+                          // on it can match.
+                          try {
+                            const rf = await apiFetch("/api/muse?type=forum");
+                            const df = await rf.json();
+                            if (df.posts) setLiveForum?.(df.posts);
+                          } catch {}
                           setForumPosts((prev) => [
                             {
                               id: uid(),

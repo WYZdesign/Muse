@@ -93,6 +93,10 @@ export const BtsScreen = memo(function BtsScreen({
             : item
         )
       );
+      // The 5 hardcoded fallback moments (ids 501-505, shown whenever a user
+      // has zero real moments) are numeric ids, never rows in muse_moments.
+      // Same bug/fix as Feed's seed posts: server would 404 and revert.
+      if (typeof s.id === "number") return;
       apiFetch("/api/muse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
