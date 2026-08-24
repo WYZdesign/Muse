@@ -70,7 +70,7 @@ export default function MusePageWrapper() {
   return <ErrorBoundary><MusePage /></ErrorBoundary>;
 }
 
-import { viewerSide } from "@/lib/role";
+import { viewerSide, viewerSideOf } from "@/lib/role";
 
 // Deterministic per-user gradient-initials avatar (data URI, no network) —
 // used when a live profile has no uploaded photo, so Discover cards never
@@ -188,7 +188,7 @@ function MusePage() {
   const [portfolioTab, setPortfolioTab] = useState<"all"|"portrait"|"landscape"|"sets">("all");
   const [forumPosts, setForumPosts] = useState<{id:number;title:string;body:string;author:string;avatar:string;votes:number;comments:{author:string;text:string}[];cat:string;time:string;pinned:boolean}[]>([]);
   const [commTab, setCommTab] = useState<"groups"|"events">("groups");
-  const [sessTab, setSessTab] = useState<"sessions"|"bookings"|"requests">(() => viewerSide(currentUser?.type) === "industry" ? "bookings" : "sessions");
+  const [sessTab, setSessTab] = useState<"sessions"|"bookings"|"requests">(() => viewerSideOf(currentUser) === "industry" ? "bookings" : "sessions");
   // The lazy init above runs before the server profile arrives (type starts
   // as the "Photographer" placeholder), so re-align once when the real type
   // lands — duality Phase 0's role-aware default.
@@ -218,7 +218,7 @@ function MusePage() {
   const [feedReactions, setFeedReactions] = useState<Record<number,string[]>>({});
   const [feedPostsStatic, setFeedPostsStatic] = useState<{id:number;author:string;avatar:string;type:string;text:string;likes:number;comments:number;shares:number;time:string;liked:boolean;saved:boolean;img?:string}[]>([{id:401,author:"Maya Chen",avatar:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",type:"photo",text:"Golden hour never gets old. Shot this at El Matador Beach last weekend.",likes:234,comments:18,shares:5,time:"2h ago",img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600",liked:false,saved:false},{id:402,author:"Jordan Rivera",avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",type:"text",text:"Just wrapped principal photography on a 30-min short. 14-hour days for 12 days straight. The footage is incredible!",likes:189,comments:32,shares:12,time:"5h ago",liked:false,saved:false},{id:403,author:"Sam Taylor",avatar:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",type:"photo",text:"New album art I designed. Surreal dreamlike aesthetic.",likes:312,comments:24,shares:8,time:"8h ago",img:"https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=600",liked:false,saved:false},{id:404,author:"Riley Patel",avatar:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",type:"photo",text:"Motion graphics reel. 6 months of work in 90 seconds.",likes:567,comments:45,shares:23,time:"1d ago",liked:false,saved:false}]);
   const [feedFilter, setFeedFilter] = useState<"all"|"photos"|"videos"|"text">("all");
-  const [museCat, setMuseCat] = useState<"all"|"tfp"|"paid"|"opencall"|"concept">(() => viewerSide(currentUser?.type) === "industry" ? "paid" : "all");
+  const [museCat, setMuseCat] = useState<"all"|"tfp"|"paid"|"opencall"|"concept">(() => viewerSideOf(currentUser) === "industry" ? "paid" : "all");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -615,7 +615,7 @@ function MusePage() {
                   const sv = serverStats[k];
                   if (typeof sv === "number" && sv > (mergedStats[k] || 0)) mergedStats[k] = sv;
                 }
-                return { ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, type: d.profile.type || prev.type, foundingTier: isOwner ? "founding" : (d.profile.founding_tier || ""), proExpiresAt: isOwner ? "" : (d.profile.pro_expires_at || ""), tier: effTier, stats: mergedStats };
+                return { ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, audience: (d.profile as any).audience || "creative", type: d.profile.type || prev.type, foundingTier: isOwner ? "founding" : (d.profile.founding_tier || ""), proExpiresAt: isOwner ? "" : (d.profile.pro_expires_at || ""), tier: effTier, stats: mergedStats };
               });
               if (effTier) setUserTier(effTier);
               if (d.profile.age_verified) setAgeVerified(true);
@@ -1969,6 +1969,11 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
                   <div className="onboard-content">
                     <div className="step-title">Creative Type</div>
                     <div className="step-sub">Where do you work — behind the camera or in front of it?</div>
+                    <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+                      {([["creative", "I'm here to work & collaborate"], ["industry", "I'm here to hire & book"]] as const).map(([val, label]) => (
+                        <div key={val} onClick={() => setObData(d => ({ ...d, audience: val }))} style={{ flex: 1, padding: "10px 8px", borderRadius: 12, cursor: "pointer", textAlign: "center", fontSize: 12, fontWeight: 700, transition: "all .25s", background: (obData as any).audience === val ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${(obData as any).audience === val ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"}`, color: (obData as any).audience === val ? "var(--gold)" : "var(--muted)" }}>{label}</div>
+                      ))}
+                    </div>
                     <div className="side-group">
                       <div className="side-label">🎬 Behind the Camera</div>
                       <div className="side-sub">You make the work — crew, direction, craft.</div>
@@ -2282,7 +2287,7 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
                       if(authUser?.id){
                         try{
                           const r = await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"update-profile",
-                            name:obData.name,loc:obData.loc,bio:obData.bio,type:obData.type,
+                            name:obData.name,loc:obData.loc,bio:obData.bio,audience:(obData as any).audience||"creative",type:obData.type,
                             looking:obData.looking,styles:obData.styles,
                             zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,life_path:obData.lifePath,
                             avatar:obProfilePic,

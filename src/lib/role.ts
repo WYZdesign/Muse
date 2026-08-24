@@ -14,3 +14,12 @@ export type ViewerSide = "industry" | "creative";
 export function viewerSide(type?: string | null): ViewerSide {
   return isIndustryType(type) ? "industry" : "creative";
 }
+
+// Prefers an explicit audience column (P4+) over type inference. Accepts any
+// object with optional audience/type fields — e.g. a muse_profiles row or
+// the client-side currentUser shape.
+export function viewerSideOf(profile?: { audience?: string | null; type?: string | null } | null): ViewerSide {
+  const a = String(profile?.audience || "").trim().toLowerCase();
+  if (a === "industry" || a === "creative") return a as ViewerSide;
+  return viewerSide(profile?.type);
+}

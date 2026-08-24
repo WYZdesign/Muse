@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
       const accessToken = bearerOrBodyToken(req, body);
       const { data: { user }, error: authErr } = await supabase.auth.getUser(accessToken);
       if (authErr || !user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-      const allowed = ["name", "bio", "loc", "city", "lat", "long", "avatar", "type", "styles", "looking", "photos", "preferences", "zodiac", "chinese", "mbti", "life_path"];
+      const allowed = ["name", "bio", "loc", "city", "lat", "long", "avatar", "type", "styles", "looking", "photos", "preferences", "zodiac", "chinese", "mbti", "life_path", "audience"];
       const updates: Record<string, unknown> = {};
       for (const k of allowed) if (body[k] !== undefined) updates[k] = body[k];
       if (Object.keys(updates).length === 0) return NextResponse.json({ error: "No updatable fields" }, { status: 400 });
