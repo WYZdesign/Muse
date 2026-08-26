@@ -135,8 +135,9 @@ export async function POST(req: NextRequest) {
     const safeFolder = folder.replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "avatars";
     const path = safeFilename(`${profileId}/${safeFolder}`, ext);
     const sb = getServiceClient();
+    const mimeExt = ext === "jpg" ? "jpeg" : ext;
     const { data, error } = await sb.storage.from("muse-uploads").upload(path, buffer, {
-      contentType: isVideo ? "video/webm" : `image/${ext}`,
+      contentType: isVideo ? "video/webm" : `image/${mimeExt}`,
       upsert: false,
     });
 
