@@ -162,6 +162,7 @@ export const FeedScreen = memo(function FeedScreen({
         const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-moment", text: "", img: url }) });
         if (!r.ok) throw new Error("failed");
         showToast("Shared to Feed & BTS ✨");
+        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["create_moment", "post_bts"] }) }).catch(() => {});
       } catch {
         setStories(prev => prev.filter(s => s.id !== momentId));
         showToast("Went to your Feed, but BTS sync failed");
@@ -295,6 +296,7 @@ export const FeedScreen = memo(function FeedScreen({
                     try {
                       await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed", text: txt, media: feedMedia, userId: currentUser.id }) });
                       showToast("Posted!");
+                      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_key: "post_feed" }) }).catch(() => {});
                     } catch {
                       showToast("Failed to post");
                     }
@@ -368,8 +370,11 @@ export const FeedScreen = memo(function FeedScreen({
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                  <button className={"feed-action-btn" + (post.liked ? " liked-pop" : "")} style={{ flex: 1.25, height: 42, background: post.liked ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.04)", border: post.liked ? "1.5px solid rgba(239,68,68,0.35)" : "1px solid rgba(255,255,255,0.08)", color: post.liked ? "#ff5c5c" : "#ff8a8a", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => { const newLiked = !post.liked; const isStatic = feedPostsStatic.some(p => p.id === post.id); setFeedPosts(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); if (isStatic) return; apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "like-feed-post", postId: post.id, liked: newLiked }) }).then(r => { if (!r.ok) throw new Error("failed"); }).catch(() => { setFeedPosts(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: !newLiked }) : p)); showToast("Failed to update like"); }); }}>♥ {post.likes + (post.liked ? 1 : 0)}</button>
-                  <button className="feed-action-btn" style={{ flex: 1.25, height: 42, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#87CEEE", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => {
+                  {/* Equal flex:1 + minWidth:0 on all three (was 1.25/1.25/0.9 with
+                      Report flexShrink:0) — uneven ratios could overflow the card's
+                      rounded edge and clip Report. */}
+                  <button className={"feed-action-btn" + (post.liked ? " liked-pop" : "")} style={{ flex: 1, minWidth: 0, height: 42, background: post.liked ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.04)", border: post.liked ? "1.5px solid rgba(239,68,68,0.35)" : "1px solid rgba(255,255,255,0.08)", color: post.liked ? "#ff5c5c" : "#ff8a8a", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => { const newLiked = !post.liked; const isStatic = feedPostsStatic.some(p => p.id === post.id); setFeedPosts(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); if (isStatic) return; apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "like-feed-post", postId: post.id, liked: newLiked }) }).then(r => { if (!r.ok) throw new Error("failed"); }).catch(() => { setFeedPosts(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: !newLiked }) : p)); showToast("Failed to update like"); }); }}>♥ {post.likes + (post.liked ? 1 : 0)}</button>
+                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 42, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#87CEEB", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, transition: "all .2s ease" }} onClick={() => {
                     if (replyingTo !== post.id && !postReplies[post.id]) {
                       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "get-replies", postId: post.id }) })
                         .then((r: any) => r.json?.()).then((data: any) => {
@@ -378,7 +383,7 @@ export const FeedScreen = memo(function FeedScreen({
                     }
                     setReplyingTo(replyingTo === post.id ? null : post.id);
                   }}>💬 {post.comments}</button>
-                  <button className="feed-action-btn" style={{ flex: 0.9, height: 42, background: "transparent", border: "none", color: "#ff8a8a", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 14, transition: "all .2s ease", whiteSpace: "nowrap", flexShrink: 0 }} onClick={() => { setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }}>⚑ Report</button>
+                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: "#ff8a8a", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 14, transition: "all .2s ease", whiteSpace: "nowrap" }} onClick={() => { setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }}>⚑ Report</button>
                 </div>
                 {replyingTo === post.id && (
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>

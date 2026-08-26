@@ -246,8 +246,12 @@ export const NetworkScreen = memo(function NetworkScreen({
       }
       return { ...p, votes: p.votes + delta };
     };
-    // liveForum, not forumPosts, is what's rendered — updating forumPosts was a dead write
-    setLiveForum?.((prev) => (prev ? prev.map(applyDelta) : prev));
+    // liveForum, not forumPosts, is what's rendered. When liveForum is null/empty,
+    // filteredForum falls back to the static FORUM_POSTS import — so mapping only
+    // over `prev` was a no-op and the fallback's vote count never moved (arrow
+    // highlighted via votedPosts, count frozen). Seed liveForum from FORUM_POSTS
+    // on first interaction so the rendered copy updates.
+    setLiveForum?.((prev) => (prev && prev.length ? prev.map(applyDelta) : FORUM_POSTS.map(applyDelta)));
     setForumPosts((prev) => prev.map(applyDelta));
     if (typeof postId === "number" && !liveForum?.length) return;
     apiFetch("/api/muse", {
@@ -266,7 +270,9 @@ export const NetworkScreen = memo(function NetworkScreen({
     const newComment = { author: currentUser.name || "You", text };
     const addC = (p: any) => (p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p);
     const removeC = (p: any) => (p.id === postId ? { ...p, comments: p.comments.filter((c: any) => c !== newComment) } : p);
-    setLiveForum?.((prev) => (prev ? prev.map(addC) : prev));
+    // Same fallback-seeding fix as handleVote — without it, replying to a seed post
+    // showed "Comment added" but the comment never appeared.
+    setLiveForum?.((prev) => (prev && prev.length ? prev.map(addC) : FORUM_POSTS.map(addC)));
     setForumPosts((prev) => prev.map(addC));
     setCommentTexts((prev) => ({ ...prev, [postId]: "" }));
     if (typeof postId === "number" && !liveForum?.length) { showToast("Comment added"); return; }
@@ -278,7 +284,7 @@ export const NetworkScreen = memo(function NetworkScreen({
       if (!r.ok) throw new Error("failed");
       showToast("Comment added");
     }).catch(() => {
-      setLiveForum?.((prev) => (prev ? prev.map(removeC) : prev));
+      setLiveForum?.((prev) => (prev && prev.length ? prev.map(removeC) : prev));
       setForumPosts((prev) => prev.map(removeC));
       showToast("Failed to post comment");
     });
@@ -396,21 +402,25 @@ export const NetworkScreen = memo(function NetworkScreen({
               const allLooking = [...new Set(proSource.flatMap((p) => p.looking || []))];
               return (
                 <>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-                    <span
+                  <div className="pro-skill-row">
+                    <button
+                      type="button"
+                      aria-pressed={!proSkill.length}
                       onClick={() => setProSkill([])}
-                      style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: !proSkill.length ? "#90caf9" : "var(--muted)", opacity: !proSkill.length ? 1 : 0.6, transition: "all 0.15s", borderBottom: !proSkill.length ? "2px solid #90caf9" : "2px solid transparent", paddingBottom: 2 }}
+                      className={"pro-skill-chip" + (!proSkill.length ? " active" : "")}
                     >
                       All skills
-                    </span>
+                    </button>
                     {allSkills.map((s) => (
-                      <span
+                      <button
                         key={s}
+                        type="button"
+                        aria-pressed={proSkill.includes(s)}
                         onClick={() => setProSkill(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
-                        style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proSkill.includes(s) ? "#90caf9" : "var(--muted)", opacity: proSkill.includes(s) ? 1 : 0.6, transition: "all 0.15s", borderBottom: proSkill.includes(s) ? "2px solid #90caf9" : "2px solid transparent", paddingBottom: 2 }}
+                        className={"pro-skill-chip" + (proSkill.includes(s) ? " active" : "")}
                       >
                         {s}
-                      </span>
+                      </button>
                     ))}
                   </div>
                   {allLooking.length > 0 && (
@@ -651,6 +661,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                             showToast(d.code === "SAFETY_BLOCK" ? "Post blocked by safety policy" : "Failed to post");
                             return;
                           }
+                          apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["forum_post"] }) }).catch(() => {});
                           // Create response doesn't echo the new row's real id —
                           // re-fetch so filteredForum renders it and votes/comments
                           // on it can match.

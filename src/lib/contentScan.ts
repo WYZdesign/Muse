@@ -128,7 +128,11 @@ export async function logScan(meta: {
       details: meta.result.details,
       scanned_at: new Date().toISOString(),
     });
-  } catch {}
+  } catch (e) {
+    // Safety scan logs must never be silently lost — at minimum surface the error
+    // so it appears in server logs and can be investigated.
+    console.error("[contentScan] logScan failed:", e);
+  }
 }
 
 export async function reportIncident(meta: {
@@ -144,7 +148,9 @@ export async function reportIncident(meta: {
       details: { flaggedCategories: meta.result.flaggedCategories, confidence: meta.result.confidence, context: meta.context },
       status: meta.result.isCSAM ? "pending_ncmec" : "pending_review",
     });
-  } catch {}
+  } catch (e) {
+    console.error("[contentScan] reportIncident failed:", e);
+  }
 }
 
 // ═══ NCMEC CyberTipline escalation — CSAM only ═══

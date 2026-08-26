@@ -300,7 +300,7 @@ export async function POST(req: NextRequest) {
     // ═══ TRANSFER: Manual transfer (admin only) ═══
     if (action === "transfer") {
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase());
-      if (!authData.user.email || !admins.includes(authData.user.email.toLowerCase())) {
+      if (!admins.includes((profile.email || "").toLowerCase())) {
         return NextResponse.json({ error: "Admin only" }, { status: 403 });
       }
 

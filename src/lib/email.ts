@@ -208,14 +208,18 @@ export function signupWelcome(email: string, name?: string): EmailMessage {
 /** Generic notification for events: match, message, booking, verification, etc. */
 export function notify(email: string, subject: string, title: string, body: string, ctaLabel?: string, ctaUrl?: string): EmailMessage {
   const cta = ctaLabel && ctaUrl
-    ? `<a href="${ctaUrl}" style="display:inline-block;margin-top:20px;padding:12px 26px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;">${ctaLabel}</a>`
+    ? `<a href="${escapeHtml(ctaUrl)}" style="display:inline-block;margin-top:20px;padding:12px 26px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;">${escapeHtml(ctaLabel)}</a>`
     : "";
   const html = SHELL(`
     <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:32px 28px;text-align:center;">
-      <h1 style="font-size:20px;color:#fff;margin:0 0 12px;">${title}</h1>
-      <p style="font-size:15px;color:rgba(255,255,255,0.75);line-height:1.7;margin:0;">${body}</p>
+      <h1 style="font-size:20px;color:#fff;margin:0 0 12px;">${escapeHtml(title)}</h1>
+      <p style="font-size:15px;color:rgba(255,255,255,0.75);line-height:1.7;margin:0;">${escapeHtml(body)}</p>
       ${cta}
     </div>
   `);
   return { to: email, subject, html, text: body };
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }

@@ -79,9 +79,36 @@ export async function POST(req: NextRequest) {
     }
 
     // Content moderation — scan image uploads with AWS Rekognition before
-    // storing. Video (webm) can't go through the image scanner yet — flagged
-    // as a moderation follow-up in HANDOVER.
-    if (!isVideo) {
+    // storing. Video (webm) can't go through the image scanner yet; instead
+    // we log the upload, create a safety incident for manual admin review,
+    // and auto-mark the profile as NSFW until the video is reviewed.
+    let autoNsfw = false;
+    let videoPendingReview = false;
+    if (isVideo) {
+      // Log the video upload in the scan table (scanned: false = no automated scan)
+      await logScan({
+        userId: profileId,
+        fileName: file.name,
+        fileType: "video/webm",
+        fileSize: file.size,
+        context: folder,
+        result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PENDING_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [] },
+      });
+      // Create a safety incident for admin review — all video uploads
+      // require manual approval until automated video moderation is built.
+      await reportIncident({
+        userId: profileId,
+        context: `video-upload:${folder}`,
+        result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_NEEDS_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [] },
+      });
+      // Conservative: auto-mark profile as NSFW so videos are age-gated
+      // in Discovery until an admin reviews and clears them.
+      try {
+        await getServiceClient().from("muse_profiles").update({ nsfw: true }).eq("id", profileId);
+        autoNsfw = true;
+      } catch {}
+      videoPendingReview = true;
+    } else {
       const scanResult = await scanWithRekognition(buffer);
       await logScan({ userId: profileId, fileName: file.name, fileType: file.type || `image/${ext}`, fileSize: file.size, context: folder, result: scanResult });
       if (scanResult.shouldBlock) {
@@ -92,6 +119,16 @@ export async function POST(req: NextRequest) {
         }
         const msg = scanResult.scanned ? "Content violates safety policies" : "Moderation unavailable — try again later";
         return NextResponse.json({ error: msg, flaggedCategories: scanResult.flaggedCategories }, { status: scanResult.scanned ? 403 : 503 });
+      }
+
+      // Auto-mark profile as NSFW when Rekognition flags suggestive content.
+      // The Discover blur gates on profile.nsfw — without this, suggestive
+      // uploads render unblurred because nothing ever sets that flag.
+      if (scanResult.scanned && scanResult.flaggedCategories.some(c => /^suggestive/i.test(c))) {
+        try {
+          await getServiceClient().from("muse_profiles").update({ nsfw: true }).eq("id", profileId);
+          autoNsfw = true;
+        } catch {}
       }
     }
 
@@ -106,7 +143,7 @@ export async function POST(req: NextRequest) {
     if (error) return safeServerError(error, "upload POST");
 
     const { data: urlData } = sb.storage.from("muse-uploads").getPublicUrl(data.path);
-    return NextResponse.json({ success: true, url: urlData.publicUrl, path: data.path, moderation: isVideo ? "skipped-video" : "scanned" });
+    return NextResponse.json({ success: true, url: urlData.publicUrl, path: data.path, moderation: isVideo ? "pending_review" : "scanned", autoNsfw: autoNsfw || undefined, videoPendingReview: videoPendingReview || undefined });
   } catch (e: unknown) {
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }

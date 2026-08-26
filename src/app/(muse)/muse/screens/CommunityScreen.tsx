@@ -64,6 +64,9 @@ export const CommunityScreen = memo(function CommunityScreen({
       if (!r.ok) throw new Error("failed");
       setJoinedIds(prev => { const n = new Set(prev); if (isJoined) n.delete(c.id); else n.add(c.id); return n; });
       showToast(isJoined ? "Left " + c.name : "Joined " + c.name + "!");
+      if (!isJoined) {
+        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["join_community"] }) }).catch(() => {});
+      }
     } catch { showToast("Couldn't update — try again"); }
     setJoinLoading(null);
   };
@@ -76,6 +79,9 @@ export const CommunityScreen = memo(function CommunityScreen({
       if (!r.ok) throw new Error("failed");
       setRsvpdEvents(prev => isRsvpd ? prev.filter((x: number) => x !== ev.id) : [...prev, ev.id]);
       showToast(isRsvpd ? "RSVP cancelled" : "RSVP confirmed!");
+      if (!isRsvpd) {
+        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["rsvp_event"] }) }).catch(() => {});
+      }
     } catch { showToast("Failed to update RSVP"); }
     setRsvpLoading(null);
   };
@@ -98,8 +104,8 @@ export const CommunityScreen = memo(function CommunityScreen({
     } catch { showToast("Failed to create"); }
   };
 
-  const openGroupDetail = (c: any) => { setDetailItem(c); setDetailType("group"); };
-  const openEventDetail = (ev: any) => { setDetailItem(ev); setDetailType("event"); };
+  const openGroupDetail = (c: any) => { setDetailItem(c); setDetailType("group"); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_community"] }) }).catch(() => {}); };
+  const openEventDetail = (ev: any) => { setDetailItem(ev); setDetailType("event"); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_event"] }) }).catch(() => {}); };
 
   const groups = (liveCommunities?.length ? liveCommunities : COMMUNITIES).filter((c: any) => showNsfw || !c.nsfw);
   const events = (liveEvents?.length ? liveEvents : EVENTS).filter((e: any) => showNsfw || !e.nsfw);
@@ -194,16 +200,24 @@ export const CommunityScreen = memo(function CommunityScreen({
 
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
         {commTab === "groups" && groups.map((c: any) => (
-          <div key={c.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "column", cursor: "pointer" }} onClick={() => openGroupDetail(c)}>
-            <div style={{ display: "flex", alignItems: "stretch", width: "100%" }}>
-              <img loading="lazy" src={c.img} alt={c.name} style={{ width: "30%", minHeight: 120, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
-              <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
-                <div className="conn-name" style={{ fontSize: 15 }}>{c.name}</div>
-                <div className="conn-meta" style={{ fontSize: 12 }}>{c.members} members</div>
+          <div key={c.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "column", alignItems: "center", cursor: "pointer" }} onClick={() => openGroupDetail(c)}>
+            {/* Top-banner layout (matches Events). Seeded communities have img:"" — a bare
+                <img src=""> doesn't reliably fire onError, so guard explicitly and render an
+                initials-gradient banner instead of a blank hole. */}
+            {c.img ? (
+              <img loading="lazy" src={c.img} alt={c.name} style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }} onError={handleImgError} />
+            ) : (
+              <div style={{ width: "100%", height: 140, background: "linear-gradient(135deg, #2a1a3e 0%, #1a0a2e 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,215,0,0.6)", fontSize: "2em", fontWeight: 700 }}>
+                {(c.name || "").trim().charAt(0).toUpperCase()}
               </div>
-            </div>
-            <div style={{ padding: "10px 14px 4px", width: "100%", position: "relative", zIndex: 1 }}>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginBottom: 8 }}>
+            )}
+            {/* width:"100%" is required — .conn-card sets align-items:flex-start, so a
+                column child without explicit width shrink-wraps and left-anchors, making
+                the title and badges center against different reference boxes. */}
+            <div className="conn-content" style={{ width: "100%", padding: 14, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
+              <div className="conn-name" style={{ fontSize: 15 }}>{c.name}</div>
+              <div className="conn-meta" style={{ fontSize: 12, marginBottom: 8 }}>{c.members} members</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
                 {(() => {
                   const badges: { t: string; bg: string; bd: string; c: string }[] = [];
                   const cat = c.cat || "Community";
@@ -216,7 +230,6 @@ export const CommunityScreen = memo(function CommunityScreen({
                   return badges.map(b => <span key={b.t} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 600 }}>{b.t}</span>);
                 })()}
               </div>
-              <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", marginTop: 2 }}>Tap to view details ›</div>
             </div>
             <div style={{ padding: "0 14px 14px", width: "100%", position: "relative", zIndex: 1 }}>
               <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
@@ -227,16 +240,24 @@ export const CommunityScreen = memo(function CommunityScreen({
           </div>
         ))}
         {commTab === "events" && events.map((ev: any) => (
-          <div key={ev.id} className="conn-card" style={{ flexDirection: "column", marginBottom: 10, padding: 0, overflow: "hidden", borderRadius: 16, cursor: "pointer" }} onClick={() => openEventDetail(ev)}>
-            {ev.img && <img loading="lazy" src={ev.img} alt={ev.title} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} onError={handleImgError} />}
-            <div style={{ padding: 16, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div key={ev.id} className="conn-card" style={{ flexDirection: "column", alignItems: "center", marginBottom: 10, padding: 0, overflow: "hidden", borderRadius: 16, cursor: "pointer" }} onClick={() => openEventDetail(ev)}>
+            {ev.img ? (
+              <img loading="lazy" src={ev.img} alt={ev.title} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} onError={handleImgError} />
+            ) : (
+              <div style={{ width: "100%", height: 160, background: "linear-gradient(135deg, #2a1a3e 0%, #1a0a2e 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,215,0,0.6)", fontSize: "2em", fontWeight: 700 }}>
+                {(ev.title || "").trim().charAt(0).toUpperCase()}
+              </div>
+            )}
+            {/* width:"100%" fixes shrink-wrap left-anchoring under .conn-card's
+                align-items:flex-start — same root cause as the Groups cards above. */}
+            <div style={{ width: "100%", padding: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div className="conn-name" style={{ fontSize: 15, width: "100%" }}>{ev.title}</div>
               <div style={{ display: "flex", gap: 10, marginTop: 6, justifyContent: "center", width: "100%" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text2)" }}><FiCalendar size={12} /> {ev.date}</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text2)" }}><FiMapPin size={12} /> {ev.loc}</span>
               </div>
               <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5, marginTop: 8, width: "100%" }}>{ev.desc?.slice(0, 80)}{ev.desc?.length > 80 ? "..." : ""}</div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginTop: 10, marginBottom: 12, width: "100%" }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginTop: 10, width: "100%" }}>
                 {(() => {
                   const badges: { t: string; bg: string; bd: string; c: string }[] = [];
                   const d = String(ev.date || "").toLowerCase();

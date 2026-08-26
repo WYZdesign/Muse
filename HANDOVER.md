@@ -792,10 +792,31 @@ When the table is empty (before anyone runs the migration or signs up as industr
 
 ---
 
+### Session 35 (ox-alpha) — Security hardening + engagement quests system + merge of Sessions 33–34
+
+Large multi-area session. All changes code-verified locally: **tsc error count identical to HEAD baseline (36, all pre-existing local-env SupabaseAuthClient/@aws-sdk type drift — zero new errors introduced), 53/53 vitest pass.** Local `next build` still blocked by that same env-only type drift; Vercel remains the authoritative build gate. Note for future sessions: `npm i --no-save @rolldown/binding-win32-x64-msvc` is needed on this Windows box before vitest will run (npm optional-deps bug).
+
+**Migrations run in Supabase by Torreé this session:** `MUSE_ATOMIC_LIKE_COUNT_20260825.sql` ✅ and `MUSE_WEEKLY_QUESTS_20260825.sql` ✅ — but V1 of the quests seed was then **superseded by `sql/MUSE_QUESTS_V2_20260825.sql` (consolidated action keys, server-side bumps) which STILL NEEDS RUNNING.** V2 wipes+reseeds `muse_quests` only; user progress rows cascade away (acceptable pre-launch).
+
+**Security fixes:** admin authorization now resolves email from DB profile (`isAdminEmail`, 9 sites incl. promo gate) instead of JWT claim; connect-route transfer uses DB email too. CORS in vercel.json locked to `https://muse.wyzdesign.com`. Rekognition/log/email failures now console.error instead of vanishing. Email HTML injection escaped (`escapeHtml` on title/body/ctaLabel/ctaUrl). Stripe client constructed lazily per-request with 503 when unconfigured. Admin avatar scanner SSRF-guarded (storage-host allowlist + HTTPS + 10s timeout). Suspended users blocked from session AND self-delete. Stat sync capped 100k. Dead Ollama/Qdrant/embedding-hash code removed from save-prompt-response.
+
+**NSFW pipeline:** upload auto-flags profile `nsfw=true` on "Suggestive"; videos logged to content-scans + incident + pending-review response flag; users can toggle own NSFW (Edit Profile switch); bio keyword auto-flag; admin batch re-scan endpoint + ModerationPanel button.
+
+**Engagement quests system (new):** `muse_quests` / `muse_user_quests` / `muse_user_xp`; ~55 seeded quests across starter→daily→weekly→monthly→season→legendary tiers (free likes → super likes → boosts → free Pro months). API: `get-quests` / `track-quest` (batched keys, server-only key denylist, rate-limited) / `claim-quest` (conditional-update anti-double-claim, current-period check; Pro-time rewards extend `pro_expires_at` server-side). Shared engine helpers (`bumpQuest`, `awardQuestXp`, `setQuestProgress`, `refreshMetaQuest`) wired server-side into match / book-session / create-session / complete-booking (both parties) / verification-verified / referral-apply. Client hooks: login (once per calendar day via localStorage guard), swipe families, like_profile, send_message, post_feed, create_moment+post_bts, forum_post (both post sites), apply_brief, join/rsvp/detail-views, portfolio upload, profile-save (bio/styles conditionals). UI: `QuestPanel.tsx` bottom sheet (XP bar mirroring the sqrt level curve, tier filters, claim buttons), entry points in Profile + Settings, pink dot badge on Settings item driven by a claimables count fetched at login and updated on completions. Toast policy deliberately quiet: progress is silent; one subtle toast max per batch on completion/level-up; claim confirmations only on user action.
+
+**Discover card hero chips (new):** collabs count, live distance (profile lat/long or CITY_GEO fallback via `distanceMiles`), shared-styles count vs viewer (`myStyles` prop). Verified ✓/online-dot already existed.
+
+**Network Professionals skills filter:** converted to real `<button>` chips (`.pro-skill-row`/`.pro-skill-chip`) — single horizontally-scrollable row, `aria-pressed`, hidden scrollbar. Kept over Session 34's `.chip` reuse because real buttons + a11y state were explicitly requested.
+
+**Merge reconciliation:** Sessions 33–34 (authored elsewhere, provided as patches against d0f0491) folded into this tree: duplicate Log Out removed from ProfileScreen; Groups cards rebuilt as banner-image layout WITH initials-gradient fallback for seeded `img:''` rows; Events cards centered per Torreé's ruling (supersedes this session's earlier left-align instruction) with the width:100% shrink-wrap fix both tabs needed; the 4-instance `prev ? map : prev` forum no-op bug fixed (NetworkScreen handleVote/addComment + MenuModal vote-up/vote-down/reply — fallback now seeds liveForum from FORUM_POSTS); Feed action buttons equal flex:1 + minWidth:0 (Report clipping); `.brief-avatar` 60→75px. Session 33/34 HANDOVER entries were never landed here — this entry supersedes them.
+
+---
+
 ## SESSION STATE
-- **Build status:** Clean (tsc exit 0), `npm run build` clean, 53/53 vitest tests pass
-- **Last compile:** 2026-08-24 (Session 32)
-- **Last commit:** `1263e2b` — Badge color taxonomy + header gradient removal
+- **Build status:** tsc = 36 errors, byte-identical categories to HEAD baseline (local env type drift only; zero from session work); vitest 53/53 pass; `next build` locally blocked by same env drift — verify on Vercel
+- **Last compile:** 2026-08-26 (Session 35)
+- **Last commit (this session):** Session 35 — security hardening, quests system v2 (+V2 SQL pending run), Discover hero chips, Professionals skill buttons, merged Sessions 33–34 fixes
+- **Prior commit:** `d0f0491` — Session 32 clean-slate schema migration
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** 54 tables live (muse_profiles, muse_matches, muse_messages, muse_feed_posts, muse_feed_comments, muse_briefs, muse_brief_applications, muse_forum_posts, muse_forum_comments, muse_events, muse_event_rsvps, muse_activity_log, muse_reports, muse_blocks, muse_forum_replies, muse_communities, muse_community_members, muse_sessions, muse_bookings, muse_connections, muse_notifications, muse_push_subscriptions, muse_error_logs, muse_events_log, muse_albums, muse_album_photos, muse_album_access, muse_referrals, muse_referral_rewards, muse_stripe_connect, muse_booking_payments, muse_content_scans, muse_safety_incidents, muse_disclosures, muse_strikes, muse_safety_profiles, muse_safety_checkins, muse_safety_shares, muse_admin_audit_log, muse_prompt_bank, muse_prompt_responses, muse_profile_embeddings, muse_ncmec_reports, muse_verification_sessions, muse_waitlist, muse_landing_analytics, muse_qr_events, muse_rsvps, muse_reviews, muse_moments, muse_professionals, muse_rate_limits, muse_album_likes, muse_ai_docs)
 - **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)

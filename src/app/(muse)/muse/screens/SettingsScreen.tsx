@@ -29,6 +29,7 @@ export interface SettingsScreenProps {
   setEditBio: (v: string) => void;
   setEditLoc: (v: string) => void;
   setEditAvatar: (v: string) => void;
+  setEditNsfw: (v: boolean) => void;
   setShowNotificationsSettings: (v: boolean) => void;
   showNotificationsSettings: boolean;
   setShowConnectedAccounts: (v: boolean) => void;
@@ -59,6 +60,8 @@ export interface SettingsScreenProps {
   setScreen?: (s: Screen) => void;
   setObStep?: (s: number) => void;
   apiFetch?: (url: string, opts?: any) => Promise<any>;
+  setShowQuests?: (v: boolean) => void;
+  questClaimables?: number;
 }
 
 export const SettingsScreen = memo(function SettingsScreen({
@@ -85,6 +88,7 @@ export const SettingsScreen = memo(function SettingsScreen({
   setEditBio,
   setEditLoc,
   setEditAvatar,
+  setEditNsfw,
   setShowNotificationsSettings,
   showNotificationsSettings,
   setShowConnectedAccounts,
@@ -115,6 +119,8 @@ export const SettingsScreen = memo(function SettingsScreen({
   setScreen = () => {},
   setObStep = () => {},
   apiFetch,
+  setShowQuests = () => {},
+  questClaimables = 0,
 }: SettingsScreenProps) {
   if (screen !== "settings") return null;
 
@@ -129,7 +135,7 @@ export const SettingsScreen = memo(function SettingsScreen({
           <div className="settings-group">
             <div className="settings-group-title">Account</div>
             {[
-              { icon: <FiUser size={18} />, label: "Edit Profile", desc: "Name, bio, photos", action: () => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setShowEditProfile(true); } },
+              { icon: <FiUser size={18} />, label: "Edit Profile", desc: "Name, bio, photos", action: () => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditNsfw(!!currentUser.nsfw); setShowEditProfile(true); } },
               { icon: <FiSettings size={18} />, label: "Notifications", desc: "Push and email alerts", action: () => setShowNotificationsSettings(!showNotificationsSettings) },
               { icon: <FiLink size={18} />, label: "Connected Accounts", desc: "Instagram, Spotify, etc.", action: () => setShowConnectedAccounts(!showConnectedAccounts) },
               { icon: <FiStar size={18} />, label: "Personality Profile", desc: "Zodiac, MBTI, Life Path", action: () => { setScreen("onboard"); setObStep(7); } },
@@ -223,12 +229,13 @@ export const SettingsScreen = memo(function SettingsScreen({
             <div className="settings-group-title">Payments & Subscription</div>
             {[
               { icon: <FiZap size={18} />, label: "Subscription", desc: "Manage your plan", action: () => showScreen("subscription") },
+              { icon: <FiStar size={18} />, label: "Quests & Rewards", desc: questClaimables > 0 ? `${questClaimables} reward${questClaimables > 1 ? "s" : ""} ready to claim!` : "Complete challenges, earn free likes", action: () => setShowQuests(true), dot: questClaimables > 0 },
               { icon: <FiDollarSign size={18} />, label: "Marketplace Payments", desc: "Connect Stripe to receive bookings", action: () => setShowConnect(true) },
               { icon: <FiDollarSign size={18} />, label: "Payment History", desc: "View earnings and transactions", action: () => setShowPaymentHistory(true) },
               { icon: <FiGift size={18} />, label: "Referral Program", desc: "Invite friends, earn free months", action: () => setShowReferral(true) },
             ].map(item => (
               <div key={item.label} className="settings-item" onClick={item.action}>
-                <div className="settings-item-left"><div className="settings-icon">{item.icon}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>
+                <div className="settings-item-left"><div className="settings-icon" style={{ position: "relative" }}>{item.icon}{(item as any).dot && <span style={{ position: "absolute", top: -2, right: -2, width: 10, height: 10, borderRadius: "50%", background: "#FF69B4", border: "1.5px solid #0f0a1e" }} />}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>
                 <div className="settings-arrow">→</div>
               </div>
             ))}

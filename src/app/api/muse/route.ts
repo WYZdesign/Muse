@@ -8,9 +8,122 @@ import { screenText, moderateText } from "@/lib/aiModeration";
 import { parseRateToCents } from "@/lib/money";
 import { sendEmail, notify } from "@/lib/email";
 import { pushToProfile } from "@/lib/push";
+import { scanWithRekognition, logScan } from "@/lib/contentScan";
 import Stripe from "stripe";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Period bucket for quest progress. Weekly buckets are keyed by the Monday
+ *  (UTC) date so weeks roll over cleanly; 'once' and 'lifetime' never reset. */
+function questPeriodKey(frequency: string): string {
+  const now = new Date();
+  const day = now.toISOString().slice(0, 10);
+  if (frequency === "weekly") {
+    const d = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    const mondayOffset = (d.getDay() + 6) % 7; // Mon=0..Sun=6
+    d.setDate(d.getDate() - mondayOffset);
+    return `weekly:${d.toISOString().slice(0, 10)}`;
+  }
+  if (frequency === "monthly") return `monthly:${day.slice(0, 7)}`;
+  if (frequency === "lifetime" || frequency === "once") return "lifetime:all";
+  return `daily:${day}`;
+}
+
+/* ═══ QUEST ENGINE — shared by track-quest and server-side bumps ═══
+ * type SupabaseClient avoided — sb is structurally compatible across the
+ * service client and the anon client used in this route. */
+
+/** Award XP for a completed quest; handles level-ups and cascades into
+ *  reach_level + meta_quests quests. Idempotent per completion. */
+async function awardQuestXp(sb: any, profileId: string, xpReward: number): Promise<boolean> {
+  const { data: xpRow } = await sb.from("muse_user_xp").select("total_xp, level").eq("user_id", profileId).maybeSingle();
+  const currentXp = xpRow?.total_xp || 0;
+  const newXp = currentXp + xpReward;
+  const prevLevel = Math.floor(Math.sqrt(currentXp / 50)) + 1;
+  const newLevel = Math.floor(Math.sqrt(newXp / 50)) + 1;
+  await sb.from("muse_user_xp").upsert({ user_id: profileId, total_xp: newXp, level: newLevel, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  if (newLevel > prevLevel) await setQuestProgress(sb, profileId, "reach_level", newLevel);
+  return newLevel > prevLevel;
+}
+
+/** Set ABSOLUTE progress on every active quest with this action_key
+ *  (lifetime period). Used for level-based and meta quests. */
+async function setQuestProgress(sb: any, profileId: string, actionKey: string, absolute: number): Promise<void> {
+  const { data: quests } = await sb.from("muse_quests").select("*").eq("active", true).eq("action_key", actionKey);
+  for (const quest of quests || []) {
+    const periodKey = questPeriodKey(quest.frequency);
+    const clamped = Math.min(Math.max(0, Math.floor(absolute)), quest.target_count);
+    const completed = clamped >= quest.target_count;
+    const { data: existing } = await sb.from("muse_user_quests")
+      .select("id, progress, completed").eq("user_id", profileId).eq("quest_id", quest.id).eq("period_key", periodKey).maybeSingle();
+    if (existing?.completed) continue;
+    if (existing && existing.progress === clamped && !completed) continue;
+    if (existing) {
+      await sb.from("muse_user_quests").update({
+        progress: clamped, completed,
+        completed_at: completed ? new Date().toISOString() : null, updated_at: new Date().toISOString(),
+      }).eq("id", existing.id);
+    } else {
+      await sb.from("muse_user_quests").insert({
+        user_id: profileId, quest_id: quest.id, period_key: periodKey,
+        progress: clamped, target: quest.target_count, completed,
+        completed_at: completed ? new Date().toISOString() : null,
+      });
+    }
+    if (completed && quest.xp_reward > 0) {
+      // Meta quests recompute their own count after being marked complete —
+      // guard against recursion by skipping the recount when setting meta itself.
+      if (actionKey !== "meta_quests") await refreshMetaQuest(sb, profileId);
+      await awardQuestXp(sb, profileId, quest.xp_reward);
+    }
+  }
+}
+
+/** Recompute total-completed-quests meta progress. */
+async function refreshMetaQuest(sb: any, profileId: string): Promise<void> {
+  const { count } = await sb.from("muse_user_quests")
+    .select("id", { count: "exact", head: true }).eq("user_id", profileId).eq("completed", true);
+  await setQuestProgress(sb, profileId, "meta_quests", count || 0);
+}
+
+/** Increment (+1) progress on every active quest with this action_key.
+ *  Server-side events call this: match, book_session, host_session,
+ *  complete_session, complete_host, get_verified, referral_signup. */
+async function bumpQuest(sb: any, profileId: string, actionKey: string): Promise<void> {
+  try {
+    const { data: quests } = await sb.from("muse_quests").select("*").eq("active", true).eq("action_key", actionKey);
+    let anyCompleted = false;
+    for (const quest of quests || []) {
+      const periodKey = questPeriodKey(quest.frequency);
+      const { data: existing } = await sb.from("muse_user_quests")
+        .select("id, progress, completed").eq("user_id", profileId).eq("quest_id", quest.id).eq("period_key", periodKey).maybeSingle();
+      if (existing?.completed) continue;
+      const newProgress = (existing?.progress || 0) + 1;
+      const completed = newProgress >= quest.target_count;
+      if (existing) {
+        await sb.from("muse_user_quests").update({
+          progress: newProgress, completed,
+          completed_at: completed ? new Date().toISOString() : null, updated_at: new Date().toISOString(),
+        }).eq("id", existing.id);
+      } else {
+        await sb.from("muse_user_quests").insert({
+          user_id: profileId, quest_id: quest.id, period_key: periodKey,
+          progress: newProgress, target: quest.target_count, completed,
+          completed_at: completed ? new Date().toISOString() : null,
+        });
+      }
+      if (completed) anyCompleted = true;
+    }
+    if (anyCompleted) {
+      // Award XP once per bump using the highest tier reward for this key —
+      // slight over-award vs tracking per-tier ledgers, but never under-awards.
+      const { data: tiers } = await sb.from("muse_quests").select("xp_reward").eq("action_key", actionKey).eq("active", true);
+      const maxXp = Math.max(0, ...(tiers || []).map((q: any) => q.xp_reward || 0));
+      if (maxXp > 0) await awardQuestXp(sb, profileId, maxXp);
+      await refreshMetaQuest(sb, profileId);
+    }
+  } catch { /* quest failures must never break the primary action */ }
+}
 
 function getAuthUser() {
   return supabase.auth.getUser();
@@ -113,6 +226,18 @@ function bearerTokenFromReq(req: NextRequest, body?: Record<string, unknown>): s
   if (bearer) return bearer;
   if (body && typeof body.access_token === "string") return body.access_token;
   return "";
+}
+
+/**
+ * Admin gate — verifies the caller's email from the DB profile row, not from
+ * the JWT. The JWT email is self-claimed and unverified; an attacker could
+ * register with an admin email before the real admin does. The profile row
+ * email is set during verified OAuth signup and is authoritative.
+ */
+function isAdminEmail(profileEmail: string | null | undefined): boolean {
+  if (!profileEmail) return false;
+  const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+  return admins.includes(profileEmail.toLowerCase());
 }
 
 
@@ -404,8 +529,11 @@ export async function GET(req: NextRequest) {
       const token = bearerTokenFromReq(req);
       if (!token) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       const { data: authData, error: authErr } = await supabase.auth.getUser(token);
-      const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (authErr || !authData.user?.email || !admins.includes(authData.user.email.toLowerCase())) {
+      if (authErr || !authData.user) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      const { data: adminProfile } = await sb.from("muse_profiles").select("email").eq("auth_id", authData.user.id).maybeSingle();
+      if (!isAdminEmail(adminProfile?.email)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
@@ -602,6 +730,7 @@ export async function POST(req: NextRequest) {
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id } });
       await sb.from("muse_notifications").insert({ user_id: target_id, from_id: profile.id, type: "match", body: `${profile.name} matched with you!`, read: false });
       await emailProfile(sb, target_id, "Someone matched with you ✦", "New match on Muse", `${profile.name} matched with you. Open Muse to say hi.`, "See who it is", "https://muse.wyzdesign.com/muse");
+      await bumpQuest(sb, profile.id, "match");
       return NextResponse.json({ success: true });
     }
 
@@ -706,12 +835,23 @@ export async function POST(req: NextRequest) {
       const { postId: feedPostId, liked } = rest;
       if (!feedPostId) return NextResponse.json({ error: "postId required" }, { status: 400 });
       if (typeof feedPostId === "number" || !UUID_RE.test(String(feedPostId))) return NextResponse.json({ success: true, demo: true });
-      const { data: feedPost } = await sb.from("muse_feed_posts").select("likes").eq("id", feedPostId).maybeSingle();
-      if (!feedPost) return NextResponse.json({ error: "Post not found" }, { status: 404 });
-      const newLikes = (feedPost.likes || 0) + (liked ? 1 : -1);
-      const { error: updErr } = await sb.from("muse_feed_posts").update({ likes: Math.max(0, newLikes) }).eq("id", feedPostId);
-      if (updErr) return safeServerError(updErr, "db op");
-      return NextResponse.json({ success: true, likes: Math.max(0, newLikes) });
+      // Atomic increment via SQL to avoid read-modify-write race condition.
+      // Supabase JS doesn't expose raw SQL update, so we use rpc() with a
+      // Postgres function. Fallback to read-modify-write if rpc unavailable.
+      const delta = liked ? 1 : -1;
+      const { data: rpcResult, error: rpcErr } = await sb.rpc("atomic_like_count", { table_name: "muse_feed_posts", row_id: feedPostId, delta });
+      let newLikes: number;
+      if (!rpcErr && rpcResult !== null) {
+        newLikes = Number(rpcResult);
+      } else {
+        // Fallback: read-modify-write (safe for low-contention like counts)
+        const { data: feedPost } = await sb.from("muse_feed_posts").select("likes").eq("id", feedPostId).maybeSingle();
+        if (!feedPost) return NextResponse.json({ error: "Post not found" }, { status: 404 });
+        newLikes = Math.max(0, (feedPost.likes || 0) + delta);
+        const { error: updErr } = await sb.from("muse_feed_posts").update({ likes: newLikes }).eq("id", feedPostId);
+        if (updErr) return safeServerError(updErr, "db op");
+      }
+      return NextResponse.json({ success: true, likes: newLikes });
     }
 
     if (actionType === "create-moment") {
@@ -732,12 +872,19 @@ export async function POST(req: NextRequest) {
       const { momentId, liked } = rest;
       if (!momentId) return NextResponse.json({ error: "momentId required" }, { status: 400 });
       if (typeof momentId === "number" || !UUID_RE.test(String(momentId))) return NextResponse.json({ success: true, demo: true });
-      const { data: moment } = await sb.from("muse_moments").select("likes").eq("id", momentId).maybeSingle();
-      if (!moment) return NextResponse.json({ error: "Moment not found" }, { status: 404 });
-      const newLikes = (moment.likes || 0) + (liked ? 1 : -1);
-      const { error: updErr } = await sb.from("muse_moments").update({ likes: Math.max(0, newLikes) }).eq("id", momentId);
-      if (updErr) return safeServerError(updErr, "db op");
-      return NextResponse.json({ success: true, likes: Math.max(0, newLikes) });
+      const delta = liked ? 1 : -1;
+      const { data: rpcResult, error: rpcErr } = await sb.rpc("atomic_like_count", { table_name: "muse_moments", row_id: momentId, delta });
+      let newLikes: number;
+      if (!rpcErr && rpcResult !== null) {
+        newLikes = Number(rpcResult);
+      } else {
+        const { data: moment } = await sb.from("muse_moments").select("likes").eq("id", momentId).maybeSingle();
+        if (!moment) return NextResponse.json({ error: "Moment not found" }, { status: 404 });
+        newLikes = Math.max(0, (moment.likes || 0) + delta);
+        const { error: updErr } = await sb.from("muse_moments").update({ likes: newLikes }).eq("id", momentId);
+        if (updErr) return safeServerError(updErr, "db op");
+      }
+      return NextResponse.json({ success: true, likes: newLikes });
     }
 
     if (actionType === "brief") {
@@ -1015,6 +1162,7 @@ export async function POST(req: NextRequest) {
       );
       await sb.from("muse_notifications").insert({ user_id: effectiveHostId || profile.id, from_id: profile.id, type: "booking", body: `${profile.name} requested to book a session`, read: false });
       if (effectiveHostId) await emailProfile(sb, effectiveHostId, "New booking request ✦", "Someone wants to book you", `${profile.name} requested to book one of your sessions.`, "Review booking", "https://muse.wyzdesign.com/muse");
+      await bumpQuest(sb, profile.id, "book_session");
       return NextResponse.json({ success: true });
     }
 
@@ -1044,6 +1192,7 @@ export async function POST(req: NextRequest) {
         available: true,
       }).select().single();
       if (error) return safeServerError(error, "db op");
+      await bumpQuest(sb, profile.id, "host_session");
       return NextResponse.json({ success: true, session: data });
     }
 
@@ -1094,8 +1243,11 @@ export async function POST(req: NextRequest) {
       if (!await checkRateUser(profile.id, "apply-promo", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const code = String(rest.code || "").trim().toUpperCase();
       if (!code) return NextResponse.json({ error: "Promo code required" }, { status: 400 });
-      // Single known beta promo for now — grants Muse Pro at no charge.
-      // Not stackable with an existing paid subscription; re-applying is a harmless no-op.
+      // Promo codes must go through Stripe checkout (which validates the code
+      // and attaches a coupon to the subscription). The apply-promo shortcut
+      // bypasses Stripe entirely, giving free Pro with no payment method on
+      // file — restrict to admin-only.
+      if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Invalid promo code" }, { status: 404 });
       if (code !== "MUSEBETA") return NextResponse.json({ error: "Invalid promo code" }, { status: 404 });
       const { error } = await sb.from("muse_profiles").update({ tier: "muse_pro" }).eq("id", profile.id);
       if (error) return safeServerError(error, "db op");
@@ -1134,7 +1286,8 @@ export async function POST(req: NextRequest) {
         const cleanStats: Record<string, number> = {};
         for (const k of allowedStatKeys) {
           const v = (rest.stats as Record<string, unknown>)[k];
-          if (typeof v === "number" && Number.isFinite(v) && v >= 0) cleanStats[k] = Math.floor(v);
+          // Cap at 100k to prevent client-side stat inflation attacks
+          if (typeof v === "number" && Number.isFinite(v) && v >= 0) cleanStats[k] = Math.min(Math.floor(v), 100000);
         }
         if (Object.keys(cleanStats).length > 0) {
           const { data: existing } = await sb.from("muse_profiles").select("stats").eq("id", profile.id).maybeSingle();
@@ -1462,8 +1615,7 @@ export async function POST(req: NextRequest) {
 
     if (actionType === "admin-resolve-appeal") {
       // Admin only — resolve an appeal
-      const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (!user.email || !admins.includes(user.email.toLowerCase())) {
+      if (!isAdminEmail(profile.email)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       const { strikeId, resolution } = rest; // resolution: 'upheld' | 'overturned'
@@ -1597,6 +1749,10 @@ export async function POST(req: NextRequest) {
           body: `${profile.name} marked the shoot as complete — leave a review`, read: false
         });
       }
+      // Quest bumps for both parties — booker counts toward completed sessions,
+      // host toward hosted sessions.
+      await bumpQuest(sb, String(booking.user_id), "complete_session");
+      if (booking.host_id) await bumpQuest(sb, String(booking.host_id), "complete_host");
       return NextResponse.json({ success: true });
     }
 
@@ -1732,20 +1888,10 @@ export async function POST(req: NextRequest) {
       // Fire-and-forget: embed prompt response in background (don't block response)
       if (responseText && typeof responseText === "string" && responseText.trim()) {
         const embedText = `${responseText}`.trim();
-        const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
-        const QDRANT_URL = process.env.QDRANT_URL || "http://localhost:6333";
-        fetch(`${OLLAMA_URL}/api/embeddings`, {
+        fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ""}/api/muse/embed`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "nomic-embed-text", prompt: embedText }),
-        }).then(async r => r.ok ? r.json() : null).then(async data => {
-          if (!data?.embedding?.length) return;
-          const pointId = hashToUint64(`response:${profile.id}:${promptId}`);
-          await fetch(`${QDRANT_URL}/collections/muse_embeddings/points`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ points: [{ id: pointId, vector: data.embedding, payload: { user_id: profile.id, embedding_type: "prompt_response", prompt_id: promptId, text_source: embedText.slice(0, 2000), updated_at: new Date().toISOString() } }] }),
-          });
+          body: JSON.stringify({ action: "embed-text", text: embedText, userId: profile.id, meta: { embedding_type: "prompt_response", prompt_id: promptId } }),
         }).catch(() => {}); // silent fail — non-critical background task
       }
 
@@ -1763,8 +1909,7 @@ export async function POST(req: NextRequest) {
 
     if (actionType === "admin-brain") {
       if (!await checkRate(ip, "admin-brain", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (!user.email || !admins.includes(user.email.toLowerCase())) {
+      if (!isAdminEmail(profile.email)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       const { query: userQuery } = rest;
@@ -1886,8 +2031,7 @@ export async function POST(req: NextRequest) {
     // ════════════════════════════════════════════════════════════════
 
     if (actionType === "admin-reports") {
-      const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (!user.email || !admins.includes(user.email.toLowerCase())) {
+      if (!isAdminEmail(profile.email)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       const { data: reports } = await sb.from("muse_reports").select("*, reporter_id(id, name, avatar), target_id(id, name, avatar)")
@@ -1896,8 +2040,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "admin-strikes") {
-      const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (!user.email || !admins.includes(user.email.toLowerCase())) {
+      if (!isAdminEmail(profile.email)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       const { data: strikes } = await sb.from("muse_strikes").select("*, user_id(id, name, avatar)")
@@ -1908,8 +2051,7 @@ export async function POST(req: NextRequest) {
     if (actionType === "admin-suspend-user") {
       // Admin-only (email-gated); higher limit so a moderation sweep doesn't bottleneck.
       if (!await checkRate(ip, "admin-suspend-user", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (!user.email || !admins.includes(user.email.toLowerCase())) {
+      if (!isAdminEmail(profile.email)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       const { targetUserId, reason, durationDays } = rest;
@@ -1934,6 +2076,207 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    if (actionType === "admin-scan-nsfw") {
+      // Admin-only: scan a user's avatar for suggestive content and auto-set nsfw flag.
+      // Pass { userId } to scan one profile, or { all: true } to scan all non-nsfw profiles.
+      if (!await checkRate(ip, "admin-scan-nsfw", 10)) return NextResponse.json({ error: "Rate limited", status: 429 });
+      if (!isAdminEmail(profile.email)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      const { userId, all } = rest;
+      const sb = getServiceClient();
+
+      let profilesToScan: { id: string; avatar: string; name: string }[] = [];
+      if (all) {
+        const { data } = await sb.from("muse_profiles").select("id, avatar, name").eq("nsfw", false).not("avatar", "eq", "").limit(100);
+        profilesToScan = data || [];
+      } else if (userId) {
+        const { data } = await sb.from("muse_profiles").select("id, avatar, name").eq("id", userId).maybeSingle();
+        if (data) profilesToScan = [data];
+      } else {
+        return NextResponse.json({ error: "Provide userId or all:true" }, { status: 400 });
+      }
+
+      let scanned = 0, flagged = 0, errors = 0;
+      for (const p of profilesToScan) {
+        if (!p.avatar || p.avatar.startsWith("/")) { continue; } // skip local/demo avatars
+        // SSRF guard: only fetch from known storage hosts to prevent scanning
+        // internal network addresses (e.g. cloud metadata endpoints).
+        let avatarUrl: URL;
+        try { avatarUrl = new URL(p.avatar); } catch { errors++; continue; }
+        const allowedHosts = ["supabase.co", "supabase.in", "vercel.app", "vercel.storage", "cloudinary.com", "amazonaws.com"];
+        const hostOk = allowedHosts.some(h => avatarUrl.hostname.endsWith(`.${h}`) || avatarUrl.hostname === h);
+        if (!hostOk || avatarUrl.protocol !== "https:") { errors++; continue; }
+
+        try {
+          const resp = await fetch(avatarUrl.toString(), { signal: AbortSignal.timeout(10000) });
+          if (!resp.ok) { errors++; continue; }
+          const buf = Buffer.from(await resp.arrayBuffer());
+          const result = await scanWithRekognition(buf);
+          await logScan({ userId: p.id, fileName: "avatar-scan", fileType: "image/jpeg", fileSize: buf.length, context: "admin-scan", result });
+          scanned++;
+          if (result.scanned && result.flaggedCategories.some(c => /^suggestive/i.test(c))) {
+            await sb.from("muse_profiles").update({ nsfw: true }).eq("id", p.id);
+            flagged++;
+          }
+        } catch { errors++; }
+      }
+      return NextResponse.json({ success: true, scanned, flagged, errors, total: profilesToScan.length });
+    }
+
+    // ── QUESTS ──────────────────────────────────────────────────────────
+    if (actionType === "get-quests") {
+      const { data: quests } = await sb.from("muse_quests").select("*").eq("active", true).order("sort_order");
+      if (!quests) return NextResponse.json({ quests: [], xp: { total_xp: 0, level: 1 } });
+
+      const { data: userQuests } = await sb.from("muse_user_quests")
+        .select("quest_id, progress, target, completed, claimed, period_key")
+        .eq("user_id", profile.id);
+
+      const { data: xpData } = await sb.from("muse_user_xp").select("total_xp, level").eq("user_id", profile.id).maybeSingle();
+
+      // Map quest progress by period
+      const progressMap: Record<string, any> = {};
+      for (const uq of userQuests || []) {
+        progressMap[`${uq.quest_id}:${uq.period_key}`] = uq;
+      }
+
+      const enriched = quests.map((q: any) => {
+        const periodKey = questPeriodKey(q.frequency);
+        const userProg = progressMap[`${q.id}:${periodKey}`];
+        return {
+          ...q,
+          progress: userProg?.progress || 0,
+          target: q.target_count,
+          completed: userProg?.completed || false,
+          claimed: userProg?.claimed || false,
+          period_key: periodKey,
+        };
+      });
+
+      return NextResponse.json({ quests: enriched, xp: xpData || { total_xp: 0, level: 1 } });
+    }
+
+    if (actionType === "track-quest") {
+      if (!await checkRateUser(profile.id, "track-quest", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+
+      // Accept one key or a batch — batching keeps swipes to a single request.
+      const rawKeys: string[] = Array.isArray(rest.action_keys)
+        ? rest.action_keys.filter((k: unknown) => typeof k === "string" && k.length <= 64).slice(0, 6)
+        : (typeof rest.action_key === "string" ? [rest.action_key] : []);
+      if (!rawKeys.length) return NextResponse.json({ error: "action_key required" }, { status: 400 });
+
+      // Server-authoritative keys are bumped by their own handlers — reject
+      // client attempts to forge them.
+      const SERVER_ONLY_KEYS = new Set(["match", "book_session", "host_session", "complete_session", "complete_host", "get_verified", "referral_signup"]);
+      const clientKeys = rawKeys.filter(k => !SERVER_ONLY_KEYS.has(k));
+      if (!clientKeys.length) return NextResponse.json({ success: true, results: [] });
+
+      const { data: questDefs } = await sb.from("muse_quests")
+        .select("*").eq("active", true).in("action_key", clientKeys);
+      if (!questDefs?.length) return NextResponse.json({ success: true, noQuest: true });
+
+      const results: any[] = [];
+      let leveledUp = false;
+      for (const quest of questDefs) {
+        const periodKey = questPeriodKey(quest.frequency);
+
+        const { data: existing } = await sb.from("muse_user_quests")
+          .select("id, progress, completed")
+          .eq("user_id", profile.id).eq("quest_id", quest.id).eq("period_key", periodKey)
+          .maybeSingle();
+
+        if (existing?.completed) { results.push({ action_key: quest.action_key, alreadyCompleted: true }); continue; }
+
+        const newProgress = (existing?.progress || 0) + 1;
+        const completed = newProgress >= quest.target_count;
+
+        if (existing) {
+          await sb.from("muse_user_quests").update({
+            progress: newProgress,
+            completed,
+            completed_at: completed ? new Date().toISOString() : null,
+            updated_at: new Date().toISOString(),
+          }).eq("id", existing.id);
+        } else {
+          await sb.from("muse_user_quests").insert({
+            user_id: profile.id,
+            quest_id: quest.id,
+            period_key: periodKey,
+            progress: newProgress,
+            target: quest.target_count,
+            completed,
+            completed_at: completed ? new Date().toISOString() : null,
+          });
+        }
+
+        if (completed) {
+          leveledUp = (await awardQuestXp(sb, profile.id, quest.xp_reward)) || leveledUp;
+          await refreshMetaQuest(sb, profile.id);
+        }
+
+        results.push({
+          action_key: quest.action_key,
+          progress: newProgress,
+          target: quest.target_count,
+          completed,
+          newlyCompleted: completed,
+          quest: { title: quest.title, icon: quest.icon, reward_label: quest.reward_label },
+        });
+      }
+      if (leveledUp) results.push({ leveledUp: true });
+
+      return NextResponse.json({ success: true, results });
+    }
+
+    if (actionType === "claim-quest") {
+      const { quest_id } = rest;
+      if (!quest_id || !UUID_RE.test(String(quest_id))) return NextResponse.json({ error: "quest_id required" }, { status: 400 });
+
+      // Verify the period key matches the CURRENT period — prevents claiming
+      // a stale completed row from an old week/month.
+      const { data: questDef } = await sb.from("muse_quests").select("id, reward_type, reward_amount, reward_label, frequency").eq("id", quest_id).maybeSingle();
+      if (!questDef) return NextResponse.json({ error: "Quest not found" }, { status: 404 });
+
+      const periodKey = questPeriodKey(questDef.frequency);
+      const { data: uq } = await sb.from("muse_user_quests")
+        .select("id, completed, claimed")
+        .eq("user_id", profile.id).eq("quest_id", quest_id).eq("period_key", periodKey)
+        .maybeSingle();
+
+      if (!uq) return NextResponse.json({ error: "Quest not started" }, { status: 404 });
+      if (!uq.completed) return NextResponse.json({ error: "Quest not completed" }, { status: 400 });
+      if (uq.claimed) return NextResponse.json({ error: "Already claimed" }, { status: 400 });
+
+      const { error: claimErr } = await sb.from("muse_user_quests")
+        .update({ claimed: true, updated_at: new Date().toISOString() })
+        .eq("id", uq.id).eq("claimed", false); // conditional update = no double-claim race
+
+      if (claimErr) return NextResponse.json({ error: "Could not claim reward" }, { status: 500 });
+
+      // Fulfil Pro-time rewards server-side: extend pro_expires_at by the
+      // reward months. Free-tier users start their clock from now; existing
+      // Pro stacks from their current expiry.
+      let grantedUntil: string | undefined;
+      if (questDef.reward_type === "superpower" || questDef.reward_type === "pro_day") {
+        const months = questDef.reward_type === "pro_day"
+          ? Math.max(1, Math.ceil(questDef.reward_amount / 30))
+          : Math.max(1, questDef.reward_amount);
+        const { data: prof } = await sb.from("muse_profiles").select("tier, pro_expires_at").eq("id", profile.id).maybeSingle();
+        const cur = prof?.pro_expires_at ? new Date(prof.pro_expires_at).getTime() : 0;
+        const base = Math.max(Date.now(), cur);
+        grantedUntil = new Date(base + months * 30 * 24 * 60 * 60 * 1000).toISOString();
+        await sb.from("muse_profiles").update({ pro_expires_at: grantedUntil }).eq("id", profile.id);
+      }
+
+      return NextResponse.json({
+        success: true,
+        grantedUntil: grantedUntil || null,
+        reward: { reward_type: questDef.reward_type, reward_amount: questDef.reward_amount, reward_label: questDef.reward_label },
+      });
+    }
+
     // ── Analytics / error beacons (fire-and-forget) ──
     if (actionType === "track-error" || actionType === "track-event") {
       try {
@@ -1954,14 +2297,4 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function hashToUint64(str: string): number {
-  let hash = BigInt("0xcbf29ce484222325");
-  const prime = BigInt("0x100000001b3");
-  const mask = BigInt("0xffffffffffffffff");
-  const positiveMask = BigInt("0x7fffffffffffffff");
-  for (let i = 0; i < str.length; i++) {
-    hash ^= BigInt(str.charCodeAt(i));
-    hash = (hash * prime) & mask;
-  }
-  return Number(hash & positiveMask);
-}
+

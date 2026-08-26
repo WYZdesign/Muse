@@ -4,10 +4,11 @@ import { checkRate, clientIp } from "@/lib/rate-limit";
 import { sendEmail, notify } from "@/lib/email";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
-
 export async function POST(req: NextRequest) {
   try {
+    const secret = process.env.STRIPE_SECRET_KEY;
+    if (!secret) return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
+    const stripe = new Stripe(secret);
     const sb = getServiceClient();
     const authHeader = req.headers.get("authorization");
     const token = authHeader?.replace(/^Bearer\s+/i, "");
@@ -71,6 +72,22 @@ export async function POST(req: NextRequest) {
             await sb.from("muse_profiles").update({ age_verified: true, age_verified_at: new Date().toISOString(), verified: true }).eq("id", profile.id);
             const { data: vp } = await sb.from("muse_profiles").select("email").eq("id", profile.id).maybeSingle();
             if (vp?.email) sendEmail(notify(vp.email, "Identity verified ✦", "You're verified", "Your identity has been verified. You can now book paid sessions and access verified-only features.")).catch(() => {});
+            // Quest bump: Get Verified — inline since the shared quest engine
+            // lives in the main muse route module.
+            try {
+              const { data: vq } = await sb.from("muse_quests").select("*").eq("active", true).eq("action_key", "get_verified").maybeSingle();
+              if (vq) {
+                const { data: vuq } = await sb.from("muse_user_quests").select("id, completed").eq("user_id", profile.id).eq("quest_id", vq.id).maybeSingle();
+                if (!vuq?.completed) {
+                  const periodKey = "lifetime:all";
+                  if (vuq) await sb.from("muse_user_quests").update({ progress: 1, completed: true, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", vuq.id);
+                  else await sb.from("muse_user_quests").insert({ user_id: profile.id, quest_id: vq.id, period_key: periodKey, progress: 1, target: vq.target_count, completed: true, completed_at: new Date().toISOString() });
+                  const { data: xpRow } = await sb.from("muse_user_xp").select("total_xp, level").eq("user_id", profile.id).maybeSingle();
+                  const newXp = (xpRow?.total_xp || 0) + vq.xp_reward;
+                  await sb.from("muse_user_xp").upsert({ user_id: profile.id, total_xp: newXp, level: Math.floor(Math.sqrt(newXp / 50)) + 1, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+                }
+              }
+            } catch { /* quest bump is best-effort */ }
           }
         }
         return NextResponse.json({ status, verifiedOutputs: stripeSession.verified_outputs });

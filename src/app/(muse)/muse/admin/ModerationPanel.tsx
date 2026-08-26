@@ -73,6 +73,8 @@ export default function AdminModerationPanel() {
   };
 
   const [resolvingAppeal, setResolvingAppeal] = useState<string | null>(null);
+  const [nsfwScanResult, setNsfwScanResult] = useState<string>("");
+  const [nsfwScanning, setNsfwScanning] = useState(false);
   const resolveAppeal = async (strikeId: string, resolution: "upheld" | "overturned") => {
     setResolvingAppeal(strikeId);
     try {
@@ -83,6 +85,22 @@ export default function AdminModerationPanel() {
     } finally { setResolvingAppeal(null); }
   };
 
+  const scanAllNsfw = async () => {
+    setNsfwScanning(true);
+    setNsfwScanResult("Scanning...");
+    try {
+      const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-scan-nsfw", all: true }) });
+      if (r.ok) {
+        const d = await r.json();
+        setNsfwScanResult(`Done — scanned ${d.scanned}/${d.total} profiles, ${d.flagged} flagged as NSFW, ${d.errors} errors`);
+      } else {
+        const e = await r.json();
+        setNsfwScanResult(`Error: ${e.error}`);
+      }
+    } catch { setNsfwScanResult("Scan failed — network error"); }
+    finally { setNsfwScanning(false); }
+  };
+
   const box: React.CSSProperties = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 20 };
 
   return (
@@ -90,6 +108,16 @@ export default function AdminModerationPanel() {
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>🛡️ Admin Moderation</h1>
         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 28 }}>Reports, strikes, user management, and AI admin brain.</p>
+
+        {/* NSFW Batch Scan */}
+        <div style={{ background: "rgba(255,69,0,0.08)", border: "1px solid rgba(255,69,0,0.2)", borderRadius: 12, padding: 16, marginBottom: 24 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#ff6b6b", marginBottom: 6 }}>NSFW Profile Scanner</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 10 }}>Scan all non-NSFW profiles' avatars via Rekognition. Suggestive content auto-sets the profile's NSFW flag for age-gating in Discovery.</div>
+          <button onClick={scanAllNsfw} disabled={nsfwScanning} style={{ padding: "8px 16px", borderRadius: 8, background: nsfwScanning ? "rgba(255,69,0,0.3)" : "rgba(255,69,0,0.15)", border: "1px solid rgba(255,69,0,0.3)", color: "#ff6b6b", fontSize: 13, fontWeight: 600, cursor: nsfwScanning ? "wait" : "pointer" }}>
+            {nsfwScanning ? "Scanning..." : "Scan All Profiles"}
+          </button>
+          {nsfwScanResult && <div style={{ marginTop: 8, fontSize: 12, color: "rgba(255,255,255,0.7)" }}>{nsfwScanResult}</div>}
+        </div>
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>

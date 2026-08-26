@@ -23,6 +23,7 @@ export interface ProfileScreenProps {
   setEditAvatar: (v: string) => void;
   setEditType: (v: string) => void;
   setEditLooking: (v: string[]) => void;
+  setEditNsfw: (v: boolean) => void;
   showToast: (msg: string) => void;
   promptResponses: any[];
   promptBankData: any[];
@@ -50,6 +51,7 @@ export interface ProfileScreenProps {
   getReferralTier?: (count: number) => { tier: string; perks: string };
   apiFetch?: (url: string, opts?: any) => Promise<any>;
   doLogout?: () => void;
+  setShowQuests?: (v: boolean) => void;
 }
 
 export const ProfileScreen = memo(function ProfileScreen({
@@ -69,6 +71,7 @@ export const ProfileScreen = memo(function ProfileScreen({
   setEditAvatar,
   setEditType,
   setEditLooking,
+  setEditNsfw,
   showToast,
   promptResponses,
   promptBankData,
@@ -97,6 +100,7 @@ export const ProfileScreen = memo(function ProfileScreen({
   getReferralTier = () => ({ tier: "", perks: "" }),
   apiFetch = async () => ({}),
   doLogout = () => {},
+  setShowQuests = () => {},
 }: ProfileScreenProps) {
   return (
     <div className={"screen-el" + (screen === "profile" ? " active" : "")}>
@@ -106,7 +110,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         </div>
         <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 18, fontWeight: 800, background: "linear-gradient(90deg,#FFD700,#F48FB1,#CE93D8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Your Profile</div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="hdr-btn" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setShowEditProfile(true); }} aria-label="Edit Profile"><FiEdit2 size={18} /></button>
+          <button className="hdr-btn" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setEditNsfw(!!currentUser.nsfw); setShowEditProfile(true); }} aria-label="Edit Profile"><FiEdit2 size={18} /></button>
         </div>
       </div>
       <div className="profile-scroll">
@@ -203,6 +207,11 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
         </div>
         <div className="section">
+          <div className="section-title">Quests</div>
+          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 8 }}>Complete challenges to earn free likes, super likes, and boosts.</div>
+          <button className="quest-compact-btn" onClick={() => setShowQuests(true)}>⭐ View Quests</button>
+        </div>
+        <div className="section">
           <div className="section-title">Referral</div>
           <div className="section-text" style={{ marginBottom: 8 }}>Invite creatives. Earn rewards.</div>
           <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 6 }}>Tier: <span style={{ color: "var(--gold)", fontWeight: 700 }}>{getReferralTier(currentUser.referrals || 0).tier}</span> · {currentUser.referrals || 0} joined</div>
@@ -288,10 +297,12 @@ export const ProfileScreen = memo(function ProfileScreen({
             )}
           </div>
         </div>
-        <div className="profile-btn"><button className="btn btn-outline" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setShowEditProfile(true); }}>Edit Profile</button></div>
+        <div className="profile-btn"><button className="btn btn-outline" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setEditNsfw(!!currentUser.nsfw); setShowEditProfile(true); }}>Edit Profile</button></div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => setScreen("settings")}><FiSettings size={16} style={{ marginRight: 6 }} /> Account Settings</button></div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => setShowShareProfile(true)}>Share Profile</button></div>
-        <div className="profile-btn"><button className="btn btn-outline" style={{ borderColor: "rgba(255,138,128,0.2)", color: "var(--coral)" }} onClick={doLogout}>Log Out</button></div>
+        {/* Log Out intentionally lives only in Settings now — the full Profile screen
+            previously duplicated SettingsScreen's Log Out. doLogout prop kept (optional,
+            default no-op) so callers don't need touching. */}
       </div>
       <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>

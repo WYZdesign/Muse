@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
       const accessToken = bearerOrBodyToken(req, body);
       const { data: { user }, error: authErr } = await supabase.auth.getUser(accessToken);
       if (authErr || !user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-      const allowed = ["name", "bio", "loc", "city", "lat", "long", "avatar", "type", "styles", "looking", "photos", "preferences", "zodiac", "chinese", "mbti", "life_path", "audience"];
+      const allowed = ["name", "bio", "loc", "city", "lat", "long", "avatar", "type", "styles", "looking", "photos", "preferences", "zodiac", "chinese", "mbti", "life_path", "audience", "nsfw"];
       const updates: Record<string, unknown> = {};
       for (const k of allowed) if (body[k] !== undefined) updates[k] = body[k];
       if (Object.keys(updates).length === 0) return NextResponse.json({ error: "No updatable fields" }, { status: 400 });
@@ -218,27 +218,29 @@ export async function POST(req: NextRequest) {
       const { data: { user }, error: authErr } = await supabase.auth.getUser(accessToken);
       if (authErr || !user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
       const sb = getServiceClient();
-      const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
-      if (profile) {
-        const pid = profile.id;
-        await sb.from("muse_messages").delete().or(`sender_id.eq.${pid},receiver_id.eq.${pid}`);
-        await sb.from("muse_matches").delete().or(`user_id.eq.${pid},target_id.eq.${pid}`);
-        await sb.from("muse_feed_posts").delete().eq("author_id", pid);
-        await sb.from("muse_briefs").delete().eq("author_id", pid);
-        await sb.from("muse_brief_applications").delete().eq("user_id", pid);
-        await sb.from("muse_forum_posts").delete().eq("author_id", pid);
-        await sb.from("muse_forum_replies").delete().eq("user_id", pid);
-        await sb.from("muse_connections").delete().or(`user_id.eq.${pid},target_id.eq.${pid}`);
-        await sb.from("muse_community_members").delete().eq("user_id", pid);
-        await sb.from("muse_bookings").delete().eq("user_id", pid);
-        await sb.from("muse_notifications").delete().or(`user_id.eq.${pid},from_id.eq.${pid}`);
-        await sb.from("muse_push_subscriptions").delete().eq("user_id", pid);
-        await sb.from("muse_activity_log").delete().eq("user_id", pid);
-        await sb.from("muse_reports").delete().eq("reporter_id", pid);
-        await sb.from("muse_blocks").delete().eq("user_id", pid);
-        await sb.from("muse_verification_sessions").delete().eq("user_id", pid);
-        await sb.from("muse_profiles").delete().eq("id", pid);
-      }
+      const { data: profile } = await sb.from("muse_profiles").select("id, suspended").eq("auth_id", user.id).maybeSingle();
+      if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      // Suspended accounts cannot self-delete — this preserves the evidence
+      // trail for moderation investigation.
+      if ((profile as any).suspended) return NextResponse.json({ error: "Account suspended — cannot delete", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
+      const pid = profile.id;
+      await sb.from("muse_messages").delete().or(`sender_id.eq.${pid},receiver_id.eq.${pid}`);
+      await sb.from("muse_matches").delete().or(`user_id.eq.${pid},target_id.eq.${pid}`);
+      await sb.from("muse_feed_posts").delete().eq("author_id", pid);
+      await sb.from("muse_briefs").delete().eq("author_id", pid);
+      await sb.from("muse_brief_applications").delete().eq("user_id", pid);
+      await sb.from("muse_forum_posts").delete().eq("author_id", pid);
+      await sb.from("muse_forum_replies").delete().eq("user_id", pid);
+      await sb.from("muse_connections").delete().or(`user_id.eq.${pid},target_id.eq.${pid}`);
+      await sb.from("muse_community_members").delete().eq("user_id", pid);
+      await sb.from("muse_bookings").delete().eq("user_id", pid);
+      await sb.from("muse_notifications").delete().or(`user_id.eq.${pid},from_id.eq.${pid}`);
+      await sb.from("muse_push_subscriptions").delete().eq("user_id", pid);
+      await sb.from("muse_activity_log").delete().eq("user_id", pid);
+      await sb.from("muse_reports").delete().eq("reporter_id", pid);
+      await sb.from("muse_blocks").delete().eq("user_id", pid);
+      await sb.from("muse_verification_sessions").delete().eq("user_id", pid);
+      await sb.from("muse_profiles").delete().eq("id", pid);
       await sb.auth.admin.deleteUser(user.id);
       return NextResponse.json({ success: true });
     }

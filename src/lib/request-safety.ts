@@ -15,7 +15,10 @@ export async function enforceRequestSafety(req: NextRequest): Promise<NextRespon
     }
   }
 
-  // Body size limit (Content-Length header check — best effort)
+  // Body size limit (Content-Length header check — advisory only).
+  // Clients can set Content-Length to any value or omit it entirely; the real
+  // enforcement comes from Next.js body parser limits and the runtime memory
+  // cap. This check catches well-behaved clients early and documents intent.
   const cl = parseInt(req.headers.get("content-length") || "0", 10);
   if (cl > MAX_BODY_SIZE) {
     return NextResponse.json({ error: "Request body too large" }, { status: 413 });

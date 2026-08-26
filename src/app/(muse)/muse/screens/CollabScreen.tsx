@@ -172,6 +172,7 @@ export const CollabScreen = memo(function CollabScreen({
                           const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "brief-apply", briefId: brief.id }) });
                           if (!r.ok) throw new Error("failed");
                           showToast("Applied!");
+                          apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["apply_brief"] }) }).catch(() => {});
                         } catch {
                           showToast("Failed to apply");
                           setAppliedBriefs(prev => prev.filter(x => x !== brief.id));

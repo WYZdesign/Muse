@@ -5,6 +5,8 @@ import { FiSearch, FiSettings, FiFilter, FiCompass, FiZap, FiCamera, FiX, FiChev
 import Nav from "../components/Nav";
 import MuseMap from "../components/MuseMap";
 import type { Screen, Profile } from "../components/types";
+import { CITY_GEO } from "../components/types";
+import { distanceMiles } from "@/app/muse-realtime";
 import { PORTRAIT_IMG } from "../components/photoOrientation";
 
 // ── Tag description maps (for expandable info popover) ──────────────────────
@@ -123,6 +125,7 @@ export interface DiscoverScreenProps {
   discoverSearch: string;
   setDiscoverSearch: (v: string) => void;
   myGeo: any;
+  myStyles?: string[];
   apiFetch: (url: string, opts?: any) => Promise<any>;
   showToast: (msg: string) => void;
   doSwipe: (dir: "left" | "right" | "super") => void;
@@ -196,6 +199,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   safeRemoveItem = () => {},
   filteredProfiles,
   myGeo,
+  myStyles = [],
   currentIdx,
   setCurrentIdx,
   onPointerDown = () => {},
@@ -338,6 +342,24 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               {profile.online && <span className="card-online-dot" />}
                             </div>
                             <div className="card-hero-type">{profile.type} · {profile.loc?.split(",")[0]}</div>
+                            {(() => {
+                              const chips: string[] = [];
+                              if ((profile as any).collabs) chips.push(`🎬 ${profile.collabs} collabs`);
+                              const pLat = (profile as any).lat ?? CITY_GEO[profile.loc]?.lat;
+                              const pLong = (profile as any).long ?? CITY_GEO[profile.loc]?.long;
+                              if (myGeo && typeof pLat === "number" && typeof pLong === "number") {
+                                const d = distanceMiles({ lat: myGeo.lat, long: myGeo.long }, { lat: pLat, long: pLong });
+                                if (Number.isFinite(d)) chips.push(d < 1 ? "<1 mi away" : `${Math.round(d)} mi away`);
+                              }
+                              const shared = myStyles.filter(s => profile.styles?.includes(s));
+                              if (shared.length) chips.push(`🎨 ${shared.length} shared style${shared.length > 1 ? "s" : ""}`);
+                              if (!chips.length) return null;
+                              return (
+                                <div className="card-hero-chips">
+                                  {chips.map(c => <span key={c} className="card-hero-chip">{c}</span>)}
+                                </div>
+                              );
+                            })()}
                           </div>
                           {isTop && (
                             <>
