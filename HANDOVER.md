@@ -920,6 +920,40 @@ Claude ran deep audits across Sessions 36–38 and delivered patches; their git/
 
 ---
 
+### Session 44 (Claude) — MatchCard list-view layout fix + swipe direction + Discover recenter + Feed redesign + avatar popup
+
+**MatchCard list-view layout:**
+- Added `display: "flex"`, `alignItems`, `flexWrap`, `gap: 16`, `width: "100%"` to swipe-transform content wrapper for proper flex layout
+- Card content now uses flex row (avatar + info side-by-side) instead of broken inline layout
+
+**Swipe direction fix:**
+- Changed `revealX` from `-REVEAL_OFFSET` to `+REVEAL_OFFSET` — card now slides right when revealing (correct physical swipe direction)
+- Fixed left-swipe Unmatch panel: moved to right edge (`borderRight`, `justifyContent: "flex-end"`, `paddingRight`)
+- Fixed right-swipe Report/Block panel: moved to left edge (`left: 0`, `alignItems: "flex-start"`, `paddingLeft`)
+
+**Discover swipe stuck fix:**
+- Added `cancelAnimationFrame(rafRef.current)` in both `onPointerUp` and `onPointerCancel` — prevents stuck drag state when pointer events fire out of order
+
+**Feed redesign:**
+- Replaced 3-dot `FiMoreHorizontal` more button with absolute-positioned `FiFlag` report badge (top-right corner)
+- Made post author avatars clickable → opens profile popup via `openAuthorProfile`
+- Replaced Report button in action row with Share button (`FiShare2`)
+- Redesigned reply input into pill shape with embedded circular send button (`FiSend`)
+- Made reply avatars clickable → opens author profile
+- Applied same pill design to post-detail modal reply input
+- Added `position: "relative"` to post card div for flag badge positioning
+
+**Avatar popup from matches:**
+- Added `setViewProfile` prop to MatchCard and FeedScreen
+- List-view avatar is now clickable → opens profile popup
+- MatchCard `openProfile` callback with `stopPropagation` to prevent card click
+
+**Pass-through wiring:**
+- `setViewProfile` added to `matchActions` useMemo + dependency array
+- `setViewProfile` prop passed through to `<FeedScreen>`
+
+---
+
 ## SESSION STATE
 - **Build status:** ✅ CLEAN — tsc 0 errors, vitest 53/53, `npm run build` passes
 - **Env fix (Session 35, follow-up):** the ~36 "pre-existing" type errors were NOT baseline — they were incomplete package installs missing `.d.ts` output (@supabase/auth-js, @aws-sdk/client-rekognition) plus a corrupt @next/swc native binary. Deleting those packages and re-running `npm i` restored them. If this machine's node_modules goes stale again: delete the misbehaving package dir + reinstall before debugging code.

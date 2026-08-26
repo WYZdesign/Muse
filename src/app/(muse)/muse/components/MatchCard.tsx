@@ -17,6 +17,7 @@ export interface MatchCardProps {
     setBlockTarget: (v: { id: string; name: string } | null) => void;
     handleImgError: (e: any) => void;
     getIcebreaker: (type: string, seed?: string) => string;
+    setViewProfile?: (p: any) => void;
   };
 }
 
@@ -31,7 +32,13 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
     setBlockTarget,
     handleImgError,
     getIcebreaker,
+    setViewProfile,
   } = actions;
+
+  const openProfile = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setViewProfile?.(m);
+  }, [m, setViewProfile]);
 
   const mid = String(m.id);
   const [dragOffset, setDragOffset] = useState(0);
@@ -102,7 +109,7 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
     setBlockTarget({ id: String(m.id), name: m.name });
   }, [m.id, m.name, setBlockTarget]);
 
-  const revealX = revealed ? -REVEAL_OFFSET : 0;
+  const revealX = revealed ? REVEAL_OFFSET : 0;
   const transformX = isDragging ? dragOffset : revealX;
 
   const leftActive = dragOffset < -20;
@@ -170,11 +177,12 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
             position: "absolute",
             inset: 0,
             background: "linear-gradient(90deg, rgba(239,68,68,0.3) 0%, rgba(239,68,68,0.08) 100%)",
-            borderLeft: "3px solid #ef4444",
+            borderRight: "3px solid #ef4444",
             zIndex: 0,
             display: "flex",
             alignItems: "center",
-            paddingLeft: 16,
+            justifyContent: "flex-end",
+            paddingRight: 16,
             gap: 6,
             color: "#ff5c5c",
             fontWeight: 700,
@@ -193,15 +201,15 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
           style={{
             position: "absolute",
             top: 0,
-            right: 0,
+            left: 0,
             bottom: 0,
             width: REVEAL_OFFSET,
             zIndex: 0,
             display: "flex",
             flexDirection: "column",
-            alignItems: "flex-end",
+            alignItems: "flex-start",
             justifyContent: "center",
-            paddingRight: 12,
+            paddingLeft: 12,
             gap: 8,
           }}
         >
@@ -275,10 +283,15 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
           position: "relative",
           zIndex: 1,
           background: "inherit",
+          display: "flex",
+          alignItems: expanded ? "flex-start" : "center",
+          flexWrap: expanded ? "wrap" : "nowrap",
+          gap: 16,
+          width: "100%",
         }}
       >
         <div className="match-avatar-wrap" style={{ zIndex: 1 }}>
-          <img loading="lazy" src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} />
+          <img loading="lazy" src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} onClick={openProfile} style={{ cursor: "pointer" }} />
           {m.online && <div className="online-dot" />}
         </div>
 

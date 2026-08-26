@@ -2,7 +2,7 @@
 
 import React, { memo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FiArrowLeft, FiImage, FiX, FiMoreHorizontal, FiFlag } from "react-icons/fi";
+import { FiArrowLeft, FiImage, FiX, FiFlag, FiShare2, FiSend } from "react-icons/fi";
 import Nav from "../components/Nav";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
 import type { Screen } from "../components/types";
@@ -48,6 +48,7 @@ export interface FeedScreenProps {
   setShowReport?: (v: boolean) => void;
   setReportTarget?: (t: any) => void;
   setShareTarget?: (t: any) => void;
+  setViewProfile?: (p: any) => void;
 }
 
 export const FeedScreen = memo(function FeedScreen({
@@ -90,10 +91,16 @@ export const FeedScreen = memo(function FeedScreen({
   setShowReport = () => {},
   setReportTarget = () => {},
   setShareTarget = () => {},
+  setViewProfile = () => {},
   authFetch,
 }: FeedScreenProps) {
   const [postReplies, setPostReplies] = useState<Record<number, any[]>>({});
   const [detailPostId, setDetailPostId] = useState<number | null>(null);
+
+  const openAuthorProfile = (p: { id?: any; name?: string; avatar?: string }, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setViewProfile({ id: p.id ?? p.name, name: p.name, img: p.avatar, type: "Creative" });
+  };
 
   // ── Camera capture (photo + video) → posts to Feed AND BTS ──
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -335,14 +342,14 @@ export const FeedScreen = memo(function FeedScreen({
             const feedReactionArr = feedReactions[post.id] || [];
             const totalReactions = ["❤️", "🔥", "😍", "😂", "😢", "😡"].reduce((s, r) => s + (feedReactionArr.filter(x => x === r).length || 0), (post.liked ? 1 : 0));
             return (
-              <div key={post.id} className="conn-card" style={{ flexDirection: "column", margin: "0 20px 14px", padding: 0, overflow: "hidden" }}>
+              <div key={post.id} className="conn-card" style={{ flexDirection: "column", margin: "0 20px 14px", padding: 0, overflow: "hidden", position: "relative" }}>
                 <div style={{ padding: "14px 18px 0", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPostDetail(post.id); } }} onClick={() => openPostDetail(post.id)}>
-                   <img loading="lazy" src={post.avatar} alt="Avatar" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} onError={handleImgError} />
+                   <img loading="lazy" src={post.avatar} alt="Avatar" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: post.rid || post.id, name: post.author, avatar: post.avatar }, e)} />
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700 }}>{post.author}</div>
                     <div style={{ fontSize: 11, color: "var(--muted)" }}>{post.time}</div>
                   </div>
-                  <button style={{ marginLeft: "auto", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 16 }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }} aria-label="More options"><FiMoreHorizontal size={16} /></button>
+                   <div style={{ position: "absolute", top: 10, right: 10, width: 28, height: 28, borderRadius: 8, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--gold)", fontSize: 13 }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); } }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }} aria-label="Report post"><FiFlag size={13} /></div>
                 </div>
                 <div style={{ padding: "10px 18px", fontSize: 14, color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-wrap", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPostDetail(post.id); } }} onClick={() => openPostDetail(post.id)}>{post.text}</div>
                 {post.img && (
@@ -383,13 +390,13 @@ export const FeedScreen = memo(function FeedScreen({
                     }
                     setReplyingTo(replyingTo === post.id ? null : post.id);
                   }}>💬 {post.comments}</button>
-                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: "#ff8a8a", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", borderRadius: 14, transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { setShowReport(true); setReportTarget({ id: (post as any).rid || post.id, type: "feed_post", name: post.author }); }}>⚑ Report</button>
+                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", borderRadius: 14, transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { showToast("Link copied!"); }}><FiShare2 size={14} /> Share</button>
                 </div>
                 {replyingTo === post.id && (
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
                     {(postReplies[post.id] || []).map((reply: any, i: number) => (
                       <div key={i} style={{ display: "flex", gap: 10, padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-                        <img loading="lazy" src={reply.avatar || currentUser.avatar} alt="Avatar" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
+                        <img loading="lazy" src={reply.avatar || currentUser.avatar} alt="Avatar" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0, cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e)} />
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 12, fontWeight: 700 }}>{reply.author || "User"}</div>
                           <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5 }}>{reply.text}</div>
@@ -397,19 +404,21 @@ export const FeedScreen = memo(function FeedScreen({
                         </div>
                       </div>
                     ))}
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "10px 16px 14px" }}>
-                      <input
-                          className="inp"
-                          placeholder="Write a reply..."
-                          value={commentText}
-                          onChange={e => setCommentText(e.target.value)}
-                          onKeyDown={async e => { if (e.key === "Enter" && commentText.trim()) { const txt = commentText.trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "reply", postId: post.id, text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: Math.max(0, p.comments - 1) } : p)); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
-                          style={{ width: "100%", margin: 0, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "var(--text)" }}
-                        />
-                        <button
-                          onClick={async () => { if (commentText.trim()) { const txt = commentText.trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "reply", postId: post.id, text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: Math.max(0, p.comments - 1) } : p)); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
-                          style={{ width: "100%", height: 38, borderRadius: 10, border: "none", background: commentText.trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: commentText.trim() ? "#fff" : "rgba(255,255,255,0.25)", fontWeight: 700, fontSize: 12, cursor: commentText.trim() ? "pointer" : "default", transition: "all .2s" }}
-                        >Post</button>
+                    <div style={{ padding: "10px 16px 14px" }}>
+                      <div style={{ position: "relative" }}>
+                        <input
+                            className="inp"
+                            placeholder="Write a reply..."
+                            value={commentText}
+                            onChange={e => setCommentText(e.target.value)}
+                            onKeyDown={async e => { if (e.key === "Enter" && commentText.trim()) { const txt = commentText.trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "reply", postId: post.id, text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: Math.max(0, p.comments - 1) } : p)); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
+                            style={{ width: "100%", margin: 0, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.06)", borderRadius: 99, padding: "10px 42px 10px 14px", fontSize: 13, color: "var(--text)" }}
+                          />
+                          <button
+                            onClick={async () => { if (commentText.trim()) { const txt = commentText.trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "reply", postId: post.id, text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { setFeedPosts(prev => prev.map(p => p.id === post.id ? { ...p, comments: Math.max(0, p.comments - 1) } : p)); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
+                            style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", width: 30, height: 30, borderRadius: "50%", border: "none", background: commentText.trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: commentText.trim() ? "#fff" : "rgba(255,255,255,0.25)", cursor: commentText.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
+                          ><FiSend size={14} /></button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -468,7 +477,7 @@ export const FeedScreen = memo(function FeedScreen({
               )}
               {replies.map((reply: any, i: number) => (
                 <div key={i} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                  <img loading="lazy" src={reply.avatar || currentUser.avatar} alt="Avatar" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
+                  <img loading="lazy" src={reply.avatar || currentUser.avatar} alt="Avatar" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", flexShrink: 0, cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e)} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12, fontWeight: 700 }}>{reply.author || "User"} <span style={{ fontWeight: 400, color: "var(--muted)", fontSize: 11 }}>· {reply.time || "now"}</span></div>
                     <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5 }}>{reply.text}</div>
@@ -476,19 +485,20 @@ export const FeedScreen = memo(function FeedScreen({
                 </div>
               ))}
               <div style={{ marginTop: 14 }}>
-                <input
-                  className="inp"
-                  placeholder="Post your reply…"
-                  value={commentText}
-                  onChange={e => setCommentText(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter") sendDetailReply(); }}
-                  style={{ width: "100%", marginBottom: 8 }}
-                />
-                <button
-                  className="btn btn-gold"
-                  style={{ width: "100%", height: 40, borderRadius: 10, border: "none", background: commentText.trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: commentText.trim() ? "#fff" : "rgba(255,255,255,0.25)", fontWeight: 700, fontSize: 13, cursor: commentText.trim() ? "pointer" : "default", transition: "all .2s" }}
-                  onClick={sendDetailReply}
-                >Reply</button>
+                <div style={{ position: "relative" }}>
+                  <input
+                    className="inp"
+                    placeholder="Post your reply…"
+                    value={commentText}
+                    onChange={e => setCommentText(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") sendDetailReply(); }}
+                    style={{ width: "100%", margin: 0, borderRadius: 99, padding: "10px 42px 10px 14px" }}
+                  />
+                  <button
+                    onClick={sendDetailReply}
+                    style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", width: 30, height: 30, borderRadius: "50%", border: "none", background: commentText.trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: commentText.trim() ? "#fff" : "rgba(255,255,255,0.25)", cursor: commentText.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
+                  ><FiSend size={14} /></button>
+                </div>
               </div>
             </div>
           </div>, document.body);
