@@ -11,11 +11,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 
-    const { email, phone, source } = await req.json();
-    
-    if (!email || !email.includes("@")) {
+    const { email: rawEmail, phone, source } = await req.json();
+
+    if (!rawEmail || !rawEmail.includes("@")) {
       return NextResponse.json({ error: "Valid email required" }, { status: 400 });
     }
+    // Normalize once, use for both dedup check and insert. Previously the check
+    // ran against raw mixed-case input while inserts lowercased — "Foo@x.com" and
+    // "foo@x.com" both passed dedup as "unique" rows, each firing a welcome email
+    // (case-varying spam vector on a victim's address).
+    const email = rawEmail.toLowerCase();
 
     // Check if already exists
     const { data: existing } = await sb.from("muse_waitlist").select("id").eq("email", email).maybeSingle();
@@ -25,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     // Insert waitlist entry
     const { error } = await sb.from("muse_waitlist").insert({
-      email: email.toLowerCase(),
+      email,
       phone: phone || null,
       source: source || "default",
       created_at: new Date().toISOString(),

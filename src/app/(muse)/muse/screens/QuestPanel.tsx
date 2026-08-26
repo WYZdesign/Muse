@@ -20,17 +20,6 @@ const TIER_CONFIG: Record<string, { label: string; color: string; bg: string; bo
   legendary: { label: "Legendary", color: "#FF8A80", bg: "rgba(255,138,128,0.08)",  border: "rgba(255,138,128,0.2)" },
 };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  discovery: "🔍",
-  content: "📸",
-  community: "🤝",
-  social: "💬",
-  commerce: "💰",
-  profile: "👤",
-  streaks: "🔥",
-};
-void CATEGORY_ICONS;
-
 export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewardGranted, onClaimablesChange }: QuestPanelProps) {
   const [quests, setQuests] = useState<any[]>([]);
   const [xp, setXp] = useState({ total_xp: 0, level: 1 });

@@ -112,6 +112,9 @@ export async function POST(req: NextRequest) {
             const newXp = (xpRow?.total_xp || 0) + q.xp_reward;
             await sb.from("muse_user_xp").upsert({ user_id: referrer.id, total_xp: newXp, level: Math.floor(Math.sqrt(newXp / 50)) + 1, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
           }
+          if (completed) {
+            await sb.from("muse_notifications").insert({ user_id: referrer.id, type: "quest", body: `⭐ Quest complete: ${q.title} — claim your reward in Settings → Quests`, read: false });
+          }
         }
       } catch { /* quest bump is best-effort */ }
 
@@ -156,7 +159,18 @@ export async function POST(req: NextRequest) {
     }
 
     // ═══ REDEEM-REWARD: Give free month when referee subscribes ═══
+    // ═══ REDEEM-REWARD: DISABLED — fraud surface ═══
+    // This endpoint performed NO subscription verification: either party to any
+    // referral could call it directly and grant themselves a free month for a
+    // referral where nothing was ever purchased. Until a verified-purchase check
+    // exists (Stripe subscription lookup server-side), it stays disabled.
     if (action === "redeem-reward") {
+      return NextResponse.json({ error: "Reward redemption is handled automatically on subscription" }, { status: 410 });
+    }
+    /* ORIGINAL redeem-reward body disabled — no subscription verification existed,
+       letting either party mint free months for any referralId. Preserved below
+       for the future verified-purchase implementation.
+       ─────────────────────────────────────────────────────────────────────
       const secret = process.env.STRIPE_SECRET_KEY;
       if (!secret) return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
 
@@ -170,40 +184,33 @@ export async function POST(req: NextRequest) {
       if (!referral) return NextResponse.json({ error: "Referral not found" }, { status: 404 });
       if (referral.status === "reward_issued") return NextResponse.json({ error: "Reward already issued" }, { status: 400 });
 
-      // Authorization: only the referrer, the referee, or an admin may redeem.
-      // Without this, any user could redeem an arbitrary referralId to mint
-      // free months for themselves and others.
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase());
       const isParty = String(referral.referrer_id) === String(profile.id) || String(referral.referee_id) === String(profile.id);
       const isAdmin = admins.includes((profile.email || "").toLowerCase());
       if (!isParty && !isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-      // Update referral status
       await sb.from("muse_referrals").update({
         status: "reward_issued",
         reward_issued_at: new Date().toISOString(),
       }).eq("id", referralId);
 
-      // Record rewards for both parties
       await sb.from("muse_referral_rewards").insert([
         { referral_id: referralId, reward_type: "free_month", recipient_id: referral.referrer_id, amount_cents: 0 },
         { referral_id: referralId, reward_type: "free_month", recipient_id: referral.referee_id, amount_cents: 0 },
       ]);
 
-      // Notify both parties
       await sb.from("muse_notifications").insert([
         { user_id: referral.referrer_id, type: "referral_reward", body: "You earned a free month of Muse Pro for a successful referral!", read: false },
         { user_id: referral.referee_id, type: "referral_reward", body: "You received a free month of Muse Pro thanks to a referral!", read: false },
       ]);
 
-      // Email both parties (fail-open)
       const { data: rewardProfiles } = await sb.from("muse_profiles").select("id,email").in("id", [referral.referrer_id, referral.referee_id]);
       for (const p of (rewardProfiles || [])) {
         if (p?.email) sendEmail(notify(p.email, "Free month unlocked ✦", "You earned a free month", "A referral just went through — you've received a free month of Muse Pro.")).catch(() => {});
       }
 
       return NextResponse.json({ success: true, message: "Free month issued to both parties" });
-    }
+     ================================================================================ */
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (e: unknown) {

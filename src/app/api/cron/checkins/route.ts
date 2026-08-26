@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
-  // Verify cron secret
+  // Verify cron secret. The `!process.env.CRON_SECRET ||` guard matters — without
+  // it, an unset secret makes `expected` the literal "Bearer undefined", which
+  // anyone sending that exact header would pass (backup/route.ts already guards).
   const authHeader = req.headers.get("authorization");
   const expected = `Bearer ${process.env.CRON_SECRET}`;
-  if (authHeader !== expected) {
+  if (!process.env.CRON_SECRET || authHeader !== expected) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

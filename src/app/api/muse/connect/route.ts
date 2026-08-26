@@ -109,6 +109,13 @@ export async function POST(req: NextRequest) {
       if (!payeeId) return NextResponse.json({ error: "payeeId required" }, { status: 400 });
       if (String(payeeId) === String(profile.id)) return NextResponse.json({ error: "Cannot pay yourself" }, { status: 400 });
 
+      // Same Stripe Identity 18+ enforcement book-session applies — this action
+      // creates a real PaymentIntent for a paid interaction, so gate it the same way.
+      const { data: payer } = await sb.from("muse_profiles").select("age_verified").eq("id", profile.id).maybeSingle();
+      if (!payer?.age_verified) {
+        return NextResponse.json({ error: "Identity verification required", code: "VERIFICATION_REQUIRED" }, { status: 403 });
+      }
+
       // Payment-integrity: if a booking is supplied, derive the amount from
       // its session's declared rate — never trust a client-supplied amount.
       let amount: number;

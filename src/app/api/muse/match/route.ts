@@ -46,11 +46,18 @@ export async function GET(req: NextRequest) {
 
     // Fetch candidates WITH their stored embeddings (single read, no token cost).
     const { data: allProfiles } = await sb.from("muse_profiles")
-      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, photos, collabs, verified, tier, profile_completion_pct, embedding, preferences")
+      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, photos, collabs, verified, tier, profile_completion_pct, embedding, preferences, nsfw")
       .limit(200);
+
+    // Blocks (either direction) were never consulted here — the swipe deck could
+    // surface a profile that blocked the viewer or vice versa. Mirrors the same
+    // lookup used for the generic type=profiles listing in route.ts.
+    const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profile.id},target_id.eq.${profile.id}`);
+    const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profile.id) ? String(b.target_id) : String(b.user_id))));
 
     const candidates = (allProfiles || []).filter((p: any) => {
       if (String(p.id) === String(profile.id)) return false;
+      if (blockedIds.has(String(p.id))) return false;
       const hasAvatar = typeof p.avatar === "string" && p.avatar.trim().length > 0;
       const hasPhotos = Array.isArray(p.photos) && p.photos.length > 0;
       return hasAvatar || hasPhotos;

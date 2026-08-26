@@ -86,6 +86,71 @@ function initialsAvatarUrl(name: string, key: string | number): string {  const 
   return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='${c1}'/><stop offset='1' stop-color='${c2}'/></linearGradient></defs><rect width='200' height='200' fill='url(%23g)'/><text x='100' y='102' font-family='Inter,Arial,sans-serif' font-size='82' font-weight='700' fill='white' text-anchor='middle' dominant-baseline='central'>${letters}</text></svg>`;
 }
 
+// Normalize raw muse_communities rows (snake_case: member_count/description/
+// category/is_nsfw) into the camelCase shape CommunityScreen/MenuModal expect.
+// SAFETY: without this, c.nsfw is always undefined on real rows, so the
+// showNsfw || !c.nsfw filter always passes and an is_nsfw=true community
+// (e.g. seeded "Adults Only (18+)") bypasses every user's Show NSFW setting.
+function normalizeCommunity(c: any) {
+  return {
+    ...c,
+    members: c.members ?? c.member_count ?? 0,
+    desc: c.desc ?? c.description ?? "",
+    cat: c.cat ?? c.category ?? "",
+    nsfw: c.nsfw ?? c.is_nsfw ?? false,
+  };
+}
+
+// Same for muse_events rows (description/location). No nsfw column exists on
+// the table today; when one is added, e.nsfw ?? e.is_nsfw picks it up.
+function normalizeEvent(e: any) {
+  return {
+    ...e,
+    desc: e.desc ?? e.description ?? "",
+    loc: e.loc ?? e.location ?? "",
+    nsfw: e.nsfw ?? e.is_nsfw ?? false,
+  };
+}
+
+// muse_forum_posts has no `comments` column (replies live in muse_forum_replies,
+// never joined by the GET handler) and author arrives as author_id:{name,avatar}.
+// NetworkScreen/MenuModal call post.comments.length unconditionally — the first
+// real forum post would crash the whole Forum tab. Keeps the REAL DB id since
+// vote/comment/report actions send it back to the API.
+function normalizeForumPost(p: any) {
+  return {
+    ...p,
+    author: p.author ?? p.author_id?.name ?? "Creative",
+    avatar: p.avatar ?? p.author_id?.avatar ?? "",
+    cat: p.cat ?? p.category ?? "General",
+    comments: Array.isArray(p.comments) ? p.comments : [],
+    time: p.time ?? (p.created_at ? new Date(p.created_at).toLocaleString() : "Just now"),
+  };
+}
+
+// muse_briefs returns description/category + joined author_id object; CollabScreen
+// reads desc/cat/author/authorImg. Paid-Book button gates on cat==="paid", so the
+// mismatch hid it entirely on real paid briefs.
+function normalizeBrief(b: any) {
+  return {
+    ...b,
+    desc: b.desc ?? b.description ?? "",
+    cat: b.cat ?? b.category ?? "concept",
+    author: b.author ?? b.author_id?.name ?? "Creative",
+    authorImg: b.authorImg ?? b.author_id?.avatar ?? "",
+  };
+}
+
+// muse_sessions has `title`, not `name` — SessionsScreen reads s.name for heading,
+// alt text, and toast (real sessions toasted "...sent to undefined!").
+function normalizeSession(s: any) {
+  return {
+    ...s,
+    name: s.name ?? s.title ?? "Creative Pro",
+    sessions: s.sessions ?? 0,
+  };
+}
+
 function MusePage() {
   const [screen, setScreen] = useState<Screen>("auth");
   const [authMode, setAuthMode] = useState<"login"|"signup">("signup");
@@ -430,7 +495,7 @@ function MusePage() {
         showDistance: p.showDistance !== false,
         side: (p as any).side || viewerSide(p.type),
       })));
-      if (briefs?.briefs?.length) setLiveBriefs(briefs.briefs);
+      if (briefs?.briefs?.length) setLiveBriefs(briefs.briefs.map(normalizeBrief));
       if (feed?.posts?.length) {
         setLiveFeed(feed.posts);
         setFeedPosts(feed.posts.map((p: any, i: number) => ({
@@ -441,16 +506,16 @@ function MusePage() {
         })));
       }
       if (forum?.posts?.length) {
-        setLiveForum(forum.posts);
+        setLiveForum(forum.posts.map(normalizeForumPost));
         setForumPosts(forum.posts.map((p: any, i: number) => ({
           id: 100000 + i, title: p.title || "", body: p.body || "", author: p.author_id?.name || "Creative",
           avatar: p.author_id?.avatar || "", votes: p.votes || 0, comments: Array.isArray(p.comments) ? p.comments : [],
           cat: p.cat || "General", time: p.created_at ? new Date(p.created_at).toLocaleString() : "Just now", pinned: false
         })));
       }
-      if (events?.events?.length) setLiveEvents(events.events);
-      if (communities?.communities?.length) setLiveCommunities(communities.communities);
-      if (sessions?.sessions?.length) setLiveSessions(sessions.sessions);
+      if (events?.events?.length) setLiveEvents(events.events.map(normalizeEvent));
+      if (communities?.communities?.length) setLiveCommunities(communities.communities.map(normalizeCommunity));
+      if (sessions?.sessions?.length) setLiveSessions(sessions.sessions.map(normalizeSession));
       if (professionals?.professionals?.length) setLiveProfessionals(professionals.professionals);
     } catch {}
     setBootstrapped(true);
@@ -675,6 +740,14 @@ function MusePage() {
             setTimeout(() => { try { applySession(accessToken, refreshToken, attempt + 1); } catch {} }, 1000);
             return;
           }
+          // Suspended accounts were silently bounced to the login screen with no
+          // explanation — tell the user why, and clear the dead token so reloads
+          // don't loop through the same rejection. (Event, not showToast: this
+          // callback is defined before showToast's declaration.)
+          if (d.code === "ACCOUNT_SUSPENDED") {
+            try { safeRemoveItem("muse_user"); } catch {}
+            try { window.dispatchEvent(new CustomEvent("muse:toast", { detail: "Your account has been suspended. Contact support@wyzdesign.com" })); } catch {}
+          }
           setAuthUser(null);
           setScreen(prev => (prev === "discover" || prev === "matches" || prev === "connections") ? prev : "auth");
         }
@@ -884,6 +957,13 @@ function MusePage() {
     return () => window.removeEventListener("muse:storage-quota", onQuota);
   }, [showToast]);
 
+  // Toast channel for code that runs before showToast exists (session bootstrap).
+  useEffect(() => {
+    const onToast = (e: Event) => { const msg = (e as CustomEvent<string>).detail; if (msg) showToast(msg); };
+    window.addEventListener("muse:toast", onToast);
+    return () => window.removeEventListener("muse:toast", onToast);
+  }, [showToast]);
+
   // Login quests + claimables badge — runs once authed+bootstrapped. Must live
   // AFTER trackQuest's declaration. Login counts once per calendar day so
   // daily/streak quests stay accurate across refreshes.
@@ -906,6 +986,10 @@ function MusePage() {
 
   const doLogout = useCallback(async () => {
     try { await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "logout" }) }); } catch(e) {}
+    // Kill the CLIENT-side supabase session too — without this, the persisted
+    // supabase-js session survives and silently re-logs the user on next load
+    // (shared-device risk). The backend call alone was a no-op for this.
+    try { await supabase.auth.signOut(); } catch {}
     const keys = ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium","muse_referral_code","muse_open_count","muse_hide_premium"];
     keys.forEach(k => { try { safeRemoveItem(k); } catch {} });
     setAuthUser(null); setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free", foundingTier:"", proExpiresAt:"" })); setUserTier("free"); setScreen("auth"); showToast("Logged out");
@@ -1669,7 +1753,7 @@ function MusePage() {
     let cancelled = false;
     authFetch("/api/muse?type=briefs")
       .then(r => r.json())
-      .then(d => { if (!cancelled && d.briefs) setLiveBriefs(d.briefs); })
+      .then(d => { if (!cancelled && d.briefs) setLiveBriefs(d.briefs.map(normalizeBrief)); })
       .catch((err) => { trackError("fetch_briefs", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
@@ -1680,7 +1764,7 @@ function MusePage() {
     let cancelled = false;
     authFetch("/api/muse?type=forum")
       .then(r => r.json())
-      .then(d => { if (!cancelled && d.posts) setLiveForum(d.posts); })
+      .then(d => { if (!cancelled && d.posts) setLiveForum(d.posts.map(normalizeForumPost)); })
       .catch((err) => { trackError("fetch_forum", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
@@ -1691,7 +1775,7 @@ function MusePage() {
     let cancelled = false;
     authFetch("/api/muse?type=events")
       .then(r => r.json())
-      .then(d => { if (!cancelled && d.events) setLiveEvents(d.events); })
+      .then(d => { if (!cancelled && d.events) setLiveEvents(d.events.map(normalizeEvent)); })
       .catch((err) => { trackError("fetch_events", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
@@ -1713,7 +1797,7 @@ function MusePage() {
     let cancelled = false;
     authFetch("/api/muse?type=communities")
       .then(r => r.json())
-      .then(d => { if (!cancelled && d.communities) setLiveCommunities(d.communities); })
+      .then(d => { if (!cancelled && d.communities) setLiveCommunities(d.communities.map(normalizeCommunity)); })
       .catch((err) => { trackError("fetch_communities", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
@@ -1724,7 +1808,7 @@ function MusePage() {
     let cancelled = false;
     authFetch("/api/muse?type=sessions")
       .then(r => r.json())
-      .then(d => { if (!cancelled && d.sessions) setLiveSessions(d.sessions); })
+      .then(d => { if (!cancelled && d.sessions) setLiveSessions(d.sessions.map(normalizeSession)); })
       .catch((err) => { trackError("fetch_sessions", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
@@ -1955,7 +2039,7 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
           {toastMsg}
         </div>
       )}
-      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} setLiveForum={setLiveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} />
+      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} setLiveForum={setLiveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} liveProfessionals={liveProfessionals} />
       {screen === "auth" ? (
         <div className="phone-wrap">
           <div className="phone" id="muse-app">

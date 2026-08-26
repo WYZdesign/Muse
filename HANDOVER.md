@@ -812,6 +812,26 @@ Large multi-area session. All changes code-verified locally: **tsc error count i
 
 ---
 
+### Session 39 (ox-alpha) — merged Claude's Sessions 36–38 audit patches by hand + fixed 5 more of their flagged CRITICALs + admin scan queue
+
+Claude ran deep audits across Sessions 36–38 and delivered patches; their git/handover state had diverged from this tree (which had already landed S35 on origin), so all three were **applied manually here** — code hunks verbatim, HANDOVER hunks skipped in favor of this consolidated entry. Their full findings lists below are canonical reading; highlights integrated:
+
+**From Claude's audits, now IN THIS TREE:** S36 — Communities/Events NSFW-bypass normalizers + detail-modal img fallback. S37 — `match/route.ts` missing `nsfw` select (second NSFW bypass!) + blocks check in swipe deck; `normalizeForumPost` (real forum post would crash the Forum tab via `comments.length` on undefined); `normalizeBrief`/`normalizeSession` (blank real briefs/sessions, "sent to undefined!" toast); Concept tab `vision`→`concept`; Professionals Connect profileId resolution + honest failure toast; dead-end Message button wired; MenuModal liveProfessionals prop. S38 — cron/checkins CRON_SECRET fail-open guard; waitlist case-normalization spam fix; create-payment age gate; a11y keyboard support for Community/Network tabs + NSFW toggle.
+
+**ox-alpha fixes on top, closing items from Claude's unfixed-CRITICAL list:**
+1. **Quest claim double-grant race** (their CRITICAL): conditional update now `.select()`s flipped rows — empty result ⇒ 409 Already claimed, reward granted exactly once. Plus per-user rate limit (`claim-quest`, 12/min).
+2. **Chat image messages always 400'd** (their CRITICAL): message handler no longer requires non-empty text when an image is present; screening/disclosure only run when there's text.
+3. **Logout left supabase-js session alive** (their CRITICAL, shared-device risk): client `supabase.auth.signOut()` added to doLogout.
+4. **`redeem-reward` fraud endpoint** (their HIGH): returns 410 pending a verified-purchase design; original body preserved commented for that future work.
+5. **Suspended-session silent bounce**: ACCOUNT_SUSPENDED now surfaces a clear toast via a pre-showToast-safe event channel and clears the dead token.
+6. Also verified Claude's "Verified Artist quest unwinnable" flag was already stale — the server-side bump landed in Session 35's verification-route hook.
+
+**New this session:** admin **Scans tab** in ModerationPanel (`admin-content-scans` + `admin-resolve-incident`, audit-logged) — videos/pending incidents finally have a review surface; quest completions from server-side bumps now persist a bell notification (⭐ …claim in Settings → Quests); Settings dot typed (no `as any`).
+
+**On Claude's production-mismatch flag (Quests unreachable in prod):** most likely explanation is the earlier Vercel deploy for `b4acdf5` failed or hadn't finished when they checked live — the Quests UI is unconditional in current source and the full build passes locally. This push re-triggers the deploy. **Torreé: after it goes green, open the app → Settings → "Quests & Rewards" row must be present between Subscription and Marketplace Payments. If it still isn't, pull the Vercel build logs for the latest production deployment — that would mean the dashboard's prod alias points at an older deployment than git HEAD.**
+
+---
+
 ## SESSION STATE
 - **Build status:** ✅ CLEAN — tsc 0 errors, vitest 53/53, `npm run build` passes locally (first full local build on Torreé's Windows box; previously blocked by corrupted node_modules)
 - **Env fix (Session 35, follow-up):** the ~36 "pre-existing" type errors were NOT baseline — they were incomplete package installs missing `.d.ts` output (@supabase/auth-js, @aws-sdk/client-rekognition) plus a corrupt @next/swc native binary. Deleting those packages and re-running `npm i` restored them. If this machine's node_modules goes stale again: delete the misbehaving package dir + reinstall before debugging code.

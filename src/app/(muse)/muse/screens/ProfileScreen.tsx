@@ -175,7 +175,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div className="section">
           <div className="avail-row">
             <div><div className="section-title">Show NSFW</div><div className="avail-sub">Fine art, figure, body art</div></div>
-            <div className={"toggle" + (showNsfw ? " on" : "")} onClick={() => setShowNsfw(!showNsfw)}><div className="toggle-dot" /></div>
+            <div role="switch" aria-checked={showNsfw} tabIndex={0} className={"toggle" + (showNsfw ? " on" : "")} onClick={() => setShowNsfw(!showNsfw)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowNsfw(!showNsfw); } }}><div className="toggle-dot" /></div>
           </div>
         </div>
         <div className="section">

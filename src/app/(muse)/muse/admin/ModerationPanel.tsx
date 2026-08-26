@@ -18,9 +18,11 @@ type Strike = {
 type AuditLog = { id: string; query_text: string; query_result_summary: string; created_at: string };
 
 export default function AdminModerationPanel() {
-  const [tab, setTab] = useState<"reports" | "strikes" | "brain" | "audit">("reports");
+  const [tab, setTab] = useState<"reports" | "strikes" | "scans" | "brain" | "audit">("reports");
   const [reports, setReports] = useState<Report[]>([]);
   const [strikes, setStrikes] = useState<Strike[]>([]);
+  const [scanRows, setScanRows] = useState<any[]>([]);
+  const [incidents, setIncidents] = useState<any[]>([]);
   const [auditLog, setAuditLog] = useState<AuditLog[]>([]);
   const [brainQuery, setBrainQuery] = useState("");
   const [brainResult, setBrainResult] = useState<string>("");
@@ -43,6 +45,11 @@ export default function AdminModerationPanel() {
     if (t === "strikes" && !strikes.length) {
       const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-strikes" }) });
       if (r.ok) { const d = await r.json(); setStrikes(d.strikes || []); }
+    }
+    if (t === "scans") {
+      // Always refetch — the queue changes as uploads happen.
+      const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-content-scans" }) });
+      if (r.ok) { const d = await r.json(); setScanRows(d.scans || []); setIncidents(d.incidents || []); }
     }
     if (t === "audit") {
       const r = await authFetch("/api/muse?type=admin-analytics");
@@ -121,7 +128,7 @@ export default function AdminModerationPanel() {
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>
-          {[["reports", `Reports (${reports.length})`], ["strikes", `Strikes (${strikes.length})`], ["brain", "🧠 AI Brain"], ["audit", "Audit Log"]].map(([key, label]) => (
+          {[["reports", `Reports (${reports.length})`], ["strikes", `Strikes (${strikes.length})`], ["scans", `Scans${incidents.length ? ` ⚠${incidents.length}` : ""}`], ["brain", "🧠 AI Brain"], ["audit", "Audit Log"]].map(([key, label]) => (
             <button key={key} onClick={() => loadTab(key)} style={{ flex: 1, padding: "10px 0", borderRadius: 8, background: tab === key ? "rgba(255,215,0,0.15)" : "transparent", border: "none", color: tab === key ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
               {label}
             </button>
@@ -152,6 +159,54 @@ export default function AdminModerationPanel() {
                   <button onClick={() => suspendUser(r.target_id?.id || "", `Reported: ${r.reason}`, 7)} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(255,150,0,0.15)", border: "1px solid rgba(255,150,0,0.3)", color: "#ff9600", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Suspend 7d</button>
                   <button onClick={() => suspendUser(r.target_id?.id || "", `Reported: ${r.reason}`, 30)} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(255,100,0,0.15)", border: "1px solid rgba(255,100,0,0.3)", color: "#ff6400", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Suspend 30d</button>
                   <button onClick={() => suspendUser(r.target_id?.id || "", `Reported: ${r.reason} — permanent ban`, null)} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(255,50,50,0.15)", border: "1px solid rgba(255,50,50,0.3)", color: "#ff3232", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Ban</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* SCANS — upload moderation queue (videos land here as pending_review) */}
+        {tab === "scans" && (
+          <div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Pending incidents first, then the 100 most recent moderation scans.</div>
+            {incidents.length === 0 && scanRows.length === 0 && (
+              <div style={{ ...box, textAlign: "center", padding: 40, color: "rgba(255,255,255,0.4)" }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🛡️</div>
+                <div>No scans or pending incidents</div>
+              </div>
+            )}
+            {incidents.map(i => (
+              <div key={i.id} style={{ ...box, marginBottom: 10, borderColor: i.severity === "critical" ? "rgba(255,50,50,0.5)" : "rgba(255,150,0,0.35)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: i.severity === "critical" ? "#ff3232" : "#ff9600" }}>
+                    {i.type === "csam" ? "🚨 CSAM" : "⚠️"} {i.type}
+                  </span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{new Date(i.created_at).toLocaleString()}</span>
+                </div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>
+                  status: {i.status}{i.details?.flaggedCategories?.length ? ` · flagged: ${i.details.flaggedCategories.join(", ")}` : ""}{i.user_id ? ` · user ${String(i.user_id).slice(0, 8)}…` : ""}
+                </div>
+                {i.status === "pending_review" && (
+                  <button
+                    onClick={async () => {
+                      const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-resolve-incident", incidentId: i.id }) });
+                      if (r.ok) setIncidents(prev => prev.filter(x => x.id !== i.id));
+                    }}
+                    style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(100,200,120,0.15)", border: "1px solid rgba(100,200,120,0.3)", color: "#7ee2a0", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+                  >Mark reviewed</button>
+                )}
+              </div>
+            ))}
+            {scanRows.filter(s => !s.safe || s.should_block || s.should_report || /video/i.test(String(s.file_type))).map(s => (
+              <div key={s.id} style={{ ...box, marginBottom: 8, opacity: s.safe ? 0.65 : 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: s.is_csam ? "#ff3232" : s.safe ? "rgba(255,255,255,0.6)" : "#ff9600" }}>
+                    {s.is_csam ? "🚨 CSAM · " : !s.safe ? "⚠ FLAGGED · " : "🎬 "}{s.file_name || "(unnamed)"}
+                  </span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", whiteSpace: "nowrap" }}>{new Date(s.scanned_at).toLocaleString()}</span>
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
+                  ctx: {s.context || "?"} · type: {s.file_type || "?"}{s.confidence != null ? ` · conf ${(s.confidence * 100).toFixed(0)}%` : ""}{s.flagged_categories?.length ? ` · [${s.flagged_categories.join(", ")}]` : ""}{s.user_id ? ` · user ${String(s.user_id).slice(0, 8)}…` : ""}
                 </div>
               </div>
             ))}

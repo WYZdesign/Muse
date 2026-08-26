@@ -102,7 +102,7 @@ export const CollabScreen = memo(function CollabScreen({
         <button className="hdr-btn" onClick={() => setShowPostBrief(true)} aria-label="Create Brief"><FiPlus size={18} /></button>
       </div>
       <div className="conn-tabs" style={{ padding: "0 12px" }}>
-        {([["all", "All"], ["tfp", "TFP"], ["paid", "Paid"], ["opencall", "Open Call"], ["vision", "Concept"]] as const).map(([k, l]) => (
+        {([["all", "All"], ["tfp", "TFP"], ["paid", "Paid"], ["opencall", "Open Call"], ["concept", "Concept"]] as const).map(([k, l]) => (
           <div key={k} className={"conn-tab" + (museCat === k ? " active" : "")} onClick={() => setMuseCat(k as any)}>{l}</div>
         ))}
       </div>
@@ -116,7 +116,7 @@ export const CollabScreen = memo(function CollabScreen({
               deadline: "Flexible",
               urgent: false,
               nsfw: false,
-              cat: b.cat || "vision",
+              cat: b.cat || "concept",
             })),
             ...(liveBriefs?.length ? liveBriefs : BRIEFS),
           ];
@@ -150,7 +150,7 @@ export const CollabScreen = memo(function CollabScreen({
                   {brief.cat === "tfp" && <span className="brief-tag" style={{ background: "rgba(152,251,152,0.15)", borderColor: "rgba(152,251,152,0.3)", color: "var(--mint)" }}>TFP</span>}
                   {brief.cat === "paid" && <span className="brief-tag" style={{ background: "rgba(255,215,0,0.12)", borderColor: "rgba(255,215,0,0.2)", color: "var(--gold)" }}>Paid</span>}
                   {brief.cat === "opencall" && <span className="brief-tag" style={{ background: "rgba(135,206,235,0.12)", borderColor: "rgba(135,206,235,0.25)", color: "#87CEEB" }}>Open Call</span>}
-                  {brief.cat === "vision" && <span className="brief-tag" style={{ background: "rgba(212,165,255,0.12)", borderColor: "rgba(212,165,255,0.25)", color: "var(--lavender)" }}>Ideas</span>}
+                  {brief.cat === "concept" && <span className="brief-tag" style={{ background: "rgba(212,165,255,0.12)", borderColor: "rgba(212,165,255,0.25)", color: "var(--lavender)" }}>Ideas</span>}
                   {brief.urgent && <span className="brief-tag" style={{ background: "rgba(255,107,107,0.15)", borderColor: "rgba(255,107,107,0.3)", color: "var(--coral)" }}>Urgent</span>}
                   {brief.nsfw && <span className="brief-tag" style={{ background: "rgba(255,107,107,0.15)", borderColor: "rgba(255,107,107,0.3)", color: "var(--sunset)" }}>18+</span>}
                 </div>
@@ -159,7 +159,7 @@ export const CollabScreen = memo(function CollabScreen({
               <div className="brief-desc">{brief.desc}</div>
               <div className="brief-tags">{brief.tags.map((t: string) => <span key={t} className="brief-tag">{t}</span>)}</div>
               <div className="brief-actions">
-                {brief.cat === "vision" ? (
+                {brief.cat === "concept" ? (
                   <button className="brief-btn-apply" style={{ padding: "8px 14px", fontSize: 12 }} onClick={() => { setChatTarget({ id: brief.id, name: brief.author, type: "Creative", img: brief.authorImg, messages: [] }); showScreen("chat"); }}>Respond</button>
                 ) : (
                   <button

@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
                   const { data: xpRow } = await sb.from("muse_user_xp").select("total_xp, level").eq("user_id", profile.id).maybeSingle();
                   const newXp = (xpRow?.total_xp || 0) + vq.xp_reward;
                   await sb.from("muse_user_xp").upsert({ user_id: profile.id, total_xp: newXp, level: Math.floor(Math.sqrt(newXp / 50)) + 1, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+                  await sb.from("muse_notifications").insert({ user_id: profile.id, type: "quest", body: `⭐ Quest complete: ${vq.title} — claim your reward in Settings → Quests`, read: false });
                 }
               }
             } catch { /* quest bump is best-effort */ }

@@ -72,6 +72,7 @@ export interface MenuModalProps {
   onOpenActivity?: () => void;
   unreadCount?: number;
   activityFeed?: {id:number;from:string;avatar:string;text:string;time:string;read:boolean}[];
+  liveProfessionals?: any[] | null;
 }
 
 const SUPPORT_EMAIL = "info@wyzdesign.com";
@@ -142,6 +143,7 @@ export const MenuModal = memo(function MenuModal({
   onOpenActivity,
   unreadCount,
   activityFeed = [],
+  liveProfessionals,
 }: MenuModalProps) {
   if (!showHamburger) return null;
 
@@ -288,7 +290,8 @@ export const MenuModal = memo(function MenuModal({
               <div className="conn-scroll">
                 <div className="hamburger-title">Network</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "0 0 10px" }}>Creative Professionals</div>
-                {PROFESSIONALS.filter(p => showNsfw || !p.nsfw).map(p => (
+                {/* Was always the static seed list — liveProfessionals wasn't a prop at all */}
+                {(liveProfessionals?.length ? liveProfessionals : PROFESSIONALS).filter((p: any) => showNsfw || !p.nsfw).map((p: any) => (
                   <div key={p.id} className="conn-card" style={{ margin: "0 0 10px", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "0 0 16px 0", gap: 0 }}>
                     <img loading="lazy" src={p.img} alt={p.name} style={{ width: "100%", height: 150, objectFit: "fill", borderRadius: "16px 16px 0 0" }} onError={handleImgError} />
                     <div className="conn-content" style={{ padding: "12px 16px 0", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "100%" }}>

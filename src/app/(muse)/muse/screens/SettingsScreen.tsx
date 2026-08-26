@@ -228,14 +228,14 @@ export const SettingsScreen = memo(function SettingsScreen({
           <div className="settings-group">
             <div className="settings-group-title">Payments & Subscription</div>
             {[
-              { icon: <FiZap size={18} />, label: "Subscription", desc: "Manage your plan", action: () => showScreen("subscription") },
+              { icon: <FiZap size={18} />, label: "Subscription", desc: "Manage your plan", action: () => showScreen("subscription"), dot: false },
               { icon: <FiStar size={18} />, label: "Quests & Rewards", desc: questClaimables > 0 ? `${questClaimables} reward${questClaimables > 1 ? "s" : ""} ready to claim!` : "Complete challenges, earn free likes", action: () => setShowQuests(true), dot: questClaimables > 0 },
-              { icon: <FiDollarSign size={18} />, label: "Marketplace Payments", desc: "Connect Stripe to receive bookings", action: () => setShowConnect(true) },
-              { icon: <FiDollarSign size={18} />, label: "Payment History", desc: "View earnings and transactions", action: () => setShowPaymentHistory(true) },
-              { icon: <FiGift size={18} />, label: "Referral Program", desc: "Invite friends, earn free months", action: () => setShowReferral(true) },
+              { icon: <FiDollarSign size={18} />, label: "Marketplace Payments", desc: "Connect Stripe to receive bookings", action: () => setShowConnect(true), dot: false },
+              { icon: <FiDollarSign size={18} />, label: "Payment History", desc: "View earnings and transactions", action: () => setShowPaymentHistory(true), dot: false },
+              { icon: <FiGift size={18} />, label: "Referral Program", desc: "Invite friends, earn free months", action: () => setShowReferral(true), dot: false },
             ].map(item => (
               <div key={item.label} className="settings-item" onClick={item.action}>
-                <div className="settings-item-left"><div className="settings-icon" style={{ position: "relative" }}>{item.icon}{(item as any).dot && <span style={{ position: "absolute", top: -2, right: -2, width: 10, height: 10, borderRadius: "50%", background: "#FF69B4", border: "1.5px solid #0f0a1e" }} />}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>
+                <div className="settings-item-left"><div className="settings-icon" style={{ position: "relative" }}>{item.icon}{item.dot && <span style={{ position: "absolute", top: -2, right: -2, width: 10, height: 10, borderRadius: "50%", background: "#FF69B4", border: "1.5px solid #0f0a1e" }} />}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>
                 <div className="settings-arrow">→</div>
               </div>
             ))}

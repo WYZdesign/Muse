@@ -119,7 +119,7 @@ export const CommunityScreen = memo(function CommunityScreen({
       </div>
       <div className="conn-tabs" style={{ padding: "0 16px" }}>
         {(["groups", "events"] as const).map(t => (
-          <div key={t} className={"conn-tab" + (commTab === t ? " active" : "")} onClick={() => setCommTab(t)}>{t === "groups" ? "Groups" : "Events"}</div>
+          <div key={t} role="tab" tabIndex={0} aria-selected={commTab === t} className={"conn-tab" + (commTab === t ? " active" : "")} onClick={() => setCommTab(t)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCommTab(t); } }}>{t === "groups" ? "Groups" : "Events"}</div>
         ))}
       </div>
 
@@ -133,7 +133,14 @@ export const CommunityScreen = memo(function CommunityScreen({
               <button onClick={() => setDetailItem(null)} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(255,255,255,0.6)" }}><FiX size={16} /></button>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 100px" }}>
-              {detailItem.img && <img src={detailItem.img} alt="" style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 16, marginBottom: 16 }} onError={handleImgError} />}
+              {/* Same img:'' seed-data gap as the card views — gradient-initial fallback */}
+              {detailItem.img ? (
+                <img src={detailItem.img} alt="" style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 16, marginBottom: 16 }} onError={handleImgError} />
+              ) : (
+                <div style={{ width: "100%", height: 200, borderRadius: 16, marginBottom: 16, background: "linear-gradient(135deg, #2a1a3e 0%, #1a0a2e 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,215,0,0.6)", fontSize: "2.5em", fontWeight: 700 }}>
+                  {((detailType === "group" ? detailItem.name : detailItem.title) || "").trim().charAt(0).toUpperCase()}
+                </div>
+              )}
               {detailType === "group" ? (
                 <>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>

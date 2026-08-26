@@ -33,6 +33,19 @@ function questPeriodKey(frequency: string): string {
  * type SupabaseClient avoided — sb is structurally compatible across the
  * service client and the anon client used in this route. */
 
+/** Persist a "quest complete" notification so server-side completions
+ *  (match/book/verify/referral etc.) surface in the bell — client-tracked
+ *  actions already toast, but these would otherwise be silent. */
+async function notifyQuestComplete(sb: any, userId: string, title: string): Promise<void> {
+  try {
+    await sb.from("muse_notifications").insert({
+      user_id: userId, type: "quest",
+      body: `⭐ Quest complete: ${title} — claim your reward in Settings → Quests`,
+      read: false,
+    });
+  } catch { /* best-effort */ }
+}
+
 /** Award XP for a completed quest; handles level-ups and cascades into
  *  reach_level + meta_quests quests. Idempotent per completion. */
 async function awardQuestXp(sb: any, profileId: string, xpReward: number): Promise<boolean> {
@@ -76,6 +89,7 @@ async function setQuestProgress(sb: any, profileId: string, actionKey: string, a
       if (actionKey !== "meta_quests") await refreshMetaQuest(sb, profileId);
       await awardQuestXp(sb, profileId, quest.xp_reward);
     }
+    if (completed) await notifyQuestComplete(sb, profileId, quest.title);
   }
 }
 
@@ -112,7 +126,10 @@ async function bumpQuest(sb: any, profileId: string, actionKey: string): Promise
           completed_at: completed ? new Date().toISOString() : null,
         });
       }
-      if (completed) anyCompleted = true;
+      if (completed) {
+        anyCompleted = true;
+        await notifyQuestComplete(sb, profileId, quest.title);
+      }
     }
     if (anyCompleted) {
       // Award XP once per bump using the highest tier reward for this key —
@@ -399,7 +416,17 @@ export async function GET(req: NextRequest) {
 
     if (type === "professionals") {
       const { data } = await sb.from("muse_professionals").select("*").order("created_at", { ascending: false }).limit(50);
-      return NextResponse.json({ professionals: data || [] });
+      // muse_professionals.user_id references auth.users, not muse_profiles — resolve
+      // each professional's real profile id so the client's connect action targets
+      // something the handler can actually find (was silently 400ing for real pros).
+      const rows = data || [];
+      const userIds = rows.map((p: any) => p.user_id).filter(Boolean);
+      let profileIdByAuthId = new Map<string, string>();
+      if (userIds.length) {
+        const { data: profiles } = await sb.from("muse_profiles").select("id, auth_id").in("auth_id", userIds);
+        profileIdByAuthId = new Map((profiles || []).map((pr: any) => [pr.auth_id, pr.id]));
+      }
+      return NextResponse.json({ professionals: rows.map((p: any) => ({ ...p, profileId: profileIdByAuthId.get(p.user_id) || null })) });
     }
 
     if (type === "reviews") {
@@ -765,7 +792,10 @@ export async function POST(req: NextRequest) {
       const vErr = validateInput(rest);
       if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
       const { toId, text, image_url, img, client_msg_id } = rest;
-      if (!text?.trim()) return NextResponse.json({ error: "text required" }, { status: 400 });
+      const imageUrl = image_url || img;
+      // Image-only messages are valid — text was previously required
+      // unconditionally, which 400'd every photo send.
+      if (!text?.trim() && !imageUrl) return NextResponse.json({ error: "text or image required" }, { status: 400 });
       if (!toId) return NextResponse.json({ error: "toId required" }, { status: 400 });
       // Blocks were never enforced anywhere — a blocked user could still
       // message the person who blocked them (or vice versa). Check both
@@ -774,9 +804,10 @@ export async function POST(req: NextRequest) {
         const { data: msgBlock } = await sb.from("muse_blocks").select("id").or(`and(user_id.eq.${profile.id},target_id.eq.${toId}),and(user_id.eq.${toId},target_id.eq.${profile.id})`).limit(1).maybeSingle();
         if (msgBlock) return NextResponse.json({ error: "Unable to message this user" }, { status: 403 });
       }
-      const cleanText = sanitizeText(String(text).trim());
-      if (!cleanText) return NextResponse.json({ error: "text required" }, { status: 400 });
-      const screen = screenText(cleanText);
+      const cleanText = sanitizeText(String(text || "").trim());
+      if (!cleanText && !imageUrl) return NextResponse.json({ error: "text or image required" }, { status: 400 });
+      // Text screening only applies when there IS text — image-only messages skip it.
+      const screen = cleanText ? screenText(cleanText) : { block: false, categories: [] as string[] };
       if (screen.block) {
         await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message_blocked", details: { categories: screen.categories } });
         return NextResponse.json({ error: "Message blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
@@ -2231,6 +2262,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (actionType === "claim-quest") {
+      if (!await checkRateUser(profile.id, "claim-quest", 12)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { quest_id } = rest;
       if (!quest_id || !UUID_RE.test(String(quest_id))) return NextResponse.json({ error: "quest_id required" }, { status: 400 });
 
@@ -2249,11 +2281,17 @@ export async function POST(req: NextRequest) {
       if (!uq.completed) return NextResponse.json({ error: "Quest not completed" }, { status: 400 });
       if (uq.claimed) return NextResponse.json({ error: "Already claimed" }, { status: 400 });
 
-      const { error: claimErr } = await sb.from("muse_user_quests")
+      // Conditional update + .select() so we verify a row ACTUALLY flipped —
+      // Supabase returns success with an empty array when the eq("claimed",
+      // false) guard matches nothing, which previously let two concurrent
+      // claims both succeed and double-grant (including stacking free Pro).
+      const { data: claimedRows, error: claimErr } = await sb.from("muse_user_quests")
         .update({ claimed: true, updated_at: new Date().toISOString() })
-        .eq("id", uq.id).eq("claimed", false); // conditional update = no double-claim race
+        .eq("id", uq.id).eq("claimed", false)
+        .select("id");
 
       if (claimErr) return NextResponse.json({ error: "Could not claim reward" }, { status: 500 });
+      if (!claimedRows?.length) return NextResponse.json({ error: "Already claimed" }, { status: 409 });
 
       // Fulfil Pro-time rewards server-side: extend pro_expires_at by the
       // reward months. Free-tier users start their clock from now; existing
@@ -2275,6 +2313,31 @@ export async function POST(req: NextRequest) {
         grantedUntil: grantedUntil || null,
         reward: { reward_type: questDef.reward_type, reward_amount: questDef.reward_amount, reward_label: questDef.reward_label },
       });
+    }
+
+    // ── ADMIN: content-scan review queue (uploads incl. videos) ────────
+    if (actionType === "admin-content-scans") {
+      if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      const [scans, incidents] = await Promise.all([
+        sb.from("muse_content_scans")
+          .select("id, user_id, file_name, file_type, context, safe, flagged_categories, confidence, should_block, should_report, is_csam, scanned_at")
+          .order("scanned_at", { ascending: false }).limit(100),
+        sb.from("muse_safety_incidents")
+          .select("id, user_id, type, severity, details, status, created_at")
+          .in("status", ["pending_review", "pending_ncmec"])
+          .order("created_at", { ascending: false }).limit(100),
+      ]);
+      return NextResponse.json({ scans: scans.data || [], incidents: incidents.data || [] });
+    }
+
+    if (actionType === "admin-resolve-incident") {
+      if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      const { incidentId } = rest;
+      if (!incidentId || !UUID_RE.test(String(incidentId))) return NextResponse.json({ error: "incidentId required" }, { status: 400 });
+      const { error } = await sb.from("muse_safety_incidents").update({ status: "reviewed" }).eq("id", incidentId);
+      if (error) return safeServerError(error, "db op");
+      await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `resolve_incident:${incidentId}` });
+      return NextResponse.json({ success: true });
     }
 
     // ── Analytics / error beacons (fire-and-forget) ──

@@ -186,10 +186,13 @@ export const NetworkScreen = memo(function NetworkScreen({
   function handleConnect(p: any) {
     if (connectedIds.has(p.id)) return;
     setConnectLoading(p.id);
+    // muse_professionals rows aren't keyed by muse_profiles.id — the connect
+    // action needs the real profile id, resolved server-side as `profileId`.
+    const targetId = p.profileId || p.id;
     apiFetch("/api/muse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "connect", targetId: p.id }),
+      body: JSON.stringify({ action: "connect", targetId }),
     })
       .then((r: any) => {
         if (!r.ok) throw new Error("failed");
@@ -201,12 +204,8 @@ export const NetworkScreen = memo(function NetworkScreen({
         showToast(`Request sent \u2014 ${p.name} will be notified`);
       })
       .catch(() => {
-        setConnectedIds((prev) => {
-          const n = new Set(prev);
-          n.add(p.id);
-          return n;
-        });
-        showToast(`Request sent \u2014 ${p.name} will be notified`);
+        // Was masking every failure with the same success toast.
+        showToast(`Couldn't send request \u2014 try again`);
       })
       .finally(() => setConnectLoading(null));
   }
@@ -323,8 +322,12 @@ export const NetworkScreen = memo(function NetworkScreen({
         {(["pros", "forum"] as const).map((t) => (
           <div
             key={t}
+            role="tab"
+            tabIndex={0}
+            aria-selected={netTab === t}
             className={"conn-tab" + (netTab === t ? " active" : "")}
             onClick={() => setNetTab(t)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNetTab(t); } }}
           >
             {t === "pros" ? "Professionals" : "Forum"}
           </div>
@@ -1373,8 +1376,9 @@ export const NetworkScreen = memo(function NetworkScreen({
                       cursor: "pointer",
                     }}
                     onClick={() => {
+                      // Was a dead-end stub — never actually opened a conversation.
+                      openChat({ id: proDetail.profileId || proDetail.id, name: proDetail.name, type: proDetail.type || "Creative", img: proDetail.img, messages: [] });
                       setProDetail(null);
-                      showToast(`Opening chat with ${proDetail.name}...`);
                     }}
                   >
                     Message
