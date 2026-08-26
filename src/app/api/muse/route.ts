@@ -146,13 +146,23 @@ function getAuthUser() {
   return supabase.auth.getUser();
 }
 
-/** Fetch a profile's email and send them a notification email + push (fail-open). */
-async function emailProfile(sb: ReturnType<typeof getServiceClient>, profileId: string, subject: string, title: string, body: string, ctaLabel?: string, ctaUrl?: string) {
+/** Fetch a profile's email and send them a notification email + push (fail-open).
+ *  `prefKey` gates BOTH channels on the recipient's Notifications toggles
+ *  (preferences.notifications.match/message/brief/like) — previously the toggles
+ *  saved but were never consulted, so opt-outs had zero effect. Omit prefKey
+ *  for transactional/safety notices that must always deliver. */
+async function emailProfile(sb: ReturnType<typeof getServiceClient>, profileId: string, subject: string, title: string, body: string, ctaLabel?: string, ctaUrl?: string, prefKey?: "match" | "message" | "brief" | "like") {
   try {
-    const { data } = await sb.from("muse_profiles").select("email").eq("id", profileId).maybeSingle();
+    const { data } = await sb.from("muse_profiles").select("email, preferences").eq("id", profileId).maybeSingle();
+    const prefs = (data as any)?.preferences?.notifications;
+    const optedOut = !!prefKey && prefs && prefs[prefKey] === false;
+    if (optedOut) return;
     if (data?.email) sendEmail(notify(data.email, subject, title, body, ctaLabel, ctaUrl)).catch(() => {});
-  } catch { /* fail-open */ }
-  pushToProfile(profileId, title, body, ctaUrl).catch(() => {});
+    pushToProfile(profileId, title, body, ctaUrl).catch(() => {});
+  } catch {
+    // Fail-open on the prefs read itself — still deliver via push.
+    pushToProfile(profileId, title, body, ctaUrl).catch(() => {});
+  }
 }
 
 // Graduated-enforcement ladder: number of active (non-overturned) strikes
@@ -756,7 +766,7 @@ export async function POST(req: NextRequest) {
       if (error) return safeServerError(error, "db op");
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id } });
       await sb.from("muse_notifications").insert({ user_id: target_id, from_id: profile.id, type: "match", body: `${profile.name} matched with you!`, read: false });
-      await emailProfile(sb, target_id, "Someone matched with you ✦", "New match on Muse", `${profile.name} matched with you. Open Muse to say hi.`, "See who it is", "https://muse.wyzdesign.com/muse");
+      await emailProfile(sb, target_id, "Someone matched with you ✦", "New match on Muse", `${profile.name} matched with you. Open Muse to say hi.`, "See who it is", "https://muse.wyzdesign.com/muse", "match");
       await bumpQuest(sb, profile.id, "match");
       return NextResponse.json({ success: true });
     }
@@ -839,7 +849,7 @@ export async function POST(req: NextRequest) {
       if (UUID_RE.test(String(toId))) {
         await sb.from("muse_notifications").insert({ user_id: String(toId), from_id: profile.id, type: "message", body: `${profile.name} sent you a message`, read: false });
       }
-      await emailProfile(sb, String(toId), "New message on Muse ✦", "You have a new message", `${profile.name} sent you a message.`, "Read it", "https://muse.wyzdesign.com/muse");
+      await emailProfile(sb, String(toId), "New message on Muse ✦", "You have a new message", `${profile.name} sent you a message.`, "Read it", "https://muse.wyzdesign.com/muse", "message");
       return NextResponse.json({ success: true, match_id: matchId });
     }
 
@@ -891,8 +901,11 @@ export async function POST(req: NextRequest) {
       const cleanText = sanitizeText(String(text || "").slice(0, 500));
       const resolvedImg = img && typeof img === "string" ? String(img).slice(0, 500) : "";
       if (!cleanText && !resolvedImg) return NextResponse.json({ error: "text or img required" }, { status: 400 });
+      // Respect video uploads — type was hardcoded to "photo", which (with the
+      // client's Videos filter reading it) permanently emptied that tab.
+      const isVideo = /\.(mp4|webm|mov)(\?|$)/i.test(resolvedImg);
       const { data, error } = await sb.from("muse_moments").insert({
-        author_id: profile.id, text: cleanText, img: resolvedImg, type: resolvedImg ? "photo" : "text",
+        author_id: profile.id, text: cleanText, img: resolvedImg, type: resolvedImg ? (isVideo ? "video" : "photo") : "text",
       }).select("id, text, img, type, likes, comments, created_at, author_id(name, avatar)").single();
       if (error) return safeServerError(error, "db op");
       return NextResponse.json({ success: true, moment: data });
@@ -1254,6 +1267,10 @@ export async function POST(req: NextRequest) {
         "filterStyles", "filterScore",
         // saved briefs (bookmarks)
         "savedBriefs",
+        // applied briefs — without this, a cache clear made already-applied
+        // briefs show "Apply" again and re-applying hit the unique constraint
+        // with no explanation to the user.
+        "appliedBriefs",
       ]);
       // Accept both a flat payload and the client's nested `{ preferences: {...} }` shape.
       const source = (rest.preferences && typeof rest.preferences === "object") ? rest.preferences : rest;
@@ -1663,6 +1680,7 @@ export async function POST(req: NextRequest) {
       }
       const { error } = await sb.from("muse_strikes").update(updates).eq("id", strikeId);
       if (error) return safeServerError(error, "db op");
+      await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `resolve_appeal:${strikeId}:${resolution}` });
       return NextResponse.json({ success: true });
     }
 
@@ -2104,6 +2122,8 @@ export async function POST(req: NextRequest) {
         body: suspensionEnd ? `Your account has been suspended until ${new Date(suspensionEnd).toLocaleDateString()}` : "Your account has been permanently banned",
         read: false
       });
+      // The single most consequential admin action — always leave a trail.
+      await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `suspend_user:${targetUserId}:${suspensionEnd ? "until " + suspensionEnd : "permanent"}:${String(reason || "").slice(0, 300)}` });
       return NextResponse.json({ success: true });
     }
 
@@ -2153,6 +2173,7 @@ export async function POST(req: NextRequest) {
           }
         } catch { errors++; }
       }
+      await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `scan_nsfw:${all ? "all" : String(userId)}:scanned=${scanned}:flagged=${flagged}:errors=${errors}` });
       return NextResponse.json({ success: true, scanned, flagged, errors, total: profilesToScan.length });
     }
 
@@ -2337,20 +2358,6 @@ export async function POST(req: NextRequest) {
       const { error } = await sb.from("muse_safety_incidents").update({ status: "reviewed" }).eq("id", incidentId);
       if (error) return safeServerError(error, "db op");
       await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `resolve_incident:${incidentId}` });
-      return NextResponse.json({ success: true });
-    }
-
-    // ── Analytics / error beacons (fire-and-forget) ──
-    if (actionType === "track-error" || actionType === "track-event") {
-      try {
-        const { name, params, url, time } = rest;
-        await sb.from("muse_events_log").insert({
-          name: String(name || actionType).slice(0, 200),
-          props: { ...(params || {}), url: url || "", time: time || "" },
-          ua: req.headers.get("user-agent") || "",
-          ip: clientIp(req),
-        });
-      } catch { /* best-effort analytics */ }
       return NextResponse.json({ success: true });
     }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useState } from "react";
-import { FiSearch, FiSettings, FiFilter, FiCompass, FiZap, FiCamera, FiX, FiChevronRight } from "react-icons/fi";
+import { FiSearch, FiSettings, FiCompass, FiZap, FiCamera, FiX, FiChevronRight } from "react-icons/fi";
 import Nav from "../components/Nav";
 import MuseMap from "../components/MuseMap";
 import type { Screen, Profile } from "../components/types";

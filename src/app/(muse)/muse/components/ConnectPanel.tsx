@@ -21,10 +21,12 @@ export default function ConnectPanel({ onClose }: Props) {
   const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     authFetch("/api/muse/connect", {
       method: "POST",
       body: JSON.stringify({ action: "account-status" }),
-    }).then(r => r.json()).then(d => { setStatus(d); setLoading(false); }).catch(() => setLoading(false));
+    }).then(r => r.json()).then(d => { if (!cancelled) { setStatus(d); setLoading(false); } }).catch(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   const startOnboarding = async () => {

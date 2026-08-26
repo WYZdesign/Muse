@@ -43,7 +43,7 @@ import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
 import QuestPanel from "./screens/QuestPanel";
-import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, AESTHETICS, CREATIVE_TYPES, BEHIND_CAMERA, IN_FRONT_CAMERA, LOOKING_FOR, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
+import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, AESTHETICS, CREATIVE_TYPES, BEHIND_CAMERA, IN_FRONT_CAMERA, LOOKING_FOR, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, ICEBREAKERS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
 
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL || "torree.marcel@gmail.com";
@@ -499,7 +499,10 @@ function MusePage() {
       if (feed?.posts?.length) {
         setLiveFeed(feed.posts);
         setFeedPosts(feed.posts.map((p: any, i: number) => ({
-          id: 100000 + i, author: p.author_id?.name || "Creative", avatar: p.author_id?.avatar || "",
+          id: 100000 + i,
+          // Real DB id — synthetic display ids break server-side lookups
+          // (reports pointed at posts no moderator could ever resolve).
+          rid: p.id, author: p.author_id?.name || "Creative", avatar: p.author_id?.avatar || "",
           type: p.img ? "photo" : "text", text: p.text || "", likes: p.likes || 0, comments: p.comments || 0,
           shares: p.shares || 0, time: p.created_at ? new Date(p.created_at).toLocaleString() : "Just now",
           img: p.img || "", liked: false, saved: false
@@ -649,6 +652,19 @@ function MusePage() {
     return () => { if (filterTimerRef.current) clearTimeout(filterTimerRef.current); };
   }, [filterStyles, filterScore, authUser]);
 
+  // ─── CROSS-DEVICE: Persist appliedBriefs (debounced) — was local-only, so a
+  // cache clear resurrected "Apply" buttons on already-applied briefs and the
+  // re-apply then died on the unique constraint with no user-facing reason.
+  const appliedBriefsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!authUser) return;
+    if (appliedBriefsTimerRef.current) clearTimeout(appliedBriefsTimerRef.current);
+    appliedBriefsTimerRef.current = setTimeout(() => {
+      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { appliedBriefs } }) }).catch(() => {});
+    }, 2000);
+    return () => { if (appliedBriefsTimerRef.current) clearTimeout(appliedBriefsTimerRef.current); };
+  }, [appliedBriefs, authUser]);
+
   const applySession = useCallback((accessToken: string, refreshToken?: string, attempt = 0) => {
     if (accessToken) {
       supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || "" }).catch(() => {});
@@ -723,6 +739,9 @@ function MusePage() {
               }
               if (d.profile.preferences?.savedBriefs && Array.isArray(d.profile.preferences.savedBriefs)) {
                 setSavedBriefs(d.profile.preferences.savedBriefs);
+              }
+              if (Array.isArray(d.profile.preferences?.appliedBriefs)) {
+                setAppliedBriefs(d.profile.preferences.appliedBriefs);
               }
               if (typeof d.profile.preferences?.showOnline === "boolean") {
                 setShowOnline(d.profile.preferences.showOnline);
@@ -901,6 +920,20 @@ function MusePage() {
         sessionAppliedRef.current = true;
         applySession(session.access_token, session.refresh_token);
       }
+      // Keep the cached token fresh — supabase-js auto-refreshes its own copy
+      // but only SIGNED_IN was handled here, so after the JWT TTL every cached-
+      // token API call silently 401'd even though a valid refreshed token existed.
+      if (event === "TOKEN_REFRESHED" && session?.access_token) {
+        try {
+          const raw = safeGetItem("muse_user");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed?.access_token && parsed.access_token !== session.access_token) {
+              safeSetItem("muse_user", JSON.stringify({ ...parsed, access_token: session.access_token, refresh_token: session.refresh_token || parsed.refresh_token || "" }));
+            }
+          }
+        } catch {}
+      }
     });
     return () => { authListener?.subscription?.unsubscribe(); };
   }, []);
@@ -1015,21 +1048,8 @@ function MusePage() {
     } catch { trackError("upload_image_failed", { folder }); showToast("Upload failed"); return null; }
   }, [showToast, trackQuest]);
 
-  const ICEBREAKERS: Record<string, string[]> = {
-    Photographer: ["What's your favorite golden hour spot?", "Film or digital, and why?", "What made you pick up a camera?"],
-    Model: ["What's your favorite type of shoot?", "How do you prepare before a session?", "Editorial or commercial, where do you thrive?"],
-    "Content Creator": ["What platform are you most active on?", "What's your content creation process?", "Collab or solo, what do you prefer?"],
-    Director: ["What's your dream project?", "Who inspires your visual style?", "Short film or feature, what's the goal?"],
-    Editor: ["What's your go-to color grading style?", "Premiere, DaVinci, or Final Cut?", "What's the hardest edit you've pulled off?"],
-    MUA: ["What's your signature look?", "Skincare or glam, what do you love more?", "What products can you not live without?"],
-    Stylist: ["Where do you source your pieces?", "Editorial or commercial, which do you prefer?", "What's your styling philosophy?"],
-    Actor: ["What type of roles do you gravitate toward?", "Stage or screen, where do you thrive?", "What's your preparation process?"],
-    Videographer: ["Drone or handheld, what's your style?", "What's the most cinematic thing you've filmed?", "Client work or passion projects?"],
-    Writer: ["What genres do you write in?", "Have you written for screen?", "What's your creative process like?"],
-    Producer: ["What's your production style?", "Indie or studio, where do you thrive?", "What's the key to a smooth shoot?"],
-    Designer: ["What's your design philosophy?", "Typography or illustration, which do you love more?", "What tools define your workflow?"],
-    default: ["What's inspiring you right now?", "What are you working on?", "What's your creative dream project?"],
-  };
+  // Single source of truth lives in components/types.ts — a second local copy
+  // existed here and the two were drifting.
   const getIcebreaker = useCallback((type: string, seed?: string) => {
     const pool = ICEBREAKERS[type] || ICEBREAKERS.default;
     const hash = seed ? seed.split('').reduce((a, c) => a + c.charCodeAt(0), 0) : 0;
@@ -1550,8 +1570,8 @@ function MusePage() {
     const sub = subscribeToConversation({
       myId,
       theirId,
-      onMessage: (senderId, text) => {
-        const msg = { from: "them" as const, text, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
+      onMessage: (senderId, text, img) => {
+        const msg = { from: "them" as const, text, img, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
         setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, msg] } : prev);
         setMatches(prev => prev.map(m => String(m.id) === theirId ? { ...m, messages: [...m.messages, msg] } : m));
         setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
@@ -1656,6 +1676,9 @@ function MusePage() {
           avatar: m.author_id?.avatar || "",
           text: m.text || "",
           img: m.img || "",
+          // BtsScreen's Videos filter reads `s.video` — was never set, so the
+          // tab stayed empty even when a real video moment existed.
+          video: m.type === "video" || /\.(mp4|webm|mov)(\?|$)/i.test(m.img || ""),
           time: m.created_at ? new Date(m.created_at).toLocaleDateString() : "",
           liked: false,
           likes: m.likes || 0,

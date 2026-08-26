@@ -24,10 +24,12 @@ export default function ReferralPanel({ onClose }: Props) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     authFetch("/api/muse/referral", {
       method: "POST",
       body: JSON.stringify({ action: "status" }),
-    }).then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false));
+    }).then(r => r.json()).then(d => { if (!cancelled) { setData(d); setLoading(false); } }).catch(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   const copyCode = () => {

@@ -832,6 +832,47 @@ Claude ran deep audits across Sessions 36–38 and delivered patches; their git/
 
 ---
 
+### Session 40 (ox-alpha) — finished the remaining safe fixes + GitHub Copilot quality audit folded in + full completion matrix
+
+**GitHub Copilot** independently ran a code-QUALITY audit (maintainability, not bugs — complements Claude's behavioral audits). Its findings verified against this tree; quick-wins applied now, structural refactors filed as roadmap:
+
+*Applied from Copilot's list:* unused `FiFilter` import removed (DiscoverScreen); duplicate local `ICEBREAKERS` deleted from page.tsx — single source now `components/types.ts` (the two had already drifted on one Model line); shadowed `subscribeToMusePush`/`unsubscribeFromMusePush` module import removed from SettingsScreen (props are authoritative); unreachable late track-event/track-error block deleted from route.ts (early handlers return).
+
+*Roadmap (real but NOT quick wins — dedicated sessions):*
+1. Split `page.tsx` (~3,100 lines: shell+auth+swipe+chat+onboarding+persistence in one component) by feature domain.
+2. Convert route.ts POST chain (~70 branches, ~2,350 lines) to a map-dispatched action registry + per-domain modules.
+3. Shared server util for token→profile resolution (currently duplicated across 5 route files).
+4. Extract quest engine into `src/lib/questEngine.ts` (route.ts + referral/route.ts inline copy).
+5. Merge dual BackgroundScene components (`src/components` vs `muse/components`).
+6. Unify legal pages — `/terms` vs `/muse/terms` and `/privacy` vs `/muse/privacy` diverge on liability/arbitration/contact (also a legal-consistency issue flagged in Session 38).
+
+**Also closed this session (from Claude S37's unfixed list — all mechanical):**
+- `TOKEN_REFRESHED` handler updates cached token (auth silently died after JWT TTL)
+- Realtime incoming messages carry `img` (was dropped; resurfaced once image sends were fixed)
+- Audit-log entries for admin-suspend-user / resolve-appeal / scan-nsfw
+- BTS moments: video type respected on insert + Videos tab filter field mapped (tab was permanently empty)
+- Cancelled-flags on ConnectPanel/ReferralPanel/PaymentHistory mount fetches
+- Push/email gated on recipient's notification prefs via `emailProfile(prefKey)` — match/message wired; transactional notices ungated by design
+- Feed reports carry real DB id (`rid`) so moderators can resolve them
+- `appliedBriefs` persisted server-side (allowlist + debounced save + restore) — cache-clear no longer resurrects Apply buttons onto unique-constraint failures
+- push unsubscribe deletes by endpoint AND user_id; auth route outer catch logs
+
+#### COMPLETION MATRIX — every finding across Sessions 33–40
+
+| Source | Finding | Status |
+|---|---|---|
+| S33 | ProfileScreen duplicate Log Out | ✅ merged |
+| S34 | Groups banner+initials fallback / Events centering / forum no-op ×4 / Feed flex / avatar size / skills chips | ✅ merged (chips superseded by button version) |
+| S36 | Communities/Events NSFW bypass + modal fallback | ✅ applied |
+| S37 | match nsfw select; swipe-deck blocks; forum crash normalizer; brief/session normalizers; Concept tab; Connect profileId + honest errors; Message stub; MenuModal live pros | ✅ all 8 applied |
+| S38 | cron fail-open; waitlist case spam; create-payment age gate; a11y ×3 | ✅ all 4 applied |
+| S37 unfixed → **now fixed** | claim double-grant race; claim rate limit; chat image 400; logout signOut; redeem-reward fraud; suspended message; Verified-Artist unwinnable (was already fixed in S35 — flag stale); suspend/appeal/scan audit logs; realtime img drop; feed report rid; appliedBriefs persistence; modal cancelled-flags; notif-pref gating; BTS videos tab; auth catch logging; push unsub ownership | ✅ all closed |
+| Copilot | FiFilter / ICEBREAKERS dup / Settings shadow import / dead track block | ✅ applied |
+| Copilot roadmap | split page.tsx; action registry; shared auth util; quest-engine lib; merge BackgroundScene; unify legal pages | 📋 documented above |
+| S37/S38 unfixed needing PRODUCT decisions | refunds path; failed-capture still marks complete; past_due/payment_failed webhooks; brief Book = real booking linkage; mutual-match logic; discovery prefs enforcement; read receipts; safety-share dispatch + missed-checkin escalation; reporter status loop; suspended users filtered from listings; brief-application status column; MUSEBETA promo policy; DMCA registration verification; ToS/Privacy canonical choice; ScreenErrorBoundary per-screen wiring; remaining ~78 div-onClick a11y pass; ~20 empty alt attributes | ⚠️ wyzmind/Torreé to prioritize — each is scoped in S37/S38 entries |
+
+---
+
 ## SESSION STATE
 - **Build status:** ✅ CLEAN — tsc 0 errors, vitest 53/53, `npm run build` passes locally (first full local build on Torreé's Windows box; previously blocked by corrupted node_modules)
 - **Env fix (Session 35, follow-up):** the ~36 "pre-existing" type errors were NOT baseline — they were incomplete package installs missing `.d.ts` output (@supabase/auth-js, @aws-sdk/client-rekognition) plus a corrupt @next/swc native binary. Deleting those packages and re-running `npm i` restored them. If this machine's node_modules goes stale again: delete the misbehaving package dir + reinstall before debugging code.

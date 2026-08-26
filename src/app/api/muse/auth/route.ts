@@ -247,6 +247,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (e: unknown) {
+    // Every other path in this file reports; the outer boundary was swallowing.
+    console.error("[muse:auth] unhandled:", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

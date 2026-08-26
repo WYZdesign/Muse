@@ -71,7 +71,10 @@ export async function POST(req: NextRequest) {
       const { error } = await sb
         .from("muse_push_subscriptions")
         .delete()
-        .eq("endpoint", endpoint);
+        // Ownership: tie the delete to the authenticated caller, not just the
+        // endpoint — endpoints are unguessable in practice, but this costs nothing.
+        .eq("endpoint", endpoint)
+        .eq("user_id", userId);
       if (error) {
         return safeServerError(error, "push unsubscribe");
       }

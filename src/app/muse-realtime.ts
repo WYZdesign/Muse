@@ -105,7 +105,7 @@ const RECONNECT_DELAYS_MS = [1000, 2000, 5000, 10000, 20000, 30000];
 export function subscribeToConversation(opts: {
   myId: string;
   theirId: string;
-  onMessage: (senderId: string, text: string) => void;
+  onMessage: (senderId: string, text: string, img?: string) => void;
   onStatus?: (status: RealtimeStatus) => void;
   onTyping?: () => void;
 }): { unsubscribe: () => void; sendTyping: () => void } {
@@ -157,7 +157,7 @@ export function subscribeToConversation(opts: {
           const sender = row.sender_id;
           const text = row.text;
           if (sender === opts.myId) return; // ignore our own echo
-          opts.onMessage(sender, text);
+          opts.onMessage(sender, text, row.img || undefined);
         }
       )
       .on("broadcast", { event: "typing" }, () => {

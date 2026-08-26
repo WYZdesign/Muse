@@ -27,13 +27,16 @@ export default function PaymentHistory({ userId, onClose }: Props) {
 
   useEffect(() => {
     // Fetch payments from booking_payments table
+    let cancelled = false;
     authFetch("/api/muse", {
       method: "POST",
       body: JSON.stringify({ type: "get-payments" }),
     }).then(r => r.json()).then(d => {
+      if (cancelled) return;
       setPayments(d.payments || []);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
