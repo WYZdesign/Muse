@@ -25,7 +25,7 @@ export async function notifyQuestComplete(sb: SupabaseClient, userId: string, ti
   try {
     await sb.from("muse_notifications").insert({
       user_id: userId, type: "quest",
-      body: `⭐ Quest complete: ${title} — claim your reward in Settings → Quests`,
+      body: `⭐ Spark complete: ${title} — claim your reward in Settings → Sparks`,
       read: false,
     });
   } catch { /* best-effort */ }
@@ -159,4 +159,29 @@ export async function setReferralQuestProgress(sb: SupabaseClient, referrerId: s
       if (completed) await notifyQuestComplete(sb, referrerId, q.title);
     }
   } catch { /* quest bump is best-effort */ }
+}
+
+/** Bump login streak. Call on each authenticated get-quests request.
+ *  Compares today's UTC date against the stored last_login_date.
+ *  - Same day → no-op
+ *  - Consecutive day (yesterday) → streak + 1
+ *  - Gap ≥ 2 days → streak resets to 1
+ *  Fails silently until the migration adds the columns. */
+export async function bumpLoginStreak(sb: SupabaseClient, profileId: string): Promise<number> {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: row } = await sb.from("muse_profiles")
+      .select("login_streak, last_login_date")
+      .eq("id", profileId).maybeSingle();
+    const prev = (row as any)?.last_login_date;
+    const streak = (row as any)?.login_streak || 0;
+    if (prev === today) return streak;
+    let newStreak = 1;
+    if (prev) {
+      const diff = (new Date(today).getTime() - new Date(prev).getTime()) / 86400000;
+      if (Math.round(diff) === 1) newStreak = streak + 1;
+    }
+    await sb.from("muse_profiles").update({ login_streak: newStreak, last_login_date: today }).eq("id", profileId);
+    return newStreak;
+  } catch { return 0; }
 }

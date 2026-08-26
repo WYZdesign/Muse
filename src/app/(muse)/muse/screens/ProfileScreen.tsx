@@ -207,9 +207,9 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
         </div>
         <div className="section">
-          <div className="section-title">Quests</div>
+          <div className="section-title">Sparks</div>
           <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 8 }}>Complete challenges to earn free likes, super likes, and boosts.</div>
-          <button className="quest-compact-btn" onClick={() => setShowQuests(true)}>⭐ View Quests</button>
+          <button className="quest-compact-btn" onClick={() => setShowQuests(true)}>⭐ View Sparks</button>
         </div>
         <div className="section">
           <div className="section-title">Referral</div>

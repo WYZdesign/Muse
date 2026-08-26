@@ -9,7 +9,7 @@ import { parseRateToCents } from "@/lib/money";
 import { sendEmail, notify } from "@/lib/email";
 import { pushToProfile } from "@/lib/push";
 import { scanWithRekognition, logScan } from "@/lib/contentScan";
-import { bumpQuest, questPeriodKey, awardQuestXp, setQuestProgress, refreshMetaQuest } from "@/lib/questEngine";
+import { bumpQuest, questPeriodKey, awardQuestXp, setQuestProgress, refreshMetaQuest, bumpLoginStreak } from "@/lib/questEngine";
 import Stripe from "stripe";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1631,7 +1631,7 @@ ACTIONS["get-quests"] = async ({ sb, profile }) => {
     };
   });
 
-  return NextResponse.json({ quests: enriched, xp: xpData || { total_xp: 0, level: 1 } });
+  return NextResponse.json({ quests: enriched, xp: xpData || { total_xp: 0, level: 1 }, streak: await bumpLoginStreak(sb, profile.id) });
 };
 
 ACTIONS["track-quest"] = async ({ sb, profile, rest, ip }) => {

@@ -56,6 +56,8 @@ export interface MenuModalProps {
   setShowReferral?: (v: boolean) => void;
   setShowQuests?: (v: boolean) => void;
   questClaimables?: number;
+  nearQuests?: number;
+  loginStreak?: number;
   isUnlimited?: boolean;
   profileViews?: number;
   likesReceived?: number;
@@ -129,6 +131,8 @@ export const MenuModal = memo(function MenuModal({
   setShowReferral,
   setShowQuests,
   questClaimables = 0,
+  nearQuests = 0,
+  loginStreak = 0,
   isUnlimited = false,
   profileViews = 0,
   likesReceived = 0,
@@ -558,7 +562,14 @@ export const MenuModal = memo(function MenuModal({
                       </div>
                       {hubTab === "notif" && (activityFeed.length === 0
                         ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No activity yet. Start swiping!</div>
-                        : activityFeed.map(a => (
+                        : <>
+                            {(nearQuests > 0 || loginStreak > 0) && (
+                              <div style={{ padding: "10px 14px", marginBottom: 10, borderRadius: 12, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)" }}>
+                                {loginStreak > 0 && <div style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700, marginBottom: 4 }}>🔥 {loginStreak} day streak</div>}
+                                {nearQuests > 0 && <div style={{ fontSize: 12, color: "var(--text2)" }}>{nearQuests} spark{nearQuests > 1 ? "s" : ""} nearly done — keep going!</div>}
+                              </div>
+                            )}
+                            {activityFeed.map(a => (
                           <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1 }}>
                             <img loading="lazy" src={a.avatar} alt="Avatar" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
                             <div style={{ flex: 1 }}>
@@ -566,7 +577,8 @@ export const MenuModal = memo(function MenuModal({
                               <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{a.time}</div>
                             </div>
                           </div>
-                        )))}
+                        ))}
+                        </>)}
                       {(hubTab === "applied" || hubTab === "saved") && (() => {
                         const ids = hubTab === "applied" ? appliedBriefs : savedBriefs;
                         if (!ids.length) return <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>{hubTab === "applied" ? "You haven't applied to any briefs yet." : "No saved briefs yet."}</div>;

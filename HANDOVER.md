@@ -954,13 +954,42 @@ Claude ran deep audits across Sessions 36–38 and delivered patches; their git/
 
 ---
 
+### Session 45 (Claude) — Quests→Sparks rename + login streak + near-quests widget + tappable toasts
+
+**Quests→Sparks rename (user-facing only):**
+- All user-facing strings changed: "Quests" → "Sparks", "Quests & Rewards" → "Sparks & Rewards"
+- Internal variable names, DB tables, function names stay as-is (no migration risk)
+- Files: `ProfileScreen.tsx` (section title + button), `SettingsScreen.tsx` (label), `QuestPanel.tsx` (header, empty state), `MenuModal.tsx` (sparks highlights), `questEngine.ts` (notification body)
+
+**Login streak tracking:**
+- New SQL migration: `sql/MUSE_LOGIN_STREAK_20260826.sql` — adds `login_streak` (int) + `last_login_date` (text) to `muse_profiles`
+- New `bumpLoginStreak()` function in `questEngine.ts` — compares today vs stored date, bumps on consecutive days, resets on gaps ≥2 days, returns current streak
+- `route.ts` `get-quests` action calls `bumpLoginStreak` and returns `streak` in response
+- `page.tsx` stores `loginStreak` state, passes to QuestPanel + MenuModal
+- `QuestPanel.tsx` renders streak bar with fire emoji, day count, and 7 dot indicators
+
+**Near-quests widget:**
+- Quests at ≥60% progress shown as horizontal scrollable pills in QuestPanel header
+- `MenuModal` activity tab shows sparks-highlight card when nearQuests > 0 or loginStreak > 0
+- Both driven by server response, computed client-side from quest progress
+
+**Tappable toasts:**
+- `toastMsg` state type changed from `string | null` to `{ msg: string; onTap?: () => void } | null`
+- `showToast()` now accepts `string` or `{ msg, onTap? }` — backward-compatible
+- Toast div gets `pointerEvents: "auto"` + `cursor: "pointer"` when `onTap` is present
+- All `setToastMsg(...)` calls replaced with `showToast(...)` (8 occurrences in disclosure/safety modals)
+
+**SQL Migration Required:** Run `sql/MUSE_LOGIN_STREAK_20260826.sql` in Supabase Dashboard.
+
+---
+
 ## SESSION STATE
 - **Build status:** ✅ CLEAN — tsc 0 errors, vitest 53/53, `npm run build` passes
 - **Env fix (Session 35, follow-up):** the ~36 "pre-existing" type errors were NOT baseline — they were incomplete package installs missing `.d.ts` output (@supabase/auth-js, @aws-sdk/client-rekognition) plus a corrupt @next/swc native binary. Deleting those packages and re-running `npm i` restored them. If this machine's node_modules goes stale again: delete the misbehaving package dir + reinstall before debugging code.
 - **Real bug fixed in that pass:** `next.config.ts` used `__dirname` for `turbopack.root` — undefined under Next 16's ESM-compiled config (breaks any fresh build). Now uses `fileURLToPath(new URL(".", import.meta.url))`.
 - **Agent preference:** SQL files always opened in VS Code (`AGENTS.md` at repo root documents the command).
-- **Last compile:** 2026-08-26 (Session 43) — tsc 0 errors, build clean, vitest 53/53
-- **Last commits:** Session 35 → infra-fix → Session 39 (ox-alpha) → Session 40 (ox-alpha) → Session 43 (ox-alpha, comprehensive audit + refactors + Claude S41/S42 patches)
+- **Last compile:** 2026-08-26 (Session 45) — tsc 0 errors, build clean, vitest 53/53
+- **Last commits:** Session 35 → infra-fix → Session 39 (ox-alpha) → Session 40 (ox-alpha) → Session 43 (ox-alpha, comprehensive audit + refactors + Claude S41/S42 patches) → Session 45 (Quests→Sparks + login streak + near-quests + tappable toasts)
 - **Quests V2 SQL:** confirmed run in Supabase by Torreé — quest system fully live
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** 54 tables live (muse_profiles, muse_matches, muse_messages, muse_feed_posts, muse_feed_comments, muse_briefs, muse_brief_applications, muse_forum_posts, muse_forum_comments, muse_events, muse_event_rsvps, muse_activity_log, muse_reports, muse_blocks, muse_forum_replies, muse_communities, muse_community_members, muse_sessions, muse_bookings, muse_connections, muse_notifications, muse_push_subscriptions, muse_error_logs, muse_events_log, muse_albums, muse_album_photos, muse_album_access, muse_referrals, muse_referral_rewards, muse_stripe_connect, muse_booking_payments, muse_content_scans, muse_safety_incidents, muse_disclosures, muse_strikes, muse_safety_profiles, muse_safety_checkins, muse_safety_shares, muse_admin_audit_log, muse_prompt_bank, muse_prompt_responses, muse_profile_embeddings, muse_ncmec_reports, muse_verification_sessions, muse_waitlist, muse_landing_analytics, muse_qr_events, muse_rsvps, muse_reviews, muse_moments, muse_professionals, muse_rate_limits, muse_album_likes, muse_ai_docs)

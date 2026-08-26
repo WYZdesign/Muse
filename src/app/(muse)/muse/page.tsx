@@ -222,7 +222,7 @@ function MusePage() {
   const [feedPostsStatic, setFeedPostsStatic] = useState<{id:number;author:string;avatar:string;type:string;text:string;likes:number;comments:number;shares:number;time:string;liked:boolean;saved:boolean;img?:string}[]>([{id:401,author:"Maya Chen",avatar:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",type:"photo",text:"Golden hour never gets old. Shot this at El Matador Beach last weekend.",likes:234,comments:18,shares:5,time:"2h ago",img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600",liked:false,saved:false},{id:402,author:"Jordan Rivera",avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",type:"text",text:"Just wrapped principal photography on a 30-min short. 14-hour days for 12 days straight. The footage is incredible!",likes:189,comments:32,shares:12,time:"5h ago",liked:false,saved:false},{id:403,author:"Sam Taylor",avatar:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",type:"photo",text:"New album art I designed. Surreal dreamlike aesthetic.",likes:312,comments:24,shares:8,time:"8h ago",img:"https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=600",liked:false,saved:false},{id:404,author:"Riley Patel",avatar:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",type:"photo",text:"Motion graphics reel. 6 months of work in 90 seconds.",likes:567,comments:45,shares:23,time:"1d ago",liked:false,saved:false}]);
   const [feedFilter, setFeedFilter] = useState<"all"|"photos"|"videos"|"text">("all");
   const [museCat, setMuseCat] = useState<"all"|"tfp"|"paid"|"opencall"|"concept">(() => viewerSideOf(currentUser) === "industry" ? "paid" : "all");
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<{ msg: string; onTap?: () => void } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -276,6 +276,8 @@ function MusePage() {
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   const [showQuests, setShowQuests] = useState(false);
   const [claimableQuests, setClaimableQuests] = useState(0);
+  const [nearQuests, setNearQuests] = useState(0);
+  const [loginStreak, setLoginStreak] = useState(0);
 
   useEffect(() => {
     try {
@@ -892,7 +894,19 @@ function MusePage() {
     setActiveTutorial(def.key);
   }, [screen, activeTutorial]);
 
-  const showToast = useCallback((msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); }, []);
+  const showToast = useCallback((msg: string | { msg: string; onTap?: () => void }) => { const t = typeof msg === "string" ? { msg } : msg; setToastMsg(t); setTimeout(() => setToastMsg(null), 3000); }, []);
+
+  const handleQuestsChange = useCallback(async () => {
+    try {
+      const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-quests" }) });
+      const d = await res.json();
+      if (Array.isArray(d?.quests)) {
+        setClaimableQuests(d.quests.filter((q: any) => q.completed && !q.claimed).length);
+        setNearQuests(d.quests.filter((q: any) => !q.completed && q.progress / q.target >= 0.6).length);
+      }
+      if (typeof d?.streak === "number") setLoginStreak(d.streak);
+    } catch {}
+  }, [apiFetch]);
 
   // Quest tracking — call after successful actions. Batches multiple keys into
   // one request; silent unless a quest is newly completed or the user levels up
@@ -1782,11 +1796,11 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
         </div>
       )}
       {toastMsg && (
-        <div style={{ position: "fixed", left: "50%", bottom: "calc(84px + env(safe-area-inset-bottom,0px))", transform: "translateX(-50%)", zIndex: 4000, background: "rgba(20,12,34,0.92)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(255,215,0,0.28)", color: "#f5f0ff", padding: "10px 18px", borderRadius: 999, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", boxShadow: "0 6px 24px rgba(0,0,0,0.5)", pointerEvents: "none", animation: "museToastIn .22s ease-out forwards" }}>
-          {toastMsg}
+        <div style={{ position: "fixed", left: "50%", bottom: "calc(84px + env(safe-area-inset-bottom,0px))", transform: "translateX(-50%)", zIndex: 4000, background: "rgba(20,12,34,0.92)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(255,215,0,0.28)", color: "#f5f0ff", padding: "10px 18px", borderRadius: 999, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", boxShadow: "0 6px 24px rgba(0,0,0,0.5)", pointerEvents: toastMsg.onTap ? "auto" : "none", cursor: toastMsg.onTap ? "pointer" : "default", animation: "museToastIn .22s ease-out forwards" }} onClick={toastMsg.onTap}>
+          {toastMsg.msg}
         </div>
       )}
-      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} setLiveForum={setLiveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} liveProfessionals={liveProfessionals} setShowQuests={setShowQuests} questClaimables={claimableQuests} />
+      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} setLiveForum={setLiveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} nearQuests={nearQuests} loginStreak={loginStreak} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} liveProfessionals={liveProfessionals} setShowQuests={setShowQuests} questClaimables={claimableQuests} />
       {screen === "auth" ? (
         <div className="phone-wrap">
           <div className="phone" id="muse-app">
@@ -2732,8 +2746,8 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
             }
             const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "create-disclosure", ...form, responderId: disclosureTarget.id, bookingId: disclosureBookingId }) });
             const d = await r.json();
-            if (d.blocked) { setShowDisclosureModal(false); setToastMsg("Request blocked — violates Muse terms"); return; }
-            if (d.success) { setShowDisclosureModal(false); setToastMsg("Disclosure sent for review"); }
+            if (d.blocked) { setShowDisclosureModal(false); showToast("Request blocked — violates Muse terms"); return; }
+            if (d.success) { setShowDisclosureModal(false); showToast("Disclosure sent for review"); }
           }}
           onCancel={() => { setShowDisclosureModal(false); setDisclosureTarget(null); }}
           onConfirm={existingDisclosure ? async (discId) => {
@@ -2748,7 +2762,7 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
               return;
             }
             await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "confirm-disclosure", disclosureId: discId }) });
-            setShowDisclosureModal(false); setToastMsg("Disclosure confirmed ✓");
+            setShowDisclosureModal(false); showToast("Disclosure confirmed ✓");
           } : undefined}
         />
       )}
@@ -2765,14 +2779,14 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
               const discId = pendingDisclosureConfirm;
               setPendingDisclosureConfirm(null);
               await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "confirm-disclosure", disclosureId: discId }) });
-              setToastMsg("Disclosure confirmed ✓");
+              showToast("Disclosure confirmed ✓");
             } else if (pendingDisclosureCreate) {
               const form = pendingDisclosureCreate;
               setPendingDisclosureCreate(null);
               const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "create-disclosure", ...form, responderId: disclosureTarget?.id, bookingId: disclosureBookingId }) });
               const d = await r.json();
-              if (d.blocked) { setToastMsg("Request blocked — violates Muse terms"); return; }
-              if (d.success) { setToastMsg("Disclosure sent for review"); }
+              if (d.blocked) { showToast("Request blocked — violates Muse terms"); return; }
+              if (d.success) { showToast("Disclosure sent for review"); }
             }
           }}
           onClose={() => {
@@ -2793,11 +2807,11 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
           }}
           onSaveSafetyProfile={async (profile) => {
             await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "save-safety-profile", ...profile }) });
-            setSafetyProfile(profile); setToastMsg("Safety profile saved");
+            setSafetyProfile(profile); showToast("Safety profile saved");
           }}
           onShareDetails={async (bookingId, method) => {
             await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "share-safety-details", bookingId, shareMethod: method }) });
-            setToastMsg("Details shared with trusted contact");
+            showToast("Details shared with trusted contact");
           }}
           onFetchStrikes={async () => {
             const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-strikes" }) });
@@ -2849,7 +2863,7 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
         <PaymentHistory userId={authUser?.id || ""} onClose={() => setShowPaymentHistory(false)} />
       )}
       {/* ══════ QUESTS PANEL ══════ */}
-      <QuestPanel show={showQuests} onClose={() => setShowQuests(false)} apiFetch={apiFetch} showToast={showToast} onClaimablesChange={setClaimableQuests} onRewardGranted={(type, amount) => {
+      <QuestPanel show={showQuests} onClose={() => setShowQuests(false)} apiFetch={apiFetch} showToast={showToast} onClaimablesChange={setClaimableQuests} onQuestsChange={handleQuestsChange} loginStreak={loginStreak} onRewardGranted={(type, amount) => {
         if (type === "like") setDailyLikes(prev => prev + amount);
         else if (type === "super_like") setSuperLikes(prev => prev + amount);
         else if (type === "boost") { const end = Date.now() + 30 * 60 * 1000; setBoostEnd(end); setBoostActive(true); try { safeSetItem("muse_boost", String(end)); } catch {} }

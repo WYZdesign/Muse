@@ -9,6 +9,8 @@ interface QuestPanelProps {
   showToast: (msg: string) => void;
   onRewardGranted?: (rewardType: string, amount: number) => void;
   onClaimablesChange?: (count: number) => void;
+  onQuestsChange?: () => void;
+  loginStreak?: number;
 }
 
 const TIER_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -20,11 +22,12 @@ const TIER_CONFIG: Record<string, { label: string; color: string; bg: string; bo
   legendary: { label: "Legendary", color: "#FF8A80", bg: "rgba(255,138,128,0.08)",  border: "rgba(255,138,128,0.2)" },
 };
 
-export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewardGranted, onClaimablesChange }: QuestPanelProps) {
+export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewardGranted, onClaimablesChange, onQuestsChange, loginStreak = 0 }: QuestPanelProps) {
   const [quests, setQuests] = useState<any[]>([]);
   const [xp, setXp] = useState({ total_xp: 0, level: 1 });
   const [filter, setFilter] = useState<string>("all");
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [nearQuests, setNearQuests] = useState<any[]>([]);
 
   const fetchQuests = useCallback(async () => {
     try {
@@ -33,8 +36,10 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
       setQuests(data.quests || []);
       setXp(data.xp || { total_xp: 0, level: 1 });
       onClaimablesChange?.((data.quests || []).filter((q: any) => q.completed && !q.claimed).length);
+      setNearQuests((data.quests || []).filter((q: any) => !q.completed && q.progress / q.target >= 0.6));
+      onQuestsChange?.();
     } catch {}
-  }, [apiFetch, onClaimablesChange]);
+  }, [apiFetch, onClaimablesChange, onQuestsChange]);
 
   useEffect(() => { if (show) fetchQuests(); }, [show, fetchQuests]);
 
@@ -78,7 +83,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <FiStar size={22} color="#FFD700" />
             <div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)" }}>Quests</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)" }}>Sparks</div>
               <div style={{ fontSize: 12, color: "var(--text2)" }}>Complete challenges, earn rewards</div>
             </div>
           </div>
@@ -102,6 +107,34 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
           </div>
         </div>
 
+        {/* Streak Bar */}
+        <div className="streak-bar">
+          <span className="streak-flame">🔥</span>
+          <span className="streak-num">{loginStreak}</span>
+          <span className="streak-label">day streak</span>
+          <div className="streak-dots">
+            {[0,1,2,3,4,5,6].map(i => (
+              <div key={i} className={`streak-dot${i < loginStreak ? " filled" : ""}`} />
+            ))}
+          </div>
+        </div>
+
+        {/* Near-Quests Widget */}
+        {nearQuests.length > 0 && (
+          <div className="near-quests">
+            {nearQuests.slice(0, 4).map((q: any) => {
+              const pct = Math.round((q.progress / q.target) * 100);
+              return (
+                <div key={q.id} className="near-quest-pill">
+                  <span className="nq-icon">{q.icon}</span>
+                  <span>{q.title}</span>
+                  <span className="nq-pct">{pct}%</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Filter Tabs */}
         <div className="quest-filters">
           <button className={`quest-filter-btn ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>All</button>
@@ -119,7 +152,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
         {/* Quest List */}
         <div className="quest-list">
           {filtered.length === 0 && (
-            <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No quests in this category</div>
+            <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No sparks in this category</div>
           )}
           {filtered.map((q: any) => {
             const tier = TIER_CONFIG[q.quest_tier] || TIER_CONFIG.weekly;
