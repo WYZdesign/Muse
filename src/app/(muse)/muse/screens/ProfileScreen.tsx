@@ -108,19 +108,19 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         </div>
-        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 18, fontWeight: 800, background: "linear-gradient(90deg,#FFD700,#F48FB1,#CE93D8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Your Profile</div>
+        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 24, fontWeight: 800, background: "linear-gradient(90deg,#FFD700,#F48FB1,#CE93D8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Your Profile</div>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="hdr-btn" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setEditNsfw(!!currentUser.nsfw); setShowEditProfile(true); }} aria-label="Edit Profile"><FiEdit2 size={18} /></button>
         </div>
       </div>
       <div className="profile-scroll">
         {isUnlimited && showUnlimitedBadge && (
-          <div style={{ position: "fixed", top: 80, right: 20, zIndex: 9998, padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,191,0,0.1))", border: "1px solid rgba(255,215,0,0.2)", fontSize: 11, fontWeight: 700, color: "var(--gold)", boxShadow: "0 4px 16px rgba(255,215,0,0.2)", display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ position: "fixed", bottom: 100, left: "50%", transform: "translateX(-50%)", zIndex: 9998, padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,191,0,0.1))", border: "1px solid rgba(255,215,0,0.2)", fontSize: 11, fontWeight: 700, color: "var(--gold)", boxShadow: "0 4px 16px rgba(255,215,0,0.2)", display: "flex", alignItems: "center", gap: 6 }}>
             <span>⚡</span>∞ Unlimited Likes &amp; Super Likes
             <button onClick={() => setShowUnlimitedBadge(false)} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
           </div>
         )}
-        <div className="completeness">
+        <div className="completeness" style={{ marginTop: 16 }}>
           <div className="completeness-text">
             <span>Profile Completeness</span>
             <span>{Math.min(100, (currentUser.name !== "You" ? 15 : 0) + (obData.bio ? 15 : 0) + (obData.type ? 15 : 0) + ((obData.looking || []).length ? 10 : 0) + ((obData.styles || []).length ? 10 : 0) + (obData.zodiac ? 8 : 0) + (obData.mbti ? 7 : 0) + (obData.lifePath ? 5 : 0) + (obData.chinese ? 5 : 0) + (obData.loc ? 10 : 0))}%</span>
