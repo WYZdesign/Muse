@@ -1,9 +1,8 @@
 "use client";
 
 import React, { memo } from "react";
-import { FiX, FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiHeadphones, FiBell } from "react-icons/fi";
+import { FiX, FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiBell } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
-import { startSubscriptionCheckout } from "../lib/api";
 import { COMMUNITIES, EVENTS, SESSIONS, PROFESSIONALS, FORUM_POSTS } from "../components/types";
 
 export interface MenuModalProps {

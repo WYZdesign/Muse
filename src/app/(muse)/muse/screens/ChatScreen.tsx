@@ -73,7 +73,7 @@ export const ChatScreen = memo(function ChatScreen({
         <div className="chat-wrap">
           <div className="chat-header">
             <button className="chat-back" onClick={() => showScreen("matches")}><FiArrowLeft size={20} /></button>
-            <img loading="lazy" src={chatTarget.img} alt={chatTarget.name} className="chat-avatar" onError={handleImgError} onClick={() => setViewProfile(chatTarget)} style={{ cursor: "pointer" }} />
+            <img loading="lazy" src={chatTarget.img} alt={chatTarget.name} className="chat-avatar" onError={handleImgError} onClick={() => setViewProfile(chatTarget)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewProfile(chatTarget); } }} style={{ cursor: "pointer" }} />
             <div className="chat-info">
               <div className="chat-name">{chatTarget.name}</div>
               <div className="chat-type">{typingTarget === chatTarget.id ? <span style={{ color: "var(--gold)", fontStyle: "italic" }}>typing…</span> : chatTarget.type}</div>

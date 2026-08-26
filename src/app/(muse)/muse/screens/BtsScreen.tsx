@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useState, useEffect, useCallback } from "react";
-import { FiArrowLeft, FiCamera, FiClock, FiImage, FiGrid, FiList } from "react-icons/fi";
+import { FiArrowLeft, FiCamera, FiClock, FiGrid, FiList } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 

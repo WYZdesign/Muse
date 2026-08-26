@@ -240,7 +240,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div className="section-text" style={{ marginBottom: 10 }}>Your albums &amp; showcased work</div>
           <div style={{ display: "flex", gap: 8, marginBottom: 12, overflowX: "auto", scrollbarWidth: "none" }}>
             {(["all", "portrait", "landscape", "sets"] as const).map(tab => (
-              <span key={tab} className={"conn-tab" + (portfolioTab === tab ? " active" : "")} onClick={() => setPortfolioTab(tab)} style={{ flexShrink: 0, fontSize: 12, padding: "6px 14px" }}>{tab === "all" ? "All" : tab === "portrait" ? "Portrait" : tab === "landscape" ? "Landscape" : "Sets"}</span>
+              <span key={tab} className={"conn-tab" + (portfolioTab === tab ? " active" : "")} role="tab" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPortfolioTab(tab); } }} onClick={() => setPortfolioTab(tab)} style={{ flexShrink: 0, fontSize: 12, padding: "6px 14px" }}>{tab === "all" ? "All" : tab === "portrait" ? "Portrait" : tab === "landscape" ? "Landscape" : "Sets"}</span>
             ))}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
@@ -252,7 +252,7 @@ export const ProfileScreen = memo(function ProfileScreen({
                 return true;
               });
               if (filtered.length > 0) return filtered.slice(0, 9).map((p: any, i: number) => (
-                <div key={i} style={{ aspectRatio: "3/4", borderRadius: 12, overflow: "hidden", background: "#1a0a2e", position: "relative", cursor: "pointer" }} onClick={() => setSelectedPortfolio(p)}>
+                <div key={i} style={{ aspectRatio: "3/4", borderRadius: 12, overflow: "hidden", background: "#1a0a2e", position: "relative", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedPortfolio(p); } }} onClick={() => setSelectedPortfolio(p)}>
                   <img loading="lazy" src={p.img} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={handleImgError} />
                   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px", background: "linear-gradient(to top,rgba(10,6,18,0.9),transparent)" }}>
                     <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.title}</div>
@@ -261,7 +261,7 @@ export const ProfileScreen = memo(function ProfileScreen({
                 </div>
               ));
               return [1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} style={{ aspectRatio: "3/4", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "2px dashed rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 11, cursor: "pointer" }} onClick={() => setScreen("portfolio")}>Add</div>
+                <div key={i} style={{ aspectRatio: "3/4", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "2px dashed rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 11, cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setScreen("portfolio"); } }} onClick={() => setScreen("portfolio")}>Add</div>
               ));
             })()}
           </div>
@@ -272,7 +272,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div className="section-text" style={{ marginBottom: 10 }}>Your latest connections</div>
           <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, scrollbarWidth: "none" }}>
             {matches.length > 0 ? matches.slice(0, 5).map(m => (
-              <div key={m.id} style={{ flexShrink: 0, width: 60, height: 60, borderRadius: "50%", overflow: "hidden", background: "#1a0a2e", border: "2px solid rgba(255,215,0,0.2)" }} onClick={() => { setChatTarget(m); showScreen("chat"); }}>
+              <div key={m.id} style={{ flexShrink: 0, width: 60, height: 60, borderRadius: "50%", overflow: "hidden", background: "#1a0a2e", border: "2px solid rgba(255,215,0,0.2)" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setChatTarget(m); showScreen("chat"); } }} onClick={() => { setChatTarget(m); showScreen("chat"); }}>
                 <img loading="lazy" src={m.img} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={handleImgError} />
               </div>
             )) : (

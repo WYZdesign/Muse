@@ -38,7 +38,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
       onClaimablesChange?.((data.quests || []).filter((q: any) => q.completed && !q.claimed).length);
       setNearQuests((data.quests || []).filter((q: any) => !q.completed && q.progress / q.target >= 0.6));
       onQuestsChange?.();
-    } catch {}
+    } catch (e) { console.warn("[Sparks] fetch failed:", e); }
   }, [apiFetch, onClaimablesChange, onQuestsChange]);
 
   useEffect(() => { if (show) fetchQuests(); }, [show, fetchQuests]);
