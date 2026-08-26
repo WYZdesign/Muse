@@ -55,7 +55,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
         </div>
       ) : null}
       <p style={{marginTop:16,lineHeight:1.6,color:"#ddd"}}>{post.text}</p>
-      {post.img ? <img src={post.img} alt="" style={{width:"100%",borderRadius:18,marginTop:12}} /> : null}
+      {post.img ? <img src={post.img} alt="Photo" style={{width:"100%",borderRadius:18,marginTop:12}} /> : null}
       <a href="/muse" style={{display:"inline-block",marginTop:28,padding:"14px 28px",borderRadius:16,background:"linear-gradient(120deg,#FFD700,#FFBF00,#FFD700)",backgroundSize:"300% 300%",color:"#0a0612",fontWeight:800,textDecoration:"none"}}>Open Muse App</a>
     </div>
   );

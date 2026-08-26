@@ -119,7 +119,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [forumSearch, setForumSearch] = useState("");
   const [forumSearchOpen, setForumSearchOpen] = useState(false);
   const [proSkill, setProSkill] = useState<string[]>([]);
-  const [proRateBand, setProRateBand] = useState<"all" | "lt100" | "100to150" | "gt150">("all");
+  const [proRateBand, setProRateBand] = useState<"all" | "tfp" | "50to100" | "100to150" | "gt150">("all");
   const [proLooking, setProLooking] = useState<string>("all");
   const [threadId, setThreadId] = useState<number | null>(null);
   const [threadSort, setThreadSort] = useState<"best" | "new">("best");
@@ -152,7 +152,8 @@ export const NetworkScreen = memo(function NetworkScreen({
     if (proRateBand !== "all") {
       list = list.filter((p) => {
         const r = parseRate(p.rate);
-        if (proRateBand === "lt100") return r > 0 && r < 100;
+        if (proRateBand === "tfp") return /tfp/i.test(String(p.rate || ""));
+        if (proRateBand === "50to100") return r >= 50 && r < 100;
         if (proRateBand === "100to150") return r >= 100 && r <= 150;
         return r > 150;
       });
@@ -349,22 +350,33 @@ export const NetworkScreen = memo(function NetworkScreen({
               onChange={(e) => setProSearch(e.target.value)}
               style={{ margin: "0 0 10px", fontSize: 13 }}
             />
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
+              <div style={{ display: "flex", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: 3 }}>
               {([
                 { k: "all", label: "All levels", color: "var(--muted)" },
                 { k: "rising", label: "Rising", color: "#90caf9" },
                 { k: "established", label: "Established", color: "var(--gold)" },
                 { k: "veteran", label: "Veteran", color: "#e6d3ff" },
               ] as const).map((b) => (
-                <span
+                <button
+                  type="button"
                   key={b.k}
+                  role="tab"
+                  aria-selected={proExp === b.k}
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProExp(b.k); } }}
                   onClick={() => setProExp(b.k)}
-                  style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proExp === b.k ? b.color : "var(--muted)", opacity: proExp === b.k ? 1 : 0.6, transition: "all 0.15s", borderBottom: proExp === b.k ? `2px solid ${b.color}` : "2px solid transparent", paddingBottom: 2 }}
+                  style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proExp === b.k ? b.color : "var(--muted)", background: proExp === b.k ? "rgba(255,255,255,0.1)" : "transparent", border: "none", borderRadius: 9, padding: "7px 6px", transition: "all 0.15s", flex: 1 }}
                 >
                   {b.label}
-                </span>
+                </button>
               ))}
+              </div>
               <span
+                role="tab"
+                aria-selected={proHiringOnly}
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProHiringOnly(!proHiringOnly); } }}
                 onClick={() => setProHiringOnly(!proHiringOnly)}
                 style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proHiringOnly ? "#4cdd88" : "var(--muted)", opacity: proHiringOnly ? 1 : 0.6, transition: "all 0.15s", borderBottom: proHiringOnly ? "2px solid #4cdd88" : "2px solid transparent", paddingBottom: 2 }}
               >
@@ -372,6 +384,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               </span>
             </div>
             <select
+              className="inp"
               value={proSort}
               onChange={(e) => setProSort(e.target.value as any)}
               style={{ width: "100%", marginBottom: 12, padding: "9px 12px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 12 }}
@@ -386,12 +399,17 @@ export const NetworkScreen = memo(function NetworkScreen({
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
               {([
                 { k: "all", label: "Any rate", color: "var(--muted)" },
-                { k: "lt100", label: "Under $100", color: "#90caf9" },
-                { k: "100to150", label: "$100–150", color: "var(--gold)" },
+                { k: "tfp", label: "TFP", color: "#90caf9" },
+                { k: "50to100", label: "$50-100", color: "var(--gold)" },
+                { k: "100to150", label: "$100–150", color: "#e6d3ff" },
                 { k: "gt150", label: "$150+", color: "#e6d3ff" },
               ] as const).map((b) => (
                 <span
                   key={b.k}
+                  role="tab"
+                  aria-selected={proRateBand === b.k}
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProRateBand(b.k); } }}
                   onClick={() => setProRateBand(b.k)}
                   style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proRateBand === b.k ? b.color : "var(--muted)", opacity: proRateBand === b.k ? 1 : 0.6, transition: "all 0.15s", borderBottom: proRateBand === b.k ? `2px solid ${b.color}` : "2px solid transparent", paddingBottom: 2 }}
                 >
@@ -428,6 +446,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                   </div>
                   {allLooking.length > 0 && (
                     <select
+                      className="inp"
                       value={proLooking}
                       onChange={(e) => setProLooking(e.target.value)}
                       style={{ width: "100%", marginBottom: 12, padding: "9px 12px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 12 }}
@@ -447,6 +466,9 @@ export const NetworkScreen = memo(function NetworkScreen({
             {proList.map((p) => (
             <div
               key={p.id}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openProProfile(p); } }}
               onClick={() => openProProfile(p)}
               style={{
                 marginBottom: 14,
@@ -717,6 +739,10 @@ export const NetworkScreen = memo(function NetworkScreen({
                   {(["hot", "new", "top"] as const).map((s) => (
                     <div
                       key={s}
+                      role="tab"
+                      aria-selected={forumSort === s}
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setForumSort(s); } }}
                       className={"conn-tab-sub" + (forumSort === s ? " active" : "")}
                       onClick={() => setForumSort(s)}
                     >
@@ -1015,7 +1041,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)" }}>{threadPost.comments.length} {threadPost.comments.length === 1 ? "comment" : "comments"}</div>
                 <div style={{ display: "flex", gap: 6 }}>
                   {(["best", "new"] as const).map((s) => (
-                    <div key={s} className={"conn-tab-sub" + (threadSort === s ? " active" : "")} onClick={() => setThreadSort(s)} style={{ cursor: "pointer", fontSize: 11, padding: "4px 10px" }}>
+                    <div key={s} role="tab" aria-selected={threadSort === s} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setThreadSort(s); } }} className={"conn-tab-sub" + (threadSort === s ? " active" : "")} onClick={() => setThreadSort(s)} style={{ cursor: "pointer", fontSize: 11, padding: "4px 10px" }}>
                       {s === "best" ? "Best" : "New"}
                     </div>
                   ))}
@@ -1092,9 +1118,12 @@ export const NetworkScreen = memo(function NetworkScreen({
             justifyContent: "center",
             overflowY: "auto",
           }}
+          role="presentation"
+          aria-hidden="true"
           onClick={() => setProDetail(null)}
         >
           <div
+            role="presentation"
             style={{
               position: "fixed",
               inset: 0,

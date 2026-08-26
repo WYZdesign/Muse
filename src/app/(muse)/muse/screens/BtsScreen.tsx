@@ -22,7 +22,7 @@ export interface BtsScreenProps {
 }
 
 type FeedView = "grid" | "list";
-type FilterTab = "All" | "Photos" | "Videos" | "Trending";
+type FilterTab = "All" | "Photos" | "Videos" | "Trending" | "New" | "Liked";
 
 function formatCountdown(ms: number): { hours: number; minutes: number } {
   const totalMinutes = Math.max(0, Math.floor(ms / 60000));
@@ -40,7 +40,7 @@ function timeAgo(ts: number): string {
   return days + "d ago";
 }
 
-const FILTER_TABS: FilterTab[] = ["All", "Photos", "Videos", "Trending"];
+const FILTER_TABS: FilterTab[] = ["All", "Photos", "Videos", "Trending", "New", "Liked"];
 
 export const BtsScreen = memo(function BtsScreen({
   screen,
@@ -128,9 +128,18 @@ export const BtsScreen = memo(function BtsScreen({
     [showToast]
   );
 
+  const trendingCutoff = (() => {
+    const scores = stories.map((s) => (s.likes || 0) + (s.comments || 0)).sort((a, b) => b - a);
+    if (!scores.length) return Infinity;
+    return scores[Math.floor(scores.length / 3)] ?? scores[scores.length - 1];
+  })();
+
   const filteredStories = stories.filter((s) => {
     if (activeFilter === "Photos") return !s.video;
     if (activeFilter === "Videos") return !!s.video;
+    if (activeFilter === "Trending") return (s.likes || 0) + (s.comments || 0) >= trendingCutoff;
+    if (activeFilter === "New") return Date.now() - (s.ts || 0) < 24 * 60 * 60 * 1000;
+    if (activeFilter === "Liked") return !!s.liked;
     return true;
   });
 
@@ -331,7 +340,7 @@ export const BtsScreen = memo(function BtsScreen({
                   <img
                     loading="lazy"
                     src={s.img || s.avatar}
-                    alt=""
+                    alt="Photo"
                     onError={handleImgError}
                     style={{
                       width: "100%",
@@ -428,7 +437,7 @@ export const BtsScreen = memo(function BtsScreen({
                   <img
                     loading="lazy"
                     src={s.avatar}
-                    alt=""
+                    alt="Avatar"
                     onError={handleImgError}
                     style={{
                       width: 32,
@@ -461,7 +470,7 @@ export const BtsScreen = memo(function BtsScreen({
                   <img
                     loading="lazy"
                     src={s.img || s.avatar}
-                    alt=""
+                    alt="Photo"
                     onError={handleImgError}
                     style={{
                       width: "100%",

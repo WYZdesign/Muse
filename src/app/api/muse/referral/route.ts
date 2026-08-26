@@ -3,6 +3,7 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { safeServerError } from "@/lib/http";
 import { sendEmail, notify } from "@/lib/email";
+import { setReferralQuestProgress } from "@/lib/questEngine";
 import Stripe from "stripe";
 
 /**
@@ -94,29 +95,8 @@ export async function POST(req: NextRequest) {
       const { data: referrerFull } = await sb.from("muse_profiles").select("email").eq("id", referrer.id).maybeSingle();
       if (referrerFull?.email) sendEmail(notify(referrerFull.email, "Someone joined via your referral ✦", "Your referral worked", `${profile.name || "Someone"} joined Muse using your referral code. You'll get a free month of Muse Pro when they subscribe.`)).catch(() => {});
 
-      // Quest bump for the referrer: count successful signups. Inline since the
-      // shared quest engine lives in the main muse route module.
-      try {
-        const { count: signupCount } = await sb.from("muse_referrals")
-          .select("id", { count: "exact", head: true }).eq("referrer_id", referrer.id);
-        const { data: rqs } = await sb.from("muse_quests").select("*").eq("active", true).eq("action_key", "referral_signup");
-        for (const q of rqs || []) {
-          const clamped = Math.min(signupCount || 0, q.target_count);
-          const completed = clamped >= q.target_count;
-          const { data: ruq } = await sb.from("muse_user_quests").select("id, progress, completed").eq("user_id", referrer.id).eq("quest_id", q.id).maybeSingle();
-          if (ruq?.completed) continue;
-          if (ruq) await sb.from("muse_user_quests").update({ progress: clamped, completed, completed_at: completed ? new Date().toISOString() : null, updated_at: new Date().toISOString() }).eq("id", ruq.id);
-          else await sb.from("muse_user_quests").insert({ user_id: referrer.id, quest_id: q.id, period_key: "lifetime:all", progress: clamped, target: q.target_count, completed, completed_at: completed ? new Date().toISOString() : null });
-          if (completed && q.xp_reward > 0) {
-            const { data: xpRow } = await sb.from("muse_user_xp").select("total_xp, level").eq("user_id", referrer.id).maybeSingle();
-            const newXp = (xpRow?.total_xp || 0) + q.xp_reward;
-            await sb.from("muse_user_xp").upsert({ user_id: referrer.id, total_xp: newXp, level: Math.floor(Math.sqrt(newXp / 50)) + 1, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
-          }
-          if (completed) {
-            await sb.from("muse_notifications").insert({ user_id: referrer.id, type: "quest", body: `⭐ Quest complete: ${q.title} — claim your reward in Settings → Quests`, read: false });
-          }
-        }
-      } catch { /* quest bump is best-effort */ }
+      // Quest bump for the referrer: count successful signups.
+      await setReferralQuestProgress(sb, referrer.id);
 
       return NextResponse.json({ success: true, referrerName: referrer.name });
     }

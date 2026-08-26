@@ -115,8 +115,8 @@ export const COMMUNITIES = [
 export const EVENTS = [
   {id:1,title:"Golden Hour Meetup",date:"Sat, Jul 20",loc:"Venice Beach",desc:"Group shoot at sunset. All levels welcome.",nsfw:false,img:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600"},
   {id:2,title:"Creative Portfolio Review",date:"Wed, Jul 24",loc:"Online (Zoom)",desc:"Get feedback from industry pros on your portfolio.",nsfw:false,img:"https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600"},
-  {id:3,title:"Street Style Workshop",date:"Sat, Aug 3",loc:"Downtown LA",desc:"Learn candid street photography techniques.",nsfw:false,img:"https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600"},
-  {id:4,title:"Figure Art Exhibition",date:"Fri, Aug 9",loc:"Arts District",desc:"Annual body-positive fine art show.",nsfw:false,img:"https://images.unsplash.com/photo-1531913764164-f85c3e1e4530?w=600"},
+  {id:3,title:"Street Style Workshop",date:"Sat, Aug 3",loc:"Downtown LA",desc:"Learn candid street photography techniques.",nsfw:false,img:"https://images.unsplash.com/photo-1598087216773-d02ad98034f1?w=600"},
+  {id:4,title:"Figure Art Exhibition",date:"Fri, Aug 9",loc:"Arts District",desc:"Annual body-positive fine art show.",nsfw:false,img:"https://images.unsplash.com/photo-1606819717115-9159c900370b?w=600"},
   {id:5,title:"Film Scoring 101",date:"Sun, Aug 18",loc:"Online (Zoom)",desc:"Compose for visual media.",nsfw:false},
   {id:6,title:"Mobile Photography Masterclass",date:"Tue, Aug 22",loc:"Santa Monica Pier",desc:"Shoot and edit pro-level mobile photos on your iPhone.",nsfw:false},
   {id:7,title:"Neon Night Shoot",date:"Fri, Aug 30",loc:"Downtown LA",desc:"After-dark urban portrait session with neon lighting.",nsfw:false},

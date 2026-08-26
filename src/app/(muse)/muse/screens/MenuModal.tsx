@@ -54,6 +54,8 @@ export interface MenuModalProps {
   setShowConnect?: (v: boolean) => void;
   setShowPaymentHistory?: (v: boolean) => void;
   setShowReferral?: (v: boolean) => void;
+  setShowQuests?: (v: boolean) => void;
+  questClaimables?: number;
   isUnlimited?: boolean;
   profileViews?: number;
   likesReceived?: number;
@@ -125,6 +127,8 @@ export const MenuModal = memo(function MenuModal({
   setShowConnect,
   setShowPaymentHistory,
   setShowReferral,
+  setShowQuests,
+  questClaimables = 0,
   isUnlimited = false,
   profileViews = 0,
   likesReceived = 0,
@@ -149,7 +153,7 @@ export const MenuModal = memo(function MenuModal({
 
   return (
     <div className="hamburger-overlay" role="dialog" aria-modal="true" aria-label="Menu">
-      <div className="hamburger-backdrop" onClick={() => setShowHamburger(false)} />
+      <div className="hamburger-backdrop" role="presentation" aria-hidden="true" onClick={() => setShowHamburger(false)} />
       <div className="hamburger-panel">
         <div
           className="hamburger-close"
@@ -323,7 +327,7 @@ export const MenuModal = memo(function MenuModal({
                     </div>
                   </div>
                 )}
-                <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>{(["hot", "new", "top"] as const).map(s => (<div key={s} className={"conn-tab-sub" + (forumSort === s ? " active" : "")} onClick={() => setForumSort(s)}>{s.charAt(0).toUpperCase() + s.slice(1)}</div>))}</div>
+                <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>{(["hot", "new", "top"] as const).map(s => (<div key={s} className={"conn-tab-sub" + (forumSort === s ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setForumSort(s); } }} onClick={() => setForumSort(s)}>{s.charAt(0).toUpperCase() + s.slice(1)}</div>))}</div>
                 {[...(liveForum?.length ? liveForum : FORUM_POSTS)].sort((a, b) => forumSort === "top" ? (b.votes + b.comments.length * 2) - (a.votes + a.comments.length * 2) : forumSort === "new" ? (b.id - a.id) : (b.votes * 2 + b.comments.length) - (a.votes * 2 + a.comments.length)).map(post => (
                   <div key={post.id} className="conn-card" style={{ flexDirection: "column", margin: "0 0 10px", padding: "14px 18px" }}>
                     {post.pinned && <div style={{ fontSize: 10, color: "var(--gold)", fontWeight: 700, marginBottom: 4 }}>📌 Pinned</div>}
@@ -339,7 +343,7 @@ export const MenuModal = memo(function MenuModal({
                         <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{post.title}</div>
                         <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5, marginBottom: 8 }}>{post.body}</div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--muted)", flexWrap: "wrap" }}>
-                          <img loading="lazy" src={post.avatar} alt="" style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover" }} /> <span style={{ fontWeight: 600, color: "var(--text)" }}>{post.author}</span>
+                          <img loading="lazy" src={post.avatar} alt="Avatar" style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover" }} /> <span style={{ fontWeight: 600, color: "var(--text)" }}>{post.author}</span>
                           <span>·</span><span>{post.time}</span><span>·</span><span>{post.cat}</span><span>·</span><span>{post.comments.length} replies</span>
                         </div>
                         {expandedPost === post.id && (
@@ -431,7 +435,7 @@ export const MenuModal = memo(function MenuModal({
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Show Me</div>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {["all", "women", "men", "non-binary"].map(g => (
-                      <div key={g} onClick={() => setDiscoveryPrefs((p: any) => ({ ...p, gender: g }))} style={{ padding: "8px 16px", borderRadius: 99, cursor: "pointer", fontSize: 12, fontWeight: 600, transition: "all .25s", background: discoveryPrefs.gender === g ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: "1px solid " + (discoveryPrefs.gender === g ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"), color: discoveryPrefs.gender === g ? "var(--gold)" : "var(--muted)" }}>{g.charAt(0).toUpperCase() + g.slice(1)}</div>
+                      <div key={g} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDiscoveryPrefs((p: any) => ({ ...p, gender: g })); } }} onClick={() => setDiscoveryPrefs((p: any) => ({ ...p, gender: g }))} style={{ padding: "8px 16px", borderRadius: 99, cursor: "pointer", fontSize: 12, fontWeight: 600, transition: "all .25s", background: discoveryPrefs.gender === g ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: "1px solid " + (discoveryPrefs.gender === g ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"), color: discoveryPrefs.gender === g ? "var(--gold)" : "var(--muted)" }}>{g.charAt(0).toUpperCase() + g.slice(1)}</div>
                     ))}
                   </div>
                 </div>
@@ -440,7 +444,7 @@ export const MenuModal = memo(function MenuModal({
                   {[{ k: "match", l: "New Matches" }, { k: "message", l: "Messages" }, { k: "brief", l: "Brief Updates" }, { k: "like", l: "Likes" }].map(n => (
                     <div key={n.k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                       <span style={{ fontSize: 13, color: "var(--text)" }}>{n.l}</span>
-                      <div onClick={() => setNotifPrefs((p: any) => ({ ...p, [n.k]: !p[n.k] }))} style={{ width: 44, height: 24, borderRadius: 12, background: notifPrefs[n.k] ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "all .25s" }}>
+                      <div role="switch" aria-checked={!!notifPrefs[n.k]} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNotifPrefs((p: any) => ({ ...p, [n.k]: !p[n.k] })); } }} onClick={() => setNotifPrefs((p: any) => ({ ...p, [n.k]: !p[n.k] }))} style={{ width: 44, height: 24, borderRadius: 12, background: notifPrefs[n.k] ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "all .25s" }}>
                         <div style={{ width: 20, height: 20, borderRadius: "50%", background: notifPrefs[n.k] ? "var(--gold)" : "var(--muted)", position: "absolute", top: 2, left: notifPrefs[n.k] ? 22 : 2, transition: "all .25s" }} />
                       </div>
                     </div>
@@ -452,20 +456,21 @@ export const MenuModal = memo(function MenuModal({
                   { label: "Personality Profile", desc: "Zodiac, MBTI, Life Path", go: () => { setScreen("onboard"); setObStep(7); } },
                   { label: "Creative Profile", desc: "Type, styles, looking for", go: () => { setScreen("onboard"); setObStep(4); } },
                 ].map(r => (
-                  <div key={r.label} onClick={() => { setShowHamburger(false); r.go(); }} style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
+                  <div key={r.label} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); r.go(); } }} onClick={() => { setShowHamburger(false); r.go(); }} style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
                     <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{r.label}</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{r.desc}</div></div>
                     <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
                   </div>
                 ))}
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Payments &amp; Subscription</div>
                 {[
-                  { label: "Subscription", desc: "Manage your plan — Muse Pro", go: () => { setShowHamburger(false); showScreen("subscription"); } },
-                  ...(setShowConnect ? [{ label: "Marketplace Payments", desc: "Connect Stripe to receive bookings", go: () => { setShowHamburger(false); setShowConnect(true); } }] : []),
-                  ...(setShowPaymentHistory ? [{ label: "Payment History", desc: "Your charges and payouts", go: () => { setShowHamburger(false); setShowPaymentHistory(true); } }] : []),
-                  ...(setShowReferral ? [{ label: "Referral Program", desc: "Invite friends, earn rewards", go: () => { setShowHamburger(false); setShowReferral(true); } }] : []),
+                  { label: "Subscription", desc: "Manage your plan — Muse Pro", go: () => { setShowHamburger(false); showScreen("subscription"); }, dot: false },
+                  ...(setShowQuests ? [{ label: "Quests & Rewards", desc: questClaimables > 0 ? `${questClaimables} reward${questClaimables > 1 ? "s" : ""} ready to claim!` : "Complete challenges, earn free likes", go: () => { setShowHamburger(false); setShowQuests(true); }, dot: questClaimables > 0 }] : []),
+                  ...(setShowConnect ? [{ label: "Marketplace Payments", desc: "Connect Stripe to receive bookings", go: () => { setShowHamburger(false); setShowConnect(true); }, dot: false }] : []),
+                  ...(setShowPaymentHistory ? [{ label: "Payment History", desc: "Your charges and payouts", go: () => { setShowHamburger(false); setShowPaymentHistory(true); }, dot: false }] : []),
+                  ...(setShowReferral ? [{ label: "Referral Program", desc: "Invite friends, earn rewards", go: () => { setShowHamburger(false); setShowReferral(true); }, dot: false }] : []),
                 ].map(r => (
-                  <div key={r.label} onClick={() => r.go()} style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
-                    <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{r.label}</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{r.desc}</div></div>
+                  <div key={r.label} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); r.go(); } }} onClick={() => r.go()} style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
+                    <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: 6 }}>{r.label}{r.dot && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#FF69B4", display: "inline-block" }} />}</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{r.desc}</div></div>
                     <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
                   </div>
                 ))}
@@ -473,21 +478,21 @@ export const MenuModal = memo(function MenuModal({
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Safety &amp; Privacy</div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Show Distance</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Display your approximate location</div></div>
-                  <div onClick={() => { const next = !showDistance; setShowDistance?.(next); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showDistance: next } }) }).catch(() => showToast("Couldn't save — try again")); }} style={{ width: 44, height: 24, borderRadius: 12, background: showDistance ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "all .25s" }}>
+                  <div role="switch" aria-checked={!!showDistance} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const next = !showDistance; setShowDistance?.(next); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showDistance: next } }) }).catch(() => showToast("Couldn't save — try again")); } }} onClick={() => { const next = !showDistance; setShowDistance?.(next); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showDistance: next } }) }).catch(() => showToast("Couldn't save — try again")); }} style={{ width: 44, height: 24, borderRadius: 12, background: showDistance ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "all .25s" }}>
                     <div style={{ width: 20, height: 20, borderRadius: "50%", background: showDistance ? "var(--gold)" : "var(--muted)", position: "absolute", top: 2, left: showDistance ? 22 : 2, transition: "all .25s" }} />
                   </div>
                 </div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Online Status</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Show when you're active</div></div>
-                  <div onClick={() => { const next = !showOnline; setShowOnline?.(next); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showOnline: next } }) }).catch(() => showToast("Couldn't save — try again")); }} style={{ width: 44, height: 24, borderRadius: 12, background: showOnline ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "all .25s" }}>
+                  <div role="switch" aria-checked={!!showOnline} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const next = !showOnline; setShowOnline?.(next); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showOnline: next } }) }).catch(() => showToast("Couldn't save — try again")); } }} onClick={() => { const next = !showOnline; setShowOnline?.(next); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showOnline: next } }) }).catch(() => showToast("Couldn't save — try again")); }} style={{ width: 44, height: 24, borderRadius: 12, background: showOnline ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "all .25s" }}>
                     <div style={{ width: 20, height: 20, borderRadius: "50%", background: showOnline ? "var(--gold)" : "var(--muted)", position: "absolute", top: 2, left: showOnline ? 22 : 2, transition: "all .25s" }} />
                   </div>
                 </div>
-                <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => { setShowHamburger(false); setShowSafetyCheckin?.(true); }}>
+                <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); setShowSafetyCheckin?.(true); } }} onClick={() => { setShowHamburger(false); setShowSafetyCheckin?.(true); }}>
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Safety Center</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Check-ins · Strikes &amp; Disclosures</div></div>
                   <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
                 </div>
-                <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => { setShowHamburger(false); setShowPromptBank?.(true); }}>
+                <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); setShowPromptBank?.(true); } }} onClick={() => { setShowHamburger(false); setShowPromptBank?.(true); }}>
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Prompt Bank</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Personality prompts &amp; answers</div></div>
                   <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
                 </div>
@@ -495,7 +500,7 @@ export const MenuModal = memo(function MenuModal({
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Blocked Users</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{blockedUsers.length} blocked</div></div>
                 </div>
                 {isUnlimited && (
-                  <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => { setShowHamburger(false); window.open("/muse/admin", "_self"); }}>
+                  <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); window.open("/muse/admin", "_self"); } }} onClick={() => { setShowHamburger(false); window.open("/muse/admin", "_self"); }}>
                     <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--gold)" }}>Admin Dashboard</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Analytics &amp; moderation</div></div>
                     <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
                   </div>
@@ -539,7 +544,7 @@ export const MenuModal = memo(function MenuModal({
                     }
                   }, [hubTab]);
                   const tabBtn = (key: any, label: string) => (
-                    <div key={key} className={"conn-tab-sub" + (hubTab === key ? " active" : "")} onClick={() => setHubTab(key)} style={{ cursor: "pointer", fontSize: 11, padding: "5px 10px", flexShrink: 0 }}>{label}</div>
+                    <div key={key} className={"conn-tab-sub" + (hubTab === key ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setHubTab(key); } }} onClick={() => setHubTab(key)} style={{ cursor: "pointer", fontSize: 11, padding: "5px 10px", flexShrink: 0 }}>{label}</div>
                   );
                   return (
                     <>
@@ -555,7 +560,7 @@ export const MenuModal = memo(function MenuModal({
                         ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No activity yet. Start swiping!</div>
                         : activityFeed.map(a => (
                           <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1 }}>
-                            <img loading="lazy" src={a.avatar} alt="" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
+                            <img loading="lazy" src={a.avatar} alt="Avatar" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 14, color: "var(--text)" }}><strong>{a.from}</strong> {a.text}</div>
                               <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{a.time}</div>

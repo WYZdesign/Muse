@@ -103,7 +103,7 @@ export const CollabScreen = memo(function CollabScreen({
       </div>
       <div className="conn-tabs" style={{ padding: "0 12px" }}>
         {([["all", "All"], ["tfp", "TFP"], ["paid", "Paid"], ["opencall", "Open Call"], ["concept", "Concept"]] as const).map(([k, l]) => (
-          <div key={k} className={"conn-tab" + (museCat === k ? " active" : "")} onClick={() => setMuseCat(k as any)}>{l}</div>
+          <div key={k} className={"conn-tab" + (museCat === k ? " active" : "")} role="tab" aria-selected={museCat === k} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setMuseCat(k as any); } }} onClick={() => setMuseCat(k as any)}>{l}</div>
         ))}
       </div>
       <div className="briefs-scroll">
@@ -144,7 +144,10 @@ export const CollabScreen = memo(function CollabScreen({
                 <img loading="lazy" src={brief.authorImg} alt={brief.author} className="brief-avatar" />
                 <div className="brief-info" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <div className="brief-author"><strong>{brief.author}</strong></div>
-                  <div className="brief-meta">{brief.budget} · {brief.deadline}</div>
+                  <div className="brief-meta" style={{ flexDirection: "column", alignItems: "center", gap: 2 }}>
+                    <span className="brief-meta-item"><strong>{brief.budget}</strong></span>
+                    <span className="brief-meta-item">⏱ Timeline: {brief.deadline}</span>
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4, width: "100%", justifyContent: "center" }}>
                   {brief.cat === "tfp" && <span className="brief-tag" style={{ background: "rgba(152,251,152,0.15)", borderColor: "rgba(152,251,152,0.3)", color: "var(--mint)" }}>TFP</span>}
@@ -209,7 +212,7 @@ export const CollabScreen = memo(function CollabScreen({
         })()}
       </div>
       {showPostBrief && (
-        <div className="modal-overlay" onClick={() => setShowPostBrief(false)}>
+        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setShowPostBrief(false)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 20 }}>
             <div className="modal-title" style={{ marginBottom: 4 }}>{viewerSide(currentUser?.type) === "industry" ? "Post a Brief — find talent" : "Post a Brief"}</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Share a project, collab, or open call.</div>

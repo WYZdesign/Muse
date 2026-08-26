@@ -12,26 +12,26 @@ export default function PrivacyPage() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "120px 24px 80px", fontFamily: "'Inter', sans-serif" }}>
       <h1 style={{ fontSize: "2rem", fontWeight: 700, marginBottom: 24, color: "#ffd700" }}>Privacy Policy</h1>
-      <p style={{ color: "rgba(255,255,255,0.6)", lineHeight: 1.7, marginBottom: 16 }}>Last updated: August 2026</p>
+      <p style={{ color: "rgba(255,255,255,0.6)", lineHeight: 1.7, marginBottom: 16 }}>Effective August 13, 2026 &middot; Muse by WYZ Design</p>
       <div style={{ color: "rgba(255,255,255,0.75)", lineHeight: 1.8, fontSize: 15 }}>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>1. Information We Collect</h2>
-        <p style={{ marginBottom: 16 }}>We collect information you provide directly: name, email, phone, location, profile photos, portfolio content, and messages. We also collect usage data including device type, browser, IP address, and interaction patterns within the platform.</p>
-        <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>2. How We Use Your Information</h2>
-        <p style={{ marginBottom: 16 }}>Your information is used to: operate and improve the platform, match you with other creatives, process bookings and payments, send safety-related notifications, enforce our community guidelines, and communicate platform updates.</p>
-        <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>3. Information Sharing</h2>
-        <p style={{ marginBottom: 16 }}>We do not sell your personal information. We share data only: with other users as part of your profile (limited to what you choose to display), with Stripe for payment processing, with Supabase for authentication and data storage, and when required by law.</p>
-        <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>4. Safety Data</h2>
-        <p style={{ marginBottom: 16 }}>Disclosure forms, check-in data, and trusted contact information are handled with heightened security. Check-in data is deleted after the confirmation window expires. Trusted contact information is never visible to other users.</p>
-        <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>5. Data Security</h2>
-        <p style={{ marginBottom: 16 }}>We use industry-standard encryption for data in transit and at rest. Payment data is handled entirely by Stripe and never touches our servers. However, no method of transmission is 100% secure.</p>
-        <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>6. Your Rights</h2>
-        <p style={{ marginBottom: 16 }}>You can access, update, or delete your data at any time from Settings. Account deletion removes your profile, matches, and messages. Some data may be retained for legal or safety purposes as required by law.</p>
+        <p style={{ marginBottom: 16 }}>We collect: your name, email, profile photos, bio, location, creative style tags, portfolio images, chat messages, booking details, device info, IP address, and geolocation (with your permission). Stripe Identity collects government ID and selfie for verification.</p>
+        <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>2. How We Use Your Data</h2>
+        <p style={{ marginBottom: 16 }}>Your data powers: profile matching, geolocation-based discovery, content moderation (AWS Rekognition), age verification (Stripe Identity), payment processing (Stripe), push notifications, and analytics to improve the platform. We never sell your data.</p>
+        <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>3. Third-Party Services</h2>
+        <p style={{ marginBottom: 16 }}>We share data with: <strong>Supabase</strong> (database/auth), <strong>Stripe</strong> (payments/identity), <strong>AWS Rekognition</strong> (content scanning), <strong>Mapbox</strong> (geolocation), and <strong>Vercel</strong> (hosting). Each has their own privacy policy.</p>
+        <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>4. Data Retention</h2>
+        <p style={{ marginBottom: 16 }}>We retain your data for the lifetime of your account plus 30 days after deletion. Content moderation logs are kept for 1 year. Booking records are kept for 7 years for tax/legal compliance.</p>
+        <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>5. Your Rights</h2>
+        <p style={{ marginBottom: 16 }}>You may: access your data, correct inaccuracies, export your data, delete your account, opt out of marketing. Contact <a href="mailto:privacy@wyzdesign.com" style={{ color: "#ffd700" }}>privacy@wyzdesign.com</a> for requests. We respond within 30 days.</p>
+        <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>6. Data Security</h2>
+        <p style={{ marginBottom: 16 }}>We use Supabase Row Level Security (RLS), HTTPS everywhere, DPAPI encryption for local credentials, and AWS KMS for secrets at rest. No system is perfectly secure, but we invest heavily in protecting your data.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>7. Children&apos;s Privacy</h2>
-        <p style={{ marginBottom: 16 }}>Muse is not intended for users under 18. We do not knowingly collect data from minors.</p>
+        <p style={{ marginBottom: 16 }}>Muse is strictly for ages 18+. We do not knowingly collect data from children. If you believe a child has used Muse, contact us immediately — we will delete all associated data within24 hours.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>8. Changes to This Policy</h2>
-        <p style={{ marginBottom: 16 }}>We may update this policy from time to time. Material changes will be communicated via the platform.</p>
+        <p style={{ marginBottom: 16 }}>We may update this policy. We will notify you of material changes via email or in-app notification. Your continued use after changes means you accept the new policy.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>9. Contact</h2>
-        <p>Privacy questions? Email <a href="mailto:info@wyzdesign.com" style={{ color: "#ffd700" }}>info@wyzdesign.com</a>.</p>
+        <p>Privacy questions? Reach us at <a href="mailto:privacy@wyzdesign.com" style={{ color: "#ffd700" }}>privacy@wyzdesign.com</a></p>
       </div>
       <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muse</a>
     </div>

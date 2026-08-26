@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
     const candidates = (allProfiles || []).filter((p: any) => {
       if (String(p.id) === String(profile.id)) return false;
       if (blockedIds.has(String(p.id))) return false;
+      if (p.suspended) return false;
       const hasAvatar = typeof p.avatar === "string" && p.avatar.trim().length > 0;
       const hasPhotos = Array.isArray(p.photos) && p.photos.length > 0;
       return hasAvatar || hasPhotos;

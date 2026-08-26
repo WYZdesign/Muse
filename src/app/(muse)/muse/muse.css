@@ -407,7 +407,7 @@ img{background-color:#1a0a2e}
 .match-msg{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
 .match-time{font-size:11px;color:var(--muted);flex-shrink:0}
 .match-card-grid{display:block;position:relative;width:100%;overflow:hidden;border-radius:16px;padding:0;border:1px solid rgba(255,255,255,0.08);background:#1a0a2e;box-shadow:0 4px 16px rgba(0,0,0,0.35)}
-.match-card-grid::before{content:"";display:block;padding-top:133.33%}
+.match-card-grid::before{content:"";display:block;padding-top:213.33%}
 .match-card-grid .match-avatar-wrap{position:absolute;inset:0;width:100%;height:100%;display:block}
 .match-card-grid .match-avatar{width:100%;height:100%;border-radius:0;border:none;object-fit:cover}
 .match-card-grid .match-info{position:absolute;bottom:0;left:0;right:0;padding:14px 12px;background:linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.6) 60%,transparent 100%);max-height:62%;overflow-y:auto}

@@ -142,7 +142,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               { icon: <FiStar size={18} />, label: "Personality Profile", desc: "Zodiac, MBTI, Life Path", action: () => { setScreen("onboard"); setObStep(7); } },
               { icon: <FiUsers size={18} />, label: "Creative Profile", desc: "Type, styles, looking for", action: () => { setScreen("onboard"); setObStep(4); } },
             ].map(item => (
-              <div key={item.label} className="settings-item" onClick={item.action}>
+              <div key={item.label} className="settings-item" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); item.action(); } }} onClick={item.action}>
                 <div className="settings-item-left"><div className="settings-icon">{item.icon}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>
                 <div className="settings-arrow">→</div>
               </div>
@@ -152,7 +152,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                 {[{ k: "match", l: "New Matches" }, { k: "message", l: "Messages" }, { k: "brief", l: "Brief Updates" }, { k: "like", l: "Likes" }].map(n => (
                   <div key={n.k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                     <span style={{ fontSize: 14, color: "var(--text)" }}>{n.l}</span>
-                    <div onClick={() => setNotifPrefs(prev => ({ ...prev, [n.k]: !prev[n.k] }))} className={"toggle-track" + (notifPrefs[n.k] ? " active" : "")} style={{ width: 44, height: 24, borderRadius: 12, cursor: "pointer", position: "relative", transition: "all .3s", background: notifPrefs[n.k] ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.1)" }}>
+                    <div role="switch" aria-checked={!!notifPrefs[n.k]} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNotifPrefs(prev => ({ ...prev, [n.k]: !prev[n.k] })); } }} onClick={() => setNotifPrefs(prev => ({ ...prev, [n.k]: !prev[n.k] }))} className={"toggle-track" + (notifPrefs[n.k] ? " active" : "")} style={{ width: 44, height: 24, borderRadius: 12, cursor: "pointer", position: "relative", transition: "all .3s", background: notifPrefs[n.k] ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.1)" }}>
                       <div style={{ width: 20, height: 20, borderRadius: 10, background: "#fff", position: "absolute", top: 2, left: notifPrefs[n.k] ? 22 : 2, transition: "all .3s" }} />
                     </div>
                   </div>
@@ -184,7 +184,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                 {[{ k: "instagram", l: "Instagram", icon: <FiInstagram size={18} /> }, { k: "facebook", l: "Facebook", icon: <FiTwitter size={18} /> }, { k: "spotify", l: "Spotify", icon: <FiMusic size={18} /> }, { k: "soundcloud", l: "SoundCloud", icon: <FiHeadphones size={18} /> }].map(s => (
                   <div key={s.k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ color: "var(--text2)" }}>{s.icon}</span><span style={{ fontSize: 14, color: "var(--text)" }}>{s.l}</span></div>
-                    <div onClick={() => toggleSocial(s.k)} className={"toggle-track" + (obConnectedSocials[s.k] ? " active" : "")} style={{ width: 44, height: 24, borderRadius: 12, cursor: "pointer", position: "relative", transition: "all .3s", background: obConnectedSocials[s.k] ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.1)" }}>
+                    <div role="switch" aria-checked={!!obConnectedSocials[s.k]} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleSocial(s.k); } }} onClick={() => toggleSocial(s.k)} className={"toggle-track" + (obConnectedSocials[s.k] ? " active" : "")} style={{ width: 44, height: 24, borderRadius: 12, cursor: "pointer", position: "relative", transition: "all .3s", background: obConnectedSocials[s.k] ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.1)" }}>
                       <div style={{ width: 20, height: 20, borderRadius: 10, background: "#fff", position: "absolute", top: 2, left: obConnectedSocials[s.k] ? 22 : 2, transition: "all .3s" }} />
                     </div>
                   </div>
@@ -196,7 +196,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             <div className="settings-group-title">Appearance</div>
             <div className="theme-grid" style={{ margin: "12px 0 4px" }}>
               {(["lasunset", "deepspace", "nebula", "villa", "deepsea", "sunrise"] as const).map(t => (
-                <div key={t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} onClick={() => setTheme(t)} style={{ textTransform: "capitalize" }}>{theme === t ? "✓" : t.slice(0, 3)}</div>
+                <div key={t} role="radio" aria-checked={theme === t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme(t); } }} onClick={() => setTheme(t)} style={{ textTransform: "capitalize" }}>{theme === t ? "✓" : t.slice(0, 3)}</div>
               ))}
             </div>
           </div>
@@ -206,7 +206,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               { icon: <FiEye size={18} />, label: "NSFW Content", desc: myGeo?.requiresIdVerification ? "ID verification required in your state" : "Show or hide 18+ content", action: () => { if (!showNsfw) { if (myGeo?.requiresIdVerification) { setShowAgeVerification(true); } else { setShowAgeGate(true); setPendingNsfw(true); } } else { setShowNsfw(false); } } },
               { icon: <FiMoreHorizontal size={18} />, label: "Blocked Users", desc: "Manage blocked profiles", action: () => setShowBlockedUsers(!showBlockedUsers) },
             ].map(item => (
-              <div key={item.label} className="settings-item" onClick={item.action}>
+              <div key={item.label} className="settings-item" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); item.action(); } }} onClick={item.action}>
                 <div className="settings-item-left"><div className="settings-icon">{item.icon}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>
                 <div className="settings-arrow">→</div>
               </div>
@@ -235,7 +235,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               { icon: <FiDollarSign size={18} />, label: "Payment History", desc: "View earnings and transactions", action: () => setShowPaymentHistory(true), dot: false },
               { icon: <FiGift size={18} />, label: "Referral Program", desc: "Invite friends, earn free months", action: () => setShowReferral(true), dot: false },
             ].map(item => (
-              <div key={item.label} className="settings-item" onClick={item.action}>
+              <div key={item.label} className="settings-item" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); item.action(); } }} onClick={item.action}>
                 <div className="settings-item-left"><div className="settings-icon" style={{ position: "relative" }}>{item.icon}{item.dot && <span style={{ position: "absolute", top: -2, right: -2, width: 10, height: 10, borderRadius: "50%", background: "#FF69B4", border: "1.5px solid #0f0a1e" }} />}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>
                 <div className="settings-arrow">→</div>
               </div>
@@ -248,7 +248,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               { icon: <FiStar size={18} />, label: "Prompt Bank", desc: `${Math.round((promptResponses.length / Math.max(promptBankData.length, 1)) * 100)}% completed`, action: () => setShowPromptBank(true) },
               ...(isUnlimited ? [{ icon: <FiShield size={18} />, label: "Admin Dashboard", desc: "Analytics & moderation", action: () => { window.open("/muse/admin", "_self"); } }] : []),
             ].map(item => (
-              <div key={item.label} className="settings-item" onClick={item.action}>
+              <div key={item.label} className="settings-item" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); item.action(); } }} onClick={item.action}>
                 <div className="settings-item-left"><div className="settings-icon">{item.icon}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>
                 <div className="settings-arrow">→</div>
               </div>
@@ -262,7 +262,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               { icon: <FiFile size={18} />, label: "Community Guidelines", desc: "Standards & expectations", action: () => setShowGuidelines(true) },
               { icon: <FiX size={18} />, label: "Delete Account", desc: "Permanently remove your data", action: () => setShowDeleteConfirm(true) },
             ].map(item => (
-              <div key={item.label} className="settings-item" onClick={item.action}>
+              <div key={item.label} className="settings-item" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); item.action(); } }} onClick={item.action}>
                 <div className="settings-item-left"><div className="settings-icon">{item.icon}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>
                 <div className="settings-arrow">→</div>
               </div>

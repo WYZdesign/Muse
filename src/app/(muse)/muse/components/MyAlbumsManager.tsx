@@ -208,7 +208,7 @@ export default function MyAlbumsManager({
         {photos.length === 0 && <div className="album-loading">No photos yet. Add your first one above.</div>}
 
         {showInviteManager && (
-          <div className="modal-overlay" onClick={() => setShowInviteManager(false)}>
+          <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setShowInviteManager(false)}>
             <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 380, width: "90%", padding: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Album Access</div>
               <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Only people you toggle on below can see this album. Everyone else, including people you've matched with, cannot.</div>
@@ -217,7 +217,7 @@ export default function MyAlbumsManager({
                 const has = grantedIds.has(String(m.id));
                 return (
                   <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                    {m.avatar && <img src={m.avatar} alt="" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />}
+                    {m.avatar && <img src={m.avatar} alt="Avatar" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />}
                     <div style={{ flex: 1, fontSize: 13 }}>{m.name}</div>
                     <button className={"access-pill" + (has ? " active" : "")} onClick={() => toggleGrant(String(m.id), has)}>
                       {has ? "Granted" : "Grant"}
@@ -243,7 +243,7 @@ export default function MyAlbumsManager({
       )}
       <div className="portfolio-grid">
         {albums.map(a => (
-          <div key={a.id} className="portfolio-item" onClick={() => openAlbum(a)} style={{ cursor: "pointer" }}>
+          <div key={a.id} className="portfolio-item" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAlbum(a); } }} onClick={() => openAlbum(a)} style={{ cursor: "pointer" }}>
             {a.cover_url ? <img src={a.cover_url} alt={a.title} /> : <div style={{ width: "100%", height: "100%", background: "var(--surface)" }} />}
             <div className="portfolio-item-overlay">
               <div className="portfolio-item-title">{a.title}</div>
@@ -257,7 +257,7 @@ export default function MyAlbumsManager({
       </button>
 
       {showCreate && (
-        <div className="modal-overlay" onClick={() => setShowCreate(false)}>
+        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setShowCreate(false)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 380, width: "90%", padding: 20 }}>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 14 }}>New Album</div>
             <input

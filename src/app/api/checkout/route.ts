@@ -50,6 +50,13 @@ export async function POST(req: NextRequest) {
     const BETA_PROMO = process.env.MUSE_BETA_PROMO_CODE || "MUSEBETA";
     let discountCouponId: string | null = null;
     if (promo && String(promo).trim().toUpperCase() === BETA_PROMO.toUpperCase()) {
+      // Admin-gate: only ADMIN_EMAILS can use the beta promo code.
+      const { data: promoProfile } = await supabase.from("muse_profiles")
+        .select("email").eq("auth_id", userId).maybeSingle();
+      const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+      if (!promoProfile?.email || !admins.includes(promoProfile.email.toLowerCase())) {
+        return NextResponse.json({ error: "Invalid promo code" }, { status: 400 });
+      }
       // Prefer the pre-created MUSEBETA coupon (100% off, created in the
       // Dashboard) so a restricted Vercel key without coupon-write scope
       // still works. Fall back to idempotent on-the-fly creation.

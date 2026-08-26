@@ -103,7 +103,7 @@ export const TutorialOverlay = memo(function TutorialOverlay({
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, pointerEvents: "auto" }}>
-      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.88)" }} onClick={next} />
+      <div role="presentation" aria-hidden="true" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.88)" }} onClick={next} />
 
       <div style={{
         position: "absolute", left: target.left, top: target.top, width: target.width, height: target.height,

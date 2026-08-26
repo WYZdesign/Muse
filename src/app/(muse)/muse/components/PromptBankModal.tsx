@@ -110,13 +110,13 @@ export default function PromptBankModal({ prompts, responses, onSaveResponse, on
             ) : current.prompt_type === "single_choice" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {current.choices.map(choice => (
-                  <div key={choice} onClick={() => setSelectedChoices([choice])} style={choiceStyle(selectedChoices.includes(choice))}>{choice}</div>
+                  <div key={choice} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedChoices([choice]); } }} onClick={() => setSelectedChoices([choice])} style={choiceStyle(selectedChoices.includes(choice))}>{choice}</div>
                 ))}
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {current.choices.map(choice => (
-                  <div key={choice} onClick={() => setSelectedChoices(prev => prev.includes(choice) ? prev.filter(c => c !== choice) : [...prev, choice])} style={choiceStyle(selectedChoices.includes(choice))}>{choice}</div>
+                  <div key={choice} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedChoices(prev => prev.includes(choice) ? prev.filter(c => c !== choice) : [...prev, choice]); } }} onClick={() => setSelectedChoices(prev => prev.includes(choice) ? prev.filter(c => c !== choice) : [...prev, choice])} style={choiceStyle(selectedChoices.includes(choice))}>{choice}</div>
                 ))}
               </div>
             )}
@@ -133,7 +133,7 @@ export default function PromptBankModal({ prompts, responses, onSaveResponse, on
             {/* Dots */}
             <div style={{ display: "flex", gap: 4, justifyContent: "center", marginTop: 16, flexWrap: "wrap" }}>
               {filtered.map((_, i) => (
-                <div key={i} onClick={() => setCurrentIdx(i)} style={{ width: 8, height: 8, borderRadius: 4, background: i === currentIdx ? "#ffd700" : responseMap.has(filtered[i].id) ? "#4ecdc4" : "rgba(255,255,255,0.15)", cursor: "pointer", transition: "all 0.2s" }} />
+                <div key={i} role="button" aria-label={`Question ${i + 1}`} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCurrentIdx(i); } }} onClick={() => setCurrentIdx(i)} style={{ width: 8, height: 8, borderRadius: 4, background: i === currentIdx ? "#ffd700" : responseMap.has(filtered[i].id) ? "#4ecdc4" : "rgba(255,255,255,0.15)", cursor: "pointer", transition: "all 0.2s" }} />
               ))}
             </div>
           </div>

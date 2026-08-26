@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
         // userId is propagated into subscription_data.metadata at checkout.
         const userId = sub.metadata?.userId as string | undefined;
         if (userId) {
-          await sb.from("muse_profiles").update({ tier: "free" }).eq("auth_id", userId);
+          await sb.from("muse_profiles").update({ tier: "free", pro_expires_at: null }).eq("auth_id", userId);
         }
         break;
       }
@@ -119,6 +119,60 @@ export async function POST(req: NextRequest) {
           status: "failed",
           updated_at: new Date().toISOString(),
         }).eq("stripe_payment_intent", pi.id);
+        break;
+      }
+      case "charge.refunded": {
+        const charge = event.data.object as Stripe.Charge;
+        // The charge may have a subscription — if so, find the customer and
+        // downgrade their tier. A refund on a subscription charge means the
+        // subscriber should lose Pro access.
+        if (charge.customer) {
+          // Look up the profile by Stripe customer id or subscription metadata.
+          // We store userId in subscription metadata, so find the subscription first.
+          try {
+            const subs = await stripe.subscriptions.list({ customer: charge.customer as string, limit: 1, status: "active" });
+            const sub = subs.data[0];
+            const userId = sub?.metadata?.userId;
+            if (userId) {
+              await sb.from("muse_profiles").update({ tier: "free", pro_expires_at: null }).eq("auth_id", userId);
+              // Cancel the subscription so billing stops
+              if (sub.id) {
+                await stripe.subscriptions.cancel(sub.id);
+              }
+              // Notify the user
+              const { data: prof } = await sb.from("muse_profiles").select("id,email").eq("auth_id", userId).maybeSingle();
+              if (prof?.email) {
+                sendEmail(notify(prof.email, "Subscription refunded", "Your Muse Pro subscription has been refunded", "Your Pro access has been revoked. You can resubscribe anytime from Settings.")).catch(() => {});
+              }
+            }
+          } catch (e: unknown) {
+            console.error("[webhook] charge.refunded subscription lookup failed:", e);
+          }
+        }
+        break;
+      }
+      case "invoice.payment_action_required": {
+        // Stripe needs the customer to update their payment method (e.g. expired
+        // card). Give a 3-day grace period before revoking Pro.
+        const invoice = event.data.object as Stripe.Invoice;
+        if (invoice.customer) {
+          try {
+            const subs = await stripe.subscriptions.list({ customer: invoice.customer as string, limit: 1 });
+            const sub = subs.data[0];
+            const userId = sub?.metadata?.userId;
+            if (userId) {
+              // Set grace period: 3 days from now
+              const graceUntil = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+              await sb.from("muse_profiles").update({ pro_expires_at: graceUntil }).eq("auth_id", userId);
+              const { data: prof } = await sb.from("muse_profiles").select("id,email").eq("auth_id", userId).maybeSingle();
+              if (prof?.email) {
+                sendEmail(notify(prof.email, "Action required: update payment method", "Your Muse Pro payment needs attention", "Your card on file couldn't be charged. Please update your payment method within 3 days to keep Pro access.")).catch(() => {});
+              }
+            }
+          } catch (e: unknown) {
+            console.error("[webhook] invoice.payment_action_required failed:", e);
+          }
+        }
         break;
       }
       // Any other event — no-op, acknowledged to avoid Stripe retry spam.

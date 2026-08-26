@@ -95,7 +95,7 @@ export const ChatScreen = memo(function ChatScreen({
             )}
             {(chatTarget.messages || []).map((msg: any, i: number) => (
               <div key={i} className={"msg " + (msg.from === "me" ? "msg-me" : "msg-them")}>
-                {msg.img && <img loading="lazy" src={msg.img} alt="" style={{ maxWidth: 200, borderRadius: 12, marginBottom: 6, display: "block" }} />}
+                {msg.img && <img loading="lazy" src={msg.img} alt="Photo" style={{ maxWidth: 200, borderRadius: 12, marginBottom: 6, display: "block" }} />}
                 {msg.text && <div>{msg.text}</div>}
                 <div className="msg-time" style={{ textAlign: msg.from === "me" ? "right" : "left", marginTop: 4, fontSize: 10, color: msg.from === "me" ? "rgba(10,6,18,0.4)" : "var(--muted)" }}>
                   {msg.time}{msg.from === "me" && <span style={{ marginLeft: 4 }}>{i === (chatTarget.messages || []).length - 1 ? "✓✓" : "✓"}</span>}

@@ -156,7 +156,7 @@ export const SessionsScreen = memo(function SessionsScreen({
       </div>
       <div className="conn-tabs" style={{ padding: "0 16px" }}>
         {(["sessions", "bookings", "requests"] as const).map(t => (
-          <div key={t} className={"conn-tab" + (sessTab === t ? " active" : "")} onClick={() => setSessTab(t)}>{t === "sessions" ? "Browse" : t === "bookings" ? "My Bookings" : "Requests"}</div>
+          <div key={t} className={"conn-tab" + (sessTab === t ? " active" : "")} role="tab" aria-selected={sessTab === t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSessTab(t); } }} onClick={() => setSessTab(t)}>{t === "sessions" ? "Browse" : t === "bookings" ? "My Bookings" : "Requests"}</div>
         ))}
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
@@ -271,13 +271,20 @@ export const SessionsScreen = memo(function SessionsScreen({
               const booker = b.user_id || {};
               const sess = b.session_id || {};
               const label = b.status === "pending" ? "Pending" : b.status === "confirmed" ? "Confirmed" : b.status === "completed" ? "Completed" : "Cancelled";
+              const statusColors: Record<string, { bg: string; bd: string; c: string }> = {
+                completed: BADGE_COLORS.green,
+                confirmed: BADGE_COLORS.gold,
+                cancelled: BADGE_COLORS.red,
+                pending: BADGE_COLORS.muted,
+              };
+              const sc = statusColors[b.status] || BADGE_COLORS.muted;
               return (
                 <div key={b.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
                   <img loading="lazy" src={booker.avatar || sess.img || ""} alt={booker.name || "Booker"} style={{ width: "25%", alignSelf: "stretch", minHeight: 110, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
                   <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                       <div className="conn-name" style={{ fontSize: 15 }}>{booker.name || "Booker"}</div>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: "rgba(255,255,255,0.08)", color: "var(--muted)" }}>{label}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: sc.bg, border: `1px solid ${sc.bd}`, color: sc.c, whiteSpace: "nowrap" }}>{label}</span>
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
@@ -302,7 +309,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         )}
       </div>
       {showCreate && (
-        <div className="modal-overlay" onClick={() => setShowCreate(false)}>
+        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setShowCreate(false)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 20 }}>
             <div className="modal-title" style={{ marginBottom: 4 }}>List a Session</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Become bookable — set your rate and availability.</div>
@@ -322,7 +329,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         </div>
       )}
       {reviewTarget && (
-        <div className="modal-overlay" onClick={() => setReviewTarget(null)}>
+        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setReviewTarget(null)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, width: "90%", padding: 20 }}>
             <div className="modal-title" style={{ marginBottom: 4 }}>Leave a Review</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>How was your shoot with {reviewTarget.host_id?.name || reviewTarget.user_id?.name || "them"}?</div>

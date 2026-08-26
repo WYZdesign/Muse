@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
+import { sendEmail, notify } from "@/lib/email";
 
 export async function GET(req: NextRequest) {
   // Verify cron secret. The `!process.env.CRON_SECRET ||` guard matters — without
@@ -65,7 +66,78 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, checkinsCreated: created });
+    // ── Escalate overdue check-ins ─────────────────────────────────────
+    // Find check-ins that are still "pending" and were created more than 24h
+    // ago — the shoot time has passed and the user never responded.
+    const overdueCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: overdueCheckins } = await sb
+      .from("muse_safety_checkins")
+      .select("id, user_id, booking_id, created_at")
+      .eq("status", "pending")
+      .lt("created_at", overdueCutoff)
+      .limit(50);
+
+    let escalated = 0;
+    for (const ci of overdueCheckins || []) {
+      // Mark as escalated
+      await sb.from("muse_safety_checkins").update({
+        status: "escalated",
+        escalated_at: new Date().toISOString(),
+      }).eq("id", ci.id);
+
+      // Notify the overdue user
+      try {
+        await sb.from("muse_notifications").insert({
+          user_id: ci.user_id,
+          type: "safety_escalation",
+          body: "You missed a safety check-in. Please confirm you're safe.",
+          read: false,
+        });
+      } catch { /* non-fatal */ }
+
+      // Notify the other party in the booking
+      if (ci.booking_id) {
+        const { data: bk } = await sb.from("muse_bookings")
+          .select("user_id, host_id").eq("id", ci.booking_id).maybeSingle();
+        if (bk) {
+          const otherId = String(bk.user_id) === String(ci.user_id) ? bk.host_id : bk.user_id;
+          if (otherId && String(otherId) !== String(ci.user_id)) {
+            try {
+              await sb.from("muse_notifications").insert({
+                user_id: otherId,
+                type: "safety_escalation",
+                body: "Your shoot partner missed a safety check-in. We've notified them.",
+                read: false,
+              });
+            } catch { /* non-fatal */ }
+          }
+        }
+      }
+
+      // Escalate to emergency contact if auto-share is enabled
+      const { data: safetyProfile } = await sb.from("muse_safety_profiles")
+        .select("trusted_friend_email, trusted_friend_name, emergency_contact_name, emergency_contact_phone, auto_share_enabled")
+        .eq("user_id", ci.user_id).maybeSingle();
+
+      if (safetyProfile?.auto_share_enabled && safetyProfile.trusted_friend_email) {
+        const { data: userProfile } = await sb.from("muse_profiles")
+          .select("name, email").eq("id", ci.user_id).maybeSingle();
+
+        sendEmail(notify(
+          safetyProfile.trusted_friend_email,
+          `Safety check-in missed by ${userProfile?.name || "a Muse user"}`,
+          "Muse Safety Escalation",
+          `${userProfile?.name || "A Muse user"} missed a scheduled safety check-in. ` +
+          `Their emergency contact is ${safetyProfile.emergency_contact_name || "not set"} ` +
+          `(${safetyProfile.emergency_contact_phone || "no phone"}). ` +
+          `Please check on them.`
+        )).catch((e: unknown) => console.error("[cron] safety escalation email failed:", e));
+      }
+
+      escalated++;
+    }
+
+    return NextResponse.json({ success: true, checkinsCreated: created, escalated });
   } catch (error: unknown) {
     console.error("[cron] checkins failed:", error);
     return NextResponse.json({ error: "Cron failed" }, { status: 500 });

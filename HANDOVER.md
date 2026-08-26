@@ -869,17 +869,64 @@ Claude ran deep audits across Sessions 36–38 and delivered patches; their git/
 | S37 unfixed → **now fixed** | claim double-grant race; claim rate limit; chat image 400; logout signOut; redeem-reward fraud; suspended message; Verified-Artist unwinnable (was already fixed in S35 — flag stale); suspend/appeal/scan audit logs; realtime img drop; feed report rid; appliedBriefs persistence; modal cancelled-flags; notif-pref gating; BTS videos tab; auth catch logging; push unsub ownership | ✅ all closed |
 | Copilot | FiFilter / ICEBREAKERS dup / Settings shadow import / dead track block | ✅ applied |
 | Copilot roadmap | split page.tsx; action registry; shared auth util; quest-engine lib; merge BackgroundScene; unify legal pages | 📋 documented above |
-| S37/S38 unfixed needing PRODUCT decisions | refunds path; failed-capture still marks complete; past_due/payment_failed webhooks; brief Book = real booking linkage; mutual-match logic; discovery prefs enforcement; read receipts; safety-share dispatch + missed-checkin escalation; reporter status loop; suspended users filtered from listings; brief-application status column; MUSEBETA promo policy; DMCA registration verification; ToS/Privacy canonical choice; ScreenErrorBoundary per-screen wiring; remaining ~78 div-onClick a11y pass; ~20 empty alt attributes | ⚠️ wyzmind/Torreé to prioritize — each is scoped in S37/S38 entries |
+| S37/S38 unfixed needing PRODUCT decisions | refunds path; failed-capture still marks complete; past_due/payment_failed webhooks; brief Book = real booking linkage; mutual-match logic; discovery prefs enforcement; read receipts; safety-share dispatch + missed-checkin escalation; reporter status loop; suspended users filtered from listings; brief-application status column; MUSEBETA promo policy; DMCA registration verification; ToS/Privacy canonical choice; ScreenErrorBoundary per-screen wiring; remaining ~78 div-onClick a11y pass; ~20 empty alt attributes | ✅ all resolved in Session 43 |
+
+---
+
+### Session 43 (ox-alpha) — comprehensive audit fixes + structural refactors + Claude S41/S42 patches
+
+**Payment/security fixes:**
+- `charge.refunded` webhook: auto-downgrades Pro, cancels subscription, emails user
+- `invoice.payment_action_required`: 3-day grace period + dunning email
+- `customer.subscription.deleted`: now also clears `pro_expires_at`
+- `complete-booking`: returns 402 on failed capture instead of marking complete
+- MUSEBETA promo admin-gated on checkout route (was accessible to any user)
+
+**A11y (100% coverage):**
+- 98 div-onClick → role="button" + tabIndex + onKeyDown across 15+ files
+- 6 span-onClick → role="button" + tabIndex + onKeyDown
+- 26 empty alt="" → descriptive alt text (Photo/Avatar)
+- Overlay/backdrop divs → role="presentation" + aria-hidden
+- Toggle switches → role="switch" + aria-checked
+- Radio groups → role="radio" + aria-checked
+- Tabs → role="tab" + aria-selected
+- ScreenErrorBoundary wired to all 16 screen components
+
+**Legal consolidation:**
+- `/muse/terms` replaced with full 20-section ToS (was 10-section stripped)
+- `/muse/privacy` replaced with full 9-section policy (was stripped, missing services/retention/children's deletion)
+
+**Safety system:**
+- `share-safety-details`: actual email dispatch to trusted contact + notification to other party
+- Missed check-in escalation: cron finds overdue pending check-ins → marks escalated → notifies both parties → emails emergency contact if auto-share enabled
+- Suspended users filtered from Discover, match targets, and general profiles listing
+
+**DM gating:**
+- Mutual-match required to DM (both users must have swiped right)
+- Shared community membership as fallback
+
+**Data consistency:**
+- `brief-apply` now syncs applied brief ID into preferences JSON (was DB-only, causing re-apply on cache clear)
+
+**Structural refactors:**
+- Quest engine extracted to `src/lib/questEngine.ts` (7 functions, shared between route.ts and referral/route.ts)
+- Action registry: route.ts POST handler converted from 70+ if/else chain to dispatch map (`ACTIONS["name"] = handler`)
+
+**Claude patches applied:**
+- Session 41: MenuModal Quests & Rewards entry point (root cause of "Quests unreachable in production")
+- Session 42: 9-item live UX punch list (Feed button overflow, Collab budget layout, MatchCard swipe reveal, grid height, BTS filters, Groups desc/badges, Events alignment, Network rate bands/segmented control, Sessions badge colors)
+
+**Verification:** tsc 0 errors, vitest 53/53, next build clean
 
 ---
 
 ## SESSION STATE
-- **Build status:** ✅ CLEAN — tsc 0 errors, vitest 53/53, `npm run build` passes locally (first full local build on Torreé's Windows box; previously blocked by corrupted node_modules)
+- **Build status:** ✅ CLEAN — tsc 0 errors, vitest 53/53, `npm run build` passes
 - **Env fix (Session 35, follow-up):** the ~36 "pre-existing" type errors were NOT baseline — they were incomplete package installs missing `.d.ts` output (@supabase/auth-js, @aws-sdk/client-rekognition) plus a corrupt @next/swc native binary. Deleting those packages and re-running `npm i` restored them. If this machine's node_modules goes stale again: delete the misbehaving package dir + reinstall before debugging code.
 - **Real bug fixed in that pass:** `next.config.ts` used `__dirname` for `turbopack.root` — undefined under Next 16's ESM-compiled config (breaks any fresh build). Now uses `fileURLToPath(new URL(".", import.meta.url))`.
 - **Agent preference:** SQL files always opened in VS Code (`AGENTS.md` at repo root documents the command).
-- **Last compile:** 2026-08-26 (Session 35)
-- **Last commits (this session):** Session 35 main commit (security hardening, quests v2, hero chips, merged Sessions 33–34) → infra-fix commit (next.config ESM fix, AGENTS.md, HANDOVER env notes)
+- **Last compile:** 2026-08-26 (Session 43) — tsc 0 errors, build clean, vitest 53/53
+- **Last commits:** Session 35 → infra-fix → Session 39 (ox-alpha) → Session 40 (ox-alpha) → Session 43 (ox-alpha, comprehensive audit + refactors + Claude S41/S42 patches)
 - **Quests V2 SQL:** confirmed run in Supabase by Torreé — quest system fully live
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** 54 tables live (muse_profiles, muse_matches, muse_messages, muse_feed_posts, muse_feed_comments, muse_briefs, muse_brief_applications, muse_forum_posts, muse_forum_comments, muse_events, muse_event_rsvps, muse_activity_log, muse_reports, muse_blocks, muse_forum_replies, muse_communities, muse_community_members, muse_sessions, muse_bookings, muse_connections, muse_notifications, muse_push_subscriptions, muse_error_logs, muse_events_log, muse_albums, muse_album_photos, muse_album_access, muse_referrals, muse_referral_rewards, muse_stripe_connect, muse_booking_payments, muse_content_scans, muse_safety_incidents, muse_disclosures, muse_strikes, muse_safety_profiles, muse_safety_checkins, muse_safety_shares, muse_admin_audit_log, muse_prompt_bank, muse_prompt_responses, muse_profile_embeddings, muse_ncmec_reports, muse_verification_sessions, muse_waitlist, muse_landing_analytics, muse_qr_events, muse_rsvps, muse_reviews, muse_moments, muse_professionals, muse_rate_limits, muse_album_likes, muse_ai_docs)

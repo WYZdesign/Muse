@@ -126,7 +126,7 @@ export const CommunityScreen = memo(function CommunityScreen({
       {/* DETAIL MODAL */}
       {detailItem && detailType && (
         <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
-          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} onClick={() => setDetailItem(null)} />
+          <div role="presentation" aria-hidden="true" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} onClick={() => setDetailItem(null)} />
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxHeight: "85vh", background: "linear-gradient(135deg,#1a0a2e,#2d1b4e)", borderRadius: "24px 24px 0 0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 20px 0" }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{detailType === "group" ? detailItem.name : detailItem.title}</div>
@@ -135,7 +135,7 @@ export const CommunityScreen = memo(function CommunityScreen({
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 100px" }}>
               {/* Same img:'' seed-data gap as the card views — gradient-initial fallback */}
               {detailItem.img ? (
-                <img src={detailItem.img} alt="" style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 16, marginBottom: 16 }} onError={handleImgError} />
+                <img src={detailItem.img} alt="Photo" style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 16, marginBottom: 16 }} onError={handleImgError} />
               ) : (
                 <div style={{ width: "100%", height: 200, borderRadius: 16, marginBottom: 16, background: "linear-gradient(135deg, #2a1a3e 0%, #1a0a2e 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,215,0,0.6)", fontSize: "2.5em", fontWeight: 700 }}>
                   {((detailType === "group" ? detailItem.name : detailItem.title) || "").trim().charAt(0).toUpperCase()}
@@ -207,7 +207,7 @@ export const CommunityScreen = memo(function CommunityScreen({
 
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
         {commTab === "groups" && groups.map((c: any) => (
-          <div key={c.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "column", alignItems: "center", cursor: "pointer" }} onClick={() => openGroupDetail(c)}>
+          <div key={c.id} className="conn-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openGroupDetail(c); } }} style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "column", alignItems: "center", cursor: "pointer" }} onClick={() => openGroupDetail(c)}>
             {/* Top-banner layout (matches Events). Seeded communities have img:"" — a bare
                 <img src=""> doesn't reliably fire onError, so guard explicitly and render an
                 initials-gradient banner instead of a blank hole. */}
@@ -222,7 +222,8 @@ export const CommunityScreen = memo(function CommunityScreen({
                 column child without explicit width shrink-wraps and left-anchors, making
                 the title and badges center against different reference boxes. */}
             <div className="conn-content" style={{ width: "100%", padding: 14, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
-              <div className="conn-name" style={{ fontSize: 15 }}>{c.name}</div>
+              <div className="conn-name" style={{ fontSize: 19.5 }}>{c.name}</div>
+              <div className="conn-desc" style={{ fontSize: 12.5, color: "var(--text2)", marginTop: 4, marginBottom: 8, lineHeight: 1.4, maxWidth: 280 }}>{c.desc || "A community for creatives to connect and collaborate."}</div>
               <div className="conn-meta" style={{ fontSize: 12, marginBottom: 8 }}>{c.members} members</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
                 {(() => {
@@ -233,6 +234,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                   else if ((c.members || 0) >= 100) badges.push({ t: "Growing", ...BADGE_COLORS.blue });
                   else badges.push({ t: "Intimate", ...BADGE_COLORS.blue });
                   if (joinedIds.has(c.id)) badges.push({ t: "✓ Joined", ...BADGE_COLORS.green });
+                  else badges.push({ t: "Open to Join", ...BADGE_COLORS.lavender });
                   if (c.nsfw) badges.push({ t: "18+", ...BADGE_COLORS.red });
                   return badges.map(b => <span key={b.t} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 600 }}>{b.t}</span>);
                 })()}
@@ -247,7 +249,7 @@ export const CommunityScreen = memo(function CommunityScreen({
           </div>
         ))}
         {commTab === "events" && events.map((ev: any) => (
-          <div key={ev.id} className="conn-card" style={{ flexDirection: "column", alignItems: "center", marginBottom: 10, padding: 0, overflow: "hidden", borderRadius: 16, cursor: "pointer" }} onClick={() => openEventDetail(ev)}>
+          <div key={ev.id} className="conn-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openEventDetail(ev); } }} style={{ flexDirection: "column", alignItems: "center", marginBottom: 10, padding: 0, overflow: "hidden", borderRadius: 16, cursor: "pointer" }} onClick={() => openEventDetail(ev)}>
             {ev.img ? (
               <img loading="lazy" src={ev.img} alt={ev.title} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} onError={handleImgError} />
             ) : (
@@ -257,7 +259,7 @@ export const CommunityScreen = memo(function CommunityScreen({
             )}
             {/* width:"100%" fixes shrink-wrap left-anchoring under .conn-card's
                 align-items:flex-start — same root cause as the Groups cards above. */}
-            <div style={{ width: "100%", padding: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ width: "100%", padding: 16, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
               <div className="conn-name" style={{ fontSize: 15, width: "100%" }}>{ev.title}</div>
               <div style={{ display: "flex", gap: 10, marginTop: 6, justifyContent: "center", width: "100%" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text2)" }}><FiCalendar size={12} /> {ev.date}</span>

@@ -363,8 +363,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                           </div>
                           {isTop && (
                             <>
-                              <div className={"card-photo-zone card-photo-zone-left" + (cardScrolled ? " hidden" : "")} style={{ pointerEvents: cardScrolled ? "none" : "auto" }} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.max(0, prev - 1)); }}><span style={{ position: "absolute", left: 6, top: "50%", transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundImage: "linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)", backgroundSize: "300% 300%", animation: "dotLava 3s ease-in-out infinite", pointerEvents: "none", lineHeight: "28px" }}>‹</span></div>
-                              <div className={"card-photo-zone card-photo-zone-right" + (cardScrolled ? " hidden" : "")} style={{ pointerEvents: cardScrolled ? "none" : "auto" }} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.min(photos.length - 1, prev + 1)); }}><span style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundImage: "linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)", backgroundSize: "300% 300%", animation: "dotLava 3s ease-in-out infinite", pointerEvents: "none", lineHeight: "28px" }}>›</span></div>
+                              <div className={"card-photo-zone card-photo-zone-left" + (cardScrolled ? " hidden" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.max(0, prev - 1)); } }} style={{ pointerEvents: cardScrolled ? "none" : "auto" }} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.max(0, prev - 1)); }}><span style={{ position: "absolute", left: 6, top: "50%", transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundImage: "linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)", backgroundSize: "300% 300%", animation: "dotLava 3s ease-in-out infinite", pointerEvents: "none", lineHeight: "28px" }}>‹</span></div>
+                              <div className={"card-photo-zone card-photo-zone-right" + (cardScrolled ? " hidden" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.min(photos.length - 1, prev + 1)); } }} style={{ pointerEvents: cardScrolled ? "none" : "auto" }} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.min(photos.length - 1, prev + 1)); }}><span style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundImage: "linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)", backgroundSize: "300% 300%", animation: "dotLava 3s ease-in-out infinite", pointerEvents: "none", lineHeight: "28px" }}>›</span></div>
                             </>
                           )}
                           <div className={"card-photo-dots" + (cardScrolled ? " hidden" : "")}>
@@ -443,9 +443,9 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                         style={{ position: "relative", borderRadius: 14, overflow: "hidden", aspectRatio: "3/4", background: "rgba(255,255,255,0.03)", cursor: "pointer" }}
                                         onClick={() => { setLightboxPhotos(albumPhotos); setLightboxIdx(portIdx); }}
                                       >
-                                        <img loading="lazy" src={albumPhotos[portIdx]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", filter: (profile as any).nsfw && !revealedNsfw.has(String(profile.id)) ? "blur(26px) brightness(0.7)" : "none", transition: "filter .3s" }} onError={handleImgError} />
+                                         <img loading="lazy" src={albumPhotos[portIdx]} alt="Photo" style={{ width: "100%", height: "100%", objectFit: "cover", filter: (profile as any).nsfw && !revealedNsfw.has(String(profile.id)) ? "blur(26px) brightness(0.7)" : "none", transition: "filter .3s" }} onError={handleImgError} />
                                         {(profile as any).nsfw && !revealedNsfw.has(String(profile.id)) && (
-                                          <div onClick={(e) => { e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); }} style={{ position: "absolute", inset: 0, zIndex: 4, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(10,6,18,0.45)", cursor: "pointer" }}>
+                                           <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); } }} onClick={(e) => { e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); }} style={{ position: "absolute", inset: 0, zIndex: 4, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(10,6,18,0.45)", cursor: "pointer" }}>
                                             <div style={{ fontSize: 24, fontWeight: 800, color: "#ff8a80" }}>18+</div>
                                             <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", letterSpacing: 0.03 }}>NSFW content</div>
                                             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)" }}>Tap to reveal</div>
@@ -454,8 +454,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                         {/* Tap zones */}
                                         {albumPhotos.length > 1 && (
                                           <>
-                                            <div onClick={(e) => { e.stopPropagation(); setPortfolioPhotoIdx(p => Math.max(0, p - 1)); }} style={{ position: "absolute", left: 0, top: 0, width: "30%", height: "100%", zIndex: 2 }} />
-                                            <div onClick={(e) => { e.stopPropagation(); setPortfolioPhotoIdx(p => Math.min(albumPhotos.length - 1, p + 1)); }} style={{ position: "absolute", right: 0, top: 0, width: "30%", height: "100%", zIndex: 2 }} />
+                                             <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setPortfolioPhotoIdx(p => Math.max(0, p - 1)); } }} onClick={(e) => { e.stopPropagation(); setPortfolioPhotoIdx(p => Math.max(0, p - 1)); }} style={{ position: "absolute", left: 0, top: 0, width: "30%", height: "100%", zIndex: 2 }} />
+                                             <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setPortfolioPhotoIdx(p => Math.min(albumPhotos.length - 1, p + 1)); } }} onClick={(e) => { e.stopPropagation(); setPortfolioPhotoIdx(p => Math.min(albumPhotos.length - 1, p + 1)); }} style={{ position: "absolute", right: 0, top: 0, width: "30%", height: "100%", zIndex: 2 }} />
                                           </>
                                         )}
                                         {/* Left/Right arrows */}
@@ -470,7 +470,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                       {albumPhotos.length > 1 && (
                                         <div style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 8 }}>
                                           {albumPhotos.map((_: string, i: number) => (
-                                            <div key={i} onClick={(e) => { e.stopPropagation(); setPortfolioPhotoIdx(i); }} style={{ width: 6, height: 6, borderRadius: "50%", background: i === portIdx ? "var(--gold)" : "rgba(255,255,255,0.15)", cursor: "pointer", transition: "all .2s" }} />
+                                             <div key={i} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setPortfolioPhotoIdx(i); } }} onClick={(e) => { e.stopPropagation(); setPortfolioPhotoIdx(i); }} style={{ width: 6, height: 6, borderRadius: "50%", background: i === portIdx ? "var(--gold)" : "rgba(255,255,255,0.15)", cursor: "pointer", transition: "all .2s" }} />
                                           ))}
                                         </div>
                                       )}
@@ -516,7 +516,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
         )}
       </div>
       {galleryView && (
-        <div className="gallery-view" onClick={() => setGalleryView(null)}>
+        <div className="gallery-view" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setGalleryView(null); } }} onClick={() => setGalleryView(null)}>
           <button className="gallery-view-close" onClick={(e) => { e.stopPropagation(); setGalleryView(null); }} aria-label="Close"><FiX size={22} /></button>
           {galleryView.photos.length > 1 && (
             <>
@@ -535,7 +535,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
       )}
       {/* Lightbox */}
       {lightboxPhotos.length > 0 && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.95)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => { setLightboxPhotos([]); setLightboxIdx(0); }}>
+        <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.95)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => { setLightboxPhotos([]); setLightboxIdx(0); }}>
           <button onClick={(e) => { e.stopPropagation(); setLightboxPhotos([]); setLightboxIdx(0); }} aria-label="Close" style={{ position: "absolute", top: 16, right: 16, zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 18 }}>✕</button>
           {lightboxPhotos.length > 1 && (
             <>
@@ -543,13 +543,13 @@ export const DiscoverScreen = memo(function DiscoverScreen({
               <button onClick={(e) => { e.stopPropagation(); setLightboxIdx(i => (i + 1) % lightboxPhotos.length); }} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 22 }}>›</button>
             </>
           )}
-          <img src={lightboxPhotos[lightboxIdx] || lightboxPhotos[0]} alt="" style={{ maxWidth: "100vw", maxHeight: "100vh", objectFit: "contain" }} onClick={(e) => e.stopPropagation()} onError={handleImgError} />
+           <img src={lightboxPhotos[lightboxIdx] || lightboxPhotos[0]} alt="Photo" style={{ maxWidth: "100vw", maxHeight: "100vh", objectFit: "contain" }} onClick={(e) => e.stopPropagation()} onError={handleImgError} />
           <div style={{ position: "absolute", bottom: 20, color: "rgba(255,255,255,0.5)", fontSize: 13 }}>{lightboxIdx + 1} / {lightboxPhotos.length}</div>
         </div>
       )}
       {/* Badge info popover */}
       {badgeInfo && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setBadgeInfo(null)}>
+        <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setBadgeInfo(null)}>
           <div style={{ background: "#1a0a2e", border: `1px solid ${badgeInfo.color}40`, borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
               <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, background: `${badgeInfo.color}20`, border: `1px solid ${badgeInfo.color}40`, color: badgeInfo.color, flexShrink: 0 }}>{badgeInfo.icon}</div>

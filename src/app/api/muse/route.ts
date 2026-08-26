@@ -9,138 +9,10 @@ import { parseRateToCents } from "@/lib/money";
 import { sendEmail, notify } from "@/lib/email";
 import { pushToProfile } from "@/lib/push";
 import { scanWithRekognition, logScan } from "@/lib/contentScan";
+import { bumpQuest, questPeriodKey, awardQuestXp, setQuestProgress, refreshMetaQuest } from "@/lib/questEngine";
 import Stripe from "stripe";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** Period bucket for quest progress. Weekly buckets are keyed by the Monday
- *  (UTC) date so weeks roll over cleanly; 'once' and 'lifetime' never reset. */
-function questPeriodKey(frequency: string): string {
-  const now = new Date();
-  const day = now.toISOString().slice(0, 10);
-  if (frequency === "weekly") {
-    const d = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-    const mondayOffset = (d.getDay() + 6) % 7; // Mon=0..Sun=6
-    d.setDate(d.getDate() - mondayOffset);
-    return `weekly:${d.toISOString().slice(0, 10)}`;
-  }
-  if (frequency === "monthly") return `monthly:${day.slice(0, 7)}`;
-  if (frequency === "lifetime" || frequency === "once") return "lifetime:all";
-  return `daily:${day}`;
-}
-
-/* ═══ QUEST ENGINE — shared by track-quest and server-side bumps ═══
- * type SupabaseClient avoided — sb is structurally compatible across the
- * service client and the anon client used in this route. */
-
-/** Persist a "quest complete" notification so server-side completions
- *  (match/book/verify/referral etc.) surface in the bell — client-tracked
- *  actions already toast, but these would otherwise be silent. */
-async function notifyQuestComplete(sb: any, userId: string, title: string): Promise<void> {
-  try {
-    await sb.from("muse_notifications").insert({
-      user_id: userId, type: "quest",
-      body: `⭐ Quest complete: ${title} — claim your reward in Settings → Quests`,
-      read: false,
-    });
-  } catch { /* best-effort */ }
-}
-
-/** Award XP for a completed quest; handles level-ups and cascades into
- *  reach_level + meta_quests quests. Idempotent per completion. */
-async function awardQuestXp(sb: any, profileId: string, xpReward: number): Promise<boolean> {
-  const { data: xpRow } = await sb.from("muse_user_xp").select("total_xp, level").eq("user_id", profileId).maybeSingle();
-  const currentXp = xpRow?.total_xp || 0;
-  const newXp = currentXp + xpReward;
-  const prevLevel = Math.floor(Math.sqrt(currentXp / 50)) + 1;
-  const newLevel = Math.floor(Math.sqrt(newXp / 50)) + 1;
-  await sb.from("muse_user_xp").upsert({ user_id: profileId, total_xp: newXp, level: newLevel, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
-  if (newLevel > prevLevel) await setQuestProgress(sb, profileId, "reach_level", newLevel);
-  return newLevel > prevLevel;
-}
-
-/** Set ABSOLUTE progress on every active quest with this action_key
- *  (lifetime period). Used for level-based and meta quests. */
-async function setQuestProgress(sb: any, profileId: string, actionKey: string, absolute: number): Promise<void> {
-  const { data: quests } = await sb.from("muse_quests").select("*").eq("active", true).eq("action_key", actionKey);
-  for (const quest of quests || []) {
-    const periodKey = questPeriodKey(quest.frequency);
-    const clamped = Math.min(Math.max(0, Math.floor(absolute)), quest.target_count);
-    const completed = clamped >= quest.target_count;
-    const { data: existing } = await sb.from("muse_user_quests")
-      .select("id, progress, completed").eq("user_id", profileId).eq("quest_id", quest.id).eq("period_key", periodKey).maybeSingle();
-    if (existing?.completed) continue;
-    if (existing && existing.progress === clamped && !completed) continue;
-    if (existing) {
-      await sb.from("muse_user_quests").update({
-        progress: clamped, completed,
-        completed_at: completed ? new Date().toISOString() : null, updated_at: new Date().toISOString(),
-      }).eq("id", existing.id);
-    } else {
-      await sb.from("muse_user_quests").insert({
-        user_id: profileId, quest_id: quest.id, period_key: periodKey,
-        progress: clamped, target: quest.target_count, completed,
-        completed_at: completed ? new Date().toISOString() : null,
-      });
-    }
-    if (completed && quest.xp_reward > 0) {
-      // Meta quests recompute their own count after being marked complete —
-      // guard against recursion by skipping the recount when setting meta itself.
-      if (actionKey !== "meta_quests") await refreshMetaQuest(sb, profileId);
-      await awardQuestXp(sb, profileId, quest.xp_reward);
-    }
-    if (completed) await notifyQuestComplete(sb, profileId, quest.title);
-  }
-}
-
-/** Recompute total-completed-quests meta progress. */
-async function refreshMetaQuest(sb: any, profileId: string): Promise<void> {
-  const { count } = await sb.from("muse_user_quests")
-    .select("id", { count: "exact", head: true }).eq("user_id", profileId).eq("completed", true);
-  await setQuestProgress(sb, profileId, "meta_quests", count || 0);
-}
-
-/** Increment (+1) progress on every active quest with this action_key.
- *  Server-side events call this: match, book_session, host_session,
- *  complete_session, complete_host, get_verified, referral_signup. */
-async function bumpQuest(sb: any, profileId: string, actionKey: string): Promise<void> {
-  try {
-    const { data: quests } = await sb.from("muse_quests").select("*").eq("active", true).eq("action_key", actionKey);
-    let anyCompleted = false;
-    for (const quest of quests || []) {
-      const periodKey = questPeriodKey(quest.frequency);
-      const { data: existing } = await sb.from("muse_user_quests")
-        .select("id, progress, completed").eq("user_id", profileId).eq("quest_id", quest.id).eq("period_key", periodKey).maybeSingle();
-      if (existing?.completed) continue;
-      const newProgress = (existing?.progress || 0) + 1;
-      const completed = newProgress >= quest.target_count;
-      if (existing) {
-        await sb.from("muse_user_quests").update({
-          progress: newProgress, completed,
-          completed_at: completed ? new Date().toISOString() : null, updated_at: new Date().toISOString(),
-        }).eq("id", existing.id);
-      } else {
-        await sb.from("muse_user_quests").insert({
-          user_id: profileId, quest_id: quest.id, period_key: periodKey,
-          progress: newProgress, target: quest.target_count, completed,
-          completed_at: completed ? new Date().toISOString() : null,
-        });
-      }
-      if (completed) {
-        anyCompleted = true;
-        await notifyQuestComplete(sb, profileId, quest.title);
-      }
-    }
-    if (anyCompleted) {
-      // Award XP once per bump using the highest tier reward for this key —
-      // slight over-award vs tracking per-tier ledgers, but never under-awards.
-      const { data: tiers } = await sb.from("muse_quests").select("xp_reward").eq("action_key", actionKey).eq("active", true);
-      const maxXp = Math.max(0, ...(tiers || []).map((q: any) => q.xp_reward || 0));
-      if (maxXp > 0) await awardQuestXp(sb, profileId, maxXp);
-      await refreshMetaQuest(sb, profileId);
-    }
-  } catch { /* quest failures must never break the primary action */ }
-}
 
 function getAuthUser() {
   return supabase.auth.getUser();
@@ -288,6 +160,1620 @@ function isConvoParticipant(matchId: string, profileId: string): boolean {
   return parts.includes(profileId);
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ACTION HANDLER REGISTRY
+// ══════════════════════════════════════════════════════════════════════════════
+
+type ActionContext = {
+  sb: ReturnType<typeof getServiceClient>;
+  profile: { id: string; name?: string | null; email?: string | null; avatar?: string | null; [key: string]: unknown };
+  rest: Record<string, any>;
+  ip: string;
+  req: NextRequest;
+  rawType?: string;
+};
+
+type ActionHandler = (ctx: ActionContext) => Promise<Response>;
+
+const ACTIONS: Record<string, ActionHandler> = {};
+
+// ═══ PROFILE ═══
+
+ACTIONS["profile"] = async ({ sb, profile, rest }) => {
+  const ALLOWED_PROFILE_FIELDS = ["name", "bio", "styles", "loc", "city", "type", "zodiac", "chinese", "mbti", "life_path", "looking", "avatar"];
+  const updates: Record<string, unknown> = {};
+  for (const k of ALLOWED_PROFILE_FIELDS) {
+    if (rest[k] !== undefined) updates[k] = rest[k];
+  }
+  if (typeof updates.name === "string") updates.name = sanitizeText(updates.name as string, 80);
+  if (typeof updates.bio === "string") updates.bio = sanitizeText(updates.bio as string, 500);
+  if (typeof updates.styles === "string") updates.styles = sanitizeText(updates.styles as string, 200);
+  if (typeof updates.looking === "string") updates.looking = sanitizeText(updates.looking as string, 200);
+  if (Object.keys(updates).length === 0) return NextResponse.json({ error: "No updatable fields" }, { status: 400 });
+  const { error } = await sb.from("muse_profiles").update(updates).eq("id", profile.id);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+// ═══ MATCHING & DISCOVERY ═══
+
+ACTIONS["match"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "match", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { target_id } = rest;
+  if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
+  if (target_id === profile.id) return NextResponse.json({ error: "Cannot match yourself" }, { status: 400 });
+  if (!UUID_RE.test(String(target_id))) {
+    await sb.from("muse_notifications").insert({ user_id: profile.id, type: "match", body: "You matched with a new creative!", read: false });
+    return NextResponse.json({ success: true, demo: true });
+  }
+  const { data: target } = await sb.from("muse_profiles").select("id, suspended").eq("id", target_id).maybeSingle();
+  if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
+  if (target.suspended) return NextResponse.json({ error: "Unable to match with this user" }, { status: 403 });
+  const { data: matchBlock } = await sb.from("muse_blocks").select("id").or(`and(user_id.eq.${profile.id},target_id.eq.${target_id}),and(user_id.eq.${target_id},target_id.eq.${profile.id})`).limit(1).maybeSingle();
+  if (matchBlock) return NextResponse.json({ error: "Unable to match with this user" }, { status: 403 });
+  const { error } = await sb.from("muse_matches").upsert(
+    { user_id: profile.id, target_id },
+    { onConflict: "user_id,target_id", ignoreDuplicates: true }
+  );
+  if (error) return safeServerError(error, "db op");
+  await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id } });
+  await sb.from("muse_notifications").insert({ user_id: target_id, from_id: profile.id, type: "match", body: `${profile.name} matched with you!`, read: false });
+  await emailProfile(sb, target_id, "Someone matched with you ✦", "New match on Muse", `${profile.name} matched with you. Open Muse to say hi.`, "See who it is", "https://muse.wyzdesign.com/muse", "match");
+  await bumpQuest(sb, profile.id, "match");
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["unmatch"] = async ({ sb, profile, rest }) => {
+  const { target_id } = rest;
+  if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
+  if (UUID_RE.test(String(target_id))) {
+    await sb.from("muse_matches").delete().eq("user_id", profile.id).eq("target_id", target_id);
+    await sb.from("muse_matches").delete().eq("user_id", target_id).eq("target_id", profile.id);
+    await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "unmatch", details: { target_id } });
+  }
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["track-view"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRateUser(profile.id, "track-view", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { target_id } = rest;
+  if (!target_id || target_id === profile.id) return NextResponse.json({ success: true });
+  if (!UUID_RE.test(String(target_id))) return NextResponse.json({ success: true, demo: true });
+  const { data: cur } = await sb.from("muse_profiles").select("views_count").eq("id", target_id).maybeSingle();
+  const next = ((cur as any)?.views_count || 0) + 1;
+  const { error } = await sb.from("muse_profiles").update({ views_count: next }).eq("id", target_id);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+// ═══ MESSAGING ═══
+
+ACTIONS["message"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRateUser(profile.id, "message", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const vErr = validateInput(rest);
+  if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
+  const { toId, text, image_url, img, client_msg_id } = rest;
+  const imageUrl = image_url || img;
+  if (!text?.trim() && !imageUrl) return NextResponse.json({ error: "text or image required" }, { status: 400 });
+  if (!toId) return NextResponse.json({ error: "toId required" }, { status: 400 });
+  if (UUID_RE.test(String(toId))) {
+    const { data: msgBlock } = await sb.from("muse_blocks").select("id").or(`and(user_id.eq.${profile.id},target_id.eq.${toId}),and(user_id.eq.${toId},target_id.eq.${profile.id})`).limit(1).maybeSingle();
+    if (msgBlock) return NextResponse.json({ error: "Unable to message this user" }, { status: 403 });
+  }
+  const [userA, userB] = [String(profile.id), String(toId)].sort();
+  const { data: mutualMatch } = await sb.from("muse_matches")
+    .select("id").eq("user_id", profile.id).eq("target_id", toId).maybeSingle();
+  const { data: reverseMatch } = await sb.from("muse_matches")
+    .select("id").eq("user_id", toId).eq("target_id", profile.id).maybeSingle();
+  const hasMatch = !!mutualMatch && !!reverseMatch;
+
+  let sameCommunity = false;
+  if (!hasMatch) {
+    const { data: myCommunities } = await sb.from("muse_community_members")
+      .select("community_id").eq("user_id", profile.id);
+    const { data: theirCommunities } = await sb.from("muse_community_members")
+      .select("community_id").eq("user_id", toId);
+    if (myCommunities?.length && theirCommunities?.length) {
+      const myIds = new Set(myCommunities.map(c => c.community_id));
+      sameCommunity = theirCommunities.some(c => myIds.has(c.community_id));
+    }
+  }
+
+  if (!hasMatch && !sameCommunity) {
+    return NextResponse.json({ error: "You need to match with this person before messaging, or join a shared community." }, { status: 403 });
+  }
+  const cleanText = sanitizeText(String(text || "").trim());
+  if (!cleanText && !imageUrl) return NextResponse.json({ error: "text or image required" }, { status: 400 });
+  const screen = cleanText ? screenText(cleanText) : { block: false, categories: [] as string[] };
+  if (screen.block) {
+    await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message_blocked", details: { categories: screen.categories } });
+    return NextResponse.json({ error: "Message blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
+  }
+  const lower = cleanText.toLowerCase();
+  const hasPayment = /\$[\d]+|\bpay\b|\bcompensation\b|\brate\b|\bbudget\b|\bfee\b|\bcharged?\b/i.test(lower);
+  const hasNsfw = /\bnude\b|\bnudity\b|\bnsfw\b|\bnsf[ww]\b|\bexplicit\b|\bboudoir\b|\bpenetrat\b|\bsexual\b|\berotic\b|\btopless\b|\bundressed\b|\bintimate\b|\bsensual\b|\badult\b/i.test(lower);
+  if (hasPayment && hasNsfw) {
+    await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "disclosure_required", details: { to: toId } });
+    return NextResponse.json({ error: "Disclosure required before discussing paid NSFW shoots", code: "DISCLOSURE_REQUIRED" }, { status: 409 });
+  }
+  const matchId = [profile.id, String(toId)].sort().join("__");
+  const { error } = await sb.from("muse_messages").insert({
+    match_id: matchId,
+    sender_id: profile.id,
+    receiver_id: String(toId),
+    text: cleanText,
+    img: img || image_url || "",
+    client_msg_id: typeof client_msg_id === "string" ? client_msg_id.slice(0, 120) : undefined,
+  });
+  if (error && (error as { code?: string }).code !== "23505") return safeServerError(error, "message insert");
+  await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message", details: { to: toId } });
+  if (UUID_RE.test(String(toId))) {
+    await sb.from("muse_notifications").insert({ user_id: String(toId), from_id: profile.id, type: "message", body: `${profile.name} sent you a message`, read: false });
+  }
+  await emailProfile(sb, String(toId), "New message on Muse ✦", "You have a new message", `${profile.name} sent you a message.`, "Read it", "https://muse.wyzdesign.com/muse", "message");
+  return NextResponse.json({ success: true, match_id: matchId });
+};
+
+// ═══ FEED & MOMENTS ═══
+
+ACTIONS["feed"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "feed", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const vErr = validateInput(rest);
+  if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
+  const { text, image_url, image, img, media } = rest;
+  if (!text?.trim()) return NextResponse.json({ error: "text required" }, { status: 400 });
+  const cleanText = sanitizeText(String(text).trim());
+  if (!cleanText) return NextResponse.json({ error: "text required" }, { status: 400 });
+  const screen = screenText(cleanText);
+  if (screen.block) return NextResponse.json({ error: "Post blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
+  const mediaArr = Array.isArray(media) ? media : [];
+  const resolvedImg = img || image_url || image || mediaArr[0] || "";
+  const { error } = await sb.from("muse_feed_posts").insert({ author_id: profile.id, text: cleanText, img: resolvedImg, type: resolvedImg ? "photo" : "text" });
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["like-feed-post"] = async ({ sb, rest, ip }) => {
+  if (!await checkRate(ip, "like-feed-post", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { postId: feedPostId, liked } = rest;
+  if (!feedPostId) return NextResponse.json({ error: "postId required" }, { status: 400 });
+  if (typeof feedPostId === "number" || !UUID_RE.test(String(feedPostId))) return NextResponse.json({ success: true, demo: true });
+  const delta = liked ? 1 : -1;
+  const { data: rpcResult, error: rpcErr } = await sb.rpc("atomic_like_count", { table_name: "muse_feed_posts", row_id: feedPostId, delta });
+  let newLikes: number;
+  if (!rpcErr && rpcResult !== null) {
+    newLikes = Number(rpcResult);
+  } else {
+    const { data: feedPost } = await sb.from("muse_feed_posts").select("likes").eq("id", feedPostId).maybeSingle();
+    if (!feedPost) return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    newLikes = Math.max(0, (feedPost.likes || 0) + delta);
+    const { error: updErr } = await sb.from("muse_feed_posts").update({ likes: newLikes }).eq("id", feedPostId);
+    if (updErr) return safeServerError(updErr, "db op");
+  }
+  return NextResponse.json({ success: true, likes: newLikes });
+};
+
+ACTIONS["create-moment"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "create-moment", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { text, img } = rest;
+  const cleanText = sanitizeText(String(text || "").slice(0, 500));
+  const resolvedImg = img && typeof img === "string" ? String(img).slice(0, 500) : "";
+  if (!cleanText && !resolvedImg) return NextResponse.json({ error: "text or img required" }, { status: 400 });
+  const isVideo = /\.(mp4|webm|mov)(\?|$)/i.test(resolvedImg);
+  const { data, error } = await sb.from("muse_moments").insert({
+    author_id: profile.id, text: cleanText, img: resolvedImg, type: resolvedImg ? (isVideo ? "video" : "photo") : "text",
+  }).select("id, text, img, type, likes, comments, created_at, author_id(name, avatar)").single();
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true, moment: data });
+};
+
+ACTIONS["like-moment"] = async ({ sb, rest, ip }) => {
+  if (!await checkRate(ip, "like-moment", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { momentId, liked } = rest;
+  if (!momentId) return NextResponse.json({ error: "momentId required" }, { status: 400 });
+  if (typeof momentId === "number" || !UUID_RE.test(String(momentId))) return NextResponse.json({ success: true, demo: true });
+  const delta = liked ? 1 : -1;
+  const { data: rpcResult, error: rpcErr } = await sb.rpc("atomic_like_count", { table_name: "muse_moments", row_id: momentId, delta });
+  let newLikes: number;
+  if (!rpcErr && rpcResult !== null) {
+    newLikes = Number(rpcResult);
+  } else {
+    const { data: moment } = await sb.from("muse_moments").select("likes").eq("id", momentId).maybeSingle();
+    if (!moment) return NextResponse.json({ error: "Moment not found" }, { status: 404 });
+    newLikes = Math.max(0, (moment.likes || 0) + delta);
+    const { error: updErr } = await sb.from("muse_moments").update({ likes: newLikes }).eq("id", momentId);
+    if (updErr) return safeServerError(updErr, "db op");
+  }
+  return NextResponse.json({ success: true, likes: newLikes });
+};
+
+// ═══ BRIEFS ═══
+
+ACTIONS["brief"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "brief", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const vErr = validateInput(rest);
+  if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
+  const { title, desc, budget, cat, tags, paid, rate } = rest;
+  if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
+  const cleanTitle = sanitizeText(String(title).trim(), 200);
+  if (!cleanTitle) return NextResponse.json({ error: "title required" }, { status: 400 });
+  const cleanDesc = sanitizeText(String(desc || ""), 2000);
+  const briefScreen = screenText(`${cleanTitle} ${cleanDesc}`);
+  if (briefScreen.block) {
+    await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "brief_blocked", details: { categories: briefScreen.categories } });
+    return NextResponse.json({ error: "Brief blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
+  }
+  const { error } = await sb.from("muse_briefs").insert({ author_id: profile.id, title: cleanTitle, description: cleanDesc, budget: budget || "Negotiable", category: cat || "concept", tags: tags || [], paid: paid || false, rate: rate || "" });
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["brief-apply"] = async ({ sb, profile, rest }) => {
+  const { briefId } = rest;
+  if (!briefId) return NextResponse.json({ error: "briefId required" }, { status: 400 });
+  if (!UUID_RE.test(String(briefId))) return NextResponse.json({ success: true, demo: true });
+  const { error } = await sb.from("muse_brief_applications").insert({ brief_id: briefId, user_id: profile.id });
+  if (error) return safeServerError(error, "db op");
+  try {
+    const { data: prof } = await sb.from("muse_profiles").select("preferences").eq("id", profile.id).maybeSingle();
+    const existing = Array.isArray(prof?.preferences?.appliedBriefs) ? prof.preferences.appliedBriefs : [];
+    if (!existing.includes(briefId)) {
+      await sb.from("muse_profiles").update({
+        preferences: { ...(prof?.preferences || {}), appliedBriefs: [...existing, briefId] }
+      }).eq("id", profile.id);
+    }
+  } catch { /* non-fatal — DB is source of truth, preferences is cache */ }
+  await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "brief_apply", details: { brief_id: briefId } });
+  return NextResponse.json({ success: true });
+};
+
+// ═══ FORUM ═══
+
+ACTIONS["forum"] = async ({ sb, profile, rest, ip, rawType }) => {
+  if (!await checkRate(ip, "forum", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const vErr = validateInput(rest);
+  if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
+  const { title, body: forumBody, text, cat, postId } = rest;
+  const forumType = rawType;
+  if (forumType === "get-replies") {
+    const { data: replies, error: replErr } = await sb.from("muse_forum_replies")
+      .select("id, user_name, user_avatar, text, created_at")
+      .eq("post_id", postId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (replErr) return safeServerError(replErr, "db op");
+    const mapped = (replies || []).map((r: any) => ({
+      author: r.user_name || "User",
+      avatar: r.user_avatar || "",
+      text: r.text || "",
+      time: r.created_at ? new Date(r.created_at).toLocaleString() : "Just now",
+    }));
+    return NextResponse.json({ success: true, replies: mapped });
+  }
+  if (forumType === "reply") {
+    const cleanText = sanitizeText(String(text || ""), 2000);
+    const replyScreen = screenText(cleanText);
+    if (replyScreen.block) {
+      await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "forum_reply_blocked", details: { categories: replyScreen.categories } });
+      return NextResponse.json({ error: "Reply blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
+    }
+    const isStubPost = typeof postId === "number" || !UUID_RE.test(String(postId));
+    if (isStubPost) return NextResponse.json({ success: true, demo: true });
+    const { error } = await sb.from("muse_forum_replies").insert({ post_id: postId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, text: cleanText });
+    if (error) return safeServerError(error, "db op");
+    return NextResponse.json({ success: true });
+  }
+  if (forumType === "vote") {
+    const { direction } = rest;
+    if (!postId) return NextResponse.json({ error: "postId required" }, { status: 400 });
+    const isStubVote = typeof postId === "number" || !UUID_RE.test(String(postId));
+    if (isStubVote) return NextResponse.json({ success: true, demo: true });
+    const delta = direction === "down" ? -1 : 1;
+    const { data: post } = await sb.from("muse_forum_posts").select("votes").eq("id", postId).maybeSingle();
+    if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    const newVotes = (post.votes || 0) + delta;
+    const { error: updErr } = await sb.from("muse_forum_posts").update({ votes: newVotes }).eq("id", postId);
+    if (updErr) return safeServerError(updErr, "db op");
+    return NextResponse.json({ success: true, votes: newVotes });
+  }
+  if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
+  const cleanTitle = sanitizeText(String(title).trim(), 200);
+  if (!cleanTitle) return NextResponse.json({ error: "title required" }, { status: 400 });
+  const cleanBody = sanitizeText(String(forumBody || ""), 5000);
+  const postScreen = screenText(`${cleanTitle} ${cleanBody}`);
+  if (postScreen.block) {
+    await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "forum_post_blocked", details: { categories: postScreen.categories } });
+    return NextResponse.json({ error: "Post blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
+  }
+  const { error } = await sb.from("muse_forum_posts").insert({ author_id: profile.id, title: cleanTitle, body: cleanBody, category: cat || "General" });
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+// ═══ SAFETY & MODERATION ═══
+
+ACTIONS["report"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRateUser(profile.id, "report", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { target_id, target_type, reason, details } = rest;
+  if (!target_id || !reason) return NextResponse.json({ error: "target_id and reason required" }, { status: 400 });
+  if (target_id === profile.id) return NextResponse.json({ error: "Cannot report yourself" }, { status: 400 });
+  const isPostTarget = target_type === "feed_post" || target_type === "forum_post";
+  if (!isPostTarget) {
+    if (!UUID_RE.test(String(target_id))) return NextResponse.json({ success: true, demo: true });
+    const { data: targetProfile } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
+    if (!targetProfile) return NextResponse.json({ error: "Target not found" }, { status: 400 });
+  }
+  let aiClassification: unknown = null;
+  try {
+    const verdict = await moderateText(`${reason} ${details || ""}`.trim());
+    aiClassification = verdict;
+  } catch { /* best-effort; never block report creation on AI */ }
+  const { error } = await sb.from("muse_reports").insert({ reporter_id: profile.id, target_id, target_type: target_type || "user", reason, details: details || "", ai_classification: aiClassification });
+  if (error) return safeServerError(error, "db op");
+  await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "report", details: { target_id, reason } });
+  if (profile.email) sendEmail(notify(profile.email, "We received your report", "Report received", "Thanks for looking out for the community. Our safety team is reviewing your report.", "Muse Safety", "https://muse.wyzdesign.com/muse/safety")).catch(() => {});
+  if (target_type === "user" || target_type === "match") {
+    try {
+      const { count: distinctReporters } = await sb.from("muse_reports")
+        .select("reporter_id", { count: "exact", head: true })
+        .eq("target_id", target_id);
+      const { data: allReports } = await sb.from("muse_reports")
+        .select("reporter_id")
+        .eq("target_id", target_id)
+        .limit(50);
+      const distinct = new Set((allReports || []).map((r: any) => String(r.reporter_id))).size;
+      if (distinct >= 3) {
+        await applyStrikeAndEscalate(sb, target_id, {
+          category: "standard",
+          severity: "warning",
+          reason: "Multiple user reports",
+          details: `${distinct} distinct reporters flagged this account`,
+        });
+      }
+    } catch { /* best-effort enforcement; never block report creation */ }
+  }
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["block"] = async ({ sb, profile, rest }) => {
+  const { target_id } = rest;
+  if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
+  if (target_id === profile.id) return NextResponse.json({ error: "Cannot block yourself" }, { status: 400 });
+  const { data: target } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
+  if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
+  await sb.from("muse_blocks").upsert(
+    { user_id: profile.id, target_id },
+    { onConflict: "user_id,target_id", ignoreDuplicates: true }
+  );
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["unblock"] = async ({ sb, profile, rest }) => {
+  const { target_id } = rest;
+  if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
+  await sb.from("muse_blocks").delete().eq("user_id", profile.id).eq("target_id", target_id);
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["get-blocks"] = async ({ sb, profile }) => {
+  const { data: blocks } = await sb.from("muse_blocks").select("target_id").eq("user_id", profile.id);
+  return NextResponse.json({ blocked: blocks?.map((b: { target_id: string }) => b.target_id) || [] });
+};
+
+// ═══ COMMUNITIES ═══
+
+ACTIONS["join-community"] = async ({ sb, profile, rest }) => {
+  const { communityId } = rest;
+  if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
+  const isStub = !UUID_RE.test(String(communityId));
+  if (isStub) return NextResponse.json({ success: true, demo: true });
+  const { data: community } = await sb.from("muse_communities").select("id").eq("id", communityId).maybeSingle();
+  if (!community) return NextResponse.json({ error: "Community not found" }, { status: 400 });
+  await sb.from("muse_community_members").upsert(
+    { community_id: communityId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar },
+    { onConflict: "community_id,user_id", ignoreDuplicates: true }
+  );
+  const { count } = await sb.from("muse_community_members").select("*", { count: "exact", head: true }).eq("community_id", communityId);
+  await sb.from("muse_communities").update({ member_count: (count ?? 0) }).eq("id", communityId);
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["leave-community"] = async ({ sb, profile, rest }) => {
+  const { communityId } = rest;
+  if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
+  const isStub = !UUID_RE.test(String(communityId));
+  if (isStub) return NextResponse.json({ success: true, demo: true });
+  const { data: community } = await sb.from("muse_communities").select("id").eq("id", communityId).maybeSingle();
+  if (!community) return NextResponse.json({ error: "Community not found" }, { status: 400 });
+  await sb.from("muse_community_members").delete().eq("community_id", communityId).eq("user_id", profile.id);
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["create-community"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "create-community", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { name, description, category, isNsfw } = rest;
+  const cleanName = String(name || "").trim().slice(0, 80);
+  if (!cleanName) return NextResponse.json({ error: "name required" }, { status: 400 });
+  const { data, error } = await sb.from("muse_communities").insert({
+    name: cleanName,
+    description: String(description || "").slice(0, 500),
+    img: String(rest.img || "").slice(0, 500),
+    category: String(category || "general").slice(0, 40),
+    is_nsfw: Boolean(isNsfw),
+    member_count: 1,
+  }).select().single();
+  if (error) return safeServerError(error, "db op");
+  await sb.from("muse_community_members").upsert(
+    { community_id: data.id, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar },
+    { onConflict: "community_id,user_id", ignoreDuplicates: true }
+  );
+  return NextResponse.json({ success: true, community: data });
+};
+
+// ═══ EVENTS & RSVP ═══
+
+ACTIONS["create-event"] = async ({ sb, rest, ip }) => {
+  if (!await checkRate(ip, "create-event", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { title, description, date, location, category } = rest;
+  const cleanTitle = String(title || "").trim().slice(0, 120);
+  if (!cleanTitle) return NextResponse.json({ error: "title required" }, { status: 400 });
+  const { data, error } = await sb.from("muse_events").insert({
+    title: cleanTitle,
+    description: String(description || "").slice(0, 500),
+    date: String(date || "").slice(0, 100),
+    location: String(location || "").slice(0, 200),
+    category: String(category || "General").slice(0, 40),
+    img: String(rest.img || "").slice(0, 500),
+    attendees: 0,
+  }).select().single();
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true, event: data });
+};
+
+ACTIONS["rsvp"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "rsvp", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { eventId } = rest;
+  if (!eventId) return NextResponse.json({ error: "eventId required" }, { status: 400 });
+  const isStub = !UUID_RE.test(String(eventId));
+  if (isStub) return NextResponse.json({ success: true, demo: true });
+  const { data: existing } = await sb.from("muse_rsvps").select("id").eq("event_id", eventId).eq("user_id", profile.id).maybeSingle();
+  if (existing) return NextResponse.json({ success: true, alreadyRsvpd: true });
+  const { error } = await sb.from("muse_rsvps").insert({ event_id: eventId, user_id: profile.id });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["cancel-rsvp"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "cancel-rsvp", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { eventId } = rest;
+  if (!eventId) return NextResponse.json({ error: "eventId required" }, { status: 400 });
+  const isStub = !UUID_RE.test(String(eventId));
+  if (isStub) return NextResponse.json({ success: true, demo: true });
+  await sb.from("muse_rsvps").delete().eq("event_id", eventId).eq("user_id", profile.id);
+  return NextResponse.json({ success: true });
+};
+
+// ═══ SESSIONS & BOOKINGS ═══
+
+ACTIONS["book-session"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRateUser(profile.id, "book-session", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { sessionId, hostId } = rest;
+  if (!sessionId) return NextResponse.json({ error: "sessionId required" }, { status: 400 });
+  const { data: booker } = await sb.from("muse_profiles").select("age_verified").eq("id", profile.id).maybeSingle();
+  if (!booker?.age_verified) {
+    return NextResponse.json({ error: "Identity verification required", code: "VERIFICATION_REQUIRED" }, { status: 403 });
+  }
+  if (!UUID_RE.test(String(sessionId))) return NextResponse.json({ success: true, demo: true });
+  const { data: session } = await sb.from("muse_sessions").select("id, host_id").eq("id", sessionId).maybeSingle();
+  if (!session) return NextResponse.json({ error: "Session not found" }, { status: 400 });
+  const effectiveHostId = hostId || (session as any).host_id || null;
+  if (effectiveHostId) {
+    const { data: host } = await sb.from("muse_profiles").select("id").eq("id", effectiveHostId).maybeSingle();
+    if (!host) return NextResponse.json({ error: "Host not found" }, { status: 400 });
+  }
+  await sb.from("muse_bookings").upsert(
+    { session_id: sessionId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, host_id: effectiveHostId, status: "pending" },
+    { onConflict: "session_id,user_id", ignoreDuplicates: true }
+  );
+  await sb.from("muse_notifications").insert({ user_id: effectiveHostId || profile.id, from_id: profile.id, type: "booking", body: `${profile.name} requested to book a session`, read: false });
+  if (effectiveHostId) await emailProfile(sb, effectiveHostId, "New booking request ✦", "Someone wants to book you", `${profile.name} requested to book one of your sessions.`, "Review booking", "https://muse.wyzdesign.com/muse");
+  await bumpQuest(sb, profile.id, "book_session");
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["create-session"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "create-session", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { title, description, type, rate, duration, skills, date, location, img } = rest;
+  if (!title || !String(title).trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
+  const rawRate = String(rate || "").trim();
+  if (rawRate && parseRateToCents(rawRate) === null) {
+    return NextResponse.json({ error: "Rate must be a single dollar amount (e.g. \"$150\" or \"150\"). Remove ranges or extra text." }, { status: 400 });
+  }
+  const { data, error } = await sb.from("muse_sessions").insert({
+    host_id: profile.id,
+    title: String(title).slice(0, 200),
+    description: String(description || "").slice(0, 1000),
+    type: String(type || "Photoshoot").slice(0, 50),
+    rate: rawRate.slice(0, 50),
+    duration: String(duration || "60 min").slice(0, 50),
+    skills: Array.isArray(skills) ? skills.slice(0, 20).map((s: unknown) => String(s).slice(0, 50)) : [],
+    date: String(date || "").slice(0, 100),
+    location: String(location || "").slice(0, 200),
+    img: String(img || "").slice(0, 500),
+    available: true,
+  }).select().single();
+  if (error) return safeServerError(error, "db op");
+  await bumpQuest(sb, profile.id, "host_session");
+  return NextResponse.json({ success: true, session: data });
+};
+
+// ═══ CONNECTIONS ═══
+
+ACTIONS["connect"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "connect", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { targetId } = rest;
+  if (!targetId) return NextResponse.json({ error: "targetId required" }, { status: 400 });
+  if (targetId === profile.id) return NextResponse.json({ error: "Cannot connect with yourself" }, { status: 400 });
+  if (!UUID_RE.test(String(targetId))) return NextResponse.json({ success: true, demo: true });
+  const { data: target } = await sb.from("muse_profiles").select("id").eq("id", targetId).maybeSingle();
+  if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
+  await sb.from("muse_connections").upsert({ user_id: profile.id, target_id: targetId, status: "pending" }, { onConflict: "user_id,target_id", ignoreDuplicates: true }).select();
+  await sb.from("muse_notifications").insert({ user_id: targetId, from_id: profile.id, type: "connection", body: `${profile.name} wants to connect`, read: false });
+  await emailProfile(sb, targetId, "New connection request ✦", "Someone wants to connect", `${profile.name} sent you a connection request.`, "View request", "https://muse.wyzdesign.com/muse");
+  return NextResponse.json({ success: true });
+};
+
+// ═══ PREFERENCES & SYNC ═══
+
+ACTIONS["save-preferences"] = async ({ sb, profile, rest }) => {
+  const ALLOWED_PREFS = new Set([
+    "nsfw", "showOnline", "showDistance", "notifications", "emailNotifications",
+    "pushNotifications", "soundEffects", "darkMode", "distance", "ageRange",
+    "openToTravel", "autoReply", "privacy", "visibility", "tags",
+    "ageMin", "ageMax", "gender",
+    "onboardingStep",
+    "filterStyles", "filterScore",
+    "savedBriefs",
+    "appliedBriefs",
+  ]);
+  const source = (rest.preferences && typeof rest.preferences === "object") ? rest.preferences : rest;
+  const prefs: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(source as Record<string, unknown>)) {
+    if (ALLOWED_PREFS.has(k)) prefs[k] = v;
+  }
+  if (Object.keys(prefs).length === 0) return NextResponse.json({ error: "No valid preferences provided" }, { status: 400 });
+  const { data: existing } = await sb.from("muse_profiles").select("preferences").eq("id", profile.id).maybeSingle();
+  const merged = { ...(existing?.preferences || {}), ...prefs };
+  const { error } = await sb.from("muse_profiles").update({ preferences: merged }).eq("id", profile.id);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["apply-promo"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRateUser(profile.id, "apply-promo", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const code = String(rest.code || "").trim().toUpperCase();
+  if (!code) return NextResponse.json({ error: "Promo code required" }, { status: 400 });
+  if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Invalid promo code" }, { status: 404 });
+  if (code !== "MUSEBETA") return NextResponse.json({ error: "Invalid promo code" }, { status: 404 });
+  const { error } = await sb.from("muse_profiles").update({ tier: "muse_pro" }).eq("id", profile.id);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true, tier: "muse_pro" });
+};
+
+ACTIONS["mark-read"] = async ({ sb, profile, rest }) => {
+  const { notificationIds } = rest;
+  if (Array.isArray(notificationIds) && notificationIds.length > 0) {
+    const ids = notificationIds.slice(0, 100).filter((x: unknown) => typeof x === "string" && UUID_RE.test(String(x)));
+    if (ids.length > 0) {
+      await sb.from("muse_notifications").update({ read: true }).in("id", ids).eq("user_id", profile.id);
+    }
+  }
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["sync"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "sync", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const results: string[] = [];
+  if (rest.matches?.length) {
+    for (const m of rest.matches as any[]) {
+      await sb.from("muse_matches").upsert(
+        { user_id: profile.id, target_id: m.id, matched_at: new Date().toISOString() },
+        { onConflict: "user_id,target_id", ignoreDuplicates: true }
+      );
+    }
+    results.push("matches");
+  }
+  if (rest.stats && typeof rest.stats === "object") {
+    const allowedStatKeys = ["likes", "superLikes", "passes", "bookingsCompleted", "matchesReceived", "messagesSent"];
+    const cleanStats: Record<string, number> = {};
+    for (const k of allowedStatKeys) {
+      const v = (rest.stats as Record<string, unknown>)[k];
+      if (typeof v === "number" && Number.isFinite(v) && v >= 0) cleanStats[k] = Math.min(Math.floor(v), 100000);
+    }
+    if (Object.keys(cleanStats).length > 0) {
+      const { data: existing } = await sb.from("muse_profiles").select("stats").eq("id", profile.id).maybeSingle();
+      const merged = { ...(existing?.stats || {}), ...cleanStats };
+      await sb.from("muse_profiles").update({ stats: merged }).eq("id", profile.id);
+      results.push("stats");
+    }
+  }
+  return NextResponse.json({ success: true, synced: results });
+};
+
+// ═══ ALBUMS ═══
+
+ACTIONS["create-album"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "create-album", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const vErr = validateInput(rest);
+  if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
+  const { title, description, cover_url, access_level, tags } = rest;
+  if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
+  const level = ["public", "private", "invite"].includes(access_level as string) ? access_level : "public";
+  const { data, error } = await sb.from("muse_albums").insert({
+    profile_id: profile.id, title: (title as string).trim(), description: description || "",
+    cover_url: cover_url || "", access_level: level, tags: Array.isArray(tags) ? tags.slice(0, 20) : [],
+  }).select().single();
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true, album: data });
+};
+
+ACTIONS["update-album"] = async ({ sb, profile, rest }) => {
+  const { albumId, title, description, cover_url, access_level, tags } = rest;
+  if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
+  const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
+  if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (title !== undefined) updates.title = String(title).slice(0, 200);
+  if (description !== undefined) updates.description = String(description).slice(0, 2000);
+  if (cover_url !== undefined) updates.cover_url = cover_url;
+  if (access_level !== undefined && ["public", "private", "invite"].includes(access_level as string)) updates.access_level = access_level;
+  if (tags !== undefined && Array.isArray(tags)) updates.tags = tags.slice(0, 20);
+  const { error } = await sb.from("muse_albums").update(updates).eq("id", albumId);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["delete-album"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "delete-album", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { albumId } = rest;
+  if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
+  const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
+  if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { error } = await sb.from("muse_albums").delete().eq("id", albumId);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["add-album-photo"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "add-album-photo", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { albumId, img_url, caption } = rest;
+  if (!albumId || !img_url) return NextResponse.json({ error: "albumId and img_url required" }, { status: 400 });
+  const storageHost = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/^https?:\/\//, "").split("/")[0];
+  if (storageHost && !String(img_url).includes(storageHost)) {
+    return NextResponse.json({ error: "Images must be uploaded through Muse" }, { status: 400 });
+  }
+  const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
+  if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { count } = await sb.from("muse_album_photos").select("*", { count: "exact", head: true }).eq("album_id", albumId);
+  const { data, error } = await sb.from("muse_album_photos").insert({ album_id: albumId, img_url, caption: String(caption || "").slice(0, 500), position: count ?? 0 }).select().single();
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true, photo: data });
+};
+
+ACTIONS["remove-album-photo"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "remove-album-photo", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { photoId } = rest;
+  if (!photoId) return NextResponse.json({ error: "photoId required" }, { status: 400 });
+  const { data: photo } = await sb.from("muse_album_photos").select("album_id").eq("id", photoId).maybeSingle();
+  if (!photo) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const { data: album } = await sb.from("muse_albums").select("profile_id").eq("id", photo.album_id).maybeSingle();
+  if (!album || String(album.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { error } = await sb.from("muse_album_photos").delete().eq("id", photoId);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["grant-album-access"] = async ({ sb, profile, rest }) => {
+  const { albumId, viewerProfileId } = rest;
+  if (!albumId || !viewerProfileId) return NextResponse.json({ error: "albumId and viewerProfileId required" }, { status: 400 });
+  const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
+  if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { error } = await sb.from("muse_album_access").upsert({ album_id: albumId, viewer_profile_id: viewerProfileId }, { onConflict: "album_id,viewer_profile_id", ignoreDuplicates: true });
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["revoke-album-access"] = async ({ sb, profile, rest }) => {
+  const { albumId, viewerProfileId } = rest;
+  if (!albumId || !viewerProfileId) return NextResponse.json({ error: "albumId and viewerProfileId required" }, { status: 400 });
+  const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
+  if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  await sb.from("muse_album_access").delete().eq("album_id", albumId).eq("viewer_profile_id", viewerProfileId);
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["list-album-access"] = async ({ sb, profile, rest }) => {
+  const { albumId } = rest;
+  if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
+  const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
+  if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { data } = await sb.from("muse_album_access").select("viewer_profile_id, granted_at, viewer_profile_id(id, name, avatar)").eq("album_id", albumId);
+  return NextResponse.json({ access: data || [] });
+};
+
+ACTIONS["view-album"] = async ({ sb, rest, ip }) => {
+  if (!await checkRate(ip, "view-album", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { albumId } = rest;
+  if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
+  const { data: album } = await sb.from("muse_albums").select("view_count").eq("id", albumId).maybeSingle();
+  if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  await sb.from("muse_albums").update({ view_count: (album.view_count || 0) + 1 }).eq("id", albumId);
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["like-album"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "like-album", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { albumId } = rest;
+  if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
+  const { data: album } = await sb.from("muse_albums").select("like_count").eq("id", albumId).maybeSingle();
+  if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const { data: existingLike } = await sb.from("muse_album_likes").select("id").eq("album_id", albumId).eq("user_id", profile.id).maybeSingle();
+  if (existingLike) return NextResponse.json({ success: true, alreadyLiked: true });
+  await sb.from("muse_album_likes").insert({ album_id: albumId, user_id: profile.id });
+  const { count } = await sb.from("muse_album_likes").select("*", { count: "exact", head: true }).eq("album_id", albumId);
+  await sb.from("muse_albums").update({ like_count: (count ?? 0) }).eq("id", albumId);
+  return NextResponse.json({ success: true });
+};
+
+// ═══ DISCLOSURES ═══
+
+ACTIONS["create-disclosure"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "create-disclosure", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const {
+    responderId, bookingId,
+    compensationAmount, compensationTiming, compensationMethod,
+    contentTypeNudity, contentTypeArtisticNude, contentTypeBoudoir, contentTypePortrait,
+    contentTypeFashion, contentTypeEditorial, contentTypeCommercial, contentTypeConceptual,
+    contentTypeOther, contentTypeOtherDesc,
+    boundaryFullNudity, boundaryImpliedNudity, boundaryPartials, boundaryNoPartials,
+    boundaryExplicitActs, boundaryPenetration, boundaryNoPenetration,
+    boundaryTouchingSelf, boundaryTouchingOther, boundaryNoTouching,
+    locationType, locationAddress, locationPublic,
+    othersPresent, othersCount, othersDesc,
+    usageRights, usageCustomDesc, editApprovalRequired, ndaRequired, modelReleaseRequired
+  } = rest;
+
+  if (!responderId) return NextResponse.json({ error: "responderId required" }, { status: 400 });
+
+  const hasNsfw = contentTypeNudity || contentTypeArtisticNude || boundaryExplicitActs || boundaryPenetration;
+  const hasPayment = compensationAmount && compensationAmount !== "0" && compensationAmount !== "Free";
+  if (hasNsfw && hasPayment) {
+    await sb.from("muse_disclosures").insert({
+      proposer_id: profile.id, responder_id: responderId, booking_id: bookingId || null,
+      status: "blocked", blocked_reason: "NSFW content with payment — violates Muse terms",
+      compensation_amount: compensationAmount || "",
+      content_type_nudity: !!contentTypeNudity,
+      content_type_artistic_nude: !!contentTypeArtisticNude,
+      boundary_explicit_acts: !!boundaryExplicitActs,
+      boundary_penetration: !!boundaryPenetration,
+    });
+    await applyStrikeAndEscalate(sb, profile.id, {
+      category: "high_severity", severity: "suspension",
+      reason: "Attempted to arrange paid explicit sexual content",
+      details: "Disclosure was hard-blocked: NSFW content + payment combination",
+    });
+    await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "disclosure_blocked", details: { responder_id: responderId } });
+    return NextResponse.json({ error: "This request violates Muse terms and has been blocked.", blocked: true }, { status: 403 });
+  }
+
+  const { data, error } = await sb.from("muse_disclosures").insert({
+    proposer_id: profile.id, responder_id: responderId, booking_id: bookingId || null,
+    compensation_amount: String(compensationAmount || ""),
+    compensation_timing: String(compensationTiming || ""),
+    compensation_method: String(compensationMethod || ""),
+    content_type_nudity: !!contentTypeNudity,
+    content_type_artistic_nudity: !!contentTypeArtisticNude,
+    content_type_boudoir: !!contentTypeBoudoir,
+    content_type_portrait: !!contentTypePortrait,
+    content_type_fashion: !!contentTypeFashion,
+    content_type_editorial: !!contentTypeEditorial,
+    content_type_commercial: !!contentTypeCommercial,
+    content_type_conceptual: !!contentTypeConceptual,
+    content_type_other: !!contentTypeOther,
+    content_type_other_desc: String(contentTypeOtherDesc || ""),
+    boundary_full_nudity: !!boundaryFullNudity,
+    boundary_implied_nudity: !!boundaryImpliedNudity,
+    boundary_partials: !!boundaryPartials,
+    boundary_no_partials: !!boundaryNoPartials,
+    boundary_explicit_acts: !!boundaryExplicitActs,
+    boundary_penetration: !!boundaryPenetration,
+    boundary_no_penetration: !!boundaryNoPenetration,
+    boundary_touching_self: !!boundaryTouchingSelf,
+    boundary_touching_other: !!boundaryTouchingOther,
+    boundary_no_touching: !!boundaryNoTouching,
+    location_type: String(locationType || ""),
+    location_address: String(locationAddress || ""),
+    location_public: locationPublic !== false,
+    others_present: !!othersPresent,
+    others_count: parseInt(othersCount as string) || 0,
+    others_desc: String(othersDesc || ""),
+    usage_rights: String(usageRights || ""),
+    usage_custom_desc: String(usageCustomDesc || ""),
+    edit_approval_required: !!editApprovalRequired,
+    nda_required: !!ndaRequired,
+    model_release_required: !!modelReleaseRequired,
+    status: "pending_responder",
+  }).select().single();
+
+  if (error) return safeServerError(error, "db op");
+  await sb.from("muse_notifications").insert({
+    user_id: responderId, from_id: profile.id, type: "disclosure",
+    body: `${profile.name} sent a shoot disclosure for your review`, read: false
+  });
+  return NextResponse.json({ success: true, disclosure: data });
+};
+
+ACTIONS["confirm-disclosure"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRateUser(profile.id, "confirm-disclosure", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { disclosureId } = rest;
+  if (!disclosureId) return NextResponse.json({ error: "disclosureId required" }, { status: 400 });
+  const { data: disc } = await sb.from("muse_disclosures").select("*").eq("id", disclosureId).maybeSingle();
+  if (!disc) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const isProposer = String(disc.proposer_id) === String(profile.id);
+  const isResponder = String(disc.responder_id) === String(profile.id);
+  if (!isProposer && !isResponder) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const updates: Record<string, unknown> = {};
+  if (isProposer && disc.status === "pending_proposer") {
+    updates.status = "pending_responder";
+    updates.proposer_confirmed_at = new Date().toISOString();
+  } else if (isResponder && disc.status === "pending_responder") {
+    updates.status = "confirmed";
+    updates.responder_confirmed_at = new Date().toISOString();
+  } else {
+    return NextResponse.json({ error: "Cannot confirm in current state" }, { status: 400 });
+  }
+
+  const { error } = await sb.from("muse_disclosures").update(updates).eq("id", disclosureId);
+  if (error) return safeServerError(error, "db op");
+
+  if (updates.status === "confirmed") {
+    const otherUserId = isProposer ? disc.responder_id : disc.proposer_id;
+    await sb.from("muse_notifications").insert({
+      user_id: otherUserId, from_id: profile.id, type: "disclosure_confirmed",
+      body: `${profile.name} confirmed the shoot disclosure`, read: false
+    });
+    if (otherUserId) await emailProfile(sb, otherUserId, "Disclosure confirmed ✦", "Shoot disclosure confirmed", `${profile.name} confirmed the shoot disclosure. You're all set.`, "View details", "https://muse.wyzdesign.com/muse");
+  }
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["get-disclosures"] = async ({ sb, profile }) => {
+  const { data } = await sb.from("muse_disclosures").select("*, proposer_id(id, name, avatar), responder_id(id, name, avatar)")
+    .or(`proposer_id.eq.${profile.id},responder_id.eq.${profile.id}`)
+    .order("created_at", { ascending: false }).limit(20);
+  return NextResponse.json({ disclosures: data || [] });
+};
+
+// ═══ STRIKES & ENFORCEMENT ═══
+
+ACTIONS["get-strikes"] = async ({ sb, profile }) => {
+  const { data } = await sb.from("muse_strikes").select("*").eq("user_id", profile.id).order("created_at", { ascending: false });
+  return NextResponse.json({ strikes: data || [] });
+};
+
+ACTIONS["appeal-strike"] = async ({ sb, profile, rest }) => {
+  const { strikeId, appealText } = rest;
+  if (!strikeId || !appealText) return NextResponse.json({ error: "strikeId and appealText required" }, { status: 400 });
+  const { error } = await sb.from("muse_strikes").update({
+    appeal_status: "pending", appeal_text: String(appealText).slice(0, 2000)
+  }).eq("id", strikeId).eq("user_id", profile.id);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["admin-resolve-appeal"] = async ({ sb, profile, rest }) => {
+  if (!isAdminEmail(profile.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const { strikeId, resolution } = rest;
+  if (!strikeId || !["upheld", "overturned"].includes(resolution as string)) {
+    return NextResponse.json({ error: "strikeId and valid resolution required" }, { status: 400 });
+  }
+  const updates: Record<string, unknown> = {
+    appeal_status: resolution,
+    appeal_resolved_at: new Date().toISOString(),
+    appeal_resolved_by: profile.id,
+  };
+  if (resolution === "overturned") {
+    updates.severity = "warning";
+  }
+  const { error } = await sb.from("muse_strikes").update(updates).eq("id", strikeId);
+  if (error) return safeServerError(error, "db op");
+  await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `resolve_appeal:${strikeId}:${resolution}` });
+  return NextResponse.json({ success: true });
+};
+
+// ═══ BOOKING MANAGEMENT ═══
+
+ACTIONS["respond-booking"] = async ({ sb, profile, rest }) => {
+  const { bookingId, response } = rest;
+  if (!bookingId || !response) return NextResponse.json({ error: "bookingId and response required" }, { status: 400 });
+  const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
+  if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (String(booking.host_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (response === "accept") {
+    updates.status = "confirmed";
+    updates.confirmed_at = new Date().toISOString();
+    await sb.from("muse_safety_checkins").insert({
+      booking_id: bookingId, user_id: booking.user_id, checkin_type: "pre_shoot_24h", status: "pending"
+    });
+    await sb.from("muse_safety_checkins").insert({
+      booking_id: bookingId, user_id: profile.id, checkin_type: "pre_shoot_24h", status: "pending"
+    });
+  } else if (response === "decline") {
+    updates.status = "cancelled";
+    updates.cancelled_at = new Date().toISOString();
+    updates.cancel_reason = "Host declined";
+  } else if (response === "reschedule") {
+    updates.status = "pending";
+    updates.reschedule_date = rest.newDate || "";
+  }
+
+  const { error } = await sb.from("muse_bookings").update(updates).eq("id", bookingId);
+  if (error) return safeServerError(error, "db op");
+
+  await sb.from("muse_notifications").insert({
+    user_id: booking.user_id, from_id: profile.id, type: "booking_update",
+    body: `${profile.name} ${response === "accept" ? "accepted" : response === "decline" ? "declined" : "wants to reschedule"} your booking`, read: false
+  });
+  if (booking.user_id) await emailProfile(sb, booking.user_id, "Booking update ✦", "Your booking was updated", `${profile.name} ${response === "accept" ? "accepted" : response === "decline" ? "declined" : "wants to reschedule"} your booking.`, "View booking", "https://muse.wyzdesign.com/muse");
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["cancel-booking"] = async ({ sb, profile, rest }) => {
+  const { bookingId, reason } = rest;
+  if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
+  const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
+  if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const isParty = String(booking.user_id) === String(profile.id) || String(booking.host_id) === String(profile.id);
+  if (!isParty) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const { data: cancelPayment } = await sb.from("muse_booking_payments")
+    .select("id, stripe_payment_intent, status").eq("booking_id", bookingId).maybeSingle();
+  if (cancelPayment?.stripe_payment_intent && cancelPayment.status !== "succeeded") {
+    try {
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+      await stripe.paymentIntents.cancel(cancelPayment.stripe_payment_intent);
+      await sb.from("muse_booking_payments").update({ status: "cancelled" }).eq("id", cancelPayment.id);
+    } catch (e: unknown) { /* non-fatal */ }
+  }
+
+  const { error } = await sb.from("muse_bookings").update({
+    status: "cancelled", cancelled_at: new Date().toISOString(),
+    cancel_reason: String(reason || "Cancelled by user"),
+    updated_at: new Date().toISOString()
+  }).eq("id", bookingId);
+  if (error) return safeServerError(error, "db op");
+
+  const otherUserId = String(booking.user_id) === String(profile.id) ? booking.host_id : booking.user_id;
+  if (otherUserId) {
+    await sb.from("muse_notifications").insert({
+      user_id: otherUserId, from_id: profile.id, type: "booking_cancelled",
+      body: `${profile.name} cancelled the booking${reason ? `: ${reason}` : ""}`, read: false
+    });
+  }
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["complete-booking"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "complete-booking", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { bookingId } = rest;
+  if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
+  const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
+  if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const isParty = String(booking.user_id) === String(profile.id) || String(booking.host_id) === String(profile.id);
+  if (!isParty) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (booking.status !== "confirmed") return NextResponse.json({ error: "Only confirmed bookings can be completed" }, { status: 400 });
+
+  const { data: payments } = await sb.from("muse_booking_payments")
+    .select("id, stripe_payment_intent, status").eq("booking_id", bookingId)
+    .order("created_at", { ascending: false }).limit(1);
+  const payment = payments?.[0];
+  let captureSucceeded = payment?.status === "succeeded";
+  if (payment?.stripe_payment_intent && payment.status !== "succeeded") {
+    try {
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+      await stripe.paymentIntents.capture(payment.stripe_payment_intent);
+      await sb.from("muse_booking_payments").update({ status: "succeeded" }).eq("id", payment.id);
+      captureSucceeded = true;
+    } catch (e: unknown) {
+      console.error("[complete-booking] capture failed:", e);
+      return NextResponse.json({ error: "Payment capture failed. The booking cannot be completed until payment is resolved." }, { status: 402 });
+    }
+  }
+  if (!payment || captureSucceeded) {
+    await sb.from("muse_bookings").update({
+      status: "completed", completed_at: new Date().toISOString(), updated_at: new Date().toISOString()
+    }).eq("id", bookingId);
+  } else {
+    return NextResponse.json({ error: "Payment capture failed. The booking cannot be completed until payment is resolved." }, { status: 402 });
+  }
+
+  const otherId = String(booking.user_id) === String(profile.id) ? booking.host_id : booking.user_id;
+  if (otherId) {
+    await sb.from("muse_notifications").insert({
+      user_id: otherId, from_id: profile.id, type: "booking_completed",
+      body: `${profile.name} marked the shoot as complete — leave a review`, read: false
+    });
+  }
+  await bumpQuest(sb, String(booking.user_id), "complete_session");
+  if (booking.host_id) await bumpQuest(sb, String(booking.host_id), "complete_host");
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["submit-review"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "submit-review", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { bookingId, rating, body } = rest;
+  if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
+  const r = Number(rating);
+  if (!Number.isInteger(r) || r < 1 || r > 5) return NextResponse.json({ error: "rating must be an integer 1-5" }, { status: 400 });
+  const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
+  if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (booking.status !== "completed") return NextResponse.json({ error: "Only completed bookings can be reviewed" }, { status: 400 });
+  const isParty = String(booking.user_id) === String(profile.id) || String(booking.host_id) === String(profile.id);
+  if (!isParty) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const revieweeId = String(booking.user_id) === String(profile.id) ? booking.host_id : booking.user_id;
+  if (!revieweeId) return NextResponse.json({ error: "No other party to review" }, { status: 400 });
+  const { data, error } = await sb.from("muse_reviews").upsert({
+    booking_id: bookingId, reviewer_id: profile.id, reviewee_id: revieweeId,
+    rating: r, body: String(body || "").slice(0, 1000),
+  }, { onConflict: "booking_id,reviewer_id" }).select().single();
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true, review: data });
+};
+
+// ═══ CHECK-INS & SAFETY SHARES ═══
+
+ACTIONS["respond-checkin"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRateUser(profile.id, "respond-checkin", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { checkinId, response, sharedWithContact } = rest;
+  if (!checkinId || !response) return NextResponse.json({ error: "checkinId and response required" }, { status: 400 });
+  const { data: checkin } = await sb.from("muse_safety_checkins").select("*").eq("id", checkinId).maybeSingle();
+  if (!checkin) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (String(checkin.user_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const updates: Record<string, unknown> = {
+    status: response, responded_at: new Date().toISOString(),
+    shared_with_contact: !!sharedWithContact
+  };
+  if (response === "cancelled") {
+    updates.cancelled_at = new Date().toISOString();
+    updates.cancel_reason = rest.reason || "Cancelled during check-in";
+  }
+  const { error } = await sb.from("muse_safety_checkins").update(updates).eq("id", checkinId);
+  if (error) return safeServerError(error, "db op");
+
+  if (response === "cancelled" && checkin.booking_id) {
+    await sb.from("muse_bookings").update({
+      status: "cancelled", cancelled_at: new Date().toISOString(),
+      cancel_reason: updates.cancel_reason as string, updated_at: new Date().toISOString()
+    }).eq("id", checkin.booking_id);
+  }
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["get-checkins"] = async ({ sb, profile }) => {
+  const { data } = await sb.from("muse_safety_checkins").select("*, booking_id(id, session_id, status)")
+    .eq("user_id", profile.id).order("created_at", { ascending: false }).limit(20);
+  return NextResponse.json({ checkins: data || [] });
+};
+
+ACTIONS["share-safety-details"] = async ({ sb, profile, rest }) => {
+  const { bookingId, disclosureId, recipientName, recipientPhone, recipientEmail, shareMethod } = rest;
+  const { error } = await sb.from("muse_safety_shares").insert({
+    user_id: profile.id, booking_id: bookingId || null, disclosure_id: disclosureId || null,
+    recipient_name: String(recipientName || ""),
+    recipient_phone: String(recipientPhone || ""),
+    recipient_email: String(recipientEmail || ""),
+    share_method: String(shareMethod || "sms"),
+  });
+  if (error) return safeServerError(error, "db op");
+
+  let sessionInfo = "";
+  if (bookingId) {
+    const { data: bk } = await sb.from("muse_bookings")
+      .select("session_id, host_id, user_id")
+      .eq("id", bookingId).maybeSingle();
+    if (bk) {
+      const ids = [bk.host_id, bk.user_id].filter(Boolean);
+      const { data: profiles } = await sb.from("muse_profiles").select("id,name").in("id", ids);
+      const nameMap = new Map((profiles || []).map((p: { id: string; name: string }) => [p.id, p.name]));
+      const hostName = nameMap.get(bk.host_id) || "Unknown";
+      const clientName = nameMap.get(bk.user_id) || "Unknown";
+      const { data: session } = await sb.from("muse_sessions").select("title,location,date,time").eq("id", bk.session_id).maybeSingle();
+      if (session) {
+        sessionInfo = `Shoot: ${session.title || "Untitled"} at ${session.location || "TBD"} on ${session.date || "?"} ${session.time || "?"} with ${hostName} (host) and ${clientName} (client).`;
+      }
+    }
+  }
+
+  const safetyBody = `A safety disclosure has been shared by ${profile.name}.\n\nRecipient: ${recipientName || "Not specified"}\nMethod: ${shareMethod || "email"}\n${recipientEmail ? `Email: ${recipientEmail}` : ""}${recipientPhone ? `Phone: ${recipientPhone}` : ""}\n\n${sessionInfo}\n\nThis is an automated safety notification from Muse.`;
+
+  if (recipientEmail) {
+    sendEmail(notify(
+      recipientEmail,
+      `Safety disclosure from ${profile.name}`,
+      "Muse Safety Notification",
+      safetyBody
+    )).catch((e: unknown) => console.error("[share-safety] email dispatch failed:", e));
+  }
+
+  if (bookingId) {
+    const { data: bk2 } = await sb.from("muse_bookings")
+      .select("user_id, host_id").eq("id", bookingId).maybeSingle();
+    if (bk2) {
+      const otherId = String(bk2.user_id) === String(profile.id) ? bk2.host_id : bk2.user_id;
+      if (otherId && String(otherId) !== String(profile.id)) {
+        try {
+          await sb.from("muse_notifications").insert({
+            user_id: otherId, from_id: profile.id, type: "safety_share",
+            body: `${profile.name} shared safety details with a trusted contact for this shoot.`, read: false
+          });
+        } catch { /* non-fatal */ }
+      }
+    }
+  }
+
+  return NextResponse.json({ success: true });
+};
+
+// ═══ SAFETY PROFILE ═══
+
+ACTIONS["save-safety-profile"] = async ({ sb, profile, rest }) => {
+  const { emergencyContactName, emergencyContactPhone, emergencyContactRelation,
+    trustedFriendName, trustedFriendPhone, trustedFriendEmail, autoShareEnabled } = rest;
+  const { error } = await sb.from("muse_safety_profiles").upsert({
+    user_id: profile.id,
+    emergency_contact_name: String(emergencyContactName || ""),
+    emergency_contact_phone: String(emergencyContactPhone || ""),
+    emergency_contact_relation: String(emergencyContactRelation || ""),
+    trusted_friend_name: String(trustedFriendName || ""),
+    trusted_friend_phone: String(trustedFriendPhone || ""),
+    trusted_friend_email: String(trustedFriendEmail || ""),
+    auto_share_enabled: !!autoShareEnabled,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "user_id" });
+  if (error) return safeServerError(error, "db op");
+  await sb.from("muse_profiles").update({ emergency_contact_added: true }).eq("id", profile.id);
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["get-safety-profile"] = async ({ sb, profile }) => {
+  const { data } = await sb.from("muse_safety_profiles").select("*").eq("user_id", profile.id).maybeSingle();
+  return NextResponse.json({ safety: data || null });
+};
+
+// ═══ PROMPTS ═══
+
+ACTIONS["get-prompts"] = async ({ sb, rest }) => {
+  const { category } = rest;
+  let query = sb.from("muse_prompt_bank").select("*").eq("active", true).order("display_order");
+  if (category) query = query.eq("category", category);
+  const { data } = await query.limit(100);
+  return NextResponse.json({ prompts: data || [] });
+};
+
+ACTIONS["save-prompt-response"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "save-prompt-response", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { promptId, responseText, responseChoices } = rest;
+  if (!promptId) return NextResponse.json({ error: "promptId required" }, { status: 400 });
+  const { error } = await sb.from("muse_prompt_responses").upsert({
+    user_id: profile.id, prompt_id: promptId,
+    response_text: String(responseText || ""),
+    response_choices: Array.isArray(responseChoices) ? responseChoices : [],
+  }, { onConflict: "user_id,prompt_id" });
+  if (error) return safeServerError(error, "db op");
+  const { count } = await sb.from("muse_prompt_responses").select("*", { count: "exact", head: true }).eq("user_id", profile.id);
+  const { count: total } = await sb.from("muse_prompt_bank").select("*", { count: "exact", head: true }).eq("active", true);
+  const pct = total && total > 0 ? Math.round(((count || 0) / total) * 100) : 0;
+  await sb.from("muse_profiles").update({ profile_completion_pct: pct, prompt_completed_at: new Date().toISOString() }).eq("id", profile.id);
+
+  if (responseText && typeof responseText === "string" && responseText.trim()) {
+    const embedText = `${responseText}`.trim();
+    fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ""}/api/muse/embed`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "embed-text", text: embedText, userId: profile.id, meta: { embedding_type: "prompt_response", prompt_id: promptId } }),
+    }).catch(() => {});
+  }
+
+  return NextResponse.json({ success: true, completionPct: pct });
+};
+
+ACTIONS["get-prompt-responses"] = async ({ sb, profile }) => {
+  const { data } = await sb.from("muse_prompt_responses").select("*, prompt_id(id, prompt_text, category)").eq("user_id", profile.id);
+  return NextResponse.json({ responses: data || [] });
+};
+
+// ═══ ADMIN BRAIN ═══
+
+ACTIONS["admin-brain"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "admin-brain", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  if (!isAdminEmail(profile.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const { query: userQuery } = rest;
+  if (!userQuery || typeof userQuery !== "string") {
+    return NextResponse.json({ error: "query required" }, { status: 400 });
+  }
+
+  try {
+    const q = userQuery.toLowerCase();
+    let result: Record<string, unknown> = {};
+
+    if (q.includes("user") && (q.includes("count") || q.includes("total") || q.includes("how many"))) {
+      const { count } = await sb.from("muse_profiles").select("*", { count: "exact", head: true });
+      result = { answer: `Total registered users: ${count || 0}`, data: { count: count || 0 } };
+    } else if (q.includes("match") && (q.includes("count") || q.includes("total"))) {
+      const { count } = await sb.from("muse_matches").select("*", { count: "exact", head: true });
+      result = { answer: `Total matches: ${count || 0}`, data: { count: count || 0 } };
+    } else if (q.includes("report") || q.includes("flag")) {
+      const { data: reports } = await sb.from("muse_reports").select("*, reporter_id(id, name), target_id(id, name)").order("created_at", { ascending: false }).limit(20);
+      const { count } = await sb.from("muse_reports").select("*", { count: "exact", head: true });
+      result = { answer: `Total reports: ${count || 0}. Showing most recent.`, data: { reports: reports || [], count: count || 0 } };
+    } else if (q.includes("strike") || q.includes("suspension") || q.includes("ban")) {
+      const { data: strikes } = await sb.from("muse_strikes").select("*, user_id(id, name, avatar)").order("created_at", { ascending: false }).limit(20);
+      const { count } = await sb.from("muse_strikes").select("*", { count: "exact", head: true });
+      const suspended = (strikes || []).filter((s: any) => s.severity === "suspension" && (!s.suspension_ends_at || new Date(s.suspension_ends_at) > new Date()));
+      result = { answer: `Total strikes: ${count || 0}. Currently suspended: ${suspended.length}.`, data: { strikes: strikes || [], suspendedCount: suspended.length } };
+    } else if (q.includes("disclosure")) {
+      const { data: disclosures } = await sb.from("muse_disclosures").select("*, proposer_id(id, name), responder_id(id, name)").order("created_at", { ascending: false }).limit(20);
+      const blocked = (disclosures || []).filter((d: any) => d.status === "blocked");
+      result = { answer: `Total disclosures: ${(disclosures || []).length}. Blocked: ${blocked.length}.`, data: { disclosures: disclosures || [], blockedCount: blocked.length } };
+    } else if (q.includes("active") || q.includes("retention") || q.includes("engagement")) {
+      const since7d = new Date(Date.now() - 7 * 86400000).toISOString();
+      const since30d = new Date(Date.now() - 30 * 86400000).toISOString();
+      const [active7d, active30d, newUsers30d] = await Promise.all([
+        sb.from("muse_activity_log").select("user_id").gte("created_at", since7d),
+        sb.from("muse_activity_log").select("user_id").gte("created_at", since30d),
+        sb.from("muse_profiles").select("id").gte("created_at", since30d),
+      ]);
+      const activeUsers7d = new Set((active7d.data || []).map((r: any) => r.user_id).filter(Boolean)).size;
+      const activeUsers30d = new Set((active30d.data || []).map((r: any) => r.user_id).filter(Boolean)).size;
+      result = { answer: `Active users (7d): ${activeUsers7d}, Active (30d): ${activeUsers30d}, New signups (30d): ${(newUsers30d.data || []).length}`, data: { active7d: activeUsers7d, active30d: activeUsers30d, newUsers30d: (newUsers30d.data || []).length } };
+    } else if (q.includes("safety") || q.includes("checkin")) {
+      const { data: checkins } = await sb.from("muse_safety_checkins").select("*, user_id(id, name)").order("created_at", { ascending: false }).limit(20);
+      const pending = (checkins || []).filter((c: any) => c.status === "pending");
+      const cancelled = (checkins || []).filter((c: any) => c.status === "cancelled");
+      result = { answer: `Safety check-ins: ${(checkins || []).length} total. Pending: ${pending.length}. Cancelled: ${cancelled.length}.`, data: { checkins: checkins || [], pendingCount: pending.length, cancelledCount: cancelled.length } };
+    } else if (q.includes("user") && (q.includes("find") || q.includes("search") || q.includes("name"))) {
+      const searchTerm = q.replace(/.*(?:find|search|name)\s+(?:user\s*)?/i, "").trim();
+      const { data: users } = await sb.from("muse_profiles").select("id, name, email, type, created_at, profile_completion_pct").ilike("name", `%${searchTerm}%`).limit(10);
+      result = { answer: `Found ${(users || []).length} users matching "${searchTerm}".`, data: { users: users || [] } };
+    } else if (q.includes("prompt") && (q.includes("response") || q.includes("answer"))) {
+      const { count } = await sb.from("muse_prompt_responses").select("*", { count: "exact", head: true });
+      const { count: totalPrompts } = await sb.from("muse_prompt_bank").select("*", { count: "exact", head: true }).eq("active", true);
+      result = { answer: `Prompt responses: ${count || 0} across ${totalPrompts || 0} active prompts.`, data: { responseCount: count || 0, promptCount: totalPrompts || 0 } };
+    } else {
+      const counts = await Promise.all([
+        sb.from("muse_profiles").select("*", { count: "exact", head: true }),
+        sb.from("muse_matches").select("*", { count: "exact", head: true }),
+        sb.from("muse_reports").select("*", { count: "exact", head: true }),
+        sb.from("muse_strikes").select("*", { count: "exact", head: true }),
+        sb.from("muse_disclosures").select("*", { count: "exact", head: true }),
+      ]);
+      result = {
+        answer: `Muse Overview: ${counts[0].count || 0} users, ${counts[1].count || 0} matches, ${counts[2].count || 0} reports, ${counts[3].count || 0} strikes, ${counts[4].count || 0} disclosures.`,
+        data: { users: counts[0].count || 0, matches: counts[1].count || 0, reports: counts[2].count || 0, strikes: counts[3].count || 0, disclosures: counts[4].count || 0 }
+      };
+    }
+
+    let answer = String(result.answer || "");
+    let aiSources: string[] = [];
+    try {
+      const enriched = await askMuseAI(
+        `Question: ${userQuery}\n\nLive metrics (from database): ${JSON.stringify((result as any).data || {})}`,
+        { forAdmin: true }
+      );
+      if (enriched) {
+        answer = enriched.answer;
+        aiSources = enriched.sources;
+      }
+    } catch { /* AI is best-effort; keep rule-based answer */ }
+
+    await sb.from("muse_admin_audit_log").insert({
+      admin_user_id: profile.id, query_text: userQuery.slice(0, 1000),
+      query_result_summary: answer.slice(0, 500),
+      result_row_count: Array.isArray((result as any).data?.users) ? (result as any).data.users.length : 0,
+    });
+
+    return NextResponse.json({ answer, data: (result as any).data, sources: aiSources, ai: aiSources.length > 0 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: "Query failed: " + (err instanceof Error ? err.message : "unknown") }, { status: 500 });
+  }
+};
+
+// ═══ PAYMENTS ═══
+
+ACTIONS["get-payments"] = async ({ sb, profile }) => {
+  const { data: asPayee } = await sb.from("muse_booking_payments").select("*, payer_id(name, avatar), payee_id(name, avatar), booking_id(session_id, status)")
+    .eq("payee_id", profile.id).order("created_at", { ascending: false }).limit(50);
+  const { data: asPayer } = await sb.from("muse_booking_payments").select("*, payer_id(name, avatar), payee_id(name, avatar), booking_id(session_id, status)")
+    .eq("payer_id", profile.id).order("created_at", { ascending: false }).limit(50);
+  const all = [...(asPayee || []), ...(asPayer || [])];
+  const deduped = Array.from(new Map(all.map((p: any) => [p.id, p])).values());
+  deduped.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  return NextResponse.json({ payments: deduped });
+};
+
+// ═══ ADMIN — MODERATION ═══
+
+ACTIONS["admin-reports"] = async ({ sb, profile }) => {
+  if (!isAdminEmail(profile.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const { data: reports } = await sb.from("muse_reports").select("*, reporter_id(id, name, avatar), target_id(id, name, avatar)")
+    .order("created_at", { ascending: false }).limit(50);
+  return NextResponse.json({ reports: reports || [] });
+};
+
+ACTIONS["admin-strikes"] = async ({ sb, profile }) => {
+  if (!isAdminEmail(profile.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const { data: strikes } = await sb.from("muse_strikes").select("*, user_id(id, name, avatar)")
+    .order("created_at", { ascending: false }).limit(50);
+  return NextResponse.json({ strikes: strikes || [] });
+};
+
+ACTIONS["admin-suspend-user"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "admin-suspend-user", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  if (!isAdminEmail(profile.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const { targetUserId, reason, durationDays } = rest;
+  if (!targetUserId) return NextResponse.json({ error: "targetUserId required" }, { status: 400 });
+  if (targetUserId === profile.id) return NextResponse.json({ error: "Cannot suspend yourself" }, { status: 400 });
+  const suspensionEnd = durationDays ? new Date(Date.now() + (durationDays as number) * 86400000).toISOString() : null;
+  const { error } = await sb.from("muse_strikes").insert({
+    user_id: targetUserId, issued_by: profile.id,
+    reason: String(reason || "Suspended by admin"),
+    category: "high_severity",
+    severity: suspensionEnd ? "suspension" : "permanent_ban",
+    suspension_ends_at: suspensionEnd,
+  });
+  if (error) return safeServerError(error, "db op");
+  await sb.from("muse_profiles").update({ suspended: true, suspended_at: new Date().toISOString() }).eq("id", targetUserId);
+  await sb.from("muse_notifications").insert({
+    user_id: targetUserId, from_id: profile.id, type: "suspension",
+    body: suspensionEnd ? `Your account has been suspended until ${new Date(suspensionEnd).toLocaleDateString()}` : "Your account has been permanently banned",
+    read: false
+  });
+  await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `suspend_user:${targetUserId}:${suspensionEnd ? "until " + suspensionEnd : "permanent"}:${String(reason || "").slice(0, 300)}` });
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["admin-scan-nsfw"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "admin-scan-nsfw", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  if (!isAdminEmail(profile.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { userId, all } = rest;
+
+  let profilesToScan: { id: string; avatar: string; name: string }[] = [];
+  if (all) {
+    const { data } = await sb.from("muse_profiles").select("id, avatar, name").eq("nsfw", false).not("avatar", "eq", "").limit(100);
+    profilesToScan = data || [];
+  } else if (userId) {
+    const { data } = await sb.from("muse_profiles").select("id, avatar, name").eq("id", userId).maybeSingle();
+    if (data) profilesToScan = [data];
+  } else {
+    return NextResponse.json({ error: "Provide userId or all:true" }, { status: 400 });
+  }
+
+  let scanned = 0, flagged = 0, errors = 0;
+  for (const p of profilesToScan) {
+    if (!p.avatar || p.avatar.startsWith("/")) { continue; }
+    let avatarUrl: URL;
+    try { avatarUrl = new URL(p.avatar); } catch { errors++; continue; }
+    const allowedHosts = ["supabase.co", "supabase.in", "vercel.app", "vercel.storage", "cloudinary.com", "amazonaws.com"];
+    const hostOk = allowedHosts.some(h => avatarUrl.hostname.endsWith(`.${h}`) || avatarUrl.hostname === h);
+    if (!hostOk || avatarUrl.protocol !== "https:") { errors++; continue; }
+
+    try {
+      const resp = await fetch(avatarUrl.toString(), { signal: AbortSignal.timeout(10000) });
+      if (!resp.ok) { errors++; continue; }
+      const buf = Buffer.from(await resp.arrayBuffer());
+      const result = await scanWithRekognition(buf);
+      await logScan({ userId: p.id, fileName: "avatar-scan", fileType: "image/jpeg", fileSize: buf.length, context: "admin-scan", result });
+      scanned++;
+      if (result.scanned && result.flaggedCategories.some(c => /^suggestive/i.test(c))) {
+        await sb.from("muse_profiles").update({ nsfw: true }).eq("id", p.id);
+        flagged++;
+      }
+    } catch { errors++; }
+  }
+  await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `scan_nsfw:${all ? "all" : String(userId)}:scanned=${scanned}:flagged=${flagged}:errors=${errors}` });
+  return NextResponse.json({ success: true, scanned, flagged, errors, total: profilesToScan.length });
+};
+
+// ═══ QUESTS ═══
+
+ACTIONS["get-quests"] = async ({ sb, profile }) => {
+  const { data: quests } = await sb.from("muse_quests").select("*").eq("active", true).order("sort_order");
+  if (!quests) return NextResponse.json({ quests: [], xp: { total_xp: 0, level: 1 } });
+
+  const { data: userQuests } = await sb.from("muse_user_quests")
+    .select("quest_id, progress, target, completed, claimed, period_key")
+    .eq("user_id", profile.id);
+
+  const { data: xpData } = await sb.from("muse_user_xp").select("total_xp, level").eq("user_id", profile.id).maybeSingle();
+
+  const progressMap: Record<string, any> = {};
+  for (const uq of userQuests || []) {
+    progressMap[`${uq.quest_id}:${uq.period_key}`] = uq;
+  }
+
+  const enriched = quests.map((q: any) => {
+    const periodKey = questPeriodKey(q.frequency);
+    const userProg = progressMap[`${q.id}:${periodKey}`];
+    return {
+      ...q,
+      progress: userProg?.progress || 0,
+      target: q.target_count,
+      completed: userProg?.completed || false,
+      claimed: userProg?.claimed || false,
+      period_key: periodKey,
+    };
+  });
+
+  return NextResponse.json({ quests: enriched, xp: xpData || { total_xp: 0, level: 1 } });
+};
+
+ACTIONS["track-quest"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRateUser(profile.id, "track-quest", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+
+  const rawKeys: string[] = Array.isArray(rest.action_keys)
+    ? rest.action_keys.filter((k: unknown) => typeof k === "string" && k.length <= 64).slice(0, 6)
+    : (typeof rest.action_key === "string" ? [rest.action_key] : []);
+  if (!rawKeys.length) return NextResponse.json({ error: "action_key required" }, { status: 400 });
+
+  const SERVER_ONLY_KEYS = new Set(["match", "book_session", "host_session", "complete_session", "complete_host", "get_verified", "referral_signup"]);
+  const clientKeys = rawKeys.filter(k => !SERVER_ONLY_KEYS.has(k));
+  if (!clientKeys.length) return NextResponse.json({ success: true, results: [] });
+
+  const { data: questDefs } = await sb.from("muse_quests")
+    .select("*").eq("active", true).in("action_key", clientKeys);
+  if (!questDefs?.length) return NextResponse.json({ success: true, noQuest: true });
+
+  const results: any[] = [];
+  let leveledUp = false;
+  for (const quest of questDefs) {
+    const periodKey = questPeriodKey(quest.frequency);
+
+    const { data: existing } = await sb.from("muse_user_quests")
+      .select("id, progress, completed")
+      .eq("user_id", profile.id).eq("quest_id", quest.id).eq("period_key", periodKey)
+      .maybeSingle();
+
+    if (existing?.completed) { results.push({ action_key: quest.action_key, alreadyCompleted: true }); continue; }
+
+    const newProgress = (existing?.progress || 0) + 1;
+    const completed = newProgress >= quest.target_count;
+
+    if (existing) {
+      await sb.from("muse_user_quests").update({
+        progress: newProgress,
+        completed,
+        completed_at: completed ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      }).eq("id", existing.id);
+    } else {
+      await sb.from("muse_user_quests").insert({
+        user_id: profile.id,
+        quest_id: quest.id,
+        period_key: periodKey,
+        progress: newProgress,
+        target: quest.target_count,
+        completed,
+        completed_at: completed ? new Date().toISOString() : null,
+      });
+    }
+
+    if (completed) {
+      leveledUp = (await awardQuestXp(sb, profile.id, quest.xp_reward)) || leveledUp;
+      await refreshMetaQuest(sb, profile.id);
+    }
+
+    results.push({
+      action_key: quest.action_key,
+      progress: newProgress,
+      target: quest.target_count,
+      completed,
+      newlyCompleted: completed,
+      quest: { title: quest.title, icon: quest.icon, reward_label: quest.reward_label },
+    });
+  }
+  if (leveledUp) results.push({ leveledUp: true });
+
+  return NextResponse.json({ success: true, results });
+};
+
+ACTIONS["claim-quest"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRateUser(profile.id, "claim-quest", 12)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { quest_id } = rest;
+  if (!quest_id || !UUID_RE.test(String(quest_id))) return NextResponse.json({ error: "quest_id required" }, { status: 400 });
+
+  const { data: questDef } = await sb.from("muse_quests").select("id, reward_type, reward_amount, reward_label, frequency").eq("id", quest_id).maybeSingle();
+  if (!questDef) return NextResponse.json({ error: "Quest not found" }, { status: 404 });
+
+  const periodKey = questPeriodKey(questDef.frequency);
+  const { data: uq } = await sb.from("muse_user_quests")
+    .select("id, completed, claimed")
+    .eq("user_id", profile.id).eq("quest_id", quest_id).eq("period_key", periodKey)
+    .maybeSingle();
+
+  if (!uq) return NextResponse.json({ error: "Quest not started" }, { status: 404 });
+  if (!uq.completed) return NextResponse.json({ error: "Quest not completed" }, { status: 400 });
+  if (uq.claimed) return NextResponse.json({ error: "Already claimed" }, { status: 400 });
+
+  const { data: claimedRows, error: claimErr } = await sb.from("muse_user_quests")
+    .update({ claimed: true, updated_at: new Date().toISOString() })
+    .eq("id", uq.id).eq("claimed", false)
+    .select("id");
+
+  if (claimErr) return NextResponse.json({ error: "Could not claim reward" }, { status: 500 });
+  if (!claimedRows?.length) return NextResponse.json({ error: "Already claimed" }, { status: 409 });
+
+  let grantedUntil: string | undefined;
+  if (questDef.reward_type === "superpower" || questDef.reward_type === "pro_day") {
+    const months = questDef.reward_type === "pro_day"
+      ? Math.max(1, Math.ceil(questDef.reward_amount / 30))
+      : Math.max(1, questDef.reward_amount);
+    const { data: prof } = await sb.from("muse_profiles").select("tier, pro_expires_at").eq("id", profile.id).maybeSingle();
+    const cur = prof?.pro_expires_at ? new Date(prof.pro_expires_at).getTime() : 0;
+    const base = Math.max(Date.now(), cur);
+    grantedUntil = new Date(base + months * 30 * 24 * 60 * 60 * 1000).toISOString();
+    await sb.from("muse_profiles").update({ pro_expires_at: grantedUntil }).eq("id", profile.id);
+  }
+
+  return NextResponse.json({
+    success: true,
+    grantedUntil: grantedUntil || null,
+    reward: { reward_type: questDef.reward_type, reward_amount: questDef.reward_amount, reward_label: questDef.reward_label },
+  });
+};
+
+// ═══ ADMIN — CONTENT SCANS ═══
+
+ACTIONS["admin-content-scans"] = async ({ sb, profile }) => {
+  if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const [scans, incidents] = await Promise.all([
+    sb.from("muse_content_scans")
+      .select("id, user_id, file_name, file_type, context, safe, flagged_categories, confidence, should_block, should_report, is_csam, scanned_at")
+      .order("scanned_at", { ascending: false }).limit(100),
+    sb.from("muse_safety_incidents")
+      .select("id, user_id, type, severity, details, status, created_at")
+      .in("status", ["pending_review", "pending_ncmec"])
+      .order("created_at", { ascending: false }).limit(100),
+  ]);
+  return NextResponse.json({ scans: scans.data || [], incidents: incidents.data || [] });
+};
+
+ACTIONS["admin-resolve-incident"] = async ({ sb, profile, rest }) => {
+  if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { incidentId } = rest;
+  if (!incidentId || !UUID_RE.test(String(incidentId))) return NextResponse.json({ error: "incidentId required" }, { status: 400 });
+  const { error } = await sb.from("muse_safety_incidents").update({ status: "reviewed" }).eq("id", incidentId);
+  if (error) return safeServerError(error, "db op");
+  await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `resolve_incident:${incidentId}` });
+  return NextResponse.json({ success: true });
+};
+
 export async function GET(req: NextRequest) {
   try {
     const sb = getServiceClient();
@@ -305,7 +1791,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "profiles") {
-      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, photos").limit(100);
+      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, photos, suspended").limit(100);
       // Blocks were write-only until now — muse_blocks was never consulted
       // anywhere, so a blocked user could still show up in Discover, match,
       // and message the person who blocked them. Filter both directions:
@@ -318,6 +1804,7 @@ export async function GET(req: NextRequest) {
       const visible = (data || []).filter((p: any) => {
         if (profileId && String(p.id) === String(profileId)) return false;
         if (blockedIds.has(String(p.id))) return false;
+        if (p.suspended) return false;
         const hasAvatar = typeof p.avatar === "string" && p.avatar.trim().length > 0;
         const hasPhotos = Array.isArray(p.photos) && p.photos.length > 0;
         return hasAvatar || hasPhotos;
@@ -723,1648 +2210,12 @@ export async function POST(req: NextRequest) {
     }
 
     const sb = getServiceClient();
+    const handler = ACTIONS[actionType];
+    if (!handler) return NextResponse.json({ error: "Unknown action type" }, { status: 400 });
 
-    if (actionType === "profile") {
-      // Explicit field whitelist — never spread arbitrary client keys into the
-      // profile row (that would allow mass-assignment of tier/verified/suspended).
-      const ALLOWED_PROFILE_FIELDS = ["name", "bio", "styles", "loc", "city", "type", "zodiac", "chinese", "mbti", "life_path", "looking", "avatar"];
-      const updates: Record<string, unknown> = {};
-      for (const k of ALLOWED_PROFILE_FIELDS) {
-        if (rest[k] !== undefined) updates[k] = rest[k];
-      }
-      if (typeof updates.name === "string") updates.name = sanitizeText(updates.name as string, 80);
-      if (typeof updates.bio === "string") updates.bio = sanitizeText(updates.bio as string, 500);
-      if (typeof updates.styles === "string") updates.styles = sanitizeText(updates.styles as string, 200);
-      if (typeof updates.looking === "string") updates.looking = sanitizeText(updates.looking as string, 200);
-      if (Object.keys(updates).length === 0) return NextResponse.json({ error: "No updatable fields" }, { status: 400 });
-      const { error } = await sb.from("muse_profiles").update(updates).eq("id", profile.id);
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "match") {
-      if (!await checkRate(ip, "match", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { target_id } = rest;
-      if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
-      if (target_id === profile.id) return NextResponse.json({ error: "Cannot match yourself" }, { status: 400 });
-      // Stub/demo profiles use numeric ids (hardcoded in types.ts) — treat as
-      // local-only match so the UI can record it instead of a silent 400.
-      if (!UUID_RE.test(String(target_id))) {
-        await sb.from("muse_notifications").insert({ user_id: profile.id, type: "match", body: "You matched with a new creative!", read: false });
-        return NextResponse.json({ success: true, demo: true });
-      }
-      const { data: target } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
-      if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
-      // Blocks were never enforced anywhere — check both directions before
-      // allowing a match to form.
-      const { data: matchBlock } = await sb.from("muse_blocks").select("id").or(`and(user_id.eq.${profile.id},target_id.eq.${target_id}),and(user_id.eq.${target_id},target_id.eq.${profile.id})`).limit(1).maybeSingle();
-      if (matchBlock) return NextResponse.json({ error: "Unable to match with this user" }, { status: 403 });
-      const { error } = await sb.from("muse_matches").upsert(
-        { user_id: profile.id, target_id },
-        { onConflict: "user_id,target_id", ignoreDuplicates: true }
-      );
-      if (error) return safeServerError(error, "db op");
-      await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id } });
-      await sb.from("muse_notifications").insert({ user_id: target_id, from_id: profile.id, type: "match", body: `${profile.name} matched with you!`, read: false });
-      await emailProfile(sb, target_id, "Someone matched with you ✦", "New match on Muse", `${profile.name} matched with you. Open Muse to say hi.`, "See who it is", "https://muse.wyzdesign.com/muse", "match");
-      await bumpQuest(sb, profile.id, "match");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "unmatch") {
-      const { target_id } = rest;
-      if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
-      if (UUID_RE.test(String(target_id))) {
-        await sb.from("muse_matches").delete().eq("user_id", profile.id).eq("target_id", target_id);
-        await sb.from("muse_matches").delete().eq("user_id", target_id).eq("target_id", profile.id);
-        await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "unmatch", details: { target_id } });
-      }
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "track-view") {
-      if (!await checkRateUser(profile.id, "track-view", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { target_id } = rest;
-      if (!target_id || target_id === profile.id) return NextResponse.json({ success: true });
-      if (!UUID_RE.test(String(target_id))) return NextResponse.json({ success: true, demo: true });
-      // Read-modify-write is fine here: client dedupes per session per profile,
-      // so contention on a single row is minimal and exact precision isn't
-      // required for a social-proof counter.
-      const { data: cur } = await sb.from("muse_profiles").select("views_count").eq("id", target_id).maybeSingle();
-      const next = ((cur as any)?.views_count || 0) + 1;
-      const { error } = await sb.from("muse_profiles").update({ views_count: next }).eq("id", target_id);
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "message") {
-      if (!await checkRateUser(profile.id, "message", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const vErr = validateInput(rest);
-      if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
-      const { toId, text, image_url, img, client_msg_id } = rest;
-      const imageUrl = image_url || img;
-      // Image-only messages are valid — text was previously required
-      // unconditionally, which 400'd every photo send.
-      if (!text?.trim() && !imageUrl) return NextResponse.json({ error: "text or image required" }, { status: 400 });
-      if (!toId) return NextResponse.json({ error: "toId required" }, { status: 400 });
-      // Blocks were never enforced anywhere — a blocked user could still
-      // message the person who blocked them (or vice versa). Check both
-      // directions before the message is written.
-      if (UUID_RE.test(String(toId))) {
-        const { data: msgBlock } = await sb.from("muse_blocks").select("id").or(`and(user_id.eq.${profile.id},target_id.eq.${toId}),and(user_id.eq.${toId},target_id.eq.${profile.id})`).limit(1).maybeSingle();
-        if (msgBlock) return NextResponse.json({ error: "Unable to message this user" }, { status: 403 });
-      }
-      const cleanText = sanitizeText(String(text || "").trim());
-      if (!cleanText && !imageUrl) return NextResponse.json({ error: "text or image required" }, { status: 400 });
-      // Text screening only applies when there IS text — image-only messages skip it.
-      const screen = cleanText ? screenText(cleanText) : { block: false, categories: [] as string[] };
-      if (screen.block) {
-        await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message_blocked", details: { categories: screen.categories } });
-        return NextResponse.json({ error: "Message blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
-      }
-      // Disclosure trigger (server-side enforcement) — payment + NSFW keywords
-      // require a signed disclosure before the shoot. Mirrors the client-side
-      // prompt so a bypassed client still can't send the raw message.
-      const lower = cleanText.toLowerCase();
-      const hasPayment = /\$[\d]+|\bpay\b|\bcompensation\b|\brate\b|\bbudget\b|\bfee\b|\bcharged?\b/i.test(lower);
-      const hasNsfw = /\bnude\b|\bnudity\b|\bnsfw\b|\bnsf[ww]\b|\bexplicit\b|\bboudoir\b|\bpenetrat\b|\bsexual\b|\berotic\b|\btopless\b|\bundressed\b|\bintimate\b|\bsensual\b|\badult\b/i.test(lower);
-      if (hasPayment && hasNsfw) {
-        await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "disclosure_required", details: { to: toId } });
-        return NextResponse.json({ error: "Disclosure required before discussing paid NSFW shoots", code: "DISCLOSURE_REQUIRED" }, { status: 409 });
-      }
-      // Canonical convo key derived server-side so the sender is always a
-      // participant — a client-supplied match_id can't target another pair.
-      const matchId = [profile.id, String(toId)].sort().join("__");
-      const { error } = await sb.from("muse_messages").insert({
-        match_id: matchId,
-        sender_id: profile.id,
-        receiver_id: String(toId),
-        text: cleanText,
-        img: img || image_url || "",
-        client_msg_id: typeof client_msg_id === "string" ? client_msg_id.slice(0, 120) : undefined,
-      });
-      // Treat duplicate client_msg_id as success (already persisted by retry).
-      if (error && (error as { code?: string }).code !== "23505") return safeServerError(error, "message insert");
-      await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message", details: { to: toId } });
-      if (UUID_RE.test(String(toId))) {
-        await sb.from("muse_notifications").insert({ user_id: String(toId), from_id: profile.id, type: "message", body: `${profile.name} sent you a message`, read: false });
-      }
-      await emailProfile(sb, String(toId), "New message on Muse ✦", "You have a new message", `${profile.name} sent you a message.`, "Read it", "https://muse.wyzdesign.com/muse", "message");
-      return NextResponse.json({ success: true, match_id: matchId });
-    }
-
-    if (actionType === "feed") {
-      if (!await checkRate(ip, "feed", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const vErr = validateInput(rest);
-      if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
-      const { text, image_url, image, img, media } = rest;
-      if (!text?.trim()) return NextResponse.json({ error: "text required" }, { status: 400 });
-      const cleanText = sanitizeText(String(text).trim());
-      if (!cleanText) return NextResponse.json({ error: "text required" }, { status: 400 });
-      const screen = screenText(cleanText);
-      if (screen.block) return NextResponse.json({ error: "Post blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
-      // Accept media (array from client) or single image fields.
-      const mediaArr = Array.isArray(media) ? media : [];
-      const resolvedImg = img || image_url || image || mediaArr[0] || "";
-      const { error } = await sb.from("muse_feed_posts").insert({ author_id: profile.id, text: cleanText, img: resolvedImg, type: resolvedImg ? "photo" : "text" });
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "like-feed-post") {
-      if (!await checkRate(ip, "like-feed-post", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { postId: feedPostId, liked } = rest;
-      if (!feedPostId) return NextResponse.json({ error: "postId required" }, { status: 400 });
-      if (typeof feedPostId === "number" || !UUID_RE.test(String(feedPostId))) return NextResponse.json({ success: true, demo: true });
-      // Atomic increment via SQL to avoid read-modify-write race condition.
-      // Supabase JS doesn't expose raw SQL update, so we use rpc() with a
-      // Postgres function. Fallback to read-modify-write if rpc unavailable.
-      const delta = liked ? 1 : -1;
-      const { data: rpcResult, error: rpcErr } = await sb.rpc("atomic_like_count", { table_name: "muse_feed_posts", row_id: feedPostId, delta });
-      let newLikes: number;
-      if (!rpcErr && rpcResult !== null) {
-        newLikes = Number(rpcResult);
-      } else {
-        // Fallback: read-modify-write (safe for low-contention like counts)
-        const { data: feedPost } = await sb.from("muse_feed_posts").select("likes").eq("id", feedPostId).maybeSingle();
-        if (!feedPost) return NextResponse.json({ error: "Post not found" }, { status: 404 });
-        newLikes = Math.max(0, (feedPost.likes || 0) + delta);
-        const { error: updErr } = await sb.from("muse_feed_posts").update({ likes: newLikes }).eq("id", feedPostId);
-        if (updErr) return safeServerError(updErr, "db op");
-      }
-      return NextResponse.json({ success: true, likes: newLikes });
-    }
-
-    if (actionType === "create-moment") {
-      if (!await checkRate(ip, "create-moment", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { text, img } = rest;
-      const cleanText = sanitizeText(String(text || "").slice(0, 500));
-      const resolvedImg = img && typeof img === "string" ? String(img).slice(0, 500) : "";
-      if (!cleanText && !resolvedImg) return NextResponse.json({ error: "text or img required" }, { status: 400 });
-      // Respect video uploads — type was hardcoded to "photo", which (with the
-      // client's Videos filter reading it) permanently emptied that tab.
-      const isVideo = /\.(mp4|webm|mov)(\?|$)/i.test(resolvedImg);
-      const { data, error } = await sb.from("muse_moments").insert({
-        author_id: profile.id, text: cleanText, img: resolvedImg, type: resolvedImg ? (isVideo ? "video" : "photo") : "text",
-      }).select("id, text, img, type, likes, comments, created_at, author_id(name, avatar)").single();
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true, moment: data });
-    }
-
-    if (actionType === "like-moment") {
-      if (!await checkRate(ip, "like-moment", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { momentId, liked } = rest;
-      if (!momentId) return NextResponse.json({ error: "momentId required" }, { status: 400 });
-      if (typeof momentId === "number" || !UUID_RE.test(String(momentId))) return NextResponse.json({ success: true, demo: true });
-      const delta = liked ? 1 : -1;
-      const { data: rpcResult, error: rpcErr } = await sb.rpc("atomic_like_count", { table_name: "muse_moments", row_id: momentId, delta });
-      let newLikes: number;
-      if (!rpcErr && rpcResult !== null) {
-        newLikes = Number(rpcResult);
-      } else {
-        const { data: moment } = await sb.from("muse_moments").select("likes").eq("id", momentId).maybeSingle();
-        if (!moment) return NextResponse.json({ error: "Moment not found" }, { status: 404 });
-        newLikes = Math.max(0, (moment.likes || 0) + delta);
-        const { error: updErr } = await sb.from("muse_moments").update({ likes: newLikes }).eq("id", momentId);
-        if (updErr) return safeServerError(updErr, "db op");
-      }
-      return NextResponse.json({ success: true, likes: newLikes });
-    }
-
-    if (actionType === "brief") {
-      if (!await checkRate(ip, "brief", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const vErr = validateInput(rest);
-      if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
-      const { title, desc, budget, cat, tags, paid, rate } = rest;
-      if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
-      const cleanTitle = sanitizeText(String(title).trim(), 200);
-      if (!cleanTitle) return NextResponse.json({ error: "title required" }, { status: 400 });
-      const cleanDesc = sanitizeText(String(desc || ""), 2000);
-      const briefScreen = screenText(`${cleanTitle} ${cleanDesc}`);
-      if (briefScreen.block) {
-        await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "brief_blocked", details: { categories: briefScreen.categories } });
-        return NextResponse.json({ error: "Brief blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
-      }
-      const { error } = await sb.from("muse_briefs").insert({ author_id: profile.id, title: cleanTitle, description: cleanDesc, budget: budget || "Negotiable", category: cat || "concept", tags: tags || [], paid: paid || false, rate: rate || "" });
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "brief-apply") {
-      const { briefId } = rest;
-      if (!briefId) return NextResponse.json({ error: "briefId required" }, { status: 400 });
-      // Stub/demo briefs use numeric ids (hardcoded in types.ts) — treat as
-      // local-only apply so the UI can show "Applied" instead of a silent 500.
-      if (!UUID_RE.test(String(briefId))) return NextResponse.json({ success: true, demo: true });
-      const { error } = await sb.from("muse_brief_applications").insert({ brief_id: briefId, user_id: profile.id });
-      if (error) return safeServerError(error, "db op");
-      await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "brief_apply", details: { brief_id: briefId } });
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "forum") {
-      if (!await checkRate(ip, "forum", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const vErr = validateInput(rest);
-      if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
-      const { title, body: forumBody, text, cat, postId } = rest;
-      // `type` was already pulled out of `body` above (as rawType) — `rest`
-      // never has it, so reading it here always yielded undefined. Use rawType.
-      const forumType = rawType;
-      if (forumType === "get-replies") {
-        // FeedScreen's comment expansion sends action:"forum", type:"get-replies"
-        // — previously fell through to the post-creation path (missing `title`)
-        // and silently failed, so replies could never be loaded. Return the
-        // stored replies for this post, newest first, matching the shape the
-        // frontend maps into postReplies.
-        const { data: replies, error: replErr } = await sb.from("muse_forum_replies")
-          .select("id, user_name, user_avatar, text, created_at")
-          .eq("post_id", postId)
-          .order("created_at", { ascending: false })
-          .limit(100);
-        if (replErr) return safeServerError(replErr, "db op");
-        const mapped = (replies || []).map((r: any) => ({
-          author: r.user_name || "User",
-          avatar: r.user_avatar || "",
-          text: r.text || "",
-          time: r.created_at ? new Date(r.created_at).toLocaleString() : "Just now",
-        }));
-        return NextResponse.json({ success: true, replies: mapped });
-      }
-      if (forumType === "reply") {
-        const cleanText = sanitizeText(String(text || ""), 2000);
-        const replyScreen = screenText(cleanText);
-        if (replyScreen.block) {
-          await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "forum_reply_blocked", details: { categories: replyScreen.categories } });
-          return NextResponse.json({ error: "Reply blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
-        }
-        const isStubPost = typeof postId === "number" || !UUID_RE.test(String(postId));
-        if (isStubPost) return NextResponse.json({ success: true, demo: true });
-        const { error } = await sb.from("muse_forum_replies").insert({ post_id: postId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, text: cleanText });
-        if (error) return safeServerError(error, "db op");
-        return NextResponse.json({ success: true });
-      }
-      if (forumType === "vote") {
-        const { direction } = rest;
-        if (!postId) return NextResponse.json({ error: "postId required" }, { status: 400 });
-        const isStubVote = typeof postId === "number" || !UUID_RE.test(String(postId));
-        if (isStubVote) return NextResponse.json({ success: true, demo: true });
-        const delta = direction === "down" ? -1 : 1;
-        const { data: post } = await sb.from("muse_forum_posts").select("votes").eq("id", postId).maybeSingle();
-        if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
-        const newVotes = (post.votes || 0) + delta;
-        const { error: updErr } = await sb.from("muse_forum_posts").update({ votes: newVotes }).eq("id", postId);
-        if (updErr) return safeServerError(updErr, "db op");
-        return NextResponse.json({ success: true, votes: newVotes });
-      }
-      if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
-      const cleanTitle = sanitizeText(String(title).trim(), 200);
-      if (!cleanTitle) return NextResponse.json({ error: "title required" }, { status: 400 });
-      const cleanBody = sanitizeText(String(forumBody || ""), 5000);
-      const postScreen = screenText(`${cleanTitle} ${cleanBody}`);
-      if (postScreen.block) {
-        await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "forum_post_blocked", details: { categories: postScreen.categories } });
-        return NextResponse.json({ error: "Post blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
-      }
-      const { error } = await sb.from("muse_forum_posts").insert({ author_id: profile.id, title: cleanTitle, body: cleanBody, category: cat || "General" });
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "report") {
-      if (!await checkRateUser(profile.id, "report", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { target_id, target_type, reason, details } = rest;
-      if (!target_id || !reason) return NextResponse.json({ error: "target_id and reason required" }, { status: 400 });
-      if (target_id === profile.id) return NextResponse.json({ error: "Cannot report yourself" }, { status: 400 });
-      // Only user/match targets need a profile lookup to verify existence.
-      // feed_post / forum_post targets are post ids (not profile ids) and are
-      // reported without a profile resolution — the id is stored verbatim so
-      // moderators can trace back to the offending post.
-      const isPostTarget = target_type === "feed_post" || target_type === "forum_post";
-      if (!isPostTarget) {
-        if (!UUID_RE.test(String(target_id))) return NextResponse.json({ success: true, demo: true });
-        const { data: targetProfile } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
-        if (!targetProfile) return NextResponse.json({ error: "Target not found" }, { status: 400 });
-      }
-      // AI triage: classify the report text to help moderators prioritize.
-      let aiClassification: unknown = null;
-      try {
-        const verdict = await moderateText(`${reason} ${details || ""}`.trim());
-        aiClassification = verdict;
-      } catch { /* best-effort; never block report creation on AI */ }
-      const { error } = await sb.from("muse_reports").insert({ reporter_id: profile.id, target_id, target_type: target_type || "user", reason, details: details || "", ai_classification: aiClassification });
-      if (error) return safeServerError(error, "db op");
-      await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "report", details: { target_id, reason } });
-      // Ack email to the reporter — reassurance that we received it.
-      if (profile.email) sendEmail(notify(profile.email, "We received your report", "Report received", "Thanks for looking out for the community. Our safety team is reviewing your report.", "Muse Safety", "https://muse.wyzdesign.com/muse/safety")).catch(() => {});
-
-      // Graduated enforcement: when a user accumulates 3+ reports from distinct
-      // reporters, issue a standard strike (which escalates toward suspension
-      // via applyStrikeAndEscalate). Prevents a single malicious reporter from
-      // farming strikes — only distinct reporters count.
-      if (target_type === "user" || target_type === "match") {
-        try {
-          const { count: distinctReporters } = await sb.from("muse_reports")
-            .select("reporter_id", { count: "exact", head: true })
-            .eq("target_id", target_id);
-          // Count distinct reporters (exact-count query above returns rows count;
-          // distinct requires a follow-up). Use a cheaper heuristic: total reports
-          // from the reporter list is sufficient to gate — distinct handled below.
-          const { data: allReports } = await sb.from("muse_reports")
-            .select("reporter_id")
-            .eq("target_id", target_id)
-            .limit(50);
-          const distinct = new Set((allReports || []).map((r: any) => String(r.reporter_id))).size;
-          if (distinct >= 3) {
-            await applyStrikeAndEscalate(sb, target_id, {
-              category: "standard",
-              severity: "warning",
-              reason: "Multiple user reports",
-              details: `${distinct} distinct reporters flagged this account`,
-            });
-          }
-        } catch { /* best-effort enforcement; never block report creation */ }
-      }
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "block") {
-      const { target_id } = rest;
-      if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
-      if (target_id === profile.id) return NextResponse.json({ error: "Cannot block yourself" }, { status: 400 });
-      const { data: target } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
-      if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
-      await sb.from("muse_blocks").upsert(
-        { user_id: profile.id, target_id },
-        { onConflict: "user_id,target_id", ignoreDuplicates: true }
-      );
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "unblock") {
-      const { target_id } = rest;
-      if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
-      await sb.from("muse_blocks").delete().eq("user_id", profile.id).eq("target_id", target_id);
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "get-blocks") {
-      const { data: blocks } = await sb.from("muse_blocks").select("target_id").eq("user_id", profile.id);
-      return NextResponse.json({ blocked: blocks?.map((b: { target_id: string }) => b.target_id) || [] });
-    }
-
-    if (actionType === "join-community") {
-      const { communityId } = rest;
-      if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
-      // Stub/demo communities use numeric ids (hardcoded in types.ts) and don't
-      // exist in the DB. Treat those as a local-only join (succeed without a DB
-      // write) so the UI can show "Joined" instead of a silent 400.
-      const isStub = !UUID_RE.test(String(communityId));
-      if (isStub) return NextResponse.json({ success: true, demo: true });
-      const { data: community } = await sb.from("muse_communities").select("id").eq("id", communityId).maybeSingle();
-      if (!community) return NextResponse.json({ error: "Community not found" }, { status: 400 });
-      await sb.from("muse_community_members").upsert(
-        { community_id: communityId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar },
-        { onConflict: "community_id,user_id", ignoreDuplicates: true }
-      );
-      // Count server-side — never trust a client-supplied member count.
-      const { count } = await sb.from("muse_community_members").select("*", { count: "exact", head: true }).eq("community_id", communityId);
-      await sb.from("muse_communities").update({ member_count: (count ?? 0) }).eq("id", communityId);
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "leave-community") {
-      const { communityId } = rest;
-      if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
-      const isStub = !UUID_RE.test(String(communityId));
-      if (isStub) return NextResponse.json({ success: true, demo: true });
-      const { data: community } = await sb.from("muse_communities").select("id").eq("id", communityId).maybeSingle();
-      if (!community) return NextResponse.json({ error: "Community not found" }, { status: 400 });
-      await sb.from("muse_community_members").delete().eq("community_id", communityId).eq("user_id", profile.id);
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "create-community") {
-      if (!await checkRate(ip, "create-community", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { name, description, category, isNsfw } = rest;
-      const cleanName = String(name || "").trim().slice(0, 80);
-      if (!cleanName) return NextResponse.json({ error: "name required" }, { status: 400 });
-      const { data, error } = await sb.from("muse_communities").insert({
-        name: cleanName,
-        description: String(description || "").slice(0, 500),
-        img: String(rest.img || "").slice(0, 500),
-        category: String(category || "general").slice(0, 40),
-        is_nsfw: Boolean(isNsfw),
-        member_count: 1,
-      }).select().single();
-      if (error) return safeServerError(error, "db op");
-      // Creator auto-joins their community.
-      await sb.from("muse_community_members").upsert(
-        { community_id: data.id, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar },
-        { onConflict: "community_id,user_id", ignoreDuplicates: true }
-      );
-      return NextResponse.json({ success: true, community: data });
-    }
-
-    if (actionType === "create-event") {
-      if (!await checkRate(ip, "create-event", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { title, description, date, location, category } = rest;
-      const cleanTitle = String(title || "").trim().slice(0, 120);
-      if (!cleanTitle) return NextResponse.json({ error: "title required" }, { status: 400 });
-      const { data, error } = await sb.from("muse_events").insert({
-        title: cleanTitle,
-        description: String(description || "").slice(0, 500),
-        date: String(date || "").slice(0, 100),
-        location: String(location || "").slice(0, 200),
-        category: String(category || "General").slice(0, 40),
-        img: String(rest.img || "").slice(0, 500),
-        attendees: 0,
-      }).select().single();
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true, event: data });
-    }
-
-    if (actionType === "book-session") {
-      if (!await checkRateUser(profile.id, "book-session", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { sessionId, hostId } = rest;
-      if (!sessionId) return NextResponse.json({ error: "sessionId required" }, { status: 400 });
-      // Stripe Identity enforcement — paid bookings require verified 18+ identity
-      const { data: booker } = await sb.from("muse_profiles").select("age_verified").eq("id", profile.id).maybeSingle();
-      if (!booker?.age_verified) {
-        return NextResponse.json({ error: "Identity verification required", code: "VERIFICATION_REQUIRED" }, { status: 403 });
-      }
-      if (!UUID_RE.test(String(sessionId))) return NextResponse.json({ success: true, demo: true });
-      const { data: session } = await sb.from("muse_sessions").select("id, host_id").eq("id", sessionId).maybeSingle();
-      if (!session) return NextResponse.json({ error: "Session not found" }, { status: 400 });
-      const effectiveHostId = hostId || (session as any).host_id || null;
-      if (effectiveHostId) {
-        const { data: host } = await sb.from("muse_profiles").select("id").eq("id", effectiveHostId).maybeSingle();
-        if (!host) return NextResponse.json({ error: "Host not found" }, { status: 400 });
-      }
-      await sb.from("muse_bookings").upsert(
-        { session_id: sessionId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, host_id: effectiveHostId, status: "pending" },
-        { onConflict: "session_id,user_id", ignoreDuplicates: true }
-      );
-      await sb.from("muse_notifications").insert({ user_id: effectiveHostId || profile.id, from_id: profile.id, type: "booking", body: `${profile.name} requested to book a session`, read: false });
-      if (effectiveHostId) await emailProfile(sb, effectiveHostId, "New booking request ✦", "Someone wants to book you", `${profile.name} requested to book one of your sessions.`, "Review booking", "https://muse.wyzdesign.com/muse");
-      await bumpQuest(sb, profile.id, "book_session");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "create-session") {
-      if (!await checkRate(ip, "create-session", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { title, description, type, rate, duration, skills, date, location, img } = rest;
-      if (!title || !String(title).trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
-      // Validate the rate at creation time so a host can't create a session
-      // that is *unpayable* (ambiguous free-text like "$50-100/hr" would
-      // resolve to null at checkout and block payment). Rate is optional for
-      // free/TFP sessions — an empty rate is allowed, just not an ambiguous one.
-      const rawRate = String(rate || "").trim();
-      if (rawRate && parseRateToCents(rawRate) === null) {
-        return NextResponse.json({ error: "Rate must be a single dollar amount (e.g. \"$150\" or \"150\"). Remove ranges or extra text." }, { status: 400 });
-      }
-      const { data, error } = await sb.from("muse_sessions").insert({
-        host_id: profile.id,
-        title: String(title).slice(0, 200),
-        description: String(description || "").slice(0, 1000),
-        type: String(type || "Photoshoot").slice(0, 50),
-        rate: rawRate.slice(0, 50),
-        duration: String(duration || "60 min").slice(0, 50),
-        skills: Array.isArray(skills) ? skills.slice(0, 20).map((s: unknown) => String(s).slice(0, 50)) : [],
-        date: String(date || "").slice(0, 100),
-        location: String(location || "").slice(0, 200),
-        img: String(img || "").slice(0, 500),
-        available: true,
-      }).select().single();
-      if (error) return safeServerError(error, "db op");
-      await bumpQuest(sb, profile.id, "host_session");
-      return NextResponse.json({ success: true, session: data });
-    }
-
-    if (actionType === "connect") {
-      if (!await checkRate(ip, "connect", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { targetId } = rest;
-      if (!targetId) return NextResponse.json({ error: "targetId required" }, { status: 400 });
-      if (targetId === profile.id) return NextResponse.json({ error: "Cannot connect with yourself" }, { status: 400 });
-      if (!UUID_RE.test(String(targetId))) return NextResponse.json({ success: true, demo: true });
-      const { data: target } = await sb.from("muse_profiles").select("id").eq("id", targetId).maybeSingle();
-      if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
-      await sb.from("muse_connections").upsert({ user_id: profile.id, target_id: targetId, status: "pending" }, { onConflict: "user_id,target_id", ignoreDuplicates: true }).select();
-      await sb.from("muse_notifications").insert({ user_id: targetId, from_id: profile.id, type: "connection", body: `${profile.name} wants to connect`, read: false });
-      await emailProfile(sb, targetId, "New connection request ✦", "Someone wants to connect", `${profile.name} sent you a connection request.`, "View request", "https://muse.wyzdesign.com/muse");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "save-preferences") {
-      const ALLOWED_PREFS = new Set([
-        "nsfw", "showOnline", "showDistance", "notifications", "emailNotifications",
-        "pushNotifications", "soundEffects", "darkMode", "distance", "ageRange",
-        "openToTravel", "autoReply", "privacy", "visibility", "tags",
-        // discovery-preference fields the client sends nested under `preferences`
-        "ageMin", "ageMax", "gender",
-        // cross-device onboarding resume
-        "onboardingStep",
-        // discovery filters
-        "filterStyles", "filterScore",
-        // saved briefs (bookmarks)
-        "savedBriefs",
-        // applied briefs — without this, a cache clear made already-applied
-        // briefs show "Apply" again and re-applying hit the unique constraint
-        // with no explanation to the user.
-        "appliedBriefs",
-      ]);
-      // Accept both a flat payload and the client's nested `{ preferences: {...} }` shape.
-      const source = (rest.preferences && typeof rest.preferences === "object") ? rest.preferences : rest;
-      const prefs: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(source)) {
-        if (ALLOWED_PREFS.has(k)) prefs[k] = v;
-      }
-      if (Object.keys(prefs).length === 0) return NextResponse.json({ error: "No valid preferences provided" }, { status: 400 });
-      // Merge (not overwrite) so a partial save preserves prior prefs.
-      const { data: existing } = await sb.from("muse_profiles").select("preferences").eq("id", profile.id).maybeSingle();
-      const merged = { ...(existing?.preferences || {}), ...prefs };
-      const { error } = await sb.from("muse_profiles").update({ preferences: merged }).eq("id", profile.id);
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "apply-promo") {
-      if (!await checkRateUser(profile.id, "apply-promo", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const code = String(rest.code || "").trim().toUpperCase();
-      if (!code) return NextResponse.json({ error: "Promo code required" }, { status: 400 });
-      // Promo codes must go through Stripe checkout (which validates the code
-      // and attaches a coupon to the subscription). The apply-promo shortcut
-      // bypasses Stripe entirely, giving free Pro with no payment method on
-      // file — restrict to admin-only.
-      if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Invalid promo code" }, { status: 404 });
-      if (code !== "MUSEBETA") return NextResponse.json({ error: "Invalid promo code" }, { status: 404 });
-      const { error } = await sb.from("muse_profiles").update({ tier: "muse_pro" }).eq("id", profile.id);
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true, tier: "muse_pro" });
-    }
-
-    if (actionType === "mark-read") {
-      const { notificationIds } = rest;
-      if (Array.isArray(notificationIds) && notificationIds.length > 0) {
-        const ids = notificationIds.slice(0, 100).filter((x: unknown) => typeof x === "string" && UUID_RE.test(String(x)));
-        if (ids.length > 0) {
-          await sb.from("muse_notifications").update({ read: true }).in("id", ids).eq("user_id", profile.id);
-        }
-      }
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "sync") {
-      if (!await checkRate(ip, "sync", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const results: string[] = [];
-      if (rest.matches?.length) {
-        for (const m of rest.matches) {
-          await sb.from("muse_matches").upsert(
-            { user_id: profile.id, target_id: m.id, matched_at: new Date().toISOString() },
-            { onConflict: "user_id,target_id", ignoreDuplicates: true }
-          );
-        }
-        results.push("matches");
-      }
-      // Engagement stats (likes/superlikes/passes given) were previously
-      // local-only -- swiping on a new device or after clearing storage reset
-      // them to zero. Persist them alongside matches so `muse_profiles.stats`
-      // is the source of truth across devices/sessions.
-      if (rest.stats && typeof rest.stats === "object") {
-        const allowedStatKeys = ["likes", "superLikes", "passes", "bookingsCompleted", "matchesReceived", "messagesSent"];
-        const cleanStats: Record<string, number> = {};
-        for (const k of allowedStatKeys) {
-          const v = (rest.stats as Record<string, unknown>)[k];
-          // Cap at 100k to prevent client-side stat inflation attacks
-          if (typeof v === "number" && Number.isFinite(v) && v >= 0) cleanStats[k] = Math.min(Math.floor(v), 100000);
-        }
-        if (Object.keys(cleanStats).length > 0) {
-          const { data: existing } = await sb.from("muse_profiles").select("stats").eq("id", profile.id).maybeSingle();
-          const merged = { ...(existing?.stats || {}), ...cleanStats };
-          await sb.from("muse_profiles").update({ stats: merged }).eq("id", profile.id);
-          results.push("stats");
-        }
-      }
-      // Feed/forum "sync" was a no-op (client-authored posts are persisted via
-      // the feed/forum actions already). Drop the misleading branches entirely
-      // so sync never reports work it didn't do.
-      return NextResponse.json({ success: true, synced: results });
-    }
-
-    if (actionType === "create-album") {
-      if (!await checkRate(ip, "create-album", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const vErr = validateInput(rest);
-      if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
-      const { title, description, cover_url, access_level, tags } = rest;
-      if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
-      const level = ["public", "private", "invite"].includes(access_level) ? access_level : "public";
-      const { data, error } = await sb.from("muse_albums").insert({
-        profile_id: profile.id, title: title.trim(), description: description || "",
-        cover_url: cover_url || "", access_level: level, tags: Array.isArray(tags) ? tags.slice(0, 20) : [],
-      }).select().single();
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true, album: data });
-    }
-
-    if (actionType === "update-album") {
-      const { albumId, title, description, cover_url, access_level, tags } = rest;
-      if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
-      const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
-      if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-      if (title !== undefined) updates.title = String(title).slice(0, 200);
-      if (description !== undefined) updates.description = String(description).slice(0, 2000);
-      if (cover_url !== undefined) updates.cover_url = cover_url;
-      if (access_level !== undefined && ["public", "private", "invite"].includes(access_level)) updates.access_level = access_level;
-      if (tags !== undefined && Array.isArray(tags)) updates.tags = tags.slice(0, 20);
-      const { error } = await sb.from("muse_albums").update(updates).eq("id", albumId);
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "delete-album") {
-      if (!await checkRate(ip, "delete-album", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { albumId } = rest;
-      if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
-      const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
-      if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      const { error } = await sb.from("muse_albums").delete().eq("id", albumId);
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "add-album-photo") {
-      if (!await checkRate(ip, "add-album-photo", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { albumId, img_url, caption } = rest;
-      if (!albumId || !img_url) return NextResponse.json({ error: "albumId and img_url required" }, { status: 400 });
-      // Reject any URL not on Muse's own storage. Every uploaded image is
-      // scanned by Rekognition; an arbitrary external URL would bypass that
-      // check and land an unscanned image in an album.
-      const storageHost = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/^https?:\/\//, "").split("/")[0];
-      if (storageHost && !String(img_url).includes(storageHost)) {
-        return NextResponse.json({ error: "Images must be uploaded through Muse" }, { status: 400 });
-      }
-      const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
-      if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      const { count } = await sb.from("muse_album_photos").select("*", { count: "exact", head: true }).eq("album_id", albumId);
-      const { data, error } = await sb.from("muse_album_photos").insert({ album_id: albumId, img_url, caption: String(caption || "").slice(0, 500), position: count ?? 0 }).select().single();
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true, photo: data });
-    }
-
-    if (actionType === "remove-album-photo") {
-      if (!await checkRate(ip, "remove-album-photo", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { photoId } = rest;
-      if (!photoId) return NextResponse.json({ error: "photoId required" }, { status: 400 });
-      const { data: photo } = await sb.from("muse_album_photos").select("album_id").eq("id", photoId).maybeSingle();
-      if (!photo) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      const { data: album } = await sb.from("muse_albums").select("profile_id").eq("id", photo.album_id).maybeSingle();
-      if (!album || String(album.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      const { error } = await sb.from("muse_album_photos").delete().eq("id", photoId);
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "grant-album-access") {
-      const { albumId, viewerProfileId } = rest;
-      if (!albumId || !viewerProfileId) return NextResponse.json({ error: "albumId and viewerProfileId required" }, { status: 400 });
-      const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
-      if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      const { error } = await sb.from("muse_album_access").upsert({ album_id: albumId, viewer_profile_id: viewerProfileId }, { onConflict: "album_id,viewer_profile_id", ignoreDuplicates: true });
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "revoke-album-access") {
-      const { albumId, viewerProfileId } = rest;
-      if (!albumId || !viewerProfileId) return NextResponse.json({ error: "albumId and viewerProfileId required" }, { status: 400 });
-      const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
-      if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      await sb.from("muse_album_access").delete().eq("album_id", albumId).eq("viewer_profile_id", viewerProfileId);
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "list-album-access") {
-      const { albumId } = rest;
-      if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
-      const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
-      if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      const { data } = await sb.from("muse_album_access").select("viewer_profile_id, granted_at, viewer_profile_id(id, name, avatar)").eq("album_id", albumId);
-      return NextResponse.json({ access: data || [] });
-    }
-
-    if (actionType === "view-album") {
-      if (!await checkRate(ip, "view-album", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { albumId } = rest;
-      if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
-      const { data: album } = await sb.from("muse_albums").select("view_count").eq("id", albumId).maybeSingle();
-      if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      await sb.from("muse_albums").update({ view_count: (album.view_count || 0) + 1 }).eq("id", albumId);
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "like-album") {
-      if (!await checkRate(ip, "like-album", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { albumId } = rest;
-      if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
-      const { data: album } = await sb.from("muse_albums").select("like_count").eq("id", albumId).maybeSingle();
-      if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      // Idempotent like: one user may like an album once. Upsert a row (unique
-      // on album_id,user_id) so repeat taps don't inflate the counter.
-      const { data: existingLike } = await sb.from("muse_album_likes").select("id").eq("album_id", albumId).eq("user_id", profile.id).maybeSingle();
-      if (existingLike) return NextResponse.json({ success: true, alreadyLiked: true });
-      await sb.from("muse_album_likes").insert({ album_id: albumId, user_id: profile.id });
-      const { count } = await sb.from("muse_album_likes").select("*", { count: "exact", head: true }).eq("album_id", albumId);
-      await sb.from("muse_albums").update({ like_count: (count ?? 0) }).eq("id", albumId);
-      return NextResponse.json({ success: true });
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // RSVP SYSTEM — event attendance
-    // ════════════════════════════════════════════════════════════════
-
-    if (actionType === "rsvp") {
-      if (!await checkRate(ip, "rsvp", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { eventId } = rest;
-      if (!eventId) return NextResponse.json({ error: "eventId required" }, { status: 400 });
-      const isStub = !UUID_RE.test(String(eventId));
-      if (isStub) return NextResponse.json({ success: true, demo: true });
-      const { data: existing } = await sb.from("muse_rsvps").select("id").eq("event_id", eventId).eq("user_id", profile.id).maybeSingle();
-      if (existing) return NextResponse.json({ success: true, alreadyRsvpd: true });
-      const { error } = await sb.from("muse_rsvps").insert({ event_id: eventId, user_id: profile.id });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "cancel-rsvp") {
-      if (!await checkRate(ip, "cancel-rsvp", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { eventId } = rest;
-      if (!eventId) return NextResponse.json({ error: "eventId required" }, { status: 400 });
-      const isStub = !UUID_RE.test(String(eventId));
-      if (isStub) return NextResponse.json({ success: true, demo: true });
-      await sb.from("muse_rsvps").delete().eq("event_id", eventId).eq("user_id", profile.id);
-      return NextResponse.json({ success: true });
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // DISCLOSURE SYSTEM — structured booking agreements
-    // ════════════════════════════════════════════════════════════════
-
-    if (actionType === "create-disclosure") {
-      if (!await checkRate(ip, "create-disclosure", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const {
-        responderId, bookingId,
-        compensationAmount, compensationTiming, compensationMethod,
-        contentTypeNudity, contentTypeArtisticNude, contentTypeBoudoir, contentTypePortrait,
-        contentTypeFashion, contentTypeEditorial, contentTypeCommercial, contentTypeConceptual,
-        contentTypeOther, contentTypeOtherDesc,
-        boundaryFullNudity, boundaryImpliedNudity, boundaryPartials, boundaryNoPartials,
-        boundaryExplicitActs, boundaryPenetration, boundaryNoPenetration,
-        boundaryTouchingSelf, boundaryTouchingOther, boundaryNoTouching,
-        locationType, locationAddress, locationPublic,
-        othersPresent, othersCount, othersDesc,
-        usageRights, usageCustomDesc, editApprovalRequired, ndaRequired, modelReleaseRequired
-      } = rest;
-
-      if (!responderId) return NextResponse.json({ error: "responderId required" }, { status: 400 });
-
-      // HARD BLOCK: NSFW + payment combo → never proceed to disclosure
-      const hasNsfw = contentTypeNudity || contentTypeArtisticNude || boundaryExplicitActs || boundaryPenetration;
-      const hasPayment = compensationAmount && compensationAmount !== "0" && compensationAmount !== "Free";
-      if (hasNsfw && hasPayment) {
-        // Create a blocked disclosure record for audit trail
-        await sb.from("muse_disclosures").insert({
-          proposer_id: profile.id, responder_id: responderId, booking_id: bookingId || null,
-          status: "blocked", blocked_reason: "NSFW content with payment — violates Muse terms",
-          compensation_amount: compensationAmount || "",
-          content_type_nudity: !!contentTypeNudity,
-          content_type_artistic_nude: !!contentTypeArtisticNude,
-          boundary_explicit_acts: !!boundaryExplicitActs,
-          boundary_penetration: !!boundaryPenetration,
-        });
-        // Auto-strike the user (high-severity) — severity "suspension" escalates
-        // to an immediate account suspension via applyStrikeAndEscalate.
-        await applyStrikeAndEscalate(sb, profile.id, {
-          category: "high_severity", severity: "suspension",
-          reason: "Attempted to arrange paid explicit sexual content",
-          details: "Disclosure was hard-blocked: NSFW content + payment combination",
-        });
-        await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "disclosure_blocked", details: { responder_id: responderId } });
-        return NextResponse.json({ error: "This request violates Muse terms and has been blocked.", blocked: true }, { status: 403 });
-      }
-
-      const { data, error } = await sb.from("muse_disclosures").insert({
-        proposer_id: profile.id, responder_id: responderId, booking_id: bookingId || null,
-        compensation_amount: String(compensationAmount || ""),
-        compensation_timing: String(compensationTiming || ""),
-        compensation_method: String(compensationMethod || ""),
-        content_type_nudity: !!contentTypeNudity,
-        content_type_artistic_nudity: !!contentTypeArtisticNude,
-        content_type_boudoir: !!contentTypeBoudoir,
-        content_type_portrait: !!contentTypePortrait,
-        content_type_fashion: !!contentTypeFashion,
-        content_type_editorial: !!contentTypeEditorial,
-        content_type_commercial: !!contentTypeCommercial,
-        content_type_conceptual: !!contentTypeConceptual,
-        content_type_other: !!contentTypeOther,
-        content_type_other_desc: String(contentTypeOtherDesc || ""),
-        boundary_full_nudity: !!boundaryFullNudity,
-        boundary_implied_nudity: !!boundaryImpliedNudity,
-        boundary_partials: !!boundaryPartials,
-        boundary_no_partials: !!boundaryNoPartials,
-        boundary_explicit_acts: !!boundaryExplicitActs,
-        boundary_penetration: !!boundaryPenetration,
-        boundary_no_penetration: !!boundaryNoPenetration,
-        boundary_touching_self: !!boundaryTouchingSelf,
-        boundary_touching_other: !!boundaryTouchingOther,
-        boundary_no_touching: !!boundaryNoTouching,
-        location_type: String(locationType || ""),
-        location_address: String(locationAddress || ""),
-        location_public: locationPublic !== false,
-        others_present: !!othersPresent,
-        others_count: parseInt(othersCount) || 0,
-        others_desc: String(othersDesc || ""),
-        usage_rights: String(usageRights || ""),
-        usage_custom_desc: String(usageCustomDesc || ""),
-        edit_approval_required: !!editApprovalRequired,
-        nda_required: !!ndaRequired,
-        model_release_required: !!modelReleaseRequired,
-        status: "pending_responder",
-      }).select().single();
-
-      if (error) return safeServerError(error, "db op");
-      // Notify responder
-      await sb.from("muse_notifications").insert({
-        user_id: responderId, from_id: profile.id, type: "disclosure",
-        body: `${profile.name} sent a shoot disclosure for your review`, read: false
-      });
-      return NextResponse.json({ success: true, disclosure: data });
-    }
-
-    if (actionType === "confirm-disclosure") {
-      if (!await checkRateUser(profile.id, "confirm-disclosure", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { disclosureId } = rest;
-      if (!disclosureId) return NextResponse.json({ error: "disclosureId required" }, { status: 400 });
-      const { data: disc } = await sb.from("muse_disclosures").select("*").eq("id", disclosureId).maybeSingle();
-      if (!disc) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      const isProposer = String(disc.proposer_id) === String(profile.id);
-      const isResponder = String(disc.responder_id) === String(profile.id);
-      if (!isProposer && !isResponder) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-      const updates: Record<string, unknown> = {};
-      if (isProposer && disc.status === "pending_proposer") {
-        updates.status = "pending_responder";
-        updates.proposer_confirmed_at = new Date().toISOString();
-      } else if (isResponder && disc.status === "pending_responder") {
-        updates.status = "confirmed";
-        updates.responder_confirmed_at = new Date().toISOString();
-      } else {
-        return NextResponse.json({ error: "Cannot confirm in current state" }, { status: 400 });
-      }
-
-      const { error } = await sb.from("muse_disclosures").update(updates).eq("id", disclosureId);
-      if (error) return safeServerError(error, "db op");
-
-      if (updates.status === "confirmed") {
-        const otherUserId = isProposer ? disc.responder_id : disc.proposer_id;
-        await sb.from("muse_notifications").insert({
-          user_id: otherUserId, from_id: profile.id, type: "disclosure_confirmed",
-          body: `${profile.name} confirmed the shoot disclosure`, read: false
-        });
-        if (otherUserId) await emailProfile(sb, otherUserId, "Disclosure confirmed ✦", "Shoot disclosure confirmed", `${profile.name} confirmed the shoot disclosure. You're all set.`, "View details", "https://muse.wyzdesign.com/muse");
-      }
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "get-disclosures") {
-      const { data } = await sb.from("muse_disclosures").select("*, proposer_id(id, name, avatar), responder_id(id, name, avatar)")
-        .or(`proposer_id.eq.${profile.id},responder_id.eq.${profile.id}`)
-        .order("created_at", { ascending: false }).limit(20);
-      return NextResponse.json({ disclosures: data || [] });
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // STRIKE / ENFORCEMENT SYSTEM
-    // ════════════════════════════════════════════════════════════════
-
-    if (actionType === "get-strikes") {
-      const { data } = await sb.from("muse_strikes").select("*").eq("user_id", profile.id).order("created_at", { ascending: false });
-      return NextResponse.json({ strikes: data || [] });
-    }
-
-    if (actionType === "appeal-strike") {
-      const { strikeId, appealText } = rest;
-      if (!strikeId || !appealText) return NextResponse.json({ error: "strikeId and appealText required" }, { status: 400 });
-      const { error } = await sb.from("muse_strikes").update({
-        appeal_status: "pending", appeal_text: String(appealText).slice(0, 2000)
-      }).eq("id", strikeId).eq("user_id", profile.id);
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "admin-resolve-appeal") {
-      // Admin only — resolve an appeal
-      if (!isAdminEmail(profile.email)) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-      const { strikeId, resolution } = rest; // resolution: 'upheld' | 'overturned'
-      if (!strikeId || !["upheld", "overturned"].includes(resolution)) {
-        return NextResponse.json({ error: "strikeId and valid resolution required" }, { status: 400 });
-      }
-      const updates: Record<string, unknown> = {
-        appeal_status: resolution,
-        appeal_resolved_at: new Date().toISOString(),
-        appeal_resolved_by: profile.id,
-      };
-      if (resolution === "overturned") {
-        updates.severity = "warning"; // downgrade on overturn
-      }
-      const { error } = await sb.from("muse_strikes").update(updates).eq("id", strikeId);
-      if (error) return safeServerError(error, "db op");
-      await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `resolve_appeal:${strikeId}:${resolution}` });
-      return NextResponse.json({ success: true });
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // BOOKING MANAGEMENT — enhanced with status flow
-    // ════════════════════════════════════════════════════════════════
-
-    if (actionType === "respond-booking") {
-      const { bookingId, response } = rest; // response: 'accept' | 'decline' | 'reschedule'
-      if (!bookingId || !response) return NextResponse.json({ error: "bookingId and response required" }, { status: 400 });
-      const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
-      if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      if (String(booking.host_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-      const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-      if (response === "accept") {
-        updates.status = "confirmed";
-        updates.confirmed_at = new Date().toISOString();
-        // Create pre-shoot check-in for 24h reminder
-        await sb.from("muse_safety_checkins").insert({
-          booking_id: bookingId, user_id: booking.user_id, checkin_type: "pre_shoot_24h", status: "pending"
-        });
-        await sb.from("muse_safety_checkins").insert({
-          booking_id: bookingId, user_id: profile.id, checkin_type: "pre_shoot_24h", status: "pending"
-        });
-      } else if (response === "decline") {
-        updates.status = "cancelled";
-        updates.cancelled_at = new Date().toISOString();
-        updates.cancel_reason = "Host declined";
-      } else if (response === "reschedule") {
-        updates.status = "pending";
-        updates.reschedule_date = rest.newDate || "";
-      }
-
-      const { error } = await sb.from("muse_bookings").update(updates).eq("id", bookingId);
-      if (error) return safeServerError(error, "db op");
-
-      await sb.from("muse_notifications").insert({
-        user_id: booking.user_id, from_id: profile.id, type: "booking_update",
-        body: `${profile.name} ${response === "accept" ? "accepted" : response === "decline" ? "declined" : "wants to reschedule"} your booking`, read: false
-      });
-      if (booking.user_id) await emailProfile(sb, booking.user_id, "Booking update ✦", "Your booking was updated", `${profile.name} ${response === "accept" ? "accepted" : response === "decline" ? "declined" : "wants to reschedule"} your booking.`, "View booking", "https://muse.wyzdesign.com/muse");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "cancel-booking") {
-      const { bookingId, reason } = rest;
-      if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
-      const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
-      if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      const isParty = String(booking.user_id) === String(profile.id) || String(booking.host_id) === String(profile.id);
-      if (!isParty) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-      // Release escrow hold if a held (manual-capture) payment exists
-      const { data: cancelPayment } = await sb.from("muse_booking_payments")
-        .select("id, stripe_payment_intent, status").eq("booking_id", bookingId).maybeSingle();
-      if (cancelPayment?.stripe_payment_intent && cancelPayment.status !== "succeeded") {
-        try {
-          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
-          await stripe.paymentIntents.cancel(cancelPayment.stripe_payment_intent);
-          await sb.from("muse_booking_payments").update({ status: "cancelled" }).eq("id", cancelPayment.id);
-        } catch (e: unknown) { /* non-fatal */ }
-      }
-
-      const { error } = await sb.from("muse_bookings").update({
-        status: "cancelled", cancelled_at: new Date().toISOString(),
-        cancel_reason: String(reason || "Cancelled by user"),
-        updated_at: new Date().toISOString()
-      }).eq("id", bookingId);
-      if (error) return safeServerError(error, "db op");
-
-      const otherUserId = String(booking.user_id) === String(profile.id) ? booking.host_id : booking.user_id;
-      if (otherUserId) {
-        await sb.from("muse_notifications").insert({
-          user_id: otherUserId, from_id: profile.id, type: "booking_cancelled",
-          body: `${profile.name} cancelled the booking${reason ? `: ${reason}` : ""}`, read: false
-        });
-      }
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "complete-booking") {
-      if (!await checkRate(ip, "complete-booking", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { bookingId } = rest;
-      if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
-      const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
-      if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      const isParty = String(booking.user_id) === String(profile.id) || String(booking.host_id) === String(profile.id);
-      if (!isParty) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      if (booking.status !== "confirmed") return NextResponse.json({ error: "Only confirmed bookings can be completed" }, { status: 400 });
-
-      // Release escrow to the host if a held (manual-capture) payment exists.
-      // Use .limit(1) (not maybeSingle) so any historical duplicate rows can't
-      // error the query and silently block completion.
-      const { data: payments } = await sb.from("muse_booking_payments")
-        .select("id, stripe_payment_intent, status").eq("booking_id", bookingId)
-        .order("created_at", { ascending: false }).limit(1);
-      const payment = payments?.[0];
-      if (payment?.stripe_payment_intent && payment.status !== "succeeded") {
-        try {
-          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
-          await stripe.paymentIntents.capture(payment.stripe_payment_intent);
-          await sb.from("muse_booking_payments").update({ status: "succeeded" }).eq("id", payment.id);
-        } catch (e: unknown) { /* non-fatal: intent may already be captured/cancelled */ }
-      }
-
-      await sb.from("muse_bookings").update({
-        status: "completed", completed_at: new Date().toISOString(), updated_at: new Date().toISOString()
-      }).eq("id", bookingId);
-
-      const otherId = String(booking.user_id) === String(profile.id) ? booking.host_id : booking.user_id;
-      if (otherId) {
-        await sb.from("muse_notifications").insert({
-          user_id: otherId, from_id: profile.id, type: "booking_completed",
-          body: `${profile.name} marked the shoot as complete — leave a review`, read: false
-        });
-      }
-      // Quest bumps for both parties — booker counts toward completed sessions,
-      // host toward hosted sessions.
-      await bumpQuest(sb, String(booking.user_id), "complete_session");
-      if (booking.host_id) await bumpQuest(sb, String(booking.host_id), "complete_host");
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "submit-review") {
-      if (!await checkRate(ip, "submit-review", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { bookingId, rating, body } = rest;
-      if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
-      const r = Number(rating);
-      if (!Number.isInteger(r) || r < 1 || r > 5) return NextResponse.json({ error: "rating must be an integer 1-5" }, { status: 400 });
-      const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
-      if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      if (booking.status !== "completed") return NextResponse.json({ error: "Only completed bookings can be reviewed" }, { status: 400 });
-      const isParty = String(booking.user_id) === String(profile.id) || String(booking.host_id) === String(profile.id);
-      if (!isParty) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      const revieweeId = String(booking.user_id) === String(profile.id) ? booking.host_id : booking.user_id;
-      if (!revieweeId) return NextResponse.json({ error: "No other party to review" }, { status: 400 });
-      const { data, error } = await sb.from("muse_reviews").upsert({
-        booking_id: bookingId, reviewer_id: profile.id, reviewee_id: revieweeId,
-        rating: r, body: String(body || "").slice(0, 1000),
-      }, { onConflict: "booking_id,reviewer_id" }).select().single();
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true, review: data });
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // PRE-SHOOT CHECK-IN
-    // ════════════════════════════════════════════════════════════════
-
-    if (actionType === "respond-checkin") {
-      if (!await checkRateUser(profile.id, "respond-checkin", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { checkinId, response, sharedWithContact } = rest; // response: 'confirmed' | 'cancelled'
-      if (!checkinId || !response) return NextResponse.json({ error: "checkinId and response required" }, { status: 400 });
-      const { data: checkin } = await sb.from("muse_safety_checkins").select("*").eq("id", checkinId).maybeSingle();
-      if (!checkin) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      if (String(checkin.user_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-      const updates: Record<string, unknown> = {
-        status: response, responded_at: new Date().toISOString(),
-        shared_with_contact: !!sharedWithContact
-      };
-      if (response === "cancelled") {
-        updates.cancelled_at = new Date().toISOString();
-        updates.cancel_reason = rest.reason || "Cancelled during check-in";
-      }
-      const { error } = await sb.from("muse_safety_checkins").update(updates).eq("id", checkinId);
-      if (error) return safeServerError(error, "db op");
-
-      if (response === "cancelled" && checkin.booking_id) {
-        await sb.from("muse_bookings").update({
-          status: "cancelled", cancelled_at: new Date().toISOString(),
-          cancel_reason: updates.cancel_reason as string, updated_at: new Date().toISOString()
-        }).eq("id", checkin.booking_id);
-      }
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "get-checkins") {
-      const { data } = await sb.from("muse_safety_checkins").select("*, booking_id(id, session_id, status)")
-        .eq("user_id", profile.id).order("created_at", { ascending: false }).limit(20);
-      return NextResponse.json({ checkins: data || [] });
-    }
-
-    if (actionType === "share-safety-details") {
-      const { bookingId, disclosureId, recipientName, recipientPhone, recipientEmail, shareMethod } = rest;
-      const { error } = await sb.from("muse_safety_shares").insert({
-        user_id: profile.id, booking_id: bookingId || null, disclosure_id: disclosureId || null,
-        recipient_name: String(recipientName || ""),
-        recipient_phone: String(recipientPhone || ""),
-        recipient_email: String(recipientEmail || ""),
-        share_method: String(shareMethod || "sms"),
-      });
-      if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ success: true });
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // SAFETY PROFILE — emergency contacts & trusted friends
-    // ════════════════════════════════════════════════════════════════
-
-    if (actionType === "save-safety-profile") {
-      const { emergencyContactName, emergencyContactPhone, emergencyContactRelation,
-        trustedFriendName, trustedFriendPhone, trustedFriendEmail, autoShareEnabled } = rest;
-      const { error } = await sb.from("muse_safety_profiles").upsert({
-        user_id: profile.id,
-        emergency_contact_name: String(emergencyContactName || ""),
-        emergency_contact_phone: String(emergencyContactPhone || ""),
-        emergency_contact_relation: String(emergencyContactRelation || ""),
-        trusted_friend_name: String(trustedFriendName || ""),
-        trusted_friend_phone: String(trustedFriendPhone || ""),
-        trusted_friend_email: String(trustedFriendEmail || ""),
-        auto_share_enabled: !!autoShareEnabled,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "user_id" });
-      if (error) return safeServerError(error, "db op");
-      // Mark profile as having emergency contact
-      await sb.from("muse_profiles").update({ emergency_contact_added: true }).eq("id", profile.id);
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "get-safety-profile") {
-      const { data } = await sb.from("muse_safety_profiles").select("*").eq("user_id", profile.id).maybeSingle();
-      return NextResponse.json({ safety: data || null });
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // PROMPT BANK — curated onboarding prompts
-    // ════════════════════════════════════════════════════════════════
-
-    if (actionType === "get-prompts") {
-      const { category } = rest;
-      let query = sb.from("muse_prompt_bank").select("*").eq("active", true).order("display_order");
-      if (category) query = query.eq("category", category);
-      const { data } = await query.limit(100);
-      return NextResponse.json({ prompts: data || [] });
-    }
-
-    if (actionType === "save-prompt-response") {
-      if (!await checkRate(ip, "save-prompt-response", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { promptId, responseText, responseChoices } = rest;
-      if (!promptId) return NextResponse.json({ error: "promptId required" }, { status: 400 });
-      const { error } = await sb.from("muse_prompt_responses").upsert({
-        user_id: profile.id, prompt_id: promptId,
-        response_text: String(responseText || ""),
-        response_choices: Array.isArray(responseChoices) ? responseChoices : [],
-      }, { onConflict: "user_id,prompt_id" });
-      if (error) return safeServerError(error, "db op");
-      // Update completion percentage
-      const { count } = await sb.from("muse_prompt_responses").select("*", { count: "exact", head: true }).eq("user_id", profile.id);
-      const { count: total } = await sb.from("muse_prompt_bank").select("*", { count: "exact", head: true }).eq("active", true);
-      const pct = total && total > 0 ? Math.round(((count || 0) / total) * 100) : 0;
-      await sb.from("muse_profiles").update({ profile_completion_pct: pct, prompt_completed_at: new Date().toISOString() }).eq("id", profile.id);
-
-      // Fire-and-forget: embed prompt response in background (don't block response)
-      if (responseText && typeof responseText === "string" && responseText.trim()) {
-        const embedText = `${responseText}`.trim();
-        fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ""}/api/muse/embed`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "embed-text", text: embedText, userId: profile.id, meta: { embedding_type: "prompt_response", prompt_id: promptId } }),
-        }).catch(() => {}); // silent fail — non-critical background task
-      }
-
-      return NextResponse.json({ success: true, completionPct: pct });
-    }
-
-    if (actionType === "get-prompt-responses") {
-      const { data } = await sb.from("muse_prompt_responses").select("*, prompt_id(id, prompt_text, category)").eq("user_id", profile.id);
-      return NextResponse.json({ responses: data || [] });
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // ADMIN BRAIN — AI-powered analytics (founder-only)
-    // ════════════════════════════════════════════════════════════════
-
-    if (actionType === "admin-brain") {
-      if (!await checkRate(ip, "admin-brain", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      if (!isAdminEmail(profile.email)) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-      const { query: userQuery } = rest;
-      if (!userQuery || typeof userQuery !== "string") {
-        return NextResponse.json({ error: "query required" }, { status: 400 });
-      }
-
-      try {
-        const q = userQuery.toLowerCase();
-        let result: Record<string, unknown> = {};
-
-        // Parse intent from natural language query
-        if (q.includes("user") && (q.includes("count") || q.includes("total") || q.includes("how many"))) {
-          const { count } = await sb.from("muse_profiles").select("*", { count: "exact", head: true });
-          result = { answer: `Total registered users: ${count || 0}`, data: { count: count || 0 } };
-        } else if (q.includes("match") && (q.includes("count") || q.includes("total"))) {
-          const { count } = await sb.from("muse_matches").select("*", { count: "exact", head: true });
-          result = { answer: `Total matches: ${count || 0}`, data: { count: count || 0 } };
-        } else if (q.includes("report") || q.includes("flag")) {
-          const { data: reports } = await sb.from("muse_reports").select("*, reporter_id(id, name), target_id(id, name)").order("created_at", { ascending: false }).limit(20);
-          const { count } = await sb.from("muse_reports").select("*", { count: "exact", head: true });
-          result = { answer: `Total reports: ${count || 0}. Showing most recent.`, data: { reports: reports || [], count: count || 0 } };
-        } else if (q.includes("strike") || q.includes("suspension") || q.includes("ban")) {
-          const { data: strikes } = await sb.from("muse_strikes").select("*, user_id(id, name, avatar)").order("created_at", { ascending: false }).limit(20);
-          const { count } = await sb.from("muse_strikes").select("*", { count: "exact", head: true });
-          const suspended = (strikes || []).filter((s: any) => s.severity === "suspension" && (!s.suspension_ends_at || new Date(s.suspension_ends_at) > new Date()));
-          result = { answer: `Total strikes: ${count || 0}. Currently suspended: ${suspended.length}.`, data: { strikes: strikes || [], suspendedCount: suspended.length } };
-        } else if (q.includes("disclosure")) {
-          const { data: disclosures } = await sb.from("muse_disclosures").select("*, proposer_id(id, name), responder_id(id, name)").order("created_at", { ascending: false }).limit(20);
-          const blocked = (disclosures || []).filter((d: any) => d.status === "blocked");
-          result = { answer: `Total disclosures: ${(disclosures || []).length}. Blocked: ${blocked.length}.`, data: { disclosures: disclosures || [], blockedCount: blocked.length } };
-        } else if (q.includes("active") || q.includes("retention") || q.includes("engagement")) {
-          const since7d = new Date(Date.now() - 7 * 86400000).toISOString();
-          const since30d = new Date(Date.now() - 30 * 86400000).toISOString();
-          const [active7d, active30d, newUsers30d] = await Promise.all([
-            sb.from("muse_activity_log").select("user_id").gte("created_at", since7d),
-            sb.from("muse_activity_log").select("user_id").gte("created_at", since30d),
-            sb.from("muse_profiles").select("id").gte("created_at", since30d),
-          ]);
-          const activeUsers7d = new Set((active7d.data || []).map((r: any) => r.user_id).filter(Boolean)).size;
-          const activeUsers30d = new Set((active30d.data || []).map((r: any) => r.user_id).filter(Boolean)).size;
-          result = { answer: `Active users (7d): ${activeUsers7d}, Active (30d): ${activeUsers30d}, New signups (30d): ${(newUsers30d.data || []).length}`, data: { active7d: activeUsers7d, active30d: activeUsers30d, newUsers30d: (newUsers30d.data || []).length } };
-        } else if (q.includes("safety") || q.includes("checkin")) {
-          const { data: checkins } = await sb.from("muse_safety_checkins").select("*, user_id(id, name)").order("created_at", { ascending: false }).limit(20);
-          const pending = (checkins || []).filter((c: any) => c.status === "pending");
-          const cancelled = (checkins || []).filter((c: any) => c.status === "cancelled");
-          result = { answer: `Safety check-ins: ${(checkins || []).length} total. Pending: ${pending.length}. Cancelled: ${cancelled.length}.`, data: { checkins: checkins || [], pendingCount: pending.length, cancelledCount: cancelled.length } };
-        } else if (q.includes("user") && (q.includes("find") || q.includes("search") || q.includes("name"))) {
-          const searchTerm = q.replace(/.*(?:find|search|name)\s+(?:user\s*)?/i, "").trim();
-          const { data: users } = await sb.from("muse_profiles").select("id, name, email, type, created_at, profile_completion_pct").ilike("name", `%${searchTerm}%`).limit(10);
-          result = { answer: `Found ${(users || []).length} users matching "${searchTerm}".`, data: { users: users || [] } };
-        } else if (q.includes("prompt") && (q.includes("response") || q.includes("answer"))) {
-          const { count } = await sb.from("muse_prompt_responses").select("*", { count: "exact", head: true });
-          const { count: totalPrompts } = await sb.from("muse_prompt_bank").select("*", { count: "exact", head: true }).eq("active", true);
-          result = { answer: `Prompt responses: ${count || 0} across ${totalPrompts || 0} active prompts.`, data: { responseCount: count || 0, promptCount: totalPrompts || 0 } };
-        } else {
-          // Generic: return overview stats
-          const counts = await Promise.all([
-            sb.from("muse_profiles").select("*", { count: "exact", head: true }),
-            sb.from("muse_matches").select("*", { count: "exact", head: true }),
-            sb.from("muse_reports").select("*", { count: "exact", head: true }),
-            sb.from("muse_strikes").select("*", { count: "exact", head: true }),
-            sb.from("muse_disclosures").select("*", { count: "exact", head: true }),
-          ]);
-          result = {
-            answer: `Muse Overview: ${counts[0].count || 0} users, ${counts[1].count || 0} matches, ${counts[2].count || 0} reports, ${counts[3].count || 0} strikes, ${counts[4].count || 0} disclosures.`,
-            data: { users: counts[0].count || 0, matches: counts[1].count || 0, reports: counts[2].count || 0, strikes: counts[3].count || 0, disclosures: counts[4].count || 0 }
-          };
-        }
-
-        // ── AI enhancement: synthesize a richer natural-language answer ──
-        // The rule-based result above already gathered live DB metrics; if AI
-        // is available, ground the LLM in those metrics + Muse docs for a
-        // better answer. Falls back to the rule-based answer when AI is off.
-        let answer = String(result.answer || "");
-        let aiSources: string[] = [];
-        try {
-          const enriched = await askMuseAI(
-            `Question: ${userQuery}\n\nLive metrics (from database): ${JSON.stringify((result as any).data || {})}`,
-            { forAdmin: true }
-          );
-          if (enriched) {
-            answer = enriched.answer;
-            aiSources = enriched.sources;
-          }
-        } catch { /* AI is best-effort; keep rule-based answer */ }
-
-        // Log the admin query for audit trail
-        await sb.from("muse_admin_audit_log").insert({
-          admin_user_id: profile.id, query_text: userQuery.slice(0, 1000),
-          query_result_summary: answer.slice(0, 500),
-          result_row_count: Array.isArray((result as any).data?.users) ? (result as any).data.users.length : 0,
-        });
-
-        return NextResponse.json({ answer, data: (result as any).data, sources: aiSources, ai: aiSources.length > 0 });
-      } catch (err: unknown) {
-        return NextResponse.json({ error: "Query failed: " + (err instanceof Error ? err.message : "unknown") }, { status: 500 });
-      }
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // PAYMENT HISTORY — bookings where user is payer or payee
-    // ════════════════════════════════════════════════════════════════
-
-    if (actionType === "get-payments") {
-      const { data: asPayee } = await sb.from("muse_booking_payments").select("*, payer_id(name, avatar), payee_id(name, avatar), booking_id(session_id, status)")
-        .eq("payee_id", profile.id).order("created_at", { ascending: false }).limit(50);
-      const { data: asPayer } = await sb.from("muse_booking_payments").select("*, payer_id(name, avatar), payee_id(name, avatar), booking_id(session_id, status)")
-        .eq("payer_id", profile.id).order("created_at", { ascending: false }).limit(50);
-      // Merge and dedupe
-      const all = [...(asPayee || []), ...(asPayer || [])];
-      const deduped = Array.from(new Map(all.map((p: any) => [p.id, p])).values());
-      deduped.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      return NextResponse.json({ payments: deduped });
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // ADMIN — suspension
-    // ════════════════════════════════════════════════════════════════
-
-    if (actionType === "admin-reports") {
-      if (!isAdminEmail(profile.email)) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-      const { data: reports } = await sb.from("muse_reports").select("*, reporter_id(id, name, avatar), target_id(id, name, avatar)")
-        .order("created_at", { ascending: false }).limit(50);
-      return NextResponse.json({ reports: reports || [] });
-    }
-
-    if (actionType === "admin-strikes") {
-      if (!isAdminEmail(profile.email)) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-      const { data: strikes } = await sb.from("muse_strikes").select("*, user_id(id, name, avatar)")
-        .order("created_at", { ascending: false }).limit(50);
-      return NextResponse.json({ strikes: strikes || [] });
-    }
-
-    if (actionType === "admin-suspend-user") {
-      // Admin-only (email-gated); higher limit so a moderation sweep doesn't bottleneck.
-      if (!await checkRate(ip, "admin-suspend-user", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      if (!isAdminEmail(profile.email)) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-      const { targetUserId, reason, durationDays } = rest;
-      if (!targetUserId) return NextResponse.json({ error: "targetUserId required" }, { status: 400 });
-      if (targetUserId === profile.id) return NextResponse.json({ error: "Cannot suspend yourself" }, { status: 400 });
-      const suspensionEnd = durationDays ? new Date(Date.now() + durationDays * 86400000).toISOString() : null;
-      const { error } = await sb.from("muse_strikes").insert({
-        user_id: targetUserId, issued_by: profile.id,
-        reason: String(reason || "Suspended by admin"),
-        category: "high_severity",
-        severity: suspensionEnd ? "suspension" : "permanent_ban",
-        suspension_ends_at: suspensionEnd,
-      });
-      if (error) return safeServerError(error, "db op");
-      // Actually suspend the account — a strike row alone does not enforce the ban.
-      await sb.from("muse_profiles").update({ suspended: true, suspended_at: new Date().toISOString() }).eq("id", targetUserId);
-      await sb.from("muse_notifications").insert({
-        user_id: targetUserId, from_id: profile.id, type: "suspension",
-        body: suspensionEnd ? `Your account has been suspended until ${new Date(suspensionEnd).toLocaleDateString()}` : "Your account has been permanently banned",
-        read: false
-      });
-      // The single most consequential admin action — always leave a trail.
-      await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `suspend_user:${targetUserId}:${suspensionEnd ? "until " + suspensionEnd : "permanent"}:${String(reason || "").slice(0, 300)}` });
-      return NextResponse.json({ success: true });
-    }
-
-    if (actionType === "admin-scan-nsfw") {
-      // Admin-only: scan a user's avatar for suggestive content and auto-set nsfw flag.
-      // Pass { userId } to scan one profile, or { all: true } to scan all non-nsfw profiles.
-      if (!await checkRate(ip, "admin-scan-nsfw", 10)) return NextResponse.json({ error: "Rate limited", status: 429 });
-      if (!isAdminEmail(profile.email)) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-
-      const { userId, all } = rest;
-      const sb = getServiceClient();
-
-      let profilesToScan: { id: string; avatar: string; name: string }[] = [];
-      if (all) {
-        const { data } = await sb.from("muse_profiles").select("id, avatar, name").eq("nsfw", false).not("avatar", "eq", "").limit(100);
-        profilesToScan = data || [];
-      } else if (userId) {
-        const { data } = await sb.from("muse_profiles").select("id, avatar, name").eq("id", userId).maybeSingle();
-        if (data) profilesToScan = [data];
-      } else {
-        return NextResponse.json({ error: "Provide userId or all:true" }, { status: 400 });
-      }
-
-      let scanned = 0, flagged = 0, errors = 0;
-      for (const p of profilesToScan) {
-        if (!p.avatar || p.avatar.startsWith("/")) { continue; } // skip local/demo avatars
-        // SSRF guard: only fetch from known storage hosts to prevent scanning
-        // internal network addresses (e.g. cloud metadata endpoints).
-        let avatarUrl: URL;
-        try { avatarUrl = new URL(p.avatar); } catch { errors++; continue; }
-        const allowedHosts = ["supabase.co", "supabase.in", "vercel.app", "vercel.storage", "cloudinary.com", "amazonaws.com"];
-        const hostOk = allowedHosts.some(h => avatarUrl.hostname.endsWith(`.${h}`) || avatarUrl.hostname === h);
-        if (!hostOk || avatarUrl.protocol !== "https:") { errors++; continue; }
-
-        try {
-          const resp = await fetch(avatarUrl.toString(), { signal: AbortSignal.timeout(10000) });
-          if (!resp.ok) { errors++; continue; }
-          const buf = Buffer.from(await resp.arrayBuffer());
-          const result = await scanWithRekognition(buf);
-          await logScan({ userId: p.id, fileName: "avatar-scan", fileType: "image/jpeg", fileSize: buf.length, context: "admin-scan", result });
-          scanned++;
-          if (result.scanned && result.flaggedCategories.some(c => /^suggestive/i.test(c))) {
-            await sb.from("muse_profiles").update({ nsfw: true }).eq("id", p.id);
-            flagged++;
-          }
-        } catch { errors++; }
-      }
-      await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `scan_nsfw:${all ? "all" : String(userId)}:scanned=${scanned}:flagged=${flagged}:errors=${errors}` });
-      return NextResponse.json({ success: true, scanned, flagged, errors, total: profilesToScan.length });
-    }
-
-    // ── QUESTS ──────────────────────────────────────────────────────────
-    if (actionType === "get-quests") {
-      const { data: quests } = await sb.from("muse_quests").select("*").eq("active", true).order("sort_order");
-      if (!quests) return NextResponse.json({ quests: [], xp: { total_xp: 0, level: 1 } });
-
-      const { data: userQuests } = await sb.from("muse_user_quests")
-        .select("quest_id, progress, target, completed, claimed, period_key")
-        .eq("user_id", profile.id);
-
-      const { data: xpData } = await sb.from("muse_user_xp").select("total_xp, level").eq("user_id", profile.id).maybeSingle();
-
-      // Map quest progress by period
-      const progressMap: Record<string, any> = {};
-      for (const uq of userQuests || []) {
-        progressMap[`${uq.quest_id}:${uq.period_key}`] = uq;
-      }
-
-      const enriched = quests.map((q: any) => {
-        const periodKey = questPeriodKey(q.frequency);
-        const userProg = progressMap[`${q.id}:${periodKey}`];
-        return {
-          ...q,
-          progress: userProg?.progress || 0,
-          target: q.target_count,
-          completed: userProg?.completed || false,
-          claimed: userProg?.claimed || false,
-          period_key: periodKey,
-        };
-      });
-
-      return NextResponse.json({ quests: enriched, xp: xpData || { total_xp: 0, level: 1 } });
-    }
-
-    if (actionType === "track-quest") {
-      if (!await checkRateUser(profile.id, "track-quest", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-
-      // Accept one key or a batch — batching keeps swipes to a single request.
-      const rawKeys: string[] = Array.isArray(rest.action_keys)
-        ? rest.action_keys.filter((k: unknown) => typeof k === "string" && k.length <= 64).slice(0, 6)
-        : (typeof rest.action_key === "string" ? [rest.action_key] : []);
-      if (!rawKeys.length) return NextResponse.json({ error: "action_key required" }, { status: 400 });
-
-      // Server-authoritative keys are bumped by their own handlers — reject
-      // client attempts to forge them.
-      const SERVER_ONLY_KEYS = new Set(["match", "book_session", "host_session", "complete_session", "complete_host", "get_verified", "referral_signup"]);
-      const clientKeys = rawKeys.filter(k => !SERVER_ONLY_KEYS.has(k));
-      if (!clientKeys.length) return NextResponse.json({ success: true, results: [] });
-
-      const { data: questDefs } = await sb.from("muse_quests")
-        .select("*").eq("active", true).in("action_key", clientKeys);
-      if (!questDefs?.length) return NextResponse.json({ success: true, noQuest: true });
-
-      const results: any[] = [];
-      let leveledUp = false;
-      for (const quest of questDefs) {
-        const periodKey = questPeriodKey(quest.frequency);
-
-        const { data: existing } = await sb.from("muse_user_quests")
-          .select("id, progress, completed")
-          .eq("user_id", profile.id).eq("quest_id", quest.id).eq("period_key", periodKey)
-          .maybeSingle();
-
-        if (existing?.completed) { results.push({ action_key: quest.action_key, alreadyCompleted: true }); continue; }
-
-        const newProgress = (existing?.progress || 0) + 1;
-        const completed = newProgress >= quest.target_count;
-
-        if (existing) {
-          await sb.from("muse_user_quests").update({
-            progress: newProgress,
-            completed,
-            completed_at: completed ? new Date().toISOString() : null,
-            updated_at: new Date().toISOString(),
-          }).eq("id", existing.id);
-        } else {
-          await sb.from("muse_user_quests").insert({
-            user_id: profile.id,
-            quest_id: quest.id,
-            period_key: periodKey,
-            progress: newProgress,
-            target: quest.target_count,
-            completed,
-            completed_at: completed ? new Date().toISOString() : null,
-          });
-        }
-
-        if (completed) {
-          leveledUp = (await awardQuestXp(sb, profile.id, quest.xp_reward)) || leveledUp;
-          await refreshMetaQuest(sb, profile.id);
-        }
-
-        results.push({
-          action_key: quest.action_key,
-          progress: newProgress,
-          target: quest.target_count,
-          completed,
-          newlyCompleted: completed,
-          quest: { title: quest.title, icon: quest.icon, reward_label: quest.reward_label },
-        });
-      }
-      if (leveledUp) results.push({ leveledUp: true });
-
-      return NextResponse.json({ success: true, results });
-    }
-
-    if (actionType === "claim-quest") {
-      if (!await checkRateUser(profile.id, "claim-quest", 12)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { quest_id } = rest;
-      if (!quest_id || !UUID_RE.test(String(quest_id))) return NextResponse.json({ error: "quest_id required" }, { status: 400 });
-
-      // Verify the period key matches the CURRENT period — prevents claiming
-      // a stale completed row from an old week/month.
-      const { data: questDef } = await sb.from("muse_quests").select("id, reward_type, reward_amount, reward_label, frequency").eq("id", quest_id).maybeSingle();
-      if (!questDef) return NextResponse.json({ error: "Quest not found" }, { status: 404 });
-
-      const periodKey = questPeriodKey(questDef.frequency);
-      const { data: uq } = await sb.from("muse_user_quests")
-        .select("id, completed, claimed")
-        .eq("user_id", profile.id).eq("quest_id", quest_id).eq("period_key", periodKey)
-        .maybeSingle();
-
-      if (!uq) return NextResponse.json({ error: "Quest not started" }, { status: 404 });
-      if (!uq.completed) return NextResponse.json({ error: "Quest not completed" }, { status: 400 });
-      if (uq.claimed) return NextResponse.json({ error: "Already claimed" }, { status: 400 });
-
-      // Conditional update + .select() so we verify a row ACTUALLY flipped —
-      // Supabase returns success with an empty array when the eq("claimed",
-      // false) guard matches nothing, which previously let two concurrent
-      // claims both succeed and double-grant (including stacking free Pro).
-      const { data: claimedRows, error: claimErr } = await sb.from("muse_user_quests")
-        .update({ claimed: true, updated_at: new Date().toISOString() })
-        .eq("id", uq.id).eq("claimed", false)
-        .select("id");
-
-      if (claimErr) return NextResponse.json({ error: "Could not claim reward" }, { status: 500 });
-      if (!claimedRows?.length) return NextResponse.json({ error: "Already claimed" }, { status: 409 });
-
-      // Fulfil Pro-time rewards server-side: extend pro_expires_at by the
-      // reward months. Free-tier users start their clock from now; existing
-      // Pro stacks from their current expiry.
-      let grantedUntil: string | undefined;
-      if (questDef.reward_type === "superpower" || questDef.reward_type === "pro_day") {
-        const months = questDef.reward_type === "pro_day"
-          ? Math.max(1, Math.ceil(questDef.reward_amount / 30))
-          : Math.max(1, questDef.reward_amount);
-        const { data: prof } = await sb.from("muse_profiles").select("tier, pro_expires_at").eq("id", profile.id).maybeSingle();
-        const cur = prof?.pro_expires_at ? new Date(prof.pro_expires_at).getTime() : 0;
-        const base = Math.max(Date.now(), cur);
-        grantedUntil = new Date(base + months * 30 * 24 * 60 * 60 * 1000).toISOString();
-        await sb.from("muse_profiles").update({ pro_expires_at: grantedUntil }).eq("id", profile.id);
-      }
-
-      return NextResponse.json({
-        success: true,
-        grantedUntil: grantedUntil || null,
-        reward: { reward_type: questDef.reward_type, reward_amount: questDef.reward_amount, reward_label: questDef.reward_label },
-      });
-    }
-
-    // ── ADMIN: content-scan review queue (uploads incl. videos) ────────
-    if (actionType === "admin-content-scans") {
-      if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      const [scans, incidents] = await Promise.all([
-        sb.from("muse_content_scans")
-          .select("id, user_id, file_name, file_type, context, safe, flagged_categories, confidence, should_block, should_report, is_csam, scanned_at")
-          .order("scanned_at", { ascending: false }).limit(100),
-        sb.from("muse_safety_incidents")
-          .select("id, user_id, type, severity, details, status, created_at")
-          .in("status", ["pending_review", "pending_ncmec"])
-          .order("created_at", { ascending: false }).limit(100),
-      ]);
-      return NextResponse.json({ scans: scans.data || [], incidents: incidents.data || [] });
-    }
-
-    if (actionType === "admin-resolve-incident") {
-      if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      const { incidentId } = rest;
-      if (!incidentId || !UUID_RE.test(String(incidentId))) return NextResponse.json({ error: "incidentId required" }, { status: 400 });
-      const { error } = await sb.from("muse_safety_incidents").update({ status: "reviewed" }).eq("id", incidentId);
-      if (error) return safeServerError(error, "db op");
-      await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `resolve_incident:${incidentId}` });
-      return NextResponse.json({ success: true });
-    }
-
-    return NextResponse.json({ error: "Unknown action type" }, { status: 400 });
+    return await handler({ sb, profile: profile as ActionContext["profile"], rest, ip, req, rawType });
   } catch (e: unknown) {
     return safeServerError(e, "muse route");
   }
 }
-
 
