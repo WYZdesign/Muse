@@ -813,10 +813,13 @@ Large multi-area session. All changes code-verified locally: **tsc error count i
 ---
 
 ## SESSION STATE
-- **Build status:** tsc = 36 errors, byte-identical categories to HEAD baseline (local env type drift only; zero from session work); vitest 53/53 pass; `next build` locally blocked by same env drift — verify on Vercel
+- **Build status:** ✅ CLEAN — tsc 0 errors, vitest 53/53, `npm run build` passes locally (first full local build on Torreé's Windows box; previously blocked by corrupted node_modules)
+- **Env fix (Session 35, follow-up):** the ~36 "pre-existing" type errors were NOT baseline — they were incomplete package installs missing `.d.ts` output (@supabase/auth-js, @aws-sdk/client-rekognition) plus a corrupt @next/swc native binary. Deleting those packages and re-running `npm i` restored them. If this machine's node_modules goes stale again: delete the misbehaving package dir + reinstall before debugging code.
+- **Real bug fixed in that pass:** `next.config.ts` used `__dirname` for `turbopack.root` — undefined under Next 16's ESM-compiled config (breaks any fresh build). Now uses `fileURLToPath(new URL(".", import.meta.url))`.
+- **Agent preference:** SQL files always opened in VS Code (`AGENTS.md` at repo root documents the command).
 - **Last compile:** 2026-08-26 (Session 35)
-- **Last commit (this session):** Session 35 — security hardening, quests system v2 (+V2 SQL pending run), Discover hero chips, Professionals skill buttons, merged Sessions 33–34 fixes
-- **Prior commit:** `d0f0491` — Session 32 clean-slate schema migration
+- **Last commits (this session):** Session 35 main commit (security hardening, quests v2, hero chips, merged Sessions 33–34) → infra-fix commit (next.config ESM fix, AGENTS.md, HANDOVER env notes)
+- **Quests V2 SQL:** confirmed run in Supabase by Torreé — quest system fully live
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** 54 tables live (muse_profiles, muse_matches, muse_messages, muse_feed_posts, muse_feed_comments, muse_briefs, muse_brief_applications, muse_forum_posts, muse_forum_comments, muse_events, muse_event_rsvps, muse_activity_log, muse_reports, muse_blocks, muse_forum_replies, muse_communities, muse_community_members, muse_sessions, muse_bookings, muse_connections, muse_notifications, muse_push_subscriptions, muse_error_logs, muse_events_log, muse_albums, muse_album_photos, muse_album_access, muse_referrals, muse_referral_rewards, muse_stripe_connect, muse_booking_payments, muse_content_scans, muse_safety_incidents, muse_disclosures, muse_strikes, muse_safety_profiles, muse_safety_checkins, muse_safety_shares, muse_admin_audit_log, muse_prompt_bank, muse_prompt_responses, muse_profile_embeddings, muse_ncmec_reports, muse_verification_sessions, muse_waitlist, muse_landing_analytics, muse_qr_events, muse_rsvps, muse_reviews, muse_moments, muse_professionals, muse_rate_limits, muse_album_likes, muse_ai_docs)
 - **Preferences JSONB keys:** notifications, onboardingStep, filterStyles, filterScore, savedBriefs, discovery prefs (ageMin, ageMax, gender, openToTravel, distance, tags, nsfw, showOnline, showDistance)

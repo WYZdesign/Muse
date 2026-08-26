@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
+import { fileURLToPath } from "url";
 import { withSentryConfig } from "@sentry/nextjs";
+
+// next.config is compiled to ESM by Next 16 — __dirname is undefined there.
+const projectRoot = fileURLToPath(new URL(".", import.meta.url));
 
 const SUPABASE_HOST = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
@@ -50,7 +54,7 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["react-icons"],
   },
   turbopack: {
-    root: __dirname,
+    root: projectRoot,
   },
   async headers() {
     return [
