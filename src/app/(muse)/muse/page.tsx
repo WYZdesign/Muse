@@ -45,6 +45,13 @@ import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
 import QuestPanel from "./screens/QuestPanel";
 import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, AESTHETICS, CREATIVE_TYPES, BEHIND_CAMERA, IN_FRONT_CAMERA, LOOKING_FOR, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, ICEBREAKERS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
+import { useDiscoveryData } from "./hooks/useDiscoveryData";
+import { useFeedData } from "./hooks/useFeedData";
+import { useCommunityData } from "./hooks/useCommunityData";
+import { useSessionData } from "./hooks/useSessionData";
+import { useBriefsData } from "./hooks/useBriefsData";
+import { useProfileData } from "./hooks/useProfileData";
+import { normalizeCommunity, normalizeEvent, normalizeForumPost, normalizeBrief, normalizeSession } from "./hooks/normalizers";
 
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL || "torree.marcel@gmail.com";
@@ -60,6 +67,14 @@ const DEMO_MOMENTS: any[] = [
   { id: 9004, author: "Riley Patel", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100", img: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800", time: "2h ago", text: "Studio setup build-out. T-minus 3 days to the big shoot 🎬", likes: 231, comments: 34 },
   { id: 9005, author: "Avery Brooks", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100", img: "https://images.unsplash.com/photo-1493514789931-586cb221d7a7?w=800", time: "3h ago", text: "Location scouting found this gem. Natural diffusers everywhere.", likes: 98, comments: 15 },
   { id: 9006, author: "Kai Tanaka", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100", img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800", time: "4h ago", text: "First edit pass on the campaign. Client's gonna love this one.", likes: 312, comments: 41 },
+];
+
+const INITIAL_STORIES: any[] = [
+  {id:501,author:"Maya Chen",avatar:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",type:"photo",text:"Behind the scenes of today's editorial shoot. The light was absolutely magical.",likes:87,comments:12,shares:3,time:"12m ago",img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600"},
+  {id:502,author:"Jordan Rivera",avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",type:"photo",text:"Color grading session. Testing new LUTs for the indie film.",likes:45,comments:8,shares:2,time:"1h ago",img:"https://images.unsplash.com/photo-1535016120720-40c646be5580?w=600"},
+  {id:503,author:"Sam Taylor",avatar:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",type:"photo",text:"Studio session vibes. New album art coming together.",likes:62,comments:9,shares:4,time:"3h ago",img:"https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=600"},
+  {id:504,author:"Riley Patel",avatar:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",type:"photo",text:"Motion capture test for the music video. The visuals are insane.",likes:134,comments:21,shares:7,time:"5h ago",img:"https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600"},
+  {id:505,author:"Avery Nguyen",avatar:"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",type:"photo",text:"Golden hour at the pier. Sometimes the best shots are the simplest.",likes:98,comments:15,shares:6,time:"8h ago",img:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600"},
 ];
 
 
@@ -87,71 +102,6 @@ function initialsAvatarUrl(name: string, key: string | number): string {  const 
   return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='${c1}'/><stop offset='1' stop-color='${c2}'/></linearGradient></defs><rect width='200' height='200' fill='url(%23g)'/><text x='100' y='102' font-family='Inter,Arial,sans-serif' font-size='82' font-weight='700' fill='white' text-anchor='middle' dominant-baseline='central'>${letters}</text></svg>`;
 }
 
-// Normalize raw muse_communities rows (snake_case: member_count/description/
-// category/is_nsfw) into the camelCase shape CommunityScreen/MenuModal expect.
-// SAFETY: without this, c.nsfw is always undefined on real rows, so the
-// showNsfw || !c.nsfw filter always passes and an is_nsfw=true community
-// (e.g. seeded "Adults Only (18+)") bypasses every user's Show NSFW setting.
-function normalizeCommunity(c: any) {
-  return {
-    ...c,
-    members: c.members ?? c.member_count ?? 0,
-    desc: c.desc ?? c.description ?? "",
-    cat: c.cat ?? c.category ?? "",
-    nsfw: c.nsfw ?? c.is_nsfw ?? false,
-  };
-}
-
-// Same for muse_events rows (description/location). No nsfw column exists on
-// the table today; when one is added, e.nsfw ?? e.is_nsfw picks it up.
-function normalizeEvent(e: any) {
-  return {
-    ...e,
-    desc: e.desc ?? e.description ?? "",
-    loc: e.loc ?? e.location ?? "",
-    nsfw: e.nsfw ?? e.is_nsfw ?? false,
-  };
-}
-
-// muse_forum_posts has no `comments` column (replies live in muse_forum_replies,
-// never joined by the GET handler) and author arrives as author_id:{name,avatar}.
-// NetworkScreen/MenuModal call post.comments.length unconditionally — the first
-// real forum post would crash the whole Forum tab. Keeps the REAL DB id since
-// vote/comment/report actions send it back to the API.
-function normalizeForumPost(p: any) {
-  return {
-    ...p,
-    author: p.author ?? p.author_id?.name ?? "Creative",
-    avatar: p.avatar ?? p.author_id?.avatar ?? "",
-    cat: p.cat ?? p.category ?? "General",
-    comments: Array.isArray(p.comments) ? p.comments : [],
-    time: p.time ?? (p.created_at ? new Date(p.created_at).toLocaleString() : "Just now"),
-  };
-}
-
-// muse_briefs returns description/category + joined author_id object; CollabScreen
-// reads desc/cat/author/authorImg. Paid-Book button gates on cat==="paid", so the
-// mismatch hid it entirely on real paid briefs.
-function normalizeBrief(b: any) {
-  return {
-    ...b,
-    desc: b.desc ?? b.description ?? "",
-    cat: b.cat ?? b.category ?? "concept",
-    author: b.author ?? b.author_id?.name ?? "Creative",
-    authorImg: b.authorImg ?? b.author_id?.avatar ?? "",
-  };
-}
-
-// muse_sessions has `title`, not `name` — SessionsScreen reads s.name for heading,
-// alt text, and toast (real sessions toasted "...sent to undefined!").
-function normalizeSession(s: any) {
-  return {
-    ...s,
-    name: s.name ?? s.title ?? "Creative Pro",
-    sessions: s.sessions ?? 0,
-  };
-}
-
 function MusePage() {
   const [screen, setScreen] = useState<Screen>("auth");
   const [authMode, setAuthMode] = useState<"login"|"signup">("signup");
@@ -173,7 +123,6 @@ function MusePage() {
   const [cardAlbumIdx, setCardAlbumIdx] = useState(0);
   const [cardAlbumPhotos, setCardAlbumPhotos] = useState<string[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
-    const [matches, setMatches] = useState<Match[]>([]);
     const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setShowMatchMenu, unmatchTarget, setUnmatchTarget, chatImages, setChatImages, typingTarget, setTypingTarget, themTyping, setThemTyping } = useChatState();
     const [connFilter, setConnFilter] = useState("all");
   const [showNsfw, setShowNsfw] = useState(false);
@@ -197,7 +146,6 @@ function MusePage() {
   // start hidden. Starting it false meant the badge (and its dismiss button)
   // could never actually appear for any Pro user.
   const [showUnlimitedBadge, setShowUnlimitedBadge] = useState(true);
-  const [matchStreak, setMatchStreak] = useState(0);
   const [rewindStack, setRewindStack] = useState<number[]>([]);
   const [showLikeNote, setShowLikeNote] = useState(false);
   const [likeNoteText, setLikeNoteText] = useState("");
@@ -220,17 +168,7 @@ function MusePage() {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterStyles, setFilterStyles] = useState<string[]>([]);
    const [filterScore, setFilterScore] = useState(50);
-   // Live data overrides (fetched from the API; falls back to static arrays).
-  const [liveProfiles, setLiveProfiles] = useState<typeof PROFILES | null>(null);
-  const [liveBriefs, setLiveBriefs] = useState<typeof BRIEFS | null>(null);
-  const [liveFeed, setLiveFeed] = useState<any[] | null>(null);
-  const [liveForum, setLiveForum] = useState<any[] | null>(null);
-  const [liveEvents, setLiveEvents] = useState<any[] | null>(null);
-  const [liveCommunities, setLiveCommunities] = useState<typeof COMMUNITIES | null>(null);
-  const [liveSessions, setLiveSessions] = useState<typeof SESSIONS | null>(null);
   const [liveProfessionals, setLiveProfessionals] = useState<any[] | null>(null);
-  const [myBookings, setMyBookings] = useState<{ asBooker: any[]; asHost: any[] }>({ asBooker: [], asHost: [] });
-  const [myStats, setMyStats] = useState<{ views: number; likes: number } | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
@@ -250,12 +188,10 @@ function MusePage() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showGuidelines, setShowGuidelines] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>({match:true,message:true,brief:true,like:true});
   const [pushEnabled, setPushEnabled] = useState<boolean>(false);
   const [connTab, setConnTab] = useState<"community"|"events"|"sessions"|"forum"|"feed"|"professional">("community");
   const [portfolioTab, setPortfolioTab] = useState<"all"|"portrait"|"landscape"|"sets">("all");
-  const [forumPosts, setForumPosts] = useState<{id:number;title:string;body:string;author:string;avatar:string;votes:number;comments:{author:string;text:string}[];cat:string;time:string;pinned:boolean}[]>([]);
   const [commTab, setCommTab] = useState<"groups"|"events">("groups");
   const [sessTab, setSessTab] = useState<"sessions"|"bookings"|"requests">(() => viewerSideOf(currentUser) === "industry" ? "bookings" : "sessions");
   // The lazy init above runs before the server profile arrives (type starts
@@ -279,8 +215,6 @@ function MusePage() {
   const [commentText, setCommentText] = useState("");
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [eventsFilter, setEventsFilter] = useState<"all"|"upcoming"|"past">("all");
-  const [rsvpdEvents, setRsvpdEvents] = useState<number[]>([]);
-  const [feedPosts, setFeedPosts] = useState<{id:number;author:string;avatar:string;type:string;text:string;likes:number;comments:number;shares:number;time:string;liked:boolean;saved:boolean;img?:string;media?:string[];reactions?:Record<string,number>}[]>([]);
   const [feedText, setFeedText] = useState("");
   const [feedMedia, setFeedMedia] = useState<string[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -311,18 +245,10 @@ function MusePage() {
   const [obPortfolioItems, setObPortfolioItems] = useState<{img:string;title:string}[]>([]);
   const portfolioInputRef = useRef<HTMLInputElement>(null);
   const [obPortfolioSlot, setObPortfolioSlot] = useState<number | null>(null);
-  const [likedBy, setLikedBy] = useState<Profile[]>([]);
   const [showLikesYou, setShowLikesYou] = useState(false);
   const [matchesView, setMatchesView] = useState<"list"|"grid">("list");
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
-  const [stories, setStories] = useState<any[]>([
-    {id:501,author:"Maya Chen",avatar:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",type:"photo",text:"Behind the scenes of today's editorial shoot. The light was absolutely magical.",likes:87,comments:12,shares:3,time:"12m ago",img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600"},
-    {id:502,author:"Jordan Rivera",avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",type:"photo",text:"Color grading session. Testing new LUTs for the indie film.",likes:45,comments:8,shares:2,time:"1h ago",img:"https://images.unsplash.com/photo-1535016120720-40c646be5580?w=600"},
-    {id:503,author:"Sam Taylor",avatar:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",type:"photo",text:"Studio session vibes. New album art coming together.",likes:62,comments:9,shares:4,time:"3h ago",img:"https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=600"},
-    {id:504,author:"Riley Patel",avatar:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",type:"photo",text:"Motion capture test for the music video. The visuals are insane.",likes:134,comments:21,shares:7,time:"5h ago",img:"https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600"},
-    {id:505,author:"Avery Nguyen",avatar:"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",type:"photo",text:"Golden hour at the pier. Sometimes the best shots are the simplest.",likes:98,comments:15,shares:6,time:"8h ago",img:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600"},
-  ]);
   const [showStory, setShowStory] = useState<number|null>(null);
   const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"villa"|"deepsea"|"sunrise">("lasunset");
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
@@ -344,11 +270,7 @@ function MusePage() {
   const [pendingDisclosureConfirm, setPendingDisclosureConfirm] = useState<string | null>(null);
   const [pendingDisclosureCreate, setPendingDisclosureCreate] = useState<Record<string, unknown> | null>(null);
   const [showSafetyCheckin, setShowSafetyCheckin] = useState(false);
-  const [safetyCheckins, setSafetyCheckins] = useState<any[]>([]);
-  const [safetyProfile, setSafetyProfile] = useState<any>(null);
   const [showPromptBank, setShowPromptBank] = useState(false);
-  const [promptBankData, setPromptBankData] = useState<any[]>([]);
-  const [promptResponses, setPromptResponses] = useState<any[]>([]);
   const [showReferral, setShowReferral] = useState(false);
   const [showConnect, setShowConnect] = useState(false);
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
@@ -450,6 +372,13 @@ function MusePage() {
     if (!res.ok) throw new Error(`API ${res.status}`);
     return res;
   }, []);
+
+  const { liveProfiles, setLiveProfiles, matches, setMatches, likedBy, setLikedBy, blockedUsers, setBlockedUsers, matchStreak, setMatchStreak } = useDiscoveryData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
+  const { liveFeed, setLiveFeed, feedPosts, setFeedPosts, stories, setStories, liveForum, setLiveForum, forumPosts, setForumPosts } = useFeedData({ authFetch, profileId: authUser?.profile?.id ?? null, initialStories: INITIAL_STORIES });
+  const { liveCommunities, setLiveCommunities, liveEvents, setLiveEvents, rsvpdEvents, setRsvpdEvents } = useCommunityData({ authFetch, profileId: authUser?.profile?.id ?? null });
+  const { myBookings, setMyBookings, liveSessions, setLiveSessions } = useSessionData({ authFetch, profileId: authUser?.profile?.id ?? null });
+  const { liveBriefs, setLiveBriefs } = useBriefsData({ authFetch, profileId: authUser?.profile?.id ?? null });
+  const { myStats, setMyStats, safetyCheckins, setSafetyCheckins, safetyProfile, setSafetyProfile, promptBankData, setPromptBankData, promptResponses, setPromptResponses } = useProfileData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
 
   // Load a profile's reviews when the profile modal opens (reviews are
   // written via submit-review but were previously never read back).
@@ -1124,11 +1053,11 @@ function MusePage() {
     // deck is untouched, so the visible card never jumps.
     const merged = liveProfiles?.length ? [...base, ...liveProfiles.filter((lp: any) => !base.some((dp: any) => String(dp.id) === String(lp.id)))] : base;
     let list = showNsfw ? merged : merged.filter(p => !p.nsfw);
-    if (filterStyles.length > 0) list = list.filter(p => p.styles.some(s => filterStyles.includes(s)));
+    if (filterStyles.length > 0) list = list.filter(p => p.styles.some((s: string) => filterStyles.includes(s)));
     if (filterScore > 50) list = list.filter(p => p.score >= filterScore);
     if (discoverSearch.trim()) {
       const q = discoverSearch.toLowerCase();
-      list = list.filter(p => p.name.toLowerCase().includes(q) || p.type?.toLowerCase().includes(q) || p.loc?.toLowerCase().includes(q) || p.styles?.some(s => s.toLowerCase().includes(q)));
+      list = list.filter(p => p.name.toLowerCase().includes(q) || p.type?.toLowerCase().includes(q) || p.loc?.toLowerCase().includes(q) || p.styles?.some((s: string) => s.toLowerCase().includes(q)));
     }
     const enriched = list.map(p => {
       const geo = CITY_GEO[p.loc];
@@ -1622,220 +1551,6 @@ function MusePage() {
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [chatTarget?.id, authUser?.id]);
-
-  // ═══ SAFETY: fetch check-ins and safety profile on mount ═══
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-checkins" }) })
-      .then(r => r.json()).then(d => { if (d.checkins) setSafetyCheckins(d.checkins); }).catch(() => {});
-    authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-safety-profile" }) })
-      .then(r => r.json()).then(d => { if (d.safety) setSafetyProfile(d.safety); }).catch(() => {});
-  }, [authUser?.profile?.id]);
-
-  // ═══ PROMPTS: fetch prompt bank and user responses ═══
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-prompts" }) })
-      .then(r => r.json()).then(d => { if (d.prompts) setPromptBankData(d.prompts); }).catch(() => {});
-    authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-prompt-responses" }) })
-      .then(r => r.json()).then(d => { if (d.responses) setPromptResponses(d.responses); }).catch(() => {});
-  }, [authUser?.profile?.id]);
-
-  // ═══ DISCOVER: fetch real profiles from API ═══
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    let cancelled = false;
-    authFetch("/api/muse?type=profiles")
-      .then(r => r.json())
-      .then(d => { if (!cancelled && d.profiles) setLiveProfiles(d.profiles); })
-      .catch((err) => { trackError("fetch_profiles", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
-
-  // ═══ FEED: fetch real feed posts from API ═══
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    let cancelled = false;
-    authFetch("/api/muse?type=feed")
-      .then(r => r.json())
-      .then(d => { if (!cancelled && d.posts) setLiveFeed(d.posts); })
-      .catch((err) => { trackError("fetch_feed", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
-
-  // ═══ MOMENTS: fetch real BTS moments (replaces demo fallback) ═══
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    let cancelled = false;
-    authFetch("/api/muse?type=moments")
-      .then(r => r.json())
-      .then(d => {
-        if (cancelled || !Array.isArray(d.moments)) return;
-        const mapped = d.moments.map((m: any) => ({
-          id: m.id,
-          author: m.author_id?.name || "Muse",
-          avatar: m.author_id?.avatar || "",
-          text: m.text || "",
-          img: m.img || "",
-          // BtsScreen's Videos filter reads `s.video` — was never set, so the
-          // tab stayed empty even when a real video moment existed.
-          video: m.type === "video" || /\.(mp4|webm|mov)(\?|$)/i.test(m.img || ""),
-          time: m.created_at ? new Date(m.created_at).toLocaleDateString() : "",
-          liked: false,
-          likes: m.likes || 0,
-          comments: m.comments || 0,
-        }));
-        // Only replace the demo fallback once there's real content to show —
-        // otherwise this unconditionally overwrote the seeded DEMO_MOMENTS
-        // (set by loadState when nothing was persisted yet) with an empty
-        // array the instant auth resolved, which is almost immediately — so
-        // BTS looked like a dead ghost-town feature for every user even
-        // though the fallback logic itself was correct.
-        if (mapped.length) setStories(mapped);
-      })
-      .catch((err) => { trackError("fetch_moments", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
-
-  // ═══ MATCHES: fetch real matches (replaces demo fallback) ═══
-  // loadState() seeds `matches` from PROFILES.slice(0,6) whenever nothing was
-  // in localStorage — a reasonable cold-start fallback — but nothing ever
-  // followed up by checking whether the account actually has real matches in
-  // muse_matches (GET type=matches was never called anywhere). A returning
-  // user with genuine matches, or the same user on a new device, would only
-  // ever see the 6 fake demo ones. Runs once at session start (not on every
-  // `matches` change), so it can't clobber a match made later in the session.
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    let cancelled = false;
-    authFetch("/api/muse?type=matches")
-      .then(r => r.json())
-      .then(d => {
-        if (cancelled || !Array.isArray(d.matches) || !d.matches.length) return;
-        const real: Match[] = d.matches
-          .map((m: any) => {
-            const t = m.target_id || {};
-            if (!t.id) return null;
-            // Real presence (last_seen_at, touched on every session check),
-            // not the seed-data/coin-flip the demo fallback uses.
-            const online = !!t.last_seen_at && (Date.now() - new Date(t.last_seen_at).getTime()) < 5 * 60 * 1000;
-            return { id: t.id, name: t.name || "Unknown", img: t.avatar || "", type: t.type || "", bio: t.bio || "", location: t.loc || "", booked: false, online, messages: [] } as Match;
-          })
-          .filter((m: any): m is Match => m !== null);
-        if (real.length) setMatches(real);
-      })
-      .catch((err) => { trackError("fetch_matches", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
-
-  // ═══ BLOCKS: fetch real blocked-user ids (replaces localStorage-only list) ═══
-  // `blockedUsers` was only ever populated from localStorage — the Block
-  // confirmation modal calls the real `block` action server-side but never
-  // added the target to this array, and Settings' "Blocked Users" list was
-  // never cross-checked against the real muse_blocks table (GET actionType
-  // "get-blocks" existed but nothing called it). Fetch the real list on
-  // login so Settings shows what's actually enforced server-side, not a
-  // stale/empty local array.
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    let cancelled = false;
-    apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "get-blocks" }) })
-      .then(r => r.json())
-      .then(d => {
-        if (cancelled || !Array.isArray(d.blocked)) return;
-        setBlockedUsers(prev => Array.from(new Set([...prev, ...d.blocked])));
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
-
-  // ═══ STATS: real profile views + likes received (tiles in Your Profile) ═══
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    let cancelled = false;
-    apiFetch("/api/muse?type=my-stats")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (!cancelled && d) setMyStats({ views: d.views || 0, likes: d.likesReceived || 0 }); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
-
-  // ═══ BOOKINGS: fetch real bookings (booker + host) ═══
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    let cancelled = false;
-    authFetch("/api/muse?type=bookings")
-      .then(r => r.json())
-      .then(d => { if (!cancelled && d.asBooker) setMyBookings({ asBooker: d.asBooker || [], asHost: d.asHost || [] }); })
-      .catch((err) => { trackError("fetch_bookings", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
-
-  // ═══ BRIEFS: fetch real briefs from API ═══
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    let cancelled = false;
-    authFetch("/api/muse?type=briefs")
-      .then(r => r.json())
-      .then(d => { if (!cancelled && d.briefs) setLiveBriefs(d.briefs.map(normalizeBrief)); })
-      .catch((err) => { trackError("fetch_briefs", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
-
-  // ═══ FORUM: fetch real forum posts from API ═══
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    let cancelled = false;
-    authFetch("/api/muse?type=forum")
-      .then(r => r.json())
-      .then(d => { if (!cancelled && d.posts) setLiveForum(d.posts.map(normalizeForumPost)); })
-      .catch((err) => { trackError("fetch_forum", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
-
-  // ═══ EVENTS: fetch real events from API ═══
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    let cancelled = false;
-    authFetch("/api/muse?type=events")
-      .then(r => r.json())
-      .then(d => { if (!cancelled && d.events) setLiveEvents(d.events.map(normalizeEvent)); })
-      .catch((err) => { trackError("fetch_events", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
-
-  // ═══ RSVPs: fetch user's event RSVPs ═══
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    let cancelled = false;
-    authFetch("/api/muse?type=rsvps")
-      .then(r => r.json())
-      .then(d => { if (!cancelled && d.rsvps) setRsvpdEvents(d.rsvps); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
-
-  // ═══ COMMUNITIES: fetch real communities from API ═══
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    let cancelled = false;
-    authFetch("/api/muse?type=communities")
-      .then(r => r.json())
-      .then(d => { if (!cancelled && d.communities) setLiveCommunities(d.communities.map(normalizeCommunity)); })
-      .catch((err) => { trackError("fetch_communities", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
-
-  // ═══ SESSIONS: fetch real sessions from API ═══
-  useEffect(() => {
-    if (!authUser?.profile?.id) return;
-    let cancelled = false;
-    authFetch("/api/muse?type=sessions")
-      .then(r => r.json())
-      .then(d => { if (!cancelled && d.sessions) setLiveSessions(d.sessions.map(normalizeSession)); })
-      .catch((err) => { trackError("fetch_sessions", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
 
   const saveProfileEdits = useCallback(async () => {
     setCurrentUser(prev => ({ ...prev, name: editName || prev.name, avatar: editAvatar || prev.avatar, type: editType || prev.type }));
