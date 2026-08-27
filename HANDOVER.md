@@ -1110,3 +1110,50 @@ For each screen, verify at 375px and 1440px viewport:
 - Stripe dual-account cleanup — needs Torreé's dashboard access
 
 **Be bold.** The schema is clean and correct. The code is wired. Your job is to click through everything and confirm it works visually. Report PASS/FAIL per section with screenshots for any FAIL.
+
+---
+
+## RECENT SESSIONS (2026-08-26 → 2026-08-27)
+
+### Session 46 (Claude) — a11y sweep + NSFW mis-tag fix
+| Fix | File | What changed |
+|-----|------|-------------|
+| 5 div-onClick → role/tabIndex/onKeyDown | `MenuModal.tsx` (hamburger items + Muse Pro banner), `SettingsScreen.tsx` (lock-screen push toggle), `NetworkScreen.tsx` (forum post title/body), `BtsScreen.tsx` (story rail) | Full keyboard semantics |
+| NSFW mis-tag fix | `types.ts` (PROFILES id 13, 15, 16) | JEREMY, MARISSA, MARSHAWNA `nsfw:true` → `nsfw:false` (verified against actual images) |
+
+### Session 47 (Claude) — Tutorial overlay accuracy overhaul
+| Fix | File | What changed |
+|-----|------|-------------|
+| Visible element lookup | `TutorialOverlay.tsx` | `querySelectorAll` + computed-style visibility check instead of `querySelector` |
+| Missing selector target | `BtsScreen.tsx` | Added `className="moments-feed"` to feed grid |
+| Forum/Events reachability | `page.tsx`, `NetworkScreen.tsx` | `startTutorial()` routes to correct screen+sub-tab before setting activeTutorial; `openTab` prop on NetworkScreen |
+| Support Chat unreachable | `MenuModal.tsx` | Added "Replay App Tours" button |
+
+### Session 48 (wyzmind) — Commissions rebrand + QuestPanel revamp + daily login + activity widgets
+| Fix | File | What changed |
+|-----|------|-------------|
+| Sparks → Commissions rename | `QuestPanel.tsx`, `ProfileScreen.tsx`, `SettingsScreen.tsx`, `MenuModal.tsx`, `MusesScreen.tsx`, `questEngine.ts` | All UI text: "Sparks" → "Commissions" |
+| QuestPanel full revamp | `QuestPanel.tsx`, `muse.css` | 2-col grid, hero stats (level/XP/streak), near-completion widget, slim filter tabs, compact cards |
+| Commissions on Profile tab | `ProfileScreen.tsx`, `page.tsx` | Inline streak + claimable count + "View Commissions" button |
+| Daily login popup | `page.tsx`, `muse.css` | Fires once/day, shows streak, CTA to Commissions |
+| Top 3 objectives widget | `MenuModal.tsx`, `page.tsx` | In hamburger menu + activity hub: streak, claimables, top 3 with progress bars, "View all →" |
+| Landing page fake data | `landing/page.tsx` | "X of 150 spots left" → "X spots remaining"; hardcoded "12 Cities/100% Verified" → "150 Founding members / 100% Verified at booking" |
+| Security fixes | `route.ts`, `checkout/route.ts`, `stripe/route.ts` | view-album invite bypass, respond-booking validation, Stripe cancel logging, GET 500, admin-brain columns, removed "spark" tier, rate limits |
+
+### Session 49 (wyzmind) — Commissions nav tab + tutorial spotlight fix + landing adjustments
+| Fix | File | What changed |
+|-----|------|-------------|
+| Commissions nav tab | `Nav.tsx`, `types.ts`, `page.tsx` | New "Commissions" tab (★ icon, pink gradient), full-screen route renders QuestPanel |
+| Tutorial spotlight cutout | `TutorialOverlay.tsx` | `clipPath` polygon cuts rectangular hole in dark overlay — highlighted element stays fully visible |
+| Landing button position | `landing.css` | `.muse-enter-prompt` margin-bottom 34vh → 25vh |
+| Landing sun position | `landing.css` | `.sunset-sun` bottom 31.5% → 41.5% |
+| Community member count | `CommunityScreen.tsx` | Member count moved above group name (gold, bold) |
+
+### Session 50 (wyzmind) — Referral tier fix + Network filter UX + empty states
+| Fix | File | What changed |
+|-----|------|-------------|
+| Referral tier display | `ProfileScreen.tsx` | Matches `getReferralTier`: Bronze (Exclusive badge), Silver (10% off), Gold (20% off), Platinum (20% off) |
+| Network filter expandables | `NetworkScreen.tsx` | Experience/Sort/Rate/Skills/Looking For → full-width color-coded button bars |
+| Empty state improvements | Multiple screens | Added helpful guidance text |
+
+**Build status:** All sessions clean — `tsc --noEmit` exit 0, `npm run build` success. Auto-deploys on Vercel push to `main`.
