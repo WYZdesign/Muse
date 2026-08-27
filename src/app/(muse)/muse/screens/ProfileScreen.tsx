@@ -234,7 +234,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div style={{ display: "flex", gap: 8 }}>
             <button className="btn btn-gold" style={{ flex: 1, fontSize: 12, padding: "10px 0" }} onClick={async () => { try { const res = await apiFetch("/api/muse/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "generate" }) }); const j = await res.json(); if (j.code) { const link = "https://muse.wyzdesign.com/muse?ref=" + j.code; try { navigator.clipboard?.writeText(link); showToast("Link copied: " + link); } catch { showToast("Your code: " + j.code); } } } catch { showToast("Try again later"); } }}>Copy Referral Link</button>
           </div>
-          <div style={{ marginTop: 8, fontSize: 11, color: "var(--muted)", lineHeight: 1.5 }}>Bronze: 5 free swipes · Silver: 1mo Spark free · Gold: 20% fee discount · Platinum: Pro tier</div>
+          <div style={{ marginTop: 8, fontSize: 11, color: "var(--muted)", lineHeight: 1.5 }}>Bronze: 5 free swipes · Silver: 1mo Pro free · Gold: 20% fee discount · Platinum: Pro tier</div>
         </div>
         <div className="section">
           <div className="section-title">Self Discovery</div>

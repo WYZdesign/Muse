@@ -1487,9 +1487,37 @@ ACTIONS["admin-brain"] = async ({ sb, profile, rest, ip }) => {
       const pending = (checkins || []).filter((c: any) => c.status === "pending");
       const cancelled = (checkins || []).filter((c: any) => c.status === "cancelled");
       result = { answer: `Safety check-ins: ${(checkins || []).length} total. Pending: ${pending.length}. Cancelled: ${cancelled.length}.`, data: { checkins: checkins || [], pendingCount: pending.length, cancelledCount: cancelled.length } };
+    } else if (q.includes("user") && (q.includes("detail") || q.includes("profile") || q.includes("info") || q.includes("lookup"))) {
+      const searchTerm = q.replace(/.*(?:detail|profile|info|lookup)\s+(?:user\s*)?/i, "").trim();
+      if (!searchTerm) return NextResponse.json({ error: "Provide a name or email to look up", data: {} });
+      const isEmail = searchTerm.includes("@");
+      const { data: users } = await sb.from("muse_profiles").select("id, auth_id, name, email, type, avatar, bio, loc, looking, styles, photos, nsfw, tier, pro_expires_at, created_at, profile_completion_pct, suspended, stats, referrals, age_verified").ilike(isEmail ? "email" : "name", `%${searchTerm}%`).limit(5);
+      if (!users || users.length === 0) return NextResponse.json({ answer: `No user found matching "${searchTerm}".`, data: {} });
+      const user = users[0];
+      const [activityRes, matchesRes, reportsRes, strikesRes, bookingsRes] = await Promise.all([
+        sb.from("muse_activity_log").select("id, type, target_id, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
+        sb.from("muse_matches").select("id, created_at").or(`user_a.eq.${user.id},user_b.eq.${user.id}`).order("created_at", { ascending: false }).limit(10),
+        sb.from("muse_reports").select("id, reason, target_type, status, created_at").eq("reporter_id", user.id).order("created_at", { ascending: false }).limit(10),
+        sb.from("muse_strikes").select("id, reason, severity, suspension_ends_at, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
+        sb.from("muse_booking_payments").select("id, amount, status, created_at").or(`payer_id.eq.${user.id},payee_id.eq.${user.id}`).order("created_at", { ascending: false }).limit(10),
+      ]);
+      const { count: reportsAgainst } = await sb.from("muse_reports").select("*", { count: "exact", head: true }).eq("target_id", user.id);
+      const activeStrikes = (strikesRes.data || []).filter((s: any) => s.severity === "suspension" && (!s.suspension_ends_at || new Date(s.suspension_ends_at) > new Date()));
+      const answer = [
+        `👤 ${user.name} (${user.email}) — ${user.type || "N/A"} · ${user.tier || "free"} tier`,
+        user.suspended ? "⚠️ SUSPENDED" : "Active",
+        `Joined: ${new Date(user.created_at).toLocaleDateString()} · Profile: ${user.profile_completion_pct || 0}%`,
+        `Bio: ${(user.bio || "none").slice(0, 120)} · Location: ${user.loc || "unset"}`,
+        `Looking: ${(user.looking || []).join(", ") || "unset"} · NSFW: ${user.nsfw ? "yes" : "no"}`,
+        `Stats: ${JSON.stringify(user.stats || {})}`,
+        `Activity: ${(activityRes.data || []).length} recent events · Matches: ${(matchesRes.data || []).length} · Reports filed: ${(reportsRes.data || []).length} · Reports against: ${reportsAgainst || 0}`,
+        `Strikes: ${(strikesRes.data || []).length} total, ${activeStrikes.length} active suspensions`,
+        `Payments: ${(bookingsRes.data || []).length} recent`,
+      ].join("\n");
+      result = { answer, data: { profile: user, activity: activityRes.data || [], matches: matchesRes.data || [], reportsFiled: reportsRes.data || [], reportsAgainst: reportsAgainst || 0, strikes: strikesRes.data || [], activeStrikes: activeStrikes.length, payments: bookingsRes.data || [] } };
     } else if (q.includes("user") && (q.includes("find") || q.includes("search") || q.includes("name"))) {
       const searchTerm = q.replace(/.*(?:find|search|name)\s+(?:user\s*)?/i, "").trim();
-      const { data: users } = await sb.from("muse_profiles").select("id, name, email, type, created_at, profile_completion_pct").ilike("name", `%${searchTerm}%`).limit(10);
+      const { data: users } = await sb.from("muse_profiles").select("id, name, email, type, avatar, tier, suspended, created_at, profile_completion_pct").ilike("name", `%${searchTerm}%`).limit(10);
       result = { answer: `Found ${(users || []).length} users matching "${searchTerm}".`, data: { users: users || [] } };
     } else if (q.includes("prompt") && (q.includes("response") || q.includes("answer"))) {
       const { count } = await sb.from("muse_prompt_responses").select("*", { count: "exact", head: true });
