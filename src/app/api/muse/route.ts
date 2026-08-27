@@ -2109,6 +2109,71 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ views: (me as any)?.views_count || 0, likesReceived: likesReceived || 0 });
     }
 
+    if (type === "my-analytics" && user) {
+      // Profile views over time (last 30 days from activity log)
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: viewsLog } = await sb.from("muse_activity_log")
+        .select("created_at")
+        .eq("user_id", profileId)
+        .eq("type", "profile_view")
+        .gte("created_at", thirtyDaysAgo);
+
+      // Matches received
+      const { count: matchesReceived } = await sb.from("muse_matches")
+        .select("*", { count: "exact", head: true })
+        .eq("target_id", profileId);
+
+      // Messages sent
+      const { count: messagesSent } = await sb.from("muse_messages")
+        .select("*", { count: "exact", head: true })
+        .eq("from_id", profileId);
+
+      // Brief applications
+      const { count: briefApplications } = await sb.from("muse_brief_applications")
+        .select("*", { count: "exact", head: true })
+        .eq("applicant_id", profileId);
+
+      // Bookings as host
+      const { count: bookingsAsHost } = await sb.from("muse_bookings")
+        .select("*", { count: "exact", head: true })
+        .eq("host_id", profileId);
+
+      // Bookings as booker
+      const { count: bookingsAsBooker } = await sb.from("muse_bookings")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", profileId);
+
+      // Earnings (completed bookings as host)
+      const { data: completedBookings } = await sb.from("muse_bookings")
+        .select("id")
+        .eq("host_id", profileId)
+        .eq("status", "completed");
+      const bookingIds = (completedBookings || []).map(b => b.id);
+      let totalEarnings = 0;
+      if (bookingIds.length) {
+        const { data: payments } = await sb.from("muse_booking_payments")
+          .select("amount_cents, status")
+          .in("booking_id", bookingIds)
+          .eq("status", "succeeded");
+        totalEarnings = (payments || []).reduce((sum, p) => sum + (p.amount_cents || 0), 0);
+      }
+
+      // Profile views (current total)
+      const { data: me } = await sb.from("muse_profiles").select("views_count").eq("id", profileId).maybeSingle();
+
+      return NextResponse.json({
+        views: (me as any)?.views_count || 0,
+        viewsLast30Days: viewsLog?.length || 0,
+        matchesReceived: matchesReceived || 0,
+        messagesSent: messagesSent || 0,
+        briefApplications: briefApplications || 0,
+        bookingsAsHost: bookingsAsHost || 0,
+        bookingsAsBooker: bookingsAsBooker || 0,
+        totalEarningsCents: totalEarnings,
+        totalEarningsUsd: (totalEarnings / 100).toFixed(2),
+      });
+    }
+
     if (type === "notifications" && user) {
       const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ notifications: [] });
