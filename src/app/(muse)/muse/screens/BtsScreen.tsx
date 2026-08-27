@@ -406,6 +406,7 @@ export const BtsScreen = memo(function BtsScreen({
 
         {/* Feed */}
         <div
+          className="moments-feed"
           style={{
             display: "flex",
             flexWrap: "wrap",

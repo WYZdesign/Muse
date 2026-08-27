@@ -538,7 +538,8 @@ export const MenuModal = memo(function MenuModal({
                     <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>{faq.a}</div>
                   </div>
                 ))}
-                <div style={{ marginTop: 12 }}>
+                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { setShowHamburger(false); setSupportOpen?.(true); }}>Replay App Tours</button>
                   <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => window.open("mailto:" + SUPPORT_EMAIL + "?subject=Muse%20Support%20Request")}>Email Support</button>
                 </div>
                 <button className="btn btn-gold" style={{ width: "100%", marginTop: 16, fontSize: 12, padding: "12px 0" }} onClick={doLogoutFull}>Log Out</button>

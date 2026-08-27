@@ -206,6 +206,7 @@ function MusePage() {
     }
   }, [currentUser?.type]);
   const [netTab, setNetTab] = useState<"pros"|"forum">("pros");
+  const [networkOpenTab, setNetworkOpenTab] = useState<"pros"|"forum"|undefined>(undefined);
   const [forumSort, setForumSort] = useState<"hot"|"new"|"top">("hot");
   const [forumCategory, setForumCategory] = useState<string>("all");
   const [newPostTitle, setNewPostTitle] = useState("");
@@ -1164,6 +1165,20 @@ function MusePage() {
 
   const flash = useCallback((color: string) => { setScreenFlash(color); setTimeout(() => setScreenFlash(null), 300); }, []);
   const showScreen = useCallback((s: typeof screen) => { setScreen(s); trackEvent("screen_view", { screen: s }); try { window.scrollTo({ top: 0, behavior: "instant" }); } catch {} }, []);
+
+  // A few tutorials (forum, events) describe content that only exists
+  // behind a sub-tab of another screen rather than a top-level screen of
+  // its own — starting them from the Support Chat "Tours" menu while the
+  // user is elsewhere in the app would otherwise highlight nothing (or the
+  // wrong card entirely). Route to the right screen + sub-tab first so the
+  // module the tutorial describes is guaranteed to be on screen.
+  const startTutorial = useCallback((key: string) => {
+    if (key === "forum") { setScreen("network"); setNetworkOpenTab("forum"); }
+    else if (key === "events") { setScreen("community"); setCommTab("events"); }
+    else if (key === "community") { setScreen("community"); setCommTab("groups"); }
+    else if (TUTORIALS[key]) { setScreen(key as typeof screen); }
+    setActiveTutorial(key);
+  }, []);
 
   const matchActions = useMemo(() => ({
     setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping,
@@ -2247,7 +2262,7 @@ function MusePage() {
             </ScreenErrorBoundary>
 
             <ScreenErrorBoundary name="Network">
-            <NetworkScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} setLiveForum={setLiveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} setShowReport={setShowReport} setReportTarget={setReportTarget} liveProfessionals={liveProfessionals} />
+            <NetworkScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} setLiveForum={setLiveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} setShowReport={setShowReport} setReportTarget={setReportTarget} liveProfessionals={liveProfessionals} openTab={networkOpenTab} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Portfolio">
             <PortfolioScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} />
@@ -2861,7 +2876,7 @@ function MusePage() {
           <span style={{fontWeight:400}}>({Math.max(0,Math.ceil((boostEnd-Date.now())/60000))}m)</span>
         </div>
       )}
-      <SupportChat open={supportOpen} onClose={()=>setSupportOpen(false)} onStartTutorial={(key) => setActiveTutorial(key)} />
+      <SupportChat open={supportOpen} onClose={()=>setSupportOpen(false)} onStartTutorial={startTutorial} />
       {/* ══════ DAILY LOGIN POPUP ══════ */}
       {showDailyLogin && (
         <div className="daily-login-overlay" role="presentation" onClick={() => setShowDailyLogin(false)}>

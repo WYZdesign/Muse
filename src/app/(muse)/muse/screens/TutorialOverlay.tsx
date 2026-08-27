@@ -11,12 +11,33 @@ function useElementRect(step: TutorialStep): Rect | null {
   useEffect(() => {
     const selector = step.selector;
     if (!selector) { setRect(null); return; }
-    let el: Element | null = null;
-    try { el = document.querySelector(selector); } catch { el = null; }
-    if (!el) { setRect(null); return; }
+
+    // Most screens stay permanently mounted in the DOM and are only hidden
+    // via a CSS ".active" toggle (display:none for everything else), while a
+    // few (Settings, Subscription) mount/unmount outright instead. Either
+    // way, more than one element in the document can match the same
+    // tutorial selector at once — one hidden, one visible. A bare
+    // querySelector() just grabs whichever comes first in DOM order, which
+    // is frequently the wrong (hidden) one and produces a badly-placed or
+    // fallback-positioned highlight. Walk every match and use the first one
+    // that is actually rendered on screen right now.
+    const findVisible = (): Element | null => {
+      let all: NodeListOf<Element>;
+      try { all = document.querySelectorAll(selector); } catch { return null; }
+      for (const candidate of Array.from(all)) {
+        const r = candidate.getBoundingClientRect();
+        if (r.width >= 4 && r.height >= 4) {
+          const style = window.getComputedStyle(candidate);
+          if (style.display !== "none" && style.visibility !== "hidden") return candidate;
+        }
+      }
+      return null;
+    };
 
     const measure = () => {
-      const r = el!.getBoundingClientRect();
+      const el = findVisible();
+      if (!el) { setRect(null); return; }
+      const r = el.getBoundingClientRect();
       if (r.width < 4 || r.height < 4) { setRect(null); return; }
       setRect({ left: r.left, top: r.top, width: r.width, height: r.height });
     };

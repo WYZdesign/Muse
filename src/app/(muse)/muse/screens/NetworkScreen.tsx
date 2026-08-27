@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, memo } from "react";
+import React, { useState, useMemo, useEffect, memo } from "react";
 import { createPortal } from "react-dom";
 import {
   FiArrowLeft,
@@ -50,6 +50,11 @@ export interface NetworkScreenProps {
   setShowReport?: (v: boolean) => void;
   setReportTarget?: (t: any) => void;
   liveProfessionals: any[] | null;
+  /** One-shot request to switch the internal pros/forum tab (e.g. so the
+   *  Forum tutorial can be started from anywhere and land on the right
+   *  tab). Not a controlled value — the user's own taps on the tab pills
+   *  still just use local state after this fires once. */
+  openTab?: "pros" | "forum";
 }
 
 const SKILL_COLORS = [
@@ -104,8 +109,10 @@ export const NetworkScreen = memo(function NetworkScreen({
   setShowReport = () => {},
   setReportTarget = () => {},
   liveProfessionals,
+  openTab,
 }: NetworkScreenProps) {
   const [netTab, setNetTab] = useState<"pros" | "forum">("pros");
+  useEffect(() => { if (openTab) setNetTab(openTab); }, [openTab]);
   const [proDetail, setProDetail] = useState<any | null>(null);
   const [connectedIds, setConnectedIds] = useState<Set<number>>(new Set());
   const [connectLoading, setConnectLoading] = useState<number | null>(null);
