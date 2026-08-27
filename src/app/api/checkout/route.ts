@@ -8,7 +8,6 @@ export const runtime = "nodejs";
 const PRICE_MAP: Record<string, string> = {
   muse_pro: "price_muse_pro_monthly",
   // Legacy tiers kept for backward-compat redirects
-  spark: "price_muse_pro_monthly",
   muse: "price_muse_pro_monthly",
   sovereign: "price_muse_pro_monthly",
 };

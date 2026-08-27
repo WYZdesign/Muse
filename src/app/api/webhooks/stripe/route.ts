@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
         const userId = session.client_reference_id || session.metadata?.userId;
         // Only ever assign a tier we actually know — never trust arbitrary
         // metadata.plan strings (a stray value would land an unknown tier).
-        const KNOWN_TIERS = new Set(["free", "muse_pro", "spark", "muse", "sovereign"]);
+        const KNOWN_TIERS = new Set(["free", "muse_pro", "muse", "sovereign"]);
         const plan = session.metadata?.plan && KNOWN_TIERS.has(session.metadata.plan) ? session.metadata.plan : "muse_pro";
         if (userId) {
           await sb.from("muse_profiles").update({ tier: plan }).eq("auth_id", userId);

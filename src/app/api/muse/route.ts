@@ -921,7 +921,7 @@ ACTIONS["list-album-access"] = async ({ sb, profile, rest }) => {
   return NextResponse.json({ access: data || [] });
 };
 
-ACTIONS["view-album"] = async ({ sb, rest, ip }) => {
+ACTIONS["view-album"] = async ({ sb, profile, rest, ip }) => {
   if (!await checkRate(ip, "view-album", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { albumId } = rest;
   if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
@@ -929,7 +929,7 @@ ACTIONS["view-album"] = async ({ sb, rest, ip }) => {
   if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (album.access_level === "private") return NextResponse.json({ error: "Album is private" }, { status: 403 });
   if (album.access_level === "invite") {
-    const { data: access } = await sb.from("muse_album_access").select("id").eq("album_id", albumId).limit(1);
+    const { data: access } = await sb.from("muse_album_access").select("id").eq("album_id", albumId).eq("viewer_profile_id", profile.id).limit(1);
     if (!access || access.length === 0) return NextResponse.json({ error: "Album is invite-only" }, { status: 403 });
   }
   await sb.from("muse_albums").update({ view_count: (album.view_count || 0) + 1 }).eq("id", albumId);
@@ -1126,9 +1126,11 @@ ACTIONS["admin-resolve-appeal"] = async ({ sb, profile, rest }) => {
 
 // ═══ BOOKING MANAGEMENT ═══
 
-ACTIONS["respond-booking"] = async ({ sb, profile, rest }) => {
+ACTIONS["respond-booking"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "respond-booking", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { bookingId, response } = rest;
   if (!bookingId || !response) return NextResponse.json({ error: "bookingId and response required" }, { status: 400 });
+  if (!["accept", "decline", "reschedule"].includes(response)) return NextResponse.json({ error: "response must be accept, decline, or reschedule" }, { status: 400 });
   const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
   if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (String(booking.host_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -1163,7 +1165,8 @@ ACTIONS["respond-booking"] = async ({ sb, profile, rest }) => {
   return NextResponse.json({ success: true });
 };
 
-ACTIONS["cancel-booking"] = async ({ sb, profile, rest }) => {
+ACTIONS["cancel-booking"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "cancel-booking", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { bookingId, reason } = rest;
   if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
   const { data: booking } = await sb.from("muse_bookings").select("*").eq("id", bookingId).maybeSingle();
@@ -1178,7 +1181,10 @@ ACTIONS["cancel-booking"] = async ({ sb, profile, rest }) => {
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
       await stripe.paymentIntents.cancel(cancelPayment.stripe_payment_intent);
       await sb.from("muse_booking_payments").update({ status: "cancelled" }).eq("id", cancelPayment.id);
-    } catch (e: unknown) { /* non-fatal */ }
+    } catch (e: unknown) {
+      console.error("[cancel-booking] Stripe paymentIntent cancel failed:", e instanceof Error ? e.message : e);
+      // Still proceed — booking is cancelled either way, but log for monitoring
+    }
   }
 
   const { error } = await sb.from("muse_bookings").update({
@@ -1496,7 +1502,7 @@ ACTIONS["admin-brain"] = async ({ sb, profile, rest, ip }) => {
       const user = users[0];
       const [activityRes, matchesRes, reportsRes, strikesRes, bookingsRes] = await Promise.all([
         sb.from("muse_activity_log").select("id, type, target_id, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
-        sb.from("muse_matches").select("id, created_at").or(`user_a.eq.${user.id},user_b.eq.${user.id}`).order("created_at", { ascending: false }).limit(10),
+        sb.from("muse_matches").select("id, created_at").or(`user_id.eq.${user.id},target_id.eq.${user.id}`).order("created_at", { ascending: false }).limit(10),
         sb.from("muse_reports").select("id, reason, target_type, status, created_at").eq("reporter_id", user.id).order("created_at", { ascending: false }).limit(10),
         sb.from("muse_strikes").select("id, reason, severity, suspension_ends_at, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
         sb.from("muse_booking_payments").select("id, amount, status, created_at").or(`payer_id.eq.${user.id},payee_id.eq.${user.id}`).order("created_at", { ascending: false }).limit(10),
@@ -2212,7 +2218,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ error: "Unknown type" }, { status: 400 });
   } catch (e: unknown) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    console.error("[GET /api/muse] Unhandled error:", e instanceof Error ? e.message : e);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
