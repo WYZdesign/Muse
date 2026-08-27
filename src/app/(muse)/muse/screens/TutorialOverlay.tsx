@@ -12,15 +12,6 @@ function useElementRect(step: TutorialStep): Rect | null {
     const selector = step.selector;
     if (!selector) { setRect(null); return; }
 
-    // Most screens stay permanently mounted in the DOM and are only hidden
-    // via a CSS ".active" toggle (display:none for everything else), while a
-    // few (Settings, Subscription) mount/unmount outright instead. Either
-    // way, more than one element in the document can match the same
-    // tutorial selector at once — one hidden, one visible. A bare
-    // querySelector() just grabs whichever comes first in DOM order, which
-    // is frequently the wrong (hidden) one and produces a badly-placed or
-    // fallback-positioned highlight. Walk every match and use the first one
-    // that is actually rendered on screen right now.
     const findVisible = (): Element | null => {
       let all: NodeListOf<Element>;
       try { all = document.querySelectorAll(selector); } catch { return null; }
@@ -122,17 +113,30 @@ export const TutorialOverlay = memo(function TutorialOverlay({
 
   const highlightRadius = target.anchor === "fab" ? "50%" : Math.min(22, target.width / 3);
 
+  // Create a cutout mask for the spotlight - transparent hole where the element is
+  const maskStyle: React.CSSProperties = {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.88)",
+    maskImage: `radial-gradient(circle at ${target.left + target.width/2}px ${target.top + target.height/2}px, transparent ${Math.max(target.width, target.height)/2}px, rgba(0,0,0,0.88) ${Math.max(target.width, target.height)/2 + 8}px)`,
+    WebkitMaskImage: `radial-gradient(circle at ${target.left + target.width/2}px ${target.top + target.height/2}px, transparent ${Math.max(target.width, target.height)/2}px, rgba(0,0,0,0.88) ${Math.max(target.width, target.height)/2 + 8}px)`,
+    pointerEvents: "none",
+    transition: "all .3s ease",
+    zIndex: 9999,
+  };
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, pointerEvents: "auto" }}>
-      <div role="presentation" aria-hidden="true" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.88)" }} onClick={next} />
+      <div style={maskStyle} onClick={next} />
 
       <div style={{
         position: "absolute", left: target.left, top: target.top, width: target.width, height: target.height,
         borderRadius: highlightRadius,
-        boxShadow: "0 0 0 9999px rgba(0,0,0,0.75)",
         border: "2px solid var(--gold, #FFD700)",
+        boxShadow: "0 0 0 4px rgba(0,0,0,0.4), 0 0 30px rgba(255,215,0,0.3)",
         pointerEvents: "none",
         transition: "all .3s ease",
+        zIndex: 10000,
       }} />
 
       <div style={tooltipStyle} onClick={(e) => e.stopPropagation()}>

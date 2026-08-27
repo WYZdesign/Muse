@@ -212,6 +212,35 @@ export const MenuModal = memo(function MenuModal({
                 </div>
               );
             })}
+            {topQuests.length > 0 && (
+              <div style={{ marginTop: 16, padding: 16, borderRadius: 16, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.15)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  {loginStreak > 0 && <div style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700 }}>🔥 {loginStreak} day streak</div>}
+                  {questClaimables > 0 && <div style={{ fontSize: 11, color: "#FF69B4", fontWeight: 600, padding: "3px 10px", borderRadius: 99, background: "rgba(255,105,180,0.1)", border: "1px solid rgba(255,105,180,0.2)" }}>{questClaimables} reward{questClaimables > 1 ? "s" : ""} ready</div>}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--text2)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 10 }}>Your Commissions</div>
+                {topQuests.map(q => {
+                  const pct = Math.round((q.progress / q.target) * 100);
+                  return (
+                    <div key={q.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                      <span style={{ fontSize: 16, flexShrink: 0 }}>{q.icon}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{q.title}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+                          <div style={{ flex: 1, height: 5, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                            <div style={{ height: "100%", borderRadius: 3, width: `${pct}%`, background: q.color, transition: "width .4s" }} />
+                          </div>
+                          <span style={{ fontSize: 10, fontWeight: 800, color: q.color, minWidth: 24, textAlign: "right" }}>{pct}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div style={{ marginTop: 10, textAlign: "right" }}>
+                  <span style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, cursor: "pointer" }} onClick={() => { setShowHamburger(false); setShowQuests?.(true); }}>View all →</span>
+                </div>
+              </div>
+            )}
             <div className="muse-pro-banner" onClick={() => { setShowHamburger(false); showScreen("subscription"); }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); showScreen("subscription"); } }} aria-label="Muse Pro">
               <div className="muse-pro-banner-shine" />
               <div className="muse-pro-banner-content">

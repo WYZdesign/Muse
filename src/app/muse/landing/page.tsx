@@ -429,7 +429,7 @@ export default function MuseLandingPage() {
           <div className="muse-orb lavender" data-depth="2.4" />
         </div>
         <div className="muse-hero-inner">
-          <div className="muse-hero-eyebrow" data-depth="-0.6"><span className="dot" /> <span className="muse-hero-eyebrow-text">Founding members get lifetime Pro · {Math.max(0, 150 - signupCount)} of 150 spots left</span></div>
+          <div className="muse-hero-eyebrow" data-depth="-0.6"><span className="dot" /> <span className="muse-hero-eyebrow-text">Founding members get lifetime Pro — {Math.max(0, 150 - signupCount)} spots remaining</span></div>
           <h1 className="muse-hero-title">
             <span className="line" data-depth="-0.4"><SplitText text="Where Creatives" delay={0.15} /></span>
             <span className="line" data-depth="-0.4"><SplitText text="Find Their" delay={0.38} /></span>
@@ -466,9 +466,9 @@ export default function MuseLandingPage() {
       <section className="muse-stats">
         <Reveal>
           <div className="muse-stats-grid">
-            <div className="muse-stat"><span className="num"><CountUp end={signupCount} />+</span><span className="lbl">Creatives</span></div>
-            <div className="muse-stat"><span className="num"><CountUp end={12} /></span><span className="lbl">Cities</span></div>
-            <div className="muse-stat"><span className="num"><CountUp end={100} />%</span><span className="lbl">Verified</span></div>
+            <div className="muse-stat"><span className="num"><CountUp end={signupCount} />+</span><span className="lbl">Creatives on the waitlist</span></div>
+            <div className="muse-stat"><span className="num">150</span><span className="lbl">Founding members</span></div>
+            <div className="muse-stat"><span className="num">100%</span><span className="lbl">Verified at booking</span></div>
           </div>
         </Reveal>
       </section>
@@ -611,7 +611,7 @@ export default function MuseLandingPage() {
           <Reveal>
             <div className="muse-cta-card">
               <h2>Ready to Find Your <span className="accent" style={{ color: "var(--gold)", fontStyle: "italic" }}>Muse?</span></h2>
-              <p>Join {signupCount.toLocaleString()}+ creatives already on the waitlist. Founding member spots are filling fast.</p>
+              <p>Join {signupCount.toLocaleString()}+ creatives on the waitlist. Founding member spots available.</p>
               <form onSubmit={handleSubmit} className="muse-form">
                 <div className="muse-form-row">
                   <div className="muse-form-group">
