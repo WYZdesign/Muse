@@ -2,6 +2,7 @@
 
 import "./muse.css";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import React from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
@@ -542,6 +543,18 @@ function MusePage() {
       if (d.chatImages) setChatImages(d.chatImages);
       if (d.chatTarget) setChatTarget(d.chatTarget);
       const VALID_SCREENS = ["onboard","discover","connections","matches","chat","briefs","community","sessions","network","portfolio","moments","profile","settings","subscription","codex"];
+
+  // Check for OAuth callback on mount
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("connected");
+    if (connected) {
+      setObConnectedSocials(prev => ({ ...prev, [connected]: true }));
+      showToast(`${connected.charAt(0).toUpperCase() + connected.slice(1)} connected!`);
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [showToast]);
       if (d.screen && VALID_SCREENS.includes(d.screen)) {
         // Chat requires a chatTarget to render (screen-el guards on chatTarget);
         // chatTarget is now persisted, but fallback to matches if somehow missing.
@@ -1456,7 +1469,19 @@ function MusePage() {
   const openChat = useCallback((match: Match) => { setChatTarget(match); setScreen("chat"); }, []);
 
   const sanitizeInput = (text: string) => text.replace(/[<>]/g, '').slice(0, 500);
-  const toggleSocial = (key: string) => { setObConnectedSocials(prev => { const nv = !prev[key]; showToast(nv ? "Connected!" : "Disconnected"); return {...prev, [key]: nv}; }); };
+  const toggleSocial = useCallback((key: string) => {
+    const currentlyConnected = obConnectedSocials[key];
+    if (currentlyConnected) {
+      // Disconnect
+      apiFetch("/api/muse/social", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "disconnect", provider: key }) }).then(() => {
+        setObConnectedSocials(prev => ({ ...prev, [key]: false }));
+        showToast(`${key.charAt(0).toUpperCase() + key.slice(1)} disconnected`);
+      }).catch(() => showToast("Failed to disconnect"));
+    } else {
+      // Connect - redirect to OAuth
+      window.location.href = `/api/muse/social?provider=${key}&action=auth`;
+    }
+  }, [apiFetch, obConnectedSocials, showToast]);
   const sendMsg = useCallback(async (overrideText?: string) => {
     const inputText = overrideText !== undefined ? overrideText : chatInput;
     if (!inputText.trim() || !chatTarget) return;
