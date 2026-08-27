@@ -160,19 +160,19 @@ export const FeedScreen = memo(function FeedScreen({
       // FEED
       setFeedPosts(prev => [{ id: uid(), author: currentUser.name, avatar: currentUser.avatar, type, text: "", likes: 0, comments: 0, shares: 0, time: "Just now", img: url, media: [url], liked: false, saved: false, reactions: {} }, ...prev]);
       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed", text: "", media: [url], userId: currentUser.id }) }).catch(() => {
-        showToast("Went to Moments, but Feed sync failed");
+        showToast("Went to BTS, but Feed sync failed");
       });
-      // Moments
+      // BTS
       const momentId = uid();
       setStories(prev => [{ id: momentId, author: currentUser.name, avatar: currentUser.avatar, type, text: "", img: url, media: [url], time: "Just now" }, ...prev]);
       try {
         const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-moment", text: "", img: url }) });
         if (!r.ok) throw new Error("failed");
-        showToast("Shared to Feed & Moments ✨");
+        showToast("Shared to Feed & BTS ✨");
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["create_moment", "post_bts"] }) }).catch(() => {});
       } catch {
         setStories(prev => prev.filter(s => s.id !== momentId));
-        showToast("Went to your Feed, but Moments sync failed");
+        showToast("Went to your Feed, but BTS sync failed");
       }
       closeCamera();
     } catch {
@@ -317,7 +317,7 @@ export const FeedScreen = memo(function FeedScreen({
                 style={{ flex: 1, padding: "10px 0", fontSize: 13, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap" }}
                 onClick={() => openCamera("photo")}
               >
-                📷 Moments
+                📷 BTS
               </button>
             </div>
             {showEmojiPicker && (

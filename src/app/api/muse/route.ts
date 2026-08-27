@@ -1881,6 +1881,22 @@ ACTIONS["admin-resolve-incident"] = async ({ sb, profile, rest }) => {
   return NextResponse.json({ success: true });
 };
 
+ACTIONS["get-notifications"] = async ({ sb, profile, rest }) => {
+  const { limit = 50, offset = 0, unreadOnly = false, type } = rest;
+  let query = sb.from("muse_notifications").select("*").eq("user_id", profile.id).order("created_at", { ascending: false }).range(offset, offset + limit - 1);
+  if (unreadOnly) query = query.eq("read", false);
+  if (type) query = query.eq("type", type);
+  const { data, error } = await query;
+  if (error) return safeServerError(error, "notifications fetch");
+  return NextResponse.json({ success: true, notifications: data || [] });
+};
+
+ACTIONS["mark-all-notifications-read"] = async ({ sb, profile }) => {
+  const { error } = await sb.from("muse_notifications").update({ read: true }).eq("user_id", profile.id).eq("read", false);
+  if (error) return safeServerError(error, "mark all read");
+  return NextResponse.json({ success: true });
+};
+
 export async function GET(req: NextRequest) {
   try {
     const sb = getServiceClient();

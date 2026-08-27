@@ -579,11 +579,59 @@ export const MenuModal = memo(function MenuModal({
                 {(() => {
                   const [hubTab, setHubTab] = React.useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
                   const [myReports, setMyReports] = React.useState<any[] | null>(null);
+                  const [notifications, setNotifications] = React.useState<any[]>([]);
+                  const [notifLoading, setNotifLoading] = React.useState(false);
+                  const [notifFilter, setNotifFilter] = React.useState<"all" | "unread" | "match" | "message" | "booking" | "quest" | "brief" | "community">("all");
+                  const [notifOffset, setNotifOffset] = React.useState(0);
+                  const [notifHasMore, setNotifHasMore] = React.useState(true);
+                  
                   React.useEffect(() => {
                     if (hubTab === "reports" && myReports === null && authFetch) {
                       authFetch("/api/muse?type=my-reports").then(r => r.json()).then(d => setMyReports(d.reports || [])).catch(() => setMyReports([]));
                     }
                   }, [hubTab]);
+                  
+                  const loadNotifications = async (append = false) => {
+                    if (!authFetch || notifLoading) return;
+                    setNotifLoading(true);
+                    try {
+                      const res = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-notifications", limit: 30, offset: append ? notifOffset : 0, unreadOnly: notifFilter === "unread", type: notifFilter === "all" ? undefined : notifFilter }) });
+                      const data = await res.json();
+                      if (data.success) {
+                        const newNotifs = data.notifications || [];
+                        setNotifications(prev => append ? [...prev, ...newNotifs] : newNotifs);
+                        setNotifHasMore(newNotifs.length >= 30);
+                        if (!append) setNotifOffset(newNotifs.length);
+                        else setNotifOffset(prev => prev + newNotifs.length);
+                      }
+                    } catch {}
+                    setNotifLoading(false);
+                  };
+                  
+                  React.useEffect(() => {
+                    if (hubTab === "notif") {
+                      setNotifications([]);
+                      setNotifOffset(0);
+                      loadNotifications();
+                    }
+                  }, [hubTab, notifFilter]);
+                  
+                  React.useEffect(() => {
+                    if (hubTab === "reports" && myReports === null && authFetch) {
+                      authFetch("/api/muse?type=my-reports").then(r => r.json()).then(d => setMyReports(d.reports || [])).catch(() => setMyReports([]));
+                    }
+                  }, [hubTab]);
+                  
+                  const markAllRead = async () => {
+                    if (!authFetch) return;
+                    try {
+                      await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "mark-all-notifications-read" }) });
+                      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                    } catch {}
+                  };
+                  
+                  const loadMoreNotifications = () => loadNotifications(true);
+                  
                   const tabBtn = (key: any, label: string) => (
                     <div key={key} className={"conn-tab-sub" + (hubTab === key ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setHubTab(key); } }} onClick={() => setHubTab(key)} style={{ cursor: "pointer", fontSize: 11, padding: "5px 10px", flexShrink: 0 }}>{label}</div>
                   );
@@ -591,55 +639,41 @@ export const MenuModal = memo(function MenuModal({
                     <>
                       <div style={{ textAlign: "center", fontSize: 13, color: "var(--gold)", fontWeight: 700, margin: "2px 0 10px" }}>Your Activity</div>
                       <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
-                        {tabBtn("notif", "Notifications")}
+{tabBtn("notif", "Notifications")}
                         {tabBtn("applied", `Applied (${appliedBriefs.length})`)}
                         {tabBtn("saved", `Saved (${savedBriefs.length})`)}
                         {tabBtn("bookings", `Bookings (${(bookingsForHub?.asBooker || []).length + (bookingsForHub?.asHost || []).length})`)}
                         {tabBtn("reports", "Reports")}
                       </div>
-                      {hubTab === "notif" && (activityFeed.length === 0
-                        ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No activity yet. Start swiping!</div>
-                        : <>
-                            {(loginStreak > 0 || topQuests.length > 0) && (
-                              <div style={{ padding: "12px 14px", marginBottom: 10, borderRadius: 12, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)" }}>
-                                {loginStreak > 0 && <div style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700, marginBottom: 8 }}>🔥 {loginStreak} day streak</div>}
-                                {topQuests.length > 0 && (
-                                  <div>
-                                    <div style={{ fontSize: 11, color: "var(--text2)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 8 }}>Top objectives</div>
-                                    {topQuests.map(q => {
-                                      const pct = Math.round((q.progress / q.target) * 100);
-                                      return (
-                                        <div key={q.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                                          <span style={{ fontSize: 16, flexShrink: 0 }}>{q.icon}</span>
-                                          <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{q.title}</div>
-                                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-                                              <div style={{ flex: 1, height: 5, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                                                <div style={{ height: "100%", borderRadius: 3, width: `${pct}%`, background: q.color, transition: "width .4s" }} />
-                                              </div>
-                                              <span style={{ fontSize: 10, fontWeight: 800, color: q.color, minWidth: 24, textAlign: "right" }}>{pct}%</span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                    <div style={{ marginTop: 8, textAlign: "right" }}>
-                                      <span style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, cursor: "pointer" }} onClick={() => { setShowHamburger(false); setShowQuests?.(true); }}>View all →</span>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            {activityFeed.map(a => (
-                          <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1 }}>
-                            <img loading="lazy" src={a.avatar} alt="Avatar" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 14, color: "var(--text)" }}><strong>{a.from}</strong> {a.text}</div>
-                              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{a.time}</div>
-                            </div>
+                      
+                      {hubTab === "notif" && (
+                        <>
+                          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
+                            {(["all", "unread", "match", "message", "booking", "quest", "brief", "community"] as const).map(f => (
+                              <div key={f} className={"conn-tab-sub" + (notifFilter === f ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNotifFilter(f); } }} onClick={() => setNotifFilter(f)} style={{ cursor: "pointer", fontSize: 10, padding: "4px 10px", flexShrink: 0, textTransform: "capitalize" }}>{f}</div>
+                            ))}
                           </div>
-                        ))}
-                        </>)}
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                            <div style={{ fontSize: 12, color: "var(--text2)" }}>{notifications.filter(n => !n.read).length} unread</div>
+                            {notifications.some(n => !n.read) && <button onClick={markAllRead} style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>}
+                          </div>
+                          {notifications.length === 0 && !notifLoading
+                            ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No notifications yet. Activity will appear here.</div>
+                            : notifications.map(a => (
+                                <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1, background: a.read ? "transparent" : "rgba(255,215,0,0.03)", borderRadius: 8, marginBottom: 4 }}>
+                                  <img loading="lazy" src={a.avatar} alt="Avatar" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ fontSize: 14, color: "var(--text)" }}><strong>{a.from}</strong> {a.text}</div>
+                                    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{new Date(a.created_at).toLocaleString()}</div>
+                                  </div>
+                                </div>
+                              ))}
+                          {notifHasMore && !notifLoading && (
+                            <button onClick={loadMoreNotifications} style={{ width: "100%", padding: 10, marginTop: 12, fontSize: 12, color: "var(--gold)", fontWeight: 600, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 8, cursor: "pointer" }}>Load more</button>
+                          )}
+                        </>
+                      )}
+                      
                       {(hubTab === "applied" || hubTab === "saved") && (() => {
                         const ids = hubTab === "applied" ? appliedBriefs : savedBriefs;
                         if (!ids.length) return <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>{hubTab === "applied" ? "You haven't applied to any briefs yet." : "No saved briefs yet."}</div>;

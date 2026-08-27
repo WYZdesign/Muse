@@ -119,7 +119,7 @@ export const BtsScreen = memo(function BtsScreen({
     (s: any) => {
       const url = "https://wyzdesign.com/muse/post/" + s.id;
       if (navigator.share) {
-        navigator.share({ title: "Muse Moments", text: "Check out this moment on Muse", url }).catch(() => {});
+        navigator.share({ title: "Muse BTS", text: "Check out this BTS moment on Muse", url }).catch(() => {});
       } else {
         navigator.clipboard?.writeText(url);
         showToast("Moment link copied!");
@@ -157,7 +157,7 @@ export const BtsScreen = memo(function BtsScreen({
     : { flex: "1 1 100%", maxWidth: "100%" };
 
   return (
-    <div className={"screen-el" + (screen === "moments" ? " active" : "")}>
+    <div className={"screen-el" + (screen === "bts" ? " active" : "")}>
       {/* Header */}
       <div
         style={{
@@ -200,7 +200,7 @@ export const BtsScreen = memo(function BtsScreen({
             color: "transparent",
           }}
         >
-          Moments
+          BTS
         </div>
 
         <button
