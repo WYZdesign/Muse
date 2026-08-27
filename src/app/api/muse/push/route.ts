@@ -2,13 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { safeServerError } from "@/lib/http";
+import { sendPushToUser, getVapidPublicKey } from "@/lib/push";
 
 export const runtime = "nodejs";
+
+export async function GET() {
+  return NextResponse.json({ publicKey: getVapidPublicKey() });
+}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, subscription, access_token } = body;
+    const { action, subscription, access_token, userId: bodyUserId, payload } = body;
+
+    if (action === "send" && bodyUserId && payload) {
+      const result = await sendPushToUser(bodyUserId, payload);
+      return NextResponse.json({ success: true, ...result });
+    }
 
     if (!action || !subscription || !access_token) {
       return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
