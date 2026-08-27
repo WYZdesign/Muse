@@ -187,24 +187,30 @@ export const MenuModal = memo(function MenuModal({
               { key: "network", icon: <FiShare2 size={20} />, label: "Network", desc: "Professionals & forum", grad: "linear-gradient(135deg,#B3E5FC,#64B5F6,#00BCD4)" },
               { key: "profile", icon: <FiUser size={20} />, label: "Profile", desc: "Edit profile & premium", grad: "linear-gradient(135deg,#FFD700,#FFB5C2,#B388FF)" },
               { key: "settings", icon: <FiSettings size={20} />, label: "Settings", desc: "Preferences, safety & help", grad: "linear-gradient(135deg,#CE93D8,#B388FF,#A5D6A7)" },
-            ].map(item => (
-              <div
-                key={item.key}
-                className="hamburger-item"
-                onClick={() => {
-                  if (item.key === "community" || item.key === "sessions" || item.key === "network") {
-                    setShowHamburger(false);
-                    showScreen(item.key as any);
-                  } else {
-                    setHamburgerScreen(item.key);
-                  }
-                }}
-              >
-                <div className="hamburger-item-icon" style={{ background: item.grad }}>{item.icon}</div>
-                <div><div className="hamburger-item-label">{item.label}</div><div className="hamburger-item-desc">{item.desc}</div></div>
-              </div>
-            ))}
-            <div className="muse-pro-banner" onClick={() => { setShowHamburger(false); showScreen("subscription"); }} role="button" aria-label="Muse Pro">
+            ].map(item => {
+              const activate = () => {
+                if (item.key === "community" || item.key === "sessions" || item.key === "network") {
+                  setShowHamburger(false);
+                  showScreen(item.key as any);
+                } else {
+                  setHamburgerScreen(item.key);
+                }
+              };
+              return (
+                <div
+                  key={item.key}
+                  className="hamburger-item"
+                  role="button"
+                  tabIndex={0}
+                  onClick={activate}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activate(); } }}
+                >
+                  <div className="hamburger-item-icon" style={{ background: item.grad }}>{item.icon}</div>
+                  <div><div className="hamburger-item-label">{item.label}</div><div className="hamburger-item-desc">{item.desc}</div></div>
+                </div>
+              );
+            })}
+            <div className="muse-pro-banner" onClick={() => { setShowHamburger(false); showScreen("subscription"); }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); showScreen("subscription"); } }} aria-label="Muse Pro">
               <div className="muse-pro-banner-shine" />
               <div className="muse-pro-banner-content">
                 <div className="muse-pro-banner-icon"><FiStar size={16} /></div>

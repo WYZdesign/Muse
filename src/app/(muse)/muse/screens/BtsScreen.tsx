@@ -316,7 +316,10 @@ export const BtsScreen = memo(function BtsScreen({
             {stories.slice(0, 10).map((s, i) => (
               <div
                 key={s.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => setShowStory(i)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowStory(i); } }}
                 style={{
                   display: "flex",
                   flexDirection: "column",

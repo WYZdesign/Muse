@@ -160,6 +160,22 @@ export const SettingsScreen = memo(function SettingsScreen({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                   <span style={{ fontSize: 14, color: "var(--text)" }}>Lock-Screen Push</span>
                   <div
+                    role="switch"
+                    aria-checked={!!pushEnabled}
+                    tabIndex={0}
+                    onKeyDown={async (e) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.preventDefault();
+                      if (!pushEnabled) {
+                        const res = await subscribeToMusePush();
+                        if (res.ok) { setPushEnabled(true); showToast("Push notifications on"); }
+                        else showToast(res.error || "Could not enable push");
+                      } else {
+                        const res = await unsubscribeFromMusePush();
+                        if (res.ok) { setPushEnabled(false); showToast("Push notifications off"); }
+                        else showToast(res.error || "Could not disable push");
+                      }
+                    }}
                     onClick={async () => {
                       if (!pushEnabled) {
                         const res = await subscribeToMusePush();

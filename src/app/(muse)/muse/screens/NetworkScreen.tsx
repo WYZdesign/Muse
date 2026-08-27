@@ -840,8 +840,11 @@ export const NetworkScreen = memo(function NetworkScreen({
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
+                      role="button"
+                      tabIndex={0}
                       style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4, cursor: "pointer" }}
                       onClick={() => { setThreadId(post.id); setReplyTo(null); }}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setThreadId(post.id); setReplyTo(null); } }}
                     >
                       {post.title}
                     </div>
@@ -849,8 +852,11 @@ export const NetworkScreen = memo(function NetworkScreen({
                       {post.author} · {post.time}
                     </div>
                     <div
+                      role="button"
+                      tabIndex={0}
                       style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.4, cursor: "pointer" }}
                       onClick={() => { setThreadId(post.id); setReplyTo(null); }}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setThreadId(post.id); setReplyTo(null); } }}
                     >
                       {post.body.slice(0, 120)}
                       {post.body.length > 120 ? "..." : ""}
