@@ -1029,7 +1029,21 @@ Applied after deep audit findings from three parallel subagents (security, data 
 - a11y sweep: 5 more div-onClick elements now have role/tabIndex/onKeyDown (MenuModal, SettingsScreen, NetworkScreen, BtsScreen)
 - NSFW mis-tag fix: JEREMY/MARISSA/MARSHAWNA flipped to `nsfw:false` in static seed data
 
-Verified: `tsc --noEmit` clean. All 3 commits pushed (`a7f064e`, `06f753d`, `a500dbf`).
+**Text sanitization (route.ts):**
+- create-community: `sanitizeText` on name/desc/img/category + `created_by` tracking
+- create-event: `sanitizeText` on title/desc/date/location/category/img + `created_by` tracking
+- create-session: `sanitizeText` on all text fields
+- create-disclosure: `sanitizeText` on compensation fields, otherDesc, locationAddress, othersDesc, usageCustomDesc
+
+**showToast type widening:**
+- Prop type updated across 15 screens: `(msg: string | { msg: string; onTap?: () => void }) => void`
+- Enables tappable toasts (QuestPanel near-quest "almost there" widget etc.)
+
+**SQL migration applied (Torreé):**
+- `MUSE_MISSING_COLUMNS_20260827.sql` — 5 columns added: `muse_user_xp.current_streak`, `muse_user_xp.longest_streak`, `muse_user_xp.last_login_date`, `muse_events.created_by`, `muse_communities.created_by`
+- Login streak feature now fully live
+
+Verified: `tsc --noEmit` clean. All 4 commits pushed.
 
 ---
 
