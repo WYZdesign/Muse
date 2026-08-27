@@ -19,7 +19,7 @@ export interface MenuModalProps {
   matches: Match[];
   openChat: (m: any) => void;
   setChatTarget: (m: any) => void;
-  showToast: (msg: string) => void;
+  showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   setViewProfile: (p: any) => void;
   currentUser: any;

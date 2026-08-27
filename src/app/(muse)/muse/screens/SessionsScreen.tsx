@@ -18,7 +18,7 @@ export interface SessionsScreenProps {
   setChatTarget: (m: any) => void;
   apiFetch: (url: string, opts?: any) => Promise<any>;
   authFetch: (url: string, opts?: any) => Promise<any>;
-  showToast: (msg: string) => void;
+  showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   uid: () => any;
   currentUser: any;

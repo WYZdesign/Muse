@@ -24,7 +24,7 @@ export interface ProfileScreenProps {
   setEditType: (v: string) => void;
   setEditLooking: (v: string[]) => void;
   setEditNsfw: (v: boolean) => void;
-  showToast: (msg: string) => void;
+  showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   promptResponses: any[];
   promptBankData: any[];
   setShowPromptBank: (v: boolean) => void;

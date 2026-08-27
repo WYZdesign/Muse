@@ -14,7 +14,7 @@ export interface PortfolioScreenProps {
   matches: Match[];
   getAccessToken: () => string | null;
   uploadImage: (file: File, folder: string) => Promise<string | null>;
-  showToast: (msg: string) => void;
+  showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
 }
 
 export const PortfolioScreen = memo(function PortfolioScreen({

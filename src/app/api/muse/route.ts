@@ -608,15 +608,17 @@ ACTIONS["leave-community"] = async ({ sb, profile, rest }) => {
 ACTIONS["create-community"] = async ({ sb, profile, rest, ip }) => {
   if (!await checkRate(ip, "create-community", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { name, description, category, isNsfw } = rest;
-  const cleanName = String(name || "").trim().slice(0, 80);
+  const cleanName = sanitizeText(String(name || "").trim(), 80);
   if (!cleanName) return NextResponse.json({ error: "name required" }, { status: 400 });
+  const cleanDesc = sanitizeText(String(description || ""), 500);
   const { data, error } = await sb.from("muse_communities").insert({
     name: cleanName,
-    description: String(description || "").slice(0, 500),
-    img: String(rest.img || "").slice(0, 500),
-    category: String(category || "general").slice(0, 40),
+    description: cleanDesc,
+    img: sanitizeText(String(rest.img || ""), 500),
+    category: sanitizeText(String(category || "general"), 40),
     is_nsfw: Boolean(isNsfw),
     member_count: 1,
+    created_by: profile.id,
   }).select().single();
   if (error) return safeServerError(error, "db op");
   await sb.from("muse_community_members").upsert(
@@ -628,18 +630,19 @@ ACTIONS["create-community"] = async ({ sb, profile, rest, ip }) => {
 
 // ═══ EVENTS & RSVP ═══
 
-ACTIONS["create-event"] = async ({ sb, rest, ip }) => {
+ACTIONS["create-event"] = async ({ sb, profile, rest, ip }) => {
   if (!await checkRate(ip, "create-event", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { title, description, date, location, category } = rest;
-  const cleanTitle = String(title || "").trim().slice(0, 120);
+  const cleanTitle = sanitizeText(String(title || "").trim(), 120);
   if (!cleanTitle) return NextResponse.json({ error: "title required" }, { status: 400 });
   const { data, error } = await sb.from("muse_events").insert({
     title: cleanTitle,
-    description: String(description || "").slice(0, 500),
-    date: String(date || "").slice(0, 100),
-    location: String(location || "").slice(0, 200),
-    category: String(category || "General").slice(0, 40),
-    img: String(rest.img || "").slice(0, 500),
+    description: sanitizeText(String(description || ""), 500),
+    date: sanitizeText(String(date || ""), 100),
+    location: sanitizeText(String(location || ""), 200),
+    category: sanitizeText(String(category || "General"), 40),
+    img: sanitizeText(String(rest.img || ""), 500),
+    created_by: profile.id,
     attendees: 0,
   }).select().single();
   if (error) return safeServerError(error, "db op");
@@ -708,15 +711,15 @@ ACTIONS["create-session"] = async ({ sb, profile, rest, ip }) => {
   }
   const { data, error } = await sb.from("muse_sessions").insert({
     host_id: profile.id,
-    title: String(title).slice(0, 200),
-    description: String(description || "").slice(0, 1000),
-    type: String(type || "Photoshoot").slice(0, 50),
-    rate: rawRate.slice(0, 50),
-    duration: String(duration || "60 min").slice(0, 50),
-    skills: Array.isArray(skills) ? skills.slice(0, 20).map((s: unknown) => String(s).slice(0, 50)) : [],
-    date: String(date || "").slice(0, 100),
-    location: String(location || "").slice(0, 200),
-    img: String(img || "").slice(0, 500),
+    title: sanitizeText(String(title).trim(), 200),
+    description: sanitizeText(String(description || ""), 1000),
+    type: sanitizeText(String(type || "Photoshoot"), 50),
+    rate: sanitizeText(rawRate, 50),
+    duration: sanitizeText(String(duration || "60 min"), 50),
+    skills: Array.isArray(skills) ? skills.slice(0, 20).map((s: unknown) => sanitizeText(String(s), 50)) : [],
+    date: sanitizeText(String(date || ""), 100),
+    location: sanitizeText(String(location || ""), 200),
+    img: sanitizeText(String(img || ""), 500),
     available: true,
   }).select().single();
   if (error) return safeServerError(error, "db op");
@@ -995,9 +998,9 @@ ACTIONS["create-disclosure"] = async ({ sb, profile, rest, ip }) => {
 
   const { data, error } = await sb.from("muse_disclosures").insert({
     proposer_id: profile.id, responder_id: responderId, booking_id: bookingId || null,
-    compensation_amount: String(compensationAmount || ""),
-    compensation_timing: String(compensationTiming || ""),
-    compensation_method: String(compensationMethod || ""),
+    compensation_amount: sanitizeText(String(compensationAmount || ""), 50),
+    compensation_timing: sanitizeText(String(compensationTiming || ""), 50),
+    compensation_method: sanitizeText(String(compensationMethod || ""), 50),
     content_type_nudity: !!contentTypeNudity,
     content_type_artistic_nudity: !!contentTypeArtisticNude,
     content_type_boudoir: !!contentTypeBoudoir,
@@ -1007,7 +1010,7 @@ ACTIONS["create-disclosure"] = async ({ sb, profile, rest, ip }) => {
     content_type_commercial: !!contentTypeCommercial,
     content_type_conceptual: !!contentTypeConceptual,
     content_type_other: !!contentTypeOther,
-    content_type_other_desc: String(contentTypeOtherDesc || ""),
+    content_type_other_desc: sanitizeText(String(contentTypeOtherDesc || ""), 500),
     boundary_full_nudity: !!boundaryFullNudity,
     boundary_implied_nudity: !!boundaryImpliedNudity,
     boundary_partials: !!boundaryPartials,
@@ -1019,13 +1022,13 @@ ACTIONS["create-disclosure"] = async ({ sb, profile, rest, ip }) => {
     boundary_touching_other: !!boundaryTouchingOther,
     boundary_no_touching: !!boundaryNoTouching,
     location_type: String(locationType || ""),
-    location_address: String(locationAddress || ""),
+    location_address: sanitizeText(String(locationAddress || ""), 500),
     location_public: locationPublic !== false,
     others_present: !!othersPresent,
     others_count: parseInt(othersCount as string) || 0,
-    others_desc: String(othersDesc || ""),
+    others_desc: sanitizeText(String(othersDesc || ""), 500),
     usage_rights: String(usageRights || ""),
-    usage_custom_desc: String(usageCustomDesc || ""),
+    usage_custom_desc: sanitizeText(String(usageCustomDesc || ""), 500),
     edit_approval_required: !!editApprovalRequired,
     nda_required: !!ndaRequired,
     model_release_required: !!modelReleaseRequired,

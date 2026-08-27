@@ -29,7 +29,7 @@ export interface NetworkScreenProps {
   unreadNotificationCount: number;
   matches: Match[];
   apiFetch: (url: string, opts?: any) => Promise<any>;
-  showToast: (msg: string) => void;
+  showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   setViewProfile: (p: any) => void;
   currentUser: any;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;

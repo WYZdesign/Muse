@@ -12,7 +12,7 @@ export interface BtsScreenProps {
   showScreen: (s: Screen) => void;
   openHamburger: () => void;
   unreadNotificationCount: number;
-  showToast: (msg: string) => void;
+  showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   setShowStory: (idx: number) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   apiFetch: (url: string, opts?: any) => Promise<any>;

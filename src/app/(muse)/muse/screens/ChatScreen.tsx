@@ -28,7 +28,7 @@ export interface ChatScreenProps {
   sendTyping: any;
   openHamburger?: () => void;
   unreadNotificationCount?: number;
-  showToast?: (msg: string) => void;
+  showToast?: (msg: string | { msg: string; onTap?: () => void }) => void;
   uploadImage?: (file: File, context: string) => Promise<string | null>;
   authUser?: any;
   chatInput?: string;

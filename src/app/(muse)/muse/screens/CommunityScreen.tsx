@@ -18,7 +18,7 @@ export interface CommunityScreenProps {
   rsvpdEvents: number[];
   setRsvpdEvents: React.Dispatch<React.SetStateAction<number[]>>;
   apiFetch: (url: string, opts?: any) => Promise<any>;
-  showToast: (msg: string) => void;
+  showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   openHamburger?: () => void;
   unreadNotificationCount?: number;

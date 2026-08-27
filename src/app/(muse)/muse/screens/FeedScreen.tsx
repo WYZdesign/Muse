@@ -29,7 +29,7 @@ export interface FeedScreenProps {
   currentUser: any;
   apiFetch: (url: string, opts?: any) => Promise<any>;
   authFetch: (url: string, opts?: any) => Promise<any>;
-  showToast: (msg: string) => void;
+  showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   stories: any[];
   setStories: React.Dispatch<React.SetStateAction<any[]>>;

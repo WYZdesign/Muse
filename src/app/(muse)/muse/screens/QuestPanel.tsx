@@ -6,7 +6,7 @@ interface QuestPanelProps {
   show: boolean;
   onClose: () => void;
   apiFetch: (url: string, opts?: any) => Promise<any>;
-  showToast: (msg: string) => void;
+  showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   onRewardGranted?: (rewardType: string, amount: number) => void;
   onClaimablesChange?: (count: number) => void;
   onQuestsChange?: () => void;

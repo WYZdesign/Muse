@@ -20,7 +20,7 @@ export interface CollabScreenProps {
   showNsfw: boolean;
   currentUser: any;
   apiFetch: (url: string, opts?: any) => Promise<any>;
-  showToast: (msg: string) => void;
+  showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   uid: () => any;
   openHamburger?: () => void;
   unreadNotificationCount?: number;

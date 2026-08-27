@@ -17,7 +17,7 @@ export interface SubscriptionScreenProps {
   showScreen: (s: Screen) => void;
   openHamburger: () => void;
   unreadNotificationCount: number;
-  showToast: (msg: string) => void;
+  showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   apiFetch?: (url: string, opts?: any) => Promise<Response>;
 }
 

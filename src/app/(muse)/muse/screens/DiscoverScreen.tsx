@@ -127,7 +127,7 @@ export interface DiscoverScreenProps {
   myGeo: any;
   myStyles?: string[];
   apiFetch: (url: string, opts?: any) => Promise<any>;
-  showToast: (msg: string) => void;
+  showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   doSwipe: (dir: "left" | "right" | "super") => void;
   setViewProfile: (p: any) => void;
   viewProfile: any;
