@@ -293,8 +293,8 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 /* Enter Gate Content Layout */
 .muse-enter-content {
   position: absolute; inset: 0; z-index: 10; text-align: center;
-  display: flex; flex-direction: column; align-items: center;
-  padding: 13vh 20px 0; margin-top: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: 18vh 20px 0; margin-top: 0;
 }
 .muse-enter-icon-wrap {
   position: relative; margin-bottom: 0px;
@@ -334,7 +334,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   color: rgba(255,255,255,0.45); margin-top: 4px; font-weight: 500;
 }
 .muse-enter-prompt {
-  margin-top: auto; margin-bottom: 16vh; display: inline-flex; align-items: center; gap: 10px;
+  margin-top: auto; margin-bottom: 34vh; display: inline-flex; align-items: center; gap: 10px;
   padding: 15px 36px; border-radius: 999px;
   background: linear-gradient(135deg, rgba(255,215,0,0.18), rgba(255,138,128,0.14));
   border: 1.5px solid rgba(255,215,0,0.6); color: #FFD700;
@@ -342,6 +342,7 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   box-shadow: 0 6px 28px rgba(0,0,0,0.4), 0 0 24px rgba(255,215,0,0.25);
   animation: museEnterPulse 2.4s ease-in-out infinite;
   transition: transform .25s, box-shadow .25s;
+  position: relative; z-index: 12;
 }
 .muse-enter-prompt:hover { transform: scale(1.05); box-shadow: 0 10px 38px rgba(255,215,0,0.4); }
 @keyframes museEnterPulse { 0%,100% { box-shadow: 0 0 16px rgba(255,215,0,0.2); transform: scale(1); } 50% { box-shadow: 0 0 34px rgba(255,215,0,0.45); transform: scale(1.04); } }

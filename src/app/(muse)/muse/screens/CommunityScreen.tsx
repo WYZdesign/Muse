@@ -224,8 +224,7 @@ export const CommunityScreen = memo(function CommunityScreen({
             <div className="conn-content" style={{ width: "100%", padding: 14, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
               <div className="conn-name" style={{ fontSize: 19.5 }}>{c.name}</div>
               <div className="conn-desc" style={{ fontSize: 12.5, color: "var(--text2)", marginTop: 4, marginBottom: 8, lineHeight: 1.4, maxWidth: 280 }}>{c.desc || "A community for creatives to connect and collaborate."}</div>
-              <div className="conn-meta" style={{ fontSize: 12, marginBottom: 8 }}>{c.members} members</div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginBottom: 8 }}>
                 {(() => {
                   const badges: { t: string; bg: string; bd: string; c: string }[] = [];
                   const cat = c.cat || "Community";
@@ -239,6 +238,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                   return badges.map(b => <span key={b.t} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 600 }}>{b.t}</span>);
                 })()}
               </div>
+              <div className="conn-meta" style={{ fontSize: 12, marginTop: 4 }}>{c.members} members</div>
             </div>
             <div style={{ padding: "0 14px 14px", width: "100%", position: "relative", zIndex: 1 }}>
               <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>

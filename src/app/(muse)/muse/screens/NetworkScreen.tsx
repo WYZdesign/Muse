@@ -125,6 +125,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [threadSort, setThreadSort] = useState<"best" | "new">("best");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [commentVotes, setCommentVotes] = useState<Record<string, "up" | "down" | null>>({});
+  const [filterSections, setFilterSections] = useState<Record<string, boolean>>({ experience: false, sort: false, rate: false, skills: false, looking: false });
   const iAmIndustry = viewerSide(currentUser?.type) === "industry";
 
   const parseYrs = (e: string) => parseInt(e, 10) || 0;
@@ -351,7 +352,28 @@ export const NetworkScreen = memo(function NetworkScreen({
               style={{ margin: "0 0 10px", fontSize: 13 }}
             />
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
-              <div style={{ display: "flex", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: 3 }}>
+              <div
+                role="button" tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilterSections(s => ({ ...s, experience: !s.experience })); } }}
+                onClick={() => setFilterSections(s => ({ ...s, experience: !s.experience }))}
+                style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--gold)", userSelect: "none", flexShrink: 0 }}
+              >
+                <span style={{ fontSize: 10, transition: "transform .2s", transform: filterSections.experience ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span> Experience
+              </div>
+              {!filterSections.experience && proExp !== "all" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(255,215,0,0.1)", color: "var(--gold)" }}>Active</span>}
+              <span
+                role="tab"
+                aria-selected={proHiringOnly}
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProHiringOnly(!proHiringOnly); } }}
+                onClick={() => setProHiringOnly(!proHiringOnly)}
+                style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proHiringOnly ? "#4cdd88" : "var(--muted)", opacity: proHiringOnly ? 1 : 0.6, transition: "all 0.15s", borderBottom: proHiringOnly ? "2px solid #4cdd88" : "2px solid transparent", paddingBottom: 2 }}
+              >
+                Hiring now
+              </span>
+            </div>
+            {filterSections.experience && (<>
+              <div style={{ display: "flex", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: 3, marginBottom: 10 }}>
               {([
                 { k: "all", label: "All levels", color: "var(--muted)" },
                 { k: "rising", label: "Rising", color: "#90caf9" },
@@ -372,17 +394,17 @@ export const NetworkScreen = memo(function NetworkScreen({
                 </button>
               ))}
               </div>
-              <span
-                role="tab"
-                aria-selected={proHiringOnly}
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProHiringOnly(!proHiringOnly); } }}
-                onClick={() => setProHiringOnly(!proHiringOnly)}
-                style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proHiringOnly ? "#4cdd88" : "var(--muted)", opacity: proHiringOnly ? 1 : 0.6, transition: "all 0.15s", borderBottom: proHiringOnly ? "2px solid #4cdd88" : "2px solid transparent", paddingBottom: 2 }}
-              >
-                Hiring now
-              </span>
+            </>)}
+            <div
+              role="button" tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilterSections(s => ({ ...s, sort: !s.sort })); } }}
+              onClick={() => setFilterSections(s => ({ ...s, sort: !s.sort }))}
+              style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--gold)", userSelect: "none", marginBottom: 8 }}
+            >
+              <span style={{ fontSize: 10, transition: "transform .2s", transform: filterSections.sort ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span> Sort By
+              {!filterSections.sort && proSort !== "match" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(255,215,0,0.1)", color: "var(--gold)" }}>Active</span>}
             </div>
+            {filterSections.sort && (<>
             <select
               className="inp"
               value={proSort}
@@ -396,6 +418,17 @@ export const NetworkScreen = memo(function NetworkScreen({
               <option value="rateAsc">Rate: low to high</option>
               <option value="openings">Most openings</option>
             </select>
+            </>)}
+            <div
+              role="button" tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilterSections(s => ({ ...s, rate: !s.rate })); } }}
+              onClick={() => setFilterSections(s => ({ ...s, rate: !s.rate }))}
+              style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--gold)", userSelect: "none", marginBottom: 8 }}
+            >
+              <span style={{ fontSize: 10, transition: "transform .2s", transform: filterSections.rate ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span> Rate Band
+              {!filterSections.rate && proRateBand !== "all" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(255,215,0,0.1)", color: "var(--gold)" }}>Active</span>}
+            </div>
+            {filterSections.rate && (<>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
               {([
                 { k: "all", label: "Any rate", color: "var(--muted)" },
@@ -417,12 +450,23 @@ export const NetworkScreen = memo(function NetworkScreen({
                 </span>
               ))}
             </div>
+            </>)}
             {(() => {
               const proSource = liveProfessionals?.length ? liveProfessionals : PROFESSIONALS;
               const allSkills = [...new Set(proSource.flatMap((p) => p.skills))];
               const allLooking = [...new Set(proSource.flatMap((p) => p.looking || []))];
               return (
                 <>
+                  <div
+                    role="button" tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilterSections(s => ({ ...s, skills: !s.skills })); } }}
+                    onClick={() => setFilterSections(s => ({ ...s, skills: !s.skills }))}
+                    style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--gold)", userSelect: "none", marginBottom: 8 }}
+                  >
+                    <span style={{ fontSize: 10, transition: "transform .2s", transform: filterSections.skills ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span> Skills
+                    {!filterSections.skills && proSkill.length > 0 && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(255,215,0,0.1)", color: "var(--gold)" }}>{proSkill.length} active</span>}
+                  </div>
+                  {filterSections.skills && (<>
                   <div className="pro-skill-row">
                     <button
                       type="button"
@@ -444,7 +488,17 @@ export const NetworkScreen = memo(function NetworkScreen({
                       </button>
                     ))}
                   </div>
-                  {allLooking.length > 0 && (
+                  </>)}
+                  <div
+                    role="button" tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilterSections(s => ({ ...s, looking: !s.looking })); } }}
+                    onClick={() => setFilterSections(s => ({ ...s, looking: !s.looking }))}
+                    style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--gold)", userSelect: "none", marginBottom: 8 }}
+                  >
+                    <span style={{ fontSize: 10, transition: "transform .2s", transform: filterSections.looking ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span> Looking For
+                    {!filterSections.looking && proLooking !== "all" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(255,215,0,0.1)", color: "var(--gold)" }}>Active</span>}
+                  </div>
+                  {filterSections.looking && allLooking.length > 0 && (
                     <select
                       className="inp"
                       value={proLooking}
@@ -1175,7 +1229,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               {"\u2715"}
             </button>
 
-            <div style={{ position: "relative", height: 300, flexShrink: 0 }}>
+            <div style={{ position: "relative", height: 420, flexShrink: 0 }}>
               <img
                 src={proDetail.img}
                 alt={proDetail.name}
@@ -1235,7 +1289,6 @@ export const NetworkScreen = memo(function NetworkScreen({
                 </div>
               </div>
             </div>
-
             <div
               style={{
                 flex: 1,

@@ -53,9 +53,15 @@ export default function AdminDashboard() {
   return (
     <div style={{ minHeight: "100vh", background: "#0a0612", color: "#f5f0ff", padding: "32px 24px", fontFamily: "system-ui, sans-serif" }}>
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Muse — Admin Dashboard</h1>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>Real aggregated data from Supabase. No AI/chat layer — none is configured in this environment.</p>
-        <a href="/muse/admin/moderation" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 10, background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "#ffd700", fontSize: 13, fontWeight: 600, textDecoration: "none", marginBottom: 24 }}>🛡️ Moderation Panel →</a>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
+          <a href="/muse" style={{ color: "rgba(255,255,255,0.5)", fontSize: 22, textDecoration: "none", padding: "4px 8px", borderRadius: 8, transition: "all .2s" }}>←</a>
+          <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 0 }}>Muse — Admin Dashboard</h1>
+        </div>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>Platform overview and community health metrics.</p>
+        <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+          <a href="/muse/admin/moderation" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 10, background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "#ffd700", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>🛡️ Moderation</a>
+          <a href="/muse" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>🏠 Back to Muse</a>
+        </div>
 
         {status === "loading" && <p style={{ color: "rgba(255,255,255,0.6)" }}>Loading…</p>}
         {status === "unauthenticated" && (
@@ -66,23 +72,23 @@ export default function AdminDashboard() {
         )}
         {status === "forbidden" && (
           <div style={box}>
-            <p>Your account is signed in but isn't listed in <code>ADMIN_EMAILS</code>.</p>
+            <p>Your account doesn't have admin access yet. Contact the team to get set up.</p>
           </div>
         )}
         {status === "error" && (
           <div style={box}>
-            <p>Something went wrong loading analytics. Check the server logs.</p>
+            <p>Something went wrong loading the dashboard. Please try again.</p>
           </div>
         )}
 
         {status === "ready" && data && (
           <>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 24 }}>
-              <div style={box}><div style={label}>Total Users</div><div style={bigNum}>{data.totals.users}</div></div>
-              <div style={box}><div style={label}>Total Matches</div><div style={bigNum}>{data.totals.matches}</div></div>
-              <div style={box}><div style={label}>Total Albums</div><div style={bigNum}>{data.totals.albums}</div></div>
+              <div style={box}><div style={label}>Community Members</div><div style={bigNum}>{data.totals.users}</div></div>
+              <div style={box}><div style={label}>Connections Made</div><div style={bigNum}>{data.totals.matches}</div></div>
+              <div style={box}><div style={label}>Shared Albums</div><div style={bigNum}>{data.totals.albums}</div></div>
               <div style={box}>
-                <div style={label}>Week-over-Week Retention</div>
+                <div style={label}>Weekly Return Rate</div>
                 <div style={bigNum}>{data.retention.retentionRatePct !== null ? `${data.retention.retentionRatePct}%` : "—"}</div>
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>
                   {data.retention.retainedCount} of {data.retention.activePriorWeek} returned this week
@@ -92,9 +98,9 @@ export default function AdminDashboard() {
 
             {data.referrals && (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
-                <div style={{ ...box, borderLeft: "3px solid #4ecdc4" }}><div style={label}>Referrals</div><div style={{ ...bigNum, color: "#4ecdc4" }}>{data.referrals.total}</div></div>
-                <div style={{ ...box, borderLeft: "3px solid #ffd700" }}><div style={label}>Referred Signups</div><div style={{ ...bigNum, color: "#ffd700" }}>{data.referrals.signedUp}</div></div>
-                <div style={{ ...box, borderLeft: "3px solid #ff69b4" }}><div style={label}>Rewards Issued</div><div style={{ ...bigNum, color: "#ff69b4" }}>{data.referrals.rewarded}</div></div>
+                <div style={{ ...box, borderLeft: "3px solid #4ecdc4" }}>                <div style={label}>Invite Program</div><div style={{ ...bigNum, color: "#4ecdc4" }}>{data.referrals.total}</div></div>
+                <div style={{ ...box, borderLeft: "3px solid #ffd700" }}>                <div style={label}>Joined via Invite</div><div style={{ ...bigNum, color: "#ffd700" }}>{data.referrals.signedUp}</div></div>
+                <div style={{ ...box, borderLeft: "3px solid #ff69b4" }}>                <div style={label}>Rewards Given</div><div style={{ ...bigNum, color: "#ff69b4" }}>{data.referrals.rewarded}</div></div>
               </div>
             )}
 
@@ -124,10 +130,10 @@ export default function AdminDashboard() {
             </div>
 
             <div style={{ ...box, marginBottom: 24 }}>
-              <div style={label}>Feature Usage — last 30 days (from muse_events_log)</div>
+              <div style={label}>Creator Activity — last 30 days</div>
               {Object.keys(data.featureUsage).length === 0 ? (
                 <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>
-                  No events logged yet. This is expected right after deploying — event tracking (screen views, swipes, messages) was just wired up and needs real usage to populate.
+                  Activity data will appear here as creators use the app.
                 </p>
               ) : (
                 <div>

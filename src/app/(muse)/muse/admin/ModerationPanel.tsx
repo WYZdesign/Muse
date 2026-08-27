@@ -113,22 +113,29 @@ export default function AdminModerationPanel() {
   return (
     <div style={{ minHeight: "100vh", background: "#0a0612", color: "#f5f0ff", padding: "32px 24px", fontFamily: "system-ui, sans-serif" }}>
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>🛡️ Admin Moderation</h1>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 28 }}>Reports, strikes, user management, and AI admin brain.</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
+          <a href="/muse/admin" style={{ color: "rgba(255,255,255,0.5)", fontSize: 22, textDecoration: "none", padding: "4px 8px", borderRadius: 8, transition: "all .2s" }}>←</a>
+          <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 0 }}>🛡️ Community Safety</h1>
+        </div>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>Review reports, manage accounts, and keep the community safe.</p>
+        <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+          <a href="/muse/admin" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>📊 Dashboard</a>
+          <a href="/muse" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>🏠 Back to Muse</a>
+        </div>
 
         {/* NSFW Batch Scan */}
         <div style={{ background: "rgba(255,69,0,0.08)", border: "1px solid rgba(255,69,0,0.2)", borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#ff6b6b", marginBottom: 6 }}>NSFW Profile Scanner</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 10 }}>Scan all non-NSFW profiles' avatars via Rekognition. Suggestive content auto-sets the profile's NSFW flag for age-gating in Discovery.</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#ff6b6b", marginBottom: 6 }}>Content Scanner</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 10 }}>Review profile photos across the platform. Content that may not be suitable for all audiences gets flagged automatically.</div>
           <button onClick={scanAllNsfw} disabled={nsfwScanning} style={{ padding: "8px 16px", borderRadius: 8, background: nsfwScanning ? "rgba(255,69,0,0.3)" : "rgba(255,69,0,0.15)", border: "1px solid rgba(255,69,0,0.3)", color: "#ff6b6b", fontSize: 13, fontWeight: 600, cursor: nsfwScanning ? "wait" : "pointer" }}>
-            {nsfwScanning ? "Scanning..." : "Scan All Profiles"}
+            {nsfwScanning ? "Reviewing..." : "Review All Profiles"}
           </button>
           {nsfwScanResult && <div style={{ marginTop: 8, fontSize: 12, color: "rgba(255,255,255,0.7)" }}>{nsfwScanResult}</div>}
         </div>
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>
-          {[["reports", `Reports (${reports.length})`], ["strikes", `Strikes (${strikes.length})`], ["scans", `Scans${incidents.length ? ` ⚠${incidents.length}` : ""}`], ["brain", "🧠 AI Brain"], ["audit", "Audit Log"]].map(([key, label]) => (
+          {[["reports", `Reports (${reports.length})`], ["strikes", `Warnings (${strikes.length})`], ["scans", `Review Queue${incidents.length ? ` ⚠${incidents.length}` : ""}`], ["brain", "🧠 AI Assistant"], ["audit", "Activity Log"]].map(([key, label]) => (
             <button key={key} onClick={() => loadTab(key)} style={{ flex: 1, padding: "10px 0", borderRadius: 8, background: tab === key ? "rgba(255,215,0,0.15)" : "transparent", border: "none", color: tab === key ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
               {label}
             </button>
@@ -168,11 +175,11 @@ export default function AdminModerationPanel() {
         {/* SCANS — upload moderation queue (videos land here as pending_review) */}
         {tab === "scans" && (
           <div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Pending incidents first, then the 100 most recent moderation scans.</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Content awaiting review, newest first.</div>
             {incidents.length === 0 && scanRows.length === 0 && (
               <div style={{ ...box, textAlign: "center", padding: 40, color: "rgba(255,255,255,0.4)" }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>🛡️</div>
-                <div>No scans or pending incidents</div>
+                <div>No items in the review queue</div>
               </div>
             )}
             {incidents.map(i => (
@@ -250,9 +257,9 @@ export default function AdminModerationPanel() {
         {tab === "brain" && (
           <div>
             <div style={{ ...box, marginBottom: 20 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#ffd700", marginBottom: 8 }}>🧠 Ask Your Data</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#ffd700", marginBottom: 8 }}>🧠 Community Insights</div>
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>
-                Ask natural-language questions about your platform. Read-only — no data is modified.
+                Ask questions about your community in plain language. Read-only — nothing gets changed.
               </p>
               <div style={{ display: "flex", gap: 8 }}>
                 <input value={brainQuery} onChange={e => setBrainQuery(e.target.value)} onKeyDown={e => e.key === "Enter" && runBrainQuery()} placeholder="e.g. How many users do we have? Who has the most reports?" style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 13 }} />
@@ -262,7 +269,7 @@ export default function AdminModerationPanel() {
               </div>
 
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12 }}>
-                {["How many users?", "Show reports", "Active users this week", "Strike count", "Disclosures status", "Safety check-ins"].map(q => (
+                {["How many members?", "Show recent reports", "Who's been active this week?", "Any warnings issued?", "Content reviews pending", "Safety check-ins"].map(q => (
                   <button key={q} onClick={() => { setBrainQuery(q); }} style={{ padding: "4px 10px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", fontSize: 11, cursor: "pointer" }}>{q}</button>
                 ))}
               </div>
@@ -282,13 +289,13 @@ export default function AdminModerationPanel() {
           <div>
             <div style={{ ...box, marginBottom: 16 }}>
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-                Every admin AI query is logged here for your legal protection and audit trail.
+                Every admin action is recorded here for transparency and legal compliance.
               </p>
             </div>
             {auditLog.length === 0 ? (
               <div style={{ ...box, textAlign: "center", padding: 30, color: "rgba(255,255,255,0.4)" }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>📝</div>
-                <div>No audit entries yet — use the AI Brain tab to generate queries</div>
+                <div>No activity yet — use the AI Assistant tab to get started</div>
               </div>
             ) : auditLog.map(l => (
               <div key={l.id} style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 12 }}>

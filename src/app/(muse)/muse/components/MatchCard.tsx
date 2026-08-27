@@ -133,6 +133,7 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
       >
         <div className="match-avatar-wrap">
           <img loading="lazy" src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} />
+          <div className={`profile-ring swirl-ring-${(m.id % 6) + 1}`} />
           {m.online && <div className="online-dot" style={{ position: "absolute", bottom: 10, right: 10 }} />}
         </div>
         <div className="match-info">
@@ -292,6 +293,7 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
       >
         <div className="match-avatar-wrap" style={{ zIndex: 1 }}>
           <img loading="lazy" src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} onClick={openProfile} style={{ cursor: "pointer" }} />
+          <div className={`profile-ring swirl-ring-${(m.id % 6) + 1}`} />
           {m.online && <div className="online-dot" />}
         </div>
 
@@ -306,7 +308,8 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
           </div>
 
           {expanded && (
-            <div className="match-expand" onClick={(e) => e.stopPropagation()} style={{ marginTop: 12 }}>
+            <div className="match-expand" onClick={(e) => e.stopPropagation()} style={{ marginTop: 12, position: "relative" }}>
+              <button onClick={(e) => { e.stopPropagation(); setExpandedMatchId(null); }} aria-label="Close" style={{ position: "absolute", top: -4, right: -4, width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5 }}>{"\u2715"}</button>
               <div className="match-expand-bio">{m.bio || "Creative soul looking for their next collaboration."}</div>
               <div className="match-expand-meta">
                 {m.location && <span>📍 {m.location}</span>}

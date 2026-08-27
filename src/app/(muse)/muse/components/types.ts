@@ -117,12 +117,12 @@ export const EVENTS = [
   {id:2,title:"Creative Portfolio Review",date:"Wed, Jul 24",loc:"Online (Zoom)",desc:"Get feedback from industry pros on your portfolio.",nsfw:false,img:"https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600"},
   {id:3,title:"Street Style Workshop",date:"Sat, Aug 3",loc:"Downtown LA",desc:"Learn candid street photography techniques.",nsfw:false,img:"https://images.unsplash.com/photo-1598087216773-d02ad98034f1?w=600"},
   {id:4,title:"Figure Art Exhibition",date:"Fri, Aug 9",loc:"Arts District",desc:"Annual body-positive fine art show.",nsfw:false,img:"https://images.unsplash.com/photo-1606819717115-9159c900370b?w=600"},
-  {id:5,title:"Film Scoring 101",date:"Sun, Aug 18",loc:"Online (Zoom)",desc:"Compose for visual media.",nsfw:false},
-  {id:6,title:"Mobile Photography Masterclass",date:"Tue, Aug 22",loc:"Santa Monica Pier",desc:"Shoot and edit pro-level mobile photos on your iPhone.",nsfw:false},
-  {id:7,title:"Neon Night Shoot",date:"Fri, Aug 30",loc:"Downtown LA",desc:"After-dark urban portrait session with neon lighting.",nsfw:false},
-  {id:8,title:"Body Positive Figure Workshop",date:"Sat, Sep 7",loc:"Culver City Studio",desc:"Life drawing and photography workshop for all genders.",nsfw:true},
-  {id:9,title:"VR Cinematography Lab",date:"Mon, Sep 16",loc:"Virtual Reality LA",desc:"Experiment with VR filmmaking tools and techniques.",nsfw:false},
-  {id:10,title:"Indie Film Pitch Night",date:"Thu, Sep 26",loc:"The Standard, Downtown LA",desc:"Pitch your project to producers and distributors.",nsfw:false},
+  {id:5,title:"Film Scoring 101",date:"Sun, Aug 18",loc:"Online (Zoom)",desc:"Compose for visual media.",nsfw:false,img:"https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600"},
+  {id:6,title:"Mobile Photography Masterclass",date:"Tue, Aug 22",loc:"Santa Monica Pier",desc:"Shoot and edit pro-level mobile photos on your iPhone.",nsfw:false,img:"https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600"},
+  {id:7,title:"Neon Night Shoot",date:"Fri, Aug 30",loc:"Downtown LA",desc:"After-dark urban portrait session with neon lighting.",nsfw:false,img:"https://images.unsplash.com/photo-1514539079130-25950c84af65?w=600"},
+  {id:8,title:"Body Positive Figure Workshop",date:"Sat, Sep 7",loc:"Culver City Studio",desc:"Life drawing and photography workshop for all genders.",nsfw:true,img:"https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=600"},
+  {id:9,title:"VR Cinematography Lab",date:"Mon, Sep 16",loc:"Virtual Reality LA",desc:"Experiment with VR filmmaking tools and techniques.",nsfw:false,img:"https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=600"},
+  {id:10,title:"Indie Film Pitch Night",date:"Thu, Sep 26",loc:"The Standard, Downtown LA",desc:"Pitch your project to producers and distributors.",nsfw:false,img:"https://images.unsplash.com/photo-1485846234645-a62644f84728?w=600"},
 ];
 
 export const SESSIONS = [

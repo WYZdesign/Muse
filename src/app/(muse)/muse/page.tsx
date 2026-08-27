@@ -1153,7 +1153,7 @@ function MusePage() {
   }, []);
 
   const flash = useCallback((color: string) => { setScreenFlash(color); setTimeout(() => setScreenFlash(null), 300); }, []);
-  const showScreen = useCallback((s: typeof screen) => { setScreen(s); trackEvent("screen_view", { screen: s }); }, []);
+  const showScreen = useCallback((s: typeof screen) => { setScreen(s); trackEvent("screen_view", { screen: s }); try { window.scrollTo({ top: 0, behavior: "instant" }); } catch {} }, []);
 
   const matchActions = useMemo(() => ({
     setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping,
