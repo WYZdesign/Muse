@@ -1836,6 +1836,41 @@ ACTIONS["admin-content-scans"] = async ({ sb, profile }) => {
   return NextResponse.json({ scans: scans.data || [], incidents: incidents.data || [] });
 };
 
+ACTIONS["search"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRate(ip, "search", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { query, type = "all", limit = 20, cursor } = rest;
+  if (!query || query.trim().length < 2) return NextResponse.json({ error: "Query must be at least 2 characters" }, { status: 400 });
+  const q = query.trim();
+  const results: any = { users: [], briefs: [], communities: [] };
+
+  if (type === "all" || type === "users") {
+    const { data: users } = await sb.from("muse_profiles")
+      .select("id, name, type, avatar, loc, bio, styles, looking, verified, tier")
+      .or(`name.ilike.%${q}%,bio.ilike.%${q}%,loc.ilike.%${q}%`)
+      .limit(limit);
+    results.users = users || [];
+  }
+
+  if (type === "all" || type === "briefs") {
+    const { data: briefs } = await sb.from("muse_briefs")
+      .select("id, title, description, type, budget, status, creator_id(name, avatar)")
+      .or(`title.ilike.%${q}%,description.ilike.%${q}%`)
+      .eq("status", "open")
+      .limit(limit);
+    results.briefs = briefs || [];
+  }
+
+  if (type === "all" || type === "communities") {
+    const { data: communities } = await sb.from("muse_communities")
+      .select("id, name, description, cat, members, nsfw, img")
+      .or(`name.ilike.%${q}%,description.ilike.%${q}%,cat.ilike.%${q}%`)
+      .limit(limit);
+    results.communities = communities || [];
+  }
+
+  return NextResponse.json({ success: true, results });
+};
+
 ACTIONS["admin-resolve-incident"] = async ({ sb, profile, rest }) => {
   if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { incidentId } = rest;

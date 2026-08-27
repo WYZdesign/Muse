@@ -128,6 +128,10 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [proSkill, setProSkill] = useState<string[]>([]);
   const [proRateBand, setProRateBand] = useState<"all" | "tfp" | "50to100" | "100to150" | "gt150">("all");
   const [proLooking, setProLooking] = useState<string>("all");
+  const [proSearchServer, setProSearchServer] = useState("");
+  const [proServerResults, setProServerResults] = useState<any[]>([]);
+  const [forumSearchServer, setForumSearchServer] = useState("");
+  const [forumServerResults, setForumServerResults] = useState<any[]>([]);
   const [threadId, setThreadId] = useState<number | null>(null);
   const [threadSort, setThreadSort] = useState<"best" | "new">("best");
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -143,6 +147,10 @@ export const NetworkScreen = memo(function NetworkScreen({
   };
 
   const proList = (() => {
+    // If server search has results, use those
+    if (proSearchServer.trim().length >= 2 && proServerResults.length > 0) {
+      return proServerResults.filter((p: any) => showNsfw || !p.nsfw);
+    }
     let list = (liveProfessionals?.length ? liveProfessionals : PROFESSIONALS).filter((p) => showNsfw || !p.nsfw);
     if (proExp !== "all") list = list.filter((p) => expBand(p.exp) === proExp);
     if (proHiringOnly) list = list.filter((p) => p.openings > 0);
@@ -187,6 +195,34 @@ export const NetworkScreen = memo(function NetworkScreen({
             : b.votes * 2 + b.comments.length - (a.votes * 2 + a.comments.length)
       );
   }, [liveForum, forumCategory, forumSort]);
+
+  // Server-side search for professionals
+  const handleProSearch = async (value: string) => {
+    setProSearchServer(value);
+    if (value.trim().length >= 2) {
+      try {
+        const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "search", query: value, type: "users", limit: 50 }) });
+        const data = await res.json();
+        if (data.success) setProServerResults(data.results.users || []);
+      } catch { setProServerResults([]); }
+    } else {
+      setProServerResults([]);
+    }
+  };
+
+  // Server-side search for forum
+  const handleForumSearch = async (value: string) => {
+    setForumSearchServer(value);
+    if (value.trim().length >= 2) {
+      try {
+        const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "search", query: value, type: "communities", limit: 20 }) });
+        const data = await res.json();
+        if (data.success) setForumServerResults(data.results.communities || []);
+      } catch { setForumServerResults([]); }
+    } else {
+      setForumServerResults([]);
+    }
+  };
 
   function openProProfile(p: any) {
     setProDetail(p);
@@ -356,6 +392,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               placeholder="Search pros — name, craft, skills, who they're looking for…"
               value={proSearch}
               onChange={(e) => setProSearch(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleProSearch(e.currentTarget.value); }}
               style={{ margin: "0 0 10px", fontSize: 13 }}
             />
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
