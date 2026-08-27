@@ -376,6 +376,9 @@ function MusePage() {
   }, []);
 
   const { liveProfiles, setLiveProfiles, matches, setMatches, likedBy, setLikedBy, blockedUsers, setBlockedUsers, matchStreak, setMatchStreak } = useDiscoveryData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
+  // Ref to avoid stale closure on rapid swipes — always holds latest matches
+  const matchesRef = useRef(matches);
+  useEffect(() => { matchesRef.current = matches; }, [matches]);
   const { liveFeed, setLiveFeed, feedPosts, setFeedPosts, stories, setStories, liveForum, setLiveForum, forumPosts, setForumPosts } = useFeedData({ authFetch, profileId: authUser?.profile?.id ?? null, initialStories: INITIAL_STORIES });
   const { liveCommunities, setLiveCommunities, liveEvents, setLiveEvents, rsvpdEvents, setRsvpdEvents } = useCommunityData({ authFetch, profileId: authUser?.profile?.id ?? null });
   const { myBookings, setMyBookings, liveSessions, setLiveSessions } = useSessionData({ authFetch, profileId: authUser?.profile?.id ?? null });
@@ -1250,7 +1253,7 @@ function MusePage() {
         const isMatch = matchScore > 55 || (DEMO_MODE && Math.random() < 0.3);
       if (isMatch) {
         const newMatch: Match = { ...p, messages: [] };
-        const prevMatches = matches;
+        const prevMatches = matchesRef.current;
         setMatches(prev => [...prev, newMatch]);
         setMatchStreak(prev => prev + 1);
         // Delay match overlay so swipe animation completes first

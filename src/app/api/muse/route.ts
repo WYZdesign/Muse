@@ -333,11 +333,19 @@ ACTIONS["feed"] = async ({ sb, profile, rest, ip }) => {
   return NextResponse.json({ success: true });
 };
 
-ACTIONS["like-feed-post"] = async ({ sb, rest, ip }) => {
+ACTIONS["like-feed-post"] = async ({ sb, profile, rest, ip }) => {
   if (!await checkRate(ip, "like-feed-post", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { postId: feedPostId, liked } = rest;
   if (!feedPostId) return NextResponse.json({ error: "postId required" }, { status: 400 });
   if (typeof feedPostId === "number" || !UUID_RE.test(String(feedPostId))) return NextResponse.json({ success: true, demo: true });
+  // Per-user dedup: track likes in muse_activity_log (existing table, type="feed_like")
+  if (liked) {
+    const { data: existing } = await sb.from("muse_activity_log").select("id").eq("user_id", profile.id).eq("target_id", String(feedPostId)).eq("type", "feed_like").maybeSingle();
+    if (existing) return NextResponse.json({ success: true, alreadyLiked: true });
+    await sb.from("muse_activity_log").insert({ user_id: profile.id, target_id: String(feedPostId), type: "feed_like" });
+  } else {
+    await sb.from("muse_activity_log").delete().eq("user_id", profile.id).eq("target_id", String(feedPostId)).eq("type", "feed_like");
+  }
   const delta = liked ? 1 : -1;
   const { data: rpcResult, error: rpcErr } = await sb.rpc("atomic_like_count", { table_name: "muse_feed_posts", row_id: feedPostId, delta });
   let newLikes: number;
@@ -367,11 +375,19 @@ ACTIONS["create-moment"] = async ({ sb, profile, rest, ip }) => {
   return NextResponse.json({ success: true, moment: data });
 };
 
-ACTIONS["like-moment"] = async ({ sb, rest, ip }) => {
+ACTIONS["like-moment"] = async ({ sb, profile, rest, ip }) => {
   if (!await checkRate(ip, "like-moment", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { momentId, liked } = rest;
   if (!momentId) return NextResponse.json({ error: "momentId required" }, { status: 400 });
   if (typeof momentId === "number" || !UUID_RE.test(String(momentId))) return NextResponse.json({ success: true, demo: true });
+  // Per-user dedup: track likes in muse_activity_log (existing table, type="moment_like")
+  if (liked) {
+    const { data: existing } = await sb.from("muse_activity_log").select("id").eq("user_id", profile.id).eq("target_id", String(momentId)).eq("type", "moment_like").maybeSingle();
+    if (existing) return NextResponse.json({ success: true, alreadyLiked: true });
+    await sb.from("muse_activity_log").insert({ user_id: profile.id, target_id: String(momentId), type: "moment_like" });
+  } else {
+    await sb.from("muse_activity_log").delete().eq("user_id", profile.id).eq("target_id", String(momentId)).eq("type", "moment_like");
+  }
   const delta = liked ? 1 : -1;
   const { data: rpcResult, error: rpcErr } = await sb.rpc("atomic_like_count", { table_name: "muse_moments", row_id: momentId, delta });
   let newLikes: number;
@@ -666,7 +682,8 @@ ACTIONS["book-session"] = async ({ sb, profile, rest, ip }) => {
   if (!UUID_RE.test(String(sessionId))) return NextResponse.json({ success: true, demo: true });
   const { data: session } = await sb.from("muse_sessions").select("id, host_id").eq("id", sessionId).maybeSingle();
   if (!session) return NextResponse.json({ error: "Session not found" }, { status: 400 });
-  const effectiveHostId = hostId || (session as any).host_id || null;
+  // Use the session's own host_id — never trust client-supplied hostId
+  const effectiveHostId = (session as any).host_id || null;
   if (effectiveHostId) {
     const { data: host } = await sb.from("muse_profiles").select("id").eq("id", effectiveHostId).maybeSingle();
     if (!host) return NextResponse.json({ error: "Host not found" }, { status: 400 });
@@ -905,8 +922,13 @@ ACTIONS["view-album"] = async ({ sb, rest, ip }) => {
   if (!await checkRate(ip, "view-album", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { albumId } = rest;
   if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
-  const { data: album } = await sb.from("muse_albums").select("view_count").eq("id", albumId).maybeSingle();
+  const { data: album } = await sb.from("muse_albums").select("view_count, access_level, profile_id").eq("id", albumId).maybeSingle();
   if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (album.access_level === "private") return NextResponse.json({ error: "Album is private" }, { status: 403 });
+  if (album.access_level === "invite") {
+    const { data: access } = await sb.from("muse_album_access").select("id").eq("album_id", albumId).limit(1);
+    if (!access || access.length === 0) return NextResponse.json({ error: "Album is invite-only" }, { status: 403 });
+  }
   await sb.from("muse_albums").update({ view_count: (album.view_count || 0) + 1 }).eq("id", albumId);
   return NextResponse.json({ success: true });
 };
@@ -915,8 +937,13 @@ ACTIONS["like-album"] = async ({ sb, profile, rest, ip }) => {
   if (!await checkRate(ip, "like-album", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { albumId } = rest;
   if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
-  const { data: album } = await sb.from("muse_albums").select("like_count").eq("id", albumId).maybeSingle();
+  const { data: album } = await sb.from("muse_albums").select("like_count, access_level, profile_id").eq("id", albumId).maybeSingle();
   if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (album.access_level === "private" && String(album.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Album is private" }, { status: 403 });
+  if (album.access_level === "invite") {
+    const { data: access } = await sb.from("muse_album_access").select("id").eq("album_id", albumId).eq("viewer_profile_id", profile.id).maybeSingle();
+    if (!access && String(album.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Album is invite-only" }, { status: 403 });
+  }
   const { data: existingLike } = await sb.from("muse_album_likes").select("id").eq("album_id", albumId).eq("user_id", profile.id).maybeSingle();
   if (existingLike) return NextResponse.json({ success: true, alreadyLiked: true });
   await sb.from("muse_album_likes").insert({ album_id: albumId, user_id: profile.id });
@@ -1273,6 +1300,14 @@ ACTIONS["get-checkins"] = async ({ sb, profile }) => {
 
 ACTIONS["share-safety-details"] = async ({ sb, profile, rest }) => {
   const { bookingId, disclosureId, recipientName, recipientPhone, recipientEmail, shareMethod } = rest;
+  // Verify caller is a party to the booking (if bookingId provided)
+  if (bookingId && UUID_RE.test(String(bookingId))) {
+    const { data: bk } = await sb.from("muse_bookings").select("user_id, host_id").eq("id", bookingId).maybeSingle();
+    if (bk) {
+      const isParty = String(bk.user_id) === String(profile.id) || String(bk.host_id) === String(profile.id);
+      if (!isParty) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
   const { error } = await sb.from("muse_safety_shares").insert({
     user_id: profile.id, booking_id: bookingId || null, disclosure_id: disclosureId || null,
     recipient_name: String(recipientName || ""),

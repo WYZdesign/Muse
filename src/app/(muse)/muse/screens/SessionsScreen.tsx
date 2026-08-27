@@ -179,7 +179,10 @@ export const SessionsScreen = memo(function SessionsScreen({
                     <button
                       className="btn btn-gold"
                       style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap" }}
-                      onClick={async () => {
+                      onClick={async (e) => {
+                        const btn = e.currentTarget;
+                        if (btn.disabled) return;
+                        btn.disabled = true;
                         try {
                           const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "book-session", sessionId: s.id }) });
                           if (r.status === 403) {
@@ -194,6 +197,8 @@ export const SessionsScreen = memo(function SessionsScreen({
                           showToast("Session request sent to " + s.name + "!");
                         } catch {
                           showToast("Failed to book session");
+                        } finally {
+                          setTimeout(() => { btn.disabled = false; }, 2000);
                         }
                       }}
                     >
