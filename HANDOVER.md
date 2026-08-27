@@ -1005,13 +1005,41 @@ Verified: `tsc --noEmit` clean, `npm run build` clean, vitest 53/53 (9/9 files).
 
 ---
 
+### Session 47 (wyzmind) — security hardening + data integrity fixes
+
+Applied after deep audit findings from three parallel subagents (security, data integrity, API completeness).
+
+**Security fixes (route.ts):**
+- `view-album`: access-level check — private albums blocked entirely, invite-only checks `muse_album_access` table
+- `like-album`: same access-level guard; owner can't like their own private album
+- `book-session`: hostId now comes exclusively from `muse_sessions.host_id` in DB — client-supplied `hostId` parameter ignored (IDOR fix)
+- `share-safety-details`: verifies caller is booking party (user_id or host_id) before allowing safety share
+
+**Data integrity fixes (route.ts):**
+- `like-feed-post`: added `profile` parameter + per-user deduplication via `muse_activity_log` type=`feed_like` — prevents infinite like inflation from repeated `liked:true` calls
+- `like-moment`: same pattern, type=`moment_like`
+
+**Frontend fixes (page.tsx):**
+- `prevMatches` stale closure: added `matchesRef` ref that always holds latest `matches` value — doSwipe rollback now uses `matchesRef.current` instead of stale closure, preventing rapid swipes from undoing first successful match
+
+**Frontend fixes (SessionsScreen.tsx):**
+- Book Session button: 2s disable-after-click debounce to prevent double-tap double-book race condition
+
+**Claude's Session 46 patches applied:**
+- a11y sweep: 5 more div-onClick elements now have role/tabIndex/onKeyDown (MenuModal, SettingsScreen, NetworkScreen, BtsScreen)
+- NSFW mis-tag fix: JEREMY/MARISSA/MARSHAWNA flipped to `nsfw:false` in static seed data
+
+Verified: `tsc --noEmit` clean. All 3 commits pushed (`a7f064e`, `06f753d`, `a500dbf`).
+
+---
+
 ## SESSION STATE
 - **Build status:** ✅ CLEAN — tsc 0 errors, vitest 53/53, `npm run build` passes
 - **Env fix (Session 35, follow-up):** the ~36 "pre-existing" type errors were NOT baseline — they were incomplete package installs missing `.d.ts` output (@supabase/auth-js, @aws-sdk/client-rekognition) plus a corrupt @next/swc native binary. Deleting those packages and re-running `npm i` restored them. If this machine's node_modules goes stale again: delete the misbehaving package dir + reinstall before debugging code.
 - **Real bug fixed in that pass:** `next.config.ts` used `__dirname` for `turbopack.root` — undefined under Next 16's ESM-compiled config (breaks any fresh build). Now uses `fileURLToPath(new URL(".", import.meta.url))`.
 - **Agent preference:** SQL files always opened in VS Code (`AGENTS.md` at repo root documents the command).
-- **Last compile:** 2026-08-27 (Session 46) — tsc 0 errors, build clean, vitest 53/53
-- **Last commits:** Session 35 → infra-fix → Session 39 (ox-alpha) → Session 40 (ox-alpha) → Session 43 (ox-alpha, comprehensive audit + refactors + Claude S41/S42 patches) → Session 45 (Quests→Sparks + login streak + near-quests + tappable toasts) → Session 46 (Claude, a11y sweep + NSFW mis-tag fix)
+- **Last compile:** 2026-08-27 (Session 47) — tsc 0 errors, build clean, vitest 53/53
+- **Last commits:** Session 35 → infra-fix → Session 39 (ox-alpha) → Session 40 (ox-alpha) → Session 43 (ox-alpha, comprehensive audit + refactors + Claude S41/S42 patches) → Session 45 (Quests→Sparks + login streak + near-quests + tappable toasts) → Session 46 (Claude, a11y sweep + NSFW mis-tag fix) → Session 47 (wyzmind, security hardening + data integrity)
 - **Quests V2 SQL:** confirmed run in Supabase by Torreé — quest system fully live
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** 54 tables live (muse_profiles, muse_matches, muse_messages, muse_feed_posts, muse_feed_comments, muse_briefs, muse_brief_applications, muse_forum_posts, muse_forum_comments, muse_events, muse_event_rsvps, muse_activity_log, muse_reports, muse_blocks, muse_forum_replies, muse_communities, muse_community_members, muse_sessions, muse_bookings, muse_connections, muse_notifications, muse_push_subscriptions, muse_error_logs, muse_events_log, muse_albums, muse_album_photos, muse_album_access, muse_referrals, muse_referral_rewards, muse_stripe_connect, muse_booking_payments, muse_content_scans, muse_safety_incidents, muse_disclosures, muse_strikes, muse_safety_profiles, muse_safety_checkins, muse_safety_shares, muse_admin_audit_log, muse_prompt_bank, muse_prompt_responses, muse_profile_embeddings, muse_ncmec_reports, muse_verification_sessions, muse_waitlist, muse_landing_analytics, muse_qr_events, muse_rsvps, muse_reviews, muse_moments, muse_professionals, muse_rate_limits, muse_album_likes, muse_ai_docs)
