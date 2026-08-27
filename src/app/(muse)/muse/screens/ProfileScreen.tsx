@@ -292,7 +292,10 @@ export const ProfileScreen = memo(function ProfileScreen({
                 <img loading="lazy" src={m.img} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={handleImgError} />
               </div>
             )) : (
-              <div style={{ flexShrink: 0, width: 60, height: 60, borderRadius: "50%", background: "rgba(255,255,255,0.03)", border: "2px dashed rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 11 }}>No matches yet</div>
+              <div style={{ flexShrink: 0, width: 60, height: 60, borderRadius: "50%", background: "rgba(255,255,255,0.03)", border: "2px dashed rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 10, textAlign: "center", gap: 2 }}>
+                <span>No matches yet</span>
+                <span style={{ fontSize: 9, color: "var(--gold)" }}>Swipe in Discover →</span>
+              </div>
             )}
           </div>
         </div>

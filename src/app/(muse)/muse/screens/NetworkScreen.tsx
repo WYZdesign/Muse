@@ -520,8 +520,10 @@ export const NetworkScreen = memo(function NetworkScreen({
               );
             })()}
             {proList.length === 0 && (
-              <div style={{ textAlign: "center", padding: 24, color: "var(--muted)", fontSize: 13 }}>
-                No professionals match those filters.
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, textAlign: "center", gap: 12 }}>
+                <div style={{ fontSize: 36 }}>👥</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>No professionals match those filters</div>
+                <div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 280 }}>Try clearing filters or adjust your search — new pros join weekly.</div>
               </div>
             )}
             {proList.map((p) => (

@@ -163,7 +163,11 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
         {/* Quest Grid */}
         <div className="quest-grid">
           {filtered.length === 0 && (
-            <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No commissions in this category</div>
+            <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, textAlign: "center", gap: 12 }}>
+              <div style={{ fontSize: 36 }}>📋</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>No commissions in this category</div>
+              <div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 280 }}>Switch to "All" or check back later — new commissions appear daily.</div>
+            </div>
           )}
           {filtered.map((q: any) => {
             const tier = TIER_CONFIG[q.quest_tier] || TIER_CONFIG.weekly;
