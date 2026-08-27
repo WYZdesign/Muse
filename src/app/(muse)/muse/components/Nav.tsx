@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { FiCompass, FiUsers, FiZap, FiCamera, FiEye, FiMenu } from "react-icons/fi";
+import { FiCompass, FiUsers, FiZap, FiCamera, FiEye, FiMenu, FiStar } from "react-icons/fi";
 import type { Screen } from "./types";
 
 const lineColor: Record<string,string> = {
@@ -9,6 +9,7 @@ const lineColor: Record<string,string> = {
   briefs: "#20B2AA",
   matches: "#FF4500",
   moments: "#FF1493",
+  commissions: "#FF69B4",
 };
 
 const lavaGradients: Record<string, string> = {
@@ -17,6 +18,7 @@ const lavaGradients: Record<string, string> = {
   briefs: "linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA)",
   matches: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",
   moments: "linear-gradient(90deg,#FF1493,#FF0000,#DDA0DD,#FF1493,#FF69B4,#FF1493)",
+  commissions: "linear-gradient(90deg,#FF69B4,#FF8A80,#FFD700,#FF69B4,#FF8A80,#FF69B4)",
 };
 
 const tabs: { key: string; label: string; icon: React.ReactNode; hasScreen: boolean }[] = [
@@ -25,6 +27,7 @@ const tabs: { key: string; label: string; icon: React.ReactNode; hasScreen: bool
   { key:"briefs", label:"Collab", icon:<FiZap size={22} />, hasScreen:false },
   { key:"matches", label:"Muses", icon:<FiCamera size={22} />, hasScreen:true },
   { key:"moments", label:"Moments", icon:<FiEye size={22} />, hasScreen:true },
+  { key:"commissions", label:"Commissions", icon:<FiStar size={22} />, hasScreen:true },
 ];
 
 export default React.memo(function Nav({ active, onNavigate, onHamburgerToggle, unreadCount }: { active: string; onNavigate: (s: Screen) => void; onHamburgerToggle?: () => void; unreadCount?: number }) {
