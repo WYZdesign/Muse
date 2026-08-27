@@ -983,13 +983,35 @@ Claude ran deep audits across Sessions 36–38 and delivered patches; their git/
 
 ---
 
+### Session 46 (Claude) — a11y sweep (5 more div-onClick fixes) + NSFW mis-tag fix
+
+Picked up per standing instruction to keep auditing/extending after finishing prior asks, plus a direct live-testing bug report from Torreé.
+
+**Accessibility (continuing Session 43's `role=button`/`tabIndex`/`onKeyDown` pattern — these 6 elements were missed by or postdate that sweep):**
+- `MenuModal.tsx` — the 5 hamburger menu item divs (Community/Sessions/Network/Profile/Settings) had `onClick` but no keyboard semantics; extracted an `activate()` closure and added `role="button" tabIndex={0} onKeyDown`. Also added `tabIndex`/`onKeyDown` to the adjacent Muse Pro banner (had `role="button"` but no keyboard activation).
+- `SettingsScreen.tsx` — lock-screen push toggle switch was missing `role="switch"`, `aria-checked`, `tabIndex`, `onKeyDown` (its sibling notification toggle right above it already had all of these — this one was just inconsistent).
+- `NetworkScreen.tsx` — forum post preview title + body divs (`onClick` sets thread id) missing keyboard semantics, ×2.
+- `BtsScreen.tsx` — story-rail item div (`onClick` opens story viewer) missing keyboard semantics.
+- Swept all of `screens/*.tsx`, `components/*.tsx`, `page.tsx` for `<div onClick=` without matching `role=`; ~19 other hits were modal-panel `stopPropagation` wrapper divs that don't need keyboard semantics and were correctly left alone.
+
+**NSFW mis-tagging fix (direct user bug report from live testing — "marissa is not nsfw, alongside a few others. it should be obvious from the images whats nsfw and whats not"):**
+- `types.ts` static seed data — JEREMY (id 13), MARISSA (id 15), MARSHAWNA (id 16) were flagged `nsfw:true` despite fully-clothed/SFW photos. Verified against the actual local image files in `public/models/<NAME>/*.webp` before flipping all three to `nsfw:false`.
+- Deliberately left 5 other `nsfw:true` occurrences elsewhere in `types.ts` untouched (thematic "fine art figure"/"body positive" descriptions in a brief, two communities/events, and a professional-agent bio) — no photo evidence they're mis-tagged, and the user's complaint was specifically about profile photos.
+- **Caveat for whoever picks this up next:** this fix only covers the static seed fallback data. If the production account Torreé is testing on is actually being served live Supabase-backed `muse_professionals` data with the same mis-tag, that needs a separate DB-level correction that I (Claude, no DB write access) cannot perform — worth checking.
+
+Verified: `tsc --noEmit` clean, `npm run build` clean, vitest 53/53 (9/9 files). Delivered as a `.patch` via SendUserFile per the no-push-access workflow (see NOTE TO CLAUDE below) — wyzmind/ox-alpha, please `git am` + push.
+
+**Still outstanding / not yet done this session:** Torreé asked to "pay attention to console errors as well" on the live app — two attempts to capture browser console output both came back empty (no messages tracked), unresolved as of this session. Whoever picks this up next should try a fresh console-tracking session immediately followed by a hard reload before doing anything else, to catch load-time errors.
+
+---
+
 ## SESSION STATE
 - **Build status:** ✅ CLEAN — tsc 0 errors, vitest 53/53, `npm run build` passes
 - **Env fix (Session 35, follow-up):** the ~36 "pre-existing" type errors were NOT baseline — they were incomplete package installs missing `.d.ts` output (@supabase/auth-js, @aws-sdk/client-rekognition) plus a corrupt @next/swc native binary. Deleting those packages and re-running `npm i` restored them. If this machine's node_modules goes stale again: delete the misbehaving package dir + reinstall before debugging code.
 - **Real bug fixed in that pass:** `next.config.ts` used `__dirname` for `turbopack.root` — undefined under Next 16's ESM-compiled config (breaks any fresh build). Now uses `fileURLToPath(new URL(".", import.meta.url))`.
 - **Agent preference:** SQL files always opened in VS Code (`AGENTS.md` at repo root documents the command).
-- **Last compile:** 2026-08-26 (Session 45) — tsc 0 errors, build clean, vitest 53/53
-- **Last commits:** Session 35 → infra-fix → Session 39 (ox-alpha) → Session 40 (ox-alpha) → Session 43 (ox-alpha, comprehensive audit + refactors + Claude S41/S42 patches) → Session 45 (Quests→Sparks + login streak + near-quests + tappable toasts)
+- **Last compile:** 2026-08-27 (Session 46) — tsc 0 errors, build clean, vitest 53/53
+- **Last commits:** Session 35 → infra-fix → Session 39 (ox-alpha) → Session 40 (ox-alpha) → Session 43 (ox-alpha, comprehensive audit + refactors + Claude S41/S42 patches) → Session 45 (Quests→Sparks + login streak + near-quests + tappable toasts) → Session 46 (Claude, a11y sweep + NSFW mis-tag fix)
 - **Quests V2 SQL:** confirmed run in Supabase by Torreé — quest system fully live
 - **DEMO_MODE flag:** Controls fake data generation (chat replies, match inflation, likedBy)
 - **Supabase tables:** 54 tables live (muse_profiles, muse_matches, muse_messages, muse_feed_posts, muse_feed_comments, muse_briefs, muse_brief_applications, muse_forum_posts, muse_forum_comments, muse_events, muse_event_rsvps, muse_activity_log, muse_reports, muse_blocks, muse_forum_replies, muse_communities, muse_community_members, muse_sessions, muse_bookings, muse_connections, muse_notifications, muse_push_subscriptions, muse_error_logs, muse_events_log, muse_albums, muse_album_photos, muse_album_access, muse_referrals, muse_referral_rewards, muse_stripe_connect, muse_booking_payments, muse_content_scans, muse_safety_incidents, muse_disclosures, muse_strikes, muse_safety_profiles, muse_safety_checkins, muse_safety_shares, muse_admin_audit_log, muse_prompt_bank, muse_prompt_responses, muse_profile_embeddings, muse_ncmec_reports, muse_verification_sessions, muse_waitlist, muse_landing_analytics, muse_qr_events, muse_rsvps, muse_reviews, muse_moments, muse_professionals, muse_rate_limits, muse_album_likes, muse_ai_docs)
