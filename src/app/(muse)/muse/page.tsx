@@ -132,7 +132,7 @@ function MusePage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [swipeDir, setSwipeDir] = useState<"left"|"right"|null>(null);
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
-  useEffect(() => { if (typeof window !== "undefined") (window as any).__exp = expandedMatchId; }, [expandedMatchId]);
+  // (debug artifact removed)
   const [boostActive, setBoostActive] = useState(false);
   const [boostEnd, setBoostEnd] = useState(0);
   const [discoverSearch, setDiscoverSearch] = useState("");
@@ -648,8 +648,8 @@ function MusePage() {
                 setObStep(d.profile.preferences.onboardingStep);
               }
               // Restore filterStyles/filterScore from server (cross-device discovery filters)
-              if (d.profile.preferences?.filterStyles && typeof d.profile.preferences.filterStyles === "string") {
-                setFilterStyles(d.profile.preferences.filterStyles);
+              if (d.profile.preferences?.filterStyles && (Array.isArray(d.profile.preferences.filterStyles) || typeof d.profile.preferences.filterStyles === "string")) {
+                setFilterStyles(Array.isArray(d.profile.preferences.filterStyles) ? d.profile.preferences.filterStyles : d.profile.preferences.filterStyles.split(",").filter(Boolean));
               }
               if (d.profile.preferences?.filterScore != null && typeof d.profile.preferences.filterScore === "number") {
                 setFilterScore(d.profile.preferences.filterScore);
@@ -702,8 +702,6 @@ function MusePage() {
           setAuthUser(null);
           setScreen(prev => (prev === "discover" || prev === "matches" || prev === "connections") ? prev : "auth");
         }
-        // Session resolved — splash can hide regardless of outcome
-        try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {        }
         // Session resolved — splash can hide regardless of outcome
         try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
       })
@@ -1735,39 +1733,8 @@ function MusePage() {
                 <button key={intent} className="intent-btn" onClick={()=>{
                   setUserDefaultIntent(intent);
                   setShowIntentPicker(false);
-                  const p = intentProfile;
                   setIntentProfile(null);
-                  if(!p) return;
-                   const matchScore = (p as any).matchScore ?? calcMatch({styles:obData.styles||[],looking:obData.looking||[],zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,lifePath:obData.lifePath},p);
-const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
-                   if(isMatch){
-                     const newMatch:Match={...p,messages:[],intent};
-                     setMatches(prev=>[...prev,newMatch]);
-                     setMatchStreak(prev=>prev+1);
-                     // Delay match overlay so swipe animation completes first
-                     setTimeout(() => {
-                       setShowMatchOverlay(newMatch);
-                       setShowConfetti(true);
-                       setTimeout(()=>setShowConfetti(false),1500);
-                       setExpandedMatchId(String(newMatch.id));
-                       trackEvent("muse_match",{name:p.name,type:p.type,intent});
-                       setActivityFeed(prev=>[{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"! · "+icon+" "+label,time:"Just now",read:false},...prev]);
-                       flash("#FFD700");
-                     }, 450);
-                     apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"match",target_id:p.id,intent})}).catch(()=>{});
-                   }
-                   if(DEMO_MODE&&Math.random()>0.4&&!likedBy.find(l=>l.id===p.id)){
-                     setLikedBy(prev=>[...prev,p]);
-                     setActivityFeed(prev=>[{id:uid(),type:"like",from:p.name,avatar:p.img,text:p.name+" liked your profile!",time:"Just now",read:false},...prev]);
-                   }
-                  setDailyLikes(prev=>Math.max(0,prev-1));
-                  setCurrentUser(prev=>({...prev,stats:{...prev.stats,likes:prev.stats.likes+1}}));
-                  setRewindStack(prev=>[...prev,currentIdx]);
-                   setCurrentIdx(prev=>prev+1);
-                   setCurrentPhotoIdx(0);
-    setPortfolioPhotoIdx(0);
-    setPromptIdx(0);
-                  setCardScrolled(false);
+                  doSwipe("right");
                 }} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,background:"var(--glass)",cursor:"pointer",width:"100%",textAlign:"left",transition:"all .15s"}}
                 onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.borderColor="var(--gold)"}}
                 onMouseLeave={e=>{e.currentTarget.style.background="var(--glass)";e.currentTarget.style.borderColor="rgba(255,255,255,0.06)"}}
@@ -1780,7 +1747,7 @@ const isMatch=matchScore>55||(DEMO_MODE&&Math.random()<0.3);
                 </button>
               ))}
             </div>
-            <button className="intent-skip" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null);doSwipe("left")}} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"none",color:"var(--muted)",fontSize:12,cursor:"pointer"}}>Skip this profile</button>
+            <button className="intent-skip" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null);setUserDefaultIntent("");doSwipe("left")}} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"none",color:"var(--muted)",fontSize:12,cursor:"pointer"}}>Skip this profile</button>
           </div>
         </div>
       )}
