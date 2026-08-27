@@ -277,6 +277,8 @@ function MusePage() {
   const [showQuests, setShowQuests] = useState(false);
   const [claimableQuests, setClaimableQuests] = useState(0);
   const [nearQuests, setNearQuests] = useState(0);
+  const [topQuests, setTopQuests] = useState<{id:string;title:string;icon:string;progress:number;target:number;color:string}[]>([]);
+  const [showDailyLogin, setShowDailyLogin] = useState(false);
   const [loginStreak, setLoginStreak] = useState(0);
 
   useEffect(() => {
@@ -904,6 +906,13 @@ function MusePage() {
       if (Array.isArray(d?.quests)) {
         setClaimableQuests(d.quests.filter((q: any) => q.completed && !q.claimed).length);
         setNearQuests(d.quests.filter((q: any) => !q.completed && q.progress / q.target >= 0.6).length);
+        const TIER_COLORS: Record<string,string> = { starter: "#98FB98", daily: "#87CEEB", weekly: "#FFD700", monthly: "#D4A5FF", season: "#FF69B4", legendary: "#FF8A80" };
+        const top = d.quests
+          .filter((q: any) => !q.completed && q.progress > 0)
+          .sort((a: any, b: any) => (b.progress / b.target) - (a.progress / a.target))
+          .slice(0, 3)
+          .map((q: any) => ({ id: q.id, title: q.title, icon: q.icon, progress: q.progress, target: q.target, color: TIER_COLORS[q.quest_tier] || "#FFD700" }));
+        setTopQuests(top);
       }
       if (typeof d?.streak === "number") setLoginStreak(d.streak);
     } catch {}
@@ -955,6 +964,7 @@ function MusePage() {
     if (lastLoginDay !== today) {
       try { safeSetItem("muse_quest_login_day", today); } catch {}
       trackQuest("login", "login_streak");
+      setTimeout(() => setShowDailyLogin(true), 800);
     }
     apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-quests" }) })
       .then(r => r.json())
@@ -1776,7 +1786,7 @@ function MusePage() {
           {toastMsg.msg}
         </div>
       )}
-      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} setLiveForum={setLiveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} nearQuests={nearQuests} loginStreak={loginStreak} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} liveProfessionals={liveProfessionals} setShowQuests={setShowQuests} questClaimables={claimableQuests} />
+      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} setLiveForum={setLiveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} nearQuests={nearQuests} topQuests={topQuests} loginStreak={loginStreak} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} liveProfessionals={liveProfessionals} setShowQuests={setShowQuests} questClaimables={claimableQuests} />
       {screen === "auth" ? (
         <div className="phone-wrap">
           <div className="phone" id="muse-app">
@@ -2243,7 +2253,7 @@ function MusePage() {
             <PortfolioScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Profile">
-            <ProfileScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditType={setEditType} setEditLooking={setEditLooking} setEditNsfw={setEditNsfw} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={setSelectedPortfolio} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} setShowQuests={setShowQuests} />
+            <ProfileScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditType={setEditType} setEditLooking={setEditLooking} setEditNsfw={setEditNsfw} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={setSelectedPortfolio} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} setShowQuests={setShowQuests} loginStreak={loginStreak} questClaimables={claimableQuests} />
             </ScreenErrorBoundary>
           </div>
         </div>
@@ -2852,6 +2862,19 @@ function MusePage() {
         </div>
       )}
       <SupportChat open={supportOpen} onClose={()=>setSupportOpen(false)} onStartTutorial={(key) => setActiveTutorial(key)} />
+      {/* ══════ DAILY LOGIN POPUP ══════ */}
+      {showDailyLogin && (
+        <div className="daily-login-overlay" role="presentation" onClick={() => setShowDailyLogin(false)}>
+          <div className="daily-login-card" onClick={e => e.stopPropagation()}>
+            <div className="daily-login-icon">🔥</div>
+            <div className="daily-login-title">Welcome back!</div>
+            <div className="daily-login-streak">{loginStreak > 0 ? `${loginStreak} day streak` : "Start your streak today"}</div>
+            <div className="daily-login-sub">Check your commissions and claim rewards</div>
+            <button className="daily-login-btn" onClick={() => { setShowDailyLogin(false); setShowQuests(true); }}>View Commissions</button>
+            <button className="daily-login-dismiss" onClick={() => setShowDailyLogin(false)}>Later</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

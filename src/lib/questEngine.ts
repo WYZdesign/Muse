@@ -25,7 +25,7 @@ export async function notifyQuestComplete(sb: SupabaseClient, userId: string, ti
   try {
     await sb.from("muse_notifications").insert({
       user_id: userId, type: "quest",
-      body: `⭐ Spark complete: ${title} — claim your reward in Settings → Sparks`,
+      body: `⭐ Commission complete: ${title} — claim your reward in Profile → Commissions`,
       read: false,
     });
   } catch { /* best-effort */ }

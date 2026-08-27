@@ -52,6 +52,8 @@ export interface ProfileScreenProps {
   apiFetch?: (url: string, opts?: any) => Promise<any>;
   doLogout?: () => void;
   setShowQuests?: (v: boolean) => void;
+  loginStreak?: number;
+  questClaimables?: number;
 }
 
 export const ProfileScreen = memo(function ProfileScreen({
@@ -101,6 +103,8 @@ export const ProfileScreen = memo(function ProfileScreen({
   apiFetch = async () => ({}),
   doLogout = () => {},
   setShowQuests = () => {},
+  loginStreak = 0,
+  questClaimables = 0,
 }: ProfileScreenProps) {
   return (
     <div className={"screen-el" + (screen === "profile" ? " active" : "")}>
@@ -207,9 +211,21 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
         </div>
         <div className="section">
-          <div className="section-title">Sparks</div>
-          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 8 }}>Complete challenges to earn free likes, super likes, and boosts.</div>
-          <button className="quest-compact-btn" onClick={() => setShowQuests(true)}>⭐ View Sparks</button>
+          <div className="section-title">Commissions</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            {loginStreak > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--gold)", fontWeight: 700 }}>
+                🔥 {loginStreak} day streak
+              </div>
+            )}
+            {questClaimables > 0 && (
+              <div style={{ fontSize: 12, color: "#FF69B4", fontWeight: 600, padding: "3px 10px", borderRadius: 99, background: "rgba(255,105,180,0.1)", border: "1px solid rgba(255,105,180,0.2)" }}>
+                {questClaimables} reward{questClaimables > 1 ? "s" : ""} ready
+              </div>
+            )}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 10 }}>Complete challenges to earn free likes, super likes, and boosts.</div>
+          <button className="quest-compact-btn" onClick={() => setShowQuests(true)}>⭐ View Commissions</button>
         </div>
         <div className="section">
           <div className="section-title">Referral</div>

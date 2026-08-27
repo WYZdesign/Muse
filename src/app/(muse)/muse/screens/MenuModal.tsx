@@ -56,6 +56,7 @@ export interface MenuModalProps {
   setShowQuests?: (v: boolean) => void;
   questClaimables?: number;
   nearQuests?: number;
+  topQuests?: {id:string;title:string;icon:string;progress:number;target:number;color:string}[];
   loginStreak?: number;
   isUnlimited?: boolean;
   profileViews?: number;
@@ -131,6 +132,7 @@ export const MenuModal = memo(function MenuModal({
   setShowQuests,
   questClaimables = 0,
   nearQuests = 0,
+  topQuests = [],
   loginStreak = 0,
   isUnlimited = false,
   profileViews = 0,
@@ -473,7 +475,7 @@ export const MenuModal = memo(function MenuModal({
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Payments &amp; Subscription</div>
                 {[
                   { label: "Subscription", desc: "Manage your plan — Muse Pro", go: () => { setShowHamburger(false); showScreen("subscription"); }, dot: false },
-                  ...(setShowQuests ? [{ label: "Quests & Rewards", desc: questClaimables > 0 ? `${questClaimables} reward${questClaimables > 1 ? "s" : ""} ready to claim!` : "Complete challenges, earn free likes", go: () => { setShowHamburger(false); setShowQuests(true); }, dot: questClaimables > 0 }] : []),
+                  ...(setShowQuests ? [{ label: "Commissions", desc: questClaimables > 0 ? `${questClaimables} reward${questClaimables > 1 ? "s" : ""} ready to claim!` : "Complete challenges, earn free likes", go: () => { setShowHamburger(false); setShowQuests(true); }, dot: questClaimables > 0 }] : []),
                   ...(setShowConnect ? [{ label: "Marketplace Payments", desc: "Connect Stripe to receive bookings", go: () => { setShowHamburger(false); setShowConnect(true); }, dot: false }] : []),
                   ...(setShowPaymentHistory ? [{ label: "Payment History", desc: "Your charges and payouts", go: () => { setShowHamburger(false); setShowPaymentHistory(true); }, dot: false }] : []),
                   ...(setShowReferral ? [{ label: "Referral Program", desc: "Invite friends, earn rewards", go: () => { setShowHamburger(false); setShowReferral(true); }, dot: false }] : []),
@@ -568,10 +570,34 @@ export const MenuModal = memo(function MenuModal({
                       {hubTab === "notif" && (activityFeed.length === 0
                         ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No activity yet. Start swiping!</div>
                         : <>
-                            {(nearQuests > 0 || loginStreak > 0) && (
-                              <div style={{ padding: "10px 14px", marginBottom: 10, borderRadius: 12, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)" }}>
-                                {loginStreak > 0 && <div style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700, marginBottom: 4 }}>🔥 {loginStreak} day streak</div>}
-                                {nearQuests > 0 && <div style={{ fontSize: 12, color: "var(--text2)" }}>{nearQuests} spark{nearQuests > 1 ? "s" : ""} nearly done — keep going!</div>}
+                            {(loginStreak > 0 || topQuests.length > 0) && (
+                              <div style={{ padding: "12px 14px", marginBottom: 10, borderRadius: 12, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)" }}>
+                                {loginStreak > 0 && <div style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700, marginBottom: 8 }}>🔥 {loginStreak} day streak</div>}
+                                {topQuests.length > 0 && (
+                                  <div>
+                                    <div style={{ fontSize: 11, color: "var(--text2)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 8 }}>Top objectives</div>
+                                    {topQuests.map(q => {
+                                      const pct = Math.round((q.progress / q.target) * 100);
+                                      return (
+                                        <div key={q.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                                          <span style={{ fontSize: 16, flexShrink: 0 }}>{q.icon}</span>
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{q.title}</div>
+                                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+                                              <div style={{ flex: 1, height: 5, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                                                <div style={{ height: "100%", borderRadius: 3, width: `${pct}%`, background: q.color, transition: "width .4s" }} />
+                                              </div>
+                                              <span style={{ fontSize: 10, fontWeight: 800, color: q.color, minWidth: 24, textAlign: "right" }}>{pct}%</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                    <div style={{ marginTop: 8, textAlign: "right" }}>
+                                      <span style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, cursor: "pointer" }} onClick={() => { setShowHamburger(false); setShowQuests?.(true); }}>View all →</span>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                             {activityFeed.map(a => (
