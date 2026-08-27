@@ -119,7 +119,7 @@ export const BtsScreen = memo(function BtsScreen({
     (s: any) => {
       const url = "https://wyzdesign.com/muse/post/" + s.id;
       if (navigator.share) {
-        navigator.share({ title: "Muse BTS", text: "Check out this BTS moment on Muse", url }).catch(() => {});
+        navigator.share({ title: "Muse Moments", text: "Check out this moment on Muse", url }).catch(() => {});
       } else {
         navigator.clipboard?.writeText(url);
         showToast("Moment link copied!");
@@ -145,7 +145,7 @@ export const BtsScreen = memo(function BtsScreen({
 
   const handleSnap = useCallback(() => {
     showScreen("connections");
-    showToast("Share your BTS moment from the Feed composer!");
+    showToast("Share your moment from the Feed composer!");
   }, [showScreen, showToast]);
 
   const headerGradient = "linear-gradient(135deg, #FF1493 0%, #FA8072 50%, #FFD700 100%)";
@@ -200,7 +200,7 @@ export const BtsScreen = memo(function BtsScreen({
             color: "transparent",
           }}
         >
-          BTS
+          Moments
         </div>
 
         <button
@@ -255,7 +255,7 @@ export const BtsScreen = memo(function BtsScreen({
               <FiCamera size={18} color="#fff" />
             </div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>Time to Post BTS</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>Time to Post</div>
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)" }}>
                 Dual camera: main + selfie - expires in {remaining.hours}h {remaining.minutes}m
               </div>
@@ -298,7 +298,7 @@ export const BtsScreen = memo(function BtsScreen({
             }}
           >
             <FiCamera size={16} />
-            Snap BTS Moment
+                Snap Moment
           </button>
         </div>
 
@@ -694,7 +694,7 @@ export const BtsScreen = memo(function BtsScreen({
                 <FiCamera size={32} color="rgba(255,20,147,0.4)" />
               </div>
               <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text, #fff)" }}>
-                No BTS moments yet
+                No moments yet
               </div>
               <div style={{ fontSize: 12, color: "var(--muted, #999)", textAlign: "center", maxWidth: 240 }}>
                 Snap a behind-the-scenes moment to light up this feed
@@ -717,7 +717,7 @@ export const BtsScreen = memo(function BtsScreen({
                 }}
               >
                 <FiCamera size={14} />
-                Snap BTS Moment
+            Snap Moment
               </button>
             </div>
           )}

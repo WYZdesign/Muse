@@ -53,10 +53,10 @@ export const TUTORIALS: Record<string, TutorialDef> = {
   },
   moments: {
     key: "moments",
-    title: "BTS",
+    title: "Moments",
     steps: [
       { id: "moments", title: "Live Moments", anchor: "card", selector: ".moments-feed", body: "Behind-the-scenes clips from creatives. Set photos, gear shots, location snaps. They expire after a while." },
-      { id: "post", title: "Post a Moment", anchor: "fab", body: "Share a quick BTS snap to your network. Photos and short video only." },
+      { id: "post", title: "Post a Moment", anchor: "fab", body: "Share a quick snap to your network. Photos and short video only." },
     ],
   },
   profile: {

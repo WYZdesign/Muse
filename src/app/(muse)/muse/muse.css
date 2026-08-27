@@ -979,7 +979,7 @@ img{background-color:#1a0a2e}
    to render as giant distorted ovals in the match overlay and matches list. */
 .swipe-card img[src^="/models/"]{object-fit:cover;width:100%;height:100%}
 
-/* ═══ MOMENTS / BTS PAGE ═══ */
+/* ═══ MOMENTS PAGE ═══ */
 .moments-page{padding:0 16px 20px;display:flex;flex-direction:column;gap:14px}
 .moments-hero{text-align:center;padding:12px 0 6px}
 .moments-hero h2{font-size:22px;font-weight:800;background:linear-gradient(90deg,#FF1493,#FF69B4,#FFA07A,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0 0 4px;letter-spacing:-0.02em}

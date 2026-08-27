@@ -1250,6 +1250,7 @@ function MusePage() {
         const isMatch = matchScore > 55 || (DEMO_MODE && Math.random() < 0.3);
       if (isMatch) {
         const newMatch: Match = { ...p, messages: [] };
+        const prevMatches = matches;
         setMatches(prev => [...prev, newMatch]);
         setMatchStreak(prev => prev + 1);
         // Delay match overlay so swipe animation completes first
@@ -1262,7 +1263,12 @@ function MusePage() {
           setActivityFeed(prev => [{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
           flash("#FFD700");
         }, 450);
-        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id, intent }) }).catch(() => { /* silently handled */ });
+        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id, intent }) }).then(r => { if (!r.ok) throw new Error("match failed"); }).catch(() => {
+          setMatches(prevMatches);
+          setMatchStreak(prev => Math.max(0, prev - 1));
+          setShowMatchOverlay(null);
+          showToast("Match failed — try again");
+        });
       }
       if (DEMO_MODE && Math.random() > 0.4 && !likedBy.find(l => l.id === p.id)) {
         setLikedBy(prev => [...prev, p]);
