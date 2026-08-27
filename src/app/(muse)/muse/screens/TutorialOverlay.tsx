@@ -113,13 +113,25 @@ export const TutorialOverlay = memo(function TutorialOverlay({
 
   const highlightRadius = target.anchor === "fab" ? "50%" : Math.min(22, target.width / 3);
 
-  // Create a cutout mask for the spotlight - transparent hole where the element is
+  // Create a bright highlight area around the target element - the element itself stays fully visible
+  // Dark overlay with a rectangular bright hole for the target element
   const maskStyle: React.CSSProperties = {
     position: "fixed",
     inset: 0,
     background: "rgba(0,0,0,0.88)",
-    maskImage: `radial-gradient(circle at ${target.left + target.width/2}px ${target.top + target.height/2}px, transparent ${Math.max(target.width, target.height)/2}px, rgba(0,0,0,0.88) ${Math.max(target.width, target.height)/2 + 8}px)`,
-    WebkitMaskImage: `radial-gradient(circle at ${target.left + target.width/2}px ${target.top + target.height/2}px, transparent ${Math.max(target.width, target.height)/2}px, rgba(0,0,0,0.88) ${Math.max(target.width, target.height)/2 + 8}px)`,
+    // Use clip-path to cut out the target area with padding
+    clipPath: `polygon(
+      0 0,
+      ${vw}px 0,
+      ${vw}px ${vh}px,
+      0 ${vh}px,
+      0 ${target.top + target.height + 8}px,
+      ${target.left - 8}px ${target.top + target.height + 8}px,
+      ${target.left - 8}px ${target.top - 8}px,
+      ${target.left + target.width + 8}px ${target.top - 8}px,
+      ${target.left + target.width + 8}px ${target.top + target.height + 8}px,
+      ${vw}px ${target.top + target.height + 8}px
+    )`,
     pointerEvents: "none",
     transition: "all .3s ease",
     zIndex: 9999,
@@ -130,7 +142,7 @@ export const TutorialOverlay = memo(function TutorialOverlay({
       <div style={maskStyle} onClick={next} />
 
       <div style={{
-        position: "absolute", left: target.left, top: target.top, width: target.width, height: target.height,
+        position: "absolute", left: target.left - 8, top: target.top - 8, width: target.width + 16, height: target.height + 16,
         borderRadius: highlightRadius,
         border: "2px solid var(--gold, #FFD700)",
         boxShadow: "0 0 0 4px rgba(0,0,0,0.4), 0 0 30px rgba(255,215,0,0.3)",
