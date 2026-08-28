@@ -15,8 +15,10 @@
 // Every call fails-soft: returns null when the key is missing or the
 // request errors, so callers can fall back to rules-based logic.
 // ═══════════════════════════════════════════════════════════════
+import { getMuseUrl } from "@/lib/urls";
 
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
+const MUSE_URL = getMuseUrl();
 
 const API_KEY = process.env.OPENROUTER_API_KEY || "";
 const EMBED_MODEL = process.env.OPENROUTER_EMBED_MODEL || "openai/text-embedding-3-small";
@@ -42,7 +44,7 @@ export async function embedText(text: string): Promise<number[] | null> {
       headers: {
         Authorization: `Bearer ${API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://muse.wyzdesign.com",
+        "HTTP-Referer": MUSE_URL,
         "X-Title": "Muse",
       },
       body: JSON.stringify({ model: EMBED_MODEL, input: cleaned }),
@@ -73,7 +75,7 @@ export async function chatComplete(
       headers: {
         Authorization: `Bearer ${API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://muse.wyzdesign.com",
+        "HTTP-Referer": MUSE_URL,
         "X-Title": "Muse",
       },
       body: JSON.stringify({

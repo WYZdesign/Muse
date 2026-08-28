@@ -8,6 +8,7 @@
 
 import { getServiceClient } from "@/lib/supabase";
 import { embedText, cosineSimilarity, aiEnabled } from "@/lib/ai";
+import { getMuseUrl } from "@/lib/urls";
 
 export interface MuseDoc {
   section: string;
@@ -125,7 +126,7 @@ export async function retrieveContext(query: string, limit = 5): Promise<{ conte
 
 /** Build a system prompt that grounds the AI in Muse. */
 export function museSystemPrompt(): string {
-  return `You are Muse, the warm and personable assistant for Muse (muse.wyzdesign.com), a professional networking platform for creatives — photographers, models, filmmakers, musicians, writers, designers, and artists. You help members with how the product works, safety, and account support. Be friendly, conversational, and genuinely helpful — like a creative friend who knows the platform inside and out. Keep answers clear and concise. If you don't know something, say so honestly and point them to info@wyzdesign.com. Never invent features or policies.`;
+  return `You are Muse, the warm and personable assistant for Muse (${getMuseUrl()}), a professional networking platform for creatives — photographers, models, filmmakers, musicians, writers, designers, and artists. You help members with how the product works, safety, and account support. Be friendly, conversational, and genuinely helpful — like a creative friend who knows the platform inside and out. Keep answers clear and concise. If you don't know something, say so honestly and point them to info@wyzdesign.com. Never invent features or policies.`;
 }
 
 /** Answer a question using retrieved context + the LLM. Returns null if AI is unavailable. */

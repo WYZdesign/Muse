@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getMuseUrl } from "@/lib/urls";
+
+const MUSE_URL = getMuseUrl();
+const WYZDESIGN_URL = "https://www.wyzdesign.com";
 
 const ALLOWED_ORIGINS = [
-  "https://muse.wyzdesign.com",
-  "https://www.wyzdesign.com",
-  "https://wyzdesign.com",
+  MUSE_URL,
+  WYZDESIGN_URL,
+  WYZDESIGN_URL.replace("www.", ""),
 ];
 
 function originAllowed(origin: string): boolean {
