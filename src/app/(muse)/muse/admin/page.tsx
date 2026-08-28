@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getAccessToken, authFetch } from "@/app/(muse)/muse/lib/api";
+import { authFetch } from "@/app/(muse)/muse/lib/api";
 
 type AnalyticsData = {
   totals: { users: number; matches: number; albums: number };

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { FiPlus, FiLock, FiGlobe, FiUsers, FiTrash2, FiX, FiHeart } from "react-icons/fi";
-import { getAccessToken, authFetch } from "../lib/api";
+import { authFetch } from "../lib/api";
 
 type Album = {
   id: string;

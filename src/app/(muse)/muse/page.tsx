@@ -8,14 +8,14 @@ import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
 import { persistMessage, subscribeToConversation, fetchConversationHistory, getGeolocation, distanceMiles } from "@/app/muse-realtime";
 import { trackError } from "@/lib/errorTracker";
-import { FiStar, FiHeart, FiCompass, FiFilter, FiZap, FiSend, FiArrowLeft, FiEdit2, FiPlus, FiSearch, FiUsers, FiUser, FiLink, FiTwitter, FiInstagram, FiX, FiFile, FiImage, FiEye, FiMoreHorizontal, FiSettings, FiChevronRight, FiMusic, FiHeadphones, FiMenu, FiCalendar, FiCamera, FiShare2, FiShield, FiGift, FiDollarSign } from "react-icons/fi";
+import { FiArrowLeft, FiX, FiLink, FiTwitter, FiInstagram } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
 import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, QUOTA_MSG } from "./lib/safe-storage";
 import { getAccessToken, authFetch } from "./lib/api";
 import { uid } from "./lib/uid";
-import { getProfileShareUrl, getPostShareUrl, getCommunityShareUrl, getEventShareUrl, getProShareUrlWithRef, getReferralUrl, getMuseUrl } from "@/lib/urls";
+import { getProfileShareUrl, getPostShareUrl, getMuseUrl } from "@/lib/urls";
 import DisclosureModal from "./components/DisclosureModal";
 import AgeVerificationModal from "./components/AgeVerificationModal";
 import { useChatState } from "./hooks/useChatState";
@@ -47,7 +47,7 @@ import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
 import QuestPanel from "./screens/QuestPanel";
-import { PROFILES, BRIEFS, COMMUNITIES, EVENTS, SESSIONS, AESTHETICS, CREATIVE_TYPES, BEHIND_CAMERA, IN_FRONT_CAMERA, LOOKING_FOR, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, ICEBREAKERS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
+import { PROFILES, AESTHETICS, BEHIND_CAMERA, IN_FRONT_CAMERA, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, ICEBREAKERS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
 import { useDiscoveryData } from "./hooks/useDiscoveryData";
 import { useFeedData } from "./hooks/useFeedData";
 import { useCommunityData } from "./hooks/useCommunityData";
@@ -117,17 +117,17 @@ function MusePage() {
   const [obStep, setObStep] = useState(0);
    const [obData, setObData] = useState<{name?:string;loc?:string;bio?:string;type?:string;looking?:string[];conn?:string[];styles?:string[];zodiac?:string;chinese?:string;mbti?:string;lifePath?:number;referralCode?:string}>({});
    const [currentUser, setCurrentUser] = useState({ id:"you", name:"You", type:"Photographer", exp:"New here", avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", stats:{matches:0,likes:0,superLikes:0,passes:0,bookingsCompleted:0,matchesReceived:0,messagesSent:0}, createdAt:Date.now(), referrals:0, portfolios:[] as {img:string;title:string;type:string}[], foundingTier:"" as string, proExpiresAt:"" as string, tier:"free", nsfw:false as boolean });
-   const [excludedPortfolios, setExcludedPortfolios] = useState<string[]>(EXCLUDED_PORTFOLIOS);
-   const [portfolioAccess, setPortfolioAccess] = useState<{[key: string]: "public" | "private" | "invite"}>({});
-   const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
-   const [showPortfolioModal, setShowPortfolioModal] = useState(false);
-  const [portfolioStats, setPortfolioStats] = useState<any>({});
+const [excludedPortfolios, _setExcludedPortfolios] = useState<string[]>(EXCLUDED_PORTFOLIOS);
+  const [portfolioAccess, _setPortfolioAccess] = useState<{[key: string]: "public" | "private" | "invite"}>({});
+  const [selectedPortfolio, _setSelectedPortfolio] = useState<any>(null);
+  const [showPortfolioModal, _setShowPortfolioModal] = useState(false);
+  const [portfolioStats, _setPortfolioStats] = useState<any>({});
   const [cardAlbums, setCardAlbums] = useState<{id:string;title:string;cover_url:string;access_level:string;photo_count:number}[]>([]);
   const [cardAlbumIdx, setCardAlbumIdx] = useState(0);
   const [cardAlbumPhotos, setCardAlbumPhotos] = useState<string[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
-    const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setShowMatchMenu, unmatchTarget, setUnmatchTarget, chatImages, setChatImages, typingTarget, setTypingTarget, themTyping, setThemTyping } = useChatState();
-    const [connFilter, setConnFilter] = useState("all");
+const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setShowMatchMenu, unmatchTarget, setUnmatchTarget, chatImages, setChatImages, typingTarget, setTypingTarget, themTyping, setThemTyping } = useChatState();
+  const [_connFilter, _setConnFilter] = useState("all");
   const [showNsfw, setShowNsfw] = useState(false);
   const [showOnline, setShowOnline] = useState(true);
   const [showDistance, setShowDistance] = useState(true);
@@ -186,7 +186,7 @@ function MusePage() {
   const [reportTarget, setReportTarget] = useState<{id:number|string;type:string;name:string} | null>(null);
   const [showNotificationsSettings, setShowNotificationsSettings] = useState(false);
   const [showConnectedAccounts, setShowConnectedAccounts] = useState(false);
-  const [showBlockedUsers, setShowBlockedUsers] = useState(false);
+  const [_showBlockedUsers, _setShowBlockedUsers] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showGuidelines, setShowGuidelines] = useState(false);
@@ -208,8 +208,8 @@ function MusePage() {
       setSessTab(viewerSide(t) === "industry" ? "bookings" : "sessions");
     }
   }, [currentUser?.type]);
-  const [netTab, setNetTab] = useState<"pros"|"forum">("pros");
-  const [networkOpenTab, setNetworkOpenTab] = useState<"pros"|"forum"|undefined>(undefined);
+  const [_netTab, _setNetTab] = useState<"pros"|"forum">("pros");
+  const [_networkOpenTab, _setNetworkOpenTab] = useState<"pros"|"forum"|undefined>(undefined);
   const [forumSort, setForumSort] = useState<"hot"|"new"|"top">("hot");
   const [forumCategory, setForumCategory] = useState<string>("all");
   const [newPostTitle, setNewPostTitle] = useState("");
@@ -218,11 +218,11 @@ function MusePage() {
   const [expandedPost, setExpandedPost] = useState<number|null>(null);
   const [commentText, setCommentText] = useState("");
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const [eventsFilter, setEventsFilter] = useState<"all"|"upcoming"|"past">("all");
+  const [_eventsFilter, _setEventsFilter] = useState<"all"|"upcoming"|"past">("all");
   const [feedText, setFeedText] = useState("");
   const [feedMedia, setFeedMedia] = useState<string[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [feedReactions, setFeedReactions] = useState<Record<number,string[]>>({});
+  const [_feedReactions, _setFeedReactions] = useState<Record<number,string[]>>({});
   const [feedPostsStatic, setFeedPostsStatic] = useState<{id:number;author:string;avatar:string;type:string;text:string;likes:number;comments:number;shares:number;time:string;liked:boolean;saved:boolean;img?:string}[]>([{id:401,author:"Maya Chen",avatar:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",type:"photo",text:"Golden hour never gets old. Shot this at El Matador Beach last weekend.",likes:234,comments:18,shares:5,time:"2h ago",img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600",liked:false,saved:false},{id:402,author:"Jordan Rivera",avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",type:"text",text:"Just wrapped principal photography on a 30-min short. 14-hour days for 12 days straight. The footage is incredible!",likes:189,comments:32,shares:12,time:"5h ago",liked:false,saved:false},{id:403,author:"Sam Taylor",avatar:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",type:"photo",text:"New album art I designed. Surreal dreamlike aesthetic.",likes:312,comments:24,shares:8,time:"8h ago",img:"https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=600",liked:false,saved:false},{id:404,author:"Riley Patel",avatar:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",type:"photo",text:"Motion graphics reel. 6 months of work in 90 seconds.",likes:567,comments:45,shares:23,time:"1d ago",liked:false,saved:false}]);
   const [feedFilter, setFeedFilter] = useState<"all"|"photos"|"videos"|"text">("all");
   const [museCat, setMuseCat] = useState<"all"|"tfp"|"paid"|"opencall"|"concept">(() => viewerSideOf(currentUser) === "industry" ? "paid" : "all");
@@ -233,7 +233,7 @@ function MusePage() {
   const editAvatarInputRef = useRef<HTMLInputElement>(null);
 
   // Personality Discovery
-  const [obStep10Known, setObStep10Known] = useState<"yes"|"no"|"test"|null>(null);
+  const [_obStep10Known, _setObStep10Known] = useState<"yes"|"no"|"test"|null>(null);
   const [testScreen, setTestScreen] = useState<"zodiac"|"mbti"|"chinese"|"lifepath"|"done"|null>(null);
   const [testBirthMonth, setTestBirthMonth] = useState("");
   const [testBirthDay, setTestBirthDay] = useState("");
@@ -480,7 +480,7 @@ function MusePage() {
         testLevels, obSelects, obProfilePic, obPortfolioItems,         likedBy: likedBy.slice(-MAX_ITEMS),
         profileViews: DEMO_MODE ? profileViews : 0, profileViewers: DEMO_MODE ? profileViewers.slice(-20) : [], stories: stories.slice(-20), theme, activityFeed: activityFeed.slice(-MAX_ITEMS),
         discoveryPrefs, chatImages: Object.fromEntries(Object.entries(chatImages).slice(-20).map(([k,v]) => [k, v.slice(-20)])), screen, filterStyles, filterScore,
-        searchQuery, connTab, museCat, connFilter, authUser, chatTarget
+        searchQuery, connTab, museCat, _connFilter, authUser, chatTarget
       };
       safeSetItem(STORAGE_KEY, JSON.stringify(data));
       // Throttle the server sync to once per 30s (was every saveState tick) — big load reduction at scale.
@@ -490,7 +490,7 @@ function MusePage() {
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs, stats: currentUser.stats }) }).catch(() => {});
       }
     } catch(e) {}
-  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,connFilter,authUser,chatTarget]);
+  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,_connFilter,authUser,chatTarget]);
 
   const loadState = useCallback(async () => {
     try {
@@ -1188,7 +1188,7 @@ function MusePage() {
   // wrong card entirely). Route to the right screen + sub-tab first so the
   // module the tutorial describes is guaranteed to be on screen.
   const startTutorial = useCallback((key: string) => {
-    if (key === "forum") { setScreen("network"); setNetworkOpenTab("forum"); }
+    if (key === "forum") { setScreen("network"); _setNetworkOpenTab("forum"); }
     else if (key === "events") { setScreen("community"); setCommTab("events"); }
     else if (key === "community") { setScreen("community"); setCommTab("groups"); }
     else if (TUTORIALS[key]) { setScreen(key as typeof screen); }
@@ -2262,7 +2262,7 @@ function MusePage() {
             <DiscoverScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showDiscoveryPrefs={showDiscoveryPrefs} setShowDiscoveryPrefs={setShowDiscoveryPrefs} showFilterModal={showFilterModal} setShowFilterModal={setShowFilterModal} mapView={mapView} setMapView={setMapView} filteredProfiles={filteredProfiles} currentIdx={currentIdx} setCurrentIdx={setCurrentIdx} boostActive={boostActive} setBoostActive={setBoostActive} setBoostEnd={setBoostEnd} discoverSearchOpen={discoverSearchOpen} setDiscoverSearchOpen={setDiscoverSearchOpen} discoverSearch={discoverSearch} setDiscoverSearch={setDiscoverSearch} myGeo={myGeo} myStyles={obData.styles || []} apiFetch={apiFetch} showToast={showToast} doSwipe={doSwipe} setViewProfile={setViewProfile} viewProfile={viewProfile} handleImgError={handleImgError} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} stories={stories} currentUser={currentUser} uid={uid} showMatchMenu={showMatchMenu} setShowMatchMenu={setShowMatchMenu} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel} currentPhotoIdx={currentPhotoIdx} setCurrentPhotoIdx={setCurrentPhotoIdx} cardScrolled={cardScrolled} setCardScrolled={setCardScrolled} showNoteTooltip={showNoteTooltip} setShowNoteTooltip={setShowNoteTooltip} promptIdx={promptIdx} setPromptIdx={setPromptIdx} cardAlbumIdx={cardAlbumIdx} setCardAlbumIdx={setCardAlbumIdx} cardAlbumPhotos={cardAlbumPhotos} cardAlbums={cardAlbums} portfolioPhotoIdx={portfolioPhotoIdx} setPortfolioPhotoIdx={setPortfolioPhotoIdx} setLightboxPhotos={setLightboxPhotos} setLightboxIdx={setLightboxIdx} doRewind={doRewind} doLikeWithNote={doLikeWithNote} setDailyLikes={setDailyLikes} setSuperLikes={setSuperLikes} isUnlimited={isUnlimited} dailyLikes={dailyLikes} superLikes={superLikes} galleryView={galleryView} setGalleryView={setGalleryView} lightboxPhotos={lightboxPhotos} lightboxIdx={lightboxIdx} heroRef={heroRef} likeLabelRef={likeLabelRef} nopeLabelRef={nopeLabelRef} cardScrollRef={cardScrollRef} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Feed">
-            <FeedScreen screen={screen} showScreen={showScreen} feedFilter={feedFilter} setFeedFilter={setFeedFilter} feedText={feedText} setFeedText={setFeedText} feedMedia={feedMedia} setFeedMedia={setFeedMedia} feedPosts={feedPosts} setFeedPosts={setFeedPosts} showEmojiPicker={showEmojiPicker} setShowEmojiPicker={setShowEmojiPicker} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} currentUser={currentUser} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} stories={stories} setStories={setStories} uploadImage={uploadImage} uid={uid} bootstrapped={bootstrapped} feedPostsStatic={feedPostsStatic} setFeedPostsStatic={setFeedPostsStatic} feedReactions={feedReactions} replyingTo={replyingTo} setReplyingTo={setReplyingTo} commentText={commentText} setCommentText={setCommentText} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} setShareTarget={setShareTarget} setViewProfile={setViewProfile} />
+            <FeedScreen screen={screen} showScreen={showScreen} feedFilter={feedFilter} setFeedFilter={setFeedFilter} feedText={feedText} setFeedText={setFeedText} feedMedia={feedMedia} setFeedMedia={setFeedMedia} feedPosts={feedPosts} setFeedPosts={setFeedPosts} showEmojiPicker={showEmojiPicker} setShowEmojiPicker={setShowEmojiPicker} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} currentUser={currentUser} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} stories={stories} setStories={setStories} uploadImage={uploadImage} uid={uid} bootstrapped={bootstrapped} feedPostsStatic={feedPostsStatic} setFeedPostsStatic={setFeedPostsStatic} feedReactions={_feedReactions} replyingTo={replyingTo} setReplyingTo={setReplyingTo} commentText={commentText} setCommentText={setCommentText} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} setShareTarget={setShareTarget} setViewProfile={setViewProfile} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Muses">
             <MusesScreen screen={screen} showScreen={showScreen} matches={matches} setMatches={setMatches} searchOpen={searchOpen} setSearchOpen={setSearchOpen} matchesView={matchesView} setMatchesView={setMatchesView} showLikesYou={showLikesYou} setShowLikesYou={setShowLikesYou} likedBy={likedBy} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} searchQuery={searchQuery} setSearchQuery={setSearchQuery} expandedMatchId={expandedMatchId} matchActions={matchActions} />
@@ -2289,13 +2289,13 @@ function MusePage() {
             </ScreenErrorBoundary>
 
             <ScreenErrorBoundary name="Network">
-            <NetworkScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} setLiveForum={setLiveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} setShowReport={setShowReport} setReportTarget={setReportTarget} liveProfessionals={liveProfessionals} openTab={networkOpenTab} />
+            <NetworkScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} setLiveForum={setLiveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} setShowReport={setShowReport} setReportTarget={setReportTarget} liveProfessionals={liveProfessionals} openTab={_networkOpenTab} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Portfolio">
             <PortfolioScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Profile">
-            <ProfileScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditType={setEditType} setEditLooking={setEditLooking} setEditNsfw={setEditNsfw} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={setSelectedPortfolio} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} setShowQuests={setShowQuests} loginStreak={loginStreak} questClaimables={claimableQuests} />
+            <ProfileScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditType={setEditType} setEditLooking={setEditLooking} setEditNsfw={setEditNsfw} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={_setSelectedPortfolio} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} setShowQuests={setShowQuests} loginStreak={loginStreak} questClaimables={claimableQuests} />
             </ScreenErrorBoundary>
           </div>
         </div>

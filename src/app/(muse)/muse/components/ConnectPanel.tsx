@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getAccessToken, authFetch } from "../lib/auth-client";
+import { authFetch } from "../lib/auth-client";
 
 type ConnectStatus = {
   connected: boolean;

@@ -13,7 +13,7 @@ export class ScreenErrorBoundary extends React.Component<
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
+  componentDidCatch(error: Error, _info: React.ErrorInfo) {
     console.error(`[ScreenBoundary${this.props.name ? `:${this.props.name}` : ""}]`, error.message);
     // Fire-and-forget server log so we can see crash rates in production
     fetch("/api/muse", {

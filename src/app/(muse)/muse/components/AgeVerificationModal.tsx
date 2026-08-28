@@ -12,7 +12,6 @@ type Props = {
 export default function AgeVerificationModal({ onVerified, onClose, purpose = "age_gate", authFetch }: Props) {
   const [state, setState] = useState<"idle" | "loading" | "starting" | "redirected" | "checking" | "verified" | "error">("idle");
   const [message, setMessage] = useState("");
-  const [checkCount, setCheckCount] = useState(0);
 
   const startVerification = async () => {
     setState("loading");
@@ -63,11 +62,9 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
       } else if (d.status === "pending" || d.status === "requires_input") {
         setState("redirected");
         setMessage("Not verified yet. Complete the verification in the other tab, then check again.");
-        setCheckCount(c => c + 1);
       } else {
         setState("redirected");
         setMessage(`Status: ${d.status}. Complete verification and try again.`);
-        setCheckCount(c => c + 1);
       }
     } catch {
       setState("error");

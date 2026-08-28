@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useState, useRef, useCallback } from "react";
-import { FiHeart, FiFlag, FiUserX, FiSlash, FiMessageCircle } from "react-icons/fi";
+import { FiFlag, FiUserX, FiSlash, FiMessageCircle } from "react-icons/fi";
 
 export interface MatchCardProps {
   m: any;
@@ -110,12 +110,9 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
   }, [m.id, m.name, setBlockTarget]);
 
   const revealX = revealed ? REVEAL_OFFSET : 0;
-  const transformX = isDragging ? dragOffset : revealX;
 
   const leftActive = dragOffset < -20;
-  const rightActive = dragOffset > 20;
   const leftPct = leftActive ? Math.min(100, (Math.abs(dragOffset) / SWIPE_THRESHOLD) * 100) : 0;
-  const rightPct = rightActive ? Math.min(100, (dragOffset / SWIPE_THRESHOLD) * 100) : 0;
 
   if (view === "grid") {
     return (

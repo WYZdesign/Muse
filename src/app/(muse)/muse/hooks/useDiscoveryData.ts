@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { trackError } from "@/lib/errorTracker";
 import type { Match, Profile } from "../components/types";
 

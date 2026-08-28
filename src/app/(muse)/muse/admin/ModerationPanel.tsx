@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { getAccessToken, authFetch } from "@/app/(muse)/muse/lib/api";
+import { useState } from "react";
+import { authFetch } from "@/app/(muse)/muse/lib/api";
 
 type Report = {
   id: string; reporter_id: { id: string; name: string; avatar: string } | null;
@@ -27,14 +26,6 @@ export default function AdminModerationPanel() {
   const [brainQuery, setBrainQuery] = useState("");
   const [brainResult, setBrainResult] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState("");
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      setToken(data.session?.access_token || "");
-    })();
-  }, []);
 
   const loadTab = async (t: string) => {
     setTab(t as any);
