@@ -14,6 +14,10 @@ import {
   FiChevronUp,
   FiUserPlus,
   FiSearch,
+  FiTarget,
+  FiZap,
+  FiArrowUpRight,
+  FiDollarSign,
 } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import { PROFESSIONALS, FORUM_POSTS } from "../components/types";
@@ -395,6 +399,94 @@ export const NetworkScreen = memo(function NetworkScreen({
               onKeyDown={(e) => { if (e.key === "Enter") handleProSearch(e.currentTarget.value); }}
               style={{ margin: "0 0 10px", fontSize: 13 }}
             />
+            {/* COMPACT DYNAMIC FILTER BAR */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
+              <select
+                value={proExp}
+                onChange={(e) => setProExp(e.target.value as any)}
+                style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)" }}
+              >
+                <option value="all">Experience: All</option>
+                <option value="rising">Rising (0-7yr)</option>
+                <option value="established">Established (8-11yr)</option>
+                <option value="veteran">Veteran (12+yr)</option>
+              </select>
+              <select
+                value={proRateBand}
+                onChange={(e) => setProRateBand(e.target.value as any)}
+                style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)" }}
+              >
+                <option value="all">Rate: Any</option>
+                <option value="tfp">TFP</option>
+                <option value="50to100">$50-100</option>
+                <option value="100to150">$100–150</option>
+                <option value="gt150">$150+</option>
+              </select>
+              <select
+                value={proSkill.join(",")}
+                onChange={(e) => setProSkill(e.target.value.split(",").filter(Boolean))}
+                multiple
+                style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", minWidth: 180 }}
+              >
+                {(() => {
+                  const proSource = liveProfessionals?.length ? liveProfessionals : PROFESSIONALS;
+                  return [...new Set(proSource.flatMap((p) => p.skills || []))];
+                })().map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              <select
+                value={proLooking}
+                onChange={(e) => setProLooking(e.target.value)}
+                style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)" }}
+              >
+                <option value="all">Looking: Anyone</option>
+                {(() => {
+                  const proSource = liveProfessionals?.length ? liveProfessionals : PROFESSIONALS;
+                  return [...new Set(proSource.flatMap((p) => p.looking || []))];
+                })().map((l) => (
+                  <option key={l} value={l}>Seeking {l}</option>
+                ))}
+              </select>
+              <select
+                value={proSort}
+                onChange={(e) => setProSort(e.target.value as any)}
+                style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)" }}
+              >
+                <option value="match">Sort: Featured</option>
+                <option value="expDesc">Exp: High-Low</option>
+                <option value="expAsc">Exp: Low-High</option>
+                <option value="rateDesc">Rate: High-Low</option>
+                <option value="rateAsc">Rate: Low-High</option>
+                <option value="openings">Most Openings</option>
+              </select>
+              {/* Active filter badges */}
+              {(() => {
+                const badges = [];
+                if (proExp !== "all") badges.push({ label: `Exp: ${proExp}`, clear: () => setProExp("all") });
+                if (proRateBand !== "all") badges.push({ label: `Rate: ${proRateBand}`, clear: () => setProRateBand("all") });
+                if (proSkill.length > 0) badges.push({ label: `Skills: ${proSkill.length}`, clear: () => setProSkill([]) });
+                if (proLooking !== "all") badges.push({ label: `Looking: ${proLooking}`, clear: () => setProLooking("all") });
+                if (proSort !== "match") badges.push({ label: `Sort: ${proSort}`, clear: () => setProSort("match") });
+                if (proHiringOnly) badges.push({ label: "Hiring only", clear: () => setProHiringOnly(false) });
+                return badges.map((b, i) => (
+                  <span key={i} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(255,215,0,0.15)", color: "var(--gold)", display: "inline-flex", alignItems: "center", gap: 4, marginLeft: 4 }}>
+                    {b.label}
+                    <button onClick={b.clear} style={{ background: "none", border: "none", color: "var(--gold)", cursor: "pointer", padding: 0, fontSize: 12, lineHeight: 1 }}>✕</button>
+                  </span>
+                ));
+              })()}
+              <span
+                role="tab"
+                aria-selected={proHiringOnly}
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProHiringOnly(!proHiringOnly); } }}
+                onClick={() => setProHiringOnly(!proHiringOnly)}
+                style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proHiringOnly ? "#4cdd88" : "var(--muted)", opacity: proHiringOnly ? 1 : 0.6, transition: "all 0.15s", borderBottom: proHiringOnly ? "2px solid #4cdd88" : "2px solid transparent", paddingBottom: 2 }}
+              >
+                Hiring now
+              </span>
+            </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
               <div
                 role="button" tabIndex={0}
