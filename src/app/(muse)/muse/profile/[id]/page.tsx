@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getServiceClient } from "@/lib/supabase";
 import type { Metadata } from "next";
+import { getProfileShareUrl } from "@/lib/urls";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +25,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title,
     description,
-    alternates: { canonical: `https://muse.wyzdesign.com/muse/profile/${p.id}` },
-    openGraph: { title, description, type: "profile", url: `https://muse.wyzdesign.com/muse/profile/${p.id}`, images: p.avatar ? [{ url: p.avatar, alt: p.name }] : undefined },
+    alternates: { canonical: getProfileShareUrl(p.id) },
+    openGraph: { title, description, type: "profile", url: getProfileShareUrl(p.id), images: p.avatar ? [{ url: p.avatar, alt: p.name }] : undefined },
     twitter: { card: "summary_large_image", title, description, images: p.avatar ? [p.avatar] : undefined },
   };
 }

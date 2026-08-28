@@ -4,6 +4,7 @@ import React, { memo, useState, useEffect, useCallback } from "react";
 import { FiArrowLeft, FiCamera, FiClock, FiGrid, FiList } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
+import { getPostShareUrl } from "@/lib/urls";
 
 export interface BtsScreenProps {
   screen: Screen;
@@ -117,7 +118,7 @@ export const BtsScreen = memo(function BtsScreen({
 
   const handleShare = useCallback(
     (s: any) => {
-      const url = "https://wyzdesign.com/muse/post/" + s.id;
+      const url = getPostShareUrl(s.id);
       if (navigator.share) {
         navigator.share({ title: "Muse BTS", text: "Check out this BTS moment on Muse", url }).catch(() => {});
       } else {

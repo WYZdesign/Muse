@@ -6,6 +6,7 @@ import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
 import type { Screen } from "../components/types";
 import { COMMUNITIES, EVENTS } from "../components/types";
+import { getCommunityShareUrl, getEventShareUrl } from "@/lib/urls";
 
 export interface CommunityScreenProps {
   screen: Screen;
@@ -151,7 +152,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                   <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6, marginBottom: 20 }}>{detailItem.desc || "No description yet."}</div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button className={joinedIds.has(detailItem.id) ? "btn btn-outline" : "btn btn-gold"} style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 700, borderRadius: 12, opacity: joinLoading === String(detailItem.id) ? 0.6 : 1 }} onClick={() => toggleJoin(detailItem)} disabled={joinLoading === String(detailItem.id)}>{joinedIds.has(detailItem.id) ? "✓ Joined" : "Join"}</button>
-                    <button className="btn btn-outline" style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 600, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={() => shareItem(detailItem.name, "https://muse.wyzdesign.com/community/" + detailItem.id, showToast)}><FiShare2 size={14} /> Share</button>
+                    <button className="btn btn-outline" style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 600, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={() => shareItem(detailItem.name, getCommunityShareUrl(detailItem.id), showToast)}><FiShare2 size={14} /> Share</button>
                   </div>
                 </>
               ) : (
@@ -163,7 +164,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                   <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6, marginBottom: 20 }}>{detailItem.desc || "No description yet."}</div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button className={"btn " + (rsvpdEvents.includes(detailItem.id) ? "btn-outline" : "btn-gold")} style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 700, borderRadius: 12, opacity: rsvpLoading === detailItem.id ? 0.6 : 1 }} onClick={() => handleRsvp(detailItem)} disabled={rsvpLoading === detailItem.id}>{rsvpdEvents.includes(detailItem.id) ? "✓ Going" : "RSVP"}</button>
-                    <button className="btn btn-outline" style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 600, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={() => shareItem(detailItem.title, "https://muse.wyzdesign.com/event/" + detailItem.id, showToast)}><FiShare2 size={14} /> Share</button>
+                    <button className="btn btn-outline" style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 600, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={() => shareItem(detailItem.title, getEventShareUrl(detailItem.id), showToast)}><FiShare2 size={14} /> Share</button>
                   </div>
                 </>
               )}
@@ -242,7 +243,7 @@ export const CommunityScreen = memo(function CommunityScreen({
             <div style={{ padding: "0 14px 14px", width: "100%", position: "relative", zIndex: 1 }}>
               <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
                 <button className={joinedIds.has(c.id) ? "btn btn-outline" : "btn btn-gold"} style={{ fontSize: 12, padding: "11px 24px", fontWeight: 700, borderRadius: 12, opacity: joinLoading === String(c.id) ? 0.6 : 1 }} onClick={(e) => { e.stopPropagation(); toggleJoin(c); }} disabled={joinLoading === String(c.id)}>{joinedIds.has(c.id) ? "✓ Joined" : "Join"}</button>
-                <button className="btn btn-outline" style={{ fontSize: 12, padding: "11px 24px", fontWeight: 600, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }} onClick={(e) => { e.stopPropagation(); shareItem(c.name, "https://muse.wyzdesign.com/community/" + c.id, showToast); }}><FiShare2 size={12} /> Share</button>
+                <button className="btn btn-outline" style={{ fontSize: 12, padding: "11px 24px", fontWeight: 600, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }} onClick={(e) => { e.stopPropagation(); shareItem(c.name, getCommunityShareUrl(c.id), showToast); }}><FiShare2 size={12} /> Share</button>
               </div>
             </div>
           </div>
@@ -283,7 +284,7 @@ export const CommunityScreen = memo(function CommunityScreen({
             </div>
             <div style={{ display: "flex", gap: 8, padding: "0 16px 16px", width: "100%", justifyContent: "center", position: "relative", zIndex: 1 }}>
               <button className={"btn " + (rsvpdEvents.includes(ev.id) ? "btn-outline" : "btn-gold")} style={{ padding: "12px 24px", fontSize: 13, fontWeight: 700, borderRadius: 12, opacity: rsvpLoading === ev.id ? 0.6 : 1 }} onClick={(e) => { e.stopPropagation(); handleRsvp(ev); }} disabled={rsvpLoading === ev.id}>{rsvpdEvents.includes(ev.id) ? "✓ Going" : "RSVP"}</button>
-              <button className="btn btn-outline" style={{ padding: "12px 24px", fontSize: 13, fontWeight: 600, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }} onClick={(e) => { e.stopPropagation(); shareItem(ev.title, "https://muse.wyzdesign.com/event/" + ev.id, showToast); }}><FiShare2 size={12} /> Share</button>
+              <button className="btn btn-outline" style={{ padding: "12px 24px", fontSize: 13, fontWeight: 600, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }} onClick={(e) => { e.stopPropagation(); shareItem(ev.title, getEventShareUrl(ev.id), showToast); }}><FiShare2 size={12} /> Share</button>
             </div>
           </div>
         ))}
