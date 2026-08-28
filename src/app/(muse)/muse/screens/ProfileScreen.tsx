@@ -1,5 +1,5 @@
-import React, { memo } from "react";
-import { FiArrowLeft, FiEdit2, FiSettings } from "react-icons/fi";
+import React, { memo, useState, useEffect } from "react";
+import { FiArrowLeft, FiEdit2, FiSettings, FiUsers, FiShoppingBag, FiDollarSign, FiClock, FiExternalLink } from "react-icons/fi";
 import { getReferralUrl } from "@/lib/urls";
 import Nav from "../components/Nav";
 import type { Screen, Match } from "../components/types";
@@ -47,7 +47,7 @@ export interface ProfileScreenProps {
   setChatTarget?: (m: any) => void;
   unreadNotificationCount?: number;
   checkProfileBadges?: (stats: any, createdAt: any) => any[];
-  getReferralTier?: (count: number) => { tier: string; perks: string };
+  getReferralTier?: (count: number) => { tier: string; perks: string; discount?: number; nextThreshold?: number | null };
   apiFetch?: (url: string, opts?: any) => Promise<any>;
   doLogout?: () => void;
   setShowQuests?: (v: boolean) => void;
@@ -105,6 +105,28 @@ export const ProfileScreen = memo(function ProfileScreen({
   loginStreak = 0,
   questClaimables = 0,
 }: ProfileScreenProps) {
+  const [referralData, setReferralData] = useState<any>(null);
+  const [referralStats, setReferralStats] = useState<{totalEarned: number; paid: number; pending: number; purchases: number; signups: number} | null>(null);
+  const [loadingReferral, setLoadingReferral] = useState(true);
+
+  useEffect(() => {
+    const fetchReferralData = async () => {
+      try {
+        const res = await apiFetch("/api/muse/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get" }) });
+        const data = await res.json();
+        if (data.success) {
+          setReferralData(data);
+          setReferralStats(data.stats || { totalEarned: 0, paid: 0, pending: 0, purchases: 0, signups: data.referrals || 0 });
+        }
+      } catch (e) {
+        console.error("Failed to fetch referral data:", e);
+      } finally {
+        setLoadingReferral(false);
+      }
+    };
+    fetchReferralData();
+  }, [apiFetch]);
+
   return (
     <div className={"screen-el" + (screen === "profile" ? " active" : "")}>
       <div className="hdr" style={{ justifyContent: "space-between", borderBottom: "1px solid rgba(255,215,0,0.15)" }}>
@@ -210,30 +232,119 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
         </div>
         <div className="section">
-          <div className="section-title">Commissions</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            {loginStreak > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--gold)", fontWeight: 700 }}>
-                🔥 {loginStreak} day streak
+          <div className="section-title">Referral & Commissions</div>
+          
+          {loadingReferral ? (
+            <div style={{ textAlign: "center", padding: "20px", color: "var(--muted)" }}>Loading...</div>
+          ) : referralData ? (
+            <>
+              {/* Referral Code Section */}
+              <div style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text2)" }}>Your Referral Code</div>
+                  <FiExternalLink size={16} style={{ color: "var(--muted)" }} />
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <div style={{ 
+                    flex: 1, 
+                    fontSize: 20, 
+                    fontWeight: 800, 
+                    letterSpacing: 2, 
+                    color: "var(--gold)",
+                    fontFamily: "monospace",
+                    background: "rgba(0,0,0,0.2)",
+                    padding: "12px 16px",
+                    borderRadius: 8,
+                    border: "1px solid rgba(255,215,0,0.3)"
+                  }}>
+                    {referralData.code || "—"}
+                  </div>
+                  <button 
+                    className="btn btn-gold" 
+                    style={{ whiteSpace: "nowrap" }}
+                    onClick={async () => { 
+                      try { 
+                        const res = await apiFetch("/api/muse/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "generate" }) }); 
+                        const j = await res.json(); 
+                        if (j.code) { 
+                          const link = getReferralUrl(j.code); 
+                          try { 
+                            navigator.clipboard?.writeText(link); 
+                            showToast("Link copied: " + link); 
+                          } catch { 
+                            showToast("Your code: " + j.code); 
+                          } 
+                        } 
+                      } catch { 
+                        showToast("Try again later"); 
+                      } 
+                    }}>
+                    <FiExternalLink size={14} style={{ marginRight: 4 }} /> Copy Link
+                  </button>
+                </div>
+                <div style={{ marginTop: 8, fontSize: 11, color: "var(--muted)" }}>
+                  Share this link. When they join, you both earn rewards.
+                </div>
               </div>
-            )}
-            {questClaimables > 0 && (
-              <div style={{ fontSize: 12, color: "#FF69B4", fontWeight: 600, padding: "3px 10px", borderRadius: 99, background: "rgba(255,105,180,0.1)", border: "1px solid rgba(255,105,180,0.2)" }}>
-                {questClaimables} reward{questClaimables > 1 ? "s" : ""} ready
+
+              {/* Stats Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 16 }}>
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--gold)", fontFamily: "monospace" }}>{referralStats?.signups || currentUser.referrals || 0}</div>
+                  <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>Signups</div>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#90caf9", fontFamily: "monospace" }}>{referralStats?.purchases || 0}</div>
+                  <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>Purchases</div>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--gold)", fontFamily: "monospace" }}>${(referralStats?.totalEarned || 0).toFixed(2)}</div>
+                  <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>Total Earned</div>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#90caf9", fontFamily: "monospace" }}>${(referralStats?.paid || 0).toFixed(2)}</div>
+                  <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>Paid Out</div>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center", gridColumn: "span 2" }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#FF69B4", fontFamily: "monospace" }}>${(referralStats?.pending || 0).toFixed(2)}</div>
+                  <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>Pending</div>
+                </div>
               </div>
-            )}
-          </div>
-          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 10 }}>Complete challenges to earn free likes, super likes, and boosts.</div>
-          <button className="quest-compact-btn" onClick={() => setShowQuests(true)}>⭐ View Commissions</button>
-        </div>
-        <div className="section">
-          <div className="section-title">Referral</div>
-          <div className="section-text" style={{ marginBottom: 8 }}>Invite creatives. Earn rewards.</div>
-          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 6 }}>Tier: <span style={{ color: "var(--gold)", fontWeight: 700 }}>{getReferralTier(currentUser.referrals || 0).tier}</span> · {currentUser.referrals || 0} joined</div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn btn-gold" style={{ flex: 1, fontSize: 12, padding: "10px 0" }} onClick={async () => { try { const res = await apiFetch("/api/muse/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "generate" }) }); const j = await res.json(); if (j.code) { const link = getReferralUrl(j.code); try { navigator.clipboard?.writeText(link); showToast("Link copied: " + link); } catch { showToast("Your code: " + j.code); } } } catch { showToast("Try again later"); } }}>Copy Referral Link</button>
-          </div>
-          <div style={{ marginTop: 8, fontSize: 11, color: "var(--muted)", lineHeight: 1.5 }}>Bronze (1+): Exclusive badge · Silver (5+): 10% off · Gold (20+): 20% off · Platinum (50+): 20% off</div>
+
+              {/* Tier Progress */}
+              <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text2)" }}>Current Tier</div>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--gold)", background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.35)", padding: "4px 12px", borderRadius: 99 }}>
+                    {getReferralTier(currentUser.referrals || 0).tier}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>
+                  {(currentUser.referrals || 0)} / {getReferralTier(currentUser.referrals || 0).nextThreshold || "Max"} referrals to next tier
+                </div>
+                <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ 
+                    height: "100%", 
+                    background: "linear-gradient(90deg,var(--gold),#FF8A80)", 
+                    width: `${Math.min(100, ((currentUser.referrals || 0) / (getReferralTier(currentUser.referrals || 0).nextThreshold || 1)) * 100)}%`,
+                    borderRadius: 3,
+                    transition: "width 0.4s ease"
+                  }} />
+                </div>
+              </div>
+
+              {/* Tier Perks */}
+              <div style={{ marginTop: 16, fontSize: 11, color: "var(--muted)", lineHeight: 1.8 }}>
+                <div style={{ fontWeight: 600, color: "var(--text2)", marginBottom: 8 }}>Tier Perks</div>
+                <div>Bronze (1+): Exclusive badge</div>
+                <div>Silver (5+): 10% off</div>
+                <div>Gold (20+): 20% off</div>
+                <div>Platinum (50+): 20% off + priority support</div>
+              </div>
+            </>
+          ) : (
+            <div style={{ textAlign: "center", padding: "20px", color: "var(--muted)" }}>Failed to load referral data</div>
+          )}
         </div>
         <div className="section">
           <div className="section-title">Self Discovery</div>

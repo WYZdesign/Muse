@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { FiX, FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiBell } from "react-icons/fi";
+import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiActivity, FiDollarSign, FiUsers as FiUsersIcon, FiGift, FiX, FiBell } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import { COMMUNITIES, EVENTS, SESSIONS, PROFESSIONALS, FORUM_POSTS } from "../components/types";
 import { getCommunityShareUrl, getEventShareUrl, getProShareUrlWithRef, getMuseUrl } from "@/lib/urls";
@@ -14,6 +14,7 @@ export interface MenuModalProps {
   showScreen: (s: Screen) => void;
   liveCommunities: any[] | null;
   liveEvents: any[] | null;
+  liveProfessionals: any[] | null;
   showNsfw: boolean;
   rsvpdEvents: number[];
   setRsvpdEvents: React.Dispatch<React.SetStateAction<number[]>>;
@@ -56,7 +57,7 @@ export interface MenuModalProps {
   setShowReferral?: (v: boolean) => void;
   setShowQuests?: (v: boolean) => void;
   questClaimables?: number;
-  nearQuests?: number;
+nearQuests?: number;
   topQuests?: {id:string;title:string;icon:string;progress:number;target:number;color:string}[];
   loginStreak?: number;
   isUnlimited?: boolean;
@@ -77,7 +78,7 @@ export interface MenuModalProps {
   onOpenActivity?: () => void;
   unreadCount?: number;
   activityFeed?: {id:number;from:string;avatar:string;text:string;time:string;read:boolean}[];
-  liveProfessionals?: any[] | null;
+  getReferralTier?: (count: number) => { tier: string; perks: string; discount?: number; nextThreshold?: number | null };
 }
 
 const SUPPORT_EMAIL = "info@wyzdesign.com";
@@ -154,6 +155,7 @@ export const MenuModal = memo(function MenuModal({
   unreadCount,
   activityFeed = [],
   liveProfessionals,
+  getReferralTier,
 }: MenuModalProps) {
   if (!showHamburger) return null;
 
@@ -455,6 +457,40 @@ export const MenuModal = memo(function MenuModal({
                     </>
                   );
                 })()}
+                {/* YOUR ACTIVITY WIDGET */}
+                <div style={{ marginTop: 20, padding: 16, borderRadius: 16, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.15)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Your Activity</div>
+                    <FiActivity size={20} style={{ color: "var(--gold)" }} />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                      <div style={{ fontSize: 24, fontWeight: 800, color: "var(--gold)", fontFamily: "monospace" }}>{loginStreak || 0}</div>
+                      <div style={{ fontSize: 11, color: "var(--text2)", marginTop: 4 }}>Day Streak</div>
+                    </div>
+                    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                      <div style={{ fontSize: 24, fontWeight: 800, color: "#FF69B4", fontFamily: "monospace" }}>{questClaimables || 0}</div>
+                      <div style={{ fontSize: 11, color: "var(--text2)", marginTop: 4 }}>Rewards Ready</div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 12, textAlign: "right" }}>
+                    <button style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, cursor: "pointer", background: "none", border: "none", padding: 0 }} onClick={() => { setShowHamburger(false); setShowQuests?.(true); }}>View all →</button>
+                  </div>
+                </div>
+                {/* REFERRAL PROGRAM LINK */}
+                <div style={{ marginTop: 16, padding: 16, borderRadius: 16, background: "rgba(255,105,180,0.08)", border: "1px solid rgba(255,105,180,0.15)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <FiGift size={18} style={{ color: "#FF69B4" }} />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Referral Program</span>
+                    </div>
+                    <FiDollarSign size={18} style={{ color: "var(--gold)" }} />
+                  </div>
+<div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 10 }}>
+                      Invite creatives. Earn rewards. Tier: <span style={{ color: "var(--gold)", fontWeight: 700 }}>{getReferralTier?.(currentUser.referrals || 0).tier || "None"}</span> · {currentUser.referrals || 0} joined
+                    </div>
+                  <button style={{ width: "100%", fontSize: 12, fontWeight: 600, color: "#FF69B4", background: "rgba(255,105,180,0.1)", border: "1px solid rgba(255,105,180,0.3)", padding: "10px 0", borderRadius: 12, cursor: "pointer" }} onClick={() => { setShowHamburger(false); setShowReferral?.(true); }}>Go to Referral Program</button>
+                </div>
               </div>
             )}
             {hamburgerScreen === "settings" && (
