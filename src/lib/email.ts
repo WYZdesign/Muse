@@ -14,6 +14,8 @@
  * in Resend (add SPF/DKIM DNS records), then send from info@wyzdesign.com.
  */
 
+import { getMuseUrl, getTermsUrl, getPrivacyUrl } from "@/lib/urls";
+
 const FROM = "Muse <info@wyzdesign.com>";
 const RESEND_URL = "https://api.resend.com/emails";
 
@@ -90,7 +92,7 @@ const SHELL = (inner: string) => `
       ${inner}
       <div style="margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08);text-align:center;font-size:12px;color:rgba(255,255,255,0.4);line-height:1.7;">
         You're receiving this because you're on Muse's list.<br/>
-        Built by WYZ Design · <a href="https://muse.wyzdesign.com/muse/terms" style="color:#ffd700;text-decoration:none;">Terms</a> · <a href="https://muse.wyzdesign.com/muse/privacy" style="color:#ffd700;text-decoration:none;">Privacy</a>
+        Built by WYZ Design · <a href="${getTermsUrl()}" style="color:#ffd700;text-decoration:none;">Terms</a> · <a href="${getPrivacyUrl()}" style="color:#ffd700;text-decoration:none;">Privacy</a>
       </div>
     </div>
   </body>
@@ -136,7 +138,7 @@ export function waitlistWelcome(email: string, source?: string): EmailMessage {
       </div>
 
       <div style="text-align:center;">
-        <a href="https://muse.wyzdesign.com/muse?src=welcome_email" style="display:inline-block;padding:13px 30px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;font-size:14px;">Create your account</a>
+        <a href="${getMuseUrl()}?src=welcome_email" style="display:inline-block;padding:13px 30px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;font-size:14px;">Create your account</a>
         <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:10px;">Signed up with ${email}</div>
       </div>
     </div>
@@ -156,7 +158,7 @@ export function waitlistWelcome(email: string, source?: string): EmailMessage {
       "",
       "Safety is our foundation: verified profiles, disclosure forms, and 24-hour check-ins for in-person work. No spam, ever.",
       "",
-      "Create your account: https://muse.wyzdesign.com/muse?src=welcome_email",
+      "Create your account: " + getMuseUrl() + "?src=welcome_email",
     ].join("\n"),
   };
 }
@@ -169,14 +171,14 @@ export function betaAccess(email: string): EmailMessage {
       <p style="font-size:15px;color:rgba(255,255,255,0.8);line-height:1.7;margin:0 0 20px;">
         It's time to find your muse.<br/>Head to the app and set up your profile to start matching.
       </p>
-      <a href="https://muse.wyzdesign.com/muse" style="display:inline-block;padding:13px 28px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;">Enter Muse</a>
+      <a href="${getMuseUrl()}" style="display:inline-block;padding:13px 28px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;">Enter Muse</a>
     </div>
   `);
   return {
     to: email,
     subject: "Your Muse access is ready ✦",
     html,
-    text: "Your Muse access is ready. Head to https://muse.wyzdesign.com/muse to set up your profile.",
+    text: "Your Muse access is ready. Head to " + getMuseUrl() + " to set up your profile.",
   };
 }
 
@@ -194,14 +196,14 @@ export function signupWelcome(email: string, name?: string): EmailMessage {
       <p style="font-size:15px;color:rgba(255,255,255,0.8);line-height:1.7;margin:0 0 20px;">
         Your account is live. Set up your profile, pick what kind of work you're into, and start matching with creatives who get it.
       </p>
-      <a href="https://muse.wyzdesign.com/muse" style="display:inline-block;padding:13px 28px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;">Finish your profile</a>
+      <a href="${getMuseUrl()}" style="display:inline-block;padding:13px 28px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;">Finish your profile</a>
     </div>
   `);
   return {
     to: email,
     subject: "Welcome to Muse ✦",
     html,
-    text: "Welcome to Muse! Your account is live. Set up your profile and start matching with creatives: https://muse.wyzdesign.com/muse",
+    text: "Welcome to Muse! Your account is live. Set up your profile and start matching with creatives: " + getMuseUrl(),
   };
 }
 
