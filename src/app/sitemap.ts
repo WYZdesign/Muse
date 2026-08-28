@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
+import { getMuseUrl } from "@/lib/urls";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://muse.wyzdesign.com";
+  const base = getMuseUrl();
   const now = new Date();
 
   const routes: { path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"] }[] = [

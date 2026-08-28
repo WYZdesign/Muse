@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { getMuseUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Pricing — Muse",
   description: "Muse pricing: a free tier forever, plus Muse Pro at $9.99/month. Founding members get lifetime Pro free.",
-  alternates: { canonical: "https://muse.wyzdesign.com/muse/pricing" },
-  openGraph: { title: "Pricing — Muse", description: "Muse pricing: a free tier forever, plus Muse Pro at $9.99/month. Founding members get lifetime Pro free.", url: "https://muse.wyzdesign.com/muse/pricing", siteName: "Muse", type: "website" },
+  alternates: { canonical: getMuseUrl() + "/pricing" },
+  openGraph: { title: "Pricing — Muse", description: "Muse pricing: a free tier forever, plus Muse Pro at $9.99/month. Founding members get lifetime Pro free.", url: getMuseUrl() + "/pricing", siteName: "Muse", type: "website" },
   twitter: { card: "summary", title: "Pricing — Muse", description: "Muse pricing: a free tier forever, plus Muse Pro at $9.99/month. Founding members get lifetime Pro free." },
 };
 

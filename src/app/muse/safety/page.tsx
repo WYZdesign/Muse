@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { getSafetyUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Safety Center — Muse",
   description: "Muse's safety features: disclosure forms, 24-hour check-ins, trusted contacts, verified profiles, and block/report tools.",
-  alternates: { canonical: "https://muse.wyzdesign.com/muse/safety" },
-  openGraph: { title: "Safety Center — Muse", description: "Muse's safety features: disclosure forms, 24-hour check-ins, trusted contacts, verified profiles, and block/report tools.", url: "https://muse.wyzdesign.com/muse/safety", siteName: "Muse", type: "website" },
+  alternates: { canonical: getSafetyUrl() },
+  openGraph: { title: "Safety Center — Muse", description: "Muse's safety features: disclosure forms, 24-hour check-ins, trusted contacts, verified profiles, and block/report tools.", url: getSafetyUrl(), siteName: "Muse", type: "website" },
   twitter: { card: "summary", title: "Safety Center — Muse", description: "Muse's safety features: disclosure forms, 24-hour check-ins, trusted contacts, verified profiles, and block/report tools." },
 };
 

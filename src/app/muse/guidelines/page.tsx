@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { getGuidelinesUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Community Guidelines — Muse",
   description: "Muse's community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network.",
-  alternates: { canonical: "https://muse.wyzdesign.com/muse/guidelines" },
-  openGraph: { title: "Community Guidelines — Muse", description: "Muse's community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network.", url: "https://muse.wyzdesign.com/muse/guidelines", siteName: "Muse", type: "website" },
+  alternates: { canonical: getGuidelinesUrl() },
+  openGraph: { title: "Community Guidelines — Muse", description: "Muse's community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network.", url: getGuidelinesUrl(), siteName: "Muse", type: "website" },
   twitter: { card: "summary", title: "Community Guidelines — Muse", description: "Muse's community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network." },
 };
 

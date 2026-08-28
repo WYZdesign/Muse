@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { getTermsUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Muse",
   description: "The terms of service governing use of Muse, the creative professional network by WYZ Design.",
-  alternates: { canonical: "https://muse.wyzdesign.com/muse/terms" },
-  openGraph: { title: "Terms of Service — Muse", description: "The terms of service governing use of Muse, the creative professional network by WYZ Design.", url: "https://muse.wyzdesign.com/muse/terms", siteName: "Muse", type: "website" },
+  alternates: { canonical: getTermsUrl() },
+  openGraph: { title: "Terms of Service — Muse", description: "The terms of service governing use of Muse, the creative professional network by WYZ Design.", url: getTermsUrl(), siteName: "Muse", type: "website" },
   twitter: { card: "summary", title: "Terms of Service — Muse", description: "The terms of service governing use of Muse, the creative professional network by WYZ Design." },
 };
 

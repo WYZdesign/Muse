@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { getCareersUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Careers — Join Muse / WYZ Design",
   description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design.",
-  alternates: { canonical: "https://muse.wyzdesign.com/muse/careers" },
-  openGraph: { title: "Careers — Join Muse / WYZ Design", description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design.", url: "https://muse.wyzdesign.com/muse/careers", siteName: "Muse", type: "website" },
+  alternates: { canonical: getCareersUrl() },
+  openGraph: { title: "Careers — Join Muse / WYZ Design", description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design.", url: getCareersUrl(), siteName: "Muse", type: "website" },
   twitter: { card: "summary", title: "Careers — Join Muse / WYZ Design", description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design." },
 };
 

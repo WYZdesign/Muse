@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { getPrivacyUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Muse",
   description: "How Muse collects, uses, and protects your personal information. Data security and your rights.",
-  alternates: { canonical: "https://muse.wyzdesign.com/muse/privacy" },
-  openGraph: { title: "Privacy Policy — Muse", description: "How Muse collects, uses, and protects your personal information. Data security and your rights.", url: "https://muse.wyzdesign.com/muse/privacy", siteName: "Muse", type: "website" },
+  alternates: { canonical: getPrivacyUrl() },
+  openGraph: { title: "Privacy Policy — Muse", description: "How Muse collects, uses, and protects your personal information. Data security and your rights.", url: getPrivacyUrl(), siteName: "Muse", type: "website" },
   twitter: { card: "summary", title: "Privacy Policy — Muse", description: "How Muse collects, uses, and protects your personal information. Data security and your rights." },
 };
 

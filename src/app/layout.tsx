@@ -1,5 +1,6 @@
 import type { Viewport, Metadata } from "next";
 import "./globals.css";
+import { getMuseUrl, getTermsUrl, getPrivacyUrl } from "@/lib/urls";
 
 // Blank-screen watchdog — runs inline in <head>, before any app chunk loads.
 // Detects two failure modes that previously produced a permanent blank screen:
@@ -65,7 +66,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://muse.wyzdesign.com"),
+  metadataBase: new URL(getMuseUrl()),
   title: "Muse — Where Creatives Connect",
   description: "Discover and connect with photographers, models, filmmakers, musicians, designers, and artists. The creative professional network.",
   manifest: "/manifest.webmanifest",
@@ -75,11 +76,11 @@ export const metadata: Metadata = {
     shortcut: "/muse-icon.png",
     apple: "/muse-icon.png",
   },
-  openGraph: { title: "Muse — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", url: "https://muse.wyzdesign.com", siteName: "Muse", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Muse — Where Creatives Connect" }] },
+  openGraph: { title: "Muse — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", url: getMuseUrl(), siteName: "Muse", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Muse — Where Creatives Connect" }] },
   twitter: { card: "summary_large_image", title: "Muse — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", images: ["/og-image.png"] },
   robots: { index: true, follow: true },
   keywords: ["creative network", "photographers", "models", "filmmakers", "musicians", "designers", "book creative shoots", "creative collaboration", "hire creatives"],
-  alternates: { canonical: "https://muse.wyzdesign.com" },
+  alternates: { canonical: getMuseUrl() },
 };
 
 const JSON_LD = [
@@ -87,8 +88,8 @@ const JSON_LD = [
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Muse",
-    url: "https://muse.wyzdesign.com",
-    logo: "https://muse.wyzdesign.com/muse-icon.png",
+    url: getMuseUrl(),
+    logo: getMuseUrl() + "/muse-icon.png",
     sameAs: [],
     contactPoint: {
       "@type": "ContactPoint",
@@ -100,10 +101,10 @@ const JSON_LD = [
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "Muse",
-    url: "https://muse.wyzdesign.com",
+    url: getMuseUrl(),
     potentialAction: {
       "@type": "SearchAction",
-      target: "https://muse.wyzdesign.com/muse?q={search_term_string}",
+      target: getMuseUrl() + "/muse?q={search_term_string}",
       "query-input": "required name=search_term_string",
     },
   },
@@ -111,7 +112,7 @@ const JSON_LD = [
     "@context": "https://schema.org",
     "@type": "WebApplication",
     name: "Muse",
-    url: "https://muse.wyzdesign.com/muse",
+    url: getMuseUrl() + "/muse",
     applicationCategory: "SocialNetworkingApplication",
     operatingSystem: "Web",
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },

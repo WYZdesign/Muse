@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { getMuseUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Blog — Muse",
   description: "Updates, insights, and stories from the Muse creative community and WYZ Design.",
-  alternates: { canonical: "https://muse.wyzdesign.com/muse/blog" },
-  openGraph: { title: "Blog — Muse", description: "Updates, insights, and stories from the Muse creative community and WYZ Design.", url: "https://muse.wyzdesign.com/muse/blog", siteName: "Muse", type: "website" },
+  alternates: { canonical: getMuseUrl() + "/blog" },
+  openGraph: { title: "Blog — Muse", description: "Updates, insights, and stories from the Muse creative community and WYZ Design.", url: getMuseUrl() + "/blog", siteName: "Muse", type: "website" },
   twitter: { card: "summary", title: "Blog — Muse", description: "Updates, insights, and stories from the Muse creative community and WYZ Design." },
 };
 
