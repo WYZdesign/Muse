@@ -406,7 +406,10 @@ export const MenuModal = memo(function MenuModal({
               <div className="conn-scroll">
                 <div className="hamburger-title" style={{ textAlign: "center" }}>Your Profile</div>
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
-                  <img loading="lazy" src={currentUser.avatar} alt="You" style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--gold)", marginBottom: 10 }} onError={handleImgError} />
+                  <div className="profile-avatar-wrap">
+                    <img loading="lazy" src={currentUser.avatar} alt="You" className="profile-avatar" onError={handleImgError} />
+                    <div className="profile-ring swirl-ring-1" />
+                  </div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>{currentUser.name}</div>
                   <div style={{ fontSize: 13, color: "var(--muted)" }}>{currentUser.type} · {currentUser.exp}</div>
                 </div>

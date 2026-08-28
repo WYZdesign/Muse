@@ -46,7 +46,6 @@ import PromptBankModal from "./components/PromptBankModal";
 import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
-import QuestPanel from "./screens/QuestPanel";
 import { PROFILES, AESTHETICS, BEHIND_CAMERA, IN_FRONT_CAMERA, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, ICEBREAKERS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
 import { useDiscoveryData } from "./hooks/useDiscoveryData";
 import { useFeedData } from "./hooks/useFeedData";
@@ -2305,8 +2304,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
       {/* SUBSCRIPTION SCREEN */}
       {screen === "subscription" && <ScreenErrorBoundary name="Subscription"><SubscriptionScreen screen={screen} showScreen={showScreen} currentUser={currentUser} authUser={authUser} userTier={userTier} setUserTier={setUserTier} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} apiFetch={apiFetch} /></ScreenErrorBoundary>}
-      {/* COMMISSIONS SCREEN */}
-      {screen === "commissions" && <QuestPanel show={true} onClose={() => showScreen("discover")} apiFetch={apiFetch} showToast={showToast} onClaimablesChange={setClaimableQuests} onQuestsChange={handleQuestsChange} loginStreak={loginStreak} onRewardGranted={(type, amount) => { if (type === "like") setDailyLikes(d => d + amount); else if (type === "superlike") setSuperLikes(d => d + amount); }} />}
       {/* ANALYTICS SCREEN */}
       {screen === "analytics" && <AnalyticsScreen screen={screen} showScreen={showScreen} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />}
       {/* SETTINGS SCREEN */}
@@ -2894,21 +2891,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       {showPaymentHistory && (
         <PaymentHistory userId={authUser?.id || ""} onClose={() => setShowPaymentHistory(false)} />
       )}
-      {/* ══════ QUESTS PANEL ══════ */}
-      <QuestPanel show={showQuests} onClose={() => setShowQuests(false)} apiFetch={apiFetch} showToast={showToast} onClaimablesChange={setClaimableQuests} onQuestsChange={handleQuestsChange} loginStreak={loginStreak} onRewardGranted={(type, amount) => {
-        if (type === "like") setDailyLikes(prev => prev + amount);
-        else if (type === "super_like") setSuperLikes(prev => prev + amount);
-        else if (type === "boost") { const end = Date.now() + 30 * 60 * 1000; setBoostEnd(end); setBoostActive(true); try { safeSetItem("muse_boost", String(end)); } catch {} }
-        // 'pro_day' and 'superpower' rewards are fulfilled by support/admin manually
-      }} />
-      {boostActive && (
-        <button className="boost-active-toast" style={{position:"fixed",top:80,right:20,zIndex:9999,padding:"8px 14px",borderRadius:99,background:"linear-gradient(135deg,var(--gold),var(--amber))",fontSize:11,fontWeight:700,color:"#0a0612",boxShadow:"0 4px 16px rgba(255,215,0,0.4)",display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setBoostActive(false);setBoostEnd(0);try{safeRemoveItem("muse_boost");}catch{};showToast("Boost off")}}>
-          <span>⚡ BOOST ACTIVE</span>
-          <span style={{fontWeight:400}}>({Math.max(0,Math.ceil((boostEnd-Date.now())/60000))}m)</span>
-        </button>
-      )}
-      <SupportChat open={supportOpen} onClose={()=>setSupportOpen(false)} onStartTutorial={startTutorial} />
-      {/* ══════ DAILY LOGIN POPUP ══════ */}
       {showDailyLogin && (
         <div className="daily-login-overlay" role="presentation" onClick={() => setShowDailyLogin(false)}>
           <div className="daily-login-card" onClick={e => e.stopPropagation()}>
