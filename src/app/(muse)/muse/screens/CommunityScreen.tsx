@@ -120,7 +120,7 @@ export const CommunityScreen = memo(function CommunityScreen({
       </div>
       <div className="conn-tabs" style={{ padding: "0 16px" }}>
         {(["groups", "events"] as const).map(t => (
-          <div key={t} role="tab" tabIndex={0} aria-selected={commTab === t} className={"conn-tab" + (commTab === t ? " active" : "")} onClick={() => setCommTab(t)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCommTab(t); } }}>{t === "groups" ? "Groups" : "Events"}</div>
+          <button key={t} role="tab" tabIndex={0} aria-selected={commTab === t} className={"conn-tab" + (commTab === t ? " active" : "")} onClick={() => setCommTab(t)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCommTab(t); } }}>{t === "groups" ? "Groups" : "Events"}</button>
         ))}
       </div>
 

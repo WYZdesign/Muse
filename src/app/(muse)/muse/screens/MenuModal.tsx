@@ -238,11 +238,11 @@ export const MenuModal = memo(function MenuModal({
                   );
                 })}
                 <div style={{ marginTop: 10, textAlign: "right" }}>
-                  <span style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, cursor: "pointer" }} onClick={() => { setShowHamburger(false); setShowQuests?.(true); }}>View all →</span>
+                  <button style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, cursor: "pointer", background: "none", border: "none", padding: 0 }} onClick={() => { setShowHamburger(false); setShowQuests?.(true); }}>View all →</button>
                 </div>
               </div>
             )}
-            <div className="muse-pro-banner" onClick={() => { setShowHamburger(false); showScreen("subscription"); }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); showScreen("subscription"); } }} aria-label="Muse Pro">
+            <button className="muse-pro-banner" onClick={() => { setShowHamburger(false); showScreen("subscription"); }} tabIndex={0} aria-label="Muse Pro">
               <div className="muse-pro-banner-shine" />
               <div className="muse-pro-banner-content">
                 <div className="muse-pro-banner-icon"><FiStar size={16} /></div>
@@ -252,7 +252,7 @@ export const MenuModal = memo(function MenuModal({
                 </div>
                 <div className="muse-pro-banner-cta">✦</div>
               </div>
-            </div>
+            </button>
           </>
         ) : (
           <>
@@ -605,7 +605,9 @@ export const MenuModal = memo(function MenuModal({
                         if (!append) setNotifOffset(newNotifs.length);
                         else setNotifOffset(prev => prev + newNotifs.length);
                       }
-                    } catch {}
+                    } catch (e) {
+                      console.error("[MenuModal] loadNotifications failed:", e);
+                    }
                     setNotifLoading(false);
                   };
                   

@@ -2902,10 +2902,10 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         // 'pro_day' and 'superpower' rewards are fulfilled by support/admin manually
       }} />
       {boostActive && (
-        <div role="presentation" aria-hidden="true" style={{position:"fixed",top:80,right:20,zIndex:9999,padding:"8px 14px",borderRadius:99,background:"linear-gradient(135deg,var(--gold),var(--amber))",fontSize:11,fontWeight:700,color:"#0a0612",boxShadow:"0 4px 16px rgba(255,215,0,0.4)",display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setBoostActive(false);setBoostEnd(0);try{safeRemoveItem("muse_boost");}catch{}showToast("Boost off")}}>
+        <button className="boost-active-toast" style={{position:"fixed",top:80,right:20,zIndex:9999,padding:"8px 14px",borderRadius:99,background:"linear-gradient(135deg,var(--gold),var(--amber))",fontSize:11,fontWeight:700,color:"#0a0612",boxShadow:"0 4px 16px rgba(255,215,0,0.4)",display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setBoostActive(false);setBoostEnd(0);try{safeRemoveItem("muse_boost");}catch{};showToast("Boost off")}}>
           <span>⚡ BOOST ACTIVE</span>
           <span style={{fontWeight:400}}>({Math.max(0,Math.ceil((boostEnd-Date.now())/60000))}m)</span>
-        </div>
+        </button>
       )}
       <SupportChat open={supportOpen} onClose={()=>setSupportOpen(false)} onStartTutorial={startTutorial} />
       {/* ══════ DAILY LOGIN POPUP ══════ */}

@@ -120,7 +120,9 @@ export async function POST(req: NextRequest) {
         try {
           await getServiceClient().from("muse_profiles").update({ nsfw: true }).eq("id", profileId);
           autoNsfw = true;
-        } catch {}
+        } catch (e) {
+          console.error("[upload] failed to mark profile NSFW after video upload:", e);
+        }
         videoPendingReview = true;
       }
     } else {
@@ -143,7 +145,9 @@ export async function POST(req: NextRequest) {
         try {
           await getServiceClient().from("muse_profiles").update({ nsfw: true }).eq("id", profileId);
           autoNsfw = true;
-        } catch {}
+        } catch (e) {
+          console.error("[upload] failed to mark profile NSFW after suggestive scan:", e);
+        }
       }
     }
 
