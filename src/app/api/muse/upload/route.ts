@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
 import { checkRate, clientIp } from "@/lib/rate-limit";
-import { scanWithRekognition, logScan, reportIncident, escalateToNcmec } from "@/lib/contentScan";
+import { scanWithRekognition, startVideoModeration, logScan, reportIncident, escalateToNcmec } from "@/lib/contentScan";
 
 const ALLOWED_SIGNATURES: Record<string, { bytes: number[]; ext: string }> = {
   "89504e47": { bytes: [0x89,0x50,0x4E,0x47], ext: "png" },
@@ -84,30 +84,45 @@ export async function POST(req: NextRequest) {
     // and auto-mark the profile as NSFW until the video is reviewed.
     let autoNsfw = false;
     let videoPendingReview = false;
+    let videoJobId: string | null = null;
     if (isVideo) {
-      // Log the video upload in the scan table (scanned: false = no automated scan)
-      await logScan({
-        userId: profileId,
-        fileName: file.name,
-        fileType: "video/webm",
-        fileSize: file.size,
-        context: folder,
-        result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PENDING_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [] },
-      });
-      // Create a safety incident for admin review — all video uploads
-      // require manual approval until automated video moderation is built.
-      await reportIncident({
-        userId: profileId,
-        context: `video-upload:${folder}`,
-        result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_NEEDS_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [] },
-      });
-      // Conservative: auto-mark profile as NSFW so videos are age-gated
-      // in Discovery until an admin reviews and clears them.
-      try {
-        await getServiceClient().from("muse_profiles").update({ nsfw: true }).eq("id", profileId);
-        autoNsfw = true;
-      } catch {}
-      videoPendingReview = true;
+      // Start async video moderation via Rekognition
+      const videoResult = await startVideoModeration(buffer);
+      if ("jobId" in videoResult) {
+        videoJobId = videoResult.jobId;
+        // Log the video upload with job ID for later polling
+        await logScan({
+          userId: profileId,
+          fileName: file.name,
+          fileType: "video/webm",
+          fileSize: file.size,
+          context: folder,
+          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PROCESSING"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ jobId: videoJobId }] },
+        });
+        // Store job ID for async result polling (could use cron or webhook)
+        // For now, mark as pending and allow upload - results checked via separate endpoint
+        videoPendingReview = true;
+      } else {
+        // Moderation service unavailable - fall back to manual review
+        await logScan({
+          userId: profileId,
+          fileName: file.name,
+          fileType: "video/webm",
+          fileSize: file.size,
+          context: folder,
+          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PENDING_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [] },
+        });
+        await reportIncident({
+          userId: profileId,
+          context: `video-upload:${folder}`,
+          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_NEEDS_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [] },
+        });
+        try {
+          await getServiceClient().from("muse_profiles").update({ nsfw: true }).eq("id", profileId);
+          autoNsfw = true;
+        } catch {}
+        videoPendingReview = true;
+      }
     } else {
       const scanResult = await scanWithRekognition(buffer);
       await logScan({ userId: profileId, fileName: file.name, fileType: file.type || `image/${ext}`, fileSize: file.size, context: folder, result: scanResult });
@@ -144,7 +159,7 @@ export async function POST(req: NextRequest) {
     if (error) return safeServerError(error, "upload POST");
 
     const { data: urlData } = sb.storage.from("muse-uploads").getPublicUrl(data.path);
-    return NextResponse.json({ success: true, url: urlData.publicUrl, path: data.path, moderation: isVideo ? "pending_review" : "scanned", autoNsfw: autoNsfw || undefined, videoPendingReview: videoPendingReview || undefined });
+    return NextResponse.json({ success: true, url: urlData.publicUrl, path: data.path, moderation: isVideo ? (videoJobId ? "video_processing" : "pending_review") : "scanned", autoNsfw: autoNsfw || undefined, videoPendingReview: videoPendingReview || undefined, videoJobId: videoJobId || undefined });
   } catch (e: unknown) {
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }

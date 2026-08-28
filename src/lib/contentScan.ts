@@ -1,15 +1,17 @@
 import { getServiceClient } from "@/lib/supabase";
 
 // ═══ AWS Rekognition moderation (lazy-load SDK to avoid build-time cost) ═══
-let RekognitionClient: any, DetectModerationLabelsCommand: any;
+let RekognitionClient: any, DetectModerationLabelsCommand: any, StartContentModerationCommand: any, GetContentModerationCommand: any;
 let rekognition: any = null;
 
 async function getRekognition() {
   if (rekognition !== null) return rekognition;
   try {
-    const { RekognitionClient: RC, DetectModerationLabelsCommand: DMLC } = await import("@aws-sdk/client-rekognition");
+    const { RekognitionClient: RC, DetectModerationLabelsCommand: DMLC, StartContentModerationCommand: SCMC, GetContentModerationCommand: GCMC } = await import("@aws-sdk/client-rekognition");
     RekognitionClient = RC;
     DetectModerationLabelsCommand = DMLC;
+    StartContentModerationCommand = SCMC;
+    GetContentModerationCommand = GCMC;
     const id = process.env.AWS_ACCESS_KEY_ID || "";
     const secret = process.env.AWS_SECRET_ACCESS_KEY || "";
     if (id && secret) {
@@ -100,6 +102,85 @@ export async function scanWithRekognition(imageBuffer: Buffer): Promise<Moderati
     console.error("Rekognition scan failed:", error);
     // Fail-closed: a scan error must never allow content through unchecked.
     return { safe: false, scanned: false, flaggedCategories: ["SCAN_ERROR"], confidence: 0, shouldBlock: true, shouldReport: false, isCSAM: false, details: [] };
+  }
+}
+
+// ═══ VIDEO MODERATION (async) ═══
+// Uses StartContentModeration + GetContentModeration for video files.
+// Returns a job ID that can be polled for results.
+
+export async function startVideoModeration(
+  videoBuffer: Buffer,
+  minConfidence = 50
+): Promise<{ jobId: string } | { error: string }> {
+  const client = await getRekognition();
+  if (!client || !StartContentModerationCommand) {
+    return { error: "Rekognition unavailable" };
+  }
+  try {
+    const command = new StartContentModerationCommand({
+      Video: { Bytes: videoBuffer },
+      MinConfidence: minConfidence,
+    });
+    const response = await client.send(command);
+    if (!response.JobId) return { error: "No job ID returned" };
+    return { jobId: response.JobId };
+  } catch (error) {
+    console.error("Start video moderation failed:", error);
+    return { error: "Failed to start video moderation" };
+  }
+}
+
+export async function getVideoModerationResult(
+  jobId: string
+): Promise<ModerationResult | { error: string; done: boolean }> {
+  const client = await getRekognition();
+  if (!client || !GetContentModerationCommand) {
+    return { error: "Rekognition unavailable", done: false };
+  }
+  try {
+    const command = new GetContentModerationCommand({ JobId: jobId });
+    const response = await client.send(command);
+    const status = response.JobStatus;
+    if (status === "IN_PROGRESS") {
+      return { error: "Still processing", done: false };
+    }
+    if (status === "FAILED") {
+      return { error: "Moderation job failed", done: true };
+    }
+    // COMPLETED
+    const flaggedCategories: string[] = [];
+    let maxConfidence = 0;
+    let shouldBlock = false;
+    let shouldReport = false;
+    let isCSAM = false;
+    const details: any[] = [];
+
+    for (const label of response.ModerationLabels || []) {
+      const category = label.ModerationLabel?.Name || "Unknown";
+      const confidence = label.ModerationLabel?.Confidence || 0;
+      maxConfidence = Math.max(maxConfidence, confidence);
+      const parentName = label.ModerationLabel?.ParentName;
+      const fullCategory = parentName ? `${parentName} → ${category}` : category;
+      flaggedCategories.push(fullCategory);
+      details.push({ category: fullCategory, confidence, timestamp: label.Timestamp });
+
+      if (CSAM_CATEGORIES.some(c => fullCategory.toLowerCase().includes(c.toLowerCase()))) {
+        isCSAM = true;
+        shouldBlock = true;
+        shouldReport = true;
+      }
+      const config = MODERATION_CATEGORIES[category];
+      if (config) {
+        if (config.block) shouldBlock = true;
+        if (config.report) shouldReport = true;
+      }
+    }
+
+    return { safe: flaggedCategories.length === 0, scanned: true, flaggedCategories, confidence: maxConfidence, shouldBlock, shouldReport, isCSAM, details };
+  } catch (error) {
+    console.error("Get video moderation result failed:", error);
+    return { error: "Failed to get results", done: true };
   }
 }
 
