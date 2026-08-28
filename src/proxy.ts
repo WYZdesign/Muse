@@ -10,6 +10,9 @@ const ALLOWED_ORIGINS = [
   WYZDESIGN_URL.replace("www.", ""),
 ];
 
+// Auth endpoints that should be more permissive
+const AUTH_PATHS = ["/api/muse/auth", "/api/muse/social", "/api/muse/social/callback"];
+
 function originAllowed(origin: string): boolean {
   if (!origin) return false;
   if (ALLOWED_ORIGINS.includes(origin)) return true;
@@ -22,9 +25,14 @@ function originAllowed(origin: string): boolean {
   return false;
 }
 
-function corsHeaders(response: NextResponse) {
-  const allowedOrigins = ALLOWED_ORIGINS.join(", ");
-  response.headers.set("Access-Control-Allow-Origin", MUSE_URL);
+function isAuthPath(pathname: string): boolean {
+  return AUTH_PATHS.some(p => pathname.startsWith(p));
+}
+
+function corsHeaders(response: NextResponse, origin?: string) {
+  // Use the requesting origin if allowed, otherwise default to MUSE_URL
+  const allowOrigin = origin && originAllowed(origin) ? origin : MUSE_URL;
+  response.headers.set("Access-Control-Allow-Origin", allowOrigin);
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
   response.headers.set("Access-Control-Allow-Credentials", "true");
@@ -35,26 +43,36 @@ function corsHeaders(response: NextResponse) {
 export default function proxy(request: NextRequest) {
   // Handle OPTIONS preflight requests
   if (request.method === "OPTIONS") {
+    const origin = request.headers.get("origin") || "";
     const response = new NextResponse(null, { status: 204 });
-    return corsHeaders(response);
+    return corsHeaders(response, origin);
   }
 
-  if (request.nextUrl.pathname.startsWith("/api/") && !["GET", "HEAD", "OPTIONS"].includes(request.method)) {
+  const pathname = request.nextUrl.pathname;
+  const isAuth = isAuthPath(pathname);
+
+  // Skip origin check for auth endpoints - allow login from any device
+  if (pathname.startsWith("/api/") && !["GET", "HEAD", "OPTIONS"].includes(request.method)) {
     const origin = request.headers.get("origin") || "";
     const referer = request.headers.get("referer") || "";
-    if (!originAllowed(origin) && !originAllowed(referer.split("/").slice(0, 3).join("/"))) {
-      return NextResponse.json({ error: "Forbidden — cross-origin request blocked" }, { status: 403 });
+    
+    // Always allow auth endpoints from any origin
+    if (!isAuth) {
+      if (!originAllowed(origin) && !originAllowed(referer.split("/").slice(0, 3).join("/"))) {
+        return NextResponse.json({ error: "Forbidden — cross-origin request blocked" }, { status: 403 });
+      }
     }
   }
 
-  if (request.nextUrl.pathname.startsWith("/api/")) {
+  if (pathname.startsWith("/api/")) {
+    const origin = request.headers.get("origin") || "";
     const response = NextResponse.next();
     response.headers.set("X-Content-Type-Options", "nosniff");
     response.headers.set("X-Frame-Options", "DENY");
     response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
     response.headers.set("Cache-Control", "no-store, max-age=0");
     // Add CORS headers to all API responses
-    corsHeaders(response);
+    corsHeaders(response, origin);
     return response;
   }
   
