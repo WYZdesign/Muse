@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 describe("email", () => {
-  let originalFetch: typeof fetch;
-  let mockFetch: ReturnType<typeof vi.fn>;
+  let originalFetch: typeof global.fetch;
+  let mockFetch: ReturnType<typeof vi.fn> = vi.fn();
 
   beforeEach(() => {
     vi.resetModules();
     Object.assign(process.env, { RESEND_API_KEY: "re_test_key" });
     originalFetch = global.fetch;
     mockFetch = vi.fn();
-    global.fetch = mockFetch;
+    global.fetch = mockFetch as unknown as typeof global.fetch;
   });
 
   afterEach(() => {
