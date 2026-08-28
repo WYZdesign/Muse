@@ -131,6 +131,7 @@ export {
   getPricingUrl,
   getAboutUrl,
   getPressUrl,
+  getPressUrlAlt,
   getCareersUrl,
   getBlogUrl,
   getFaqUrl,
