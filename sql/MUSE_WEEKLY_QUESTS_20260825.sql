@@ -61,12 +61,19 @@ ALTER TABLE muse_quests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_user_quests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_user_xp ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Quests public read" ON muse_quests;
 CREATE POLICY "Quests public read" ON muse_quests FOR SELECT USING (true);
+DROP POLICY IF EXISTS "User quests own read" ON muse_user_quests;
 CREATE POLICY "User quests own read" ON muse_user_quests FOR SELECT USING (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = user_id));
+DROP POLICY IF EXISTS "User quests own update" ON muse_user_quests;
 CREATE POLICY "User quests own update" ON muse_user_quests FOR UPDATE USING (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = user_id));
+DROP POLICY IF EXISTS "User quests own insert" ON muse_user_quests;
 CREATE POLICY "User quests own insert" ON muse_user_quests FOR INSERT WITH CHECK (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = user_id));
+DROP POLICY IF EXISTS "User xp own read" ON muse_user_xp;
 CREATE POLICY "User xp own read" ON muse_user_xp FOR SELECT USING (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = user_id));
+DROP POLICY IF EXISTS "User xp own upsert" ON muse_user_xp;
 CREATE POLICY "User xp own upsert" ON muse_user_xp FOR INSERT WITH CHECK (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = user_id));
+DROP POLICY IF EXISTS "User xp own update" ON muse_user_xp;
 CREATE POLICY "User xp own update" ON muse_user_xp FOR UPDATE USING (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = user_id));
 
 

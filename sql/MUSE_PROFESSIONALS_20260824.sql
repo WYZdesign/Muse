@@ -27,16 +27,20 @@ CREATE TABLE IF NOT EXISTS muse_professionals (
 ALTER TABLE muse_professionals ENABLE ROW LEVEL SECURITY;
 
 -- Everyone can read (public directory)
+DROP POLICY IF EXISTS "professionals_select" ON muse_professionals;
 CREATE POLICY "professionals_select" ON muse_professionals
   FOR SELECT USING (true);
 
 -- Users can upsert their own professional profile
+DROP POLICY IF EXISTS "professionals_upsert" ON muse_professionals;
 CREATE POLICY "professionals_upsert" ON muse_professionals
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "professionals_update" ON muse_professionals;
 CREATE POLICY "professionals_update" ON muse_professionals
   FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "professionals_delete" ON muse_professionals;
 CREATE POLICY "professionals_delete" ON muse_professionals
   FOR DELETE USING (auth.uid() = user_id);
 

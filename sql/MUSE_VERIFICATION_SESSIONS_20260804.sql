@@ -22,6 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_muse_verification_sessions_stripe ON muse_verific
 -- 2. Enable RLS + owner-only policy
 ALTER TABLE muse_verification_sessions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_verification_sessions_owner" ON muse_verification_sessions;
+DROP POLICY IF EXISTS "muse_verification_sessions_owner" ON muse_verification_sessions;
 CREATE POLICY "muse_verification_sessions_owner" ON muse_verification_sessions
   FOR SELECT USING (user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()));
 -- Service role manages insert/update via API (bypasses RLS)

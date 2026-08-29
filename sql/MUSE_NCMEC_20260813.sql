@@ -31,5 +31,6 @@ ALTER TABLE muse_content_scans
 -- 4. RLS: NCMEC reports are admin/service-role only (never readable by users)
 ALTER TABLE muse_ncmec_reports ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "ncmec_service_only" ON muse_ncmec_reports;
+DROP POLICY IF EXISTS "ncmec_service_only" ON muse_ncmec_reports;
 CREATE POLICY "ncmec_service_only" ON muse_ncmec_reports
   FOR ALL USING (false);

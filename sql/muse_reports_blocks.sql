@@ -29,8 +29,13 @@ CREATE INDEX IF NOT EXISTS idx_muse_blocks_target ON muse_blocks(target_id);
 ALTER TABLE muse_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_blocks ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can insert reports" ON muse_reports;
 CREATE POLICY "Users can insert reports" ON muse_reports FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Users can view own reports" ON muse_reports;
 CREATE POLICY "Users can view own reports" ON muse_reports FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can insert blocks" ON muse_blocks;
 CREATE POLICY "Users can insert blocks" ON muse_blocks FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Users can view own blocks" ON muse_blocks;
 CREATE POLICY "Users can view own blocks" ON muse_blocks FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can delete own blocks" ON muse_blocks;
 CREATE POLICY "Users can delete own blocks" ON muse_blocks FOR DELETE USING (true);

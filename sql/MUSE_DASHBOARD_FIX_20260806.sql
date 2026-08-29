@@ -249,6 +249,7 @@ CREATE TABLE IF NOT EXISTS muse_notifications (
 );
 ALTER TABLE muse_notifications ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_notifications_owner" ON muse_notifications;
+DROP POLICY IF EXISTS "muse_notifications_owner" ON muse_notifications;
 CREATE POLICY "muse_notifications_owner" ON muse_notifications
   FOR SELECT USING (user_id = auth.uid());
 
@@ -280,11 +281,13 @@ END $$;
 -- Email is NOT exposed to anon (the public anon key lives in the browser bundle).
 DROP POLICY IF EXISTS "Public profiles viewable by authenticated users" ON muse_profiles;
 DROP POLICY IF EXISTS "Profiles are public" ON muse_profiles;
+DROP POLICY IF EXISTS "Public profiles viewable by authenticated users" ON public;
 CREATE POLICY "Public profiles viewable by authenticated users"
 ON public.muse_profiles FOR SELECT TO authenticated
 USING (true);
 
 DROP POLICY IF EXISTS "Users update own profile" ON muse_profiles;
+DROP POLICY IF EXISTS "Users update own profile" ON public;
 CREATE POLICY "Users update own profile"
 ON public.muse_profiles FOR UPDATE TO authenticated
 USING (auth.uid() = auth_id)
@@ -295,9 +298,11 @@ DROP POLICY IF EXISTS "Users see own matches" ON muse_matches;
 DROP POLICY IF EXISTS "Users can see their matches" ON muse_matches;
 DROP POLICY IF EXISTS "Users can create matches" ON muse_matches;
 DROP POLICY IF EXISTS "muse_matches_insert_self" ON muse_matches;
+DROP POLICY IF EXISTS "Users see own matches" ON public;
 CREATE POLICY "Users see own matches"
 ON public.muse_matches FOR SELECT TO authenticated
 USING (auth.uid() = (SELECT auth_id FROM public.muse_profiles WHERE id = user_id));
+DROP POLICY IF EXISTS "muse_matches_insert_self" ON public;
 CREATE POLICY "muse_matches_insert_self"
 ON public.muse_matches FOR INSERT TO authenticated
 WITH CHECK (user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()));
@@ -307,11 +312,13 @@ DROP POLICY IF EXISTS "Users see own conversations" ON muse_messages;
 DROP POLICY IF EXISTS "muse_messages_select" ON muse_messages;
 DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
 DROP POLICY IF EXISTS "muse_messages_select_participant" ON muse_messages;
+DROP POLICY IF EXISTS "muse_messages_select" ON public;
 CREATE POLICY "muse_messages_select" ON public.muse_messages FOR SELECT TO authenticated
 USING (
   sender_id = (SELECT id::text FROM public.muse_profiles WHERE auth_id = auth.uid())
   OR receiver_id = (SELECT id::text FROM public.muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "muse_messages_insert" ON public;
 CREATE POLICY "muse_messages_insert" ON public.muse_messages FOR INSERT TO authenticated
 WITH CHECK (
   sender_id = (SELECT id::text FROM public.muse_profiles WHERE auth_id = auth.uid())
@@ -319,22 +326,27 @@ WITH CHECK (
 
 -- FEED POSTS: read by all authenticated, only owner edits/creates
 DROP POLICY IF EXISTS "Feed posts viewable by all" ON muse_feed_posts;
+DROP POLICY IF EXISTS "Feed posts viewable by all" ON public;
 CREATE POLICY "Feed posts viewable by all"
 ON public.muse_feed_posts FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS "Users edit own feed posts" ON muse_feed_posts;
+DROP POLICY IF EXISTS "Users edit own feed posts" ON public;
 CREATE POLICY "Users edit own feed posts"
 ON public.muse_feed_posts FOR UPDATE TO authenticated
 USING (auth.uid() = (SELECT auth_id FROM public.muse_profiles WHERE id = author_id));
 DROP POLICY IF EXISTS "Users create own feed posts" ON muse_feed_posts;
+DROP POLICY IF EXISTS "Users create own feed posts" ON public;
 CREATE POLICY "Users create own feed posts"
 ON public.muse_feed_posts FOR INSERT TO authenticated
 WITH CHECK (auth.uid() = (SELECT auth_id FROM public.muse_profiles WHERE id = author_id));
 
 -- BRIEFS: read by all authenticated, owner creates
 DROP POLICY IF EXISTS "Briefs viewable by all" ON muse_briefs;
+DROP POLICY IF EXISTS "Briefs viewable by all" ON public;
 CREATE POLICY "Briefs viewable by all"
 ON public.muse_briefs FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS "Users create own briefs" ON muse_briefs;
+DROP POLICY IF EXISTS "Users create own briefs" ON public;
 CREATE POLICY "Users create own briefs"
 ON public.muse_briefs FOR INSERT TO authenticated
 WITH CHECK (auth.uid() = (SELECT auth_id FROM public.muse_profiles WHERE id = author_id));
@@ -344,6 +356,7 @@ DROP POLICY IF EXISTS "Users see own notifications" ON muse_notifications;
 DROP POLICY IF EXISTS "Users can view own notifications" ON muse_notifications;
 DROP POLICY IF EXISTS "Service can manage notifications" ON muse_notifications;
 DROP POLICY IF EXISTS "muse_notifications_owner" ON muse_notifications;
+DROP POLICY IF EXISTS "muse_notifications_owner" ON public;
 CREATE POLICY "muse_notifications_owner" ON public.muse_notifications FOR SELECT TO authenticated
 USING (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid()));
 
@@ -351,8 +364,10 @@ USING (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid(
 DROP POLICY IF EXISTS "Users can view own reports" ON muse_reports;
 DROP POLICY IF EXISTS "muse_reports_owner" ON muse_reports;
 DROP POLICY IF EXISTS "Users can insert reports" ON muse_reports;
+DROP POLICY IF EXISTS "muse_reports_owner" ON public;
 CREATE POLICY "muse_reports_owner" ON public.muse_reports FOR SELECT TO authenticated
 USING (reporter_id IN (SELECT id::text FROM public.muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "Users can insert reports" ON public;
 CREATE POLICY "Users can insert reports" ON public.muse_reports FOR INSERT TO authenticated
 WITH CHECK (reporter_id IN (SELECT id::text FROM public.muse_profiles WHERE auth_id = auth.uid()));
 
@@ -364,49 +379,61 @@ DROP POLICY IF EXISTS "Users can insert blocks" ON muse_blocks;
 DROP POLICY IF EXISTS "muse_blocks_owner" ON muse_blocks;
 DROP POLICY IF EXISTS "muse_blocks_delete" ON muse_blocks;
 DROP POLICY IF EXISTS "muse_blocks_insert" ON muse_blocks;
+DROP POLICY IF EXISTS "muse_blocks_owner" ON public;
 CREATE POLICY "muse_blocks_owner" ON public.muse_blocks FOR SELECT TO authenticated
 USING (user_id IN (SELECT id::text FROM public.muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "muse_blocks_insert" ON public;
 CREATE POLICY "muse_blocks_insert" ON public.muse_blocks FOR INSERT TO authenticated
 WITH CHECK (user_id IN (SELECT id::text FROM public.muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "muse_blocks_delete" ON public;
 CREATE POLICY "muse_blocks_delete" ON public.muse_blocks FOR DELETE TO authenticated
 USING (user_id IN (SELECT id::text FROM public.muse_profiles WHERE auth_id = auth.uid()));
 
 -- FORUM REPLIES: read by all authenticated, only self-insert
 DROP POLICY IF EXISTS "Forum replies are public" ON muse_forum_replies;
 DROP POLICY IF EXISTS "Users can post replies" ON muse_forum_replies;
+DROP POLICY IF EXISTS "Forum replies are public" ON public;
 CREATE POLICY "Forum replies are public" ON public.muse_forum_replies FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Users can post replies" ON public;
 CREATE POLICY "Users can post replies" ON public.muse_forum_replies FOR INSERT TO authenticated
 WITH CHECK (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid()));
 
 -- COMMUNITIES: public read
 DROP POLICY IF EXISTS "Communities are public" ON muse_communities;
 DROP POLICY IF EXISTS "Service can manage communities" ON muse_communities;
+DROP POLICY IF EXISTS "Communities are public" ON public;
 CREATE POLICY "Communities are public" ON public.muse_communities FOR SELECT TO authenticated USING (true);
 
 -- COMMUNITY MEMBERS: users see memberships, can join/leave
 DROP POLICY IF EXISTS "Community members are public" ON muse_community_members;
 DROP POLICY IF EXISTS "Users can join communities" ON muse_community_members;
 DROP POLICY IF EXISTS "Users can leave communities" ON muse_community_members;
+DROP POLICY IF EXISTS "Community members are public" ON public;
 CREATE POLICY "Community members are public" ON public.muse_community_members FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Users can join communities" ON public;
 CREATE POLICY "Users can join communities" ON public.muse_community_members FOR INSERT TO authenticated
 WITH CHECK (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "Users can leave communities" ON public;
 CREATE POLICY "Users can leave communities" ON public.muse_community_members FOR DELETE TO authenticated
 USING (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid()));
 
 -- SESSIONS: public read
 DROP POLICY IF EXISTS "Sessions are public" ON muse_sessions;
 DROP POLICY IF EXISTS "Service can manage sessions" ON muse_sessions;
+DROP POLICY IF EXISTS "Sessions are public" ON public;
 CREATE POLICY "Sessions are public" ON public.muse_sessions FOR SELECT TO authenticated USING (true);
 
 -- BOOKINGS: users manage their own, hosts can view
 DROP POLICY IF EXISTS "Users can view own bookings" ON muse_bookings;
 DROP POLICY IF EXISTS "Users can create bookings" ON muse_bookings;
 DROP POLICY IF EXISTS "Service can manage bookings" ON muse_bookings;
+DROP POLICY IF EXISTS "Users can view own bookings" ON public;
 CREATE POLICY "Users can view own bookings" ON public.muse_bookings FOR SELECT TO authenticated
 USING (
   user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid())
   OR host_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can create bookings" ON public;
 CREATE POLICY "Users can create bookings" ON public.muse_bookings FOR INSERT TO authenticated
 WITH CHECK (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid()));
 
@@ -414,13 +441,16 @@ WITH CHECK (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth
 DROP POLICY IF EXISTS "Users can view own connections" ON muse_connections;
 DROP POLICY IF EXISTS "Users can create connections" ON muse_connections;
 DROP POLICY IF EXISTS "Users can delete own connections" ON muse_connections;
+DROP POLICY IF EXISTS "Users can view own connections" ON public;
 CREATE POLICY "Users can view own connections" ON public.muse_connections FOR SELECT TO authenticated
 USING (
   user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid())
   OR target_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can create connections" ON public;
 CREATE POLICY "Users can create connections" ON public.muse_connections FOR INSERT TO authenticated
 WITH CHECK (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "Users can delete own connections" ON public;
 CREATE POLICY "Users can delete own connections" ON public.muse_connections FOR DELETE TO authenticated
 USING (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid()));
 
@@ -428,10 +458,13 @@ USING (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid(
 DROP POLICY IF EXISTS "Users can view own push subs" ON muse_push_subscriptions;
 DROP POLICY IF EXISTS "Users can save push subs" ON muse_push_subscriptions;
 DROP POLICY IF EXISTS "Users can delete own push subs" ON muse_push_subscriptions;
+DROP POLICY IF EXISTS "Users can view own push subs" ON public;
 CREATE POLICY "Users can view own push subs" ON public.muse_push_subscriptions FOR SELECT TO authenticated
 USING (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "Users can save push subs" ON public;
 CREATE POLICY "Users can save push subs" ON public.muse_push_subscriptions FOR INSERT TO authenticated
 WITH CHECK (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "Users can delete own push subs" ON public;
 CREATE POLICY "Users can delete own push subs" ON public.muse_push_subscriptions FOR DELETE TO authenticated
 USING (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid()));
 
@@ -454,6 +487,7 @@ DROP POLICY IF EXISTS "Service manages prompts" ON muse_prompt_bank;
 -- "Prompts are public read" is SELECT-only over the curated onboarding bank —
 -- safe to keep, but narrow it to authenticated (anon key shouldn't need it).
 DROP POLICY IF EXISTS "Prompts are public read" ON muse_prompt_bank;
+DROP POLICY IF EXISTS "Prompts are public read" ON public;
 CREATE POLICY "Prompts are public read" ON public.muse_prompt_bank
   FOR SELECT TO authenticated USING (true);
 

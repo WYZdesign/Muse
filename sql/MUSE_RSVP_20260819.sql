@@ -12,14 +12,17 @@ CREATE TABLE IF NOT EXISTS muse_rsvps (
 ALTER TABLE muse_rsvps ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own RSVPs
+DROP POLICY IF EXISTS "Users read own RSVPs" ON muse_rsvps;
 CREATE POLICY "Users read own RSVPs" ON muse_rsvps
   FOR SELECT USING (auth.uid() = user_id);
 
 -- Users can insert their own RSVPs
+DROP POLICY IF EXISTS "Users insert own RSVPs" ON muse_rsvps;
 CREATE POLICY "Users insert own RSVPs" ON muse_rsvps
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Users can delete their own RSVPs
+DROP POLICY IF EXISTS "Users delete own RSVPs" ON muse_rsvps;
 CREATE POLICY "Users delete own RSVPs" ON muse_rsvps
   FOR DELETE USING (auth.uid() = user_id);
 

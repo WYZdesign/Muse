@@ -49,11 +49,13 @@ END $$;
 -- sender_id/receiver_id store muse_profiles.id (UUID cast to TEXT), so map
 -- auth.uid() through muse_profiles.auth_id to the profile id, cast to text.
 ALTER TABLE muse_messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages;
 CREATE POLICY "muse_messages_participants" ON muse_messages FOR SELECT
   USING (
     sender_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
     OR receiver_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
   );
+DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
 CREATE POLICY "muse_messages_insert" ON muse_messages FOR INSERT
   WITH CHECK (
     sender_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
@@ -70,6 +72,7 @@ CREATE TABLE IF NOT EXISTS muse_notifications (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE muse_notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_notifications_owner" ON muse_notifications;
 DROP POLICY IF EXISTS "muse_notifications_owner" ON muse_notifications;
 CREATE POLICY "muse_notifications_owner" ON muse_notifications
   FOR SELECT USING (user_id = auth.uid());

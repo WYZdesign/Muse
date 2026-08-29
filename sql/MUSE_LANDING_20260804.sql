@@ -43,17 +43,20 @@ CREATE INDEX IF NOT EXISTS idx_muse_qr_events_created ON muse_qr_events(created_
 -- 4. RLS policies (owner-only for waitlist, service-role for analytics)
 ALTER TABLE muse_waitlist ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_waitlist_owner" ON muse_waitlist;
+DROP POLICY IF EXISTS "muse_waitlist_owner" ON muse_waitlist;
 CREATE POLICY "muse_waitlist_owner" ON muse_waitlist
   FOR SELECT USING (email = (SELECT email FROM auth.users WHERE id = auth.uid()));
 -- Service role inserts via API
 
 ALTER TABLE muse_landing_analytics ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_landing_analytics_service" ON muse_landing_analytics;
+DROP POLICY IF EXISTS "muse_landing_analytics_service" ON muse_landing_analytics;
 CREATE POLICY "muse_landing_analytics_service" ON muse_landing_analytics
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
 -- Service role only
 
 ALTER TABLE muse_qr_events ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_qr_events_service" ON muse_qr_events;
 DROP POLICY IF EXISTS "muse_qr_events_service" ON muse_qr_events;
 CREATE POLICY "muse_qr_events_service" ON muse_qr_events
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);

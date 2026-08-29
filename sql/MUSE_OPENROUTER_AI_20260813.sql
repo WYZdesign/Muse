@@ -26,5 +26,6 @@ CREATE TABLE IF NOT EXISTS muse_ai_docs (
 CREATE INDEX IF NOT EXISTS idx_muse_ai_docs_section ON muse_ai_docs(section);
 
 ALTER TABLE muse_ai_docs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "AI docs are service-only" ON muse_ai_docs;
 CREATE POLICY "AI docs are service-only" ON muse_ai_docs
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);

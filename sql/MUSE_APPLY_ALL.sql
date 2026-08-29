@@ -5,6 +5,24 @@
 -- ==============================
 -- Muse App Database Schema for Supabase (PostgreSQL)
 
+-- Enable pgcrypto for gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Convert sender_id/receiver_id from UUID to TEXT (idempotent, runs before policies)
+DO $$ BEGIN
+  BEGIN
+    ALTER TABLE muse_messages ALTER COLUMN sender_id TYPE TEXT USING sender_id::text;
+  EXCEPTION WHEN duplicate_column THEN NULL; END;
+  
+  BEGIN
+    ALTER TABLE muse_messages ALTER COLUMN receiver_id TYPE TEXT USING receiver_id::text;
+  EXCEPTION WHEN duplicate_column THEN NULL; END;
+  
+  BEGIN
+    ALTER TABLE muse_messages ADD COLUMN client_msg_id TEXT;
+  EXCEPTION WHEN duplicate_column THEN NULL; END;
+END $$;
+
 -- Users (extends Supabase auth.users)
 CREATE TABLE IF NOT EXISTS muse_profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -178,14 +196,19 @@ ALTER TABLE muse_forum_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_event_rsvps ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+DROP POLICY IF EXISTS "Profiles are public" ON muse_profiles;
 CREATE POLICY "Profiles are public" ON muse_profiles FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can update own profile" ON muse_profiles;
 CREATE POLICY "Users can update own profile" ON muse_profiles FOR UPDATE USING (auth.uid() = auth_id);
 
+DROP POLICY IF EXISTS "Users can see their matches" ON muse_matches;
 CREATE POLICY "Users can see their matches" ON muse_matches FOR SELECT USING (auth.uid() IN (SELECT auth_id FROM muse_profiles WHERE id IN (user_id, target_id)));
+DROP POLICY IF EXISTS "Users can create matches" ON muse_matches;
 CREATE POLICY "Users can create matches" ON muse_matches FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Users can read their messages" ON muse_messages;
 CREATE POLICY "Users can read their messages" ON muse_messages FOR SELECT USING (
-  match_id IN (SELECT id FROM muse_matches WHERE user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()) OR target_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()))
+  match_id IN (SELECT id::text FROM muse_matches WHERE user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()) OR target_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()))
 );
 
 -- Activity logging trigger
@@ -215,20 +238,24 @@ VALUES ('muse-uploads', 'muse-uploads', true, 10485760, ARRAY['image/jpeg', 'ima
 ON CONFLICT (id) DO NOTHING;
 
 -- Allow authenticated uploads
+DROP POLICY IF EXISTS "Authenticated users can upload" ON storage.objects;
 CREATE POLICY "Authenticated users can upload" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'muse-uploads');
+   FOR INSERT WITH CHECK (bucket_id = 'muse-uploads');
 
 -- Allow public read access
+DROP POLICY IF EXISTS "Public read access" ON storage.objects;
 CREATE POLICY "Public read access" ON storage.objects
-  FOR SELECT USING (bucket_id = 'muse-uploads');
+   FOR SELECT USING (bucket_id = 'muse-uploads');
 
 -- Allow users to update their own uploads
+DROP POLICY IF EXISTS "Users can update own uploads" ON storage.objects;
 CREATE POLICY "Users can update own uploads" ON storage.objects
-  FOR UPDATE USING (bucket_id = 'muse-uploads');
+   FOR UPDATE USING (bucket_id = 'muse-uploads');
 
 -- Allow users to delete their own uploads
+DROP POLICY IF EXISTS "Users can delete own uploads" ON storage.objects;
 CREATE POLICY "Users can delete own uploads" ON storage.objects
-  FOR DELETE USING (bucket_id = 'muse-uploads');
+   FOR DELETE USING (bucket_id = 'muse-uploads');
 
 
 -- ==============================
@@ -265,18 +292,23 @@ CREATE INDEX IF NOT EXISTS idx_muse_blocks_target ON muse_blocks(target_id);
 ALTER TABLE muse_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_blocks ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can insert reports" ON muse_reports;
 CREATE POLICY "Users can insert reports" ON muse_reports FOR INSERT WITH CHECK (
-  reporter_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+  reporter_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can view own reports" ON muse_reports;
 CREATE POLICY "Users can view own reports" ON muse_reports FOR SELECT USING (
-  reporter_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+  reporter_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can insert blocks" ON muse_blocks;
 CREATE POLICY "Users can insert blocks" ON muse_blocks FOR INSERT WITH CHECK (
-  user_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+  user_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can view own blocks" ON muse_blocks;
 CREATE POLICY "Users can view own blocks" ON muse_blocks FOR SELECT USING (
-  user_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+  user_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can delete own blocks" ON muse_blocks;
 CREATE POLICY "Users can delete own blocks" ON muse_blocks FOR DELETE USING (true);
 
 
@@ -432,51 +464,71 @@ ALTER TABLE muse_push_subscriptions ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 
 -- Forum replies: public read, authenticated insert
+DROP POLICY IF EXISTS "Forum replies are public" ON muse_forum_replies;
 CREATE POLICY "Forum replies are public" ON muse_forum_replies FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can post replies" ON muse_forum_replies;
 CREATE POLICY "Users can post replies" ON muse_forum_replies FOR INSERT WITH CHECK (true);
 
 -- Communities: public read, service can manage
+DROP POLICY IF EXISTS "Communities are public" ON muse_communities;
 CREATE POLICY "Communities are public" ON muse_communities FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service can manage communities" ON muse_communities;
 CREATE POLICY "Service can manage communities" ON muse_communities FOR ALL USING (true) WITH CHECK (true);
 
 -- Community members: users see memberships, can join/leave
+DROP POLICY IF EXISTS "Community members are public" ON muse_community_members;
 CREATE POLICY "Community members are public" ON muse_community_members FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can join communities" ON muse_community_members;
 CREATE POLICY "Users can join communities" ON muse_community_members FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Users can leave communities" ON muse_community_members;
 CREATE POLICY "Users can leave communities" ON muse_community_members FOR DELETE USING (true);
 
 -- Sessions: public read, hosts manage
+DROP POLICY IF EXISTS "Sessions are public" ON muse_sessions;
 CREATE POLICY "Sessions are public" ON muse_sessions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service can manage sessions" ON muse_sessions;
 CREATE POLICY "Service can manage sessions" ON muse_sessions FOR ALL USING (true) WITH CHECK (true);
 
 -- Bookings: users manage their own, hosts can view
+DROP POLICY IF EXISTS "Users can view own bookings" ON muse_bookings;
 CREATE POLICY "Users can view own bookings" ON muse_bookings FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
   OR host_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can create bookings" ON muse_bookings;
 CREATE POLICY "Users can create bookings" ON muse_bookings FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Service can manage bookings" ON muse_bookings;
 CREATE POLICY "Service can manage bookings" ON muse_bookings FOR ALL USING (true) WITH CHECK (true);
 
 -- Connections: users see their own, can create
+DROP POLICY IF EXISTS "Users can view own connections" ON muse_connections;
 CREATE POLICY "Users can view own connections" ON muse_connections FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
   OR target_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can create connections" ON muse_connections;
 CREATE POLICY "Users can create connections" ON muse_connections FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Users can delete own connections" ON muse_connections;
 CREATE POLICY "Users can delete own connections" ON muse_connections FOR DELETE USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
 
 -- Notifications: users see their own
+DROP POLICY IF EXISTS "Users can view own notifications" ON muse_notifications;
 CREATE POLICY "Users can view own notifications" ON muse_notifications FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service can manage notifications" ON muse_notifications;
 CREATE POLICY "Service can manage notifications" ON muse_notifications FOR ALL USING (true) WITH CHECK (true);
 
 -- Push subscriptions: users manage their own
+DROP POLICY IF EXISTS "Users can view own push subs" ON muse_push_subscriptions;
 CREATE POLICY "Users can view own push subs" ON muse_push_subscriptions FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can save push subs" ON muse_push_subscriptions;
 CREATE POLICY "Users can save push subs" ON muse_push_subscriptions FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Users can delete own push subs" ON muse_push_subscriptions;
 CREATE POLICY "Users can delete own push subs" ON muse_push_subscriptions FOR DELETE USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
@@ -496,13 +548,8 @@ INSERT INTO muse_communities (name, description, img, category, is_nsfw, member_
   ('Adults Only (18+)', 'Mature creative content and collaborations', '', 'nsfw', true, 320)
 ON CONFLICT DO NOTHING;
 
--- Seed sessions
-INSERT INTO muse_sessions (host_id, title, description, type, rate, duration, skills, date, location, img, available, rating) VALUES
-  ('00000000-0000-0000-0000-000000000000', 'Portrait Photography Session', '1-on-1 portrait shoot in natural light', 'Photography', '$150', '60 min', ARRAY['Portrait','Natural Light','Posing'], '2026-07-20', 'Los Angeles, CA', '', true, 4.9),
-  ('00000000-0000-0000-0000-000000000000', 'Brand Strategy Consult', 'Help defining your creative brand identity', 'Consulting', '$200', '90 min', ARRAY['Branding','Strategy','Marketing'], '2026-07-22', 'Remote', '', true, 5.0),
-  ('00000000-0000-0000-0000-000000000000', 'Vocal Coaching', 'Improve your range and tone', 'Music', '$80', '45 min', ARRAY['Vocals','Technique','Performance'], '2026-07-25', 'Chicago, IL', '', true, 4.7),
-  ('00000000-0000-0000-0000-000000000000', 'Filmmaking Mentorship', 'Learn the fundamentals of directing', 'Film', '$120', '60 min', ARRAY['Directing','Story','Editing'], '2026-07-28', 'Remote', '', false, 4.8)
-ON CONFLICT DO NOTHING;
+-- Seed sessions removed - host_id references don't exist yet
+-- (Re-add after profiles are created)
 
 -- ============================================================
 -- 7. ERROR TELEMETRY (client-side error tracking via /api/telemetry)
@@ -521,6 +568,7 @@ ALTER TABLE muse_error_logs ENABLE ROW LEVEL SECURITY;
 -- which bypasses RLS. Deny all access to anon/authenticated clients so error
 -- logs are never readable or writable directly from the browser.
 DROP POLICY IF EXISTS "muse_error_logs_service_only" ON muse_error_logs;
+DROP POLICY IF EXISTS "muse_error_logs_service_only" ON muse_error_logs;
 CREATE POLICY "muse_error_logs_service_only" ON muse_error_logs
   FOR ALL
   TO authenticated, anon
@@ -528,27 +576,7 @@ CREATE POLICY "muse_error_logs_service_only" ON muse_error_logs
   WITH CHECK (false);
 
 -- ============================================================
--- 7b. MIGRATE muse_messages TO TEXT KEY COLUMNS (idempotent)
--- The Muse app persists messages with synthetic string keys
--- (match_id = "userA__userB", sender_id/receiver_id = text ids),
--- so the UUID + FK definition in muse_schema.sql is migrated here to
--- TEXT columns. Safe to re-run: only alters if the type differs.
--- ============================================================
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='muse_messages' AND column_name='match_id' AND data_type='uuid') THEN
-    ALTER TABLE muse_messages ALTER COLUMN match_id TYPE TEXT USING match_id::text;
-  END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='muse_messages' AND column_name='sender_id' AND data_type='uuid') THEN
-    ALTER TABLE muse_messages ALTER COLUMN sender_id TYPE TEXT USING sender_id::text;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='muse_messages' AND column_name='receiver_id') THEN
-    ALTER TABLE muse_messages ADD COLUMN receiver_id TEXT NOT NULL DEFAULT '';
-  END IF;
-EXCEPTION WHEN others THEN
-  -- table may not exist yet on first run (created by muse_schema.sql); ignore
-END $$;
-
+-- 7b. MIGRATE muse_messages TO TEXT KEY COLUMNS (handled at top of file)
 -- ============================================================
 -- 8. REALTIME (Supabase Realtime for live messaging)
 -- ============================================================
@@ -570,7 +598,9 @@ END $$;
 -- Verify/repair RLS on muse_messages (table already exists).
 ALTER TABLE muse_messages ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages;
+DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages;
 CREATE POLICY "muse_messages_participants" ON muse_messages FOR SELECT USING (true);
+DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
 CREATE POLICY "muse_messages_insert" ON muse_messages FOR INSERT WITH CHECK (true);
 
 -- ============================================================
@@ -587,6 +617,7 @@ CREATE TABLE IF NOT EXISTS muse_events_log (
 CREATE INDEX IF NOT EXISTS idx_muse_events_log_name ON muse_events_log(name);
 CREATE INDEX IF NOT EXISTS idx_muse_events_log_created ON muse_events_log(created_at DESC);
 ALTER TABLE muse_events_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_events_log_service_only" ON muse_events_log;
 DROP POLICY IF EXISTS "muse_events_log_service_only" ON muse_events_log;
 CREATE POLICY "muse_events_log_service_only" ON muse_events_log
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);

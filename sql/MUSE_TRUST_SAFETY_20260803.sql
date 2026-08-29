@@ -90,10 +90,12 @@ CREATE INDEX IF NOT EXISTS idx_muse_disclosures_status ON muse_disclosures(statu
 
 ALTER TABLE muse_disclosures ENABLE ROW LEVEL SECURITY;
 -- Both parties can read; service-role manages writes
+DROP POLICY IF EXISTS "Disclosure parties can read" ON muse_disclosures;
 CREATE POLICY "Disclosure parties can read" ON muse_disclosures FOR SELECT USING (
   proposer_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
   OR responder_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service manages disclosures" ON muse_disclosures;
 CREATE POLICY "Service manages disclosures" ON muse_disclosures FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================================
@@ -124,9 +126,11 @@ CREATE INDEX IF NOT EXISTS idx_muse_strikes_category ON muse_strikes(category);
 CREATE INDEX IF NOT EXISTS idx_muse_strikes_severity ON muse_strikes(severity);
 
 ALTER TABLE muse_strikes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view own strikes" ON muse_strikes;
 CREATE POLICY "Users can view own strikes" ON muse_strikes FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service manages strikes" ON muse_strikes;
 CREATE POLICY "Service manages strikes" ON muse_strikes FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================================
@@ -149,6 +153,7 @@ CREATE TABLE IF NOT EXISTS muse_safety_profiles (
 );
 
 ALTER TABLE muse_safety_profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own safety profile" ON muse_safety_profiles;
 CREATE POLICY "Users manage own safety profile" ON muse_safety_profiles FOR ALL USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
@@ -177,9 +182,11 @@ CREATE INDEX IF NOT EXISTS idx_muse_checkins_booking ON muse_safety_checkins(boo
 CREATE INDEX IF NOT EXISTS idx_muse_checkins_status ON muse_safety_checkins(status);
 
 ALTER TABLE muse_safety_checkins ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users view own check-ins" ON muse_safety_checkins;
 CREATE POLICY "Users view own check-ins" ON muse_safety_checkins FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service manages check-ins" ON muse_safety_checkins;
 CREATE POLICY "Service manages check-ins" ON muse_safety_checkins FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================================
@@ -199,9 +206,11 @@ CREATE TABLE IF NOT EXISTS muse_safety_shares (
 );
 
 ALTER TABLE muse_safety_shares ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users view own shares" ON muse_safety_shares;
 CREATE POLICY "Users view own shares" ON muse_safety_shares FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service manages shares" ON muse_safety_shares;
 CREATE POLICY "Service manages shares" ON muse_safety_shares FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================================
@@ -223,6 +232,7 @@ CREATE INDEX IF NOT EXISTS idx_muse_admin_audit_created ON muse_admin_audit_log(
 
 ALTER TABLE muse_admin_audit_log ENABLE ROW LEVEL SECURITY;
 -- Deny all client-side access; service-role only
+DROP POLICY IF EXISTS "Admin audit is service-only" ON muse_admin_audit_log;
 CREATE POLICY "Admin audit is service-only" ON muse_admin_audit_log
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
 
@@ -245,7 +255,9 @@ CREATE TABLE IF NOT EXISTS muse_prompt_bank (
 CREATE INDEX IF NOT EXISTS idx_muse_prompts_category ON muse_prompt_bank(category, display_order);
 
 ALTER TABLE muse_prompt_bank ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Prompts are public read" ON muse_prompt_bank;
 CREATE POLICY "Prompts are public read" ON muse_prompt_bank FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service manages prompts" ON muse_prompt_bank;
 CREATE POLICY "Service manages prompts" ON muse_prompt_bank FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================================
@@ -266,6 +278,7 @@ CREATE TABLE IF NOT EXISTS muse_prompt_responses (
 CREATE INDEX IF NOT EXISTS idx_muse_prompt_resp_user ON muse_prompt_responses(user_id);
 
 ALTER TABLE muse_prompt_responses ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own responses" ON muse_prompt_responses;
 CREATE POLICY "Users manage own responses" ON muse_prompt_responses FOR ALL USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
@@ -289,6 +302,7 @@ CREATE TABLE IF NOT EXISTS muse_profile_embeddings (
 CREATE INDEX IF NOT EXISTS idx_muse_embeddings_user ON muse_profile_embeddings(user_id);
 
 ALTER TABLE muse_profile_embeddings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Embeddings are service-only" ON muse_profile_embeddings;
 CREATE POLICY "Embeddings are service-only" ON muse_profile_embeddings
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
 

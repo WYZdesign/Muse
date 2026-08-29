@@ -7,17 +7,21 @@ VALUES ('muse-uploads', 'muse-uploads', true, 10485760, ARRAY['image/jpeg', 'ima
 ON CONFLICT (id) DO NOTHING;
 
 -- Allow authenticated uploads
+DROP POLICY IF EXISTS "Authenticated users can upload" ON storage;
 CREATE POLICY "Authenticated users can upload" ON storage.objects
   FOR INSERT WITH CHECK (bucket_id = 'muse-uploads');
 
 -- Allow public read access
+DROP POLICY IF EXISTS "Public read access" ON storage;
 CREATE POLICY "Public read access" ON storage.objects
   FOR SELECT USING (bucket_id = 'muse-uploads');
 
 -- Allow users to update their own uploads
+DROP POLICY IF EXISTS "Users can update own uploads" ON storage;
 CREATE POLICY "Users can update own uploads" ON storage.objects
   FOR UPDATE USING (bucket_id = 'muse-uploads');
 
 -- Allow users to delete their own uploads
+DROP POLICY IF EXISTS "Users can delete own uploads" ON storage;
 CREATE POLICY "Users can delete own uploads" ON storage.objects
   FOR DELETE USING (bucket_id = 'muse-uploads');

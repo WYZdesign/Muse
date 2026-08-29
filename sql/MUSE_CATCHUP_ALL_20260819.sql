@@ -58,15 +58,18 @@ CREATE INDEX IF NOT EXISTS idx_muse_qr_events_created ON muse_qr_events(created_
 
 ALTER TABLE muse_waitlist ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_waitlist_owner" ON muse_waitlist;
+DROP POLICY IF EXISTS "muse_waitlist_owner" ON muse_waitlist;
 CREATE POLICY "muse_waitlist_owner" ON muse_waitlist
   FOR SELECT USING (email = (SELECT email FROM auth.users WHERE id = auth.uid()));
 
 ALTER TABLE muse_landing_analytics ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_landing_analytics_service" ON muse_landing_analytics;
+DROP POLICY IF EXISTS "muse_landing_analytics_service" ON muse_landing_analytics;
 CREATE POLICY "muse_landing_analytics_service" ON muse_landing_analytics
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
 
 ALTER TABLE muse_qr_events ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_qr_events_service" ON muse_qr_events;
 DROP POLICY IF EXISTS "muse_qr_events_service" ON muse_qr_events;
 CREATE POLICY "muse_qr_events_service" ON muse_qr_events
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
@@ -89,6 +92,7 @@ CREATE INDEX IF NOT EXISTS idx_muse_verification_sessions_user ON muse_verificat
 CREATE INDEX IF NOT EXISTS idx_muse_verification_sessions_stripe ON muse_verification_sessions(stripe_session_id);
 
 ALTER TABLE muse_verification_sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_verification_sessions_owner" ON muse_verification_sessions;
 DROP POLICY IF EXISTS "muse_verification_sessions_owner" ON muse_verification_sessions;
 CREATE POLICY "muse_verification_sessions_owner" ON muse_verification_sessions
   FOR SELECT USING (user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()));
@@ -218,6 +222,7 @@ CREATE INDEX IF NOT EXISTS idx_muse_events_log_name ON muse_events_log(name);
 CREATE INDEX IF NOT EXISTS idx_muse_events_log_created ON muse_events_log(created_at DESC);
 ALTER TABLE muse_events_log ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_events_log_service_only" ON muse_events_log;
+DROP POLICY IF EXISTS "muse_events_log_service_only" ON muse_events_log;
 CREATE POLICY "muse_events_log_service_only" ON muse_events_log
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
 
@@ -247,6 +252,7 @@ ALTER TABLE muse_content_scans
   ADD COLUMN IF NOT EXISTS scanned BOOLEAN DEFAULT TRUE;
 
 ALTER TABLE muse_ncmec_reports ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "ncmec_service_only" ON muse_ncmec_reports;
 DROP POLICY IF EXISTS "ncmec_service_only" ON muse_ncmec_reports;
 CREATE POLICY "ncmec_service_only" ON muse_ncmec_reports
   FOR ALL USING (false);

@@ -73,18 +73,22 @@ ALTER TABLE muse_stripe_connect ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_booking_payments ENABLE ROW LEVEL SECURITY;
 
 -- Referrals: users can see their own referrals
+DROP POLICY IF EXISTS "Users see own referrals" ON muse_referrals;
 CREATE POLICY "Users see own referrals" ON muse_referrals
   FOR SELECT USING (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = referrer_id));
 
 -- Referral rewards: users see their own
+DROP POLICY IF EXISTS "Users see own rewards" ON muse_referral_rewards;
 CREATE POLICY "Users see own rewards" ON muse_referral_rewards
   FOR SELECT USING (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = recipient_id));
 
 -- Stripe Connect: users see their own
+DROP POLICY IF EXISTS "Users see own connect" ON muse_stripe_connect;
 CREATE POLICY "Users see own connect" ON muse_stripe_connect
   FOR SELECT USING (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = user_id));
 
 -- Booking payments: participants see
+DROP POLICY IF EXISTS "Payers and payees see payments" ON muse_booking_payments;
 CREATE POLICY "Payers and payees see payments" ON muse_booking_payments
   FOR SELECT USING (
     auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = payer_id)

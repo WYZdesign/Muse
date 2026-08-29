@@ -152,67 +152,87 @@ ALTER TABLE muse_push_subscriptions ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 
 -- Forum replies: public read, authenticated insert (scoped to own user_id)
+DROP POLICY IF EXISTS "Forum replies are public" ON muse_forum_replies;
 CREATE POLICY "Forum replies are public" ON muse_forum_replies FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can post replies" ON muse_forum_replies;
 CREATE POLICY "Users can post replies" ON muse_forum_replies FOR INSERT WITH CHECK (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
 
 -- Communities: public read, service role can manage (prevents client-side tampering)
+DROP POLICY IF EXISTS "Communities are public" ON muse_communities;
 CREATE POLICY "Communities are public" ON muse_communities FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service can manage communities" ON muse_communities;
 CREATE POLICY "Service can manage communities" ON muse_communities FOR ALL
   USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
 -- Community members: users see memberships, can join/leave (scoped to own user_id)
+DROP POLICY IF EXISTS "Community members are public" ON muse_community_members;
 CREATE POLICY "Community members are public" ON muse_community_members FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can join communities" ON muse_community_members;
 CREATE POLICY "Users can join communities" ON muse_community_members FOR INSERT WITH CHECK (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can leave communities" ON muse_community_members;
 CREATE POLICY "Users can leave communities" ON muse_community_members FOR DELETE USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
 
 -- Sessions: public read, service role manages lifecycle (hosts create via API)
+DROP POLICY IF EXISTS "Sessions are public" ON muse_sessions;
 CREATE POLICY "Sessions are public" ON muse_sessions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service can manage sessions" ON muse_sessions;
 CREATE POLICY "Service can manage sessions" ON muse_sessions FOR ALL
   USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
 -- Bookings: users view own, create own; service role manages lifecycle
+DROP POLICY IF EXISTS "Users can view own bookings" ON muse_bookings;
 CREATE POLICY "Users can view own bookings" ON muse_bookings FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
   OR host_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can create own bookings" ON muse_bookings;
 CREATE POLICY "Users can create own bookings" ON muse_bookings FOR INSERT WITH CHECK (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service can manage bookings" ON muse_bookings;
 CREATE POLICY "Service can manage bookings" ON muse_bookings FOR ALL
   USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
 -- Connections: users see their own, can create
+DROP POLICY IF EXISTS "Users can view own connections" ON muse_connections;
 CREATE POLICY "Users can view own connections" ON muse_connections FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
   OR target_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can create connections" ON muse_connections;
 CREATE POLICY "Users can create connections" ON muse_connections FOR INSERT WITH CHECK (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can delete own connections" ON muse_connections;
 CREATE POLICY "Users can delete own connections" ON muse_connections FOR DELETE USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
 
 -- Notifications: users see their own; service role manages
+DROP POLICY IF EXISTS "Users can view own notifications" ON muse_notifications;
 CREATE POLICY "Users can view own notifications" ON muse_notifications FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service can manage notifications" ON muse_notifications;
 CREATE POLICY "Service can manage notifications" ON muse_notifications FOR ALL
   USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
 -- Push subscriptions: users manage their own (INSERT scoped to own user_id)
+DROP POLICY IF EXISTS "Users can view own push subs" ON muse_push_subscriptions;
 CREATE POLICY "Users can view own push subs" ON muse_push_subscriptions FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can save own push subs" ON muse_push_subscriptions;
 CREATE POLICY "Users can save own push subs" ON muse_push_subscriptions FOR INSERT WITH CHECK (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can delete own push subs" ON muse_push_subscriptions;
 CREATE POLICY "Users can delete own push subs" ON muse_push_subscriptions FOR DELETE USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
@@ -256,6 +276,7 @@ ALTER TABLE muse_error_logs ENABLE ROW LEVEL SECURITY;
 -- Service-managed only: the /api/telemetry route uses the service_role key,
 -- which bypasses RLS. Deny all access to anon/authenticated clients so error
 -- logs are never readable or writable directly from the browser.
+DROP POLICY IF EXISTS "muse_error_logs_service_only" ON muse_error_logs;
 DROP POLICY IF EXISTS "muse_error_logs_service_only" ON muse_error_logs;
 CREATE POLICY "muse_error_logs_service_only" ON muse_error_logs
   FOR ALL
@@ -321,11 +342,13 @@ END $$;
 ALTER TABLE muse_messages ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages;
 DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
+DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages;
 CREATE POLICY "muse_messages_participants" ON muse_messages FOR SELECT
   USING (
     sender_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
     OR receiver_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
   );
+DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
 CREATE POLICY "muse_messages_insert" ON muse_messages FOR INSERT
   WITH CHECK (
     sender_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
@@ -346,6 +369,7 @@ CREATE TABLE IF NOT EXISTS muse_events_log (
 CREATE INDEX IF NOT EXISTS idx_muse_events_log_name ON muse_events_log(name);
 CREATE INDEX IF NOT EXISTS idx_muse_events_log_created ON muse_events_log(created_at DESC);
 ALTER TABLE muse_events_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_events_log_service_only" ON muse_events_log;
 DROP POLICY IF EXISTS "muse_events_log_service_only" ON muse_events_log;
 CREATE POLICY "muse_events_log_service_only" ON muse_events_log
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
@@ -368,6 +392,7 @@ CREATE INDEX IF NOT EXISTS idx_muse_verification_sessions_user ON muse_verificat
 CREATE INDEX IF NOT EXISTS idx_muse_verification_sessions_stripe ON muse_verification_sessions(stripe_session_id);
 ALTER TABLE muse_verification_sessions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_verification_sessions_owner" ON muse_verification_sessions;
+DROP POLICY IF EXISTS "muse_verification_sessions_owner" ON muse_verification_sessions;
 CREATE POLICY "muse_verification_sessions_owner" ON muse_verification_sessions
   FOR SELECT USING (user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()));
 -- Service role manages insert/update via API
@@ -375,7 +400,9 @@ CREATE POLICY "muse_verification_sessions_owner" ON muse_verification_sessions
 -- muse_events: was missing RLS entirely (defined in muse_schema.sql but never protected)
 ALTER TABLE IF EXISTS muse_events ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Events are public" ON muse_events;
+DROP POLICY IF EXISTS "Events are public" ON muse_events;
 CREATE POLICY "Events are public" ON muse_events FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service can manage events" ON muse_events;
 DROP POLICY IF EXISTS "Service can manage events" ON muse_events;
 CREATE POLICY "Service can manage events" ON muse_events FOR ALL
   USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');

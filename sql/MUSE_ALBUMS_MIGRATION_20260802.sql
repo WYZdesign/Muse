@@ -77,6 +77,7 @@ ALTER TABLE muse_album_access ENABLE ROW LEVEL SECURITY;
 
 -- Albums: visible if public, owned by the viewer, or invite-granted to the viewer
 DROP POLICY IF EXISTS "muse_albums_select" ON muse_albums;
+DROP POLICY IF EXISTS "muse_albums_select" ON muse_albums;
 CREATE POLICY "muse_albums_select" ON muse_albums FOR SELECT USING (
   access_level = 'public'
   OR profile_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
@@ -91,21 +92,25 @@ CREATE POLICY "muse_albums_select" ON muse_albums FOR SELECT USING (
 );
 
 DROP POLICY IF EXISTS "muse_albums_insert" ON muse_albums;
+DROP POLICY IF EXISTS "muse_albums_insert" ON muse_albums;
 CREATE POLICY "muse_albums_insert" ON muse_albums FOR INSERT WITH CHECK (
   profile_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
 
+DROP POLICY IF EXISTS "muse_albums_update" ON muse_albums;
 DROP POLICY IF EXISTS "muse_albums_update" ON muse_albums;
 CREATE POLICY "muse_albums_update" ON muse_albums FOR UPDATE USING (
   profile_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
 
 DROP POLICY IF EXISTS "muse_albums_delete" ON muse_albums;
+DROP POLICY IF EXISTS "muse_albums_delete" ON muse_albums;
 CREATE POLICY "muse_albums_delete" ON muse_albums FOR DELETE USING (
   profile_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
 
 -- Album photos: same visibility as their parent album
+DROP POLICY IF EXISTS "muse_album_photos_select" ON muse_album_photos;
 DROP POLICY IF EXISTS "muse_album_photos_select" ON muse_album_photos;
 CREATE POLICY "muse_album_photos_select" ON muse_album_photos FOR SELECT USING (
   EXISTS (
@@ -127,6 +132,7 @@ CREATE POLICY "muse_album_photos_select" ON muse_album_photos FOR SELECT USING (
 );
 
 DROP POLICY IF EXISTS "muse_album_photos_write" ON muse_album_photos;
+DROP POLICY IF EXISTS "muse_album_photos_write" ON muse_album_photos;
 CREATE POLICY "muse_album_photos_write" ON muse_album_photos FOR ALL USING (
   EXISTS (
     SELECT 1 FROM muse_albums
@@ -138,6 +144,7 @@ CREATE POLICY "muse_album_photos_write" ON muse_album_photos FOR ALL USING (
 -- Album access grants: only the album owner can see/manage the invite list;
 -- a viewer can see their own grant row (so the client can show "you have access")
 DROP POLICY IF EXISTS "muse_album_access_select" ON muse_album_access;
+DROP POLICY IF EXISTS "muse_album_access_select" ON muse_album_access;
 CREATE POLICY "muse_album_access_select" ON muse_album_access FOR SELECT USING (
   viewer_profile_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
   OR EXISTS (
@@ -147,6 +154,7 @@ CREATE POLICY "muse_album_access_select" ON muse_album_access FOR SELECT USING (
   )
 );
 
+DROP POLICY IF EXISTS "muse_album_access_write" ON muse_album_access;
 DROP POLICY IF EXISTS "muse_album_access_write" ON muse_album_access;
 CREATE POLICY "muse_album_access_write" ON muse_album_access FOR ALL USING (
   EXISTS (

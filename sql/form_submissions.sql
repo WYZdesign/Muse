@@ -15,7 +15,9 @@ CREATE INDEX IF NOT EXISTS idx_form_submissions_date ON form_submissions(submitt
 ALTER TABLE form_submissions ENABLE ROW LEVEL SECURITY;
 
 -- Allow inserts from anyone (form submissions)
+DROP POLICY IF EXISTS "Allow inserts" ON form_submissions;
 CREATE POLICY "Allow inserts" ON form_submissions FOR INSERT WITH CHECK (true);
 
 -- Allow reads only for service role (admin dashboard)
+DROP POLICY IF EXISTS "Service role reads" ON form_submissions;
 CREATE POLICY "Service role reads" ON form_submissions FOR SELECT USING (auth.role() = 'service_role');

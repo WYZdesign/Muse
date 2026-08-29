@@ -163,26 +163,32 @@ ALTER TABLE public.muse_push_subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- ── PROFILES: authenticated users can read; only owner edits ──
 DROP POLICY IF EXISTS "Public profiles viewable by authenticated users" ON muse_profiles;
+DROP POLICY IF EXISTS "Public profiles viewable by authenticated users" ON muse_profiles;
 CREATE POLICY "Public profiles viewable by authenticated users" ON muse_profiles FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Users update own profile" ON muse_profiles;
 DROP POLICY IF EXISTS "Users update own profile" ON muse_profiles;
 CREATE POLICY "Users update own profile" ON muse_profiles FOR UPDATE TO authenticated USING (auth.uid() = auth_id) WITH CHECK (auth.uid() = auth_id);
 
 -- ── MATCHES: only participants see ──
 DROP POLICY IF EXISTS "Users see own matches" ON muse_matches;
 DROP POLICY IF EXISTS "muse_matches_insert_self" ON muse_matches;
+DROP POLICY IF EXISTS "muse_matches_select" ON muse_matches;
 CREATE POLICY "muse_matches_select" ON muse_matches FOR SELECT TO authenticated
 USING (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = user_id));
+DROP POLICY IF EXISTS "muse_matches_insert" ON muse_matches;
 CREATE POLICY "muse_matches_insert" ON muse_matches FOR INSERT TO authenticated
 WITH CHECK (user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()));
 
 -- ── MESSAGES: only sender or receiver sees ──
 DROP POLICY IF EXISTS "muse_messages_select" ON muse_messages;
 DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
+DROP POLICY IF EXISTS "muse_messages_select" ON muse_messages;
 CREATE POLICY "muse_messages_select" ON muse_messages FOR SELECT TO authenticated
 USING (
   sender_id::text = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
   OR receiver_id::text = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
 CREATE POLICY "muse_messages_insert" ON muse_messages FOR INSERT TO authenticated
 WITH CHECK (
   sender_id::text = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
@@ -190,35 +196,44 @@ WITH CHECK (
 
 -- ── FEED POSTS: anyone reads, owner edits ──
 DROP POLICY IF EXISTS "Feed posts viewable by all" ON muse_feed_posts;
+DROP POLICY IF EXISTS "Feed posts viewable by all" ON muse_feed_posts;
 CREATE POLICY "Feed posts viewable by all" ON muse_feed_posts FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS "Users create own feed posts" ON muse_feed_posts;
+DROP POLICY IF EXISTS "muse_feed_insert" ON muse_feed_posts;
 CREATE POLICY "muse_feed_insert" ON muse_feed_posts FOR INSERT TO authenticated
 WITH CHECK (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = author_id));
 DROP POLICY IF EXISTS "Users edit own feed posts" ON muse_feed_posts;
+DROP POLICY IF EXISTS "muse_feed_update" ON muse_feed_posts;
 CREATE POLICY "muse_feed_update" ON muse_feed_posts FOR UPDATE TO authenticated
 USING (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = author_id));
 
 -- ── BRIEFS: anyone reads, owner creates ──
 DROP POLICY IF EXISTS "Briefs viewable by all" ON muse_briefs;
+DROP POLICY IF EXISTS "Briefs viewable by all" ON muse_briefs;
 CREATE POLICY "Briefs viewable by all" ON muse_briefs FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS "Users create own briefs" ON muse_briefs;
+DROP POLICY IF EXISTS "muse_briefs_insert" ON muse_briefs;
 CREATE POLICY "muse_briefs_insert" ON muse_briefs FOR INSERT TO authenticated
 WITH CHECK (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = author_id));
 
 -- ── FORUM POSTS: anyone reads, owner creates ──
 DROP POLICY IF EXISTS "Forum posts viewable by all" ON muse_forum_posts;
+DROP POLICY IF EXISTS "Forum posts viewable by all" ON muse_forum_posts;
 CREATE POLICY "Forum posts viewable by all" ON muse_forum_posts FOR SELECT TO authenticated USING (true);
 
 -- ── NOTIFICATIONS: only target user sees theirs ──
+DROP POLICY IF EXISTS "muse_notifications_owner" ON muse_notifications;
 DROP POLICY IF EXISTS "muse_notifications_owner" ON muse_notifications;
 CREATE POLICY "muse_notifications_owner" ON muse_notifications FOR SELECT TO authenticated
 USING (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
 
 -- ── REPORTS: only reporter sees own ──
 DROP POLICY IF EXISTS "muse_reports_owner" ON muse_reports;
+DROP POLICY IF EXISTS "muse_reports_owner" ON muse_reports;
 CREATE POLICY "muse_reports_owner" ON muse_reports FOR SELECT TO authenticated
 USING (reporter_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
 DROP POLICY IF EXISTS "Users can insert reports" ON muse_reports;
+DROP POLICY IF EXISTS "muse_reports_insert" ON muse_reports;
 CREATE POLICY "muse_reports_insert" ON muse_reports FOR INSERT TO authenticated
 WITH CHECK (reporter_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
 
@@ -226,49 +241,65 @@ WITH CHECK (reporter_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_
 DROP POLICY IF EXISTS "muse_blocks_owner" ON muse_blocks;
 DROP POLICY IF EXISTS "muse_blocks_insert" ON muse_blocks;
 DROP POLICY IF EXISTS "muse_blocks_delete" ON muse_blocks;
+DROP POLICY IF EXISTS "muse_blocks_owner" ON muse_blocks;
 CREATE POLICY "muse_blocks_owner" ON muse_blocks FOR SELECT TO authenticated
 USING (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "muse_blocks_insert" ON muse_blocks;
 CREATE POLICY "muse_blocks_insert" ON muse_blocks FOR INSERT TO authenticated
 WITH CHECK (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "muse_blocks_delete" ON muse_blocks;
 CREATE POLICY "muse_blocks_delete" ON muse_blocks FOR DELETE TO authenticated
 USING (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
 
 -- ── NEW TABLES: owner-gated policies ──
 DROP POLICY IF EXISTS "Communities viewable by all" ON muse_communities;
+DROP POLICY IF EXISTS "Communities viewable by all" ON muse_communities;
 CREATE POLICY "Communities viewable by all" ON muse_communities FOR SELECT TO authenticated USING (true);
 
 DROP POLICY IF EXISTS "Community members viewable by members" ON muse_community_members;
+DROP POLICY IF EXISTS "muse_community_members_select" ON muse_community_members;
 CREATE POLICY "muse_community_members_select" ON muse_community_members FOR SELECT TO authenticated
 USING (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "muse_community_members_insert" ON muse_community_members;
 CREATE POLICY "muse_community_members_insert" ON muse_community_members FOR INSERT TO authenticated
 WITH CHECK (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "muse_community_members_delete" ON muse_community_members;
 CREATE POLICY "muse_community_members_delete" ON muse_community_members FOR DELETE TO authenticated
 USING (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
 
 DROP POLICY IF EXISTS "Sessions viewable by all" ON muse_sessions;
+DROP POLICY IF EXISTS "Sessions viewable by all" ON muse_sessions;
 CREATE POLICY "Sessions viewable by all" ON muse_sessions FOR SELECT TO authenticated USING (true);
 
 DROP POLICY IF EXISTS "Bookings owner" ON muse_bookings;
+DROP POLICY IF EXISTS "muse_bookings_select" ON muse_bookings;
 CREATE POLICY "muse_bookings_select" ON muse_bookings FOR SELECT TO authenticated
 USING (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "muse_bookings_insert" ON muse_bookings;
 CREATE POLICY "muse_bookings_insert" ON muse_bookings FOR INSERT TO authenticated
 WITH CHECK (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
 
 DROP POLICY IF EXISTS "Connections owner" ON muse_connections;
+DROP POLICY IF EXISTS "muse_connections_select" ON muse_connections;
 CREATE POLICY "muse_connections_select" ON muse_connections FOR SELECT TO authenticated
 USING (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
    OR target_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "muse_connections_insert" ON muse_connections;
 CREATE POLICY "muse_connections_insert" ON muse_connections FOR INSERT TO authenticated
 WITH CHECK (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
 
 DROP POLICY IF EXISTS "Forum replies viewable by all" ON muse_forum_replies;
+DROP POLICY IF EXISTS "Forum replies viewable by all" ON muse_forum_replies;
 CREATE POLICY "Forum replies viewable by all" ON muse_forum_replies FOR SELECT TO authenticated USING (true);
 
 DROP POLICY IF EXISTS "Push subs owner" ON muse_push_subscriptions;
+DROP POLICY IF EXISTS "muse_push_select" ON muse_push_subscriptions;
 CREATE POLICY "muse_push_select" ON muse_push_subscriptions FOR SELECT TO authenticated
 USING (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "muse_push_insert" ON muse_push_subscriptions;
 CREATE POLICY "muse_push_insert" ON muse_push_subscriptions FOR INSERT TO authenticated
 WITH CHECK (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "muse_push_delete" ON muse_push_subscriptions;
 CREATE POLICY "muse_push_delete" ON muse_push_subscriptions FOR DELETE TO authenticated
 USING (user_id::text IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid()));
 

@@ -170,12 +170,17 @@ ALTER TABLE muse_forum_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_event_rsvps ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+DROP POLICY IF EXISTS "Profiles are public" ON muse_profiles;
 CREATE POLICY "Profiles are public" ON muse_profiles FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can update own profile" ON muse_profiles;
 CREATE POLICY "Users can update own profile" ON muse_profiles FOR UPDATE USING (auth.uid() = auth_id);
 
+DROP POLICY IF EXISTS "Users can see their matches" ON muse_matches;
 CREATE POLICY "Users can see their matches" ON muse_matches FOR SELECT USING (auth.uid() IN (SELECT auth_id FROM muse_profiles WHERE id IN (user_id, target_id)));
+DROP POLICY IF EXISTS "Users can create matches" ON muse_matches;
 CREATE POLICY "Users can create matches" ON muse_matches FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Users can read their messages" ON muse_messages;
 CREATE POLICY "Users can read their messages" ON muse_messages FOR SELECT USING (
   match_id IN (SELECT id FROM muse_matches WHERE user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()) OR target_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()))
 );

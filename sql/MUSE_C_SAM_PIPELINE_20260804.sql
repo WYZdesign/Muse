@@ -49,11 +49,13 @@ CREATE INDEX IF NOT EXISTS idx_muse_safety_incidents_created ON muse_safety_inci
 -- 3. RLS policies
 ALTER TABLE muse_content_scans ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_content_scans_owner" ON muse_content_scans;
+DROP POLICY IF EXISTS "muse_content_scans_owner" ON muse_content_scans;
 CREATE POLICY "muse_content_scans_owner" ON muse_content_scans
   FOR SELECT USING (user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()));
 -- Service role manages insert
 
 ALTER TABLE muse_safety_incidents ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_safety_incidents_owner" ON muse_safety_incidents;
 DROP POLICY IF EXISTS "muse_safety_incidents_owner" ON muse_safety_incidents;
 CREATE POLICY "muse_safety_incidents_owner" ON muse_safety_incidents
   FOR SELECT USING (user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()));

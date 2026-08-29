@@ -196,9 +196,13 @@ ALTER TABLE muse_forum_posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_forum_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_event_rsvps ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Profiles are public" ON muse_profiles;
 CREATE POLICY "Profiles are public" ON muse_profiles FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can update own profile" ON muse_profiles;
 CREATE POLICY "Users can update own profile" ON muse_profiles FOR UPDATE USING (auth.uid() = auth_id);
+DROP POLICY IF EXISTS "Users can see their matches" ON muse_matches;
 CREATE POLICY "Users can see their matches" ON muse_matches FOR SELECT USING (auth.uid() IN (SELECT auth_id FROM muse_profiles WHERE id IN (user_id, target_id)));
+DROP POLICY IF EXISTS "Users can create matches" ON muse_matches;
 CREATE POLICY "Users can create matches" ON muse_matches FOR INSERT WITH CHECK (true);
 
 CREATE OR REPLACE FUNCTION log_muse_activity()
@@ -219,12 +223,16 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 VALUES ('muse-uploads', 'muse-uploads', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 ON CONFLICT (id) DO NOTHING;
 
+DROP POLICY IF EXISTS "Authenticated users can upload" ON storage;
 CREATE POLICY "Authenticated users can upload" ON storage.objects
   FOR INSERT WITH CHECK (bucket_id = 'muse-uploads');
+DROP POLICY IF EXISTS "Public read access" ON storage;
 CREATE POLICY "Public read access" ON storage.objects
   FOR SELECT USING (bucket_id = 'muse-uploads');
+DROP POLICY IF EXISTS "Users can update own uploads" ON storage;
 CREATE POLICY "Users can update own uploads" ON storage.objects
   FOR UPDATE USING (bucket_id = 'muse-uploads');
+DROP POLICY IF EXISTS "Users can delete own uploads" ON storage;
 CREATE POLICY "Users can delete own uploads" ON storage.objects
   FOR DELETE USING (bucket_id = 'muse-uploads');
 
@@ -255,18 +263,23 @@ CREATE INDEX IF NOT EXISTS idx_muse_blocks_target ON muse_blocks(target_id);
 ALTER TABLE muse_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_blocks ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can insert reports" ON muse_reports;
 CREATE POLICY "Users can insert reports" ON muse_reports FOR INSERT WITH CHECK (
   reporter_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can view own reports" ON muse_reports;
 CREATE POLICY "Users can view own reports" ON muse_reports FOR SELECT USING (
   reporter_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can insert blocks" ON muse_blocks;
 CREATE POLICY "Users can insert blocks" ON muse_blocks FOR INSERT WITH CHECK (
   user_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can view own blocks" ON muse_blocks;
 CREATE POLICY "Users can view own blocks" ON muse_blocks FOR SELECT USING (
   user_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can delete own blocks" ON muse_blocks;
 CREATE POLICY "Users can delete own blocks" ON muse_blocks FOR DELETE USING (true);
 
 -- Profiles: extra columns
@@ -395,37 +408,57 @@ ALTER TABLE muse_connections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_push_subscriptions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Forum replies are public" ON muse_forum_replies;
 CREATE POLICY "Forum replies are public" ON muse_forum_replies FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can post replies" ON muse_forum_replies;
 CREATE POLICY "Users can post replies" ON muse_forum_replies FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Communities are public" ON muse_communities;
 CREATE POLICY "Communities are public" ON muse_communities FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service can manage communities" ON muse_communities;
 CREATE POLICY "Service can manage communities" ON muse_communities FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Community members are public" ON muse_community_members;
 CREATE POLICY "Community members are public" ON muse_community_members FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can join communities" ON muse_community_members;
 CREATE POLICY "Users can join communities" ON muse_community_members FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Users can leave communities" ON muse_community_members;
 CREATE POLICY "Users can leave communities" ON muse_community_members FOR DELETE USING (true);
+DROP POLICY IF EXISTS "Sessions are public" ON muse_sessions;
 CREATE POLICY "Sessions are public" ON muse_sessions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service can manage sessions" ON muse_sessions;
 CREATE POLICY "Service can manage sessions" ON muse_sessions FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Users can view own bookings" ON muse_bookings;
 CREATE POLICY "Users can view own bookings" ON muse_bookings FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
   OR host_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can create bookings" ON muse_bookings;
 CREATE POLICY "Users can create bookings" ON muse_bookings FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Service can manage bookings" ON muse_bookings;
 CREATE POLICY "Service can manage bookings" ON muse_bookings FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Users can view own connections" ON muse_connections;
 CREATE POLICY "Users can view own connections" ON muse_connections FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
   OR target_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can create connections" ON muse_connections;
 CREATE POLICY "Users can create connections" ON muse_connections FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Users can delete own connections" ON muse_connections;
 CREATE POLICY "Users can delete own connections" ON muse_connections FOR DELETE USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can view own notifications" ON muse_notifications;
 CREATE POLICY "Users can view own notifications" ON muse_notifications FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service can manage notifications" ON muse_notifications;
 CREATE POLICY "Service can manage notifications" ON muse_notifications FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Users can view own push subs" ON muse_push_subscriptions;
 CREATE POLICY "Users can view own push subs" ON muse_push_subscriptions FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users can save push subs" ON muse_push_subscriptions;
 CREATE POLICY "Users can save push subs" ON muse_push_subscriptions FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Users can delete own push subs" ON muse_push_subscriptions;
 CREATE POLICY "Users can delete own push subs" ON muse_push_subscriptions FOR DELETE USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
@@ -450,6 +483,7 @@ CREATE TABLE IF NOT EXISTS muse_error_logs (
 );
 
 ALTER TABLE muse_error_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_error_logs_service_only" ON muse_error_logs;
 DROP POLICY IF EXISTS "muse_error_logs_service_only" ON muse_error_logs;
 CREATE POLICY "muse_error_logs_service_only" ON muse_error_logs
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
@@ -482,7 +516,9 @@ END $$;
 
 ALTER TABLE muse_messages ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages;
+DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages;
 CREATE POLICY "muse_messages_participants" ON muse_messages FOR SELECT USING (true);
+DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
 CREATE POLICY "muse_messages_insert" ON muse_messages FOR INSERT WITH CHECK (true);
 
 -- Events Log
@@ -497,6 +533,7 @@ CREATE TABLE IF NOT EXISTS muse_events_log (
 CREATE INDEX IF NOT EXISTS idx_muse_events_log_name ON muse_events_log(name);
 CREATE INDEX IF NOT EXISTS idx_muse_events_log_created ON muse_events_log(created_at DESC);
 ALTER TABLE muse_events_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_events_log_service_only" ON muse_events_log;
 DROP POLICY IF EXISTS "muse_events_log_service_only" ON muse_events_log;
 CREATE POLICY "muse_events_log_service_only" ON muse_events_log
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
@@ -551,6 +588,7 @@ ALTER TABLE muse_album_photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_album_access ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "muse_albums_select" ON muse_albums;
+DROP POLICY IF EXISTS "muse_albums_select" ON muse_albums;
 CREATE POLICY "muse_albums_select" ON muse_albums FOR SELECT USING (
   access_level = 'public'
   OR profile_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
@@ -560,18 +598,22 @@ CREATE POLICY "muse_albums_select" ON muse_albums FOR SELECT USING (
   ))
 );
 DROP POLICY IF EXISTS "muse_albums_insert" ON muse_albums;
+DROP POLICY IF EXISTS "muse_albums_insert" ON muse_albums;
 CREATE POLICY "muse_albums_insert" ON muse_albums FOR INSERT WITH CHECK (
   profile_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "muse_albums_update" ON muse_albums;
 DROP POLICY IF EXISTS "muse_albums_update" ON muse_albums;
 CREATE POLICY "muse_albums_update" ON muse_albums FOR UPDATE USING (
   profile_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
 DROP POLICY IF EXISTS "muse_albums_delete" ON muse_albums;
+DROP POLICY IF EXISTS "muse_albums_delete" ON muse_albums;
 CREATE POLICY "muse_albums_delete" ON muse_albums FOR DELETE USING (
   profile_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
 
+DROP POLICY IF EXISTS "muse_album_photos_select" ON muse_album_photos;
 DROP POLICY IF EXISTS "muse_album_photos_select" ON muse_album_photos;
 CREATE POLICY "muse_album_photos_select" ON muse_album_photos FOR SELECT USING (
   EXISTS (SELECT 1 FROM muse_albums WHERE muse_albums.id = muse_album_photos.album_id
@@ -584,17 +626,20 @@ CREATE POLICY "muse_album_photos_select" ON muse_album_photos FOR SELECT USING (
     ))
 );
 DROP POLICY IF EXISTS "muse_album_photos_write" ON muse_album_photos;
+DROP POLICY IF EXISTS "muse_album_photos_write" ON muse_album_photos;
 CREATE POLICY "muse_album_photos_write" ON muse_album_photos FOR ALL USING (
   EXISTS (SELECT 1 FROM muse_albums WHERE muse_albums.id = muse_album_photos.album_id
     AND muse_albums.profile_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()))
 );
 
 DROP POLICY IF EXISTS "muse_album_access_select" ON muse_album_access;
+DROP POLICY IF EXISTS "muse_album_access_select" ON muse_album_access;
 CREATE POLICY "muse_album_access_select" ON muse_album_access FOR SELECT USING (
   viewer_profile_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
   OR EXISTS (SELECT 1 FROM muse_albums WHERE muse_albums.id = muse_album_access.album_id
     AND muse_albums.profile_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "muse_album_access_write" ON muse_album_access;
 DROP POLICY IF EXISTS "muse_album_access_write" ON muse_album_access;
 CREATE POLICY "muse_album_access_write" ON muse_album_access FOR ALL USING (
   EXISTS (SELECT 1 FROM muse_albums WHERE muse_albums.id = muse_album_access.album_id
@@ -667,12 +712,16 @@ ALTER TABLE muse_referral_rewards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_stripe_connect ENABLE ROW LEVEL SECURITY;
 ALTER TABLE muse_booking_payments ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users see own referrals" ON muse_referrals;
 CREATE POLICY "Users see own referrals" ON muse_referrals
   FOR SELECT USING (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = referrer_id));
+DROP POLICY IF EXISTS "Users see own rewards" ON muse_referral_rewards;
 CREATE POLICY "Users see own rewards" ON muse_referral_rewards
   FOR SELECT USING (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = recipient_id));
+DROP POLICY IF EXISTS "Users see own connect" ON muse_stripe_connect;
 CREATE POLICY "Users see own connect" ON muse_stripe_connect
   FOR SELECT USING (auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = user_id));
+DROP POLICY IF EXISTS "Payers and payees see payments" ON muse_booking_payments;
 CREATE POLICY "Payers and payees see payments" ON muse_booking_payments
   FOR SELECT USING (
     auth.uid() = (SELECT auth_id FROM muse_profiles WHERE id = payer_id)
@@ -728,10 +777,12 @@ CREATE INDEX IF NOT EXISTS idx_muse_safety_incidents_created ON muse_safety_inci
 
 ALTER TABLE muse_content_scans ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_content_scans_owner" ON muse_content_scans;
+DROP POLICY IF EXISTS "muse_content_scans_owner" ON muse_content_scans;
 CREATE POLICY "muse_content_scans_owner" ON muse_content_scans
   FOR SELECT USING (user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()));
 
 ALTER TABLE muse_safety_incidents ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_safety_incidents_owner" ON muse_safety_incidents;
 DROP POLICY IF EXISTS "muse_safety_incidents_owner" ON muse_safety_incidents;
 CREATE POLICY "muse_safety_incidents_owner" ON muse_safety_incidents
   FOR SELECT USING (user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()));
@@ -806,10 +857,12 @@ CREATE INDEX IF NOT EXISTS idx_muse_disclosures_booking ON muse_disclosures(book
 CREATE INDEX IF NOT EXISTS idx_muse_disclosures_status ON muse_disclosures(status);
 
 ALTER TABLE muse_disclosures ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Disclosure parties can read" ON muse_disclosures;
 CREATE POLICY "Disclosure parties can read" ON muse_disclosures FOR SELECT USING (
   proposer_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
   OR responder_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service manages disclosures" ON muse_disclosures;
 CREATE POLICY "Service manages disclosures" ON muse_disclosures FOR ALL USING (true) WITH CHECK (true);
 
 CREATE TABLE IF NOT EXISTS muse_strikes (
@@ -834,9 +887,11 @@ CREATE INDEX IF NOT EXISTS idx_muse_strikes_category ON muse_strikes(category);
 CREATE INDEX IF NOT EXISTS idx_muse_strikes_severity ON muse_strikes(severity);
 
 ALTER TABLE muse_strikes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view own strikes" ON muse_strikes;
 CREATE POLICY "Users can view own strikes" ON muse_strikes FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service manages strikes" ON muse_strikes;
 CREATE POLICY "Service manages strikes" ON muse_strikes FOR ALL USING (true) WITH CHECK (true);
 
 CREATE TABLE IF NOT EXISTS muse_safety_profiles (
@@ -855,6 +910,7 @@ CREATE TABLE IF NOT EXISTS muse_safety_profiles (
 );
 
 ALTER TABLE muse_safety_profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own safety profile" ON muse_safety_profiles;
 CREATE POLICY "Users manage own safety profile" ON muse_safety_profiles FOR ALL USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
@@ -879,9 +935,11 @@ CREATE INDEX IF NOT EXISTS idx_muse_checkins_booking ON muse_safety_checkins(boo
 CREATE INDEX IF NOT EXISTS idx_muse_checkins_status ON muse_safety_checkins(status);
 
 ALTER TABLE muse_safety_checkins ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users view own check-ins" ON muse_safety_checkins;
 CREATE POLICY "Users view own check-ins" ON muse_safety_checkins FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service manages check-ins" ON muse_safety_checkins;
 CREATE POLICY "Service manages check-ins" ON muse_safety_checkins FOR ALL USING (true) WITH CHECK (true);
 
 CREATE TABLE IF NOT EXISTS muse_safety_shares (
@@ -897,9 +955,11 @@ CREATE TABLE IF NOT EXISTS muse_safety_shares (
 );
 
 ALTER TABLE muse_safety_shares ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users view own shares" ON muse_safety_shares;
 CREATE POLICY "Users view own shares" ON muse_safety_shares FOR SELECT USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service manages shares" ON muse_safety_shares;
 CREATE POLICY "Service manages shares" ON muse_safety_shares FOR ALL USING (true) WITH CHECK (true);
 
 CREATE TABLE IF NOT EXISTS muse_admin_audit_log (
@@ -916,6 +976,7 @@ CREATE INDEX IF NOT EXISTS idx_muse_admin_audit_admin ON muse_admin_audit_log(ad
 CREATE INDEX IF NOT EXISTS idx_muse_admin_audit_created ON muse_admin_audit_log(created_at DESC);
 
 ALTER TABLE muse_admin_audit_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Admin audit is service-only" ON muse_admin_audit_log;
 CREATE POLICY "Admin audit is service-only" ON muse_admin_audit_log
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
 
@@ -934,7 +995,9 @@ CREATE TABLE IF NOT EXISTS muse_prompt_bank (
 CREATE INDEX IF NOT EXISTS idx_muse_prompts_category ON muse_prompt_bank(category, display_order);
 
 ALTER TABLE muse_prompt_bank ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Prompts are public read" ON muse_prompt_bank;
 CREATE POLICY "Prompts are public read" ON muse_prompt_bank FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service manages prompts" ON muse_prompt_bank;
 CREATE POLICY "Service manages prompts" ON muse_prompt_bank FOR ALL USING (true) WITH CHECK (true);
 
 CREATE TABLE IF NOT EXISTS muse_prompt_responses (
@@ -951,6 +1014,7 @@ CREATE TABLE IF NOT EXISTS muse_prompt_responses (
 CREATE INDEX IF NOT EXISTS idx_muse_prompt_resp_user ON muse_prompt_responses(user_id);
 
 ALTER TABLE muse_prompt_responses ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own responses" ON muse_prompt_responses;
 CREATE POLICY "Users manage own responses" ON muse_prompt_responses FOR ALL USING (
   user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
 );
@@ -970,6 +1034,7 @@ CREATE TABLE IF NOT EXISTS muse_profile_embeddings (
 CREATE INDEX IF NOT EXISTS idx_muse_embeddings_user ON muse_profile_embeddings(user_id);
 
 ALTER TABLE muse_profile_embeddings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Embeddings are service-only" ON muse_profile_embeddings;
 CREATE POLICY "Embeddings are service-only" ON muse_profile_embeddings
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
 
@@ -1025,15 +1090,18 @@ CREATE INDEX IF NOT EXISTS idx_muse_qr_events_created ON muse_qr_events(created_
 
 ALTER TABLE muse_waitlist ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_waitlist_owner" ON muse_waitlist;
+DROP POLICY IF EXISTS "muse_waitlist_owner" ON muse_waitlist;
 CREATE POLICY "muse_waitlist_owner" ON muse_waitlist
   FOR SELECT USING (email = (SELECT email FROM auth.users WHERE id = auth.uid()));
 
 ALTER TABLE muse_landing_analytics ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_landing_analytics_service" ON muse_landing_analytics;
+DROP POLICY IF EXISTS "muse_landing_analytics_service" ON muse_landing_analytics;
 CREATE POLICY "muse_landing_analytics_service" ON muse_landing_analytics
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
 
 ALTER TABLE muse_qr_events ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_qr_events_service" ON muse_qr_events;
 DROP POLICY IF EXISTS "muse_qr_events_service" ON muse_qr_events;
 CREATE POLICY "muse_qr_events_service" ON muse_qr_events
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
@@ -1064,6 +1132,7 @@ ALTER TABLE muse_content_scans ADD COLUMN IF NOT EXISTS scanned BOOLEAN DEFAULT 
 
 ALTER TABLE muse_ncmec_reports ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "ncmec_service_only" ON muse_ncmec_reports;
+DROP POLICY IF EXISTS "ncmec_service_only" ON muse_ncmec_reports;
 CREATE POLICY "ncmec_service_only" ON muse_ncmec_reports FOR ALL USING (false);
 
 -- ==============================
@@ -1085,6 +1154,7 @@ CREATE INDEX IF NOT EXISTS idx_muse_verification_sessions_user ON muse_verificat
 CREATE INDEX IF NOT EXISTS idx_muse_verification_sessions_stripe ON muse_verification_sessions(stripe_session_id);
 
 ALTER TABLE muse_verification_sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "muse_verification_sessions_owner" ON muse_verification_sessions;
 DROP POLICY IF EXISTS "muse_verification_sessions_owner" ON muse_verification_sessions;
 CREATE POLICY "muse_verification_sessions_owner" ON muse_verification_sessions
   FOR SELECT USING (user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()));
@@ -1137,8 +1207,11 @@ CREATE TABLE IF NOT EXISTS muse_rsvps (
   UNIQUE(event_id, user_id)
 );
 ALTER TABLE muse_rsvps ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users read own RSVPs" ON muse_rsvps;
 CREATE POLICY "Users read own RSVPs" ON muse_rsvps FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users insert own RSVPs" ON muse_rsvps;
 CREATE POLICY "Users insert own RSVPs" ON muse_rsvps FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users delete own RSVPs" ON muse_rsvps;
 CREATE POLICY "Users delete own RSVPs" ON muse_rsvps FOR DELETE USING (auth.uid() = user_id);
 CREATE INDEX IF NOT EXISTS idx_muse_rsvps_event ON muse_rsvps(event_id);
 CREATE INDEX IF NOT EXISTS idx_muse_rsvps_user ON muse_rsvps(user_id);
@@ -1188,9 +1261,13 @@ CREATE TABLE IF NOT EXISTS muse_professionals (
   UNIQUE(user_id)
 );
 ALTER TABLE muse_professionals ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "professionals_select" ON muse_professionals;
 CREATE POLICY "professionals_select" ON muse_professionals FOR SELECT USING (true);
+DROP POLICY IF EXISTS "professionals_upsert" ON muse_professionals;
 CREATE POLICY "professionals_upsert" ON muse_professionals FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "professionals_update" ON muse_professionals;
 CREATE POLICY "professionals_update" ON muse_professionals FOR UPDATE USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "professionals_delete" ON muse_professionals;
 CREATE POLICY "professionals_delete" ON muse_professionals FOR DELETE USING (auth.uid() = user_id);
 CREATE INDEX IF NOT EXISTS idx_muse_professionals_type ON muse_professionals(type);
 
@@ -1266,6 +1343,7 @@ CREATE TABLE IF NOT EXISTS muse_ai_docs (
 CREATE INDEX IF NOT EXISTS idx_muse_ai_docs_section ON muse_ai_docs(section);
 ALTER TABLE muse_ai_docs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "AI docs are service-only" ON muse_ai_docs;
+DROP POLICY IF EXISTS "AI docs are service-only" ON muse_ai_docs;
 CREATE POLICY "AI docs are service-only" ON muse_ai_docs
   FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
 
@@ -1289,55 +1367,71 @@ DROP TABLE IF EXISTS public.zz_test_b;
 
 -- Final RLS policies (override canonical with hardened versions)
 DROP POLICY IF EXISTS "Public profiles viewable by authenticated users" ON muse_profiles;
+DROP POLICY IF EXISTS "Public profiles viewable by authenticated users" ON public;
 CREATE POLICY "Public profiles viewable by authenticated users" ON public.muse_profiles
   FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS "Users update own profile" ON muse_profiles;
+DROP POLICY IF EXISTS "Users update own profile" ON public;
 CREATE POLICY "Users update own profile" ON public.muse_profiles
   FOR UPDATE TO authenticated USING (auth.uid() = auth_id) WITH CHECK (auth.uid() = auth_id);
 
 DROP POLICY IF EXISTS "Users see own matches" ON muse_matches;
+DROP POLICY IF EXISTS "Users see own matches" ON public;
 CREATE POLICY "Users see own matches" ON public.muse_matches FOR SELECT TO authenticated
   USING (auth.uid() = (SELECT auth_id FROM public.muse_profiles WHERE id = user_id));
 DROP POLICY IF EXISTS "muse_matches_insert_self" ON muse_matches;
 DROP POLICY IF EXISTS "Users can create matches" ON muse_matches;
+DROP POLICY IF EXISTS "muse_matches_insert_self" ON public;
 CREATE POLICY "muse_matches_insert_self" ON public.muse_matches FOR INSERT TO authenticated
   WITH CHECK (user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()));
 
 DROP POLICY IF EXISTS "muse_messages_select" ON muse_messages;
 DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
+DROP POLICY IF EXISTS "muse_messages_select" ON public;
 CREATE POLICY "muse_messages_select" ON public.muse_messages FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "muse_messages_insert" ON public;
 CREATE POLICY "muse_messages_insert" ON public.muse_messages FOR INSERT TO authenticated WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Feed posts viewable by all" ON muse_feed_posts;
+DROP POLICY IF EXISTS "Feed posts viewable by all" ON public;
 CREATE POLICY "Feed posts viewable by all" ON public.muse_feed_posts FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS "Users edit own feed posts" ON muse_feed_posts;
+DROP POLICY IF EXISTS "Users edit own feed posts" ON public;
 CREATE POLICY "Users edit own feed posts" ON public.muse_feed_posts FOR UPDATE TO authenticated
   USING (auth.uid() = (SELECT auth_id FROM public.muse_profiles WHERE id = author_id));
 DROP POLICY IF EXISTS "Users create own feed posts" ON muse_feed_posts;
+DROP POLICY IF EXISTS "Users create own feed posts" ON public;
 CREATE POLICY "Users create own feed posts" ON public.muse_feed_posts FOR INSERT TO authenticated
   WITH CHECK (auth.uid() = (SELECT auth_id FROM public.muse_profiles WHERE id = author_id));
 
 DROP POLICY IF EXISTS "Briefs viewable by all" ON muse_briefs;
+DROP POLICY IF EXISTS "Briefs viewable by all" ON public;
 CREATE POLICY "Briefs viewable by all" ON public.muse_briefs FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS "Users create own briefs" ON muse_briefs;
+DROP POLICY IF EXISTS "Users create own briefs" ON public;
 CREATE POLICY "Users create own briefs" ON public.muse_briefs FOR INSERT TO authenticated
   WITH CHECK (auth.uid() = (SELECT auth_id FROM public.muse_profiles WHERE id = author_id));
 
 DROP POLICY IF EXISTS "muse_notifications_owner" ON muse_notifications;
+DROP POLICY IF EXISTS "muse_notifications_owner" ON public;
 CREATE POLICY "muse_notifications_owner" ON public.muse_notifications FOR SELECT TO authenticated
   USING (user_id IN (SELECT id FROM public.muse_profiles WHERE auth_id = auth.uid()));
 
 DROP POLICY IF EXISTS "muse_reports_owner" ON muse_reports;
+DROP POLICY IF EXISTS "muse_reports_owner" ON public;
 CREATE POLICY "muse_reports_owner" ON public.muse_reports FOR SELECT TO authenticated
   USING (reporter_id = (SELECT id::text FROM public.muse_profiles WHERE auth_id = auth.uid()));
 
 DROP POLICY IF EXISTS "muse_blocks_owner" ON muse_blocks;
 DROP POLICY IF EXISTS "muse_blocks_insert" ON muse_blocks;
 DROP POLICY IF EXISTS "muse_blocks_delete" ON muse_blocks;
+DROP POLICY IF EXISTS "muse_blocks_owner" ON public;
 CREATE POLICY "muse_blocks_owner" ON public.muse_blocks FOR SELECT TO authenticated
   USING (user_id = (SELECT id::text FROM public.muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "muse_blocks_insert" ON public;
 CREATE POLICY "muse_blocks_insert" ON public.muse_blocks FOR INSERT TO authenticated
   WITH CHECK (user_id = (SELECT id::text FROM public.muse_profiles WHERE auth_id = auth.uid()));
+DROP POLICY IF EXISTS "muse_blocks_delete" ON public;
 CREATE POLICY "muse_blocks_delete" ON public.muse_blocks FOR DELETE TO authenticated USING (true);
 
 DROP POLICY IF EXISTS "Service can manage communities" ON muse_communities;
