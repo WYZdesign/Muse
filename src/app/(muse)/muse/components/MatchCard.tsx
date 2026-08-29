@@ -310,7 +310,7 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
               <div className="match-expand-bio">{m.bio || "Creative soul looking for their next collaboration."}</div>
               <div className="match-expand-meta">
                 {m.location && <span>📍 {m.location}</span>}
-                {typeof m.distanceMi === "number" && <span>• {m.distanceMi} mi</span>}
+                 {typeof m.distanceMi === "number" && <span>{m.distanceMi} mi</span>}
                 {m.zodiac && <span>• {m.zodiac}</span>}
               </div>
 

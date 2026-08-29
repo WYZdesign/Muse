@@ -433,8 +433,8 @@ export const MenuModal = memo(function MenuModal({
                     { label: "Likes received", value: likesReceived ?? 0 },
                     { label: "Matches", value: matches.length },
                     { label: "Collabs", value: (currentUser as any)?.stats?.collabs ?? (currentUser as any)?.collabs ?? 0 },
-                    { label: "Briefs applied", value: appliedBriefs.length },
-                    { label: "Briefs saved", value: savedBriefs.length },
+                    { label: "Quests applied", value: appliedBriefs.length },
+                    { label: "Quests saved", value: savedBriefs.length },
                     { label: "Bookings", value: (bookingsForHub?.asBooker || []).length + (bookingsForHub?.asHost || []).length },
                     { label: "Forum posts", value: myForumPosts },
                   ];
@@ -521,7 +521,7 @@ export const MenuModal = memo(function MenuModal({
                 </div>
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Notification Preferences</div>
-                  {[{ k: "match", l: "New Matches" }, { k: "message", l: "Messages" }, { k: "brief", l: "Brief Updates" }, { k: "like", l: "Likes" }].map(n => (
+                  {[{ k: "match", l: "New Matches" }, { k: "message", l: "Messages" }, { k: "brief", l: "Quest Updates" }, { k: "like", l: "Likes" }].map(n => (
                     <div key={n.k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                       <span style={{ fontSize: 13, color: "var(--text)" }}>{n.l}</span>
                       <div role="switch" aria-checked={!!notifPrefs[n.k]} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNotifPrefs((p: any) => ({ ...p, [n.k]: !p[n.k] })); } }} onClick={() => setNotifPrefs((p: any) => ({ ...p, [n.k]: !p[n.k] }))} style={{ width: 44, height: 24, borderRadius: 12, background: notifPrefs[n.k] ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "all .25s" }}>
@@ -597,7 +597,7 @@ export const MenuModal = memo(function MenuModal({
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Help &amp; Support</div>
                 {[
                   { q: "How does matching work?", a: "Swipe right on creators you'd like to connect with. If they swipe right back, it's a match! You can then message each other." },
-                  { q: "What are Briefs?", a: "Briefs are creative opportunities posted by brands and clients. Find them under Collab — apply to paid ones, or respond to vision briefs. Track everything you've applied to or saved in Menu → Your Activity." },
+                  { q: "What are Quests?", a: "Quests are creative opportunities posted by brands and clients. Find them under Collab — apply to paid ones, or respond to vision quests. Track everything you've applied to or saved in Menu → Your Activity." },
                   { q: "How do I upgrade to Premium?", a: "Go to Menu → Settings → Payments & Subscription → Subscription to see plan options." },
                   { q: "How do I report someone?", a: "Tap the ⚑ Report button on any feed or forum post, the ••• menu on a match, or Report inside a chat conversation. Choose a reason and we'll review it — track your reports in Menu → Your Activity → Reports." },
                   { q: "How do I delete my account?", a: "Go to Menu → Settings → Safety & Privacy → Delete Account. This permanently removes all your data." },
@@ -718,12 +718,12 @@ export const MenuModal = memo(function MenuModal({
                       
                       {(hubTab === "applied" || hubTab === "saved") && (() => {
                         const ids = hubTab === "applied" ? appliedBriefs : savedBriefs;
-                        if (!ids.length) return <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>{hubTab === "applied" ? "You haven't applied to any briefs yet." : "No saved briefs yet."}</div>;
+                        if (!ids.length) return <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>{hubTab === "applied" ? "You haven't applied to any quests yet." : "No saved quests yet."}</div>;
                         return (
                           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             {ids.map((id, i) => (
                               <div key={`${id}-${i}`} style={{ padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Brief #{id}</span>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Quest #{id}</span>
                                 <button className="btn btn-outline" style={{ fontSize: 11, padding: "5px 12px", borderRadius: 99 }} onClick={() => { setShowHamburger(false); showScreen("briefs"); }}>View in Collab</button>
                               </div>
                             ))}

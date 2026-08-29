@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useState, useEffect, useCallback } from "react";
-import { FiArrowLeft, FiCamera, FiClock, FiGrid, FiList } from "react-icons/fi";
+import { FiArrowLeft, FiCamera, FiClock } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 import { getPostShareUrl } from "@/lib/urls";
@@ -22,7 +22,6 @@ export interface BtsScreenProps {
   uid?: string;
 }
 
-type FeedView = "grid" | "list";
 type FilterTab = "All" | "Photos" | "Videos" | "Trending" | "New" | "Liked";
 
 function formatCountdown(ms: number): { hours: number; minutes: number } {
@@ -59,7 +58,6 @@ export const BtsScreen = memo(function BtsScreen({
   uid,
 }: BtsScreenProps) {
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
-  const [feedView, setFeedView] = useState<FeedView>("grid");
   const [activeFilter, setActiveFilter] = useState<FilterTab>("All");
   const [windowEnd, setWindowEnd] = useState(() => Date.now() + 24 * 60 * 60 * 1000);
 
@@ -153,9 +151,7 @@ export const BtsScreen = memo(function BtsScreen({
   const pinkGradient = "linear-gradient(135deg, #FF1493 0%, #FF69B4 60%, #FFB6C1 100%)";
   const activePill = "linear-gradient(135deg, #FF1493, #FF69B4)";
 
-  const gridCardStyle: React.CSSProperties = feedView === "grid"
-    ? { flex: "1 1 calc(50% - 6px)", maxWidth: "calc(50% - 6px)" }
-    : { flex: "1 1 100%", maxWidth: "100%" };
+  const gridCardStyle: React.CSSProperties = { flex: "1 1 calc(50% - 6px)", maxWidth: "calc(50% - 6px)" };
 
   return (
     <div className={"screen-el" + (screen === "bts" ? " active" : "")}>
@@ -204,24 +200,7 @@ export const BtsScreen = memo(function BtsScreen({
           BTS
         </div>
 
-        <button
-          onClick={() => setFeedView((v) => (v === "grid" ? "list" : "grid"))}
-          style={{
-            background: "rgba(255,255,255,0.2)",
-            border: "none",
-            borderRadius: 10,
-            width: 34,
-            height: 34,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            color: "#fff",
-          }}
-          aria-label="Toggle view"
-        >
-          {feedView === "grid" ? <FiList size={20} /> : <FiGrid size={20} />}
-        </button>
+        <div style={{ width: 34, height: 34 }} />
       </div>
 
       {/* Scrollable content */}
@@ -275,9 +254,7 @@ export const BtsScreen = memo(function BtsScreen({
             }}
           >
             <FiClock size={14} color="rgba(255,255,255,0.8)" />
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>
-              Window closes in {remaining.hours}h {remaining.minutes}m
-            </span>
+            <strong>Window closes in {remaining.hours}h {remaining.minutes}m</strong>
           </div>
 
           <button
@@ -479,7 +456,7 @@ export const BtsScreen = memo(function BtsScreen({
                     onError={handleImgError}
                     style={{
                       width: "100%",
-                      aspectRatio: feedView === "grid" ? "1" : "16/9",
+                      aspectRatio: "1",
                       objectFit: "cover",
                       display: "block",
                       filter: isNsfw ? "blur(26px) brightness(0.7)" : "none",

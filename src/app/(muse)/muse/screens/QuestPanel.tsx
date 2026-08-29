@@ -38,7 +38,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
       onClaimablesChange?.((data.quests || []).filter((q: any) => q.completed && !q.claimed).length);
       setNearQuests((data.quests || []).filter((q: any) => !q.completed && q.progress / q.target >= 0.5).sort((a: any, b: any) => (b.progress / b.target) - (a.progress / a.target)).slice(0, 3));
       onQuestsChange?.();
-    } catch (e) { console.warn("[Commissions] fetch failed:", e); }
+    } catch (e) { console.warn("[Quests] fetch failed:", e); }
   }, [apiFetch, onClaimablesChange, onQuestsChange]);
 
   useEffect(() => { if (show) fetchQuests(); }, [show, fetchQuests]);
@@ -83,7 +83,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
               <FiStar size={18} color="#0a0612" />
             </div>
             <div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)" }}>Commissions</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)" }}>Quests</div>
               <div style={{ fontSize: 12, color: "var(--text2)" }}>Complete challenges, earn rewards</div>
             </div>
           </div>
@@ -165,8 +165,8 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
           {filtered.length === 0 && (
             <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, textAlign: "center", gap: 12 }}>
               <div style={{ fontSize: 36 }}>📋</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>No commissions in this category</div>
-              <div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 280 }}>Switch to "All" or check back later — new commissions appear daily.</div>
+<div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>No quests in this category</div>
+<div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 280 }}>Switch to "All" or check back later — new quests appear daily.</div>
             </div>
           )}
           {filtered.map((q: any) => {

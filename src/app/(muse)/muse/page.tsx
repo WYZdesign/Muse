@@ -33,8 +33,6 @@ import { NetworkScreen } from "./screens/NetworkScreen";
 import { PortfolioScreen } from "./screens/PortfolioScreen";
 import { BtsScreen } from "./screens/BtsScreen";
 import { CodexScreen } from "./screens/CodexScreen";
-import { TutorialOverlay } from "./screens/TutorialOverlay";
-import { TUTORIALS } from "./screens/tutorials";
 import { ProfileScreen } from "./screens/ProfileScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { SubscriptionScreen } from "./screens/SubscriptionScreen";
@@ -261,7 +259,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [showActivityFeed, setShowActivityFeed] = useState(false);
   const [showHamburger, setShowHamburger] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
-  const [activeTutorial, setActiveTutorial] = useState<string | null>(null);
 
   // ═══ TRUST & SAFETY STATE ═══
   const [showDisclosureModal, setShowDisclosureModal] = useState(false);
@@ -504,6 +501,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (d.currentUser) setCurrentUser(prev => ({ ...prev, ...d.currentUser, tier: "free", foundingTier: "", proExpiresAt: "", stats: { ...prev.stats, ...(d.currentUser.stats || {}) }, portfolios: Array.isArray(d.currentUser.portfolios) ? d.currentUser.portfolios : (prev.portfolios || []) }));
       if (d.obData) setObData(d.obData);
       if (d.obStep) setObStep(d.obStep);
+      if (d.authUser) setAuthUser(d.authUser);
       if (d.matches) setMatches(d.matches);
       if (!d.matches || d.matches.length === 0) {
         const demoMatches = PROFILES.slice(0, 6).map((p: any) => ({
@@ -895,22 +893,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     // no separate read-modify-write here to avoid a lost-update race on muse_v1.
   }, [theme]);
 
-  // First-visit tutorials: show the matching overlay the first time a user
-  // lands on a screen that has a tutorial, then remember it so we never nag.
-  useEffect(() => {
-    if (screen === "auth" || screen === "onboard" || screen === "chat" || screen === "portfolio" || screen === "codex" || screen === "network") return;
-    const def = TUTORIALS[screen];
-    if (!def) return;
-    if (activeTutorial) return;
-    let seen: string[] = [];
-    try { seen = JSON.parse(safeGetItem("muse_tutorials_seen") || "[]"); } catch {}
-    if (Array.isArray(seen) && seen.includes(def.key)) return;
-    // Don't auto-fire during the very first discover tutorial (already handled
-    // by the "Enter Muse" flow) — only auto-fire for subsequent screens.
-    if (def.key === "discover") return;
-    try { safeSetItem("muse_tutorials_seen", JSON.stringify([...(Array.isArray(seen) ? seen : []), def.key])); } catch {}
-    setActiveTutorial(def.key);
-  }, [screen, activeTutorial]);
+
 
   const showToast = useCallback((msg: string | { msg: string; onTap?: () => void }) => { const t = typeof msg === "string" ? { msg } : msg; setToastMsg(t); setTimeout(() => setToastMsg(null), 3000); }, []);
 
@@ -1179,20 +1162,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   const flash = useCallback((color: string) => { setScreenFlash(color); setTimeout(() => setScreenFlash(null), 300); }, []);
   const showScreen = useCallback((s: typeof screen) => { setScreen(s); trackEvent("screen_view", { screen: s }); try { window.scrollTo({ top: 0, behavior: "instant" }); } catch {} }, []);
-
-  // A few tutorials (forum, events) describe content that only exists
-  // behind a sub-tab of another screen rather than a top-level screen of
-  // its own — starting them from the Support Chat "Tours" menu while the
-  // user is elsewhere in the app would otherwise highlight nothing (or the
-  // wrong card entirely). Route to the right screen + sub-tab first so the
-  // module the tutorial describes is guaranteed to be on screen.
-  const startTutorial = useCallback((key: string) => {
-    if (key === "forum") { setScreen("network"); _setNetworkOpenTab("forum"); }
-    else if (key === "events") { setScreen("community"); setCommTab("events"); }
-    else if (key === "community") { setScreen("community"); setCommTab("groups"); }
-    else if (TUTORIALS[key]) { setScreen(key as typeof screen); }
-    setActiveTutorial(key);
-  }, []);
 
   const matchActions = useMemo(() => ({
     setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping,
@@ -1731,13 +1700,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       <a href="#muse-main" className="sr-only" style={{zIndex:99999}} onFocus={(e)=>{e.currentTarget.style.cssText="position:fixed;top:0;left:0;padding:8px 16px;background:var(--gold);color:#0a0612;fontWeight:700;borderRadius:0 0 8px 0;width:auto;height:auto;clip:auto;overflow:visible;margin:0"}} onBlur={(e)=>{e.currentTarget.removeAttribute("style")}}>Skip to main content</a>
       <CardPreloader currentIdx={currentIdx} profiles={filteredProfiles} />
       <Confetti active={showConfetti} />
-      {activeTutorial && TUTORIALS[activeTutorial] && (
-        <TutorialOverlay
-          tutorial={TUTORIALS[activeTutorial]}
-          onDone={() => setActiveTutorial(null)}
-          onStepSelector={(sel) => setShowMatchMenu(sel === ".match-radial-btn.btn-like")}
-        />
-      )}
+      
       {swipeDir && <SwipeParticles active dir={swipeDir} />}
       <BackgroundScene flash={screenFlash} />
       {showMatchOverlay && (
@@ -2250,7 +2213,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                           } catch {}
                         }
                       }
-                      setScreen("discover");showToast("Welcome to Muse!");setActiveTutorial("discover")
+                      setScreen("discover");showToast("Welcome to Muse!")
                     }}>Enter Muse</button>
                     <button className="back-link" onClick={()=>setObStep(16)}>Back</button>
                   </div>
