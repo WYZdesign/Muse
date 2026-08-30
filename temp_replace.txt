@@ -1,2 +1,0 @@
-import { CodexScreen } from "./screens/CodexScreen";
-import { ProfileScreen } from "./screens/ProfileScreen";
