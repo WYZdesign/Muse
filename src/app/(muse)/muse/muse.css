@@ -422,6 +422,9 @@ img{background-color:#1a0a2e}
 .match-card-grid .match-msg{display:none}
 .match-card-grid .match-time{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);padding:2px 8px;border-radius:99px;font-size:10px}
 .match-card-grid .online-dot{display:none}
+.match-grid-expand{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.1);animation:fadeIn .2s}
+.match-grid-bio{font-size:11px;color:rgba(255,255,255,0.7);line-height:1.4;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.match-grid-tags{display:flex;flex-wrap:wrap;gap:4px}
 .match-new{width:10px;height:10px;border-radius:50%;background:var(--gold);flex-shrink:0;animation:newPulse 2s ease-in-out infinite}
 .match-card-expanded{flex-wrap:wrap;align-items:flex-start;background:rgba(255,215,0,0.05);border-left:3px solid var(--gold);z-index:2}
 .match-expand{width:100%;margin-top:10px;animation:matchExpandIn .3s ease}
@@ -465,7 +468,7 @@ img{background-color:#1a0a2e}
 .profile-avatar-wrap{position:relative;margin-bottom:16px}
 .profile-avatar{width:100px;height:100px;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-origin:border-box;background-clip:padding-box,border-box;background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(135deg,var(--gold),var(--amber),var(--pink),var(--lavender));background-size:100% 100%,200% 200%;animation:avatarGrad 4s ease-in-out infinite}
 @keyframes avatarGrad{0%,100%{background-position:0% 0%,0% 50%}50%{background-position:0% 0%,100% 50%}}
-.profile-ring{position:absolute;inset:-6px;border-radius:50%;border:2px solid transparent;border-top-color:var(--gold);border-right-color:var(--amber);border-bottom-color:var(--pink);border-left-color:var(--lavender);animation:ringSpin 4s linear infinite}
+.profile-ring{position:absolute;top:-6px;left:-6px;width:112px;height:112px;border-radius:50%;border:2px solid transparent;border-top-color:var(--gold);border-right-color:var(--amber);border-bottom-color:var(--pink);border-left-color:var(--lavender);animation:ringSpin 4s linear infinite}
 @keyframes ringSpin{to{transform:rotate(360deg)}}
 
 /* ═══ SWIRL RING VARIANTS ═══ */

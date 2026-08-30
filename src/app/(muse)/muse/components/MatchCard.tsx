@@ -130,7 +130,6 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
       >
         <div className="match-avatar-wrap">
           <img loading="lazy" src={m.img} alt={m.name} className="match-avatar" onError={handleImgError} />
-          <div className={`profile-ring swirl-ring-${(m.id % 6) + 1}`} />
           {m.online && <div className="online-dot" style={{ position: "absolute", bottom: 10, right: 10 }} />}
         </div>
         <div className="match-info">
@@ -146,6 +145,14 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
             {m.lifePath && <span className="match-badge">LP {m.lifePath}</span>}
             {(m.skills || []).slice(0, 2).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
           </div>
+          {expanded && (
+            <div className="match-grid-expand">
+              {m.bio && <div className="match-grid-bio">{m.bio}</div>}
+              <div className="match-grid-tags">
+                {(m.styles || []).slice(0, 3).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
+              </div>
+            </div>
+          )}
         </div>
         <div className="match-time">{m.messages?.[m.messages.length - 1]?.time || "New"}</div>
       </div>
