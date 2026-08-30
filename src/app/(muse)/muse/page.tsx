@@ -280,6 +280,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [topQuests, setTopQuests] = useState<{id:string;title:string;icon:string;progress:number;target:number;color:string}[]>([]);
   const [showDailyLogin, setShowDailyLogin] = useState(false);
   const [loginStreak, setLoginStreak] = useState(0);
+  const [weeklyLogins, setWeeklyLogins] = useState<boolean[]>([false,false,false,false,false,false,false]);
 
   useEffect(() => {
     try {
@@ -961,6 +962,20 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     try { lastLoginDay = safeGetItem("muse_quest_login_day") || ""; } catch {}
     if (lastLoginDay !== today) {
       try { safeSetItem("muse_quest_login_day", today); } catch {}
+      try {
+        let days: string[] = [];
+        try { days = JSON.parse(safeGetItem("muse_login_days") || "[]"); } catch {}
+        if (!days.includes(today)) { days.push(today); }
+        const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+        days = days.filter(d => new Date(d) >= cutoff);
+        safeSetItem("muse_login_days", JSON.stringify(days));
+        const weekDays: boolean[] = [];
+        for (let i = 6; i >= 0; i--) {
+          const dt = new Date(); dt.setDate(dt.getDate() - i);
+          weekDays.push(days.includes(dt.toISOString().slice(0, 10)));
+        }
+        setWeeklyLogins(weekDays);
+      } catch {}
       trackQuest("login", "login_streak");
       setTimeout(() => setShowDailyLogin(true), 800);
     }
@@ -969,6 +984,20 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       .then(d => { if (Array.isArray(d?.quests)) setClaimableQuests(d.quests.filter((q: any) => q.completed && !q.claimed).length); })
       .catch(() => {});
   }, [bootstrapped, authUser, trackQuest, apiFetch]);
+
+  useEffect(() => {
+    if (!bootstrapped || !authUser) return;
+    try {
+      let days: string[] = [];
+      try { days = JSON.parse(safeGetItem("muse_login_days") || "[]"); } catch {}
+      const weekDays: boolean[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const dt = new Date(); dt.setDate(dt.getDate() - i);
+        weekDays.push(days.includes(dt.toISOString().slice(0, 10)));
+      }
+      setWeeklyLogins(weekDays);
+    } catch {}
+  }, [bootstrapped, authUser]);
 
   const doLogout = useCallback(async () => {
     try { await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "logout" }) }); } catch(e) {}
@@ -1790,7 +1819,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           {toastMsg.msg}
         </div>
       )}
-      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} setLiveForum={setLiveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} nearQuests={nearQuests} topQuests={topQuests} loginStreak={loginStreak} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} liveProfessionals={liveProfessionals} setShowQuests={setShowQuests} questClaimables={claimableQuests} getReferralTier={getReferralTier} />
+      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} setLiveForum={setLiveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} nearQuests={nearQuests} topQuests={topQuests} loginStreak={loginStreak} weeklyLogins={weeklyLogins} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} unreadCount={unreadNotificationCount} liveProfessionals={liveProfessionals} setShowQuests={setShowQuests} questClaimables={claimableQuests} getReferralTier={getReferralTier} />
       <SupportChat open={supportOpen} onClose={() => setSupportOpen(false)} />
       {screen === "auth" ? (
         <div className="phone-wrap">
@@ -2861,6 +2890,11 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             <div className="daily-login-icon">🔥</div>
             <div className="daily-login-title">Welcome back!</div>
             <div className="daily-login-streak">{loginStreak > 0 ? `${loginStreak} day streak` : "Start your streak today"}</div>
+            <div className="streak-dots" style={{ justifyContent: "center", margin: "8px 0 4px" }}>
+              {weeklyLogins.map((on, i) => (
+                <div key={i} className={"streak-dot" + (on ? " filled" : "")} />
+              ))}
+            </div>
             <div className="daily-login-sub">Check your commissions and claim rewards</div>
             <button className="daily-login-btn" onClick={() => { setShowDailyLogin(false); setShowQuests(true); }}>View Commissions</button>
             <button className="daily-login-dismiss" onClick={() => setShowDailyLogin(false)}>Later</button>

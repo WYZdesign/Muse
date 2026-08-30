@@ -60,6 +60,7 @@ export interface MenuModalProps {
 nearQuests?: number;
   topQuests?: {id:string;title:string;icon:string;progress:number;target:number;color:string}[];
   loginStreak?: number;
+  weeklyLogins?: boolean[];
   isUnlimited?: boolean;
   profileViews?: number;
   likesReceived?: number;
@@ -136,6 +137,7 @@ export const MenuModal = memo(function MenuModal({
   nearQuests = 0,
   topQuests = [],
   loginStreak = 0,
+  weeklyLogins = [false,false,false,false,false,false,false],
   isUnlimited = false,
   profileViews = 0,
   likesReceived = 0,
@@ -679,6 +681,15 @@ export const MenuModal = memo(function MenuModal({
                   );
                   return (
                     <>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontSize: 16 }}>🔥</span>
+                        <div className="streak-dots" style={{ justifyContent: "center" }}>
+                          {weeklyLogins.map((on, i) => (
+                            <div key={i} className={"streak-dot" + (on ? " filled" : "")} />
+                          ))}
+                        </div>
+                        <span style={{ fontSize: 11, color: "var(--gold)", fontWeight: 700 }}>{loginStreak}d</span>
+                      </div>
                       <div style={{ textAlign: "center", fontSize: 13, color: "var(--gold)", fontWeight: 700, margin: "2px 0 10px" }}>Your Activity</div>
                       <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
 {tabBtn("notif", "Notifications")}
