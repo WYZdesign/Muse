@@ -341,25 +341,26 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               {profile.verified && <span className="card-verified-mark">✓</span>}
                               {profile.online && <span className="card-online-dot" />}
                             </div>
-                            <div className="card-hero-type">{profile.type} · {profile.loc?.split(",")[0]}</div>
-                            {(() => {
-                              const chips: string[] = [];
-                              if ((profile as any).collabs) chips.push(`🎬 ${profile.collabs} collabs`);
-                              const pLat = (profile as any).lat ?? CITY_GEO[profile.loc]?.lat;
-                              const pLong = (profile as any).long ?? CITY_GEO[profile.loc]?.long;
-                              if (myGeo && typeof pLat === "number" && typeof pLong === "number") {
-                                const d = distanceMiles({ lat: myGeo.lat, long: myGeo.long }, { lat: pLat, long: pLong });
-                                if (Number.isFinite(d)) chips.push(d < 1 ? "<1 mi away" : `${Math.round(d)} mi away`);
-                              }
-                              const shared = myStyles.filter(s => profile.styles?.includes(s));
-                              if (shared.length) chips.push(`🎨 ${shared.length} shared style${shared.length > 1 ? "s" : ""}`);
-                              if (!chips.length) return null;
-                              return (
-                                <div className="card-hero-chips">
-                                  {chips.map(c => <span key={c} className="card-hero-chip">{c}</span>)}
-                                </div>
-                              );
-                            })()}
+                            <div className="card-hero-type">{profile.type}</div>
+                            <div className="card-hero-loc">
+                              {profile.loc && <span>📍 {profile.loc}</span>}
+                              {(() => {
+                                const pLat = (profile as any).lat ?? CITY_GEO[profile.loc]?.lat;
+                                const pLong = (profile as any).long ?? CITY_GEO[profile.loc]?.long;
+                                if (myGeo && typeof pLat === "number" && typeof pLong === "number") {
+                                  const d = distanceMiles({ lat: myGeo.lat, long: myGeo.long }, { lat: pLat, long: pLong });
+                                  if (Number.isFinite(d)) return <span>{d < 1 ? "<1 mi" : `${Math.round(d)} mi`}</span>;
+                                }
+                                return null;
+                              })()}
+                            </div>
+                            <div className="card-hero-badges">
+                              {(profile as any).zodiac && <span className="card-hero-badge">{(profile as any).zodiac}</span>}
+                              {(profile as any).mbti && <span className="card-hero-badge">{(profile as any).mbti}</span>}
+                              {(profile as any).lifePath && <span className="card-hero-badge">LP {(profile as any).lifePath}</span>}
+                              {(profile as any).chinese && <span className="card-hero-badge">{(profile as any).chinese}</span>}
+                              {(profile as any).skills?.slice(0, 2).map((s: string) => <span key={s} className="card-hero-badge">{s}</span>)}
+                            </div>
                           </div>
                           {isTop && (
                             <>
