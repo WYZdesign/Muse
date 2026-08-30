@@ -284,11 +284,10 @@ export const BtsScreen = memo(function BtsScreen({
         {stories.length > 0 && (
           <div
             style={{
-              display: "flex",
-              gap: 14,
-              overflowX: "auto",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
+              gap: 10,
               padding: "16px 14px 8px",
-              scrollbarWidth: "none",
             }}
           >
             {stories.slice(0, 10).map((s, i) => (
@@ -304,14 +303,13 @@ export const BtsScreen = memo(function BtsScreen({
                   alignItems: "center",
                   gap: 6,
                   cursor: "pointer",
-                  flexShrink: 0,
                 }}
               >
                 <div
                   style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: "50%",
+                    width: "100%",
+                    aspectRatio: "1",
+                    borderRadius: 16,
                     padding: 3,
                     background: s.liked
                       ? "linear-gradient(135deg, #FF1493, #FFD700, #FF69B4)"
@@ -326,7 +324,7 @@ export const BtsScreen = memo(function BtsScreen({
                     style={{
                       width: "100%",
                       height: "100%",
-                      borderRadius: "50%",
+                      borderRadius: 13,
                       objectFit: "cover",
                       border: "2px solid var(--bg, #0a0612)",
                     }}
@@ -336,7 +334,7 @@ export const BtsScreen = memo(function BtsScreen({
                   style={{
                     fontSize: 10,
                     color: "var(--muted, #999)",
-                    maxWidth: 56,
+                    maxWidth: 76,
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
