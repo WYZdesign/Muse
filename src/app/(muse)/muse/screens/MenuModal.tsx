@@ -3,6 +3,7 @@
 import React, { memo } from "react";
 import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiActivity, FiDollarSign, FiUsers as FiUsersIcon, FiGift, FiX, FiBell } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
+import StreakWidget from "../components/StreakWidget";
 import { COMMUNITIES, EVENTS, SESSIONS, PROFESSIONALS, FORUM_POSTS } from "../components/types";
 import { getCommunityShareUrl, getEventShareUrl, getProShareUrlWithRef, getMuseUrl } from "@/lib/urls";
 
@@ -681,15 +682,7 @@ export const MenuModal = memo(function MenuModal({
                   );
                   return (
                     <>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 6 }}>
-                        <span style={{ fontSize: 16 }}>🔥</span>
-                        <div className="streak-dots" style={{ justifyContent: "center" }}>
-                          {weeklyLogins.map((on, i) => (
-                            <div key={i} className={"streak-dot" + (on ? " filled" : "")} />
-                          ))}
-                        </div>
-                        <span style={{ fontSize: 11, color: "var(--gold)", fontWeight: 700 }}>{loginStreak}d</span>
-                      </div>
+                      <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
                       <div style={{ textAlign: "center", fontSize: 13, color: "var(--gold)", fontWeight: 700, margin: "2px 0 10px" }}>Your Activity</div>
                       <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
 {tabBtn("notif", "Notifications")}

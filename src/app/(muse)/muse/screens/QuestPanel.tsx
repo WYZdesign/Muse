@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { FiX, FiCheck, FiStar } from "react-icons/fi";
+import StreakWidget from "../components/StreakWidget";
 
 interface QuestPanelProps {
   show: boolean;
@@ -11,6 +12,7 @@ interface QuestPanelProps {
   onClaimablesChange?: (count: number) => void;
   onQuestsChange?: () => void;
   loginStreak?: number;
+  weeklyLogins?: boolean[];
 }
 
 const TIER_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -22,7 +24,7 @@ const TIER_CONFIG: Record<string, { label: string; color: string; bg: string; bo
   legendary: { label: "Legendary", color: "#FF8A80", bg: "rgba(255,138,128,0.12)",  border: "rgba(255,138,128,0.3)" },
 };
 
-export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewardGranted, onClaimablesChange, onQuestsChange, loginStreak = 0 }: QuestPanelProps) {
+export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewardGranted, onClaimablesChange, onQuestsChange, loginStreak = 0, weeklyLogins = [false,false,false,false,false,false,false] }: QuestPanelProps) {
   const [quests, setQuests] = useState<any[]>([]);
   const [xp, setXp] = useState({ total_xp: 0, level: 1 });
   const [filter, setFilter] = useState<string>("all");
@@ -107,16 +109,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
               </div>
             </div>
           </div>
-          <div className="quest-hero-streak">
-            <span className="streak-flame">🔥</span>
-            <span className="streak-num">{loginStreak}</span>
-            <span className="streak-label">day streak</span>
-            <div className="streak-dots">
-              {[0,1,2,3,4,5,6].map(i => (
-                <div key={i} className={`streak-dot${i < loginStreak ? " filled" : ""}`} />
-              ))}
-            </div>
-          </div>
+          <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
         </div>
 
         {/* Near-Completion Widget */}

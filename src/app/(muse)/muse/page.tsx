@@ -44,6 +44,7 @@ import PromptBankModal from "./components/PromptBankModal";
 import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
+import StreakWidget from "./components/StreakWidget";
 import { PROFILES, AESTHETICS, BEHIND_CAMERA, IN_FRONT_CAMERA, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, ICEBREAKERS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
 import { useDiscoveryData } from "./hooks/useDiscoveryData";
 import { useFeedData } from "./hooks/useFeedData";
@@ -2287,7 +2288,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             <PortfolioScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Profile">
-            <ProfileScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditType={setEditType} setEditLooking={setEditLooking} setEditNsfw={setEditNsfw} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={_setSelectedPortfolio} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} setShowQuests={setShowQuests} loginStreak={loginStreak} questClaimables={claimableQuests} />
+            <ProfileScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditType={setEditType} setEditLooking={setEditLooking} setEditNsfw={setEditNsfw} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={_setSelectedPortfolio} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} setShowQuests={setShowQuests} loginStreak={loginStreak} weeklyLogins={weeklyLogins} questClaimables={claimableQuests} />
             </ScreenErrorBoundary>
           </div>
         </div>
@@ -2887,16 +2888,10 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       {showDailyLogin && (
         <div className="daily-login-overlay" role="presentation" onClick={() => setShowDailyLogin(false)}>
           <div className="daily-login-card" onClick={e => e.stopPropagation()}>
-            <div className="daily-login-icon">🔥</div>
             <div className="daily-login-title">Welcome back!</div>
-            <div className="daily-login-streak">{loginStreak > 0 ? `${loginStreak} day streak` : "Start your streak today"}</div>
-            <div className="streak-dots" style={{ justifyContent: "center", margin: "8px 0 4px" }}>
-              {weeklyLogins.map((on, i) => (
-                <div key={i} className={"streak-dot" + (on ? " filled" : "")} />
-              ))}
-            </div>
-            <div className="daily-login-sub">Check your commissions and claim rewards</div>
-            <button className="daily-login-btn" onClick={() => { setShowDailyLogin(false); setShowQuests(true); }}>View Commissions</button>
+            <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
+            <div className="daily-login-sub">Check your quests and claim rewards</div>
+            <button className="daily-login-btn" onClick={() => { setShowDailyLogin(false); setShowQuests(true); }}>View Quests</button>
             <button className="daily-login-dismiss" onClick={() => setShowDailyLogin(false)}>Later</button>
           </div>
         </div>

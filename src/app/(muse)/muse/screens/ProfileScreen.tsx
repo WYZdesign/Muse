@@ -2,6 +2,7 @@ import React, { memo, useState, useEffect } from "react";
 import { FiArrowLeft, FiEdit2, FiSettings, FiUsers, FiShoppingBag, FiDollarSign, FiClock, FiExternalLink } from "react-icons/fi";
 import { getReferralUrl } from "@/lib/urls";
 import Nav from "../components/Nav";
+import StreakWidget from "../components/StreakWidget";
 import type { Screen, Match } from "../components/types";
 
 export interface ProfileScreenProps {
@@ -52,6 +53,7 @@ export interface ProfileScreenProps {
   doLogout?: () => void;
   setShowQuests?: (v: boolean) => void;
   loginStreak?: number;
+  weeklyLogins?: boolean[];
   questClaimables?: number;
 }
 
@@ -103,6 +105,7 @@ export const ProfileScreen = memo(function ProfileScreen({
   doLogout = () => {},
   setShowQuests = () => {},
   loginStreak = 0,
+  weeklyLogins = [false,false,false,false,false,false,false],
   questClaimables = 0,
 }: ProfileScreenProps) {
   const [referralData, setReferralData] = useState<any>(null);
@@ -410,6 +413,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
         </div>
         <div className="section">
+          <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
           <div className="section-title">Activity</div>
           <div className="section-text" style={{ marginBottom: 10 }}>Recent interactions</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

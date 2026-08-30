@@ -343,7 +343,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                             </div>
                             <div className="card-hero-type">{profile.type}</div>
                             <div className="card-hero-loc">
-                              {profile.loc && <span>📍 {profile.loc}</span>}
+                              {profile.loc && <span>{profile.loc}</span>}
                               {(() => {
                                 const pLat = (profile as any).lat ?? CITY_GEO[profile.loc]?.lat;
                                 const pLong = (profile as any).long ?? CITY_GEO[profile.loc]?.long;

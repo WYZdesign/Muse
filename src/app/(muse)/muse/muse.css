@@ -733,6 +733,39 @@ img{background-color:#1a0a2e}
 .streak-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.06)}
 .streak-dot.filled{background:rgba(255,215,0,0.3);border-color:rgba(255,215,0,0.5)}
 
+/* ═══ STREAK WIDGET (Full) ═══ */
+.streak-widget{background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.12);border-radius:16px;padding:16px;margin-bottom:12px}
+.streak-widget-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.streak-widget-flame{flex-shrink:0;animation:flamePulse 2s ease-in-out infinite}
+@keyframes flamePulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 4px rgba(255,215,0,0.3))}50%{transform:scale(1.06);filter:drop-shadow(0 0 8px rgba(255,215,0,0.5))}}
+.streak-widget-info{flex:1;min-width:0}
+.streak-widget-title{font-size:16px;font-weight:800;color:var(--gold);line-height:1.2}
+.streak-widget-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.streak-widget-bar{display:flex;align-items:center;justify-content:space-between;gap:2px;margin-bottom:10px}
+.streak-day{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.streak-day-ring{width:18px;height:18px;display:flex;align-items:center;justify-content:center}
+.streak-day-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase}
+.streak-day.hit .streak-day-label{color:var(--gold)}
+.streak-day.today .streak-day-label{color:var(--text)}
+.streak-day.today .streak-day-ring{filter:drop-shadow(0 0 6px rgba(255,215,0,0.5))}
+.streak-progress-track{height:4px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden;flex:1}
+.streak-progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#FFD700,#FF8C00);transition:width .5s cubic-bezier(.4,0,.2,1)}
+.streak-widget-progress{display:flex;align-items:center;gap:8px}
+.streak-progress-text{font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap}
+
+/* ═══ STREAK WIDGET (Compact) ═══ */
+.streak-compact{display:flex;align-items:center;gap:10px;padding:6px 0}
+.streak-compact-fire{display:flex;align-items:center;gap:4px}
+.streak-compact-num{font-size:14px;font-weight:800;color:var(--gold)}
+.streak-compact-days{display:flex;align-items:center;gap:4px}
+.streak-compact-dot{display:flex;flex-direction:column;align-items:center;gap:2px}
+.streak-compact-pip{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.06);transition:all .3s}
+.streak-compact-dot.on .streak-compact-pip{background:var(--gold);border-color:var(--gold);box-shadow:0 0 6px rgba(255,215,0,0.4)}
+.streak-compact-dot.today .streak-compact-pip{box-shadow:0 0 8px rgba(255,215,0,0.6);animation:todayPulse 2s ease-in-out infinite}
+@keyframes todayPulse{0%,100%{box-shadow:0 0 4px rgba(255,215,0,0.4)}50%{box-shadow:0 0 10px rgba(255,215,0,0.7)}}
+.streak-compact-label{font-size:8px;font-weight:600;color:var(--muted);text-transform:uppercase}
+.streak-compact-dot.on .streak-compact-label{color:var(--gold)}
+
 /* ═══ PRO SKILL CHIPS (swipeable filter row) ═══ */
 .daily-login-overlay{position:fixed;inset:0;z-index:950;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);animation:fadeIn .2s}
 .daily-login-card{width:90%;max-width:340px;background:rgba(15,10,30,0.97);backdrop-filter:blur(30px);border-radius:20px;border:1px solid rgba(255,215,0,0.15);padding:32px 24px;text-align:center;animation:slideUp .3s cubic-bezier(.4,0,.2,1)}
@@ -753,7 +786,7 @@ img{background-color:#1a0a2e}
 /* ═══ DISCOVER CARD HERO CHIPS ═══ */
 .card-hero-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;pointer-events:none}
 .card-hero-chip{padding:3px 9px;border-radius:99px;background:rgba(10,6,18,0.55);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.85);font-size:10px;font-weight:600;white-space:nowrap}
-.card-hero-loc{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;font-size:13px;color:rgba(255,255,255,0.8);text-shadow:0 1px 4px rgba(0,0,0,0.6)}
+.card-hero-loc{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;font-size:14px;font-weight:700;color:var(--gold);text-shadow:0 1px 6px rgba(255,215,0,0.3),0 2px 12px rgba(0,0,0,0.5)}
 .card-hero-loc span{white-space:nowrap}
 .card-hero-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .card-hero-badge{padding:3px 9px;border-radius:99px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
