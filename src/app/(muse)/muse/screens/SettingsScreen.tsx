@@ -149,7 +149,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             ))}
             {showNotificationsSettings && (
               <div style={{ padding: "12px 0 0", display: "flex", flexDirection: "column", gap: 12 }}>
-                {[{ k: "match", l: "New Matches" }, { k: "message", l: "Messages" }, { k: "brief", l: "Brief Updates" }, { k: "like", l: "Likes" }].map(n => (
+                {[{ k: "match", l: "New Matches" }, { k: "message", l: "Messages" }, { k: "brief", l: "Quest Updates" }, { k: "like", l: "Likes" }].map(n => (
                   <div key={n.k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                     <span style={{ fontSize: 14, color: "var(--text)" }}>{n.l}</span>
                     <div role="switch" aria-checked={!!notifPrefs[n.k]} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNotifPrefs(prev => ({ ...prev, [n.k]: !prev[n.k] })); } }} onClick={() => setNotifPrefs(prev => ({ ...prev, [n.k]: !prev[n.k] }))} className={"toggle-track" + (notifPrefs[n.k] ? " active" : "")} style={{ width: 44, height: 24, borderRadius: 12, cursor: "pointer", position: "relative", transition: "all .3s", background: notifPrefs[n.k] ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.1)" }}>

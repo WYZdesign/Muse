@@ -60,7 +60,7 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
     { label: "Profile Views", value: analytics?.views?.toLocaleString() || "0", icon: FiEye, color: "#FFD700", trend: analytics?.viewsLast30Days ? `+${analytics.viewsLast30Days} (30d)` : null },
     { label: "Matches Received", value: analytics?.matchesReceived?.toLocaleString() || "0", icon: FiHeart, color: "#FF69B4", trend: null },
     { label: "Messages Sent", value: analytics?.messagesSent?.toLocaleString() || "0", icon: FiMessageSquare, color: "#87CEEB", trend: null },
-    { label: "Brief Applications", value: analytics?.briefApplications?.toLocaleString() || "0", icon: FiFileText, color: "#90caf9", trend: null },
+    { label: "Quest Applications", value: analytics?.briefApplications?.toLocaleString() || "0", icon: FiFileText, color: "#90caf9", trend: null },
     { label: "Bookings (Host)", value: analytics?.bookingsAsHost?.toLocaleString() || "0", icon: FiCalendar, color: "#98FB98", trend: null },
     { label: "Bookings (Booker)", value: analytics?.bookingsAsBooker?.toLocaleString() || "0", icon: FiUsers, color: "#D4A5FF", trend: null },
     { label: "Total Earnings", value: `$${analytics?.totalEarningsUsd || "0.00"}`, icon: FiDollarSign, color: "#FF8A80", trend: null },
@@ -118,7 +118,7 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button onClick={() => showScreen("profile")} className="btn btn-gold" style={{ flex: 1, minWidth: 140 }}>View Profile</button>
             <button onClick={() => showScreen("sessions")} className="btn btn-outline" style={{ flex: 1, minWidth: 140 }}>Manage Sessions</button>
-            <button onClick={() => showScreen("briefs")} className="btn btn-outline" style={{ flex: 1, minWidth: 140 }}>View Briefs</button>
+            <button onClick={() => showScreen("briefs")} className="btn btn-outline" style={{ flex: 1, minWidth: 140 }}>View Quests</button>
             <button onClick={() => showScreen("portfolio")} className="btn btn-outline" style={{ flex: 1, minWidth: 140 }}>Edit Portfolio</button>
           </div>
         </div>
@@ -130,7 +130,7 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
               <li><strong>Profile Views</strong> — Total lifetime views + last 30 days from activity log</li>
               <li><strong>Matches Received</strong> — Users who matched with you (you swiped right on them too)</li>
               <li><strong>Messages Sent</strong> — Total messages you've sent in chat</li>
-              <li><strong>Brief Applications</strong> — Times you've applied to creative briefs</li>
+              <li><strong>Quest Applications</strong> — Times you've applied to creative quests</li>
               <li><strong>Bookings (Host)</strong> — Sessions you've hosted and completed</li>
               <li><strong>Bookings (Booker)</strong> — Sessions you've booked with other creatives</li>
               <li><strong>Total Earnings</strong> — Net payouts from completed bookings (after 5% platform fee)</li>
