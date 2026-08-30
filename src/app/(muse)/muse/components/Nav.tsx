@@ -8,7 +8,6 @@ const lineColor: Record<string,string> = {
   connections: "#1E90FF",
   briefs: "#20B2AA",
   matches: "#FF4500",
-  moments: "#FF1493",
   bts: "#FF4500",
 };
 
@@ -17,7 +16,6 @@ const lavaGradients: Record<string, string> = {
   connections: "linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF)",
   briefs: "linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA)",
   matches: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",
-  moments: "linear-gradient(90deg,#FF1493,#FF0000,#DDA0DD,#FF1493,#FF69B4,#FF1493)",
   bts: "linear-gradient(90deg,#FF4500,#FFA500,#FFFF00,#FFA500,#FF4500)",
 };
 

@@ -142,19 +142,6 @@ describe("config", () => {
     expect(MODERATION_MIN_CONFIDENCE).toBe(75);
   });
 
-  it("should parse tutorial overlay config from env", async () => {
-    const {
-      TUTORIAL_TOOLTIP_WIDTH,
-      TUTORIAL_TOOLTIP_MARGIN,
-      TUTORIAL_RESERVED_HEIGHT,
-      TUTORIAL_HIGHLIGHT_RADIUS_MAX,
-    } = await import("./config");
-    expect(TUTORIAL_TOOLTIP_WIDTH).toBe(300);
-    expect(TUTORIAL_TOOLTIP_MARGIN).toBe(24);
-    expect(TUTORIAL_RESERVED_HEIGHT).toBe(520);
-    expect(TUTORIAL_HIGHLIGHT_RADIUS_MAX).toBe(44);
-  });
-
   it("should parse content safety config from env", async () => {
     const { MAX_TEXT_LENGTH, AI_EMBED_MAX_CHARS, AI_MODERATION_MAX_CHARS, MODERATION_MIN_CONFIDENCE } = await import("./config");
     expect(MAX_TEXT_LENGTH).toBe(4000);

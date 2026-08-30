@@ -61,12 +61,6 @@ export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 export const REKOGNITION_MIN_CONFIDENCE = Number(process.env.REKOGNITION_MIN_CONFIDENCE) || 50;
 export const VIDEO_MODERATION_MIN_CONFIDENCE = Number(process.env.VIDEO_MODERATION_MIN_CONFIDENCE) || 50;
 
-// Tutorial Overlay
-export const TUTORIAL_TOOLTIP_WIDTH = Number(process.env.TUTORIAL_TOOLTIP_WIDTH) || 280;
-export const TUTORIAL_TOOLTIP_MARGIN = Number(process.env.TUTORIAL_TOOLTIP_MARGIN) || 12;
-export const TUTORIAL_RESERVED_HEIGHT = Number(process.env.TUTORIAL_RESERVED_HEIGHT) || 260;
-export const TUTORIAL_HIGHLIGHT_RADIUS_MAX = Number(process.env.TUTORIAL_HIGHLIGHT_RADIUS_MAX) || 22;
-
 // Content Safety
 export const MAX_TEXT_LENGTH = Number(process.env.MAX_TEXT_LENGTH) || 2000;
 export const AI_EMBED_MAX_CHARS = Number(process.env.AI_EMBED_MAX_CHARS) || 8000;
