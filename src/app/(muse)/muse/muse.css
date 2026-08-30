@@ -1270,14 +1270,66 @@ img{background-color:#1a0a2e}
 .btn:active::after,.hdr-btn:active::after,.conn-btn:active::after,.feed-action-btn:active::after,.match-fab-btn:active::after,.quick-reply:active::after,.send-btn:active::after{animation:ripple .55s ease-out}
 @keyframes ripple{from{transform:translate(-50%,-50%) scale(0);opacity:.55}to{transform:translate(-50%,-50%) scale(15);opacity:0}}
 
-/* Radial menu — bouncier spring for the expand */
-@keyframes radialPop{0%{opacity:0;transform:scale(0)}70%{opacity:1;transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
-.match-radial.open .match-radial-btn{animation:radialPop .45s cubic-bezier(.22,1.4,.36,1) both}
-.match-radial.open .match-radial-btn:nth-child(1){animation-delay:0s}
-.match-radial.open .match-radial-btn:nth-child(2){animation-delay:.05s}
-.match-radial.open .match-radial-btn:nth-child(3){animation-delay:.1s}
-.match-radial.open .match-radial-btn:nth-child(4){animation-delay:.15s}
-.match-radial.open .match-radial-btn:nth-child(5){animation-delay:.2s}
+/* ══════════════════ FEATURE TOUR (paginated lightbox) ══════════════════
+   Replaces the old anchored/highlighting tutorial overlay. This is a
+   self-contained modal — it never measures or points at page elements, so
+   there is no selector-matching or z-index-stacking-vs-page-content class
+   of bug possible here. Keep it that way: if this ever needs to point at a
+   specific on-screen module again, treat that as a new feature, not a
+   patch to this one. */
+@keyframes tourFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes tourCardIn{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes tourPageIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+@keyframes tourWash{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes tourGlowPulse{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.18);opacity:.85}}
+@keyframes tourRingSpin{to{transform:rotate(360deg)}}
+@keyframes tourRingSpinRev{to{transform:rotate(-360deg)}}
+@keyframes tourBadgeFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.03)}}
+@keyframes tourOrbit0{from{transform:rotate(0deg) translateX(58px) rotate(0deg)}to{transform:rotate(360deg) translateX(58px) rotate(-360deg)}}
+@keyframes tourOrbit1{from{transform:rotate(120deg) translateX(66px) rotate(-120deg)}to{transform:rotate(480deg) translateX(66px) rotate(-480deg)}}
+@keyframes tourOrbit2{from{transform:rotate(240deg) translateX(50px) rotate(-240deg)}to{transform:rotate(600deg) translateX(50px) rotate(-600deg)}}
+@keyframes tourSparkBurst{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--vx),var(--vy)) scale(.2)}}
+@keyframes tourDotPop{0%{transform:scale(.4)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+
+.tour-overlay{position:fixed;inset:0;z-index:100000;background:rgba(6,3,14,0.82);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px;animation:tourFadeIn .25s ease}
+.tour-card{position:relative;width:100%;max-width:360px;max-height:calc(100vh - 40px);overflow:hidden;border-radius:26px;background:linear-gradient(160deg,#160b2a,#241238 60%,#1a0e2c);border:1px solid rgba(255,215,0,0.18);box-shadow:0 30px 90px rgba(0,0,0,0.6),0 0 60px rgba(255,215,0,0.06);padding:30px 24px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;animation:tourCardIn .35s cubic-bezier(.22,1,.36,1)}
+.tour-card-wash{position:absolute;inset:0;background:linear-gradient(120deg,var(--tour-a,#FFD700)22,transparent 40%,var(--tour-b,#FF8A80)18);background-size:220% 220%;animation:tourWash 8s ease-in-out infinite;pointer-events:none;transition:background .3s ease}
+.tour-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;transition:all .15s}
+.tour-close:hover{background:rgba(255,255,255,0.12);color:#fff}
+
+.tour-page{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;animation:tourPageIn .32s cubic-bezier(.22,1,.36,1)}
+
+.tour-sprite-wrap{position:relative;width:140px;height:140px;display:flex;align-items:center;justify-content:center;margin:6px 0 18px}
+.tour-sprite-glow{position:absolute;inset:-20px;border-radius:50%;animation:tourGlowPulse 2.6s ease-in-out infinite;filter:blur(6px)}
+.tour-sprite-ring{position:absolute;inset:8px;border-radius:50%;border:1.5px solid;opacity:.35;animation:tourRingSpin 7s linear infinite}
+.tour-sprite-ring-2{inset:0;opacity:.2;animation:tourRingSpinRev 10s linear infinite}
+.tour-sprite-badge{position:relative;width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,0.35),0 0 26px rgba(255,215,0,0.25);animation:tourBadgeFloat 3.2s ease-in-out infinite}
+.tour-sprite-icon{color:#0a0612;display:flex;filter:drop-shadow(0 1px 1px rgba(255,255,255,0.25))}
+.tour-sprite-orbit{position:absolute;top:50%;left:50%;width:0;height:0}
+.tour-sprite-orbit-0{animation:tourOrbit0 3.4s linear infinite}
+.tour-sprite-orbit-1{animation:tourOrbit1 4.6s linear infinite}
+.tour-sprite-orbit-2{animation:tourOrbit2 3.9s linear infinite reverse}
+.tour-sprite-orbit-dot{width:7px;height:7px;border-radius:50%;box-shadow:0 0 8px currentColor;filter:drop-shadow(0 0 4px rgba(255,215,0,0.6))}
+.tour-sprite-burst{position:absolute;inset:0;pointer-events:none}
+.tour-sprite-spark{position:absolute;top:50%;left:50%;width:5px;height:5px;border-radius:50%;animation:tourSparkBurst 1s ease-out forwards}
+
+.tour-eyebrow{font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--tour-a,#FFD700);margin-bottom:4px}
+.tour-title{font-size:24px;font-weight:800;font-family:'Playfair Display',serif;font-style:italic;color:#fff;margin-bottom:10px;line-height:1.15}
+.tour-body{font-size:14px;line-height:1.6;color:rgba(255,255,255,0.72);max-width:280px}
+
+.tour-footer{position:relative;z-index:1;width:100%;margin-top:24px}
+.tour-dots{display:flex;justify-content:center;gap:6px;margin-bottom:18px}
+.tour-dot{width:7px;height:7px;padding:0;border-radius:4px;border:none;background:rgba(255,255,255,0.18);cursor:pointer;transition:all .25s}
+.tour-dot.active{width:22px;background:linear-gradient(90deg,var(--tour-a,#FFD700),var(--tour-b,#FF8A80));animation:tourDotPop .3s ease}
+.tour-nav-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tour-btn{display:flex;align-items:center;gap:6px;justify-content:center;padding:12px 20px;border-radius:14px;border:none;font-size:13.5px;font-weight:700;cursor:pointer;transition:all .2s}
+.tour-btn-ghost{background:transparent;color:rgba(255,255,255,0.5)}
+.tour-btn-ghost:hover{color:#fff}
+.tour-btn-primary{flex:1;background:linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700);background-size:300% 300%;color:#0a0612;animation:lavaFlow 4s ease-in-out infinite}
+.tour-btn-primary:hover{transform:scale(1.02)}
+.tour-btn-primary:active{transform:scale(.98)}
+
+@media(max-width:360px){.tour-card{padding:26px 18px 18px}.tour-sprite-wrap{width:120px;height:120px}.tour-sprite-badge{width:72px;height:72px}}
 
 /* Reduce motion preference */
-@media(prefers-reduced-motion:reduce){.swipe-card.top-card,.swipe-card .card-hero img,.messages .msg,.match-title,.card-hero-name,.card-hero-type{animation:none!important}}
+@media(prefers-reduced-motion:reduce){.swipe-card.top-card,.swipe-card .card-hero img,.messages .msg,.match-title,.card-hero-name,.card-hero-type{animation:none!important}.tour-sprite-glow,.tour-sprite-ring,.tour-sprite-ring-2,.tour-sprite-badge,.tour-sprite-orbit-0,.tour-sprite-orbit-1,.tour-sprite-orbit-2,.tour-sprite-spark,.tour-card-wash,.tour-btn-primary{animation:none!important}}

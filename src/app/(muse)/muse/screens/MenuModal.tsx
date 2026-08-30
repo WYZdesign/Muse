@@ -42,6 +42,7 @@ export interface MenuModalProps {
   commentText: string;
   setCommentText: (v: string) => void;
   setSupportOpen: (v: boolean) => void;
+  setShowFeatureTour?: (v: boolean) => void;
   doLogoutFull: () => void;
   discoveryPrefs: any;
   setDiscoveryPrefs: React.Dispatch<React.SetStateAction<any>>;
@@ -119,6 +120,7 @@ export const MenuModal = memo(function MenuModal({
   commentText,
   setCommentText,
   setSupportOpen,
+  setShowFeatureTour,
   doLogoutFull,
   discoveryPrefs,
   setDiscoveryPrefs,
@@ -611,6 +613,7 @@ export const MenuModal = memo(function MenuModal({
                   </div>
                 ))}
                 <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { setShowHamburger(false); setShowFeatureTour?.(true); }}>App Walkthrough</button>
                   <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { setShowHamburger(false); setSupportOpen?.(true); }}>Help Guide</button>
                   <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => window.open("mailto:" + SUPPORT_EMAIL + "?subject=Muse%20Support%20Request")}>Email Support</button>
                 </div>

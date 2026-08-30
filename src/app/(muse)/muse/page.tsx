@@ -21,6 +21,7 @@ import AgeVerificationModal from "./components/AgeVerificationModal";
 import { useChatState } from "./hooks/useChatState";
 import { useBriefsState } from "./hooks/useBriefsState";
 import SupportChat from "./components/SupportChat";
+import FeatureTour from "./components/FeatureTour";
 import { ScreenErrorBoundary } from "./components/ScreenErrorBoundary";
 import { DiscoverScreen } from "./screens/DiscoverScreen";
 import { FeedScreen } from "./screens/FeedScreen";
