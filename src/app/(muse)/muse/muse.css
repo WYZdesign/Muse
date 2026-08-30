@@ -402,16 +402,22 @@ img{background-color:#1a0a2e}
 .match-avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-color:#1a0a2e;background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(135deg,#533483,#e94560,#ffa07a,#ffd93d);background-origin:border-box;background-clip:padding-box,border-box}
 .online-dot{width:13px;height:13px;border-radius:50%;background:var(--mint);border:3px solid var(--bg);position:absolute;bottom:0;right:0;animation:onlinePulse 2s ease-in-out infinite}
 .match-info{flex:1;min-width:0}
-.match-name{font-size:16px;font-weight:700}
+.match-name{font-size:18px;font-weight:700;line-height:1.2}
 .match-type{font-size:12px;background:linear-gradient(90deg,var(--gold),var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:600}
 .match-msg{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px;background:transparent}
+.match-loc-dist{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;font-size:12px;color:var(--text2)}
+.match-loc-dist span{white-space:nowrap}
+.match-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.match-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,0.08);color:var(--text2)}
+.match-card-grid .match-loc-dist{color:rgba(255,255,255,0.8);font-size:11px;text-shadow:0 1px 4px rgba(0,0,0,0.8)}
+.match-card-grid .match-badge{background:rgba(255,255,255,0.15);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.6);font-size:9px}
 .match-time{font-size:11px;color:var(--muted);flex-shrink:0}
 .match-card-grid{display:block;position:relative;width:100%;overflow:hidden;border-radius:16px;padding:0;border:1px solid rgba(255,255,255,0.08);background:#1a0a2e;box-shadow:0 4px 16px rgba(0,0,0,0.35)}
 .match-card-grid::before{content:"";display:block;padding-top:213.33%}
 .match-card-grid .match-avatar-wrap{position:absolute;inset:0;width:100%;height:100%;display:block}
 .match-card-grid .match-avatar{width:100%;height:100%;border-radius:0;border:none;object-fit:cover}
 .match-card-grid .match-info{position:absolute;bottom:0;left:0;right:0;padding:14px 12px;background:linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.6) 60%,transparent 100%);max-height:62%;overflow-y:auto}
-.match-card-grid .match-name{color:#fff;font-size:14px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,0.8)}
+.match-card-grid .match-name{color:#fff;font-size:16px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,0.8)}
 .match-card-grid .match-type{color:#FFD700;font-size:11px;font-weight:600;-webkit-text-fill-color:#FFD700}
 .match-card-grid .match-msg{display:none}
 .match-card-grid .match-time{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);padding:2px 8px;border-radius:99px;font-size:10px}

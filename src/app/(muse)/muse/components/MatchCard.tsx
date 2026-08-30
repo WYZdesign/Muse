@@ -136,11 +136,16 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
         <div className="match-info">
           <div className="match-name">{m.name}</div>
           <div className="match-type">{m.type}</div>
-          {expanded && (
-            <div className="match-msg" style={{ display: "block", marginTop: 6, fontSize: 12, color: "#eee", lineHeight: 1.4 }}>
-              {m.bio || m.messages?.[m.messages.length - 1]?.text || getIcebreaker(m.type, mid)}
-            </div>
-          )}
+          <div className="match-loc-dist">
+            {m.location && <span>📍 {m.location}</span>}
+            {typeof m.distanceMi === "number" && <span>{m.distanceMi} mi</span>}
+          </div>
+          <div className="match-badges">
+            {m.zodiac && <span className="match-badge">{m.zodiac}</span>}
+            {m.mbti && <span className="match-badge">{m.mbti}</span>}
+            {m.lifePath && <span className="match-badge">LP {m.lifePath}</span>}
+            {(m.skills || []).slice(0, 2).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
+          </div>
         </div>
         <div className="match-time">{m.messages?.[m.messages.length - 1]?.time || "New"}</div>
       </div>
@@ -295,13 +300,17 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
         </div>
 
         <div className="match-info" style={{ zIndex: 1, flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            <div className="match-name">{m.name}</div>
-            <div className="match-time">{m.messages?.[m.messages.length - 1]?.time || "Active"}</div>
-          </div>
+          <div className="match-name">{m.name}</div>
           <div className="match-type">{m.type}</div>
-          <div className="match-msg">
-            {m.messages?.[m.messages.length - 1]?.text || getIcebreaker(m.type, mid)}
+          <div className="match-loc-dist">
+            {m.location && <span>📍 {m.location}</span>}
+            {typeof m.distanceMi === "number" && <span>{m.distanceMi} mi</span>}
+          </div>
+          <div className="match-badges">
+            {m.zodiac && <span className="match-badge">{m.zodiac}</span>}
+            {m.mbti && <span className="match-badge">{m.mbti}</span>}
+            {m.lifePath && <span className="match-badge">LP {m.lifePath}</span>}
+            {(m.skills || []).slice(0, 2).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
           </div>
 
           {expanded && (
