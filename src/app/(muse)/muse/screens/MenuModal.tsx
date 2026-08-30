@@ -221,7 +221,7 @@ export const MenuModal = memo(function MenuModal({
                   {loginStreak > 0 && <div style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700 }}>🔥 {loginStreak} day streak</div>}
                   {questClaimables > 0 && <div style={{ fontSize: 11, color: "#FF69B4", fontWeight: 600, padding: "3px 10px", borderRadius: 99, background: "rgba(255,105,180,0.1)", border: "1px solid rgba(255,105,180,0.2)" }}>{questClaimables} reward{questClaimables > 1 ? "s" : ""} ready</div>}
                 </div>
-                <div style={{ fontSize: 11, color: "var(--text2)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 10 }}>Your Commissions</div>
+                <div style={{ fontSize: 11, color: "var(--text2)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 10 }}>Your Quests</div>
                 {topQuests.map(q => {
                   const pct = Math.round((q.progress / q.target) * 100);
                   return (
@@ -544,7 +544,7 @@ export const MenuModal = memo(function MenuModal({
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Payments &amp; Subscription</div>
                 {[
                   { label: "Subscription", desc: "Manage your plan — Muse Pro", go: () => { setShowHamburger(false); showScreen("subscription"); }, dot: false },
-                  ...(setShowQuests ? [{ label: "Commissions", desc: questClaimables > 0 ? `${questClaimables} reward${questClaimables > 1 ? "s" : ""} ready to claim!` : "Complete challenges, earn free likes", go: () => { setShowHamburger(false); setShowQuests(true); }, dot: questClaimables > 0 }] : []),
+                  ...(setShowQuests ? [{ label: "Quests", desc: questClaimables > 0 ? `${questClaimables} reward${questClaimables > 1 ? "s" : ""} ready to claim!` : "Complete challenges, earn free likes", go: () => { setShowHamburger(false); setShowQuests(true); }, dot: questClaimables > 0 }] : []),
                   ...(setShowConnect ? [{ label: "Marketplace Payments", desc: "Connect Stripe to receive bookings", go: () => { setShowHamburger(false); setShowConnect(true); }, dot: false }] : []),
                   ...(setShowPaymentHistory ? [{ label: "Payment History", desc: "Your charges and payouts", go: () => { setShowHamburger(false); setShowPaymentHistory(true); }, dot: false }] : []),
                   ...(setShowReferral ? [{ label: "Referral Program", desc: "Invite friends, earn rewards", go: () => { setShowHamburger(false); setShowReferral(true); }, dot: false }] : []),

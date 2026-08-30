@@ -232,7 +232,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
         </div>
         <div className="section">
-          <div className="section-title">Referral & Commissions</div>
+          <div className="section-title">Referral & Quests</div>
           
           {loadingReferral ? (
             <div style={{ textAlign: "center", padding: "20px", color: "var(--muted)" }}>Loading...</div>
