@@ -151,7 +151,7 @@ export const BtsScreen = memo(function BtsScreen({
   const pinkGradient = "linear-gradient(135deg, #FF1493 0%, #FF69B4 60%, #FFB6C1 100%)";
   const activePill = "linear-gradient(135deg, #FF1493, #FF69B4)";
 
-  const gridCardStyle: React.CSSProperties = { flex: "1 1 calc(50% - 6px)", maxWidth: "calc(50% - 6px)" };
+  const gridCardStyle: React.CSSProperties = { width: "100%", maxWidth: "100%" };
 
   return (
     <div className={"screen-el" + (screen === "bts" ? " active" : "")}>
@@ -284,10 +284,11 @@ export const BtsScreen = memo(function BtsScreen({
         {stories.length > 0 && (
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
-              gap: 10,
+              display: "flex",
+              gap: 12,
               padding: "16px 14px 8px",
+              overflowX: "auto",
+              scrollbarWidth: "none",
             }}
           >
             {stories.slice(0, 10).map((s, i) => (
@@ -303,13 +304,14 @@ export const BtsScreen = memo(function BtsScreen({
                   alignItems: "center",
                   gap: 6,
                   cursor: "pointer",
+                  flexShrink: 0,
                 }}
               >
                 <div
                   style={{
-                    width: "100%",
-                    aspectRatio: "1",
-                    borderRadius: 16,
+                    width: 64,
+                    height: 64,
+                    borderRadius: "50%",
                     padding: 3,
                     background: s.liked
                       ? "linear-gradient(135deg, #FF1493, #FFD700, #FF69B4)"
@@ -324,7 +326,7 @@ export const BtsScreen = memo(function BtsScreen({
                     style={{
                       width: "100%",
                       height: "100%",
-                      borderRadius: 13,
+                      borderRadius: "50%",
                       objectFit: "cover",
                       border: "2px solid var(--bg, #0a0612)",
                     }}
@@ -334,7 +336,7 @@ export const BtsScreen = memo(function BtsScreen({
                   style={{
                     fontSize: 10,
                     color: "var(--muted, #999)",
-                    maxWidth: 76,
+                    maxWidth: 64,
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",

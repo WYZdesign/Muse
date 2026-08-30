@@ -143,14 +143,25 @@ const MatchCard = memo(function MatchCard({ m, expanded, view, actions }: MatchC
             {m.zodiac && <span className="match-badge">{m.zodiac}</span>}
             {m.mbti && <span className="match-badge">{m.mbti}</span>}
             {m.lifePath && <span className="match-badge">LP {m.lifePath}</span>}
-            {(m.skills || []).slice(0, 2).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
+            {(m.skills || []).slice(0, expanded ? 99 : 2).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
           </div>
           {expanded && (
             <div className="match-grid-expand">
               {m.bio && <div className="match-grid-bio">{m.bio}</div>}
               <div className="match-grid-tags">
-                {(m.styles || []).slice(0, 3).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
+                {(m.styles || []).slice(0, 5).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
               </div>
+              <button
+                className="btn btn-gold"
+                style={{ width: "100%", padding: "10px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, marginTop: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setChatTarget(m);
+                  showScreen("chat");
+                }}
+              >
+                💬 Open Chat
+              </button>
             </div>
           )}
         </div>

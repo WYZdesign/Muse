@@ -476,174 +476,112 @@ export const NetworkScreen = memo(function NetworkScreen({
                   </span>
                 ));
               })()}
-              <span
-                role="tab"
-                aria-selected={proHiringOnly}
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProHiringOnly(!proHiringOnly); } }}
-                onClick={() => setProHiringOnly(!proHiringOnly)}
-                style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proHiringOnly ? "#4cdd88" : "var(--muted)", opacity: proHiringOnly ? 1 : 0.6, transition: "all 0.15s", borderBottom: proHiringOnly ? "2px solid #4cdd88" : "2px solid transparent", paddingBottom: 2 }}
-              >
-                Hiring now
-              </span>
             </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
-              <div
-                role="button" tabIndex={0}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilterSections(s => ({ ...s, experience: !s.experience })); } }}
-                onClick={() => setFilterSections(s => ({ ...s, experience: !s.experience }))}
-                style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--gold)", userSelect: "none", flexShrink: 0 }}
-              >
-                <span style={{ fontSize: 10, transition: "transform .2s", transform: filterSections.experience ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span> Experience
-              </div>
-              {!filterSections.experience && proExp !== "all" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(255,215,0,0.1)", color: "var(--gold)" }}>Active</span>}
-              <span
-                role="tab"
-                aria-selected={proHiringOnly}
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProHiringOnly(!proHiringOnly); } }}
-                onClick={() => setProHiringOnly(!proHiringOnly)}
-                style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proHiringOnly ? "#4cdd88" : "var(--muted)", opacity: proHiringOnly ? 1 : 0.6, transition: "all 0.15s", borderBottom: proHiringOnly ? "2px solid #4cdd88" : "2px solid transparent", paddingBottom: 2 }}
-              >
-                Hiring now
-              </span>
-            </div>
-            {filterSections.experience && (<>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+            {/* Filter bubbles row */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
               {([
-                { k: "all", label: "All levels", color: "var(--muted)" },
-                { k: "rising", label: "Rising", color: "#90caf9" },
-                { k: "established", label: "Established", color: "var(--gold)" },
-                { k: "veteran", label: "Veteran", color: "#e6d3ff" },
-              ] as const).map((b) => (
+                { key: "experience", label: "Experience", active: proExp !== "all" },
+                { key: "sort", label: "Sort", active: proSort !== "match" },
+                { key: "rate", label: "Rate", active: proRateBand !== "all" },
+                { key: "skills", label: "Skills", active: proSkill.length > 0 },
+                { key: "looking", label: "Looking", active: proLooking !== "all" },
+              ]).map(f => (
                 <button
+                  key={f.key}
                   type="button"
-                  key={b.k}
-                  role="tab"
-                  aria-selected={proExp === b.k}
-                  tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProExp(b.k); } }}
-                  onClick={() => setProExp(b.k)}
-                  style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proExp === b.k ? b.color : "var(--muted)", background: proExp === b.k ? "rgba(255,255,255,0.1)" : "transparent", border: "none", borderRadius: 9, padding: "7px 6px", transition: "all 0.15s" }}
+                  onClick={() => setFilterSections(s => ({ ...s, [f.key]: !s[f.key] }))}
+                  style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: f.active ? "#0a0612" : "var(--text)", background: f.active ? "linear-gradient(135deg, var(--gold), var(--amber))" : "rgba(255,255,255,0.06)", border: f.active ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "6px 14px", transition: "all .2s", whiteSpace: "nowrap" }}
                 >
-                  {b.label}
+                  {f.label}{f.active ? " ✓" : ""}
                 </button>
               ))}
+              <span
+                role="tab"
+                aria-selected={proHiringOnly}
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProHiringOnly(!proHiringOnly); } }}
+                onClick={() => setProHiringOnly(!proHiringOnly)}
+                style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: proHiringOnly ? "#0a0612" : "var(--text)", background: proHiringOnly ? "#4cdd88" : "rgba(255,255,255,0.06)", border: proHiringOnly ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "6px 14px", transition: "all .2s", whiteSpace: "nowrap" }}
+              >
+                Hiring{proHiringOnly ? " ✓" : ""}
+              </span>
+            </div>
+            {/* Expanded filter panels */}
+            {filterSections.experience && (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                {([
+                  { k: "all", label: "All levels", color: "var(--muted)" },
+                  { k: "rising", label: "Rising", color: "#90caf9" },
+                  { k: "established", label: "Established", color: "var(--gold)" },
+                  { k: "veteran", label: "Veteran", color: "#e6d3ff" },
+                ] as const).map((b) => (
+                  <button type="button" key={b.k} role="tab" aria-selected={proExp === b.k} tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProExp(b.k); } }}
+                    onClick={() => setProExp(b.k)}
+                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proExp === b.k ? "#0a0612" : "var(--muted)", background: proExp === b.k ? b.color : "rgba(255,255,255,0.06)", border: proExp === b.k ? "none" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s" }}
+                  >{b.label}</button>
+                ))}
               </div>
-            </>)}
-            <div
-              role="button" tabIndex={0}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilterSections(s => ({ ...s, sort: !s.sort })); } }}
-              onClick={() => setFilterSections(s => ({ ...s, sort: !s.sort }))}
-              style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--gold)", userSelect: "none", marginBottom: 8 }}
-            >
-              <span style={{ fontSize: 10, transition: "transform .2s", transform: filterSections.sort ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span> Sort By
-              {!filterSections.sort && proSort !== "match" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(255,215,0,0.1)", color: "var(--gold)" }}>Active</span>}
-            </div>
-            {filterSections.sort && (<>
-            <select
-              className="inp"
-              value={proSort}
-              onChange={(e) => setProSort(e.target.value as any)}
-              style={{ width: "100%", marginBottom: 12, padding: "9px 12px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 12 }}
-            >
-              <option value="match">Sort: Featured</option>
-              <option value="expDesc">Most experienced</option>
-              <option value="expAsc">Least experienced</option>
-              <option value="rateDesc">Rate: high to low</option>
-              <option value="rateAsc">Rate: low to high</option>
-              <option value="openings">Most openings</option>
-            </select>
-            </>)}
-            <div
-              role="button" tabIndex={0}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilterSections(s => ({ ...s, rate: !s.rate })); } }}
-              onClick={() => setFilterSections(s => ({ ...s, rate: !s.rate }))}
-              style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--gold)", userSelect: "none", marginBottom: 8 }}
-            >
-              <span style={{ fontSize: 10, transition: "transform .2s", transform: filterSections.rate ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span> Rate Band
-              {!filterSections.rate && proRateBand !== "all" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(255,215,0,0.1)", color: "var(--gold)" }}>Active</span>}
-            </div>
-            {filterSections.rate && (<>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-              {([
-                { k: "all", label: "Any rate", color: "var(--muted)" },
-                { k: "tfp", label: "TFP", color: "#90caf9" },
-                { k: "50to100", label: "$50-100", color: "var(--gold)" },
-                { k: "100to150", label: "$100–150", color: "#e6d3ff" },
-                { k: "gt150", label: "$150+", color: "#e6d3ff" },
-              ] as const).map((b) => (
-                <span
-                  key={b.k}
-                  role="tab"
-                  aria-selected={proRateBand === b.k}
-                  tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProRateBand(b.k); } }}
-                  onClick={() => setProRateBand(b.k)}
-                  style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: proRateBand === b.k ? b.color : "var(--muted)", opacity: proRateBand === b.k ? 1 : 0.6, transition: "all 0.15s", borderBottom: proRateBand === b.k ? `2px solid ${b.color}` : "2px solid transparent", paddingBottom: 2 }}
-                >
-                  {b.label}
-                </span>
-              ))}
-            </div>
-            </>)}
+            )}
+            {filterSections.sort && (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                {([
+                  { k: "match", label: "Featured" },
+                  { k: "expDesc", label: "Most exp" },
+                  { k: "expAsc", label: "Least exp" },
+                  { k: "rateDesc", label: "Rate ↓" },
+                  { k: "rateAsc", label: "Rate ↑" },
+                  { k: "openings", label: "Most openings" },
+                ] as const).map((b) => (
+                  <button type="button" key={b.k}
+                    onClick={() => setProSort(b.k)}
+                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSort === b.k ? "#0a0612" : "var(--muted)", background: proSort === b.k ? "var(--gold)" : "rgba(255,255,255,0.06)", border: proSort === b.k ? "none" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s" }}
+                  >{b.label}</button>
+                ))}
+              </div>
+            )}
+            {filterSections.rate && (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                {([
+                  { k: "all", label: "Any rate", color: "var(--muted)" },
+                  { k: "tfp", label: "TFP", color: "#90caf9" },
+                  { k: "50to100", label: "$50-100", color: "var(--gold)" },
+                  { k: "100to150", label: "$100-150", color: "#e6d3ff" },
+                  { k: "gt150", label: "$150+", color: "#e6d3ff" },
+                ] as const).map((b) => (
+                  <button type="button" key={b.k}
+                    onClick={() => setProRateBand(b.k)}
+                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proRateBand === b.k ? "#0a0612" : "var(--muted)", background: proRateBand === b.k ? b.color : "rgba(255,255,255,0.06)", border: proRateBand === b.k ? "none" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s" }}
+                  >{b.label}</button>
+                ))}
+              </div>
+            )}
             {(() => {
               const proSource = liveProfessionals?.length ? liveProfessionals : PROFESSIONALS;
               const allSkills = [...new Set(proSource.flatMap((p) => p.skills))];
               const allLooking = [...new Set(proSource.flatMap((p) => p.looking || []))];
               return (
                 <>
-                <div
-                  role="button" tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilterSections(s => ({ ...s, skills: !s.skills })); } }}
-                  onClick={() => setFilterSections(s => ({ ...s, skills: !s.skills }))}
-                  style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--gold)", userSelect: "none", marginBottom: 8 }}
-                >
-                  <span style={{ fontSize: 10, transition: "transform .2s", transform: filterSections.skills ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span> Skills
-                  {!filterSections.skills && proSkill.length > 0 && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(255,215,0,0.1)", color: "var(--gold)" }}>{proSkill.length} active</span>}
-                </div>
-                {filterSections.skills && (<>
-                <div className="pro-skill-row">
-                  <button
-                    type="button"
-                    aria-pressed={!proSkill.length}
-                    onClick={() => setProSkill([])}
-                    className={"pro-skill-chip" + (!proSkill.length ? " active" : "")}
-                  >
-                    All skills
-                  </button>
-                  {allSkills.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      aria-pressed={proSkill.includes(s)}
-                      onClick={() => setProSkill(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
-                      className={"pro-skill-chip" + (proSkill.includes(s) ? " active" : "")}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-                </>)}
-                <div
-                  role="button" tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilterSections(s => ({ ...s, looking: !s.looking })); } }}
-                  onClick={() => setFilterSections(s => ({ ...s, looking: !s.looking }))}
-                  style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--gold)", userSelect: "none", marginBottom: 8 }}
-                >
-                  <span style={{ fontSize: 10, transition: "transform .2s", transform: filterSections.looking ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span> Looking For
-                  {!filterSections.looking && proLooking !== "all" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(255,215,0,0.1)", color: "var(--gold)" }}>Active</span>}
-                </div>
+                {filterSections.skills && (
+                  <div className="pro-skill-row" style={{ marginBottom: 10 }}>
+                    <button type="button" aria-pressed={!proSkill.length} onClick={() => setProSkill([])}
+                      className={"pro-skill-chip" + (!proSkill.length ? " active" : "")}>All skills</button>
+                    {allSkills.map((s) => (
+                      <button key={s} type="button" aria-pressed={proSkill.includes(s)}
+                        onClick={() => setProSkill(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
+                        className={"pro-skill-chip" + (proSkill.includes(s) ? " active" : "")}>{s}</button>
+                    ))}
+                  </div>
+                )}
                 {filterSections.looking && allLooking.length > 0 && (
-                  <select
-                    className="inp"
-                    value={proLooking}
-                    onChange={(e) => setProLooking(e.target.value)}
-                    style={{ width: "100%", marginBottom: 12, padding: "9px 12px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 12 }}
-                  >
-                    <option value="all">Looking for: anyone</option>
-                    {allLooking.map((l) => <option key={l} value={l}>Seeking {l}</option>)}
-                  </select>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                    <button type="button" onClick={() => setProLooking("all")}
+                      style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === "all" ? "#0a0612" : "var(--muted)", background: proLooking === "all" ? "var(--gold)" : "rgba(255,255,255,0.06)", border: proLooking === "all" ? "none" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s" }}>Anyone</button>
+                    {allLooking.map((l) => (
+                      <button key={l} type="button" onClick={() => setProLooking(l)}
+                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === l ? "#0a0612" : "var(--muted)", background: proLooking === l ? "var(--gold)" : "rgba(255,255,255,0.06)", border: proLooking === l ? "none" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s" }}>{l}</button>
+                    ))}
+                  </div>
                 )}
                 </>
               );
