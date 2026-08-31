@@ -152,7 +152,7 @@ export const SessionsScreen = memo(function SessionsScreen({
     <div className={"screen-el" + (screen === "sessions" ? " active" : "")}>
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
-        <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "absolute", left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}>Sessions</div>
+        <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#E1BEE7,#9C27B0,#FF4081,#E1BEE7,#9C27B0,#E1BEE7)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Sessions</div>
         <div style={{ width: 42 }} />
       </div>
       <div className="conn-tabs" style={{ padding: "0 16px" }}>

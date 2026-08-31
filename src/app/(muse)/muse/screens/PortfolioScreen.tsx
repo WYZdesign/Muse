@@ -33,7 +33,7 @@ export const PortfolioScreen = memo(function PortfolioScreen({
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{
           fontSize: 30,
-          backgroundImage: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",
+          backgroundImage: "linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA)",
           backgroundSize: "300% 100%",
           WebkitBackgroundClip: "text",
           backgroundClip: "text",

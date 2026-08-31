@@ -131,7 +131,7 @@ export const SettingsScreen = memo(function SettingsScreen({
         <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
           <div className="logo-link" style={{
             fontSize: 30,
-            backgroundImage: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",
+            backgroundImage: "linear-gradient(90deg,#CE93D8,#B388FF,#A5D6A7,#CE93D8,#B388FF,#CE93D8)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",
             backgroundClip: "text",

@@ -147,7 +147,7 @@ export const BtsScreen = memo(function BtsScreen({
     showToast("Share your moment from the Feed composer!");
   }, [showScreen, showToast]);
 
-  const headerGradient = "linear-gradient(135deg, #FF1493 0%, #FA8072 50%, #FFD700 100%)";
+  const headerGradient = "linear-gradient(135deg, #FF1493 0%, #FF69B4 50%, #FFD700 100%)";
   const pinkGradient = "linear-gradient(135deg, #FF1493 0%, #FF69B4 60%, #FFB6C1 100%)";
   const activePill = "linear-gradient(135deg, #FF1493, #FF69B4)";
 
@@ -190,7 +190,7 @@ export const BtsScreen = memo(function BtsScreen({
             fontSize: 28,
             fontWeight: 900,
             letterSpacing: 2,
-            backgroundImage: "linear-gradient(90deg, #fff 0%, #FFE4E1 50%, #FFFACD 100%)",
+            backgroundImage: "linear-gradient(90deg, #FF1493 0%, #FF69B4 50%, #FFD700 100%)",
             backgroundClip: "text",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
