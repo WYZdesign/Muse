@@ -2,7 +2,7 @@
 
 import React, { memo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FiArrowLeft, FiImage, FiX, FiFlag, FiShare2, FiSend } from "react-icons/fi";
+import { FiArrowLeft, FiImage, FiX, FiFlag, FiSend } from "react-icons/fi";
 import Nav from "../components/Nav";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
 import type { Screen } from "../components/types";
@@ -392,7 +392,7 @@ export const FeedScreen = memo(function FeedScreen({
                     }
                     setReplyingTo(replyingTo === post.id ? null : post.id);
                   }}>💬 {post.comments}</button>
-                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", borderRadius: 14, transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { showToast("Link copied!"); }}><FiShare2 size={14} /> Share</button>
+                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", borderRadius: 14, transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { showToast("Link copied!"); }}>Share</button>
                 </div>
                 {replyingTo === post.id && (
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>

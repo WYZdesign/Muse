@@ -6,7 +6,6 @@ import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
 import type { Screen, Match } from "../components/types";
 import { SESSIONS } from "../components/types";
-import { FD_STUDIO_URL } from "@/lib/config";
 
 export interface SessionsScreenProps {
   screen: Screen;
@@ -161,25 +160,21 @@ export const SessionsScreen = memo(function SessionsScreen({
         ))}
       </div>
 <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
-            {/* Session 55 — FD Photo Studio featured integration. Deliberately a
-                plain tracked outbound link, not an in-house space-booking build:
-                no new payments/escrow surface to secure, and it's easy to prove out with the
-                founder's own studio relationship before ever negotiating (or
-                building) anything more formal with other studios. */}
-            <a
-              href={FD_STUDIO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-event", name: "fd_studio_click", props: { from: "sessions" } }) }).catch(() => {}); }}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: 14, borderRadius: 14, marginBottom: 14, textDecoration: "none", background: "linear-gradient(135deg, rgba(233,30,99,0.12), rgba(156,39,176,0.12))", border: "1px solid rgba(233,30,99,0.25)" }}
+            {/* Session 55 — FD Photo Studio featured integration. The full
+                studio browser + client guide live on the dedicated FD Studio
+                page (screen "fdstudio"). This banner routes there; tracking
+                fires fd_studio_click so we can see how often it's tapped. */}
+            <button
+              onClick={() => { showScreen("fdstudio"); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-event", name: "fd_studio_click", props: { from: "sessions" } }) }).catch(() => {}); }}
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: 14, borderRadius: 14, marginBottom: 14, textDecoration: "none", background: "linear-gradient(135deg, rgba(233,30,99,0.12), rgba(156,39,176,0.12))", border: "1px solid rgba(233,30,99,0.25)", width: "100%", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}
             >
               <div style={{ fontSize: 26 }}>📸</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)" }}>Need a space for your shoot?</div>
-                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Book FD Photo Studio — Muse's featured studio partner</div>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Book FD Photo Studio — 34 LA studios, live pricing & client guide</div>
               </div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "#F48FB1" }}>Book →</div>
-            </a>
+            </button>
             {sessTab === "sessions" && (
               <>
                 <div style={{ margin: "4px 0 10px" }}>

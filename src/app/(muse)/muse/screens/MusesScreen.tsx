@@ -96,7 +96,7 @@ export const MusesScreen = memo(function MusesScreen({
       </div>
 
       {/* Sub-nav tabs: Matches vs Likes You */}
-      <div style={{ display: "flex", gap: 6, margin: "0 16px 12px", padding: "4px", background: "rgba(255,255,255,0.04)", borderRadius: 16, border: "1px solid rgba(255,255,255,0.06)" }}>
+      <div style={{ display: "flex", gap: 6, margin: "0 16px 12px" }}>
         <button
           style={{ flex: 1, padding: "16px 0", borderRadius: 13, border: "none", background: !showLikesYou ? "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))" : "transparent", color: !showLikesYou ? "var(--gold)" : "var(--text2)", fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all .25s", boxShadow: !showLikesYou ? "0 2px 8px rgba(255,69,0,0.15)" : "none" }}
           onClick={() => setShowLikesYou(false)}
