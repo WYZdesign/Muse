@@ -113,9 +113,9 @@ export const CommunityScreen = memo(function CommunityScreen({
 
   return (
     <div className={"screen-el" + (screen === "community" ? " active" : "")}>
-      <div className="hdr">
+      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
-        <div className="logo-link" style={{ fontSize: 32, backgroundImage: "linear-gradient(120deg,var(--gold),#FF8A80,#D4A5FF,var(--gold))", backgroundSize: "300% 300%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", fontWeight: 900 }}>Community</div>
+        <div className="logo-link" style={{ fontSize: 32, backgroundImage: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", fontWeight: 800, animation: "shimmer 8s ease-in-out infinite" }}>Community</div>
         <button className="hdr-btn" onClick={() => setShowCreate(v => !v)} aria-label="Create" style={{ width: 34, height: 34 }}>+</button>
       </div>
       <div className="conn-tabs" style={{ padding: "0 16px" }}>

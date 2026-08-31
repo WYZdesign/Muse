@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMuseUrl } from "@/lib/urls";
+import { getBaseUrl } from "@/lib/urls";
 
-const MUSE_URL = getMuseUrl();
+// IMPORTANT: this must be the bare origin (scheme + host, no path) —
+// getMuseUrl() returns `${base}/muse` and was used here previously, which
+// meant ALLOWED_ORIGINS never matched a real browser Origin header (the
+// Origin header never includes a path). That silently 403'd every
+// same-origin, non-GET /api/* request in production (referral, messaging,
+// swipes, posts — anything routed through the main /api/muse dispatcher),
+// while GET requests kept working fine, making it look like isolated
+// feature bugs (e.g. "Failed to fetch referral data: API 403") rather than
+// a site-wide origin-check bug.
+const APP_ORIGIN = getBaseUrl();
 const WYZDESIGN_URL = "https://www.wyzdesign.com";
 
 const ALLOWED_ORIGINS = [
-  MUSE_URL,
+  APP_ORIGIN,
   WYZDESIGN_URL,
   WYZDESIGN_URL.replace("www.", ""),
 ];
@@ -30,8 +39,10 @@ function isAuthPath(pathname: string): boolean {
 }
 
 function corsHeaders(response: NextResponse, origin?: string) {
-  // Use the requesting origin if allowed, otherwise default to MUSE_URL
-  const allowOrigin = origin && originAllowed(origin) ? origin : MUSE_URL;
+  // Use the requesting origin if allowed, otherwise default to the app's
+  // own bare origin (must be scheme+host only — a path here makes the
+  // Access-Control-Allow-Origin header invalid and browsers ignore it).
+  const allowOrigin = origin && originAllowed(origin) ? origin : APP_ORIGIN;
   response.headers.set("Access-Control-Allow-Origin", allowOrigin);
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");

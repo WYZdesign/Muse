@@ -29,9 +29,21 @@ export const PortfolioScreen = memo(function PortfolioScreen({
 }: PortfolioScreenProps) {
   return (
     <div className={"screen-el" + (screen === "portfolio" ? " active" : "")}>
-      <div className="hdr">
+      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
-        <div className="logo-link" style={{ fontSize: 32, WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }}>Portfolio</div>
+        <div className="logo-link" style={{
+          fontSize: 30,
+          backgroundImage: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",
+          backgroundSize: "300% 100%",
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          color: "transparent",
+          position: "absolute",
+          left: "50%",
+          transform: "translateX(-50%)",
+          whiteSpace: "nowrap",
+        }}>Portfolio</div>
         <div style={{ width: 42 }} />
       </div>
       <div className="portfolio-scroll">

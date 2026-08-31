@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
+import { getMuseUrl } from "@/lib/urls";
 
 export const runtime = "nodejs";
 
@@ -84,31 +85,31 @@ export async function GET(req: NextRequest) {
     const state = url.searchParams.get("state");
     const error = url.searchParams.get("error");
 
-    if (!provider) return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/muse/settings?error=provider_missing`);
-    if (error) return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/muse/settings?error=${error}`);
+    if (!provider) return NextResponse.redirect(`${getMuseUrl()}?error=provider_missing`);
+    if (error) return NextResponse.redirect(`${getMuseUrl()}?error=${error}`);
 
     if (!code || !state) {
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/muse/settings?error=invalid_callback`);
+      return NextResponse.redirect(`${getMuseUrl()}?error=invalid_callback`);
     }
 
     let stateData: { profileId: string; provider: string; ts: number };
     try {
       stateData = JSON.parse(Buffer.from(state, "base64url").toString());
     } catch {
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/muse/settings?error=invalid_state`);
+      return NextResponse.redirect(`${getMuseUrl()}?error=invalid_state`);
     }
 
     if (stateData.provider !== provider) {
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/muse/settings?error=provider_mismatch`);
+      return NextResponse.redirect(`${getMuseUrl()}?error=provider_mismatch`);
     }
 
     if (Date.now() - stateData.ts > 10 * 60 * 1000) {
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/muse/settings?error=state_expired`);
+      return NextResponse.redirect(`${getMuseUrl()}?error=state_expired`);
     }
 
     const tokenData = await exchangeCodeForToken(provider, code);
     if (!tokenData?.access_token) {
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/muse/settings?error=token_exchange_failed`);
+      return NextResponse.redirect(`${getMuseUrl()}?error=token_exchange_failed`);
     }
 
     const userInfo = await fetchUserInfo(provider, tokenData.access_token);
@@ -131,6 +132,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/muse/settings?connected=${provider}`);
   } catch (e: unknown) {
     console.error("[social callback] failed:", e);
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/muse/settings?error=server_error`);
+    return NextResponse.redirect(`${getMuseUrl()}?error=server_error`);
   }
 }

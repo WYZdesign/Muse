@@ -128,8 +128,20 @@ export const SettingsScreen = memo(function SettingsScreen({
   return (
     <div className="phone-wrap">
       <div className="phone" id="muse-app">
-        <div className="hdr" style={{ borderBottom: "1px solid rgba(186,104,200,0.15)" }}>
-          <div className="logo-link" style={{ fontSize: 32, background: "linear-gradient(90deg,#CE93D8,#B388FF,#A5D6A7)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }}>Settings</div>
+        <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
+          <div className="logo-link" style={{
+            fontSize: 30,
+            backgroundImage: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",
+            backgroundSize: "300% 100%",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            color: "transparent",
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            whiteSpace: "nowrap",
+          }}>Settings</div>
           <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
         </div>
         <div className="settings-scroll">

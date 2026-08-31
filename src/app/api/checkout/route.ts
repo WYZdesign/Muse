@@ -129,7 +129,10 @@ export async function POST(req: NextRequest) {
       // since passing `false` is still rejected by Stripe).
       ...(discountCouponId ? {} : { allow_promotion_codes: true }),
       success_url: `${req.nextUrl.origin}/muse?upgraded=${plan}`,
-      cancel_url: `${req.nextUrl.origin}/muse/subscription`,
+      // `/muse/subscription` isn't a real route — subscription is a
+      // client-side screen state on `/muse`, not its own page — so a
+      // cancelled checkout used to 404 here. Land back on the real route.
+      cancel_url: `${req.nextUrl.origin}/muse`,
       billing_address_collection: "auto",
     });
 

@@ -83,20 +83,22 @@ export const CollabScreen = memo(function CollabScreen({
   };
   return (
     <div className={"screen-el" + (screen === "briefs" ? " active" : "")}>
-      <div className="hdr">
+      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         <div
           className="logo-link"
           style={{
-            fontSize: 32,
-            backgroundImage: "linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA)",
+            fontSize: 30,
+            backgroundImage: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",
             backgroundClip: "text",
             WebkitTextFillColor: "transparent",
             color: "transparent",
-            fontWeight: 800,
-            animation: "shimmer 8s ease-in-out infinite",
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            whiteSpace: "nowrap",
           }}
         >Collab</div>
         <button className="hdr-btn" onClick={() => setShowPostBrief(true)} aria-label="Create Brief"><FiPlus size={18} /></button>

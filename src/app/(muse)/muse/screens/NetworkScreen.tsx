@@ -343,7 +343,9 @@ export const NetworkScreen = memo(function NetworkScreen({
       <div
         className="hdr"
         style={{
-          borderBottom: "1px solid rgba(100,181,246,0.15)",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px`,
         }}
       >
         <button className="chat-back" onClick={() => showScreen("discover")}>
@@ -352,14 +354,17 @@ export const NetworkScreen = memo(function NetworkScreen({
         <div
           className="logo-link"
           style={{
-            fontSize: 32,
-            backgroundImage: "linear-gradient(120deg,#B3E5FC,#64B5F6,#00BCD4,#B3E5FC)",
-            backgroundSize: "300% 300%",
+            fontSize: 30,
+            backgroundImage: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",
+            backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",
             backgroundClip: "text",
             WebkitTextFillColor: "transparent",
             color: "transparent",
-            fontWeight: 900,
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            whiteSpace: "nowrap",
           }}
         >
           Network

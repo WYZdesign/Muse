@@ -1490,14 +1490,22 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const toggleSocial = useCallback((key: string) => {
     const currentlyConnected = obConnectedSocials[key];
     if (currentlyConnected) {
-      // Disconnect
-      apiFetch("/api/muse/social", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "disconnect", provider: key }) }).then(() => {
+      // Disconnect — the endpoint reads provider from the query string (not
+      // a JSON body) and only exports a GET handler, so this has to match
+      // that shape rather than POSTing a body.
+      apiFetch(`/api/muse/social?provider=${key}&action=disconnect`).then(() => {
         setObConnectedSocials(prev => ({ ...prev, [key]: false }));
         showToast(`${key.charAt(0).toUpperCase() + key.slice(1)} disconnected`);
       }).catch(() => showToast("Failed to disconnect"));
     } else {
-      // Connect - redirect to OAuth
-      window.location.href = `/api/muse/social?provider=${key}&action=auth`;
+      // Connect - the endpoint requires an auth bearer header to identify
+      // the caller, which a raw window.location.href navigation can't
+      // send. Fetch it (authenticated) for the provider's real OAuth URL,
+      // then navigate the browser there ourselves.
+      apiFetch(`/api/muse/social?provider=${key}&action=auth`)
+        .then(r => r.json())
+        .then(d => { if (d.authUrl) window.location.href = d.authUrl; else showToast(d.error || `Couldn't connect ${key}`); })
+        .catch(() => showToast(`Couldn't connect ${key}`));
     }
   }, [apiFetch, obConnectedSocials, showToast]);
   const sendMsg = useCallback(async (overrideText?: string) => {

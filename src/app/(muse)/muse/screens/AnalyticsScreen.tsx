@@ -69,9 +69,9 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
   if (loading) {
     return (
       <div className={"screen-el" + (screen === "analytics" ? " active" : "")} style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-        <div className="hdr" style={{ borderBottom: "1px solid rgba(233,30,99,0.15)" }}>
+        <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
           <button className="chat-back" onClick={() => showScreen("profile")}><FiArrowLeft size={20} /></button>
-          <div className="logo-link" style={{ fontSize: 32, backgroundImage: "linear-gradient(120deg,#CE93D8,#F48FB1,#BA68C8,#CE93D8)", backgroundSize: "300% 300%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", fontWeight: 900 }}>Analytics</div>
+          <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "absolute", left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}>Analytics</div>
           <div style={{ width: 42 }} />
         </div>
         <div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", color: "var(--muted)" }}>Loading analytics…</div>
@@ -81,9 +81,9 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
 
   return (
     <div className={"screen-el" + (screen === "analytics" ? " active" : "")} style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-      <div className="hdr" style={{ borderBottom: "1px solid rgba(233,30,99,0.15)" }}>
+      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("profile")}><FiArrowLeft size={20} /></button>
-        <div className="logo-link" style={{ fontSize: 32, backgroundImage: "linear-gradient(120deg,#CE93D8,#F48FB1,#BA68C8,#CE93D8)", backgroundSize: "300% 300%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", fontWeight: 900 }}>Analytics</div>
+        <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "absolute", left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}>Analytics</div>
         <button onClick={openHamburger} style={{ width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center" }}><FiUsers size={24} style={{ color: "var(--text)" }} /></button>
       </div>
 

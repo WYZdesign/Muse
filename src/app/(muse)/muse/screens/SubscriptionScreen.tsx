@@ -42,8 +42,23 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
   return (
     <div className="phone-wrap">
       <div className="phone" id="muse-app">
-        <div className="hdr">
-          <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "'Playfair Display', serif", background: "linear-gradient(135deg, var(--gold), var(--lavender))", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }}>Muse Pro</div>
+        <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
+          <div
+            className="logo-link"
+            style={{
+              fontSize: 30,
+              backgroundImage: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",
+              backgroundSize: "300% 100%",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              color: "transparent",
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+              whiteSpace: "nowrap",
+            }}
+          >Muse Pro</div>
           <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
         </div>
         <div className="sub-scroll">
