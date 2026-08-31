@@ -223,7 +223,32 @@ Fix depends on product decision: capture at booking time (simpler), or add a cro
 
 ## Session 58 commits
 ```
-(9a51b8d pending — patch via SendUserFile, git am against 79cbaf7)
+a1ce9ab fix: closed-beta scope leaks in screen-restore + onboarding tour; docs
 79cbaf7 fix: BTS title solid white with soft shadow; docs: Session 57 handover
 329a169 feat: Sessions Browse tab shows FD Photo Studio studios in-app
+```
+
+## Session 59 (this Claude — kept going per Torreé's "keep finding stuff" instruction)
+
+No push access, patch via SendUserFile. Synced clean against `origin/main` at `a1ce9ab`.
+
+### Fixed: AnalyticsScreen was fully built and completely unreachable
+`AnalyticsScreen.tsx` (profile views, matches, messages, quest applications, bookings, total earnings) is fully wired to a working backend action (`action:"my-analytics"`), imported and rendered in `page.tsx`. But grepping every screen file for `showScreen("analytics")` turned up **zero** callers. Its own back button returns to `"profile"` — the tell for where it was meant to launch. Added an "Insights" button to Profile's action-button stack, right above Account Settings.
+
+### Found, not touched: FdStudioScreen.tsx is now dead code
+Commit `329a169` changed the FD flow from "navigate to separate `FdStudioScreen`" to "render `FdStudioWidget` inline inside SessionsScreen Browse tab." That means **nothing calls `showScreen("fdstudio")` anymore** — `FdStudioScreen.tsx` and the `"fdstudio"` Screen-type entry are orphaned. Not touching: whether to delete or wire up as a deep link from the widget is wyzmind's call. Nothing broken for users.
+
+### Noticed, not worth a diff
+`Screen` type includes `"events"` but there's no `EventsScreen.tsx` and nothing navigates to a top-level `"events"` screen — it's actually used as a sub-tab value inside CommunityScreen's local `commTab` state. Cosmetic type-def leftover, no functional impact.
+
+### Still open
+- Title vertical alignment / height parity across all 13 pages — only spot-checked
+- Gradient reference table may be stale beyond BTS drift
+- **Payment-capture-expiry** (Session 58) still the highest priority open item
+
+## Session 59 commits
+```
+(pending — patch via SendUserFile, git am against a1ce9ab)
+a1ce9ab fix: closed-beta scope leaks in screen-restore + onboarding tour; docs
+79cbaf7 fix: BTS title solid white with soft shadow; docs: Session 57 handover
 ```

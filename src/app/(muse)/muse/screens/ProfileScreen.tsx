@@ -1,5 +1,5 @@
 import React, { memo, useState, useEffect } from "react";
-import { FiArrowLeft, FiEdit2, FiSettings, FiUsers, FiShoppingBag, FiDollarSign, FiClock, FiExternalLink } from "react-icons/fi";
+import { FiArrowLeft, FiEdit2, FiSettings, FiUsers, FiShoppingBag, FiDollarSign, FiClock, FiExternalLink, FiTrendingUp } from "react-icons/fi";
 import { getReferralUrl } from "@/lib/urls";
 import Nav from "../components/Nav";
 import StreakWidget from "../components/StreakWidget";
@@ -431,6 +431,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
         </div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setEditNsfw(!!currentUser.nsfw); setShowEditProfile(true); }}>Edit Profile</button></div>
+        <div className="profile-btn"><button className="btn btn-outline" onClick={() => setScreen("analytics")}><FiTrendingUp size={16} style={{ marginRight: 6 }} /> Insights</button></div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => setScreen("settings")}><FiSettings size={16} style={{ marginRight: 6 }} /> Account Settings</button></div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => setShowShareProfile(true)}>Share Profile</button></div>
         {/* Log Out intentionally lives only in Settings now — the full Profile screen
