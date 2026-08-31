@@ -71,7 +71,7 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
       <div className={"screen-el" + (screen === "analytics" ? " active" : "")} style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
         <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
           <button className="chat-back" onClick={() => showScreen("profile")}><FiArrowLeft size={20} /></button>
-          <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#FFD700,#FFB5C2,#B388FF,#FFD700,#FFB5C2,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "absolute", left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}>Analytics</div>
+          <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#FFD700,#FFB5C2,#B388FF,#FFD700,#FFB5C2,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, whiteSpace: "nowrap", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Analytics</div>
           <div style={{ width: 42 }} />
         </div>
         <div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", color: "var(--muted)" }}>Loading analytics…</div>
@@ -83,7 +83,7 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
     <div className={"screen-el" + (screen === "analytics" ? " active" : "")} style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("profile")}><FiArrowLeft size={20} /></button>
-        <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#FFD700,#FFB5C2,#B388FF,#FFD700,#FFB5C2,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "absolute", left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}>Analytics</div>
+        <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#FFD700,#FFB5C2,#B388FF,#FFD700,#FFB5C2,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, whiteSpace: "nowrap", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Analytics</div>
         <button onClick={openHamburger} style={{ width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center" }}><FiUsers size={24} style={{ color: "var(--text)" }} /></button>
       </div>
 

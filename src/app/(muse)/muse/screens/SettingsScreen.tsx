@@ -137,9 +137,9 @@ export const SettingsScreen = memo(function SettingsScreen({
             backgroundClip: "text",
             WebkitTextFillColor: "transparent",
             color: "transparent",
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)",
+            position: "relative",
+            margin: 0,
+            padding: 0,
             whiteSpace: "nowrap",
           }}>Settings</div>
           <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>

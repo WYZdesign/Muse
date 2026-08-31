@@ -53,9 +53,9 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
               backgroundClip: "text",
               WebkitTextFillColor: "transparent",
               color: "transparent",
-              position: "absolute",
-              left: "50%",
-              transform: "translateX(-50%)",
+              position: "relative",
+              margin: 0,
+              padding: 0,
               whiteSpace: "nowrap",
             }}
           >Muse Pro</div>

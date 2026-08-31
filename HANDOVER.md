@@ -241,10 +241,16 @@ Commit `329a169` changed the FD flow from "navigate to separate `FdStudioScreen`
 ### Noticed, not worth a diff
 `Screen` type includes `"events"` but there's no `EventsScreen.tsx` and nothing navigates to a top-level `"events"` screen — it's actually used as a sub-tab value inside CommunityScreen's local `commTab` state. Cosmetic type-def leftover, no functional impact.
 
+### Noticed, not worth a diff
+`Screen` type previously included `"events"` but there's no `EventsScreen.tsx` — it was actually used as a sub-tab value inside CommunityScreen's local `commTab` state. Removed from Screen type in Session 61.
+
 ### Still open
-- Title vertical alignment / height parity across all 13 pages — only spot-checked
-- Gradient reference table may be stale beyond BTS drift
-- **Payment-capture-expiry** (Session 58) ~~still the highest priority open item~~ **FIXED this session.**
+- ~~Title vertical alignment / height parity across all 13 pages — only spot-checked~~ **FIXED (Session 61)** — all 6 absolute-positioned titles converted to relative/flow.
+- ~~Gradient reference table may be stale beyond BTS drift~~ **VERIFIED (Session 61)** — all 11 screen gradients match nav source of truth.
+- **Payment-capture-expiry** ~~(Session 58)~~ **FIXED (Session 60).**
+- ~~FdStudioScreen.tsx dead code~~ **DELETED (Session 61).**
+- ~~"events" in Screen type~~ **REMOVED (Session 61).**
+- ~~AnalyticsScreen reachability~~ **VERIFIED (Session 61)** — loads real data from `my-analytics` API.
 
 ## Session 59 commits
 ```
@@ -266,3 +272,41 @@ a1ce9ab fix: closed-beta scope leaks in screen-restore + onboarding tour; docs
 (pending — git am against 15c0ada)
 15c0ada fix: wire up orphaned Analytics screen — Insights button on Profile; docs: Session 59
 ```
+
+## Session 61 (wyzmind — title alignment, dead code cleanup, gradient audit)
+
+### Fixed: Title vertical alignment across all pages
+- **Files**: `AnalyticsScreen.tsx`, `CodexScreen.tsx`, `ProfileScreen.tsx`, `SettingsScreen.tsx`, `PortfolioScreen.tsx`, `SubscriptionScreen.tsx`
+- **Root cause**: Titles using `position: "absolute", left: "50%", transform: "translateX(-50%)"` were taken out of flex flow and vertically centered via CSS transform — didn't match back-button height due to font metrics vs. button height mismatch.
+- **Fix**: All titles now use `position: "relative", margin: 0, padding: 0` — they sit in the flex header alongside the back button, naturally aligned at the same vertical center via `.hdr { display: flex; align-items: center }`. Titles that were absolute now also get `lavaFlow` + `logoShimmer` animations for visual consistency with Discover/Sessions/BTS.
+
+### Cleaned up: Dead code removed
+- **Deleted**: `screens/FdStudioScreen.tsx` (29 lines) — orphaned after Session 56 inline-widget migration; nothing called `showScreen("fdstudio")`.
+- **Removed from page.tsx**: FdStudioScreen import + `<FdStudioScreen>` rendering + `"fdstudio"` from `VALID_SCREENS`.
+- **Removed from Screen type**: `"fdstudio"` and `"events"` (both had no entry points). Screen type now: `"auth"|"onboard"|"discover"|"connections"|"matches"|"chat"|"profile"|"briefs"|"portfolio"|"settings"|"subscription"|"community"|"sessions"|"bts"|"forum"|"network"|"codex"|"analytics"`.
+
+### Verified: Gradient reference table
+All screen title gradients match their nav icon counterparts (Nav.tsx `lavaGradients`):
+| Screen | Gradient | Nav match |
+|--------|----------|-----------|
+| Discover | `#FFD700→#FF8C69→#FFB6C1` | ✅ `discover` |
+| Feed | `#1E90FF→#87CEEE→#B0C4DE` | ✅ `connections` |
+| Collab | `#20B2AA→#9ACD32→#00CED1` | ✅ `briefs` |
+| Muses | `#FF4500→#FFD700→#FFAA00` | ✅ `matches` |
+| Sessions | `#E1BEE7→#9C27B0→#FF4081` | Custom (no nav) |
+| Analytics | `#FFD700→#FFB5C2→#B388FF` | Custom (no nav) |
+| Community | `#FF8A80→#FF4757→#FFD700` | Custom (no nav) |
+| Profile | `#FFD700→#F48FB1→#CE93D8` | Custom (no nav) |
+| Settings | `#CE93D8→#B388FF→#A5D6A7` | Custom (no nav) |
+| BTS | Solid white + shadow | Custom (no nav) |
+| Codex | Solid `var(--gold)` | Custom (no nav) |
+
+### Verified: AnalyticsScreen loads real data
+- Calls `apiFetch("/api/muse", { action: "my-analytics" })` on mount
+- Shows: views, viewsLast30Days, matchesReceived, messagesSent, briefApplications, bookingsAsHost, bookingsAsBooker, totalEarningsCents
+- Includes Quick Actions (View Profile, Manage Sessions, View Quests, Edit Portfolio)
+- Entry point confirmed: ProfileScreen → "Insights" button (FiTrendingUp icon, above Account Settings)
+
+### Verification
+- `tsc --noEmit` clean, `npm run build` clean, `npm run test` 134/134.
+- **Open items**: all resolved from HANDOVER.md pre-session list.

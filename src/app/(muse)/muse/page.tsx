@@ -31,7 +31,6 @@ import { ChatScreen } from "./screens/ChatScreen";
 import { CollabScreen } from "./screens/CollabScreen";
 import { CommunityScreen } from "./screens/CommunityScreen";
 import { SessionsScreen } from "./screens/SessionsScreen";
-import { FdStudioScreen } from "./screens/FdStudioScreen";
 import { NetworkScreen } from "./screens/NetworkScreen";
 import { PortfolioScreen } from "./screens/PortfolioScreen";
 import { BtsScreen } from "./screens/BtsScreen";
@@ -549,11 +548,10 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (d.chatTarget) setChatTarget(d.chatTarget);
       // "moments" was BTS's old screen key before it was renamed to "bts" — kept
       // dropping it and never adding "bts" meant reloading mid-BTS silently
-      // bounced you back to Discover. "fdstudio" was added later and had the
-      // same gap. "community" is gated behind the closed-beta flag so a stale
-      // persisted value from before the flag existed can't restore straight
-      // into a screen the menu no longer offers a way to reach.
-      const VALID_SCREENS = ["onboard","discover","connections","matches","chat","briefs","sessions","network","portfolio","bts","fdstudio","profile","settings","subscription","codex", ...(MUSE_CLOSED_BETA_HIDE_SOCIAL ? [] : ["community"])];
+      // bounced you back to Discover. "community" is gated behind the closed-beta
+      // flag so a stale persisted value from before the flag existed can't restore
+      // straight into a screen the menu no longer offers a way to reach.
+      const VALID_SCREENS = ["onboard","discover","connections","matches","chat","briefs","sessions","network","portfolio","bts","profile","settings","subscription","codex", ...(MUSE_CLOSED_BETA_HIDE_SOCIAL ? [] : ["community"])];
 
   // Check for OAuth callback on mount
   React.useEffect(() => {
@@ -2313,10 +2311,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
             <ScreenErrorBoundary name="Sessions">
             <SessionsScreen screen={screen} showScreen={showScreen} sessTab={sessTab} setSessTab={setSessTab} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} uid={uid} currentUser={currentUser} setShowAgeVerification={setShowAgeVerification} liveSessions={liveSessions || undefined} myBookings={myBookings} setMyBookings={setMyBookings} setDisclosureTarget={setDisclosureTarget} setDisclosureBookingId={setDisclosureBookingId} setShowDisclosureModal={setShowDisclosureModal} setViewProfile={setViewProfile} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
-            </ScreenErrorBoundary>
-
-            <ScreenErrorBoundary name="FdStudio">
-            <FdStudioScreen screen={screen} showScreen={showScreen} apiFetch={apiFetch} />
             </ScreenErrorBoundary>
 
             <ScreenErrorBoundary name="Network">

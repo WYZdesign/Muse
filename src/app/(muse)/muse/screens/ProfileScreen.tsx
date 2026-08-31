@@ -136,7 +136,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         </div>
-        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 24, fontWeight: 800, background: "linear-gradient(90deg,#FFD700,#F48FB1,#CE93D8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Your Profile</div>
+        <div className="logo-link" style={{ position: "relative", margin: 0, padding: 0, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 24, fontWeight: 800, background: "linear-gradient(90deg,#FFD700,#F48FB1,#CE93D8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Your Profile</div>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="hdr-btn" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setEditNsfw(!!currentUser.nsfw); setShowEditProfile(true); }} aria-label="Edit Profile"><FiEdit2 size={18} /></button>
         </div>

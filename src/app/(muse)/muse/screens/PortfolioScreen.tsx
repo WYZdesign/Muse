@@ -39,9 +39,9 @@ export const PortfolioScreen = memo(function PortfolioScreen({
           backgroundClip: "text",
           WebkitTextFillColor: "transparent",
           color: "transparent",
-          position: "absolute",
-          left: "50%",
-          transform: "translateX(-50%)",
+          position: "relative",
+          margin: 0,
+          padding: 0,
           whiteSpace: "nowrap",
         }}>Portfolio</div>
         <div style={{ width: 42 }} />
