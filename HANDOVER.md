@@ -1156,4 +1156,30 @@ For each screen, verify at 375px and 1440px viewport:
 | Network filter expandables | `NetworkScreen.tsx` | Experience/Sort/Rate/Skills/Looking For → full-width color-coded button bars |
 | Empty state improvements | Multiple screens | Added helpful guidance text |
 
-**Build status:** All sessions clean — `tsc --noEmit` exit 0, `npm run build` success. Auto-deploys on Vercel push to `main`.
+### Session 51 (Claude) — Profile ring alignment, BTS full-width cards, circular stories bar, Network bubble filters, grid card full expansion
+| Fix | File | What changed |
+|-----|------|-------------|
+| Profile ring alignment | `muse.css` | Added `box-sizing: border-box` to `.profile-avatar` + `.match-avatar` — the spinning ring (112x112) was 2.5px off-center because the 2.5px border on the 100x100 avatar pushed the wrap to 105x105 (content-box default). Now wraps 100x100 perfectly with the ring centered. Affects Profile, MenuModal, and Muses page list-view match cards. |
+| BTS cards full width | `BtsScreen.tsx` | `gridCardStyle` was `{ flex: "1 1 calc(50% - 6px)", maxWidth: "calc(50% - 6px)" }` (2-col grid) → `width: 100%; maxWidth: 100%`. BTS moment cards now span the full feed width. |
+| Stories bar circles | `BtsScreen.tsx` | Stories row was `display: grid; gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))"` (squares) → `display: flex; gap: 12px; overflow-x: auto` (horizontal scroll). Each story bubble is now 64×64px circular with `border-radius: 50%` on both the gradient ring and the image. |
+| Network bubble filters | `NetworkScreen.tsx` | Stacked expand/collapse ▶ sections (Experience / Sort / Rate / Skills / Looking) → horizontal pill-shaped bubble buttons. Active state: gold gradient pill with ✓ mark. Inactive: translucent glass pill. Each bubble toggles its content row inline below when tapped. |
+| Grid card expansion | `muse.css` + `MatchCard.tsx` | When a match card is expanded in grid view, it now spans both columns (`grid-column: 1/-1`) with a scale-in animation. Shows full bio + all skills + 5 styles + "Open Chat" button. |
+
+### Session 51.5 (Claude) — FeatureTour lightbox: 10-page paginated modal replacing removed tutorial overlay
+| Fix | File | What changed |
+|-----|------|-------------|
+| New feature-tour lightbox | `components/FeatureTour.tsx` (new, 216 lines) | 10-page paginated modal: Welcome → Discover → Feed → Collab → Muses → BTS → Community → Network → Profile/streaks → Done. Per-page animated sprite badge (gradient circle + icon), two counter-rotating rings, 3 orbiting particles at varying radii, 10-particle spark burst that replays on every page turn (reuses existing `--vx`/`--vy` CSS-var pattern). Swipe (40px threshold) + dot navigation + back/next/skip/lets-go CTAs. Self-contained — never measures or anchors to page DOM. |
+| Tour styles + keyframes | `muse.css` | New `.tour-*` block: `tourFadeIn`, `tourCardIn`, `tourPageIn`, `tourWash`, `tourGlowPulse`, `tourRingSpin(Rev)`, `tourBadgeFloat`, `tourOrbit0/1/2`, `tourSparkBurst`, `tourDotPop`. `z-index: 100000`. `prefers-reduced-motion` extended to disable all tour animations. |
+| Tour wiring (incomplete first commit) | `page.tsx` | First commit only added the import — component never rendered. |
+| **Tour wiring fix (critical)** | `page.tsx` | Added `showFeatureTour` state, `tourBootRef` + auto-fire effect (1.2s after boot, once per browser via `muse_feature_tour_seen` localStorage, deferred until daily-login popup closes), `setShowFeatureTour` prop passed to MenuModal, `<FeatureTour open={...} onClose={...} />` rendered at end of return with close handler that persists the seen flag. |
+| Replay entry point | `MenuModal.tsx` | "App Walkthrough" button in Menu → Help & Support. |
+
+### Session 51.6 (Claude) — Dead code cleanup
+| Fix | File | What changed |
+|-----|------|-------------|
+| Remove unused `moments` key | `Nav.tsx` | `lineColor["moments"]` and `lavaGradients["moments"]` defined but never referenced in `tabs` (actual key is `bts`). Removed. |
+| Remove deleted `TUTORIAL_*` constants | `config.ts`, `config.test.ts` | `TUTORIAL_TOOLTIP_WIDTH/MARGIN`, `TUTORIAL_RESERVED_HEIGHT`, `TUTORIAL_HIGHLIGHT_RADIUS_MAX` leftover from deleted tutorial overlay. Removed from source and test. |
+
+**Build status:** All sessions clean — `tsc --noEmit` exit 0, `next build` success, 127/127 vitest tests passing (12 files). Auto-deploys on Vercel push to `main`.
+
+**Performance audit (mobile):** All CSS animations run on GPU compositor (transform/opacity only). `will-change: transform` on swipe cards. `prefers-reduced-motion` already kills tour + card animations. FeatureTour returns null when closed (zero idle cost). Zero `console.log`, zero `innerHTML`/`dangerouslySetInnerHTML`, zero `eval()`. `React.memo` + `useCallback` in MatchCard. No changes needed.
