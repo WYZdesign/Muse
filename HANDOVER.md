@@ -194,3 +194,36 @@ e279597 Add FD Photo Studio page + client guide
 cb4cf52 fix: Discover title aligned; profile ring animation
 76c78b1 feat(session-55): closed-beta, split-fee pricing
 ```
+
+## Session 58 (Claude — proactive audit, no Torreé prompt)
+
+### Two real bugs found and fixed
+
+**1. Closed-beta scope leak in screen-restore.** `page.tsx`'s `VALID_SCREENS` array unconditionally included `"community"` — so anyone with that value persisted reloads straight into the Community screen, bypassing the menu hiding it. Now gated behind `MUSE_CLOSED_BETA_HIDE_SOCIAL`.
+
+Same array still carried `"moments"` (BTS's old screen id) and never picked up `"fdstudio"`. Reloading mid-BTS or mid-FD-Studio silently dumped you back on Discover. Fixed to current real screen ids. **Pattern to remember: every time a screen id is renamed or added, grep for `VALID_SCREENS` and update it too** — it's not derived from the `Screen` type.
+
+**2. Onboarding tour was selling closed-beta users on features they can't reach.** `FeatureTour.tsx` had a full "Community — Groups & events" slide and its Network slide said "drop into the forum" — both hidden behind `MUSE_CLOSED_BETA_HIDE_SOCIAL`. Community slide dropped, Network copy adapted, both driven by the same flag.
+
+### High-priority finding, NOT fixed — needs product decision
+
+**Booking payments may fail to capture on anything booked more than ~a week out.** `connect/route.ts`'s `create-booking-checkout` creates the Stripe PaymentIntent with `capture_method: "manual"` — money authorized at booking, captured later by `complete-booking` (route.ts ~line 1207) which fires when a party marks the session as done. Stripe auto-cancels uncaptured manual-capture PaymentIntents after a fixed window (7 days last known — **verify against current Stripe docs**). No cron or webhook re-authorizes or captures early. Any booking made more than that window ahead has its authorization silently expire, and the capture call will throw.
+
+Fix depends on product decision: capture at booking time (simpler), or add a cron that captures before the window expires (mirrors existing `api/cron/checkins` T-minus-24h pass). Read `complete-booking` and `create-booking-checkout` together before deciding.
+
+### Verified, not changed
+- FdStudioWidget.tsx read in full (341 lines) — no bugs found
+- No hardcoded secrets, no leftover `console.log`, lint clean
+- `npm run test` 134/134, `tsc --noEmit` clean, `npm run build` clean
+
+### Still open
+- Title vertical alignment / height parity across all 13 pages — only spot-checked
+- Gradient reference table may be stale — only spot-checked
+- `AnalyticsScreen.tsx` has no reachable entry point (no `showScreen("analytics")` call outside admin panel) — either dead code or intentionally admin-only
+
+## Session 58 commits
+```
+(9a51b8d pending — patch via SendUserFile, git am against 79cbaf7)
+79cbaf7 fix: BTS title solid white with soft shadow; docs: Session 57 handover
+329a169 feat: Sessions Browse tab shows FD Photo Studio studios in-app
+```

@@ -5,6 +5,7 @@ import {
   FiCompass, FiUsers, FiZap, FiHeart, FiCamera, FiCalendar,
   FiMessageCircle, FiUser, FiStar, FiX, FiArrowRight, FiArrowLeft,
 } from "react-icons/fi";
+import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
 
 interface TourPage {
   id: string;
@@ -18,7 +19,7 @@ interface TourPage {
 
 // Content order mirrors the main nav + the rest of the app's key surfaces,
 // so this doubles as an at-a-glance map of everything Muse offers.
-const PAGES: TourPage[] = [
+const ALL_PAGES: TourPage[] = [
   {
     id: "welcome",
     eyebrow: "Welcome to",
@@ -85,8 +86,10 @@ const PAGES: TourPage[] = [
   {
     id: "network",
     eyebrow: "Network",
-    title: "Pros & the forum",
-    body: "Book verified professionals for your next project, or drop into the forum to ask questions and swap advice with the community.",
+    title: MUSE_CLOSED_BETA_HIDE_SOCIAL ? "Find professionals" : "Pros & the forum",
+    body: MUSE_CLOSED_BETA_HIDE_SOCIAL
+      ? "Book verified professionals for your next project — photographers, directors, editors, and more."
+      : "Book verified professionals for your next project, or drop into the forum to ask questions and swap advice with the community.",
     icon: <FiMessageCircle size={40} />,
     from: "#00CED1",
     to: "#1E90FF",
@@ -110,6 +113,11 @@ const PAGES: TourPage[] = [
     to: "#D4A5FF",
   },
 ];
+
+// Drop the Community slide during closed beta — Community is hidden from the
+// menu (MUSE_CLOSED_BETA_HIDE_SOCIAL) so the onboarding tour shouldn't sell
+// new users on a feature they have no way to reach.
+const PAGES: TourPage[] = ALL_PAGES.filter(p => !(MUSE_CLOSED_BETA_HIDE_SOCIAL && p.id === "community"));
 
 function randSpark() {
   const angle = Math.random() * Math.PI * 2;

@@ -16,6 +16,7 @@ import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, QUOTA_MSG }
 import { getAccessToken, authFetch } from "./lib/api";
 import { uid } from "./lib/uid";
 import { getProfileShareUrl, getPostShareUrl, getMuseUrl } from "@/lib/urls";
+import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
 import DisclosureModal from "./components/DisclosureModal";
 import AgeVerificationModal from "./components/AgeVerificationModal";
 import { useChatState } from "./hooks/useChatState";
@@ -546,7 +547,13 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (d.discoveryPrefs) setDiscoveryPrefs(d.discoveryPrefs);
       if (d.chatImages) setChatImages(d.chatImages);
       if (d.chatTarget) setChatTarget(d.chatTarget);
-      const VALID_SCREENS = ["onboard","discover","connections","matches","chat","briefs","community","sessions","network","portfolio","moments","profile","settings","subscription","codex"];
+      // "moments" was BTS's old screen key before it was renamed to "bts" — kept
+      // dropping it and never adding "bts" meant reloading mid-BTS silently
+      // bounced you back to Discover. "fdstudio" was added later and had the
+      // same gap. "community" is gated behind the closed-beta flag so a stale
+      // persisted value from before the flag existed can't restore straight
+      // into a screen the menu no longer offers a way to reach.
+      const VALID_SCREENS = ["onboard","discover","connections","matches","chat","briefs","sessions","network","portfolio","bts","fdstudio","profile","settings","subscription","codex", ...(MUSE_CLOSED_BETA_HIDE_SOCIAL ? [] : ["community"])];
 
   // Check for OAuth callback on mount
   React.useEffect(() => {
