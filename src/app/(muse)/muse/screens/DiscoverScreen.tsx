@@ -252,7 +252,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
     <div className={"screen-el" + (screen === "discover" ? " active" : "")}>
       <div className="discover-wrap">
         <div className="hdr">
-          <div className="logo-link" style={{ fontSize: 32, WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }}>Discover</div>
+          <div className="logo-link" style={{ fontSize: 32, WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "static", left: "auto", top: "auto", transform: "none" }}>Discover</div>
           <div style={{ flex: 1 }} />
           <div style={{ display: "flex", gap: 4 }}>
             {!discoverSearchOpen ? (

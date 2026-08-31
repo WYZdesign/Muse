@@ -569,8 +569,8 @@ img{background-color:#1a0a2e}
 .profile-avatar-wrap{position:relative;margin-bottom:16px}
 .profile-avatar{width:100px;height:100px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-origin:border-box;background-clip:padding-box,border-box;background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(135deg,var(--gold),var(--amber),var(--pink),var(--lavender));background-size:100% 100%,200% 200%;animation:avatarGrad 4s ease-in-out infinite}
 @keyframes avatarGrad{0%,100%{background-position:0% 0%,0% 50%}50%{background-position:0% 0%,100% 50%}}
-.profile-ring{position:absolute;inset:0;margin:auto;width:112px;height:112px;border-radius:50%;border:2px solid transparent;border-top-color:var(--gold);border-right-color:var(--amber);border-bottom-color:var(--pink);border-left-color:var(--lavender);animation:ringSpin 4s linear infinite;left:50%;top:50%;transform:translate(-50%,-50%)}
-@keyframes ringSpin{to{transform:rotate(360deg)}}
+.profile-ring{position:absolute;top:50%;left:50%;width:112px;height:112px;border-radius:50%;border:2px solid transparent;border-top-color:var(--gold);border-right-color:var(--amber);border-bottom-color:var(--pink);border-left-color:var(--lavender);transform:translate(-50%,-50%);animation:ringSpin 4s linear infinite}
+@keyframes ringSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
 
 /* ═══ SWIRL RING VARIANTS ═══ */
 .swirl-ring-1{animation-duration:5s;border-top-color:#FFD700;border-right-color:#FF8C00;border-bottom-color:#FF69B4;border-left-color:#9B59B6}
