@@ -185,16 +185,13 @@ export const BtsScreen = memo(function BtsScreen({
           <FiArrowLeft size={20} />
         </button>
 
-        <div
+          <div
           style={{
             fontSize: 28,
             fontWeight: 900,
             letterSpacing: 2,
-            backgroundImage: "linear-gradient(90deg, #FF1493 0%, #FF69B4 50%, #FFD700 100%)",
-            backgroundClip: "text",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            color: "transparent",
+            color: "#fff",
+            textShadow: "0 2px 10px rgba(0,0,0,0.35)",
           }}
         >
           BTS

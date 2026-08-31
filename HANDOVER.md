@@ -144,8 +144,8 @@ ls V:\wyzdesign\app\fd\[studio]
 ```
 
 ## Open question for Torreé (next session)
-- FD Studio: lightweight outbound link OR in-app studio cards mirroring `/fd` layout?
 - Title vertical alignment: is "10% offset to match button height" literal (transform: translateY(-10%)) or just "stop floating in the middle of the header" (position: static, align-self: center)?
+- Gradient reference table may be stale — only spot-checked pages. BTS header gradient code (`#FF1493→#FF69B4→#FFD700`) already drifted from what the table says (`#FF4500,#FFA500,#FFFF00...`). Treat the table as rough guide, not ground truth.
 
 ## Session 56 commits
 ```
@@ -156,4 +156,41 @@ cb4cf52 fix: Discover title left-aligned; fix profile ring animation
 76c78b1 feat(session-55): closed-beta scope, split-fee marketplace pricing
 6a78bda fix: card-hero-type now Playfair Display italic, yellow (#FFD700) with gold glow
 65147e4 feat: apply all 17 patches from Sessions 52-54
+```
+
+## Session 57 (Claude — audit of Session 56, live verification, one real fix)
+
+**No git push access** — patch delivered via SendUserFile to `git am`. Synced against `origin/main` at `329a169`.
+
+### CORRECTION — a Session 56 claim is false, do not act on it
+- The "DEFERRED / NOT STARTED" list says: *"NSFW Stripe Identity integration backend — UI gates it but the actual `stripe.identity.*` flow is not wired."* **Incorrect.** Read `src/app/api/muse/verification/route.ts` in full (137 lines): complete working integration with real `stripe.identity.verificationSessions.create` / `.retrieve` calls, DB persistence, polling, age-gate session action, quest/XP reward on verification, and email notification. Nothing to build here. Remove this from any future deferred list.
+
+### Verified live in production (Chrome, logged in) — no code changes needed
+- **Closed-beta flag working**: Menu shows only Sessions / Network / Profile / Settings / Muse Pro — no Community entry. Network shows only "Professionals" tab — no Forum. Confirms `MUSE_CLOSED_BETA_HIDE_SOCIAL`.
+- **FD Studio in-app widget working**: Sessions → Browse → FD Photo Studio card → renders all 6 buildings (Main, Art, Hill, LA Lofts, Olympic, Yukon) with studio counts, hours, phone numbers, expandable rows, and Client Guide. "Confirm FD Studio page exists and works": **confirmed working.**
+- **Network filter bubbles**: single horizontal-scroll row (Experience / Sort / Rate / Skills / Looking / Hiring) scrolls correctly, no wrap or overflow. No fix needed.
+- **MusesScreen / NetworkScreen redundant style props**: ran duplicate-key scan — no real prop collisions. Two hits were regex false-positives matching `color:` inside nested filter-option arrays. Not treated as real issues.
+
+### Real bug found and fixed: BTS title's middle letter was invisible
+- **File**: `src/app/(muse)/muse/screens/BtsScreen.tsx`
+- Screenshotted live BTS screen: header reads "B S" — the "T" is gone. Root cause: title uses `background-clip:text` with `linear-gradient(90deg, #FF1493, #FF69B4, #FFD700)` and sits directly on a header whose background is `linear-gradient(135deg, #FF1493, #FF69B4, #FFD700)` — same three colors, close enough in angle that at the "T"'s x-position the text-fill color and the background underneath are nearly identical, so the letter blends into the header.
+- **Fix**: title is now solid white (`#fff`) with a soft drop-shadow (`0 2px 10px rgba(0,0,0,.35)`), matching the "Time to Post" headline directly below it. The colorful gradient *header* is untouched — this fixes only the unreadable letter, not the intentional pink-to-gold banner design.
+
+### Still open (not audited this session)
+- Title vertical alignment / height parity with header back-buttons ("10% offset") across all 13 pages — only spot-checked Discover, Muses, BTS, Sessions, Network and none looked obviously misaligned, but not a pixel-level pass.
+- Full gradient-matching audit against the reference table — table itself may be stale (BTS gradient code already drifted from table). Treat table as rough guide until re-verified against actual deployed code.
+
+### Verification pipeline
+`npx tsc --noEmit` clean. `npm run build` clean (46 routes). `npm run test` → 134/134 passing, 13/13 files.
+
+## Session 57 commits
+```
+(Single patch via SendUserFile — git am against 329a169)
+329a169 feat: Sessions Browse tab shows FD Photo Studio studios in-app (FdStudioWidget)
+e8e3a3a docs: full HANDOVER.md for session 56 continuity
+e279597 Add FD Photo Studio page + client guide
+3eb579d feat: title gradients match nav icons
+9a51b8d fix: Muses cards open chat on tap; Network filter cleanup
+cb4cf52 fix: Discover title aligned; profile ring animation
+76c78b1 feat(session-55): closed-beta, split-fee pricing
 ```
