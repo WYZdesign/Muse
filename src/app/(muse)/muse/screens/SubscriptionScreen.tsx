@@ -103,7 +103,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
             </div>
           )}
           {(TIERS_BY_SIDE[viewerSideOf(currentUser) as "creative" | "industry"] || TIERS).map(tier => {
-            const tierKey = tier.name.toLowerCase().replace(" ", "_");
+            const tierKey = tier.name.toLowerCase().replace(/ /g, "_");
             const isCurrent = tierKey === userTier || (tierKey === "muse_pro" && currentUser.tier === "muse_pro");
             return (
               <div key={tier.name} className={"tier-card" + (isCurrent ? " current" : "")} style={{ position: "relative" }}>

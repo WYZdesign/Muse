@@ -6,6 +6,7 @@ import type { Screen, Match } from "../components/types";
 import StreakWidget from "../components/StreakWidget";
 import { COMMUNITIES, EVENTS, SESSIONS, PROFESSIONALS, FORUM_POSTS } from "../components/types";
 import { getCommunityShareUrl, getEventShareUrl, getProShareUrlWithRef, getMuseUrl } from "@/lib/urls";
+import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
 
 export interface MenuModalProps {
   showHamburger: boolean;
@@ -192,9 +193,15 @@ export const MenuModal = memo(function MenuModal({
         {!hamburgerScreen ? (
           <>
             {[
-              { key: "community", icon: <FiUsers size={20} />, label: "Community", desc: "Channels, groups & events", grad: "linear-gradient(135deg,#FF8A80,#FF4757,#FFD700)" },
+              // Session 55 closed-beta scope: Community (channels/groups/events) is
+              // hidden behind MUSE_CLOSED_BETA_HIDE_SOCIAL — built, tested, kept out
+              // of the nav until the core discover/book loop has proven out with the
+              // beta cohort. Network's "Professionals" search stays visible (real
+              // discovery value even pre-beta); its Forum sub-tab is separately
+              // suppressed below in NetworkScreen.
+              ...(MUSE_CLOSED_BETA_HIDE_SOCIAL ? [] : [{ key: "community", icon: <FiUsers size={20} />, label: "Community", desc: "Channels, groups & events", grad: "linear-gradient(135deg,#FF8A80,#FF4757,#FFD700)" }]),
               { key: "sessions", icon: <FiCalendar size={20} />, label: "Sessions", desc: "Bookings & one-on-ones", grad: "linear-gradient(135deg,#E1BEE7,#9C27B0,#FF4081)" },
-              { key: "network", icon: <FiShare2 size={20} />, label: "Network", desc: "Professionals & forum", grad: "linear-gradient(135deg,#B3E5FC,#64B5F6,#00BCD4)" },
+              { key: "network", icon: <FiShare2 size={20} />, label: "Network", desc: MUSE_CLOSED_BETA_HIDE_SOCIAL ? "Find professionals" : "Professionals & forum", grad: "linear-gradient(135deg,#B3E5FC,#64B5F6,#00BCD4)" },
               { key: "profile", icon: <FiUser size={20} />, label: "Profile", desc: "Edit profile & premium", grad: "linear-gradient(135deg,#FFD700,#FFB5C2,#B388FF)" },
               { key: "settings", icon: <FiSettings size={20} />, label: "Settings", desc: "Preferences, safety & help", grad: "linear-gradient(135deg,#CE93D8,#B388FF,#A5D6A7)" },
             ].map(item => {

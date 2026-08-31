@@ -231,7 +231,19 @@ export const SettingsScreen = memo(function SettingsScreen({
           <div className="settings-group">
             <div className="settings-group-title">Discovery</div>
             {[
-              { icon: <FiEye size={18} />, label: "NSFW Content", desc: myGeo?.requiresIdVerification ? "ID verification required in your state" : "Show or hide 18+ content", action: () => { if (!showNsfw) { if (myGeo?.requiresIdVerification) { setShowAgeVerification(true); } else { setShowAgeGate(true); setPendingNsfw(true); } } else { setShowNsfw(false); } } },
+              {
+                // Session 55 content policy: boudoir/bodypaint content is gated
+                // behind real Stripe Identity verification everywhere, not just
+                // in the states that legally require it — the self-attestation
+                // "age gate" path (an unverified click-through) used to be the
+                // default outside those states. This is deliberately stricter
+                // than the legal minimum: the goal is content that never appears
+                // by default and is only reachable by a verified adult who
+                // explicitly opted in, which is the standard that keeps this
+                // clear of App Store review issues (see HANDOVER.md Session 55 —
+                // the 500px precedent is exactly this failure mode).
+                icon: <FiEye size={18} />, label: "NSFW Content", desc: "Requires identity verification — 18+ only", action: () => { if (!showNsfw) { setShowAgeVerification(true); } else { setShowNsfw(false); } }
+              },
               { icon: <FiMoreHorizontal size={18} />, label: "Blocked Users", desc: "Manage blocked profiles", action: () => setShowBlockedUsers(!showBlockedUsers) },
             ].map(item => (
               <div key={item.label} className="settings-item" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); item.action(); } }} onClick={item.action}>

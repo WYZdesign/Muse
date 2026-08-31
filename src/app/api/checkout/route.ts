@@ -7,9 +7,22 @@ export const runtime = "nodejs";
 
 const PRICE_MAP: Record<string, string> = {
   muse_pro: "price_muse_pro_monthly",
+  muse_pro_annual: "price_muse_pro_annual",
+  muse_studio: "price_muse_studio_monthly",
   // Legacy tiers kept for backward-compat redirects
   muse: "price_muse_pro_monthly",
   sovereign: "price_muse_pro_monthly",
+};
+
+// Dev/test-mode fallback pricing (only used when STRIPE_SECRET_KEY isn't a live key) —
+// must match PRICE_MAP's keys so a test-mode checkout of any plan creates the right product/price
+// instead of always defaulting to the original $9.99/mo Muse Pro price regardless of which plan was requested.
+const DEV_FALLBACK_PRICING: Record<string, { name: string; amount: number; interval: "month" | "year" }> = {
+  muse_pro: { name: "Muse Pro", amount: 999, interval: "month" },
+  muse_pro_annual: { name: "Muse Pro Annual", amount: 7999, interval: "year" },
+  muse_studio: { name: "Muse Studio", amount: 2999, interval: "month" },
+  muse: { name: "Muse Pro", amount: 999, interval: "month" },
+  sovereign: { name: "Muse Pro", amount: 999, interval: "month" },
 };
 
 export async function POST(req: NextRequest) {
@@ -96,19 +109,23 @@ export async function POST(req: NextRequest) {
         console.error(`[checkout] price lookup key "${PRICE_MAP[plan]}" not found in LIVE mode; refusing to auto-create.`);
         return NextResponse.json({ error: "Subscription price not configured. Please contact support." }, { status: 500 });
       }
-      // Test/dev only: create a product + recurring price on the fly.
+      // Test/dev only: create a product + recurring price on the fly, using
+// the fallback config for the ACTUAL plan requested — this used to be
+// hardcoded to always mint "Muse Pro" at $9.99/month regardless of
+// which plan the client asked for, so testing muse_pro_annual or
+// muse_studio in dev silently checked out the wrong product/price.
+      const fallback = DEV_FALLBACK_PRICING[plan] || DEV_FALLBACK_PRICING.muse_pro;
       const product = await stripe.products.create({
-        name: "Muse Pro",
-        metadata: { plan: "muse_pro" },
+        name: fallback.name,
+        metadata: { plan },
       });
-      const amount = 999; // $9.99/month
       const price = await stripe.prices.create({
         product: product.id,
-        unit_amount: amount,
+        unit_amount: fallback.amount,
         currency: "usd",
-        recurring: { interval: "month" },
-        lookup_key: "price_muse_pro_monthly",
-        metadata: { plan: "muse_pro" },
+        recurring: { interval: fallback.interval },
+        lookup_key: PRICE_MAP[plan],
+        metadata: { plan },
       });
       priceId = price.id;
     }

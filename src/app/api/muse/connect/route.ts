@@ -2,16 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { parseRateToCents } from "@/lib/money";
+import { MUSE_HOST_COMMISSION_RATE, MUSE_BUYER_SERVICE_FEE_RATE } from "@/lib/config";
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
 
-const COMMISSION_RATE = 0.05; // 5% marketplace commission
-
 /**
- * Muse Stripe Connect API — marketplace payments with 5% commission.
- * POST /api/muse/connect
- *   { action: "create-account" | "create-payment" | "account-status" | "transfer" }
+ * Muse Stripe Connect API — marketplace payments with a 15% blended platform
+ * take, split so neither side eats the whole fee (Session 55 pricing):
+ *   - MUSE_HOST_COMMISSION_RATE (7%) is deducted from the host's payout.
+ *   - MUSE_BUYER_SERVICE_FEE_RATE (8%) is added on top of the session's rate
+ *     and charged to the booker as a separate, itemized "Muse service fee"
+ *     line — visible, not buried in the base price.
+ * Both amounts land in `application_fee_amount` (what stays with the
+ * platform); the host is transferred amount - hostCommission via Stripe
+ * Connect's destination-charge flow. `muse_booking_payments.amount_cents`
+ * stays "what the payer sent" (base rate + buyer fee) to match how
+ * PaymentHistory.tsx already displays "totalSent" to the booker.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -155,22 +162,28 @@ export async function POST(req: NextRequest) {
       const payeeAccount = await stripe.accounts.retrieve(payee.stripe_connect_id);
       if (!payeeAccount.charges_enabled) return NextResponse.json({ error: "Payee account not fully onboarded" }, { status: 400 });
 
-      const commission = Math.round(amount * COMMISSION_RATE);
-      const netAmount = amount - commission;
+      const hostCommission = Math.round(amount * MUSE_HOST_COMMISSION_RATE);
+      const buyerFee = Math.round(amount * MUSE_BUYER_SERVICE_FEE_RATE);
+      const netAmount = amount - hostCommission;
+      const totalCharge = amount + buyerFee;
+      const platformTake = hostCommission + buyerFee;
 
       // Create PaymentIntent with destination charge
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount,
+        amount: totalCharge,
         currency: "usd",
         capture_method: "manual",
-        application_fee_amount: commission,
+        application_fee_amount: platformTake,
         transfer_data: { destination: payee.stripe_connect_id },
         description: description || `Muse booking payment to ${payee.name}`,
         metadata: {
           muse_payer_id: profile.id,
           muse_payee_id: payeeId,
           muse_booking_id: bookingId || "",
-          commission_cents: String(commission),
+          base_amount_cents: String(amount),
+          host_commission_cents: String(hostCommission),
+          buyer_fee_cents: String(buyerFee),
+          commission_cents: String(platformTake),
           net_cents: String(netAmount),
         },
       });
@@ -181,8 +194,8 @@ export async function POST(req: NextRequest) {
         payer_id: profile.id,
         payee_id: payeeId,
         stripe_payment_intent: paymentIntent.id,
-        amount_cents: amount,
-        commission_cents: commission,
+        amount_cents: totalCharge,
+        commission_cents: platformTake,
         net_amount_cents: netAmount,
         status: "pending",
       });
@@ -190,10 +203,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
-        amountCents: amount,
-        commissionCents: commission,
+        amountCents: totalCharge,
+        baseAmountCents: amount,
+        buyerFeeCents: buyerFee,
+        commissionCents: platformTake,
         netCents: netAmount,
-        commissionPct: COMMISSION_RATE * 100,
+        commissionPct: MUSE_HOST_COMMISSION_RATE * 100,
+        buyerFeePct: MUSE_BUYER_SERVICE_FEE_RATE * 100,
       });
     }
 
@@ -247,21 +263,31 @@ export async function POST(req: NextRequest) {
       const payeeAccount = await stripe.accounts.retrieve(payee.stripe_connect_id);
       if (!payeeAccount.charges_enabled) return NextResponse.json({ error: "Payee account not fully onboarded" }, { status: 400 });
 
-      const commission = Math.round(amount * COMMISSION_RATE);
-      const netAmount = amount - commission;
+      const hostCommission = Math.round(amount * MUSE_HOST_COMMISSION_RATE);
+      const buyerFee = Math.round(amount * MUSE_BUYER_SERVICE_FEE_RATE);
+      const netAmount = amount - hostCommission;
+      const totalCharge = amount + buyerFee;
+      const platformTake = hostCommission + buyerFee;
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
-        line_items: [{
-          price_data: { currency: "usd", unit_amount: amount, product_data: { name: description || sessionRec.title || `Muse booking with ${payee.name}` } },
-          quantity: 1,
-        }],
+        line_items: [
+          {
+            price_data: { currency: "usd", unit_amount: amount, product_data: { name: description || sessionRec.title || `Muse booking with ${payee.name}` } },
+            quantity: 1,
+          },
+          {
+            price_data: { currency: "usd", unit_amount: buyerFee, product_data: { name: "Muse service fee" } },
+            quantity: 1,
+          },
+        ],
         payment_intent_data: {
           capture_method: "manual",
-          application_fee_amount: commission,
+          application_fee_amount: platformTake,
           transfer_data: { destination: payee.stripe_connect_id },
           metadata: {
             muse_payer_id: profile.id, muse_payee_id: payeeId, muse_booking_id: bookingId,
-            commission_cents: String(commission), net_cents: String(netAmount),
+            base_amount_cents: String(amount), host_commission_cents: String(hostCommission),
+            buyer_fee_cents: String(buyerFee), commission_cents: String(platformTake), net_cents: String(netAmount),
           },
         },
         success_url: `${req.nextUrl.origin}/muse?payment=success`,
@@ -274,11 +300,11 @@ export async function POST(req: NextRequest) {
       // constraint from sql/MUSE_BOOKING_PAYMENT_UNIQUE_20260819.sql.
       await sb.from("muse_booking_payments").upsert({
         booking_id: bookingId, payer_id: profile.id, payee_id: payeeId,
-        stripe_payment_intent: "", amount_cents: amount, commission_cents: commission,
+        stripe_payment_intent: "", amount_cents: totalCharge, commission_cents: platformTake,
         net_amount_cents: netAmount, status: "pending",
       }, { onConflict: "booking_id" });
 
-      return NextResponse.json({ url: session.url, amountCents: amount, commissionCents: commission });
+      return NextResponse.json({ url: session.url, amountCents: totalCharge, baseAmountCents: amount, buyerFeeCents: buyerFee, commissionCents: platformTake });
     }
 
     // ═══ ACCOUNT-STATUS: Check Connect account status ═══

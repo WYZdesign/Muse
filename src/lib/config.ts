@@ -74,3 +74,13 @@ export const PUSH_TTL_SECONDS = Number(process.env.PUSH_TTL_SECONDS) || 86400; /
 
 // Sync
 export const STATE_SYNC_INTERVAL_MS = Number(process.env.STATE_SYNC_INTERVAL_MS) || 30000;
+
+// Marketplace fees (booking take-rate)
+export const MUSE_HOST_COMMISSION_RATE = Number(process.env.MUSE_HOST_COMMISSION_RATE) || 0.07;
+export const MUSE_BUYER_SERVICE_FEE_RATE = Number(process.env.MUSE_BUYER_SERVICE_FEE_RATE) || 0.08;
+
+// Closed-beta scope
+export const MUSE_CLOSED_BETA_HIDE_SOCIAL = process.env.NEXT_PUBLIC_MUSE_CLOSED_BETA_HIDE_SOCIAL !== "false";
+
+// FD Photo Studio partnership
+export const FD_STUDIO_URL = "https://www.wyzdesign.com/fd?ref=muse_sessions";

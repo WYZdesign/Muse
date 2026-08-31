@@ -23,6 +23,7 @@ import type { Screen, Match } from "../components/types";
 import { PROFESSIONALS, FORUM_POSTS } from "../components/types";
 import { BADGE_COLORS } from "../components/badgeColors";
 import { viewerSide } from "@/lib/role";
+import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
 import Nav from "../components/Nav";
 
 export interface NetworkScreenProps {
@@ -116,7 +117,11 @@ export const NetworkScreen = memo(function NetworkScreen({
   openTab,
 }: NetworkScreenProps) {
   const [netTab, setNetTab] = useState<"pros" | "forum">("pros");
-  useEffect(() => { if (openTab) setNetTab(openTab); }, [openTab]);
+  // Session 55 closed beta: Forum is built but deferred, so ignore any
+  // deep-link/tutorial request to open it while the flag is on — otherwise
+  // a stale FeatureTour link etc. could land a user on a tab with no
+  // visible way back to it.
+  useEffect(() => { if (openTab && !(MUSE_CLOSED_BETA_HIDE_SOCIAL && openTab === "forum")) setNetTab(openTab); }, [openTab]);
   const [proDetail, setProDetail] = useState<any | null>(null);
   const [connectedIds, setConnectedIds] = useState<Set<number>>(new Set());
   const [connectLoading, setConnectLoading] = useState<number | null>(null);
@@ -373,7 +378,7 @@ export const NetworkScreen = memo(function NetworkScreen({
       </div>
 
       <div className="conn-tabs" style={{ padding: "0 16px" }}>
-        {(["pros", "forum"] as const).map((t) => (
+        {(MUSE_CLOSED_BETA_HIDE_SOCIAL ? (["pros"] as const) : (["pros", "forum"] as const)).map((t) => (
           <div
             key={t}
             role="tab"

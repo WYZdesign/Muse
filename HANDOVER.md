@@ -1183,3 +1183,26 @@ For each screen, verify at 375px and 1440px viewport:
 **Build status:** All sessions clean — `tsc --noEmit` exit 0, `next build` success, 127/127 vitest tests passing (12 files). Auto-deploys on Vercel push to `main`.
 
 **Performance audit (mobile):** All CSS animations run on GPU compositor (transform/opacity only). `will-change: transform` on swipe cards. `prefers-reduced-motion` already kills tour + card animations. FeatureTour returns null when closed (zero idle cost). Zero `console.log`, zero `innerHTML`/`dangerouslySetInnerHTML`, zero `eval()`. `React.memo` + `useCallback` in MatchCard. No changes needed.
+
+### Session 55 (Claude) — closed-beta scope, marketplace pricing, content policy hardening, FD Studio integration
+
+**Reconciliation note:** `git fetch` at the start of this session showed `origin/main` had advanced (`65147e4` "apply all 17 patches from Sessions 52-54" + `6a78bda`) since the last Session 54 patch was delivered — the origin-check 403 fix (the release-blocker flagged as URGENT in Session 54) is now live in `main`.
+
+This session picked up where the "make it real" business-planning conversation with Torreé left off — closed-beta scope, marketplace pricing, and the FD Studio integration all got implemented directly, not just discussed:
+
+| Fix | File | What changed |
+|-----|------|-------------|
+| Booking take-rate restructured to 15% blended | `connect/route.ts`, `lib/config.ts` | Was a flat 5% deducted only from the host's payout. Now `MUSE_HOST_COMMISSION_RATE` (7%, deducted from host payout) + `MUSE_BUYER_SERVICE_FEE_RATE` (8%, added on top and itemized as a separate "Muse service fee" line at checkout) — Airbnb-style split fee so neither side eats the whole 15%. Both `create-payment` and `create-booking-checkout` updated; `muse_booking_payments.amount_cents` now reflects total charged (base + buyer fee). Both rates are env-overridable without a code change. |
+| Payment History fee label fixed | `PaymentHistory.tsx` | Two places hardcoded "(5%)" — now computes the real % from `commission_cents / amount_cents` instead of a hardcoded string. Summary card now just says "Muse Fee". |
+| Subscription tiers expanded | `types.ts`, `checkout/route.ts` | Added "Muse Pro Annual" ($79.99/yr) and "Muse Studio" ($29.99/mo). `PRICE_MAP` extended with `price_muse_pro_annual` and `price_muse_studio_monthly` — these need real Stripe Price objects created in the Dashboard before purchasable in production. Dev/test-mode fallback pricing fixed to create the right product/price per plan. |
+| **Tier-key bug fix** | `SubscriptionScreen.tsx` | `tier.name.toLowerCase().replace(" ", "_")` only swapped the first space — broken for "Muse Pro Annual" (two spaces). Fixed with global regex. |
+| Closed-beta scope: Forum/Community/Events hidden | `MenuModal.tsx`, `NetworkScreen.tsx`, `lib/config.ts` | New `MUSE_CLOSED_BETA_HIDE_SOCIAL` flag (default on). Hides "Community" menu entry and "Forum" sub-tab; "Professionals" search and Sessions stay visible. Flip the flag to reveal everything post-beta. |
+| Content policy hardened: NSFW requires real ID verification | `SettingsScreen.tsx` | The NSFW toggle always requires real Stripe Identity verification, no exceptions — deliberately stricter than the legal floor (500px App Store precedent). |
+| FD Photo Studio featured integration | `SessionsScreen.tsx`, `lib/config.ts` | New "Need a space for your shoot?" card at the top of Sessions, linking out to `wyzdesign.com/fd?ref=muse_sessions` (tracked). Plain outbound link, not an in-house booking build. |
+
+**Deliberately deferred:** sponsored/ad placements, in-house studio-space marketplace (start with the FD Studio affiliate link; only build once that proves out).
+
+**Verification:** `tsc --noEmit` clean, `npm run build` success, 134/134 tests passing.
+
+**Also produced this session:** business plan and financial projections documents (Muse_Business_Plan.docx, Muse_Financial_Projections.xlsx) — saved to `_STATE/`.
+
