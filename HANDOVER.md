@@ -310,3 +310,39 @@ All screen title gradients match their nav icon counterparts (Nav.tsx `lavaGradi
 ### Verification
 - `tsc --noEmit` clean, `npm run build` clean, `npm run test` 134/134.
 - **Open items**: all resolved from HANDOVER.md pre-session list.
+
+## Session 61 (this Claude) — URGENT: Session 60's fix broke every booking payment in prod
+
+No push access, patch via SendUserFile. Synced clean against `origin/main` at `2ec6478`.
+
+**Read this whole entry before touching booking payments again — this is the second time in two sessions this exact code has shipped broken, and the second time "tsc/build/test all clean" did not mean "actually works."**
+
+### `capture_method: "automatic_delayed"` is not a valid value at the top level — production was broken
+
+Session 60's fix (commit `2ec6478`, "booking payments no longer silently expire...") set `capture_method: "automatic_delayed"` on both `stripe.paymentIntents.create()` and the Checkout Session's `payment_intent_data` in `connect/route.ts`. I checked this against Stripe's live API docs (`docs.stripe.com/api/payment_intents/create`) and the installed `stripe` SDK's own bundled type definitions (`node_modules/stripe`, v22.4.0, `PaymentIntentCreateParams.CaptureMethod`): the **top-level** `capture_method` field only accepts `'automatic' | 'automatic_async' | 'manual'`. `"automatic_delayed"` isn't one of them. Every real call Stripe receives with this parameter gets rejected with a 400 `invalid_request_error` — meaning **both `create-payment` and `create-booking-checkout` were completely unusable**, not just at-risk for long-lead bookings like before. This was live on `origin/main` (and therefore in production, per this repo's deploy-on-push setup) since Session 60 landed.
+
+**Why did `tsc --noEmit` say clean?** The Stripe SDK's `CaptureMethod` type is `'automatic' | 'automatic_async' | 'manual' | OtherString`, where `OtherString` is a `string & {}` escape hatch Stripe ships specifically so the SDK doesn't break when Stripe adds new API values before a type update — it accepts *any* string, silently. `npm run build` and `npm run test` don't call the real Stripe API either (test-mode dummy keys), so nothing in the standard verification pipeline could have caught this. **The lesson: a parameter value passed to any external API needs checking against that API's actual docs, not just tsc/build/test — those only prove the code compiles and the app's own logic works, not that a third-party service will accept what you're sending it.** I'd flag this same way if I'd written the original bug myself.
+
+To be fair to Session 60: `"automatic_delayed"` **is** a real, documented Stripe feature (`docs.stripe.com/payments/place-a-hold-on-a-payment-method#capture-payment-before-authorization-expires`) that does exactly what was intended — Stripe captures ~6h before the authorization expires, matching the commit message almost verbatim. The bug was using it in the wrong place: it's set via `payment_method_options.card.capture_method`, not the top-level `capture_method` field. It's also currently in **Private Preview** — Stripe has to grant your account early access before it'll work even in the right place, and I have no way to check from here whether this Stripe account has that.
+
+### Fix (this session)
+- Reverted both call sites in `connect/route.ts` to `capture_method: "manual"` — the known-working config both sessions started from.
+- Added `src/app/api/cron/capture-bookings/route.ts`, registered in `vercel.json` (every 6h): finds any booking payment authorized more than 4 days ago (safe margin inside even the shortest 4d18h card authorization window) and proactively captures it via `stripe.paymentIntents.capture()`. This gets you the exact same real-world guarantee Session 60 wanted — a long-lead booking's hold gets captured before it can expire — using only generally-available API surface, no Private Preview dependency. Normal bookings are unaffected: `complete-booking` still captures right after the session, same as always; this cron is a pure safety net for the case that started this whole thread.
+- **If/when this Stripe account gets Private Preview access to native `automatic_delayed`**, the cleaner fix is to set `payment_method_options: { card: { capture_method: "automatic_delayed" } }` (leaving top-level `capture_method` alone) and then this cron becomes redundant — but don't make that switch without confirming the account actually has access, since the failure mode looks identical to this bug (valid-looking parameter, rejected at the API).
+
+### Second finding while tracing this, unverified — needs someone with DB access to check
+Every schema file in `sql/` that defines `muse_booking_payments` constrains `status` to `('pending', 'succeeded', 'failed', 'refunded')` — no `'held'`. But `webhooks/stripe/route.ts`'s `checkout.session.completed` handler writes `status: "held"` on this table (and in the same UPDATE, records `stripe_payment_intent` — the *only* place that field gets set for the checkout-redirect booking flow, since `create-booking-checkout` itself inserts it empty). That Supabase call's result is never checked for `.error`. If the live table's constraint matches every file in this repo (I can't confirm — no DB access from here), that UPDATE has been silently failing on **every single booking made through the checkout-redirect flow**, meaning `stripe_payment_intent` never got recorded for those, meaning `complete-booking` had nothing to capture and those bookings could never complete — a third bug in the same feature, potentially predating both this session and Session 60.
+
+I added `sql/MUSE_BOOKING_PAYMENT_HELD_STATUS_20260831.sql` — it explains exactly how to check whether this is real (one query against `pg_constraint`) before running it, and additively widens the constraint if so. **Someone with Supabase dashboard access needs to run that check** — I can't verify this one myself, unlike the capture_method bug which I confirmed with certainty against Stripe's actual docs.
+
+### Verification
+`tsc --noEmit` clean, `npm run build` clean (48 routes now, `capture-bookings` included), `npm run test` 134/134. Single commit.
+
+**wyzmind / whoever picks this up**: booking payments are the one feature area that's now broken twice in two sessions on two different subtle issues. Before the next change here, actually exercise it against Stripe test mode with a real test secret key (not the dummy one from the verification pipeline) if at all possible — that's the only thing that would have caught either bug before it shipped.
+
+## Session 61 commits
+```
+(pending — git am against 2ec6478)
+2ec6478 fix: booking payments — capture_method 'automatic_delayed' (BROKEN, see Session 61); docs: Session 60 handover
+15c0ada fix: wire up orphaned Analytics screen — Insights button on Profile; docs: Session 59
+```
