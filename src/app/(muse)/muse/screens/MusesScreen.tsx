@@ -75,10 +75,14 @@ export const MusesScreen = memo(function MusesScreen({
             backgroundClip: "text",
             WebkitTextFillColor: "transparent",
             color: "transparent",
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)",
-            whiteSpace: "nowrap",
+            position: "relative",
+            fontFamily: "'Playfair Display',serif",
+            fontStyle: "italic",
+            fontWeight: 900,
+            padding: "0 0.18em",
+            display: "inline-block",
+            margin: 0,
+            animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite"
           }}
         >
           Muses
@@ -155,7 +159,7 @@ export const MusesScreen = memo(function MusesScreen({
             </div>
           )}
           {matches.filter(m => searchQuery === "" || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(m => (
-            <MatchCard key={m.id} m={m} expanded={expandedMatchId === String(m.id)} view={matchesView} actions={matchActions} />
+            <MatchCard key={m.id} m={m} view={matchesView} actions={matchActions} />
           ))}
         </div>
       )}
