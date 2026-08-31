@@ -4,6 +4,7 @@ import React, { memo, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
+import FdStudioWidget from "../components/FdStudioWidget";
 import type { Screen, Match } from "../components/types";
 import { SESSIONS } from "../components/types";
 
@@ -160,21 +161,6 @@ export const SessionsScreen = memo(function SessionsScreen({
         ))}
       </div>
 <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
-            {/* Session 55 — FD Photo Studio featured integration. The full
-                studio browser + client guide live on the dedicated FD Studio
-                page (screen "fdstudio"). This banner routes there; tracking
-                fires fd_studio_click so we can see how often it's tapped. */}
-            <button
-              onClick={() => { showScreen("fdstudio"); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-event", name: "fd_studio_click", props: { from: "sessions" } }) }).catch(() => {}); }}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: 14, borderRadius: 14, marginBottom: 14, textDecoration: "none", background: "linear-gradient(135deg, rgba(233,30,99,0.12), rgba(156,39,176,0.12))", border: "1px solid rgba(233,30,99,0.25)", width: "100%", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}
-            >
-              <div style={{ fontSize: 26 }}>📸</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)" }}>Need a space for your shoot?</div>
-                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Book FD Photo Studio — 34 LA studios, live pricing & client guide</div>
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#F48FB1" }}>Book →</div>
-            </button>
             {sessTab === "sessions" && (
               <>
                 <div style={{ margin: "4px 0 10px" }}>
@@ -225,6 +211,8 @@ export const SessionsScreen = memo(function SessionsScreen({
               </div>
             ))}
             <button className="btn btn-gold" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, marginTop: 6 }} onClick={() => setShowCreate(true)}>+ List a Session</button>
+            <div style={{ height: 1, margin: "20px 0 4px", background: "linear-gradient(90deg, transparent, rgba(233,30,99,0.4), transparent)" }} />
+            <FdStudioWidget apiFetch={apiFetch} />
           </>
         )}
         {sessTab === "bookings" && (
