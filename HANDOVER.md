@@ -244,11 +244,25 @@ Commit `329a169` changed the FD flow from "navigate to separate `FdStudioScreen`
 ### Still open
 - Title vertical alignment / height parity across all 13 pages — only spot-checked
 - Gradient reference table may be stale beyond BTS drift
-- **Payment-capture-expiry** (Session 58) still the highest priority open item
+- **Payment-capture-expiry** (Session 58) ~~still the highest priority open item~~ **FIXED this session.**
 
 ## Session 59 commits
 ```
-(pending — patch via SendUserFile, git am against a1ce9ab)
 a1ce9ab fix: closed-beta scope leaks in screen-restore + onboarding tour; docs
 79cbaf7 fix: BTS title solid white with soft shadow; docs: Session 57 handover
+```
+
+## Session 60 (wyzmind — payment capture expiry fix)
+
+### Fixed: Booking payments no longer silently expire on long-lead bookings
+- **File**: `src/app/api/muse/connect/route.ts`
+- **Root cause**: `capture_method: "manual"` on PaymentIntents — Stripe auto-cancels uncaptured manual-capture card PaymentIntents after 7 days. Any booking made more than ~7 days before the shoot date had its authorization silently expire before `complete-booking` ever ran, causing "Payment capture failed" on what should've been a routine booking.
+- **Fix**: Changed both instances (lines ~175 and ~284) from `capture_method: "manual"` to `capture_method: "automatic_delayed"`. Stripe now auto-captures ~6 hours before the auth window expires. The existing `complete-booking` action already handles `status === "succeeded"` gracefully (skips capture, proceeds to mark complete).
+- **Why this is safe**: `complete-booking` at route.ts:1221 checks `payment?.status === "succeeded"` first — if already captured by Stripe's auto-delayed, it skips the capture call and marks the booking complete. No behavior change for same-day or short-lead bookings (auth expires in 7 days anyway, auto-delayed captures well before that).
+- **Verification**: `tsc --noEmit` clean, `npm run build` clean, `npm run test` 134/134.
+
+## Session 60 commits
+```
+(pending — git am against 15c0ada)
+15c0ada fix: wire up orphaned Analytics screen — Insights button on Profile; docs: Session 59
 ```

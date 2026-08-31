@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: totalCharge,
         currency: "usd",
-        capture_method: "manual",
+        capture_method: "automatic_delayed",
         application_fee_amount: platformTake,
         transfer_data: { destination: payee.stripe_connect_id },
         description: description || `Muse booking payment to ${payee.name}`,
@@ -281,7 +281,7 @@ export async function POST(req: NextRequest) {
           },
         ],
         payment_intent_data: {
-          capture_method: "manual",
+          capture_method: "automatic_delayed",
           application_fee_amount: platformTake,
           transfer_data: { destination: payee.stripe_connect_id },
           metadata: {
