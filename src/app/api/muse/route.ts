@@ -361,6 +361,35 @@ ACTIONS["like-feed-post"] = async ({ sb, profile, rest, ip }) => {
   return NextResponse.json({ success: true, likes: newLikes });
 };
 
+ACTIONS["feed-comment"] = async ({ sb, profile, rest, ip }) => {
+  // Feed comments were previously (incorrectly) posted via ACTIONS["forum"]
+  // (type:"reply"), which inserts into muse_forum_replies keyed to
+  // muse_forum_posts — a real feed post's id would fail that table's FK
+  // constraint. This is the correct, dedicated action, inserting into
+  // muse_feed_comments (which references muse_feed_posts) instead.
+  if (!await checkRate(ip, "feed-comment", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { postId, text } = rest;
+  if (!postId) return NextResponse.json({ error: "postId required" }, { status: 400 });
+  const cleanText = sanitizeText(String(text || ""), 2000);
+  if (!cleanText) return NextResponse.json({ error: "text required" }, { status: 400 });
+  const commentScreen = screenText(cleanText);
+  if (commentScreen.block) {
+    await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "feed_comment_blocked", details: { categories: commentScreen.categories } });
+    return NextResponse.json({ error: "Reply blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
+  }
+  // Demo/locally-created-only posts (numeric id, or not a real DB UUID) have no row to comment against.
+  if (typeof postId === "number" || !UUID_RE.test(String(postId))) return NextResponse.json({ success: true, demo: true });
+  const { error: insErr } = await sb.from("muse_feed_comments").insert({ post_id: postId, author_id: profile.id, text: cleanText });
+  if (insErr) return safeServerError(insErr, "db op");
+  // No dedicated RPC for a comments counter (atomic_like_count is hardcoded
+  // to the `likes` column) — plain read-modify-write, same fallback shape
+  // already used by like-feed-post when its RPC path is unavailable.
+  const { data: feedPost } = await sb.from("muse_feed_posts").select("comments").eq("id", postId).maybeSingle();
+  const newComments = (feedPost?.comments || 0) + 1;
+  await sb.from("muse_feed_posts").update({ comments: newComments }).eq("id", postId);
+  return NextResponse.json({ success: true, comments: newComments });
+};
+
 ACTIONS["create-moment"] = async ({ sb, profile, rest, ip }) => {
   if (!await checkRate(ip, "create-moment", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { text, img } = rest;
@@ -2018,7 +2047,10 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "feed") {
-      const { data } = await sb.from("muse_feed_posts").select("*, author_id(id, name, avatar)").order("created_at", { ascending: false }).limit(50);
+      // last_seen_at joined so the client can render an online indicator on
+      // each post's author, same presence signal already used for matches
+      // (see useDiscoveryData.ts's `online` computation).
+      const { data } = await sb.from("muse_feed_posts").select("*, author_id(id, name, avatar, last_seen_at)").order("created_at", { ascending: false }).limit(50);
       return NextResponse.json({ posts: data || [] });
     }
 

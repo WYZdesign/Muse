@@ -9,6 +9,7 @@ import { CITY_GEO } from "../components/types";
 import { distanceMiles } from "@/app/muse-realtime";
 import { PORTRAIT_IMG } from "../components/photoOrientation";
 import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../hooks/useDeviceTilt";
+import { attachSpatialDepth } from "../hooks/useSpatialDepth";
 
 // ── Tag description maps (for expandable info popover) ──────────────────────
 const ZODIAC_FULL: Record<string, { icon: string; tag: string; desc: string }> = {
@@ -260,8 +261,23 @@ export const DiscoverScreen = memo(function DiscoverScreen({
     );
   }, [screen]);
 
+  // True depth-aware upgrade (real depth map, or in-browser segmentation
+  // fallback) layered on top of the flat tilt above — see useSpatialDepth.ts.
+  // Re-attaches per top-card change since (unlike createSpatialScene, which
+  // re-polls the DOM every frame) this builds its layers once per photo.
+  useEffect(() => {
+    if (screen !== "discover") return;
+    let detach: (() => void) | null = null;
+    const t = setTimeout(() => {
+      detach = attachSpatialDepth(".swipe-card.top-card", ".card-hero img");
+    }, 50);
+    return () => {
+      clearTimeout(t);
+      detach?.();
+    };
+  }, [screen, currentIdx]);
+
   return (
-    <div className={"screen-el" + (screen === "discover" ? " active" : "")}>
       <div className="discover-wrap">
         <div className="hdr">
           <div className="logo-link" style={{ fontSize: 32, backgroundImage: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "static", left: "auto", top: "auto", transform: "none", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Discover</div>
