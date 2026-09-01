@@ -3,23 +3,7 @@
 import React, { useState, useMemo, useEffect, memo } from "react";
 import { createPortal } from "react-dom";
 import { createSpatialScene } from "../hooks/useDeviceTilt";
-import {
-  FiArrowLeft,
-  FiShare2,
-  FiMapPin,
-  FiBriefcase,
-  FiStar,
-  FiFlag,
-  FiMessageCircle,
-  FiChevronDown,
-  FiChevronUp,
-  FiUserPlus,
-  FiSearch,
-  FiTarget,
-  FiZap,
-  FiArrowUpRight,
-  FiDollarSign,
-} from "react-icons/fi";
+import { FiArrowLeft, FiShare2, FiMapPin, FiBriefcase, FiStar, FiFlag, FiMessageCircle, FiChevronDown, FiChevronUp, FiUserPlus, FiSearch, FiTarget, FiZap, FiArrowUpRight, FiDollarSign } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import { PROFESSIONALS, FORUM_POSTS } from "../components/types";
 import { BADGE_COLORS } from "../components/badgeColors";
@@ -145,6 +129,16 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [proSearch, setProSearch] = useState("");
   const [forumSearch, setForumSearch] = useState("");
   const [forumSearchOpen, setForumSearchOpen] = useState(false);
+
+  // Depth map URLs for spatial effect — collect from current professionals list
+  const proImageUrls = useMemo(() => {
+    const urls: string[] = [];
+    [...liveProfessionals?.length ? liveProfessionals.map((p: any) => p.img).filter(Boolean) as string[] : []]
+      .slice(0, 50)
+      .forEach((u) => { if (!urls.includes(u)) urls.push(u); });
+    return urls;
+  }, [liveProfessionals]);
+
   const [proSkill, setProSkill] = useState<string[]>([]);
   const [proRateBand, setProRateBand] = useState<"all" | "tfp" | "50to100" | "100to150" | "gt150">("all");
   const [proLooking, setProLooking] = useState<string>("all");
