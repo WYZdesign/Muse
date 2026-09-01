@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, memo } from "react";
 import { createPortal } from "react-dom";
+import { createSpatialScene } from "../hooks/useDeviceTilt";
 import {
   FiArrowLeft,
   FiShare2,
@@ -122,6 +123,16 @@ export const NetworkScreen = memo(function NetworkScreen({
   // a stale FeatureTour link etc. could land a user on a tab with no
   // visible way back to it.
   useEffect(() => { if (openTab && !(MUSE_CLOSED_BETA_HIDE_SOCIAL && openTab === "forum")) setNetTab(openTab); }, [openTab]);
+
+  useEffect(() => {
+    if (screen !== "connections" && screen !== "community") return;
+    return createSpatialScene(
+      ".pro-card",
+      ".pro-card img",
+      ".pro-card .pro-card-content",
+      { imgShift: 6, imgRotate: 8, infoShift: 8, containerShift: 4, scale: 1.06 }
+    );
+  }, [screen]);
   const [proDetail, setProDetail] = useState<any | null>(null);
   const [connectedIds, setConnectedIds] = useState<Set<number>>(new Set());
   const [connectLoading, setConnectLoading] = useState<number | null>(null);
@@ -535,6 +546,7 @@ export const NetworkScreen = memo(function NetworkScreen({
             {proList.map((p) => (
             <div
               key={p.id}
+              className="pro-card"
               role="button"
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openProProfile(p); } }}

@@ -99,3 +99,53 @@ export function requestMotionPermission() {
     // to the user. This is ambient polish, not a feature anything depends on.
   });
 }
+
+/**
+ * Spatial Scenes — reusable parallax engine for any card with an image.
+ *
+ * Applies the Apple-style "spatial scene" effect: the background image shifts
+ * and rotates with device tilt, while an optional info/overlay layer shifts in
+ * the opposite direction to create a layered depth illusion.
+ *
+ * Returns a cleanup function (cancel the rAF loop). Call from a useEffect.
+ *
+ * @param cardSelector  CSS selector for the card container (e.g. ".conn-card")
+ * @param imgSelector   CSS selector for the image inside (e.g. "img")
+ * @param infoSelector  CSS selector for the foreground info layer (optional)
+ * @param opts           Tuning knobs — all optional, sensible defaults
+ */
+export function createSpatialScene(
+  cardSelector: string,
+  imgSelector: string,
+  infoSelector?: string,
+  opts?: { imgShift?: number; imgRotate?: number; infoShift?: number; containerShift?: number; scale?: number }
+): () => void {
+  if (typeof window === "undefined") return () => {};
+  ensureDeviceTiltActive();
+  const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (reduced) return () => {};
+
+  const { imgShift = 5, imgRotate = 6, infoShift = 6, containerShift = 3, scale = 1.04 } = opts || {};
+  let raf = 0;
+
+  const tick = () => {
+    const { x, y } = getDeviceTilt();
+    const card = document.querySelector(cardSelector) as HTMLElement | null;
+    const img = card?.querySelector(imgSelector) as HTMLElement | null;
+    const info = infoSelector ? card?.querySelector(infoSelector) as HTMLElement | null : null;
+
+    if (card) {
+      card.style.transform = `translate(${x * containerShift}px, ${y * containerShift}px)`;
+    }
+    if (img) {
+      img.style.transform = `perspective(800px) rotateY(${x * imgRotate}deg) rotateX(${-y * imgRotate}deg) translate(${-x * imgShift}px, ${-y * imgShift}px) scale(${scale})`;
+    }
+    if (info) {
+      info.style.transform = `translate(${-x * infoShift}px, ${-y * infoShift}px)`;
+      info.style.transition = "transform 0.1s ease-out";
+    }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  return () => cancelAnimationFrame(raf);
+}

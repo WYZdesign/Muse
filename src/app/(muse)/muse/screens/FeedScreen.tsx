@@ -3,6 +3,7 @@
 import React, { memo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { FiArrowLeft, FiImage, FiX, FiFlag, FiSend } from "react-icons/fi";
+import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import Nav from "../components/Nav";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
 import type { Screen } from "../components/types";
@@ -96,6 +97,24 @@ export const FeedScreen = memo(function FeedScreen({
 }: FeedScreenProps) {
   const [postReplies, setPostReplies] = useState<Record<number, any[]>>({});
   const [detailPostId, setDetailPostId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (screen !== "connections") return;
+    ensureDeviceTiltActive();
+    let raf = 0;
+    const tick = () => {
+      const { x, y } = getDeviceTilt();
+      const wraps = document.querySelectorAll<HTMLElement>(".feed-post-img-wrap");
+      wraps.forEach((wrap) => {
+        const img = wrap.querySelector(".feed-post-img") as HTMLElement | null;
+        wrap.style.transform = `translate(${x * 4}px, ${y * 4}px)`;
+        if (img) img.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translate(${-x * 5}px, ${-y * 5}px) scale(1.04)`;
+      });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [screen]);
 
   const openAuthorProfile = (p: { id?: any; name?: string; avatar?: string }, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -355,8 +374,8 @@ export const FeedScreen = memo(function FeedScreen({
                 </div>
                 <div style={{ padding: "10px 18px", fontSize: 14, color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-wrap", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPostDetail(post.id); } }} onClick={() => openPostDetail(post.id)}>{post.text}</div>
                 {post.img && (
-                  <div style={{ position: "relative" }}>
-                    <img loading="lazy" src={post.img} alt="Photo" style={{ width: "100%", maxHeight: 360, objectFit: "cover", display: "block" }} onError={handleImgError} />
+                  <div className="feed-post-img-wrap" style={{ position: "relative" }}>
+                    <img loading="lazy" src={post.img} alt="Photo" className="feed-post-img" style={{ width: "100%", maxHeight: 360, objectFit: "cover", display: "block" }} onError={handleImgError} />
                   </div>
                 )}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 18px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>

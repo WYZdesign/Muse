@@ -1,12 +1,13 @@
 "use client";
 
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect } from "react";
 import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
 import type { Screen } from "../components/types";
 import { COMMUNITIES, EVENTS } from "../components/types";
 import { getCommunityShareUrl, getEventShareUrl } from "@/lib/urls";
+import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 
 export interface CommunityScreenProps {
   screen: Screen;
@@ -56,6 +57,23 @@ export const CommunityScreen = memo(function CommunityScreen({
   const [detailType, setDetailType] = useState<"group" | "event" | null>(null);
   const [rsvpLoading, setRsvpLoading] = useState<number | null>(null);
   const [joinLoading, setJoinLoading] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (screen !== "community") return;
+    ensureDeviceTiltActive();
+    let raf = 0;
+    const tick = () => {
+      const { x, y } = getDeviceTilt();
+      document.querySelectorAll<HTMLElement>(".comm-banner").forEach((el) => {
+        const img = el.querySelector("img") as HTMLElement | null;
+        el.style.transform = `translate(${x * 4}px, ${y * 4}px)`;
+        if (img) img.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translate(${-x * 5}px, ${-y * 5}px) scale(1.04)`;
+      });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [screen]);
 
   const toggleJoin = async (c: any) => {
     const isJoined = joinedIds.has(c.id);
@@ -213,7 +231,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                 <img src=""> doesn't reliably fire onError, so guard explicitly and render an
                 initials-gradient banner instead of a blank hole. */}
             {c.img ? (
-              <img loading="lazy" src={c.img} alt={c.name} style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }} onError={handleImgError} />
+              <img loading="lazy" src={c.img} alt={c.name} className="comm-banner" style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }} onError={handleImgError} />
             ) : (
               <div style={{ width: "100%", height: 140, background: "linear-gradient(135deg, #2a1a3e 0%, #1a0a2e 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,215,0,0.6)", fontSize: "2em", fontWeight: 700 }}>
                 {(c.name || "").trim().charAt(0).toUpperCase()}
@@ -251,7 +269,7 @@ export const CommunityScreen = memo(function CommunityScreen({
         {commTab === "events" && events.map((ev: any) => (
           <div key={ev.id} className="conn-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openEventDetail(ev); } }} style={{ flexDirection: "column", alignItems: "center", marginBottom: 10, padding: 0, overflow: "hidden", borderRadius: 16, cursor: "pointer" }} onClick={() => openEventDetail(ev)}>
             {ev.img ? (
-              <img loading="lazy" src={ev.img} alt={ev.title} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} onError={handleImgError} />
+              <img loading="lazy" src={ev.img} alt={ev.title} className="comm-banner" style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} onError={handleImgError} />
             ) : (
               <div style={{ width: "100%", height: 160, background: "linear-gradient(135deg, #2a1a3e 0%, #1a0a2e 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,215,0,0.6)", fontSize: "2em", fontWeight: 700 }}>
                 {(ev.title || "").trim().charAt(0).toUpperCase()}

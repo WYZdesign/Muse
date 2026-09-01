@@ -8,7 +8,7 @@ import type { Screen, Profile } from "../components/types";
 import { CITY_GEO } from "../components/types";
 import { distanceMiles } from "@/app/muse-realtime";
 import { PORTRAIT_IMG } from "../components/photoOrientation";
-import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
+import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../hooks/useDeviceTilt";
 
 // ── Tag description maps (for expandable info popover) ──────────────────────
 const ZODIAC_FULL: Record<string, { icon: string; tag: string; desc: string }> = {
@@ -252,18 +252,12 @@ export const DiscoverScreen = memo(function DiscoverScreen({
 
   useEffect(() => {
     if (screen !== "discover") return;
-    if (typeof window === "undefined") return;
-    if (!window.matchMedia?.("(hover: none)").matches) return;
-    ensureDeviceTiltActive();
-    let raf = 0;
-    const tick = () => {
-      const { x, y } = getDeviceTilt();
-      const img = document.querySelector(".swipe-card.top-card .card-hero img") as HTMLElement | null;
-      if (img) img.style.transform = `perspective(800px) rotateY(${x * 7}deg) rotateX(${-y * 7}deg) scale(1.015)`;
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return createSpatialScene(
+      ".swipe-card.top-card",
+      ".card-hero img",
+      ".card-hero-info",
+      { imgShift: 5, imgRotate: 6, infoShift: 6, containerShift: 3, scale: 1.04 }
+    );
   }, [screen]);
 
   return (
@@ -319,17 +313,6 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                           <div
                             className="card-hero"
                             ref={heroRef as any}
-                            onMouseMove={(e) => {
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              const x = (e.clientX - rect.left) / rect.width - 0.5;
-                              const y = (e.clientY - rect.top) / rect.height - 0.5;
-                              const img = e.currentTarget.querySelector("img") as HTMLImageElement;
-                              if (img) img.style.transform = `perspective(800px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg) scale(1.02)`;
-                            }}
-                            onMouseLeave={(e) => {
-                              const img = e.currentTarget.querySelector("img") as HTMLImageElement;
-                              if (img) img.style.transform = "perspective(800px) rotateY(0deg) rotateX(0deg) scale(1)";
-                            }}
                           >
                             <img
                               loading="lazy"

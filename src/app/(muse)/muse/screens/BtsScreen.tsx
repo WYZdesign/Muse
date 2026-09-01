@@ -2,6 +2,7 @@
 
 import React, { memo, useState, useEffect, useCallback } from "react";
 import { FiArrowLeft, FiCamera, FiClock } from "react-icons/fi";
+import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 import { getPostShareUrl } from "@/lib/urls";
@@ -60,6 +61,23 @@ export const BtsScreen = memo(function BtsScreen({
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
   const [activeFilter, setActiveFilter] = useState<FilterTab>("All");
   const [windowEnd, setWindowEnd] = useState(() => Date.now() + 24 * 60 * 60 * 1000);
+
+  useEffect(() => {
+    if (screen !== "bts") return;
+    ensureDeviceTiltActive();
+    let raf = 0;
+    const tick = () => {
+      const { x, y } = getDeviceTilt();
+      document.querySelectorAll<HTMLElement>(".bts-photo-wrap").forEach((el) => {
+        const img = el.querySelector(".bts-photo") as HTMLElement | null;
+        el.style.transform = `translate(${x * 4}px, ${y * 4}px)`;
+        if (img) img.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translate(${-x * 5}px, ${-y * 5}px) scale(1.04)`;
+      });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [screen]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -445,11 +463,12 @@ export const BtsScreen = memo(function BtsScreen({
                 </div>
 
                 {/* Image area */}
-                <div style={{ position: "relative", marginTop: 8 }}>
+                <div className="bts-photo-wrap" style={{ position: "relative", marginTop: 8 }}>
                   <img
                     loading="lazy"
                     src={s.img || s.avatar}
                     alt="Photo"
+                    className="bts-photo"
                     onError={handleImgError}
                     style={{
                       width: "100%",

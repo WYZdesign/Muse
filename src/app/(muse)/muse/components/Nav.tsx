@@ -34,16 +34,6 @@ export default React.memo(function Nav({ active, onNavigate, onHamburgerToggle, 
         const isActive = active === tab.key;
         const color = lineColor[tab.key] || "#FFD700";
         const lava = lavaGradients[tab.key] || lavaGradients.discover;
-        const gradientBg = isActive ? {
-          background: lava,
-          backgroundSize: "300% 100%",
-          WebkitBackgroundClip: "text",
-          backgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          color: "transparent",
-          display: "inline-block",
-          animation: "lavaFlow 4s ease-in-out infinite",
-        } as React.CSSProperties : undefined;
         const iconStyle = isActive ? {
           color: color,
           filter: `drop-shadow(0 0 8px ${color}60)`,
@@ -51,10 +41,15 @@ export default React.memo(function Nav({ active, onNavigate, onHamburgerToggle, 
           alignItems: "center" as const,
           justifyContent: "center" as const,
         } : undefined;
+        const buttonStyle = {
+          "--line-color": color,
+          background: isActive ? lava : "none",
+          backgroundSize: isActive ? "300% 100%" : "none",
+        } as React.CSSProperties;
         return (
-          <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs" as Screen); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined} style={{ "--line-color": color } as React.CSSProperties}>
+          <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs" as Screen); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined} style={buttonStyle}>
             <span className="nav-icon" style={iconStyle}>{tab.icon}</span>
-            <span className="nav-label" style={isActive ? gradientBg : { color:"var(--muted)", fontWeight: 600 }}>{" " + tab.label}</span>
+            <span className="nav-label" style={isActive ? { color: "#fff" } : { color:"var(--muted)", fontWeight: 600 }}>{" " + tab.label}</span>
           </button>
         );
       })}
