@@ -1897,6 +1897,66 @@ ACTIONS["mark-all-notifications-read"] = async ({ sb, profile }) => {
   return NextResponse.json({ success: true });
 };
 
+ACTIONS["report-bug"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRateUser(profile.id, "report-bug", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { category, description, steps, expected, actual } = rest;
+  if (!category || !description) return NextResponse.json({ error: "category and description required" }, { status: 400 });
+  const safeCategory = sanitizeText(String(category), 50);
+  const safeDesc = sanitizeText(String(description), 2000);
+  const safeSteps = sanitizeText(String(steps || ""), 2000);
+  const safeExpected = sanitizeText(String(expected || ""), 1000);
+  const safeActual = sanitizeText(String(actual || ""), 1000);
+  const { error } = await sb.from("muse_activity_log").insert({
+    user_id: profile.id,
+    action: "bug-report",
+    details: { category: safeCategory, description: safeDesc, steps: safeSteps, expected: safeExpected, actual: safeActual },
+  });
+  if (error) return safeServerError(error, "log bug report");
+  const ADMIN_EMAIL = "info@wyzdesign.com";
+  const subject = `[Muse Bug] ${safeCategory}`;
+  const html = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+    <h2 style="color:#FF69B4">Bug Report</h2>
+    <p><strong>From:</strong> ${profile.name || "Unknown"} (${profile.id})</p>
+    <p><strong>Category:</strong> ${safeCategory}</p>
+    <p><strong>Description:</strong></p><p>${safeDesc.replace(/\n/g, "<br>")}</p>
+    ${safeSteps ? `<p><strong>Steps to reproduce:</strong></p><p>${safeSteps.replace(/\n/g, "<br>")}</p>` : ""}
+    ${safeExpected ? `<p><strong>Expected:</strong> ${safeExpected}</p>` : ""}
+    ${safeActual ? `<p><strong>Actual:</strong> ${safeActual}</p>` : ""}
+    <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+    <p style="color:#999;font-size:12px">Muse Bug Report System</p>
+  </div>`;
+  sendEmail({ to: ADMIN_EMAIL, subject, html }).catch(() => {});
+  return NextResponse.json({ success: true });
+};
+
+ACTIONS["submit-idea"] = async ({ sb, profile, rest, ip }) => {
+  if (!await checkRateUser(profile.id, "submit-idea", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  const { title, description, category } = rest;
+  if (!title || !description) return NextResponse.json({ error: "title and description required" }, { status: 400 });
+  const safeTitle = sanitizeText(String(title), 200);
+  const safeDesc = sanitizeText(String(description), 2000);
+  const safeCategory = sanitizeText(String(category || "general"), 50);
+  const { error } = await sb.from("muse_activity_log").insert({
+    user_id: profile.id,
+    action: "idea-submission",
+    details: { title: safeTitle, description: safeDesc, category: safeCategory },
+  });
+  if (error) return safeServerError(error, "log idea submission");
+  const ADMIN_EMAIL = "info@wyzdesign.com";
+  const subject = `[Muse Idea] ${safeTitle}`;
+  const html = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+    <h2 style="color:#FFD700">Feature Idea</h2>
+    <p><strong>From:</strong> ${profile.name || "Unknown"} (${profile.id})</p>
+    <p><strong>Category:</strong> ${safeCategory}</p>
+    <p><strong>Title:</strong> ${safeTitle}</p>
+    <p><strong>Description:</strong></p><p>${safeDesc.replace(/\n/g, "<br>")}</p>
+    <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+    <p style="color:#999;font-size:12px">Muse Feature Idea System</p>
+  </div>`;
+  sendEmail({ to: ADMIN_EMAIL, subject, html }).catch(() => {});
+  return NextResponse.json({ success: true });
+};
+
 export async function GET(req: NextRequest) {
   try {
     const sb = getServiceClient();

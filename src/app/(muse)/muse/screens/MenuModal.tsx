@@ -340,6 +340,20 @@ export const MenuModal = memo(function MenuModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showHamburger]);
 
+  const [showBugForm, setShowBugForm] = useState(false);
+  const [bugCategory, setBugCategory] = useState("ui");
+  const [bugDescription, setBugDescription] = useState("");
+  const [bugSteps, setBugSteps] = useState("");
+  const [bugExpected, setBugExpected] = useState("");
+  const [bugActual, setBugActual] = useState("");
+  const [bugSubmitting, setBugSubmitting] = useState(false);
+
+  const [showIdeaForm, setShowIdeaForm] = useState(false);
+  const [ideaCategory, setIdeaCategory] = useState("feature");
+  const [ideaTitle, setIdeaTitle] = useState("");
+  const [ideaDescription, setIdeaDescription] = useState("");
+  const [ideaSubmitting, setIdeaSubmitting] = useState(false);
+
   if (!mounted) return null;
 
   return (
@@ -775,6 +789,32 @@ export const MenuModal = memo(function MenuModal({
                   </div>
                 )}
                 <button className="btn" style={{ width: "100%", marginTop: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 13 }} onClick={async () => { try { const res = await authFetch("/api/muse?type=export"); if (!res.ok) { showToast("Export failed"); return; } const j = await res.json(); const blob = new Blob([JSON.stringify(j, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "muse-my-data.json"; a.click(); URL.revokeObjectURL(url); showToast("Data exported"); } catch (e) { showToast("Export failed"); } }}>Export My Data</button>
+                {!showBugForm ? (
+                  <button className="btn" style={{ width: "100%", marginTop: 8, background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", color: "#ff8a80", fontSize: 13 }} onClick={() => setShowBugForm(true)}>Report a Bug</button>
+                ) : (
+                  <div style={{ marginTop: 8, padding: 14, background: "rgba(255,107,107,0.06)", border: "1px solid rgba(255,107,107,0.15)", borderRadius: 12 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#ff8a80", marginBottom: 10 }}>Report a Bug</div>
+                    <select value={bugCategory} onChange={e => setBugCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
+                      <option value="ui">UI / Visual Issue</option>
+                      <option value="crash">App Crash</option>
+                      <option value="payment">Payment Problem</option>
+                      <option value="matching">Matching Not Working</option>
+                      <option value="notification">Notification Issue</option>
+                      <option value="upload">Upload / Media Issue</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <textarea value={bugDescription} onChange={e => setBugDescription(e.target.value)} placeholder="What happened?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
+                    <textarea value={bugSteps} onChange={e => setBugSteps(e.target.value)} placeholder="Steps to reproduce (optional)" rows={2} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
+                    <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                      <input value={bugExpected} onChange={e => setBugExpected(e.target.value)} placeholder="Expected behavior" style={{ flex: 1, padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
+                      <input value={bugActual} onChange={e => setBugActual(e.target.value)} placeholder="Actual behavior" style={{ flex: 1, padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,107,107,0.15)", border: "1px solid rgba(255,107,107,0.3)", color: "#ff8a80" }} disabled={bugSubmitting || !bugDescription.trim()} onClick={async () => { setBugSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "report-bug", category: bugCategory, description: bugDescription, steps: bugSteps, expected: bugExpected, actual: bugActual }) }); if (!r.ok) throw new Error("failed"); showToast("Bug report sent — thank you!"); setShowBugForm(false); setBugDescription(""); setBugSteps(""); setBugExpected(""); setBugActual(""); } catch { showToast("Failed to send bug report"); } setBugSubmitting(false); }}>{bugSubmitting ? "Sending…" : "Submit Bug"}</button>
+                      <button className="btn btn-outline" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => setShowBugForm(false)}>Cancel</button>
+                    </div>
+                  </div>
+                )}
                 <button className="btn" style={{ width: "100%", marginTop: 8, background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.3)", color: "var(--coral)", fontSize: 13 }} onClick={async () => { if (confirm("Delete your account? This cannot be undone.")) { try { const r = await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "delete-account" }) }); if (!r.ok) { showToast("Failed to delete account"); return; } showToast("Account deleted"); setTimeout(() => window.location.reload(), 1500); } catch { showToast("Failed to delete account"); } } }}>Delete Account</button>
                 <div style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", margin: "16px 0 4px" }}>Legal</div>
                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 14, padding: "4px 14px" }}>
@@ -799,6 +839,26 @@ export const MenuModal = memo(function MenuModal({
                 <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                   <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { setShowHamburger(false); setShowFeatureTour?.(true); }}>App Walkthrough</button>
                   <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { setShowHamburger(false); setSupportOpen?.(true); }}>Help Guide</button>
+                  {!showIdeaForm ? (
+                    <button className="btn" style={{ width: "100%", fontSize: 13, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)" }} onClick={() => setShowIdeaForm(true)}>Have an Idea?</button>
+                  ) : (
+                    <div style={{ padding: 14, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 12 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginBottom: 10 }}>Share Your Idea</div>
+                      <select value={ideaCategory} onChange={e => setIdeaCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
+                        <option value="feature">New Feature</option>
+                        <option value="improvement">Improvement</option>
+                        <option value="new-category">New Category</option>
+                        <option value="partnership">Partnership Idea</option>
+                        <option value="other">Other</option>
+                      </select>
+                      <input value={ideaTitle} onChange={e => setIdeaTitle(e.target.value)} placeholder="Give it a name*" style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
+                      <textarea value={ideaDescription} onChange={e => setIdeaDescription(e.target.value)} placeholder="Describe your idea — what should it do? Why would you love it?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)" }} disabled={ideaSubmitting || !ideaTitle.trim() || !ideaDescription.trim()} onClick={async () => { setIdeaSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit-idea", title: ideaTitle, description: ideaDescription, category: ideaCategory }) }); if (!r.ok) throw new Error("failed"); showToast("Idea submitted — we love it!"); setShowIdeaForm(false); setIdeaTitle(""); setIdeaDescription(""); } catch { showToast("Failed to submit idea"); } setIdeaSubmitting(false); }}>{ideaSubmitting ? "Sending…" : "Submit Idea"}</button>
+                        <button className="btn btn-outline" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => setShowIdeaForm(false)}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
                   <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => window.open("mailto:" + SUPPORT_EMAIL + "?subject=Muse%20Support%20Request")}>Email Support</button>
                 </div>
                 <button className="btn btn-gold" style={{ width: "100%", marginTop: 16, fontSize: 12, padding: "12px 0" }} onClick={doLogoutFull}>Log Out</button>
