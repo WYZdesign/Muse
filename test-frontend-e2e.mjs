@@ -483,10 +483,22 @@ function log(screen, status, detail = '') {
     const routePath = 'V:\\Muse\\src\\app\\api\\muse\\connect\\route.ts';
     if (fs.existsSync(routePath)) {
       const content = fs.readFileSync(routePath, 'utf8');
+      // Session 60 shipped capture_method: "automatic_delayed" at the top level
+      // to fix long-lead bookings silently expiring — but that value is only
+      // valid nested under payment_method_options.card.capture_method, not the
+      // top-level field this code sets. Every real Stripe call with it at the
+      // top level gets rejected (400 invalid_request_error), which broke every
+      // booking payment. Session 61 reverted to capture_method: "manual" (the
+      // known-working config) and added api/cron/capture-bookings as the actual
+      // fix for the original long-lead-expiry problem, without depending on
+      // "automatic_delayed" (which is also still Stripe Private Preview).
+      // So "manual" is the CORRECT state to test for now — flip this back only
+      // alongside re-verifying automatic_delayed against a live Stripe test call
+      // (not just this static grep, which is exactly what let the bug through).
       if (content.includes('automatic_delayed')) {
-        log('Payment Capture', 'PASS', 'capture_method: automatic_delayed found (session 60 fix)');
+        log('Payment Capture', 'FAIL', 'capture_method: "automatic_delayed" found — invalid at the top level, breaks every booking payment (see Session 61 in HANDOVER.md)');
       } else if (content.includes('capture_method: "manual"')) {
-        log('Payment Capture', 'FAIL', 'capture_method still "manual" — session 60 fix NOT applied');
+        log('Payment Capture', 'PASS', 'capture_method: "manual" — known-working config (Session 61 fix)');
       } else {
         log('Payment Capture', 'WARN', 'capture_method pattern not found');
       }
