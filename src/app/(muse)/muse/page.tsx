@@ -30,6 +30,7 @@ import { MusesScreen } from "./screens/MusesScreen";
 import { ChatScreen } from "./screens/ChatScreen";
 import { CollabScreen } from "./screens/CollabScreen";
 import { CommunityScreen } from "./screens/CommunityScreen";
+import QuestPanel from "./screens/QuestPanel";
 import { SessionsScreen } from "./screens/SessionsScreen";
 import { NetworkScreen } from "./screens/NetworkScreen";
 import { PortfolioScreen } from "./screens/PortfolioScreen";
@@ -2934,6 +2935,16 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           setShowFeatureTour(false);
           try { safeSetItem("muse_feature_tour_seen", "1"); } catch {}
         }}
+      />
+      <QuestPanel
+        show={showQuests}
+        onClose={() => setShowQuests(false)}
+        apiFetch={apiFetch}
+        showToast={showToast}
+        onClaimablesChange={(n) => setClaimableQuests(n)}
+        onQuestsChange={handleQuestsChange}
+        loginStreak={loginStreak}
+        weeklyLogins={weeklyLogins}
       />
     </div>
   );
