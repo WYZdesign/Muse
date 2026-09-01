@@ -443,52 +443,52 @@ export const NetworkScreen = memo(function NetworkScreen({
                 Hiring{proHiringOnly ? " ✓" : ""}
               </span>
             </div>
-            {/* Expanded filter panels */}
+            {/* Expanded filter panels — single-line horizontal scroll, color-coded per category */}
             {filterSections.experience && (
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+              <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
                 {([
-                  { k: "all", label: "All levels", color: "var(--muted)" },
-                  { k: "rising", label: "Rising", color: "#90caf9" },
-                  { k: "established", label: "Established", color: "var(--gold)" },
-                  { k: "veteran", label: "Veteran", color: "#e6d3ff" },
+                  { k: "all", label: "All levels", color: "var(--muted)", accent: "rgba(255,255,255,0.1)" },
+                  { k: "rising", label: "Rising", color: "#90caf9", accent: "rgba(144,202,249,0.3)" },
+                  { k: "established", label: "Established", color: "#FFD700", accent: "rgba(255,215,0,0.3)" },
+                  { k: "veteran", label: "Veteran", color: "#e6d3ff", accent: "rgba(230,211,255,0.3)" },
                 ] as const).map((b) => (
                   <button type="button" key={b.k} role="tab" aria-selected={proExp === b.k} tabIndex={0}
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProExp(b.k); } }}
                     onClick={() => setProExp(b.k)}
-                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proExp === b.k ? "#0a0612" : "var(--muted)", background: proExp === b.k ? b.color : "rgba(255,255,255,0.06)", border: proExp === b.k ? "none" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s" }}
+                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proExp === b.k ? "#0a0612" : b.color, background: proExp === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proExp === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
                   >{b.label}</button>
                 ))}
               </div>
             )}
             {filterSections.sort && (
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+              <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
                 {([
-                  { k: "match", label: "Featured" },
-                  { k: "expDesc", label: "Most exp" },
-                  { k: "expAsc", label: "Least exp" },
-                  { k: "rateDesc", label: "Rate ↓" },
-                  { k: "rateAsc", label: "Rate ↑" },
-                  { k: "openings", label: "Most openings" },
+                  { k: "match", label: "Featured", color: "#FFD700", accent: "rgba(255,215,0,0.25)" },
+                  { k: "expDesc", label: "Most exp", color: "#90caf9", accent: "rgba(144,202,249,0.25)" },
+                  { k: "expAsc", label: "Least exp", color: "#81D4FA", accent: "rgba(129,212,250,0.25)" },
+                  { k: "rateDesc", label: "Rate ↓", color: "#e6d3ff", accent: "rgba(230,211,255,0.25)" },
+                  { k: "rateAsc", label: "Rate ↑", color: "#CE93D8", accent: "rgba(206,147,216,0.25)" },
+                  { k: "openings", label: "Most openings", color: "#4cdd88", accent: "rgba(76,221,136,0.25)" },
                 ] as const).map((b) => (
                   <button type="button" key={b.k}
                     onClick={() => setProSort(b.k)}
-                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSort === b.k ? "#0a0612" : "var(--muted)", background: proSort === b.k ? "var(--gold)" : "rgba(255,255,255,0.06)", border: proSort === b.k ? "none" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s" }}
+                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSort === b.k ? "#0a0612" : b.color, background: proSort === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proSort === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
                   >{b.label}</button>
                 ))}
               </div>
             )}
             {filterSections.rate && (
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+              <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
                 {([
-                  { k: "all", label: "Any rate", color: "var(--muted)" },
-                  { k: "tfp", label: "TFP", color: "#90caf9" },
-                  { k: "50to100", label: "$50-100", color: "var(--gold)" },
-                  { k: "100to150", label: "$100-150", color: "#e6d3ff" },
-                  { k: "gt150", label: "$150+", color: "#e6d3ff" },
+                  { k: "all", label: "Any rate", color: "var(--muted)", accent: "rgba(255,255,255,0.1)" },
+                  { k: "tfp", label: "TFP", color: "#90caf9", accent: "rgba(144,202,249,0.3)" },
+                  { k: "50to100", label: "$50-100", color: "#4cdd88", accent: "rgba(76,221,136,0.3)" },
+                  { k: "100to150", label: "$100-150", color: "#FFD700", accent: "rgba(255,215,0,0.3)" },
+                  { k: "gt150", label: "$150+", color: "#e6d3ff", accent: "rgba(230,211,255,0.3)" },
                 ] as const).map((b) => (
                   <button type="button" key={b.k}
                     onClick={() => setProRateBand(b.k)}
-                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proRateBand === b.k ? "#0a0612" : "var(--muted)", background: proRateBand === b.k ? b.color : "rgba(255,255,255,0.06)", border: proRateBand === b.k ? "none" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s" }}
+                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proRateBand === b.k ? "#0a0612" : b.color, background: proRateBand === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proRateBand === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
                   >{b.label}</button>
                 ))}
               </div>
@@ -500,23 +500,23 @@ export const NetworkScreen = memo(function NetworkScreen({
               return (
                 <>
                 {filterSections.skills && (
-                  <div className="pro-skill-row" style={{ marginBottom: 10 }}>
+                  <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
                     <button type="button" aria-pressed={!proSkill.length} onClick={() => setProSkill([])}
-                      className={"pro-skill-chip" + (!proSkill.length ? " active" : "")}>All skills</button>
+                      className="filter-chip" style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: !proSkill.length ? "#0a0612" : "#FF69B4", background: !proSkill.length ? "rgba(255,105,180,0.3)" : "rgba(255,255,255,0.06)", border: !proSkill.length ? "1.5px solid rgba(255,105,180,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>All skills</button>
                     {allSkills.map((s) => (
                       <button key={s} type="button" aria-pressed={proSkill.includes(s)}
                         onClick={() => setProSkill(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
-                        className={"pro-skill-chip" + (proSkill.includes(s) ? " active" : "")}>{s}</button>
+                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSkill.includes(s) ? "#0a0612" : "#FF69B4", background: proSkill.includes(s) ? "rgba(255,105,180,0.3)" : "rgba(255,255,255,0.06)", border: proSkill.includes(s) ? "1.5px solid rgba(255,105,180,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>{s}</button>
                     ))}
                   </div>
                 )}
                 {filterSections.looking && allLooking.length > 0 && (
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                  <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
                     <button type="button" onClick={() => setProLooking("all")}
-                      style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === "all" ? "#0a0612" : "var(--muted)", background: proLooking === "all" ? "var(--gold)" : "rgba(255,255,255,0.06)", border: proLooking === "all" ? "none" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s" }}>Anyone</button>
+                      style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === "all" ? "#0a0612" : "#20B2AA", background: proLooking === "all" ? "rgba(32,178,170,0.25)" : "rgba(255,255,255,0.06)", border: proLooking === "all" ? "1.5px solid rgba(32,178,170,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>Anyone</button>
                     {allLooking.map((l) => (
                       <button key={l} type="button" onClick={() => setProLooking(l)}
-                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === l ? "#0a0612" : "var(--muted)", background: proLooking === l ? "var(--gold)" : "rgba(255,255,255,0.06)", border: proLooking === l ? "none" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s" }}>{l}</button>
+                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === l ? "#0a0612" : "#20B2AA", background: proLooking === l ? "rgba(32,178,170,0.25)" : "rgba(255,255,255,0.06)", border: proLooking === l ? "1.5px solid rgba(32,178,170,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>{l}</button>
                     ))}
                   </div>
                 )}

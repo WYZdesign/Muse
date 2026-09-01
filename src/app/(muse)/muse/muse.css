@@ -884,6 +884,13 @@ img{background-color:#1a0a2e}
 .pro-skill-chip:hover{border-color:rgba(144,202,249,0.3)}
 .pro-skill-chip.active{background:rgba(144,202,249,0.12);border-color:rgba(144,202,249,0.45);color:#90caf9}
 
+/* ═══ FILTER SCROLL ROWS ═══ */
+.filter-scroll-row{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:4;position:relative;mask-image:linear-gradient(to right,#000 85%,transparent 100%);-webkit-mask-image:linear-gradient(to right,#000 85%,transparent 100%)}
+.filter-scroll-row::-webkit-scrollbar{display:none}
+.filter-scroll-row::after{content:'';position:absolute;right:0;top:0;bottom:4;width:32px;background:linear-gradient(to right,transparent,var(--bg,#0a0612));pointer-events:none;border-radius:0 0 12px 0;opacity:0;transition:opacity .3s}
+.filter-scroll-row:not(:hover)::after{opacity:1}
+.filter-chip{flex-shrink:0;white-space:nowrap;font-family:inherit}
+
 /* ═══ DISCOVER CARD HERO CHIPS ═══ */
 .card-hero-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;pointer-events:none}
 .card-hero-chip{padding:3px 9px;border-radius:99px;background:rgba(10,6,18,0.55);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.85);font-size:10px;font-weight:600;white-space:nowrap}
