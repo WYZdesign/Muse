@@ -1,0 +1,317 @@
+{
+  "timestamp": "2026-08-31T23:58:06.145Z",
+  "baseUrl": "https://muse.wyzdesign.com",
+  "summary": {
+    "passed": 54,
+    "failed": 0,
+    "warned": 6,
+    "total": 60
+  },
+  "tests": [
+    {
+      "screen": "Landing",
+      "status": "PASS",
+      "detail": "V:\\Muse\\test-screenshots\\01-landing.png"
+    },
+    {
+      "screen": "Landing Redirect",
+      "status": "PASS",
+      "detail": "Redirected to https://muse.wyzdesign.com/muse"
+    },
+    {
+      "screen": "Auth Gate",
+      "status": "PASS",
+      "detail": "V:\\Muse\\test-screenshots\\02-auth-gate.png"
+    },
+    {
+      "screen": "Auth Gate Content",
+      "status": "PASS",
+      "detail": "Login buttons/sign-in elements visible"
+    },
+    {
+      "screen": "Muse Branding",
+      "status": "PASS",
+      "detail": "Muse branding found"
+    },
+    {
+      "screen": "Gradient: Discover",
+      "status": "PASS",
+      "detail": "Found expected color #FFD700 in source"
+    },
+    {
+      "screen": "Gradient: Feed",
+      "status": "PASS",
+      "detail": "Found expected color #1E90FF in source"
+    },
+    {
+      "screen": "Gradient: Collab",
+      "status": "PASS",
+      "detail": "Found expected color #20B2AA in source"
+    },
+    {
+      "screen": "Gradient: Muses",
+      "status": "PASS",
+      "detail": "Found expected color #FF4500 in source"
+    },
+    {
+      "screen": "Gradient: BTS",
+      "status": "PASS",
+      "detail": "Found expected color #FF1493 in source"
+    },
+    {
+      "screen": "Gradient: Sessions",
+      "status": "PASS",
+      "detail": "Found expected color #E1BEE7 in source"
+    },
+    {
+      "screen": "Gradient: Network",
+      "status": "PASS",
+      "detail": "Found expected color #1E90FF in source"
+    },
+    {
+      "screen": "Gradient: Profile",
+      "status": "PASS",
+      "detail": "Found expected color #FFD700 in source"
+    },
+    {
+      "screen": "Gradient: Settings",
+      "status": "PASS",
+      "detail": "Found expected color #CE93D8 in source"
+    },
+    {
+      "screen": "Gradient: Analytics",
+      "status": "PASS",
+      "detail": "Found expected color #FFD700 in source"
+    },
+    {
+      "screen": "Gradient: Subscription",
+      "status": "PASS",
+      "detail": "Found expected color #FFD700 in source"
+    },
+    {
+      "screen": "Gradient: Community",
+      "status": "PASS",
+      "detail": "Found expected color #FF8A80 in source"
+    },
+    {
+      "screen": "Gradient: Codex",
+      "status": "PASS",
+      "detail": "Found expected color gold in source"
+    },
+    {
+      "screen": "Profile Ring Animation",
+      "status": "PASS",
+      "detail": "ringSpin keyframe preserves translate centering transform"
+    },
+    {
+      "screen": "Profile Ring CSS",
+      "status": "PASS",
+      "detail": ".profile-ring class found"
+    },
+    {
+      "screen": "Closed Beta Flag",
+      "status": "PASS",
+      "detail": "MUSE_CLOSED_BETA_HIDE_SOCIAL found in config"
+    },
+    {
+      "screen": "Page Gate",
+      "status": "PASS",
+      "detail": "VALID_SCREENS or closed-beta check found in page.tsx"
+    },
+    {
+      "screen": "Community Gating",
+      "status": "PASS",
+      "detail": "Community is properly gated"
+    },
+    {
+      "screen": "Nav Gradient: discover",
+      "status": "PASS",
+      "detail": "Found #FFD700"
+    },
+    {
+      "screen": "Nav Gradient: connections",
+      "status": "PASS",
+      "detail": "Found #1E90FF"
+    },
+    {
+      "screen": "Nav Gradient: briefs",
+      "status": "PASS",
+      "detail": "Found #20B2AA"
+    },
+    {
+      "screen": "Nav Gradient: matches",
+      "status": "PASS",
+      "detail": "Found #FF4500"
+    },
+    {
+      "screen": "FD Studio Widget",
+      "status": "PASS",
+      "detail": "Found 6/6 building names"
+    },
+    {
+      "screen": "FD Studio Content",
+      "status": "PASS",
+      "detail": "Studio references found"
+    },
+    {
+      "screen": "FD Studio Link",
+      "status": "WARN",
+      "detail": "No wyzdesign link found"
+    },
+    {
+      "screen": "Sessions → FD Widget",
+      "status": "PASS",
+      "detail": "FD Studio widget referenced in SessionsScreen"
+    },
+    {
+      "screen": "Network: No Select Dropdowns",
+      "status": "PASS",
+      "detail": "Old <select> dropdowns removed"
+    },
+    {
+      "screen": "Network: Horizontal Scroll",
+      "status": "PASS",
+      "detail": "Horizontal scroll container found"
+    },
+    {
+      "screen": "Network: Filter Labels",
+      "status": "PASS",
+      "detail": "Found 5/5 filter labels"
+    },
+    {
+      "screen": "Analytics API",
+      "status": "PASS",
+      "detail": "Calls my-analytics endpoint"
+    },
+    {
+      "screen": "Analytics Stat Cards",
+      "status": "PASS",
+      "detail": "Found 5/5 stat labels"
+    },
+    {
+      "screen": "Analytics Trending Icon",
+      "status": "PASS",
+      "detail": "TrendingUp icon found"
+    },
+    {
+      "screen": "Profile → Insights",
+      "status": "PASS",
+      "detail": "Insights/analytics entry found in ProfileScreen"
+    },
+    {
+      "screen": "MatchCard Size",
+      "status": "PASS",
+      "detail": "69 lines (expected <150 after simplification)"
+    },
+    {
+      "screen": "MatchCard: No Drag/Swipe",
+      "status": "PASS",
+      "detail": "Drag/swipe machinery removed"
+    },
+    {
+      "screen": "MatchCard: Chat Navigation",
+      "status": "PASS",
+      "detail": "Chat-on-tap navigation found"
+    },
+    {
+      "screen": "Title: .logo-link relative",
+      "status": "WARN",
+      "detail": "No explicit position in .logo-link"
+    },
+    {
+      "screen": "Title: CSS Variable",
+      "status": "PASS",
+      "detail": "--title-gradient variable found"
+    },
+    {
+      "screen": "Title: HDR flex alignment",
+      "status": "PASS",
+      "detail": ".hdr uses flex align-items"
+    },
+    {
+      "screen": "Screen Type: No fdstudio",
+      "status": "PASS",
+      "detail": "\"fdstudio\" removed from Screen type"
+    },
+    {
+      "screen": "Screen Type: No events",
+      "status": "PASS",
+      "detail": "\"events\" removed from Screen type"
+    },
+    {
+      "screen": "VALID_SCREENS",
+      "status": "PASS",
+      "detail": "Contains: \"onboard\",\"discover\",\"connections\",\"matches\",\"chat\",\"briefs\",\"sessions\",\"network\",\"portfolio\",\"bts\","
+    },
+    {
+      "screen": "Subscription: Annual Tier",
+      "status": "WARN",
+      "detail": "Annual plan not found"
+    },
+    {
+      "screen": "Subscription: Studio Tier",
+      "status": "WARN",
+      "detail": "Studio plan not found"
+    },
+    {
+      "screen": "Subscription: Tier-Key Fix",
+      "status": "PASS",
+      "detail": "replace(/ /g, \"_\") or replaceAll found"
+    },
+    {
+      "screen": "Payment Capture",
+      "status": "PASS",
+      "detail": "capture_method: automatic_delayed found (session 60 fix)"
+    },
+    {
+      "screen": "Verification API",
+      "status": "PASS",
+      "detail": "Stripe Identity integration found (NOT deferred)"
+    },
+    {
+      "screen": "Verification Size",
+      "status": "PASS",
+      "detail": "137 lines — substantial implementation"
+    },
+    {
+      "screen": "Page Title",
+      "status": "PASS",
+      "detail": "Title: \"Muse — Where Creatives Connect\""
+    },
+    {
+      "screen": "No Visible Errors",
+      "status": "WARN",
+      "detail": "Possible error text found"
+    },
+    {
+      "screen": "Content Loaded",
+      "status": "PASS",
+      "detail": "Content loaded"
+    },
+    {
+      "screen": "Viewport Meta",
+      "status": "PASS",
+      "detail": "Mobile viewport tag present"
+    },
+    {
+      "screen": "Screen Files",
+      "status": "PASS",
+      "detail": "17 screen files: AnalyticsScreen, BtsScreen, ChatScreen, CodexScreen, CollabScreen, CommunityScreen, DiscoverScreen, FeedScreen, MenuModal, MusesScreen, NetworkScreen, PortfolioScreen, ProfileScreen, QuestPanel, SessionsScreen, SettingsScreen, SubscriptionScreen"
+    },
+    {
+      "screen": "Component Files",
+      "status": "PASS",
+      "detail": "19 component files"
+    },
+    {
+      "screen": "Console Errors",
+      "status": "WARN",
+      "detail": "3 errors:"
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 403 ()",
+    "Failed to load resource: the server responded with a status of 403 ()",
+    "Failed to load resource: the server responded with a status of 403 ()"
+  ]
+}
