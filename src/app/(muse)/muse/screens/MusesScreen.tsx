@@ -75,13 +75,16 @@ export const MusesScreen = memo(function MusesScreen({
             backgroundClip: "text",
             WebkitTextFillColor: "transparent",
             color: "transparent",
-            position: "relative",
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
             fontFamily: "'Playfair Display',serif",
             fontStyle: "italic",
             fontWeight: 900,
             padding: "0 0.18em",
             display: "inline-block",
             margin: 0,
+            whiteSpace: "nowrap",
             animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite"
           }}
         >
