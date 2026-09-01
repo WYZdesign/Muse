@@ -169,7 +169,7 @@ export const BtsScreen = memo(function BtsScreen({
         <button
           onClick={() => showScreen("discover")}
           style={{
-            background: "rgba(255,255,255,0.2)",
+            background: "linear-gradient(135deg,#FF69B4,#fff)",
             border: "none",
             borderRadius: 10,
             width: 34,
@@ -178,7 +178,7 @@ export const BtsScreen = memo(function BtsScreen({
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            color: "#fff",
+            color: "#0a0612",
           }}
           aria-label="Back"
         >

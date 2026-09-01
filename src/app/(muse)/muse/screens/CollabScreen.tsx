@@ -95,9 +95,9 @@ export const CollabScreen = memo(function CollabScreen({
             backgroundClip: "text",
             WebkitTextFillColor: "transparent",
             color: "transparent",
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)",
+            position: "relative",
+            margin: 0,
+            padding: 0,
             whiteSpace: "nowrap",
           }}
         >Collab</div>

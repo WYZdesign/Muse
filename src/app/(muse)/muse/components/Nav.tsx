@@ -22,7 +22,7 @@ const lavaGradients: Record<string, string> = {
 const tabs: { key: string; label: string; icon: React.ReactNode; hasScreen: boolean }[] = [
   { key:"discover", label:"Discover", icon:<FiCompass size={22} />, hasScreen:true },
   { key:"connections", label:"Feed", icon:<FiUsers size={22} />, hasScreen:true },
-  { key:"briefs", label:"Collab", icon:<FiZap size={22} />, hasScreen:false },
+  { key:"briefs", label:"Collab", icon:<FiZap size={22} />, hasScreen:true },
   { key:"matches", label:"Muses", icon:<FiCamera size={22} />, hasScreen:true },
   { key:"bts", label:"BTS", icon:<FiEye size={22} />, hasScreen:true },
 ];
