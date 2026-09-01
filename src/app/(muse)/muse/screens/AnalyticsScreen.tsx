@@ -40,11 +40,10 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const res = await apiFetch("/api/muse", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "my-analytics" }),
-        });
+        // "my-analytics" is a read-only GET type (see route.ts's GET handler),
+        // not a POST action — it has no entry in the POST ACTIONS dispatcher,
+        // so posting here always failed with "Unknown action type".
+        const res = await apiFetch("/api/muse?type=my-analytics");
         const data = await res.json();
         if (data) setAnalytics(data);
       } catch (e) {

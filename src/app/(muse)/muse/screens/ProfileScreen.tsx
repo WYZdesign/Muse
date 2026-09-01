@@ -115,11 +115,31 @@ export const ProfileScreen = memo(function ProfileScreen({
   useEffect(() => {
     const fetchReferralData = async () => {
       try {
-        const res = await apiFetch("/api/muse/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get" }) });
+        // Was posting action:"get" (not a real action on this route — only
+        // generate/apply/redeem-reward/status exist) and checking
+        // data.success, which the real "status" response never sets — this
+        // fetch could never succeed. Fixed to match the same action
+        // ReferralPanel.tsx already uses correctly, and to read the real
+        // response shape (code/referralUrl/totalReferrals/signedUp/
+        // subscribed/freeMonthsEarned/referrals/rewards — no `success`,
+        // `stats`, or dollar paid/pending fields exist server-side; the
+        // referral-rewards table only tracks free_month/credit grants with
+        // no paid-vs-pending status, so those two stay at their previous 0
+        // default rather than inventing numbers).
+        const res = await apiFetch("/api/muse/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "status" }) });
         const data = await res.json();
-        if (data.success) {
+        if (data.code) {
           setReferralData(data);
-          setReferralStats(data.stats || { totalEarned: 0, paid: 0, pending: 0, purchases: 0, signups: data.referrals || 0 });
+          const totalEarnedCents = (data.rewards || [])
+            .filter((r: any) => r.reward_type === "credit")
+            .reduce((sum: number, r: any) => sum + (r.amount_cents || 0), 0);
+          setReferralStats({
+            totalEarned: totalEarnedCents / 100,
+            paid: 0,
+            pending: 0,
+            purchases: data.subscribed || 0,
+            signups: data.signedUp ?? data.totalReferrals ?? 0,
+          });
         }
       } catch (e) {
         console.error("Failed to fetch referral data:", e);
