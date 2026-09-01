@@ -1,0 +1,88 @@
+
+> wyzdesign@0.1.0 build
+> next build
+
+▲ Next.js 16.3.1 (Turbopack)
+- Environments: .env.local
+[@sentry/nextjs] DEPRECATION WARNING: disableLogger is deprecated and will be removed in a future version. Use webpack.treeshake.removeDebugLogging instead. (Not supported with Turbopack.)
+✓ Running next.config.ts took 833ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+[@sentry/nextjs] DEPRECATION WARNING: disableLogger is deprecated and will be removed in a future version. Use webpack.treeshake.removeDebugLogging instead. (Not supported with Turbopack.)
+✓ Compiled successfully in 4.0s
+  Running next.config.js provided runAfterProductionCompile ...
+✓ Completed runAfterProductionCompile in 3.2s
+  Running TypeScript ...
+  Finished TypeScript in 4.7s ...
+  Collecting page data using 7 workers ...
+⚠ The Edge Runtime is deprecated. You can use the "nodejs" runtime instead. Learn more: https://nextjs.org/docs/messages/edge-runtime-deprecated
+⚠ Using edge runtime on a page currently disables static generation for that page
+  Generating static pages using 7 workers (0/48) ...
+  Generating static pages using 7 workers (12/48) 
+  Generating static pages using 7 workers (24/48) 
+  Generating static pages using 7 workers (36/48) 
+✓ Generating static pages using 7 workers (48/48) in 1157ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /_not-found
+├ ƒ /api/backup
+├ ƒ /api/checkout
+├ ƒ /api/cron/capture-bookings
+├ ƒ /api/cron/checkins
+├ ƒ /api/geocode
+├ ƒ /api/health
+├ ƒ /api/muse
+├ ƒ /api/muse/auth
+├ ƒ /api/muse/cache-version
+├ ƒ /api/muse/connect
+├ ƒ /api/muse/content-scan
+├ ƒ /api/muse/depth
+├ ƒ /api/muse/embed
+├ ƒ /api/muse/embeddings
+├ ƒ /api/muse/landing-stats
+├ ƒ /api/muse/match
+├ ƒ /api/muse/push
+├ ƒ /api/muse/referral
+├ ƒ /api/muse/social
+├ ƒ /api/muse/social/callback
+├ ƒ /api/muse/support
+├ ƒ /api/muse/upload
+├ ƒ /api/muse/verification
+├ ƒ /api/muse/waitlist
+├ ƒ /api/qr
+├ ƒ /api/webhooks/stripe
+├ ○ /dmca
+├ ○ /muse
+├ ○ /muse/about
+├ ○ /muse/admin
+├ ○ /muse/admin/moderation
+├ ○ /muse/blog
+├ ○ /muse/careers
+├ ○ /muse/faq
+├ ○ /muse/guidelines
+├ ○ /muse/landing
+├ ○ /muse/offline
+├ ƒ /muse/post/[id]
+├ ○ /muse/press
+├ ○ /muse/pricing
+├ ○ /muse/privacy
+├ ƒ /muse/profile/[id]
+├ ○ /muse/reset-password
+├ ○ /muse/safety
+├ ○ /muse/terms
+├ ○ /muse/verify
+├ ○ /privacy
+├ ○ /safety
+├ ○ /sitemap.xml
+└ ○ /terms
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
