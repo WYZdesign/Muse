@@ -1,12 +1,168 @@
 "use client";
 
-import React, { memo, useEffect, useRef, useState } from "react";
+import React, { memo, useEffect, useRef, useState, useCallback } from "react";
 import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiActivity, FiDollarSign, FiUsers as FiUsersIcon, FiGift, FiX, FiBell } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import StreakWidget from "../components/StreakWidget";
 import { COMMUNITIES, EVENTS, SESSIONS, PROFESSIONALS, FORUM_POSTS } from "../components/types";
 import { getCommunityShareUrl, getEventShareUrl, getProShareUrlWithRef, getMuseUrl } from "@/lib/urls";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
+
+interface ActivityPanelProps {
+  authFetch: any;
+  appliedBriefs: (string | number)[];
+  savedBriefs: (string | number)[];
+  bookingsForHub: any;
+  weeklyLogins: boolean[];
+  loginStreak: number;
+  setShowHamburger: (v: boolean) => void;
+  showScreen: (s: Screen) => void;
+}
+
+function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen }: ActivityPanelProps) {
+  const [hubTab, setHubTab] = useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
+  const [myReports, setMyReports] = useState<any[] | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifFilter, setNotifFilter] = useState<"all" | "unread" | "match" | "message" | "booking" | "quest" | "brief" | "community">("all");
+  const [notifOffset, setNotifOffset] = useState(0);
+  const [notifHasMore, setNotifHasMore] = useState(true);
+
+  useEffect(() => {
+    if (hubTab === "reports" && myReports === null && authFetch) {
+      authFetch("/api/muse?type=my-reports").then((r: any) => r.json()).then((d: any) => setMyReports(d.reports || [])).catch(() => setMyReports([]));
+    }
+  }, [hubTab, myReports, authFetch]);
+
+  const loadNotifications = useCallback(async (append = false) => {
+    if (!authFetch || notifLoading) return;
+    setNotifLoading(true);
+    try {
+      const res = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-notifications", limit: 30, offset: append ? notifOffset : 0, unreadOnly: notifFilter === "unread", type: notifFilter === "all" ? undefined : notifFilter }) });
+      const data = await res.json();
+      if (data.success) {
+        const newNotifs = data.notifications || [];
+        setNotifications(prev => append ? [...prev, ...newNotifs] : newNotifs);
+        setNotifHasMore(newNotifs.length >= 30);
+        if (!append) setNotifOffset(newNotifs.length);
+        else setNotifOffset(prev => prev + newNotifs.length);
+      }
+    } catch (e) {
+      console.error("[ActivityPanel] loadNotifications failed:", e);
+    }
+    setNotifLoading(false);
+  }, [authFetch, notifLoading, notifOffset, notifFilter]);
+
+  useEffect(() => {
+    if (hubTab === "notif") {
+      setNotifications([]);
+      setNotifOffset(0);
+    }
+  }, [hubTab, notifFilter]);
+
+  useEffect(() => {
+    if (hubTab === "notif") loadNotifications();
+  }, [hubTab, notifFilter, loadNotifications]);
+
+  const markAllRead = async () => {
+    if (!authFetch) return;
+    try {
+      await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "mark-all-notifications-read" }) });
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch {}
+  };
+
+  const tabBtn = (key: any, label: string) => (
+    <div key={key} className={"conn-tab-sub" + (hubTab === key ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setHubTab(key); } }} onClick={() => setHubTab(key)} style={{ cursor: "pointer", fontSize: 11, padding: "5px 10px", flexShrink: 0 }}>{label}</div>
+  );
+
+  return (
+    <>
+      <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
+      <div style={{ textAlign: "center", fontSize: 13, color: "var(--gold)", fontWeight: 700, margin: "2px 0 10px" }}>Your Activity</div>
+      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
+        {tabBtn("notif", "Notifications")}
+        {tabBtn("applied", `Applied (${appliedBriefs.length})`)}
+        {tabBtn("saved", `Saved (${savedBriefs.length})`)}
+        {tabBtn("bookings", `Bookings (${(bookingsForHub?.asBooker || []).length + (bookingsForHub?.asHost || []).length})`)}
+        {tabBtn("reports", "Reports")}
+      </div>
+
+      {hubTab === "notif" && (
+        <>
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
+            {(["all", "unread", "match", "message", "booking", "quest", "brief", "community"] as const).map(f => (
+              <div key={f} className={"conn-tab-sub" + (notifFilter === f ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNotifFilter(f); } }} onClick={() => setNotifFilter(f)} style={{ cursor: "pointer", fontSize: 10, padding: "4px 10px", flexShrink: 0, textTransform: "capitalize" }}>{f}</div>
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <div style={{ fontSize: 12, color: "var(--text2)" }}>{notifications.filter(n => !n.read).length} unread</div>
+            {notifications.some(n => !n.read) && <button onClick={markAllRead} style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>}
+          </div>
+          {notifications.length === 0 && !notifLoading
+            ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No notifications yet. Activity will appear here.</div>
+            : notifications.map(a => (
+                <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1, background: a.read ? "transparent" : "rgba(255,215,0,0.03)", borderRadius: 8, marginBottom: 4 }}>
+                  <img loading="lazy" src={a.avatar} alt="Avatar" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, color: "var(--text)" }}><strong>{a.from}</strong> {a.text}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{new Date(a.created_at).toLocaleString()}</div>
+                  </div>
+                </div>
+              ))}
+          {notifHasMore && !notifLoading && (
+            <button onClick={() => loadNotifications(true)} style={{ width: "100%", padding: 10, marginTop: 12, fontSize: 12, color: "var(--gold)", fontWeight: 600, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 8, cursor: "pointer" }}>Load more</button>
+          )}
+        </>
+      )}
+
+      {(hubTab === "applied" || hubTab === "saved") && (() => {
+        const ids = hubTab === "applied" ? appliedBriefs : savedBriefs;
+        if (!ids.length) return <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>{hubTab === "applied" ? "You haven't applied to any quests yet." : "No saved quests yet."}</div>;
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {ids.map((id, i) => (
+              <div key={`${id}-${i}`} style={{ padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Quest #{id}</span>
+                <button className="btn btn-outline" style={{ fontSize: 11, padding: "5px 12px", borderRadius: 99 }} onClick={() => { setShowHamburger(false); showScreen("briefs"); }}>View in Collab</button>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+      {hubTab === "bookings" && (() => {
+        const b = bookingsForHub || { asBooker: [], asHost: [] };
+        if (!b.asBooker.length && !b.asHost.length) return <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No bookings yet.</div>;
+        const row = (x: any, role: string) => (
+          <div key={x.id} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.04)", borderRadius: 12, marginBottom: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{x.session_id?.title || "Session"}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "capitalize", color: x.status === "completed" ? "#98fb98" : x.status === "confirmed" ? "var(--gold)" : x.status === "cancelled" ? "#ff6464" : "var(--muted)" }}>{x.status}</span>
+            </div>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 3 }}>{role} · {new Date(x.created_at).toLocaleDateString()}</div>
+          </div>
+        );
+        return (<>
+          {b.asBooker.map((x: any) => row(x, "Booked by you"))}
+          {b.asHost.map((x: any) => row(x, "You're hosting"))}
+        </>);
+      })()}
+      {hubTab === "reports" && (myReports === null
+        ? <div style={{ textAlign: "center", padding: 30, color: "var(--muted)", fontSize: 13 }}>Loading…</div>
+        : myReports.length === 0
+          ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>You haven't reported anything.</div>
+          : myReports.map((r: any) => (
+            <div key={r.id} style={{ padding: "10px 12px", background: "rgba(255,100,100,0.05)", borderRadius: 12, border: "1px solid rgba(255,100,100,0.12)", marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                <span style={{ fontWeight: 700, textTransform: "capitalize", color: "#ff8a80" }}>{String(r.target_type).replace("_", " ")}</span>
+                <span style={{ color: "var(--muted)", fontSize: 11 }}>{new Date(r.created_at).toLocaleDateString()}</span>
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 3 }}>{r.reason}</div>
+            </div>
+          )))}
+    </>
+  );
+}
 
 export interface MenuModalProps {
   showHamburger: boolean;
@@ -650,154 +806,7 @@ export const MenuModal = memo(function MenuModal({
             )}
             {hamburgerScreen === "activity" && (
               <div className="conn-scroll">
-                {(() => {
-                  const [hubTab, setHubTab] = React.useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
-                  const [myReports, setMyReports] = React.useState<any[] | null>(null);
-                  const [notifications, setNotifications] = React.useState<any[]>([]);
-                  const [notifLoading, setNotifLoading] = React.useState(false);
-                  const [notifFilter, setNotifFilter] = React.useState<"all" | "unread" | "match" | "message" | "booking" | "quest" | "brief" | "community">("all");
-                  const [notifOffset, setNotifOffset] = React.useState(0);
-                  const [notifHasMore, setNotifHasMore] = React.useState(true);
-                  
-                  React.useEffect(() => {
-                    if (hubTab === "reports" && myReports === null && authFetch) {
-                      authFetch("/api/muse?type=my-reports").then(r => r.json()).then(d => setMyReports(d.reports || [])).catch(() => setMyReports([]));
-                    }
-                  }, [hubTab]);
-                  
-                  const loadNotifications = async (append = false) => {
-                    if (!authFetch || notifLoading) return;
-                    setNotifLoading(true);
-                    try {
-                      const res = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-notifications", limit: 30, offset: append ? notifOffset : 0, unreadOnly: notifFilter === "unread", type: notifFilter === "all" ? undefined : notifFilter }) });
-                      const data = await res.json();
-                      if (data.success) {
-                        const newNotifs = data.notifications || [];
-                        setNotifications(prev => append ? [...prev, ...newNotifs] : newNotifs);
-                        setNotifHasMore(newNotifs.length >= 30);
-                        if (!append) setNotifOffset(newNotifs.length);
-                        else setNotifOffset(prev => prev + newNotifs.length);
-                      }
-                    } catch (e) {
-                      console.error("[MenuModal] loadNotifications failed:", e);
-                    }
-                    setNotifLoading(false);
-                  };
-                  
-                  React.useEffect(() => {
-                    if (hubTab === "notif") {
-                      setNotifications([]);
-                      setNotifOffset(0);
-                      loadNotifications();
-                    }
-                  }, [hubTab, notifFilter]);
-                  
-                  React.useEffect(() => {
-                    if (hubTab === "reports" && myReports === null && authFetch) {
-                      authFetch("/api/muse?type=my-reports").then(r => r.json()).then(d => setMyReports(d.reports || [])).catch(() => setMyReports([]));
-                    }
-                  }, [hubTab]);
-                  
-                  const markAllRead = async () => {
-                    if (!authFetch) return;
-                    try {
-                      await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "mark-all-notifications-read" }) });
-                      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-                    } catch {}
-                  };
-                  
-                  const loadMoreNotifications = () => loadNotifications(true);
-                  
-                  const tabBtn = (key: any, label: string) => (
-                    <div key={key} className={"conn-tab-sub" + (hubTab === key ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setHubTab(key); } }} onClick={() => setHubTab(key)} style={{ cursor: "pointer", fontSize: 11, padding: "5px 10px", flexShrink: 0 }}>{label}</div>
-                  );
-                  return (
-                    <>
-                      <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
-                      <div style={{ textAlign: "center", fontSize: 13, color: "var(--gold)", fontWeight: 700, margin: "2px 0 10px" }}>Your Activity</div>
-                      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
-{tabBtn("notif", "Notifications")}
-                        {tabBtn("applied", `Applied (${appliedBriefs.length})`)}
-                        {tabBtn("saved", `Saved (${savedBriefs.length})`)}
-                        {tabBtn("bookings", `Bookings (${(bookingsForHub?.asBooker || []).length + (bookingsForHub?.asHost || []).length})`)}
-                        {tabBtn("reports", "Reports")}
-                      </div>
-                      
-                      {hubTab === "notif" && (
-                        <>
-                          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
-                            {(["all", "unread", "match", "message", "booking", "quest", "brief", "community"] as const).map(f => (
-                              <div key={f} className={"conn-tab-sub" + (notifFilter === f ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNotifFilter(f); } }} onClick={() => setNotifFilter(f)} style={{ cursor: "pointer", fontSize: 10, padding: "4px 10px", flexShrink: 0, textTransform: "capitalize" }}>{f}</div>
-                            ))}
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                            <div style={{ fontSize: 12, color: "var(--text2)" }}>{notifications.filter(n => !n.read).length} unread</div>
-                            {notifications.some(n => !n.read) && <button onClick={markAllRead} style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>}
-                          </div>
-                          {notifications.length === 0 && !notifLoading
-                            ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No notifications yet. Activity will appear here.</div>
-                            : notifications.map(a => (
-                                <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1, background: a.read ? "transparent" : "rgba(255,215,0,0.03)", borderRadius: 8, marginBottom: 4 }}>
-                                  <img loading="lazy" src={a.avatar} alt="Avatar" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
-                                  <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: 14, color: "var(--text)" }}><strong>{a.from}</strong> {a.text}</div>
-                                    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{new Date(a.created_at).toLocaleString()}</div>
-                                  </div>
-                                </div>
-                              ))}
-                          {notifHasMore && !notifLoading && (
-                            <button onClick={loadMoreNotifications} style={{ width: "100%", padding: 10, marginTop: 12, fontSize: 12, color: "var(--gold)", fontWeight: 600, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 8, cursor: "pointer" }}>Load more</button>
-                          )}
-                        </>
-                      )}
-                      
-                      {(hubTab === "applied" || hubTab === "saved") && (() => {
-                        const ids = hubTab === "applied" ? appliedBriefs : savedBriefs;
-                        if (!ids.length) return <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>{hubTab === "applied" ? "You haven't applied to any quests yet." : "No saved quests yet."}</div>;
-                        return (
-                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                            {ids.map((id, i) => (
-                              <div key={`${id}-${i}`} style={{ padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Quest #{id}</span>
-                                <button className="btn btn-outline" style={{ fontSize: 11, padding: "5px 12px", borderRadius: 99 }} onClick={() => { setShowHamburger(false); showScreen("briefs"); }}>View in Collab</button>
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      })()}
-                      {hubTab === "bookings" && (() => {
-                        const b = bookingsForHub || { asBooker: [], asHost: [] };
-                        if (!b.asBooker.length && !b.asHost.length) return <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No bookings yet.</div>;
-                        const row = (x: any, role: string) => (
-                          <div key={x.id} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.04)", borderRadius: 12, marginBottom: 8 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{x.session_id?.title || "Session"}</span>
-                              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "capitalize", color: x.status === "completed" ? "#98fb98" : x.status === "confirmed" ? "var(--gold)" : x.status === "cancelled" ? "#ff6464" : "var(--muted)" }}>{x.status}</span>
-                            </div>
-                            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 3 }}>{role} · {new Date(x.created_at).toLocaleDateString()}</div>
-                          </div>
-                        );
-                        return (<>
-                          {b.asBooker.map(x => row(x, "Booked by you"))}
-                          {b.asHost.map(x => row(x, "You're hosting"))}
-                        </>);
-                      })()}
-                      {hubTab === "reports" && (myReports === null
-                        ? <div style={{ textAlign: "center", padding: 30, color: "var(--muted)", fontSize: 13 }}>Loading…</div>
-                        : myReports.length === 0
-                          ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>You haven't reported anything.</div>
-                          : myReports.map(r => (
-                            <div key={r.id} style={{ padding: "10px 12px", background: "rgba(255,100,100,0.05)", borderRadius: 12, border: "1px solid rgba(255,100,100,0.12)", marginBottom: 8 }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-                                <span style={{ fontWeight: 700, textTransform: "capitalize", color: "#ff8a80" }}>{String(r.target_type).replace("_", " ")}</span>
-                                <span style={{ color: "var(--muted)", fontSize: 11 }}>{new Date(r.created_at).toLocaleDateString()}</span>
-                              </div>
-                              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 3 }}>{r.reason}</div>
-                            </div>
-                          )))}
-                    </>
-                  );
-                })()}
+                <ActivityPanel authFetch={authFetch} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={bookingsForHub} weeklyLogins={weeklyLogins} loginStreak={loginStreak} setShowHamburger={setShowHamburger} showScreen={showScreen} />
               </div>
             )}
           </>

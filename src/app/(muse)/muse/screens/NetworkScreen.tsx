@@ -382,8 +382,9 @@ export const NetworkScreen = memo(function NetworkScreen({
         <div style={{ width: 42 }} />
       </div>
 
+      {!MUSE_CLOSED_BETA_HIDE_SOCIAL && (
       <div className="conn-tabs" style={{ padding: "0 16px" }}>
-        {(MUSE_CLOSED_BETA_HIDE_SOCIAL ? (["pros"] as const) : (["pros", "forum"] as const)).map((t) => (
+        {(["pros", "forum"] as const).map((t) => (
           <div
             key={t}
             role="tab"
@@ -397,6 +398,7 @@ export const NetworkScreen = memo(function NetworkScreen({
           </div>
         ))}
       </div>
+      )}
 
       <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "0 16px 80px" }}>
         {netTab === "pros" && (
