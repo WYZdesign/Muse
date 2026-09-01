@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useMemo } from "react";
+import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 
 const PC = ["#FFD700","#FF6B6B","#D4A5FF","#98FB98","#FFDAB9","#87CEEB","#FF8A80","#FFD1A4","#FFB5C2","#FFE4B5","#FF9A56","#E6E6FA"];
 
@@ -31,14 +32,20 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
   useEffect(() => {
     const orbs = document.querySelectorAll('.scene-orb');
     if (!orbs.length) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    ensureDeviceTiltActive();
     let frame: number;
     let skip = 0;
     const animate = () => {
       skip = (skip + 1) % 2;
       if (skip === 0) {
+      const tilt = getDeviceTilt();
       orbs.forEach((orb, i) => {
         const f = (i + 1) * 10;
-        (orb as HTMLElement).style.transform = `translate(${(Math.sin(Date.now()/6000 + i) - 0.5) * f}px,${(Math.cos(Date.now()/7000 + i*2) - 0.5) * f}px)`;
+        const tiltAmt = 6 + i * 1.5;
+        const tx = (Math.sin(Date.now()/6000 + i) - 0.5) * f + tilt.x * tiltAmt;
+        const ty = (Math.cos(Date.now()/7000 + i*2) - 0.5) * f + tilt.y * tiltAmt;
+        (orb as HTMLElement).style.transform = `translate(${tx}px,${ty}px)`;
       });
       }
       frame = requestAnimationFrame(animate);

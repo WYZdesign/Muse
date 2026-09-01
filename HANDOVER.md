@@ -397,3 +397,23 @@ Synced against `origin/main` at `0c17fcd`. Two things landed since Session 63: m
 fdc8ee5 fix: unitless CSS length bugs + glow/float extension; docs: Session 64 handover
 0c17fcd feat: Session 63 buttery motion pass + Muses list view sizing; docs
 ```
+
+## Session 65 — gyroscope / device-motion tilt effects, mobile
+
+Torreé asked for the same kind of pass as the Session 63-64 buttery-motion work, but for phone motion specifically: gyroscope/tilt-driven effects — "stuff on the screen moving or interacting based on phone motion or angle."
+
+### What was applied
+- **New shared hook** (`src/app/(muse)/muse/hooks/useDeviceTilt.ts`): one global `deviceorientation` listener + rAF-smoothed tilt value, mouse fallback on desktop, iOS 13+ `requestPermission()` support, bails entirely under `prefers-reduced-motion`.
+- Wired the iOS permission request to the app's first `pointerdown` (`page.tsx`) — silent, no dedicated UI, no-ops on platforms that don't need it.
+- `BackgroundScene.tsx`'s cosmic orb float now adds a tilt-driven offset on top of its existing autonomous drift; also added a `prefers-reduced-motion` guard this loop never had.
+- `DiscoverScreen.tsx`: swipe card hero photo gets the same 3D perspective/rotate tilt the existing `onMouseMove` handler gives it on desktop, but driven by phone angle on touch devices. Targets the `<img>`, not the `.swipe-card` the drag gesture moves, so it composes with an in-progress swipe.
+- Fixed `landing/page.tsx`'s `useParallax`: `if (hover:none) return` sat before either listener was attached, so the gyroscope half of that hook never ran on a touch device. Now only `prefers-reduced-motion` bails out.
+- Added `NSMotionUsageDescription` to `ios/App/App/Info.plist`.
+
+### Not verified
+Not verified on an actual device/simulator — flagged in HANDOVER.md as the one thing this session can't do from a Linux shell.
+
+## Session 65 commits
+```
+575d2ef feat: gyroscope/device-tilt effects (background orbs, Discover card tilt) + landing page fix; docs: Session 65 handover
+```

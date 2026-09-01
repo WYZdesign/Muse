@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect } from "react";
 import { FiSearch, FiSettings, FiCompass, FiZap, FiCamera, FiX, FiChevronRight } from "react-icons/fi";
 import Nav from "../components/Nav";
 import MuseMap from "../components/MuseMap";
@@ -8,6 +8,7 @@ import type { Screen, Profile } from "../components/types";
 import { CITY_GEO } from "../components/types";
 import { distanceMiles } from "@/app/muse-realtime";
 import { PORTRAIT_IMG } from "../components/photoOrientation";
+import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 
 // ── Tag description maps (for expandable info popover) ──────────────────────
 const ZODIAC_FULL: Record<string, { icon: string; tag: string; desc: string }> = {
@@ -248,6 +249,23 @@ export const DiscoverScreen = memo(function DiscoverScreen({
 }: DiscoverScreenProps) {
   const [badgeInfo, setBadgeInfo] = useState<{ name: string; desc: string; icon: string; color: string } | null>(null);
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (screen !== "discover") return;
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia?.("(hover: none)").matches) return;
+    ensureDeviceTiltActive();
+    let raf = 0;
+    const tick = () => {
+      const { x, y } = getDeviceTilt();
+      const img = document.querySelector(".swipe-card.top-card .card-hero img") as HTMLElement | null;
+      if (img) img.style.transform = `perspective(800px) rotateY(${x * 7}deg) rotateX(${-y * 7}deg) scale(1.015)`;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [screen]);
+
   return (
     <div className={"screen-el" + (screen === "discover" ? " active" : "")}>
       <div className="discover-wrap">

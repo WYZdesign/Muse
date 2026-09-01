@@ -103,26 +103,38 @@ function Magnetic({ children, strength = 0.25 }: { children: React.ReactNode; st
   );
 }
 
-/* ── Mouse + gyroscope parallax ── */
+/* ── Mouse + gyroscope parallax ──
+   The `(hover: none)` bail below used to sit before either listener was
+   attached, which meant it killed the deviceorientation listener too — so
+   the "gyroscope" half of this hook was dead code on every touch device,
+   i.e. exactly the devices it was written for. Desktop (hover:hover) still
+   gets the mouse-driven version; touch devices now get the phone-tilt
+   version instead of neither. */
 function useParallax<T extends HTMLElement>(strength = 16) {
   const ref = useRef<T | null>(null);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (window.matchMedia?.("(hover: none)").matches) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const hoverCapable = window.matchMedia?.("(hover: hover)").matches;
     let tx = 0, ty = 0, cx = 0, cy = 0;
     const onMouse = (e: MouseEvent) => { tx = (e.clientX / innerWidth - 0.5) * 2; ty = (e.clientY / innerHeight - 0.5) * 2; };
     const onOrient = (e: DeviceOrientationEvent) => { const g = Math.max(-1, Math.min(1, (e.gamma ?? 0) / 45)); const b = Math.max(-1, Math.min(1, (e.beta ?? 0) / 90)); tx = g; ty = b; };
+    const onFirstTouch = () => {
+      const DOE = (window as any).DeviceOrientationEvent;
+      if (DOE && typeof DOE.requestPermission === "function") DOE.requestPermission().catch(() => {});
+    };
     let raf = 0;
     const tick = () => {
       cx += (tx - cx) * 0.08; cy += (ty - cy) * 0.08;
       el.querySelectorAll<HTMLElement>("[data-depth]").forEach((n) => { const d = parseFloat(n.dataset.depth || "0"); n.style.transform = `translate(${cx * d * strength}px, ${cy * d * strength}px)`; });
       raf = requestAnimationFrame(tick);
     };
-    addEventListener("mousemove", onMouse);
+    if (hoverCapable) addEventListener("mousemove", onMouse);
+    else el.addEventListener("touchstart", onFirstTouch, { once: true, passive: true });
     addEventListener("deviceorientation", onOrient);
     raf = requestAnimationFrame(tick);
-    return () => { removeEventListener("mousemove", onMouse); removeEventListener("deviceorientation", onOrient); cancelAnimationFrame(raf); };
+    return () => { removeEventListener("mousemove", onMouse); removeEventListener("deviceorientation", onOrient); el.removeEventListener("touchstart", onFirstTouch); cancelAnimationFrame(raf); };
   }, [strength]);
   return ref;
 }
