@@ -278,6 +278,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   }, [screen, currentIdx]);
 
   return (
+    <div className={"screen-el" + (screen === "discover" ? " active" : "")}>
       <div className="discover-wrap">
         <div className="hdr">
           <div className="logo-link" style={{ fontSize: 32, backgroundImage: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "static", left: "auto", top: "auto", transform: "none", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Discover</div>
@@ -533,6 +534,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
           </>
         )}
       </div>
+      <>
       {galleryView && (
         <div className="gallery-view" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setGalleryView(null); } }} onClick={() => setGalleryView(null)}>
           <button className="gallery-view-close" onClick={(e) => { e.stopPropagation(); setGalleryView(null); }} aria-label="Close"><FiX size={22} /></button>
@@ -579,6 +581,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
         </div>
       )}
       <Nav active="discover" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
+      </>
     </div>
   );
 });
