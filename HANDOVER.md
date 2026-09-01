@@ -346,3 +346,25 @@ I added `sql/MUSE_BOOKING_PAYMENT_HELD_STATUS_20260831.sql` — it explains exac
 2ec6478 fix: booking payments — capture_method 'automatic_delayed' (BROKEN, see Session 61); docs: Session 60 handover
 15c0ada fix: wire up orphaned Analytics screen — Insights button on Profile; docs: Session 59
 ```
+
+## Session 62 (this Claude) — reviewed the last round of fixes, caught one more thing
+
+No push access, patch via SendUserFile. Synced against `origin/main` at `fc8b73e`.
+
+Good news first: my Session 61 patch applied clean, and the title-alignment/dead-code-cleanup work that landed alongside it (`121bfa5`) is solid — all six absolute-positioned titles correctly converted to the same relative-flow `.logo-link` pattern from the Discover fix, `FdStudioScreen.tsx` cleanly deleted with `Screen` type and `VALID_SCREENS` both updated to match, nothing left dangling. Verified `capture_method: "manual"` and the `capture-bookings` cron are both still intact in the tree. Re-ran the full pipeline on the synced result: `tsc`/`build`/`test` all clean, 134/134.
+
+### Found: the new e2e test suite still asserted the broken payment config as correct
+`test-frontend-e2e.mjs` (added this round, a real step forward — a Playwright suite that actually drives the deployed app, which is exactly what would have caught the `automatic_delayed` bug before it shipped) had a "Payment Capture" check that PASSed on finding `capture_method: "automatic_delayed"` in the source and FAILed on finding `"manual"` — written when that was believed to be the fix, before Session 61 found it was broken. Left alone, running this suite locally now shows a false "FAIL: session 60 fix NOT applied" on the actually-correct code, which is exactly the kind of signal that could talk someone into reverting the real fix. Flipped the assertion and added a comment pointing at this handover. Nothing else in the new suite looked stale — the `fdstudio` removal check is already written correctly.
+
+### Still unconfirmed: the `held` status / CHECK constraint question from Session 61
+The `fc8b73e` commit message says "fix: add 'held' status to muse_booking_payments CHECK constraint," but its actual diff is only `test-frontend-e2e.mjs` / `test-visual.mjs` / screenshots — no SQL, no HANDOVER note confirming the migration was run. My read: that commit message is a session-summary line covering everything done that round, not a description of that specific commit's own diff (this repo's commits do that sometimes), and the SQL file I added (`sql/MUSE_BOOKING_PAYMENT_HELD_STATUS_20260831.sql`) is present but I have no signal it's actually been run against the live database yet. **If someone has run it, say so explicitly in the next entry so this stops getting re-flagged. If not: it's still the one open item from my Session 61 finding that only someone with Supabase access can close** — the file has the exact verification query in its header comment.
+
+### Verification
+`tsc --noEmit` clean, `npm run build` clean, `npm run test` 134/134. Single commit.
+
+## Session 62 commits
+```
+(pending — git am against fc8b73e)
+fc8b73e fix: capture_method revert + capture-bookings cron + held-status constraint (session summary); docs
+121bfa5 fix: title alignment, dead code cleanup, gradient audit; docs
+```
