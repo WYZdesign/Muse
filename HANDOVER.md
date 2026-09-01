@@ -368,3 +368,32 @@ The `fc8b73e` commit message says "fix: add 'held' status to muse_booking_paymen
 fc8b73e fix: capture_method revert + capture-bookings cron + held-status constraint (session summary); docs
 121bfa5 fix: title alignment, dead code cleanup, gradient audit; docs
 ```
+
+## Session 63 (this Claude) — buttery motion pass, first round (recap — original entry didn't survive the squash)
+
+Torreé applied my Session 63 patch as part of squash commit `0c17fcd` (bundled with his own Muses list-view avatar work), but that squash didn't include the HANDOVER.md update from the patch — so this is a short recap of what shipped, for the record.
+
+Shipped: hamburger menu exit animation (was instant-unmount, `MenuModal.tsx` now has local `mounted`/`closing` state); Discover swipe-card fly-off animation for both button-triggered and drag-released swipes (previously an instant cut either way — drag releases were even snapping back to center for a frame before the card vanished); cascading bounce-out + subtle float-in-place on the swipe card's radial action-menu buttons; shared `--ease-buttery*`/`--dur-*` motion tokens in `muse.css` `:root`; color-matched `glowBloom` active-state pulse on `.btn-gold`/`.btn-outline`/`.hdr-btn` (gold) and `.conn-btn-primary`/`.match-fab-btn`/`.send-btn` (pink); `.floaty-sm`/`.floaty-md` ambient-float utilities, applied to one spot that round (Muse Pro banner icon).
+
+## Session 64 (this Claude) — verified Session 63 landed intact, fixed a batch of real CSS unit bugs, extended the glow/float system
+
+Synced against `origin/main` at `0c17fcd`. Two things landed since Session 63: my own patch (squashed into `0c17fcd` alongside Torreé's Muses list-view sizing work) and a separate commit (`51ca395`) redoing NetworkScreen's filter panels as single-line horizontal-scroll rows.
+
+### Found and fixed: four CSS declarations with missing units, silently dropped by the browser
+- `.label-like{right:20}` / `.label-nope{left:20}` — missing `px`, LIKE/NOPE overlays during Discover swipe drag were invisible
+- `.filter-scroll-row{padding-bottom:4}` and `.filter-scroll-row::after{bottom:4}` — missing `px`, fade scroll hint was invisible
+- `.pro-skill-row{margin-bottom:10;padding-bottom:2}` — missing `px`
+
+### Extended: color-matched active glow
+- `.card-action-btn` variants (rewind/nope/super/like/note) — each blooms its own accent color on tap
+- `.quick-reply` (gold glow), `.conn-tab-sub` (gold glow)
+
+### Added two more sparing floaty touches
+- `.hamburger-bell` (notification bell in hamburger panel)
+- `.score-text` (match-percentage text on Discover swipe cards)
+
+## Session 64 commits
+```
+fdc8ee5 fix: unitless CSS length bugs + glow/float extension; docs: Session 64 handover
+0c17fcd feat: Session 63 buttery motion pass + Muses list view sizing; docs
+```
