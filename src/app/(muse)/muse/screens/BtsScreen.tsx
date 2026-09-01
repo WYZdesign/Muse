@@ -70,8 +70,8 @@ export const BtsScreen = memo(function BtsScreen({
       const { x, y } = getDeviceTilt();
       document.querySelectorAll<HTMLElement>(".bts-photo-wrap").forEach((el) => {
         const img = el.querySelector(".bts-photo") as HTMLElement | null;
-        el.style.transform = `translate(${x * 4}px, ${y * 4}px)`;
-        if (img) img.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translate(${-x * 5}px, ${-y * 5}px) scale(1.04)`;
+        el.style.transform = `translate(${x * 8}px, ${y * 8}px)`;
+        if (img) img.style.transform = `perspective(800px) rotateY(${x * 18}deg) rotateX(${-y * 18}deg) translate(${-x * 15}px, ${-y * 15}px) scale(1.12)`;
       });
       raf = requestAnimationFrame(tick);
     };
@@ -185,17 +185,12 @@ export const BtsScreen = memo(function BtsScreen({
         }}
       >
         <button
+          className="chat-back"
           onClick={() => showScreen("discover")}
           style={{
             background: "linear-gradient(135deg,#FF69B4,#fff)",
             border: "none",
             borderRadius: 10,
-            width: 34,
-            height: 34,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
             color: "#0a0612",
           }}
           aria-label="Back"
@@ -722,7 +717,7 @@ export const BtsScreen = memo(function BtsScreen({
         </div>
       </div>
 
-      <Nav active="moments" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
+      <Nav active="bts" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );
 });

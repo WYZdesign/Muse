@@ -43,13 +43,23 @@ export default React.memo(function Nav({ active, onNavigate, onHamburgerToggle, 
         } : undefined;
         const buttonStyle = {
           "--line-color": color,
-          background: isActive ? lava : "none",
-          backgroundSize: isActive ? "300% 100%" : "none",
         } as React.CSSProperties;
+        const labelStyle = isActive ? {
+          backgroundImage: lava,
+          backgroundSize: "300% 100%",
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          color: "transparent",
+          display: "inline-block",
+          padding: "0 4px",
+          animation: "lavaFlow 4s ease-in-out infinite",
+          fontWeight: 800,
+        } as React.CSSProperties : { color: "var(--muted)", fontWeight: 600 };
         return (
           <button key={tab.key} className={"nav-item"+(isActive?" active":"")} onClick={() => { if (tab.hasScreen) onNavigate(tab.key as Screen); else if (tab.key==="briefs") onNavigate("briefs" as Screen); }} aria-label={tab.label} aria-current={isActive ? "page" : undefined} style={buttonStyle}>
             <span className="nav-icon" style={iconStyle}>{tab.icon}</span>
-            <span className="nav-label" style={isActive ? { color: "#fff" } : { color:"var(--muted)", fontWeight: 600 }}>{" " + tab.label}</span>
+            <span className="nav-label" style={labelStyle}>{" " + tab.label}</span>
           </button>
         );
       })}

@@ -130,7 +130,7 @@ export const NetworkScreen = memo(function NetworkScreen({
       ".pro-card",
       ".pro-card img",
       ".pro-card .pro-card-content",
-      { imgShift: 6, imgRotate: 8, infoShift: 8, containerShift: 4, scale: 1.06 }
+      { imgShift: 15, imgRotate: 18, infoShift: 15, containerShift: 8, scale: 1.12 }
     );
   }, [screen]);
   const [proDetail, setProDetail] = useState<any | null>(null);
@@ -582,6 +582,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 }}
               />
               <div
+                className="pro-card-content"
                 style={{
                   position: "absolute",
                   left: 0,
@@ -814,7 +815,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               </div>
             )}
 
-            <div style={{ display: "flex", gap: 6, alignItems: "center", margin: "0 20px 10px", flexWrap: "nowrap" }}>
+            <div className="conn-tab-sub-scroll" style={{ display: "flex", gap: 6, alignItems: "center", margin: "0 20px 10px", flexWrap: "nowrap", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
               {!forumSearchOpen && (
                 <>
                   {(["hot", "new", "top"] as const).map((s) => (
@@ -826,6 +827,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setForumSort(s); } }}
                       className={"conn-tab-sub" + (forumSort === s ? " active" : "")}
                       onClick={() => setForumSort(s)}
+                      style={{ flexShrink: 0 }}
                     >
                       {s.charAt(0).toUpperCase() + s.slice(1)}
                     </div>

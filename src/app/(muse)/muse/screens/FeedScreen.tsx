@@ -11,8 +11,8 @@ import type { Screen } from "../components/types";
 export interface FeedScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
-  feedFilter: "all" | "photos" | "text" | "videos";
-  setFeedFilter: (f: "all" | "photos" | "text" | "videos") => void;
+  feedFilter: "all" | "photos" | "text" | "videos" | "bts";
+  setFeedFilter: (f: "all" | "photos" | "text" | "videos" | "bts") => void;
   feedText: string;
   setFeedText: React.Dispatch<React.SetStateAction<string>>;
   feedMedia: string[];
@@ -107,8 +107,8 @@ export const FeedScreen = memo(function FeedScreen({
       const wraps = document.querySelectorAll<HTMLElement>(".feed-post-img-wrap");
       wraps.forEach((wrap) => {
         const img = wrap.querySelector(".feed-post-img") as HTMLElement | null;
-        wrap.style.transform = `translate(${x * 4}px, ${y * 4}px)`;
-        if (img) img.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translate(${-x * 5}px, ${-y * 5}px) scale(1.04)`;
+        wrap.style.transform = `translate(${x * 8}px, ${y * 8}px)`;
+        if (img) img.style.transform = `perspective(800px) rotateY(${x * 18}deg) rotateX(${-y * 18}deg) translate(${-x * 15}px, ${-y * 15}px) scale(1.12)`;
       });
       raf = requestAnimationFrame(tick);
     };
@@ -177,7 +177,7 @@ export const FeedScreen = memo(function FeedScreen({
       if (!url) throw new Error("upload failed");
       const type = isVid ? "video" : "photo";
       // FEED
-      setFeedPosts(prev => [{ id: uid(), author: currentUser.name, avatar: currentUser.avatar, type, text: "", likes: 0, comments: 0, shares: 0, time: "Just now", img: url, media: [url], liked: false, saved: false, reactions: {} }, ...prev]);
+      setFeedPosts(prev => [{ id: uid(), author: currentUser.name, avatar: currentUser.avatar, type, text: "", likes: 0, comments: 0, shares: 0, views: 0, time: "Just now", img: url, media: [url], liked: false, saved: false, reactions: {}, isBts: true }, ...prev]);
       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed", text: "", media: [url], userId: currentUser.id }) }).catch(() => {
         showToast("Went to BTS, but Feed sync failed");
       });
@@ -269,9 +269,18 @@ export const FeedScreen = memo(function FeedScreen({
         <div style={{ width: 42 }} />
       </div>
       <div className="conn-scroll" style={{ padding: "0 0 80px" }}>
-        <div style={{ display: "flex", gap: 6, margin: "0 20px 10px" }}>
-          {(["all", "photos", "text"] as const).map(f => (
-            <div key={f} className={"conn-tab-sub" + (feedFilter === f ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFeedFilter(f); } }} onClick={() => setFeedFilter(f)} style={{ fontSize: 11, padding: "5px 12px", borderRadius: 99 }}>{f === "all" ? "All" : f === "photos" ? "Photos" : "Text"}</div>
+        <div className="conn-tab-sub-scroll feed-filter-scroll" style={{ display: "flex", gap: 6, margin: "0 20px 10px", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
+          {([
+            { k: "all", l: "All", icon: "" },
+            { k: "photos", l: "Photos", icon: "📸" },
+            { k: "text", l: "Text", icon: "✍️" },
+            { k: "videos", l: "Videos", icon: "🎬" },
+            { k: "bts", l: "BTS", icon: "🎥" },
+          ] as const).map(f => (
+            <div key={f.k} className={"conn-tab-sub" + (feedFilter === f.k ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFeedFilter(f.k as any); } }} onClick={() => setFeedFilter(f.k as any)} style={{ fontSize: 11, padding: "5px 12px", borderRadius: 99, whiteSpace: "nowrap", flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
+              {f.icon && <span style={{ fontSize: 12 }}>{f.icon}</span>}
+              {f.l}
+            </div>
           ))}
         </div>
         <div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", gap: 10, alignItems: "flex-start" }}>
@@ -320,7 +329,7 @@ export const FeedScreen = memo(function FeedScreen({
                     const type = feedMedia.length ? (hasVideo ? "video" : "photo") : "text";
                     setFeedText("");
                     setFeedMedia([]);
-                    setFeedPosts(prev => [{ id: uid(), author: currentUser.name, avatar: currentUser.avatar, type, text: txt, likes: 0, comments: 0, shares: 0, time: "Just now", img: feedMedia[0] || undefined, media: feedMedia, liked: false, saved: false, reactions: {} }, ...prev]);
+                    setFeedPosts(prev => [{ id: uid(), author: currentUser.name, avatar: currentUser.avatar, type, text: txt, likes: 0, comments: 0, shares: 0, views: 0, time: "Just now", img: feedMedia[0] || undefined, media: feedMedia, liked: false, saved: false, reactions: {}, isBts: hasVideo }, ...prev]);
                     try {
                       await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed", text: txt, media: feedMedia, userId: currentUser.id }) });
                       showToast("Posted!");
@@ -359,13 +368,25 @@ export const FeedScreen = memo(function FeedScreen({
             <div className="empty-sub">Be the first to share your creative work!</div>
           </div>
         ) : (
-          [...feedPostsStatic, ...feedPosts].sort((a, b) => b.id - a.id).filter(p => feedFilter === "all" || p.type === feedFilter).map(post => {
+          [...feedPostsStatic, ...feedPosts].sort((a, b) => b.id - a.id).filter(p => feedFilter === "all" || (feedFilter === "bts" ? (p.isBts || p.type === "video" && !p.text) : p.type === feedFilter)).map(post => {
             const feedReactionArr = feedReactions[post.id] || [];
             const totalReactions = ["❤️", "🔥", "😍", "😂", "😢", "😡"].reduce((s, r) => s + (feedReactionArr.filter(x => x === r).length || 0), (post.liked ? 1 : 0));
+            // Views: approximation if backend doesn't supply a `views` field yet.
+            //   baseline 50 + likes*8 (each liker viewed it ~1-12 times) + comments*15 + shares*25
+            const views = typeof post.views === "number"
+              ? post.views
+              : 50 + (post.likes || 0) * 8 + (post.comments || 0) * 15 + (post.shares || 0) * 25;
+            // Engagement: weighted (likes=1, comments=2, shares=3, reactions=1) — Twitter/X style.
+            const engagement = (post.likes || 0) + (post.comments || 0) * 2 + (post.shares || 0) * 3 + totalReactions;
+            const fmt = (n: number) => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K" : String(n);
+            const isOnline = post.online === true || (post.lastSeen && (Date.now() - new Date(post.lastSeen).getTime() < 5 * 60 * 1000));
             return (
               <div key={post.id} className="conn-card" style={{ flexDirection: "column", margin: "0 20px 14px", padding: 0, overflow: "hidden", position: "relative" }}>
                 <div style={{ padding: "14px 18px 0", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPostDetail(post.id); } }} onClick={() => openPostDetail(post.id)}>
-                   <img loading="lazy" src={post.avatar} alt={`${post.author}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: post.rid || post.id, name: post.author, avatar: post.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: post.rid || post.id, name: post.author, img: post.avatar, type: "Creative" }); } }} />
+                   <div style={{ position: "relative", flexShrink: 0 }}>
+                     <img loading="lazy" src={post.avatar} alt={`${post.author}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: post.rid || post.id, name: post.author, avatar: post.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: post.rid || post.id, name: post.author, img: post.avatar, type: "Creative" }); } }} />
+                     {isOnline && <span title="Online" style={{ position: "absolute", right: -1, bottom: -1, width: 12, height: 12, borderRadius: "50%", background: "#22c55e", border: "2px solid #0a0612", boxShadow: "0 0 6px rgba(34,197,94,0.7)" }} />}
+                   </div>
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700 }}>{post.author}</div>
                     <div style={{ fontSize: 11, color: "var(--muted)" }}>{post.time}</div>
@@ -386,15 +407,14 @@ export const FeedScreen = memo(function FeedScreen({
                       return rc > 0 ? <span key={r} style={{ fontSize: 15 }} title={rc + " reactions"}>{r}</span> : null;
                     })}
                   </div>
-                  <div style={{ display: "flex", gap: 4 }}>
-                    {post.comments > 0 && (
-                      <span style={{ fontSize: 12, color: "var(--muted)", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (replyingTo !== post.id) setReplyingTo(post.id); } }} onClick={() => {
-                        if (replyingTo !== post.id) setReplyingTo(post.id);
-                      }}>
-                        {post.comments} comments{(postReplies[post.id]?.length || 0) > 0 ? ` · ${postReplies[post.id].length} shown` : ""}
-                      </span>
-                    )}
-                    {post.shares > 0 && <span style={{ fontSize: 12, color: "var(--muted)" }}>{post.shares} shares</span>}
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span style={{ fontSize: 12, color: "var(--text2)", display: "inline-flex", alignItems: "center", gap: 4 }} title="Views">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                      {fmt(views)}
+                    </span>
+                    <span style={{ fontSize: 12, color: engagement > 0 ? "var(--gold)" : "var(--muted)", fontWeight: engagement > 0 ? 700 : 400 }} title={`Engagement: likes(${post.likes || 0}) · comments×2(${post.comments || 0}) · shares×3(${post.shares || 0})`}>
+                      ✦ {fmt(engagement)}
+                    </span>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 6, padding: "10px 12px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
@@ -487,11 +507,21 @@ export const FeedScreen = memo(function FeedScreen({
               </div>
               {dp.text && <div style={{ fontSize: 16, lineHeight: 1.6, whiteSpace: "pre-wrap", marginBottom: dp.img ? 14 : 18 }}>{dp.text}</div>}
               {dp.img && <img loading="lazy" src={dp.img} alt="Photo" style={{ width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 16, marginBottom: 14, display: "block" }} onError={handleImgError} />}
-              <div style={{ display: "flex", gap: 18, padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 14, fontSize: 13, color: "var(--muted)" }}>
-                <span>♥ {dp.likes + (dp.liked ? 1 : 0)} likes</span>
-                <span>💬 {dp.comments} replies</span>
-                {dp.shares > 0 && <span>↗ {dp.shares} shares</span>}
-              </div>
+              {(() => {
+                const dReactions = feedReactions[dp.id] || [];
+                const dTotalReactions = ["❤️", "🔥", "😍", "😂", "😢", "😡"].reduce((s, r) => s + dReactions.filter(x => x === r).length, dp.liked ? 1 : 0);
+                const dViews = typeof dp.views === "number" ? dp.views : 50 + (dp.likes || 0) * 8 + (dp.comments || 0) * 15 + (dp.shares || 0) * 25;
+                const dEng = (dp.likes || 0) + (dp.comments || 0) * 2 + (dp.shares || 0) * 3 + dTotalReactions;
+                const dFmt = (n: number) => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K" : String(n);
+                return (
+                  <div style={{ display: "flex", gap: 18, padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 14, fontSize: 13, color: "var(--muted)", flexWrap: "wrap" }}>
+                    <span title="Views" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>👁 {dFmt(dViews)} views</span>
+                    <span>♥ {dp.likes + (dp.liked ? 1 : 0)} likes</span>
+                    <span>💬 {dp.comments} replies</span>
+                    <span style={{ color: dEng > 0 ? "var(--gold)" : "var(--muted)", fontWeight: dEng > 0 ? 700 : 400 }} title="Engagement: likes + comments×2 + shares×3 + reactions">✦ {dFmt(dEng)} engagement</span>
+                  </div>
+                );
+              })()}
               <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10 }}>Replies</div>
               {replies.length === 0 && (
                 <div style={{ textAlign: "center", padding: "16px 0", color: "var(--muted)", fontSize: 12, fontStyle: "italic" }}>No replies yet — be the first.</div>

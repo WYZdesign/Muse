@@ -125,25 +125,25 @@ export function createSpatialScene(
   const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   if (reduced) return () => {};
 
-  const { imgShift = 5, imgRotate = 6, infoShift = 6, containerShift = 3, scale = 1.04 } = opts || {};
+  const { imgShift = 15, imgRotate = 18, infoShift = 15, containerShift = 8, scale = 1.12 } = opts || {};
   let raf = 0;
 
   const tick = () => {
     const { x, y } = getDeviceTilt();
-    const card = document.querySelector(cardSelector) as HTMLElement | null;
-    const img = card?.querySelector(imgSelector) as HTMLElement | null;
-    const info = infoSelector ? card?.querySelector(infoSelector) as HTMLElement | null : null;
+    const cards = document.querySelectorAll<HTMLElement>(cardSelector);
+    cards.forEach((card) => {
+      const img = card.querySelector(imgSelector) as HTMLElement | null;
+      const info = infoSelector ? card.querySelector(infoSelector) as HTMLElement | null : null;
 
-    if (card) {
       card.style.transform = `translate(${x * containerShift}px, ${y * containerShift}px)`;
-    }
-    if (img) {
-      img.style.transform = `perspective(800px) rotateY(${x * imgRotate}deg) rotateX(${-y * imgRotate}deg) translate(${-x * imgShift}px, ${-y * imgShift}px) scale(${scale})`;
-    }
-    if (info) {
-      info.style.transform = `translate(${-x * infoShift}px, ${-y * infoShift}px)`;
-      info.style.transition = "transform 0.1s ease-out";
-    }
+      if (img) {
+        img.style.transform = `perspective(800px) rotateY(${x * imgRotate}deg) rotateX(${-y * imgRotate}deg) translate(${-x * imgShift}px, ${-y * imgShift}px) scale(${scale})`;
+      }
+      if (info) {
+        info.style.transform = `translate(${-x * infoShift}px, ${-y * infoShift}px)`;
+        info.style.transition = "transform 0.1s ease-out";
+      }
+    });
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);

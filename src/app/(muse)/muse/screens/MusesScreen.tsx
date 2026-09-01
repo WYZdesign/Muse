@@ -72,9 +72,9 @@ export const MusesScreen = memo(function MusesScreen({
       cards.forEach((card) => {
         const img = card.querySelector("img") as HTMLElement | null;
         const info = card.querySelector(".muse-likes-info") as HTMLElement | null;
-        card.style.transform = `translate(${x * 4}px, ${y * 4}px)`;
-        if (img) img.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translate(${-x * 5}px, ${-y * 5}px) scale(1.04)`;
-        if (info) info.style.transform = `translate(${-x * 6}px, ${-y * 6}px)`;
+        card.style.transform = `translate(${x * 8}px, ${y * 8}px)`;
+        if (img) img.style.transform = `perspective(800px) rotateY(${x * 18}deg) rotateX(${-y * 18}deg) translate(${-x * 15}px, ${-y * 15}px) scale(1.12)`;
+        if (info) info.style.transform = `translate(${-x * 15}px, ${-y * 15}px)`;
       });
       raf = requestAnimationFrame(tick);
     };
