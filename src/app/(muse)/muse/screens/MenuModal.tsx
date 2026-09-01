@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiActivity, FiDollarSign, FiUsers as FiUsersIcon, FiGift, FiX, FiBell } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import StreakWidget from "../components/StreakWidget";
@@ -163,10 +163,31 @@ export const MenuModal = memo(function MenuModal({
   liveProfessionals,
   getReferralTier,
 }: MenuModalProps) {
-  if (!showHamburger) return null;
+  const [mounted, setMounted] = useState(showHamburger);
+  const [closing, setClosing] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (showHamburger) {
+      if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
+      setMounted(true);
+      setClosing(false);
+    } else if (mounted) {
+      setClosing(true);
+      closeTimer.current = setTimeout(() => {
+        setMounted(false);
+        setClosing(false);
+        closeTimer.current = null;
+      }, 320);
+    }
+    return () => { if (closeTimer.current) clearTimeout(closeTimer.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showHamburger]);
+
+  if (!mounted) return null;
 
   return (
-    <div className="hamburger-overlay" role="dialog" aria-modal="true" aria-label="Menu">
+    <div className={"hamburger-overlay" + (closing ? " closing" : "")} role="dialog" aria-modal="true" aria-label="Menu">
       <div className="hamburger-backdrop" role="presentation" aria-hidden="true" onClick={() => setShowHamburger(false)} />
       <div className="hamburger-panel">
         <div

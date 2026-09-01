@@ -1347,12 +1347,27 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       // Passing costs nothing — only Like/Super Like are metered by dailyLikes/superLikes.
       setCurrentUser(prev => ({ ...prev, stats: { ...prev.stats, passes: prev.stats.passes + 1 } }));
     }
-    setRewindStack(prev => [...prev, currentIdx]);
-    setCurrentIdx(prev => prev + 1);
-    setCurrentPhotoIdx(0);
-    setPortfolioPhotoIdx(0);
-    setPromptIdx(0);
-    setCardScrolled(false);
+    const flyEl = (dragRef.current.el && dragRef.current.el.isConnected)
+      ? dragRef.current.el
+      : (typeof document !== "undefined" ? (document.querySelector('.swipe-card.top-card') as HTMLElement | null) : null);
+    if (flyEl) {
+      flyEl.style.transition = "transform .36s cubic-bezier(.36,0,.66,-0.02), opacity .36s ease";
+      flyEl.style.transform = dir === "super"
+        ? "translateY(-130%) scale(0.92)"
+        : `translateX(${dir === "right" ? 150 : -150}%) rotate(${dir === "right" ? 24 : -24}deg)`;
+      flyEl.style.opacity = "0";
+    }
+    const swapDelay = flyEl ? 260 : 0;
+    const swapToNext = () => {
+      setRewindStack(prev => [...prev, currentIdx]);
+      setCurrentIdx(prev => prev + 1);
+      setCurrentPhotoIdx(0);
+      setPortfolioPhotoIdx(0);
+      setPromptIdx(0);
+      setCardScrolled(false);
+    };
+    if (swapDelay > 0) setTimeout(swapToNext, swapDelay);
+    else swapToNext();
     if (dir === "right" || dir === "super") trackQuest("swipe", "first_swipe", "like_profile");
     else trackQuest("swipe", "first_swipe");
   }, [currentIdx, dailyLikes, superLikes, filteredProfiles, isUnlimited, calcMatch, likedBy, flash, obData, userDefaultIntent, trackQuest]);
@@ -1456,12 +1471,13 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       rafRef.current = 0;
     }
     const dx = e.clientX - dragRef.current.startX;
-    if (dragRef.current.axis === "x" && Math.abs(dx) > 80) {
+    const committed = dragRef.current.axis === "x" && Math.abs(dx) > 80;
+    if (committed) {
       doSwipe(dx > 0 ? "right" : "left");
     }
     const el = dragRef.current.el;
-    if (el) {
-      el.style.transition = "transform .4s cubic-bezier(.4,0,.2,1)";
+    if (el && !committed) {
+      el.style.transition = "transform .42s cubic-bezier(.16,1,.3,1)";
       el.style.transform = "";
     }
     if (likeLabelRef.current) likeLabelRef.current.style.opacity = "0";
