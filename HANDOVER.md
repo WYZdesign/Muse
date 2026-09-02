@@ -554,3 +554,47 @@ ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS status text;
 
 ### Skipped (per decision): `bootstrapData`/`use*Data.ts` double-fetch cleanup
 Deemed too risky to remove without live verification that nothing depends on `bootstrapData` firing before `profileId` resolves (e.g. logged-out preview). Left for a dedicated pass.
+
+## Session 77 — HANDOVER FOR CLAUDE (agentic + visual tasks)
+
+### Repo state (all pushed to origin/main, Vercel auto-deploying, site 200)
+```
+d70eb4d docs: Session 77 — Nav gradient fix + userStatus persistence + migration note
+f6807d7 feat: persist Feed composer status (DB-backed) + migration
+0c73b76 fix: restore distinct nav colors for Feed (blue) and Muses (orange)
+66725a0 fix: feed/profile data races + reconcile Session 66-76 handover
+5b45de3 chore: cleanup orphaned CSS keyframes + fix audit script overlay nav
+```
+
+### Visual audit artifacts (NOT committed — binary files in repo root)
+10 mobile/desktop screenshots captured against the live site via Playwright (test acct `test_audit_99@muse.dev`), ready for a design pass:
+```
+screenshot_01_discover.png   Discover swipe card (matches discover #FFD700, pink "M" badge)
+screenshot_02_sessions.png   Sessions — Browse/Bookings/Requests
+screenshot_03_network.png    Network — pro card + filter chips
+screenshot_04_profile_menu.png  Profile — avatar ring + stats grid
+screenshot_05_settings.png   Settings — sliders + toggles + account links
+screenshot_06_bts.png        BTS — Time to Post banner + stories + filter
+screenshot_07_feed.png       Feed — composer + posts (Nav Feed tab now BLUE)
+screenshot_08_collab.png     Collab — TFP/Paid/Open Call cards
+screenshot_09_muses.png      Muses — empty state + Start Discovering
+screenshot_10_desktop.png    Desktop 1440x900 — centered Discover card
+```
+Re-capture with `python _audit_full.py` (V:\Muse) — it now closes the hamburger overlay reliably between screens.
+
+### AGENTIC TASKS (code — priority order)
+1. **Apply the status migration** (`sql/MUSE_STATUS_COLUMN_20260902.sql`) in Supabase SQL editor — one-liner `ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS status text;`. Until then status is per-device only. Verify: edit status, reload in a second browser, confirm it persists.
+2. **`bootstrapData`/`use*Data.ts` double-fetch** (briefs/forum/events/communities/sessions fire ~7 GETs twice per load). Remove the dead half, but ONLY after confirming live that logged-out preview content doesn't depend on `bootstrapData` firing before `profileId` resolves. Then re-verify Feed/Discover shapes (normalizers now make either resolution order safe).
+3. **Verify status persistence end-to-end** with two separate test accounts — edit a status as account A, log in as account B, post/load feed, confirm the editor shows A's saved status (cross-device). The author-based dedup from Session 76 should show each post once.
+4. **Confirm the `status` field surfaces on ProfileScreen** too (not just the Feed composer) — if not, the value should be editable + displayed consistently.
+
+### VISUAL TASKS (design — the screenshots above)
+1. **Real-device pass**: the two items Claude flagged as "worth Torreé's eyes" in Session 66 are still unverified — (a) Discover card tilt is now global-cursor-scoped on desktop (no longer hover-scoped), (b) the active nav button is a static-gradient block, not a shimmering `lavaFlow`. Confirm both feel right on a real device.
+2. **Feed tab color** (`0c73b76`): confirm the active Feed tab now reads blue and matches `.screen-feed.active` — re-run `_audit_full.py` and eyeball screenshot_07_feed.png.
+3. **Avatar render check**: Session 72 fixed match avatars rendering as solid black (stripped `transform` from `avatarEccentric*`). Confirm Muses avatars now show photos (screenshot_09_muses.png).
+4. **Scan the 10 screenshots** for any regression the text pass can't see (overlap, clipped cards, contrast, badge overflow) and note findings back here.
+
+### Standing context
+- Test acct for live audits: `test_audit_99@muse.dev` / `AuditTest99!`
+- `git push` is NOT available to Claude (`WYZdesign/Muse` not authorized in its session) — Claude commits locally, wyzmind pushes to origin/main.
+- Naming convention: **Claude** = the other agent (commits only), **wyzmind** = this operator (pushes + deploys live).
