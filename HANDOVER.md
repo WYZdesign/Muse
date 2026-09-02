@@ -552,6 +552,8 @@ The one-line SQL must be run in the Supabase dashboard SQL editor (the service r
 ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS status text;
 ```
 
+**STATUS: DONE (2026-09-02).** Migration applied against the live Supabase DB via the Management API (`POST /v1/projects/{ref}/database/query`) and verified — `status` column exists as `text` on `muse_profiles`. Cross-device status sync is now live. Credentials stored in vault: `muse_SUPABASE_ACCESS_TOKEN` (`sbp_...`, expires 2026-12-01), `muse_SUPABASE_PROJECT_REF` (`ejbwjmzrazfgtisqsamf`).
+
 ### Skipped (per decision): `bootstrapData`/`use*Data.ts` double-fetch cleanup
 Deemed too risky to remove without live verification that nothing depends on `bootstrapData` firing before `profileId` resolves (e.g. logged-out preview). Left for a dedicated pass.
 
