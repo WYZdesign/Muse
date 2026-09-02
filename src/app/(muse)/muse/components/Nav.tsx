@@ -5,17 +5,17 @@ import type { Screen } from "./types";
 
 const lineColor: Record<string,string> = {
   discover: "#FFD700",
-  connections: "#FF8C00",
+  connections: "#1E90FF",
   briefs: "#4DD0E1",
-  matches: "#FF8C00",
+  matches: "#FF4500",
   bts: "#FF69B4",
 };
 
 const lavaGradients: Record<string, string> = {
   discover: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)",
-  connections: "linear-gradient(90deg,#FF8C00,#FFD700,#FFAA00,#FF8C00,#FF4500,#FF8C00)",
+  connections: "linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF)",
   briefs: "linear-gradient(90deg,#4DD0E1,#20B2AA,#00CED1,#4DD0E1,#26C6DA,#4DD0E1)",
-  matches: "linear-gradient(90deg,#FF8C00,#FFD700,#FFAA00,#FF8C00,#FF4500,#FF8C00)",
+  matches: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",
   bts: "linear-gradient(90deg,#FF69B4,#FF1493,#FFB6C1,#FF69B4,#FF69B4)",
 };
 

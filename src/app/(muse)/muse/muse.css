@@ -1543,11 +1543,11 @@ img{background-color:#1a0a2e}
    only tint non-nav elements (conn-tabs, inputs, header buttons).
    ═══════════════════════════════════════════════════════════════ */
 
-/* FEED PAGE — orange/gold */
-.screen-feed.active{--line-color:#FF8C00}
-.screen-feed.active .conn-tab.active{color:#FF8C00;border-bottom-color:#FF8C00;text-shadow:0 0 10px rgba(255,140,0,0.35)}
-.screen-feed.active .hdr-btn:hover{color:#FF8C00}
-.screen-feed.active .inp:focus{border-color:#FF8C00;box-shadow:0 0 10px rgba(255,140,0,0.12)}
+/* FEED PAGE — blue */
+.screen-feed.active{--line-color:#1E90FF}
+.screen-feed.active .conn-tab.active{color:#1E90FF;border-bottom-color:#1E90FF;text-shadow:0 0 10px rgba(30,144,255,0.35)}
+.screen-feed.active .hdr-btn:hover{color:#1E90FF}
+.screen-feed.active .inp:focus{border-color:#1E90FF;box-shadow:0 0 10px rgba(30,144,255,0.12)}
 
 /* DISCOVER PAGE — gold */
 .screen-discover.active{--line-color:#FFD700}
@@ -1586,10 +1586,10 @@ img{background-color:#1a0a2e}
 .screen-profile.active .inp:focus{border-color:#F48FB1;box-shadow:0 0 10px rgba(244,143,177,0.12)}
 
 /* MUSES PAGE — orange/gold */
-.screen-muses.active{--line-color:#FF8C00}
-.screen-muses.active .conn-tab.active{color:#FF8C00;border-bottom-color:#FF8C00;text-shadow:0 0 10px rgba(255,140,0,0.35)}
-.screen-muses.active .hdr-btn:hover{color:#FF8C00}
-.screen-muses.active .inp:focus{border-color:#FF8C00;box-shadow:0 0 10px rgba(255,140,0,0.12)}
+.screen-muses.active{--line-color:#FF4500}
+.screen-muses.active .conn-tab.active{color:#FF4500;border-bottom-color:#FF4500;text-shadow:0 0 10px rgba(255,69,0,0.35)}
+.screen-muses.active .hdr-btn:hover{color:#FF4500}
+.screen-muses.active .inp:focus{border-color:#FF4500;box-shadow:0 0 10px rgba(255,69,0,0.12)}
 
 /* PORTFOLIO PAGE — bright teal */
 .screen-portfolio.active{--line-color:#4DD0E1}
