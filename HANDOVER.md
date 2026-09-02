@@ -528,3 +528,29 @@ Net: whichever fetch resolves last, `liveFeed`/`liveProfiles` end up in the same
 ```
 (awaiting wyzmind push — applied locally, see code diff for feed/profile normalizers)
 ```
+
+## Session 77 (wyzmind) — resolved both Doc-76 follow-ups: Nav gradient duplication FIXED, Feed userStatus now persists fully
+
+Continuing "go" after Session 76. Addressed the three items Claude documented-not-fixed in Session 76:
+
+### FIXED: Nav.tsx connections/matches gradient duplication
+Confirmed via FeatureTour canon + legacy CSS (`.grad-connections`/`.grad-matches`): Feed was meant to be **blue** (`#1E90FF`), Muses **orange-red** (`#FF4500`), but Nav.tsx had both as byte-identical `#FF8C00` and identical lava gradients — a copy-paste slip. Restored distinct colors in `Nav.tsx` and aligned the screen-accent CSS (`.screen-feed.active` → blue, `.screen-muses.active` → orange-red) so the active-tab label, header accent, and screen chroma are consistent per screen. Verified: tsc clean, 146/146, build clean. (`0c73b76`)
+
+### FIXED: FeedScreen `userStatus` now persists (DB-backed + migration)
+Previously a pure `useState` stub that silently reset to the default on every reload. Now fully functional:
+- **`auth/route.ts`**: added `"status"` to the `update-profile` allowed fields array (line 191).
+- **`page.tsx`**: session merge now loads `d.profile.status` into `currentUser.status` (the session handler already does `select("*")`, so once the column exists the value flows back on every session); initial state includes `status: ""`.
+- **`FeedScreen.tsx`**: `userStatus` initializes from `currentUser.status ?? localStorage mirror ?? default`; saves on blur/Enter via `update-profile`, writes a per-user localStorage mirror as a fallback, and calls `onStatusSaved` to update `currentUser.status` immediately.
+- **`page.tsx`**: passes `onStatusSaved={(status) => setCurrentUser(prev => ({ ...prev, status }))}` to `<FeedScreen>`.
+- **`sql/MUSE_STATUS_COLUMN_20260902.sql`**: `ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS status text;` — additive, idempotent, non-destructive.
+
+Verified: tsc clean, 146/146, build clean. (`f6807d7`)
+
+### ⚠️ REQUIRED — run the migration for cross-device sync
+The one-line SQL must be run in the Supabase dashboard SQL editor (the service role key can't run DDL through PostgREST, and no direct Postgres connection string exists locally). Until it runs, the feature works per-device via the localStorage mirror but won't sync across devices.
+```
+ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS status text;
+```
+
+### Skipped (per decision): `bootstrapData`/`use*Data.ts` double-fetch cleanup
+Deemed too risky to remove without live verification that nothing depends on `bootstrapData` firing before `profileId` resolves (e.g. logged-out preview). Left for a dedicated pass.
