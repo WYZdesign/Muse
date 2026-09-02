@@ -168,6 +168,8 @@ export const FeedScreen = memo(function FeedScreen({
   const [recording, setRecording] = useState(false);
   const [recSecs, setRecSecs] = useState(0);
   const [capturing, setCapturing] = useState(false);
+  const [userStatus, setUserStatus] = useState("🎨 Working on something new");
+  const [editingStatus, setEditingStatus] = useState(false);
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach(t => t.stop());
@@ -322,6 +324,26 @@ export const FeedScreen = memo(function FeedScreen({
         <div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", gap: 10, alignItems: "flex-start" }}>
           <img loading="lazy" src={currentUser.avatar} alt="Avatar" className="feed-avatar" style={{ width: 52, height: 52, flexShrink: 0 }} onError={handleImgError} />
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+            {editingStatus ? (
+              <input
+                className="inp"
+                value={userStatus}
+                onChange={e => setUserStatus(e.target.value)}
+                onBlur={() => setEditingStatus(false)}
+                onKeyDown={e => { if (e.key === "Enter") setEditingStatus(false); }}
+                autoFocus
+                maxLength={80}
+                placeholder="What's your status?"
+                style={{ margin: 0, fontSize: 13, padding: "6px 10px", minHeight: "auto", background: "var(--glass)", border: "1px solid rgba(255,215,0,0.3)", color: "#FFD700" }}
+              />
+            ) : (
+              <div
+                onClick={() => setEditingStatus(true)}
+                style={{ fontSize: 13, color: "#FFD700", fontWeight: 600, padding: "6px 10px", borderRadius: 10, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.15)", cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textShadow: "0 0 10px rgba(255,215,0,0.3)" }}
+              >
+                {userStatus || "Set your status..."}
+              </div>
+            )}
             <textarea className="inp" placeholder="Share your work, ideas, or find collaborators..." rows={2} value={feedText} onChange={e => setFeedText(e.target.value)} style={{ resize: "none", margin: 0, minHeight: 52, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)" }} />
             <div style={{ display: "flex", gap: 8, alignItems: "center", width: "100%" }}>
               <label style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }}>
