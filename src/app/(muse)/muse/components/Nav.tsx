@@ -41,12 +41,7 @@ export default React.memo(function Nav({ active, onNavigate, onHamburgerToggle, 
           alignItems: "center" as const,
           justifyContent: "center" as const,
         } : undefined;
-        const buttonStyle = isActive ? {
-          "--line-color": color,
-          background: `linear-gradient(135deg, ${color}25, ${color}10)`,
-          borderRadius: 12,
-          border: `1px solid ${color}30`,
-        } as React.CSSProperties : {
+        const buttonStyle = {
           "--line-color": color,
         } as React.CSSProperties;
         const labelStyle = isActive ? {

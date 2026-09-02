@@ -1732,7 +1732,9 @@ ACTIONS["get-quests"] = async ({ sb, profile }) => {
     };
   });
 
-  return NextResponse.json({ quests: enriched, xp: xpData || { total_xp: 0, level: 1 }, streak: await bumpLoginStreak(sb, profile.id) });
+  const streak = await bumpLoginStreak(sb, profile.id);
+  await bumpQuest(sb, profile.id, "login");
+  return NextResponse.json({ quests: enriched, xp: xpData || { total_xp: 0, level: 1 }, streak });
 };
 
 ACTIONS["track-quest"] = async ({ sb, profile, rest, ip }) => {

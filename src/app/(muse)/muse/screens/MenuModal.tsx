@@ -390,11 +390,11 @@ export const MenuModal = memo(function MenuModal({
               // beta cohort. Network's "Professionals" search stays visible (real
               // discovery value even pre-beta); its Forum sub-tab is separately
               // suppressed below in NetworkScreen.
-              ...(MUSE_CLOSED_BETA_HIDE_SOCIAL ? [] : [{ key: "community", icon: <FiUsers size={20} />, label: "Community", desc: "Channels, groups & events", grad: "linear-gradient(135deg,#FF8A80,#FF4757,#FFD700)" }]),
-              { key: "sessions", icon: <FiCalendar size={20} />, label: "Sessions", desc: "Bookings & one-on-ones", grad: "linear-gradient(135deg,#E1BEE7,#9C27B0,#FF4081)" },
-              { key: "network", icon: <FiShare2 size={20} />, label: "Network", desc: MUSE_CLOSED_BETA_HIDE_SOCIAL ? "Find professionals" : "Professionals & forum", grad: "linear-gradient(135deg,#B3E5FC,#64B5F6,#00BCD4)" },
-              { key: "profile", icon: <FiUser size={20} />, label: "Profile", desc: "Edit profile & premium", grad: "linear-gradient(135deg,#FFD700,#FFB5C2,#B388FF)" },
-              { key: "settings", icon: <FiSettings size={20} />, label: "Settings", desc: "Preferences, safety & help", grad: "linear-gradient(135deg,#CE93D8,#B388FF,#A5D6A7)" },
+              ...(MUSE_CLOSED_BETA_HIDE_SOCIAL ? [] : [{ key: "community", icon: <FiUsers size={22} />, label: "Community", desc: "Channels, groups & events", grad: "linear-gradient(135deg,#FF8A80,#FF4757,#FFD700)" }]),
+              { key: "sessions", icon: <FiCalendar size={22} />, label: "Sessions", desc: "Bookings & one-on-ones", grad: "linear-gradient(135deg,#E1BEE7,#9C27B0,#FF4081)" },
+              { key: "network", icon: <FiShare2 size={22} />, label: "Network", desc: MUSE_CLOSED_BETA_HIDE_SOCIAL ? "Find professionals" : "Professionals & forum", grad: "linear-gradient(135deg,#B3E5FC,#64B5F6,#00BCD4)" },
+              { key: "profile", icon: <FiUser size={22} />, label: "Profile", desc: "Edit profile & premium", grad: "linear-gradient(135deg,#FFD700,#FFB5C2,#B388FF)" },
+              { key: "settings", icon: <FiSettings size={22} />, label: "Settings", desc: "Preferences, safety & help", grad: "linear-gradient(135deg,#CE93D8,#B388FF,#A5D6A7)" },
             ].map(item => {
               const activate = () => {
                 if (item.key === "community" || item.key === "sessions" || item.key === "network") {
@@ -619,7 +619,7 @@ export const MenuModal = memo(function MenuModal({
                   <div style={{ fontSize: 13, color: "var(--muted)" }}>{currentUser.type} · {currentUser.exp}</div>
                 </div>
                 <button className="hamburger-item" style={{ width: "100%", marginBottom: 6 }} onClick={() => { setHamburgerScreen(""); setShowHamburger(false); setScreen("profile"); }}>
-                  <div className="hamburger-item-icon" style={{ background: "linear-gradient(135deg,#FFD700,#FFBF00,#FF8A80)" }}><FiUser size={20} /></div>
+                  <div className="hamburger-item-icon" style={{ background: "linear-gradient(135deg,#FFD700,#FFBF00,#FF8A80)" }}><FiUser size={22} /></div>
                   <div><div className="hamburger-item-label">Edit Profile</div><div className="hamburger-item-desc">Update your bio, skills, portfolio</div></div>
                 </button>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "20px 0 10px" }}>Statistics</div>
