@@ -596,7 +596,22 @@ Re-capture with `python _audit_full.py` (V:\Muse) — it now closes the hamburge
 3. **Avatar render check**: Session 72 fixed match avatars rendering as solid black (stripped `transform` from `avatarEccentric*`). Confirm Muses avatars now show photos (screenshot_09_muses.png).
 4. **Scan the 10 screenshots** for any regression the text pass can't see (overlap, clipped cards, contrast, badge overflow) and note findings back here.
 
-### Standing context
+### Standalone context
 - Test acct for live audits: `test_audit_99@muse.dev` / `AuditTest99!`
 - `git push` is NOT available to Claude (`WYZdesign/Muse` not authorized in its session) — Claude commits locally, wyzmind pushes to origin/main.
 - Naming convention: **Claude** = the other agent (commits only), **wyzmind** = this operator (pushes + deploys live).
+
+## Session 78 (wyzmind) — status feature fully complete across both screens
+
+Closed out the remaining Session 77 punch-list items:
+
+1. **Migration applied + verified** — ran `ALTER TABLE muse_profiles ADD COLUMN IF NOT EXISTS status text;` against the live Supabase DB via the Management API (`POST /v1/projects/ejbwjmzrazfgtisqsamf/database/query`, HTTP 201), verified the column exists (`text` on `muse_profiles`). Credentials stored in vault: `muse_SUPABASE_ACCESS_TOKEN` (expires 2026-12-01), `muse_SUPABASE_PROJECT_REF`, `muse_SUPABASE_ACCESS_TOKEN_EXPIRY`. Cross-device status sync is now live.
+
+2. **ProfileScreen status pill** — added a read-only gold pill that shows `currentUser.status` under the profile header when set (matching the Feed composer's gold accent). Deliberately read-only: FeedScreen remains the single save path, so no second write path that could race against it. Verified: tsc clean, 146/146, build clean.
+
+Commits this session: `09f22da` (migration docs), `3d7369d` (ProfileScreen pill).
+
+### Remaining open items (for whoever picks up next)
+- **Cross-account status sync** was not live-verified (Chrome browser bridge disconnected in Claude's session). Now that the migration is confirmed applied, worth a two-account check: set a status as account A, log in as account B, confirm A's status shows.
+- **`bootstrapData`/`use*Data.ts` double-fetch**: Claude traced it and found a plausibly legitimate reason (prefetch before login resolves), so it's left alone — not confirmed dead code.
+- **Visual real-device pass** from Session 66 (global-cursor card tilt, static nav gradient) still unverified.
