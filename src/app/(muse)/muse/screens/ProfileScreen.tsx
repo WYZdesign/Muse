@@ -186,6 +186,11 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center", marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
             <span>Member since {new Date(currentUser.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })}</span>
           </div>
+          {currentUser.status ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 8, fontSize: 12, fontWeight: 600, color: "#FFD700", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 99, padding: "4px 12px", width: "fit-content", marginLeft: "auto", marginRight: "auto" }}>
+              {currentUser.status}
+            </div>
+          ) : null}
         </div>
         <div className="stats-row">
           <div className="stat"><div className="stat-num">{matches.length}</div><div className="stat-label">Matches</div></div>
