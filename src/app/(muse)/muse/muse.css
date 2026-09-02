@@ -592,7 +592,22 @@ img{background-color:#1a0a2e}
 .profile-avatar-wrap{position:relative;margin-bottom:16px}
 .profile-avatar{width:100px;height:100px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-origin:border-box;background-clip:padding-box,border-box;background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(135deg,var(--gold),var(--amber),var(--pink),var(--lavender));background-size:100% 100%,200% 200%;animation:avatarGrad 4s ease-in-out infinite}
 @keyframes avatarGrad{0%,100%{background-position:0% 0%,0% 50%}50%{background-position:0% 0%,100% 50%}}
-.profile-ring{position:absolute;top:50%;left:50%;width:129px;height:129px;border-radius:50%;border:2px solid transparent;border-top-color:var(--gold);border-right-color:var(--amber);border-bottom-color:var(--pink);border-left-color:var(--lavender);transform:translate(-50%,-50%);animation:spiroProfile 6s ease-in-out infinite}
+.profile-ring{position:absolute;top:50%;left:50%;width:110px;height:110px;border-radius:50%;border:2px solid transparent;border-top-color:var(--gold);border-right-color:var(--amber);border-bottom-color:var(--pink);border-left-color:var(--lavender);transform:translate(-50%,-50%);animation:orbitSpin 5s linear infinite}
+@keyframes orbitSpin{
+  0%  {transform:translate(calc(-50% + 0px),calc(-50% - 7px)) rotate(0deg)}
+  8%  {transform:translate(calc(-50% + 3.5px),calc(-50% - 6px)) rotate(30deg)}
+  16% {transform:translate(calc(-50% + 6px),calc(-50% - 3.5px)) rotate(60deg)}
+  25% {transform:translate(calc(-50% + 7px),calc(-50% + 0px)) rotate(90deg)}
+  33% {transform:translate(calc(-50% + 6px),calc(-50% + 3.5px)) rotate(120deg)}
+  41% {transform:translate(calc(-50% + 3.5px),calc(-50% + 6px)) rotate(150deg)}
+  50% {transform:translate(calc(-50% + 0px),calc(-50% + 7px)) rotate(180deg)}
+  58% {transform:translate(calc(-50% - 3.5px),calc(-50% + 6px)) rotate(210deg)}
+  66% {transform:translate(calc(-50% - 6px),calc(-50% + 3.5px)) rotate(240deg)}
+  75% {transform:translate(calc(-50% - 7px),calc(-50% + 0px)) rotate(270deg)}
+  83% {transform:translate(calc(-50% - 6px),calc(-50% - 3.5px)) rotate(300deg)}
+  91% {transform:translate(calc(-50% - 3.5px),calc(-50% - 6px)) rotate(330deg)}
+  100%{transform:translate(calc(-50% + 0px),calc(-50% - 7px)) rotate(360deg)}
+}
 @keyframes ringSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
 
 /* ═══ SWIRL RING VARIANTS ═══ */
@@ -1606,20 +1621,6 @@ img{background-color:#1a0a2e}
 
 
 
-
-@keyframes spiroProfile{
-  0%{transform:translate(-50%,-50%) rotate(0deg) scale(1)}
-  8%{transform:translate(-53%,-47%) rotate(38deg) scale(1.02)}
-  18%{transform:translate(-47%,-53%) rotate(105deg) scale(1)}
-  28%{transform:translate(-52%,-48%) rotate(148deg) scale(1.01)}
-  38%{transform:translate(-48%,-52%) rotate(220deg) scale(1)}
-  50%{transform:translate(-51%,-49%) rotate(265deg) scale(1.02)}
-  60%{transform:translate(-47%,-53%) rotate(318deg) scale(1)}
-  72%{transform:translate(-53%,-47%) rotate(380deg) scale(1.01)}
-  84%{transform:translate(-49%,-51%) rotate(420deg) scale(1)}
-  92%{transform:translate(-52%,-48%) rotate(448deg) scale(1.02)}
-  100%{transform:translate(-50%,-50%) rotate(480deg) scale(1)}
-}
 
 /* Reduce motion preference */
 @media(prefers-reduced-motion:reduce){.swipe-card.top-card,.swipe-card .card-hero img,.messages .msg,.match-title,.card-hero-name,.card-hero-type{animation:none!important}.tour-sprite-glow,.tour-sprite-ring,.tour-sprite-ring-2,.tour-sprite-badge,.tour-sprite-orbit-0,.tour-sprite-orbit-1,.tour-sprite-orbit-2,.tour-sprite-spark,.tour-card-wash,.tour-btn-primary,.brief-avatar,.conn-tab-sub-scroll::after,.conn-tab-sub-scroll::before,.feed-avatar,.match-avatar,.conn-avatar,.chat-avatar{animation:none!important}}
