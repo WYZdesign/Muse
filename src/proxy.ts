@@ -14,6 +14,7 @@ const APP_ORIGIN = getBaseUrl();
 const WYZDESIGN_URL = "https://www.wyzdesign.com";
 
 const ALLOWED_ORIGINS = [
+  "https://muse.wyzdesign.com",
   APP_ORIGIN,
   WYZDESIGN_URL,
   WYZDESIGN_URL.replace("www.", ""),
