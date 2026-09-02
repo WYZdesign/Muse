@@ -23,7 +23,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
   const [hubTab, setHubTab] = useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
   const [myReports, setMyReports] = useState<any[] | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [notifLoading, setNotifLoading] = useState(false);
+  const notifLoadingRef = useRef(false);
   const [notifFilter, setNotifFilter] = useState<"all" | "unread" | "match" | "message" | "booking" | "quest" | "brief" | "community">("all");
   const [notifOffset, setNotifOffset] = useState(0);
   const [notifHasMore, setNotifHasMore] = useState(true);
@@ -35,8 +35,8 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
   }, [hubTab, myReports, authFetch]);
 
   const loadNotifications = useCallback(async (append = false) => {
-    if (!authFetch || notifLoading) return;
-    setNotifLoading(true);
+    if (!authFetch || notifLoadingRef.current) return;
+    notifLoadingRef.current = true;
     try {
       const res = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-notifications", limit: 30, offset: append ? notifOffset : 0, unreadOnly: notifFilter === "unread", type: notifFilter === "all" ? undefined : notifFilter }) });
       const data = await res.json();
@@ -50,8 +50,8 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
     } catch (e) {
       console.error("[ActivityPanel] loadNotifications failed:", e);
     }
-    setNotifLoading(false);
-  }, [authFetch, notifLoading, notifOffset, notifFilter]);
+    notifLoadingRef.current = false;
+  }, [authFetch, notifOffset, notifFilter]);
 
   useEffect(() => {
     if (hubTab === "notif") {
@@ -99,7 +99,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
             <div style={{ fontSize: 12, color: "var(--text2)" }}>{notifications.filter(n => !n.read).length} unread</div>
             {notifications.some(n => !n.read) && <button onClick={markAllRead} style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>}
           </div>
-          {notifications.length === 0 && !notifLoading
+          {notifications.length === 0
             ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No notifications yet. Activity will appear here.</div>
             : notifications.map(a => (
                 <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1, background: a.read ? "transparent" : "rgba(255,215,0,0.03)", borderRadius: 8, marginBottom: 4 }}>
@@ -110,7 +110,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
                   </div>
                 </div>
               ))}
-          {notifHasMore && !notifLoading && (
+          {notifHasMore && (
             <button onClick={() => loadNotifications(true)} style={{ width: "100%", padding: 10, marginTop: 12, fontSize: 12, color: "var(--gold)", fontWeight: 600, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 8, cursor: "pointer" }}>Load more</button>
           )}
         </>

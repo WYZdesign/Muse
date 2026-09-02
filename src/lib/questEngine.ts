@@ -185,3 +185,45 @@ export async function bumpLoginStreak(sb: SupabaseClient, profileId: string): Pr
     return newStreak;
   } catch { return 0; }
 }
+
+/** Deterministic hash for seeded selection. Returns unsigned 32-bit int. */
+export function seededHash(str: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+  return h;
+}
+
+/** Rotation limits per tier — daily/weekly/monthly rotate a stable subset;
+ *  starter/season/legendary always show fully (onboarding/long-term). */
+export const ROTATION_LIMITS: Record<string, number> = { daily: 6, weekly: 8, monthly: 6 };
+export const ROTATION_TIERS = new Set(["daily", "weekly", "monthly"]);
+
+/** Return a rotation-stable subset of quests. Within each rotating tier,
+ *  the selected set is deterministic per UTC day/week/month so the same
+ *  user sees the same quests all period, then auto-swaps on rollover. */
+export function rotateQuests(quests: any[], now?: Date): any[] {
+  const d = now || new Date();
+  const periodBuckets: Record<string, string> = {
+    daily:   `daily:${d.toISOString().slice(0, 10)}`,
+    weekly:  `weekly:${d.toISOString().slice(0, 10)}`,
+    monthly: `monthly:${d.toISOString().slice(0, 7)}`,
+  };
+  const result: any[] = [];
+  for (const tier of ROTATION_TIERS) {
+    const tierQuests = quests.filter(q => q.quest_tier === tier);
+    const limit = ROTATION_LIMITS[tier];
+    if (tierQuests.length <= limit) { result.push(...tierQuests); continue; }
+    const seed = periodBuckets[tier];
+    const sorted = [...tierQuests].sort((a, b) => {
+      const ha = seededHash(`${seed}:${a.id}`);
+      const hb = seededHash(`${seed}:${b.id}`);
+      return ha - hb;
+    });
+    const selected = new Set(sorted.slice(0, limit).map(q => q.id));
+    result.push(...tierQuests.filter(q => selected.has(q.id)));
+  }
+  for (const q of quests) {
+    if (!ROTATION_TIERS.has(q.quest_tier)) result.push(q);
+  }
+  return result;
+}

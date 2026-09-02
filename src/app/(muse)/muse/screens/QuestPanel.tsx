@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { FiX, FiCheck, FiStar } from "react-icons/fi";
 import StreakWidget from "../components/StreakWidget";
+import { rotateQuests } from "@/lib/questEngine";
 
 interface QuestPanelProps {
   show: boolean;
@@ -25,17 +26,19 @@ const TIER_CONFIG: Record<string, { label: string; color: string; bg: string; bo
 };
 
 export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewardGranted, onClaimablesChange, onQuestsChange, loginStreak = 0, weeklyLogins = [false,false,false,false,false,false,false] }: QuestPanelProps) {
-  const [quests, setQuests] = useState<any[]>([]);
+  const [allQuests, setAllQuests] = useState<any[]>([]);
   const [xp, setXp] = useState({ total_xp: 0, level: 1 });
   const [filter, setFilter] = useState<string>("all");
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [nearQuests, setNearQuests] = useState<any[]>([]);
 
+  const quests = rotateQuests(allQuests);
+
   const fetchQuests = useCallback(async () => {
     try {
       const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-quests" }) });
       const data = await res.json();
-      setQuests(data.quests || []);
+      setAllQuests(data.quests || []);
       setXp(data.xp || { total_xp: 0, level: 1 });
       onClaimablesChange?.((data.quests || []).filter((q: any) => q.completed && !q.claimed).length);
       setNearQuests((data.quests || []).filter((q: any) => !q.completed && q.progress / q.target >= 0.5).sort((a: any, b: any) => (b.progress / b.target) - (a.progress / a.target)).slice(0, 3));

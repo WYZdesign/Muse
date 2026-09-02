@@ -2972,7 +2972,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         onClose={() => setShowQuests(false)}
         apiFetch={apiFetch}
         showToast={showToast}
-        onClaimablesChange={(n) => setClaimableQuests(n)}
+        onClaimablesChange={setClaimableQuests}
         onQuestsChange={handleQuestsChange}
         loginStreak={loginStreak}
         weeklyLogins={weeklyLogins}
