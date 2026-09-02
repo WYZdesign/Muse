@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { trackError } from "@/lib/errorTracker";
+import { normalizeProfile } from "./normalizers";
 import type { Match, Profile } from "../components/types";
 
 export type UseDiscoveryDataArgs = {
@@ -23,7 +24,7 @@ export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscover
     let cancelled = false;
     authFetch("/api/muse?type=profiles")
       .then(r => r.json())
-      .then(d => { if (!cancelled && d.profiles) setLiveProfiles(d.profiles); })
+      .then(d => { if (!cancelled && d.profiles) setLiveProfiles(d.profiles.map(normalizeProfile)); })
       .catch((err) => { trackError("fetch_profiles", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [profileId]);

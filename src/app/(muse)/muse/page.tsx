@@ -56,7 +56,7 @@ import { useCommunityData } from "./hooks/useCommunityData";
 import { useSessionData } from "./hooks/useSessionData";
 import { useBriefsData } from "./hooks/useBriefsData";
 import { useProfileData } from "./hooks/useProfileData";
-import { normalizeCommunity, normalizeEvent, normalizeForumPost, normalizeBrief, normalizeSession } from "./hooks/normalizers";
+import { normalizeCommunity, normalizeEvent, normalizeForumPost, normalizeBrief, normalizeSession, normalizeFeedPost, normalizeProfile } from "./hooks/normalizers";
 
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL || "torree.marcel@gmail.com";
@@ -455,12 +455,22 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       })));
       if (briefs?.briefs?.length) setLiveBriefs(briefs.briefs.map(normalizeBrief));
       if (feed?.posts?.length) {
-        setLiveFeed(feed.posts);
+        // Bug fix: this used to call setLiveFeed(feed.posts) with the raw,
+        // un-normalized DB rows (author still nested under `author_id`
+        // instead of a flat `author` string). useFeedData.ts's own
+        // profileId-gated fetch normalizes the same endpoint properly —
+        // whichever of the two effects resolved last silently won, so
+        // depending on timing the feed could render every post with a
+        // blank author name/avatar, and the feedPosts dedup below (matched
+        // by `.author`) would fail to match against the raw rows, showing
+        // every post twice. Normalize here too so both effects always
+        // agree on the same shape regardless of which resolves last.
+        setLiveFeed(feed.posts.map((p: any) => normalizeFeedPost(p, authUser?.profile?.id ?? null)));
         setFeedPosts(feed.posts.map((p: any, i: number) => ({
           id: 100000 + i,
           // Real DB id — synthetic display ids break server-side lookups
           // (reports pointed at posts no moderator could ever resolve).
-          rid: p.id, author: p.author_id?.name || "Creative", avatar: p.author_id?.avatar || "",
+          rid: p.id, author: p.author_id?.name || "Muse", avatar: p.author_id?.avatar || "",
           type: p.img ? "photo" : "text", text: p.text || "", likes: p.likes || 0, comments: p.comments || 0,
           shares: p.shares || 0, time: p.created_at ? new Date(p.created_at).toLocaleString() : "Just now",
           img: p.img || "", liked: false, saved: false

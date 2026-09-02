@@ -2,50 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { trackError } from "@/lib/errorTracker";
-import { normalizeForumPost } from "./normalizers";
+import { normalizeForumPost, normalizeFeedPost } from "./normalizers";
 
 export type UseFeedDataArgs = {
   authFetch: (url: string, init?: RequestInit) => Promise<Response>;
   profileId: string | null;
   initialStories: any[];
 };
-
-/**
- * Normalizes a raw `muse_feed_posts` row (DB shape, joined author, UUID id)
- * into the same flat shape FeedScreen.tsx already expects from its
- * hardcoded demo posts (`feedPostsStatic`) and locally-created posts
- * (`feedPosts`) — author/avatar pulled out of the join, a human `time`
- * string plus a numeric `createdAt` sort key (real post ids are UUIDs, not
- * sortable via subtraction the way the demo posts' numeric ids are), and
- * `online`/`lastSeen` derived the same way useDiscoveryData.ts already does
- * for matches, so the online dot FeedScreen renders isn't permanently dark
- * for real posts.
- */
-function normalizeFeedPost(p: any, profileId: string | null) {
-  const author = p.author_id || {};
-  const createdAtMs = p.created_at ? new Date(p.created_at).getTime() : Date.now();
-  return {
-    id: p.id,
-    author: author.name || "Muse",
-    avatar: author.avatar || "",
-    rid: author.id,
-    type: p.type || (p.img ? "photo" : "text"),
-    text: p.text || "",
-    img: p.img || undefined,
-    media: p.media || (p.img ? [p.img] : []),
-    likes: p.likes || 0,
-    comments: p.comments || 0,
-    shares: p.shares || 0,
-    views: typeof p.views === "number" ? p.views : undefined,
-    liked: !!(profileId && Array.isArray(p.liked_by) && p.liked_by.includes(profileId)),
-    saved: false,
-    reactions: p.reactions || {},
-    time: p.created_at ? new Date(p.created_at).toLocaleDateString() : "",
-    createdAt: createdAtMs,
-    isBts: p.type === "video" && !p.text,
-    lastSeen: author.last_seen_at || undefined,
-  };
-}
 
 export function useFeedData({ authFetch, profileId, initialStories }: UseFeedDataArgs) {
   const [liveFeed, setLiveFeed] = useState<any[] | null>(null);

@@ -417,3 +417,114 @@ Not verified on an actual device/simulator — flagged in HANDOVER.md as the one
 ```
 575d2ef feat: gyroscope/device-tilt effects (background orbs, Discover card tilt) + landing page fix; docs: Session 65 handover
 ```
+
+## Session 66 (Claude) — full audit of wyzmind's last three commits, found and fixed a real invisible-text bug
+
+Reviewed three commits in full diff: `596eba9` (Report a Bug / Have an Idea forms + backend), `9b7ab97` (BTS nav gradient, hide Professionals tab during closed beta, ActivityPanel extraction), `a003b11` (spatial-scenes 3D tilt + Nav.tsx icon/label rework).
+
+### Confirmed solid, no changes needed
+- **`596eba9`** (bug report / idea forms): rate-limited, validates required fields, sanitizes text via existing `sanitizeText` before the DB insert and HTML email — the admin-email XSS risk checked for isn't present.
+- **`9b7ab97`'s `ActivityPanel` extraction**: old code had `useState`/`useEffect` inside an IIFE invoked conditionally in JSX — a real Rules-of-Hooks violation. Extracting it into a real `ActivityPanel` fixes this correctly and dedupes a `myReports` fetch defined twice.
+- **`9b7ab97`'s NetworkScreen closed-beta change**: hides the entire Pros/Forum tab switcher during closed beta; `netTab` defaults to `"pros"` so Pros content still renders underneath.
+
+### Found and fixed: active bottom-nav tab label text was invisible
+`9b7ab97`'s Nav.tsx rework changed the active label to plain `color:"#fff"`, but `muse.css` retained a stale `.nav-item.active .nav-label{color:transparent!important;...}` rule. With `!important` beating the new inline color and no background the label carries anymore, every active bottom-nav tab's label rendered invisible. Removed the stale rule; the label now shows the JSX's own inline color.
+
+### Found and fixed: `createSpatialScene`'s `querySelector` was singular, silently breaking on card lists
+Used `document.querySelector(cardSelector)` — correct for a single match (`.swipe-card.top-card`) but NetworkScreen's `.pro-card` matches every card, so only the first got the tilt. Changed to `querySelectorAll` + `.forEach`. Also added the missing `className="pro-card-content"` to that screen's info-layer overlay (the counter-shift depth effect was silently not applying).
+
+### Verified, not changed — worth a second pair of eyes
+- Discover card hero tilt is no longer hover-scoped (global cursor position on desktop).
+- Active bottom-nav button now paints a static (non-animated) gradient background instead of a shimmering `lavaFlow` — a visual downgrade worth a real-device look.
+
+### Verification
+`tsc`/`build` clean, `npm run test` 134/134.
+
+## Session 67 (Claude) — true depth-aware Spatial Scenes (real depth map + client-side segmentation fallback)
+
+The `a003b11` tilt system is flat single-plane tilt, not depth-aware. Built the real thing as a progressive upgrade layered on top:
+- **`src/app/api/muse/depth/route.ts`** (new) — server proxy to a Replicate depth model, gated behind `REPLICATE_API_TOKEN` + `REPLICATE_DEPTH_MODEL_VERSION` (returns 501 until both set).
+- **`src/app/(muse)/muse/hooks/useSpatialDepth.ts`** (new) — client engine: (1) POST photo to `/api/muse/depth`, band into 3 depth layers; (2) fallback to `@tensorflow-models/body-pix` segmentation in-browser, band into 2 layers; (3) do nothing if both fail. Results cached by URL.
+- **`DiscoverScreen.tsx`** — wired `attachSpatialDepth(".swipe-card.top-card", ".card-hero img")`.
+
+Why body-pix over body-segmentation: the latter's ESM build statically imports a UMD global-script bundle with no real ES export, breaking Turbopack's production build. body-pix is pure tfjs.
+
+Deliberately only wired into Discover's single top card, not every list screen (cost of ML on every card). Needs Torreé to set the two env vars; until then every photo uses the body-pix fallback.
+
+### Known gotcha
+`buildDepthLayers()` assumes brighter=nearer (inverse-depth convention). If a chosen Replicate model outputs the opposite, near/far parallax will be visually backwards — one-line fix once seen rendering.
+
+## Session 68 (Claude) — reconciled with 1d00967, found the real Feed screen was silently showing zero real posts
+
+### Convergent fixes (no action)
+`1d00967` independently fixed the same `querySelector`→`querySelectorAll` bug and the missing `pro-card-content` class. Also fixed a real bug: `BtsScreen.tsx` passed `active="moments"` (nonexistent tab key) so BTS never highlighted; changed to `active="bts"`.
+
+### Found and fixed: the Feed screen never rendered real posts from the DB
+`useFeedData.ts`'s `liveFeed` state was fetched but never read anywhere — `FeedScreen.tsx` only rendered `[...feedPostsStatic, ...feedPosts]`. Every real post was invisible. Fixed:
+- **`route.ts`**: `type==="feed"` now joins `last_seen_at` on the author.
+- **`useFeedData.ts`**: added `normalizeFeedPost()` (flat author/avatar, numeric `createdAt` sort key, `liked` from `liked_by`).
+- **`FeedScreen.tsx`**: `liveFeed` is source of truth once it has data, falling back to `feedPostsStatic` when empty. Local `feedPosts` merged and de-duped against `liveFeed` by author+text.
+- **`page.tsx`**: threads `liveFeed`/`setLiveFeed` down into `<FeedScreen>`.
+
+### Found and fixed: feed comments were posted to the wrong table
+FeedScreen's comment handlers called `action: "forum", type: "reply"`, which inserts into `muse_forum_replies` with the feed post's id — would fail FFK and roll back. Added `ACTIONS["feed-comment"]` (rate-limited, sanitized, safety-screened) inserting into `muse_feed_comments` and bumping `muse_feed_posts.comments` via read-modify-write. All three feed-reply call sites now hit `action: "feed-comment"`.
+
+## Session 69 (Claude) — swept for more "fetched-but-never-rendered" bugs, found none
+
+Checked every other `live*` hook (`liveBriefs`, `liveSessions`, `liveProfiles`, `liveCommunities`/`liveEvents`, `liveForum`, `liveProfessionals`) — all confirmed actually read and rendered. Re-ran the CSS unitless-length sweep — only known false positive (`line-height:1`). No code changes.
+
+## Session 70 (Claude) — two more never-worked API call bugs: Analytics screen, ProfileScreen's referral widget
+
+- **Analytics screen** POSTs `{action:"my-analytics"}` to `/api/muse`, but `my-analytics` is a GET `type` branch, not a POST action — every request hit "Unknown action type". Fixed by switching the client to `apiFetch("/api/muse?type=my-analytics")`.
+- **ProfileScreen's referral widget** posts `{action:"get"}` to `/api/muse/referral` (not a real action) and reads fields the real `status` response doesn't return. Fixed the action to `"status"` and rewired to real fields: `signups`←`signedUp`, `purchases`←`subscribed`, `totalEarned`←summed `amount_cents` across `credit` reward rows.
+
+## Session 71 (Claude) — reconciled with 880f0ad, widened action-mismatch audit to every route file
+
+`880f0ad`'s diff doesn't touch `depth/route.ts`, yet the file existed upstream matching Claude's almost verbatim — but `useSpatialDepth.ts` and `DiscoverScreen.tsx` wiring weren't there; the Replicate depth route was live as dead code. Restored the client hook after merge. Extended the client-action-vs-server-handler audit to every route file (`auth`, `verification`, `social`, `push`, `connect`) — **no further mismatches found.**
+
+## Session 72 (Claude) — live-site re-audit: confirmed the site-wide CORS 403, fixed why match avatars render solid black
+
+- **Confirmed live**: every non-GET `/api/muse*` call is 403'd. The origin-allowlist fix has been correct in source since `65147e4` but isn't live — this is a "get it deployed" problem, not a code bug. Flagging: confirm the Vercel production deployment is building/serving current `origin/main`.
+- **Found and fixed**: Muses match-card avatars render as solid black circles. The `<img>`s are fully loaded; the fix was confirmed via direct A/B on the live DOM (set `animation:none` → photo appears). Root cause: `880f0ad` added `animation: avatarEccentric…` to `.match-avatar` (and siblings), and every keyframe combines a `transform` with the dual-`background-image` circular-border trick — animating `transform` on the same element as `background-clip: padding-box, border-box` promotes the `<img>` to its own compositor layer and drops the image raster, leaving only the dark fallback background. Fixed in `muse.css` by stripping `transform` from all four keyframe sets (border keeps its color-cycle shimmer).
+
+## Session 73 (Claude) — fixed Quest/Activity flicker, expanded quest catalog to 111 with real rotation
+
+- **Quest panel flicker**: `page.tsx` passed an inline `onClaimablesChange={(n)=>...}` arrow that was recreated on every render; `fetchQuests` listed it in its deps, so the panel refetched on every app-wide re-render. Fixed with a stable `useCallback`.
+- **Activity panel flicker**: `loadNotifications` listed `notifLoading` state in its deps, so it changed identity when flipping loading→loaded, re-firing its effect. Moved the in-flight guard to a `useRef` and read `notifOffset` through a synced ref.
+- **Quest catalog 65→111**: added `sql/MUSE_QUESTS_V3_EXPANSION_20260902.sql` (additive on top of V2, 46 new rows). Added real rotation via `selectActiveQuests()` in `questEngine.ts` — deterministic seeded subset per user per period (6 daily / 8 weekly / 6 monthly), wired into `ACTIONS["get-quests"]`. 6 new rotation tests.
+
+## Session 74 (Claude) — CORS 403 confirmed fixed live, race condition + 3 silent-failure forms fixed
+
+Good news: same-origin POST now returns `401 Not authenticated` (not 403) — production picked up pending fixes. Fixed:
+- `MyAlbumsManager.openAlbum` unguarded stale-response race (added id-checking ref guard).
+- `ConnectPanel.startOnboarding` silent no-op (added visible inline error).
+- `page.tsx`'s three `SafetyCheckinModal` callbacks — none checked `r.ok` (now check + error toast).
+- `PromptBankModal.onSaveResponse` — threw on failure so modal doesn't advance.
+- `page.tsx handleAuthClick` — "Upload failed" copy-paste leftover → "Login failed — check your credentials".
+- `useSpatialDepth.ts` console.error → console.warn (expected with ad blockers).
+
+## Session 75 (Claude) — reconciled with wyzmind's parallel push (880f0ad..5b45de3)
+
+wyzmind independently fixed the same bugs this branch had queued (quest/activity flicker, quest rotation, the 6-bug sweep) — nearly identical implementations. Rather than merge two parallel implementations, branched fresh off origin/main and carried forward only what wasn't there: this file's Session 66-74 history, which origin/main's HANDOVER.md had not been updated past Session 65. Spot-checked `ConnectPanel.tsx`'s error-style difference (inline banner vs `alert()`) — both fix the same silent-failure bug, not worth re-litigating.
+
+## Session 76 (Claude) — found and fixed a real live race-condition bug: two effects fetching the same data into one state slot, raw vs normalized shape
+
+`page.tsx`'s legacy `bootstrapData()` and the newer `useFeedData`/`useDiscoveryData` hooks both fetch the same feed/profile endpoints independently into the same state (`liveFeed`, `liveProfiles`), disagreeing on shape. Whichever resolved last won — when the legacy raw-shaped fetch won, the Feed screen rendered every post with a blank author name/avatar and duplicated posts (dedup never matched), and Discover's match-score bar showed `"undefined%"` with zodiac/mbti badges missing.
+
+Fixed by adding shared, idempotent normalizers (`normalizeFeedPost`, `normalizeProfile`) used at both fetch sites:
+- **`normalizers.ts`**: added `normalizeProfile` (top) and `normalizeFeedPost` (bottom) with `??`-fallback chains.
+- **`useFeedData.ts`**: now imports `normalizeFeedPost` instead of its private copy.
+- **`useDiscoveryData.ts`**: `type=profiles` result through `normalizeProfile`.
+- **`page.tsx`** `bootstrapData`: `setLiveFeed(feed.posts)` → `normalizeFeedPost(...)`, and the synthetic `feedPosts` author fallback `"Creative"` → `"Muse"` so the author-based dedup matches. The scored `/api/muse/match` mapping was left as-is (richer superset).
+
+Net: whichever fetch resolves last, `liveFeed`/`liveProfiles` end up in the same normalized shape.
+
+### Other findings, not fixed (documented)
+- **`FeedScreen.tsx`'s `userStatus`** field is a non-functional stub — pure local state, never persisted. Needs a schema migration (new column) + save action.
+- **`Nav.tsx`**: `connections`/`matches` tabs share byte-identical gradient/line-color values (`#FF8C00`) where they used to be distinct. Might be intentional or a copy-paste slip.
+- The **`bootstrapData`/`use*Data.ts` double-fetch** (briefs/forum/events/communities/sessions) is redundant-but-harmless — worth deleting the dead half later.
+
+## Session 76 commits
+```
+(awaiting wyzmind push — applied locally, see code diff for feed/profile normalizers)
+```
