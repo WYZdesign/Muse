@@ -4,6 +4,7 @@ import React, { memo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { FiArrowLeft, FiImage, FiX, FiFlag, FiSend } from "react-icons/fi";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
+import { safeGetItem, safeSetItem } from "../lib/safe-storage";
 import Nav from "../components/Nav";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
 import type { Screen } from "../components/types";
@@ -52,6 +53,7 @@ export interface FeedScreenProps {
   setReportTarget?: (t: any) => void;
   setShareTarget?: (t: any) => void;
   setViewProfile?: (p: any) => void;
+  onStatusSaved?: (status: string) => void;
 }
 
 export const FeedScreen = memo(function FeedScreen({
@@ -97,6 +99,7 @@ export const FeedScreen = memo(function FeedScreen({
   setReportTarget = () => {},
   setShareTarget = () => {},
   setViewProfile = () => {},
+  onStatusSaved = () => {},
   authFetch,
 }: FeedScreenProps) {
   const [postReplies, setPostReplies] = useState<Record<number, any[]>>({});
@@ -168,8 +171,26 @@ export const FeedScreen = memo(function FeedScreen({
   const [recording, setRecording] = useState(false);
   const [recSecs, setRecSecs] = useState(0);
   const [capturing, setCapturing] = useState(false);
-  const [userStatus, setUserStatus] = useState("🎨 Working on something new");
+  const [userStatus, setUserStatus] = useState<string>(() => currentUser?.status || safeGetItem("muse_status_" + (currentUser?.id || "anon")) || "🎨 Working on something new");
   const [editingStatus, setEditingStatus] = useState(false);
+
+  const saveUserStatus = async (status: string) => {
+    const value = (status || "").trim();
+    setUserStatus(value);
+    // Per-device mirror so the value is never lost even if the DB write fails
+    // or the migration hasn't been applied yet.
+    safeSetItem("muse_status_" + (currentUser?.id || "anon"), value);
+    onStatusSaved(value);
+    try {
+      const r = await authFetch("/api/muse/auth", {
+        method: "POST",
+        body: JSON.stringify({ action: "update-profile", status: value }),
+      });
+      if (!r.ok) showToast("Couldn't save status — try again");
+    } catch {
+      showToast("Couldn't save status — try again");
+    }
+  };
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach(t => t.stop());
@@ -329,8 +350,8 @@ export const FeedScreen = memo(function FeedScreen({
                 className="inp"
                 value={userStatus}
                 onChange={e => setUserStatus(e.target.value)}
-                onBlur={() => setEditingStatus(false)}
-                onKeyDown={e => { if (e.key === "Enter") setEditingStatus(false); }}
+                onBlur={() => { setEditingStatus(false); saveUserStatus(userStatus); }}
+                onKeyDown={e => { if (e.key === "Enter") { setEditingStatus(false); saveUserStatus(userStatus); } }}
                 autoFocus
                 maxLength={80}
                 placeholder="What's your status?"
