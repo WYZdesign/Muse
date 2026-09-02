@@ -309,8 +309,6 @@ a{color:inherit;text-decoration:none}
 .hdr-btn:active{transform:scale(0.88)}
 .hdr-btn-glow{animation:boostGlow 2s ease-in-out infinite}
 @keyframes boostGlow{0%,100%{box-shadow:0 0 0 rgba(212,165,255,0)}50%{box-shadow:0 0 16px rgba(212,165,255,0.4)}}
-@keyframes boostFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
-@keyframes boostBlink{0%,100%{opacity:1}50%{opacity:0.5}}
 .nav{flex-shrink:0;height:calc(72px + env(safe-area-inset-bottom,0px));background:rgba(10,6,18,0.95);backdrop-filter:blur(40px);border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-around;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));z-index:100;position:sticky;bottom:0;overflow:hidden}
 .screen-el .nav{display:none!important}
 .screen-el.active .nav{display:flex!important}
@@ -1094,8 +1092,6 @@ img{background-color:#1a0a2e}
 .story-ring{width:60px;height:60px;border-radius:50%;padding:3px;background:conic-gradient(from 0deg,var(--gold),var(--pink),var(--lavender),var(--amber),var(--gold));animation:storySpin 4s linear infinite}
 .story-ring img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid var(--bg)}
 @keyframes storySpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-@keyframes storyProgress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-
 /* ═══ MISSING CSS (audit fixes) ═══ */
 .onboard-content{display:flex;flex-direction:column;align-items:center;width:100%;max-width:400px;padding:20px 0;gap:8px;overflow-y:auto;flex:1}
 .chat-wrap{display:flex;flex-direction:column;height:100%}
@@ -1189,8 +1185,6 @@ img{background-color:#1a0a2e}
 [data-theme="sunrise"] .moments-hero{color:#2D2A26}
 
 /* ═══ NAV ICON HUE SHIFT ═══ */
-@keyframes iconHueShift{0%,100%{filter:hue-rotate(0deg) drop-shadow(0 0 6px currentColor)}50%{filter:hue-rotate(25deg) drop-shadow(0 0 12px currentColor)}}
-@keyframes hueShift{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(30deg)}}
 @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .nav-icon-glow{filter:drop-shadow(0 2px 5px rgba(255,255,255,0.24))}
 
@@ -1319,8 +1313,6 @@ img{background-color:#1a0a2e}
 .gallery-view-name{font-size:18px;font-weight:800;color:#fff;font-family:"Playfair Display",serif;font-style:italic}
 .gallery-view-count{font-size:12px;color:var(--muted);margin-top:4px}
 
-@keyframes tooltipIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-
 
 @media(max-width:767px){.scene-wash{opacity:0.3!important}.aurora-strip{opacity:0.3!important}.sparkle-field{opacity:0.3!important}.star-field{opacity:0.3!important}.nebula-fog{opacity:0.15!important}}
 
@@ -1373,8 +1365,6 @@ img{background-color:#1a0a2e}
 .match-radial-btn.btn-like{background:linear-gradient(135deg,#e94560,#ffa07a)}
 .match-radial-btn.btn-nope{background:rgba(10,6,18,0.85)}
 .match-radial-btn.btn-note{background:linear-gradient(135deg,#1a0a2e,#533483)}
-
-@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:0.3}}
 
 /* Screen transitions */
 .screen-el{opacity:0;pointer-events:none}
