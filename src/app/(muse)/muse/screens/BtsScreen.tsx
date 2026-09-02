@@ -169,7 +169,7 @@ export const BtsScreen = memo(function BtsScreen({
   const pinkGradient = "linear-gradient(135deg, #FF1493 0%, #FF69B4 60%, #FFB6C1 100%)";
   const activePill = "linear-gradient(135deg, #FF1493, #FF69B4)";
 
-  const gridCardStyle: React.CSSProperties = { width: "100%", maxWidth: "100%" };
+  const gridCardStyle: React.CSSProperties = { width: "100%", maxWidth: "100%", minWidth: 0, overflow: "hidden" };
 
   return (
     <div className={"screen-el" + (screen === "bts" ? " active" : "")}>
@@ -214,7 +214,7 @@ export const BtsScreen = memo(function BtsScreen({
       </div>
 
       {/* Scrollable content */}
-      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 80 }}>
+      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingBottom: 80 }}>
         {/* BeReal dual-capture prompt */}
         <div
           style={{
@@ -458,7 +458,7 @@ export const BtsScreen = memo(function BtsScreen({
                 </div>
 
                 {/* Image area */}
-                <div className="bts-photo-wrap" style={{ position: "relative", marginTop: 8 }}>
+                <div className="bts-photo-wrap" style={{ position: "relative", marginTop: 8, maxWidth: "100%", overflow: "hidden" }}>
                   <img
                     loading="lazy"
                     src={s.img || s.avatar}
@@ -467,6 +467,7 @@ export const BtsScreen = memo(function BtsScreen({
                     onError={handleImgError}
                     style={{
                       width: "100%",
+                      maxWidth: "100%",
                       aspectRatio: "1",
                       objectFit: "cover",
                       display: "block",
