@@ -1301,7 +1301,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (authMode === "signup") setObStep(0);
       trackEvent(authMode === "signup" ? "muse_signup" : "muse_login", { email: authEmail?.slice(0,3) + "***" });
       flash("#FFD700");
-    } catch { showToast("Upload failed"); setAuthLoading(false); }
+    } catch { showToast("Login failed — check your credentials"); setAuthLoading(false); }
     setAuthLoading(false);
   }, [authMode, authEmail, authPass, authName, authLoading, flash]);
 
@@ -2889,15 +2889,18 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           checkins={safetyCheckins}
           safetyProfile={safetyProfile}
           onRespond={async (id, response, shared, reason) => {
-            await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "respond-checkin", checkinId: id, response, sharedWithContact: shared, reason }) });
+            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "respond-checkin", checkinId: id, response, sharedWithContact: shared, reason }) });
+            if (!r.ok) { showToast("Failed to save response"); return; }
             setSafetyCheckins(prev => prev.map(c => c.id === id ? { ...c, status: response, responded_at: new Date().toISOString() } : c));
           }}
           onSaveSafetyProfile={async (profile) => {
-            await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "save-safety-profile", ...profile }) });
+            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "save-safety-profile", ...profile }) });
+            if (!r.ok) { showToast("Failed to save safety profile"); return; }
             setSafetyProfile(profile); showToast("Safety profile saved");
           }}
           onShareDetails={async (bookingId, method) => {
-            await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "share-safety-details", bookingId, shareMethod: method }) });
+            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "share-safety-details", bookingId, shareMethod: method }) });
+            if (!r.ok) { showToast("Failed to share details"); return; }
             showToast("Details shared with trusted contact");
           }}
           onFetchStrikes={async () => {
@@ -2925,14 +2928,13 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           onSaveResponse={async (promptId, text, choices) => {
             const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "save-prompt-response", promptId, responseText: text, responseChoices: choices }) });
             const d = await r.json();
-            if (d.success) {
-              setPromptResponses(prev => {
-                const existing = prev.findIndex(r => r.prompt_id === promptId);
-                const newResp = { id: "new", prompt_id: promptId, response_text: text, response_choices: choices };
-                if (existing >= 0) { const copy = [...prev]; copy[existing] = newResp; return copy; }
-                return [...prev, newResp];
-              });
-            }
+            if (!d.success) throw new Error(d.error || "Failed to save");
+            setPromptResponses(prev => {
+              const existing = prev.findIndex(r => r.prompt_id === promptId);
+              const newResp = { id: "new", prompt_id: promptId, response_text: text, response_choices: choices };
+              if (existing >= 0) { const copy = [...prev]; copy[existing] = newResp; return copy; }
+              return [...prev, newResp];
+            });
           }}
           onClose={() => setShowPromptBank(false)}
         />

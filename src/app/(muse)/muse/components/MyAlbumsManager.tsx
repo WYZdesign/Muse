@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { FiPlus, FiLock, FiGlobe, FiUsers, FiTrash2, FiX, FiHeart } from "react-icons/fi";
 import { authFetch } from "../lib/api";
 
@@ -51,6 +51,7 @@ export default function MyAlbumsManager({
   const [accessList, setAccessList] = useState<{ viewer_profile_id: string }[]>([]);
   const [showInviteManager, setShowInviteManager] = useState(false);
   const [liked, setLiked] = useState(false);
+  const albumReqId = useRef(0);
 
   const authedFetch = useCallback((body: Record<string, unknown>) =>
     authFetch("/api/muse", { method: "POST", body: JSON.stringify(body) }).then(r => r.json())
@@ -70,12 +71,13 @@ export default function MyAlbumsManager({
   const openAlbum = useCallback((album: Album) => {
     setSelected(album);
     setLiked(false);
+    const reqId = ++albumReqId.current;
     authFetch(`/api/muse?type=album-photos&album_id=${album.id}`)
       .then(r => r.json())
-      .then(d => setPhotos(Array.isArray(d.photos) ? d.photos : []))
-      .catch(() => setPhotos([]));
+      .then(d => { if (reqId === albumReqId.current) setPhotos(Array.isArray(d.photos) ? d.photos : []); })
+      .catch(() => {});
     authedFetch({ action: "view-album", albumId: album.id }).catch(() => {});
-  }, [authedFetch]);
+  }, [authFetch, authedFetch]);
 
   const likeAlbum = useCallback(async () => {
     if (!selected) return;

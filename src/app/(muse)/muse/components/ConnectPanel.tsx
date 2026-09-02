@@ -41,8 +41,10 @@ export default function ConnectPanel({ onClose }: Props) {
         window.location.href = d.onboardingUrl;
       } else if (d.onboardingComplete) {
         setStatus({ connected: true, chargesEnabled: d.chargesEnabled, payoutsEnabled: d.payoutsEnabled, onboardingComplete: true });
+      } else if (d.error) {
+        alert(d.error);
       }
-    } catch {}
+    } catch { alert("Could not start onboarding — try again"); }
     setConnecting(false);
   };
 

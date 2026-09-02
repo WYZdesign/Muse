@@ -199,7 +199,7 @@ async function buildSegmentationLayers(sourceImg: HTMLImageElement): Promise<HTM
     // Subject (mask=1) is the near band, background (mask=0) is the far band.
     return bandFromField(sourceData, maskField, 3, w, h, 2);
   } catch (e) {
-    console.error("[muse:spatial-depth] segmentation failed:", e);
+    console.warn("[muse:spatial-depth] segmentation failed (expected with ad blockers):", e);
     return null;
   }
 }
