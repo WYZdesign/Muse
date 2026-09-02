@@ -31,7 +31,6 @@ INSERT INTO muse_quests (title, description, category, quest_tier, frequency, ac
 ('Event Scout', 'View an event', 'community', 'daily', 'daily', 'view_event', 1, 'like', 1, 'Free Like', '🗓️', '#D4A5FF', 5, 26),
 ('Group Watch', 'View a community group', 'community', 'daily', 'daily', 'view_community', 1, 'like', 1, 'Free Like', '👀', '#87CEEB', 5, 27),
 ('Like Spree', 'Like 5 profiles today', 'discovery', 'daily', 'daily', 'like_profile', 5, 'like', 1, 'Free Like', '❤️', '#FF69B4', 10, 28),
-('Chat Back', 'Reply to a message today', 'social', 'daily', 'daily', 'send_message', 1, 'like', 1, 'Free Like', '💬', '#98FB98', 5, 29),
 ('Check In', 'Complete a safety check-in', 'safety', 'daily', 'daily', 'checkin', 1, 'like', 1, 'Free Like', '🛡️', '#98FB98', 10, 30),
 ('Prompt Answer', 'Answer a prompt question', 'content', 'daily', 'daily', 'answer_prompt', 1, 'like', 1, 'Free Like', '✍️', '#D4A5FF', 5, 31),
 ('Album Browse', 'View 2 albums today', 'content', 'daily', 'daily', 'create_album', 1, 'like', 1, 'Free Like', '🖼️', '#FFD700', 5, 32),
