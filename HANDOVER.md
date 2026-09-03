@@ -665,6 +665,25 @@ The first attempt (`03e8dc2`) put the pill above the avatar but it overlapped th
 - **`stash@{0}` remaining** — fully triaged; the only unapplied piece (`audience`) is now committed in `70bc588`. The stash can be dropped.
 - **`_verify_live.py`** + `screenshot_*.png` are committed to the Muse repo (audit artifacts).
 
+## Session 81 (wyzmind) — hula-hoop ring + gradient smoothness
+
+Note: Claude's Session 82 commits (`a788f18`…`95f1f26`) were pasted into chat but are NOT in this repo — Claude worked in a separate clone I can't reach. This session re-implemented Torreé's ring feedback directly in `V:\Muse`.
+
+Three ring fixes (commit `cc5bbaf`, verified live):
+1. **Gradient no longer jumps back/forth** — `avatarEccentric` (and Conn/Chat variants) were non-monotonic keyframes (135→210→305→40→175→290→15→200→135) causing a stutter. Replaced with a single monotonic 135°→495° sweep on `linear` timing (**`linear`**, not `ease-in-out`, which created a back-and-forth feel at the keyframe ends). All avatar classes (`.match-avatar`, `.feed-avatar`, `.conn-avatar`, `.chat-avatar`, `.profile-avatar`) now use `linear`.
+2. **Rings tightened (~2px gap, no orbit)** — replaced the 4-border-quadrant ring + `orbitSpin` (which orbited ±7px with uneven keyframes) with a smooth **conic-gradient ring** (`ringSpin` = fixed in-place rotation, no wobble). Sizing: `.profile-ring` 110→104px for a 100px avatar; MatchCard `RING_SIZE` 99→83px for a 78px avatar.
+3. **Profile side-tab ring fixed** — `ProfileScreen`/`MenuModal` rings used the same broken `orbitSpin`; now render the same smooth conic ring via `swirl-ring-1..6` (converted from border-colors to conic-gradients) + `swirl-avatar-1..6` (now `linear`).
+
+Also removed the now-orphaned `avatarGrad` keyframe and added `.profile-ring` to the `prefers-reduced-motion` disable list.
+
+**Verified:** `tsc --noEmit` clean, `npx vitest run` 146/146, `npm run build` clean, `wyz_deploy_check.py` → `DEPLOY IS LIVE ✅`, `screenshot_profile_live.png` shows the ring hugging the avatar tightly.
+
+### Open items (carried forward)
+- **Cross-account status sync** still not live-verified.
+- **`bootstrapData`/`use*Data.ts` double-fetch** left alone (likely legit prefetch).
+- **Visual real-device pass** from Session 66 (global-cursor card tilt, static nav gradient) still unverified.
+- **Claude Session 82 work** (StreakWidget 7-day labels, Subscription promo flex fix, broken-image `MutationObserver` sweep, BTS stat rows, Muses card-grid 30% taller, ring-v1..v5 variants) — pasted in chat but NOT in this repo. If it's wanted, Claude needs to re-commit its `audit-reconciled` branch here so I can push it live, or it'll be lost.
+
 ## Session 78 (wyzmind) — status feature fully complete across both screens
 
 Closed out the remaining Session 77 punch-list items:
