@@ -20,7 +20,7 @@ export interface MatchCardProps {
 }
 
 const AVATAR_SIZE = 78;
-const RING_SIZE = 99;
+const RING_SIZE = 83;
 const RING_SPEEDS = [3.2, 4.5, 5.8, 3.8, 5.1, 4.2, 6.0, 3.5, 4.8, 5.5];
 
 const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) {

@@ -505,18 +505,11 @@ img{background-color:#1a0a2e}
 .match-card:hover{background:rgba(255,215,0,0.03)}
 .match-card:active{background:rgba(255,215,0,0.06);transform:scale(0.98)}
 .match-avatar-wrap{position:relative;flex-shrink:0}
-.match-avatar{width:96px;height:96px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-color:#1a0a2e;background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(var(--grad-angle,135deg),#533483,#e94560,#ffa07a,#ffd93d);background-origin:border-box;background-clip:padding-box,border-box;animation:avatarEccentric 8s ease-in-out infinite}
+.match-avatar{width:96px;height:96px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-color:#1a0a2e;background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(var(--grad-angle,135deg),#533483,#e94560,#ffa07a,#ffd93d);background-origin:border-box;background-clip:padding-box,border-box;animation:avatarEccentric 8s linear infinite}
 @property --grad-angle{syntax:"<angle>";initial-value:135deg;inherits:false}
 @keyframes avatarEccentric{
-  0%{--grad-angle:135deg}
-  12.5%{--grad-angle:210deg}
-  25%{--grad-angle:305deg}
-  37.5%{--grad-angle:40deg}
-  50%{--grad-angle:175deg}
-  62.5%{--grad-angle:290deg}
-  75%{--grad-angle:15deg}
-  87.5%{--grad-angle:200deg}
-  100%{--grad-angle:135deg}
+  0%  {--grad-angle:135deg}
+  100%{--grad-angle:495deg}
 }
 .online-dot{width:13px;height:13px;border-radius:50%;background:var(--mint);border:3px solid var(--bg);position:absolute;bottom:0;right:0;animation:onlinePulse 2s ease-in-out infinite}
 .match-info{flex:1;min-width:0}
@@ -565,7 +558,7 @@ img{background-color:#1a0a2e}
 .chat-back{font-size:24px;padding:6px;color:var(--text);transition:all .2s;border-radius:12px}
 .chat-back:hover{background:rgba(255,255,255,0.05)}
 .chat-back:active{transform:scale(0.9)}
-.chat-avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,215,0,0.2);background-color:#1a0a2e;background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(var(--grad-angle,135deg),#533483,#e94560,#ffa07a);background-origin:border-box;background-clip:padding-box,border-box;animation:avatarEccentricChat 7s ease-in-out infinite}
+.chat-avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,215,0,0.2);background-color:#1a0a2e;background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(var(--grad-angle,135deg),#533483,#e94560,#ffa07a);background-origin:border-box;background-clip:padding-box,border-box;animation:avatarEccentricChat 7s linear infinite}
 .chat-name{font-size:17px;font-weight:700}
 .chat-type-label{font-size:12px;background:linear-gradient(90deg,var(--gold),var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:600}
 .messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none}
@@ -587,38 +580,23 @@ img{background-color:#1a0a2e}
 .profile-scroll::-webkit-scrollbar{width:0}
 .profile-top{display:flex;flex-direction:column;align-items:center;padding:20px 0 28px}
 .profile-avatar-wrap{position:relative;margin-bottom:16px}
-.profile-avatar{width:100px;height:100px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-origin:border-box;background-clip:padding-box,border-box;background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(135deg,var(--gold),var(--amber),var(--pink),var(--lavender));background-size:100% 100%,200% 200%;animation:avatarGrad 4s ease-in-out infinite}
-@keyframes avatarGrad{0%,100%{background-position:0% 0%,0% 50%}50%{background-position:0% 0%,100% 50%}}
-.profile-ring{position:absolute;top:50%;left:50%;width:110px;height:110px;border-radius:50%;border:2px solid transparent;border-top-color:var(--gold);border-right-color:var(--amber);border-bottom-color:var(--pink);border-left-color:var(--lavender);transform:translate(-50%,-50%);animation:orbitSpin 5s linear infinite}
-@keyframes orbitSpin{
-  0%  {transform:translate(calc(-50% + 0px),calc(-50% - 7px)) rotate(0deg)}
-  8%  {transform:translate(calc(-50% + 3.5px),calc(-50% - 6px)) rotate(30deg)}
-  16% {transform:translate(calc(-50% + 6px),calc(-50% - 3.5px)) rotate(60deg)}
-  25% {transform:translate(calc(-50% + 7px),calc(-50% + 0px)) rotate(90deg)}
-  33% {transform:translate(calc(-50% + 6px),calc(-50% + 3.5px)) rotate(120deg)}
-  41% {transform:translate(calc(-50% + 3.5px),calc(-50% + 6px)) rotate(150deg)}
-  50% {transform:translate(calc(-50% + 0px),calc(-50% + 7px)) rotate(180deg)}
-  58% {transform:translate(calc(-50% - 3.5px),calc(-50% + 6px)) rotate(210deg)}
-  66% {transform:translate(calc(-50% - 6px),calc(-50% + 3.5px)) rotate(240deg)}
-  75% {transform:translate(calc(-50% - 7px),calc(-50% + 0px)) rotate(270deg)}
-  83% {transform:translate(calc(-50% - 6px),calc(-50% - 3.5px)) rotate(300deg)}
-  91% {transform:translate(calc(-50% - 3.5px),calc(-50% - 6px)) rotate(330deg)}
-  100%{transform:translate(calc(-50% + 0px),calc(-50% - 7px)) rotate(360deg)}
-}
+.profile-avatar{width:100px;height:100px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-origin:border-box;background-clip:padding-box,border-box;background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(var(--grad-angle,135deg),var(--gold),var(--amber),var(--pink),var(--lavender));background-size:100% 100%;animation:avatarEccentric 6s linear infinite}
+.profile-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(from var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));width:104px;height:104px;animation:ringSpin 5s linear infinite}
+@keyframes ringSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
 
 /* ═══ SWIRL RING VARIANTS ═══ */
-.swirl-ring-1{animation-duration:5s;border-top-color:#FFD700;border-right-color:#FF8C00;border-bottom-color:#FF69B4;border-left-color:#9B59B6}
-.swirl-ring-2{animation-duration:7s;animation-direction:reverse;border-top-color:#00CED1;border-right-color:#FFD700;border-bottom-color:#FF4500;border-left-color:#32CD32}
-.swirl-ring-3{animation-duration:6s;border-top-color:#FF69B4;border-right-color:#9B59B6;border-bottom-color:#00CED1;border-left-color:#FFD700}
-.swirl-ring-4{animation-duration:8s;animation-direction:reverse;border-top-color:#FF4500;border-right-color:#32CD32;border-bottom-color:#FFD700;border-left-color:#00CED1}
-.swirl-ring-5{animation-duration:5.5s;border-top-color:#9B59B6;border-right-color:#FF69B4;border-bottom-color:#FF8C00;border-left-color:#00CED1}
-.swirl-ring-6{animation-duration:6.5s;animation-direction:reverse;border-top-color:#32CD32;border-right-color:#00CED1;border-bottom-color:#9B59B6;border-left-color:#FF4500}
-.swirl-avatar-1{animation:avatarGrad 5s ease-in-out infinite}
-.swirl-avatar-2{animation:avatarGrad 7s ease-in-out infinite}
-.swirl-avatar-3{animation:avatarGrad 6s ease-in-out infinite reverse}
-.swirl-avatar-4{animation:avatarGrad 8s ease-in-out infinite}
-.swirl-avatar-5{animation:avatarGrad 5.5s ease-in-out infinite reverse}
-.swirl-avatar-6{animation:avatarGrad 6.5s ease-in-out infinite}
+.swirl-ring-1{animation-duration:5s;background:conic-gradient(var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold))}
+.swirl-ring-2{animation-duration:7s;animation-direction:reverse;background:conic-gradient(#00CED1,#FFD700,#FF4500,#32CD32,#00CED1)}
+.swirl-ring-3{animation-duration:6s;background:conic-gradient(#FF69B4,#9B59B6,#00CED1,#FFD700,#FF69B4)}
+.swirl-ring-4{animation-duration:8s;animation-direction:reverse;background:conic-gradient(#FF4500,#32CD32,#FFD700,#00CED1,#FF4500)}
+.swirl-ring-5{animation-duration:5.5s;background:conic-gradient(#9B59B6,#FF69B4,#FF8C00,#00CED1,#9B59B6)}
+.swirl-ring-6{animation-duration:6.5s;animation-direction:reverse;background:conic-gradient(#32CD32,#00CED1,#9B59B6,#FF4500,#32CD32)}
+.swirl-avatar-1{animation:avatarEccentric 5s linear infinite}
+.swirl-avatar-2{animation:avatarEccentric 7s linear infinite}
+.swirl-avatar-3{animation:avatarEccentric 6s linear infinite reverse}
+.swirl-avatar-4{animation:avatarEccentric 8s linear infinite}
+.swirl-avatar-5{animation:avatarEccentric 5.5s linear infinite reverse}
+.swirl-avatar-6{animation:avatarEccentric 6.5s linear infinite}
 .profile-name{font-size:26px;font-weight:800}
 .profile-type{font-size:16px;font-weight:600;margin-top:4px;background:linear-gradient(90deg,var(--gold),var(--amber),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .profile-loc{font-size:13px;color:var(--text2);margin-top:5px}
@@ -651,7 +629,7 @@ img{background-color:#1a0a2e}
 @supports (animation-timeline: view()){.conn-card{animation-timeline:view();animation-range:entry 0% entry 70%}}
 .conn-card:nth-child(2){animation-delay:.07s}.conn-card:nth-child(3){animation-delay:.14s}.conn-card:nth-child(4){animation-delay:.21s}.conn-card:nth-child(5){animation-delay:.28s}.conn-card:nth-child(6){animation-delay:.35s}.conn-card:nth-child(7){animation-delay:.42s}
 .conn-card:hover{border-color:rgba(255,215,0,0.15);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.2)}
-.conn-avatar{width:68px;height:68px;border-radius:16px;object-fit:cover;flex-shrink:0;background-color:#1a0a2e;background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(var(--grad-angle,135deg),#533483,#e94560,#ffa07a);background-origin:border-box;background-clip:padding-box,border-box;animation:avatarEccentricConn 9s ease-in-out infinite}
+.conn-avatar{width:68px;height:68px;border-radius:16px;object-fit:cover;flex-shrink:0;background-color:#1a0a2e;background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(var(--grad-angle,135deg),#533483,#e94560,#ffa07a);background-origin:border-box;background-clip:padding-box,border-box;animation:avatarEccentricConn 9s linear infinite}
 .conn-content{flex:1;min-width:0;overflow:hidden}
 .conn-name{font-size:16px;font-weight:700}
 .conn-meta{font-size:12px;color:var(--gold);font-weight:600;margin-top:3px}
@@ -1643,20 +1621,14 @@ img{background-color:#1a0a2e}
 
 
 /* Reduce motion preference */
-@media(prefers-reduced-motion:reduce){.swipe-card.top-card,.swipe-card .card-hero img,.messages .msg,.match-title,.card-hero-name,.card-hero-type{animation:none!important}.tour-sprite-glow,.tour-sprite-ring,.tour-sprite-ring-2,.tour-sprite-badge,.tour-sprite-orbit-0,.tour-sprite-orbit-1,.tour-sprite-orbit-2,.tour-sprite-spark,.tour-card-wash,.tour-btn-primary,.brief-avatar,.conn-tab-sub-scroll::after,.conn-tab-sub-scroll::before,.feed-avatar,.match-avatar,.conn-avatar,.chat-avatar{animation:none!important}}
+@media(prefers-reduced-motion:reduce){.swipe-card.top-card,.swipe-card .card-hero img,.messages .msg,.match-title,.card-hero-name,.card-hero-type{animation:none!important}.tour-sprite-glow,.tour-sprite-ring,.tour-sprite-ring-2,.tour-sprite-badge,.tour-sprite-orbit-0,.tour-sprite-orbit-1,.tour-sprite-orbit-2,.tour-sprite-spark,.tour-card-wash,.tour-btn-primary,.brief-avatar,.conn-tab-sub-scroll::after,.conn-tab-sub-scroll::before,.profile-ring,.feed-avatar,.match-avatar,.conn-avatar,.chat-avatar{animation:none!important}}
 
 @keyframes avatarEccentricConn{
-  0%{--grad-angle:135deg}
-  25%{--grad-angle:225deg}
-  50%{--grad-angle:315deg}
-  75%{--grad-angle:45deg}
-  100%{--grad-angle:135deg}
+  0%  {--grad-angle:135deg}
+  100%{--grad-angle:495deg}
 }
 
 @keyframes avatarEccentricChat{
-  0%{--grad-angle:135deg}
-  25%{--grad-angle:225deg}
-  50%{--grad-angle:315deg}
-  75%{--grad-angle:45deg}
-  100%{--grad-angle:135deg}
+  0%  {--grad-angle:135deg}
+  100%{--grad-angle:495deg}
 }
