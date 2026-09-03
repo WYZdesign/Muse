@@ -360,9 +360,9 @@ export const FeedScreen = memo(function FeedScreen({
               <div
                 onClick={() => setEditingStatus(true)}
                 title={userStatus || "Set status"}
-                style={{ width: 52, height: 20, lineHeight: "20px", textAlign: "center", cursor: "pointer", fontSize: 9, color: "#FFD700", fontWeight: 700, padding: "0 2px", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                style={{ width: 52, height: 20, lineHeight: "20px", textAlign: "center", cursor: "pointer", fontSize: 12, color: "var(--gold)", fontWeight: 700, padding: "0 2px", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 8, overflow: "hidden", whiteSpace: "nowrap" }}
               >
-                {userStatus || "+ status"}
+                {(userStatus || "✨").trim().charAt(0)}
               </div>
             )}
             <img loading="lazy" src={currentUser.avatar} alt="Avatar" className="feed-avatar" style={{ width: 52, height: 52, flexShrink: 0 }} onError={handleImgError} />
