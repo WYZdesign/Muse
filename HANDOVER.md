@@ -596,10 +596,19 @@ Re-capture with `python _audit_full.py` (V:\Muse) — it now closes the hamburge
 3. **Avatar render check**: Session 72 fixed match avatars rendering as solid black (stripped `transform` from `avatarEccentric*`). Confirm Muses avatars now show photos (screenshot_09_muses.png).
 4. **Scan the 10 screenshots** for any regression the text pass can't see (overlap, clipped cards, contrast, badge overflow) and note findings back here.
 
-### Standalone context
+### Standing context
 - Test acct for live audits: `test_audit_99@muse.dev` / `AuditTest99!`
-- `git push` is NOT available to Claude (`WYZdesign/Muse` not authorized in its session) — Claude commits locally, wyzmind pushes to origin/main.
-- Naming convention: **Claude** = the other agent (commits only), **wyzmind** = this operator (pushes + deploys live).
+- Naming convention: **Claude** = the other agent (commits only, cannot push — `WYZdesign/Muse` not authorized in its session), **wyzmind** = this operator (pushes to origin/main + deploys live).
+
+## ⚠️ PERMANENT WORK DIVISION (applies EVERY session, every time)
+
+Per Torreé: **Claude does ALL kinetic + frontend work. Every time.** wyzmind does NOT duplicate that work.
+
+- **KINETIC** → Claude: all motion/tilt/3D/animation — device tilt, gyroscope, Spatial Scenes/depth (useDeviceTilt, useSpatialDepth, createSpatialScene, attachSpatialDepth), keyframes/orbit/pulse/ring/marquee, parallax, swipe-card tilt, background orbs.
+- **FRONTEND** → Claude: all UI/React/CSS/visual — screen layout, components, styling/chroma, Nav, badges, cards, modals, panels, color/theme, responsive, iconography.
+- **wyzmind** (this operator) → backend/data/deploy: API routes, Supabase/DB + migrations, state/data flows, deploy verification, pushing to origin, handover docs.
+
+Rule: when a handover desk contains kinetic or frontend items, they route to Claude. wyzmind focuses on backend/data/push/deploy. Don't double-own the same file — pick one owner per file per session. If a change spans both (e.g. a component + its API), wyzmind does the API half, Claude does the component half.
 
 ## Session 78 (wyzmind) — status feature fully complete across both screens
 
