@@ -710,7 +710,13 @@ Kept origin's versions where they were equal-or-better: Discover radial button s
 - `npx vitest run` 146/146 passing
 
 ### Commits this session
-`a788f18` (reapplied StreakWidget/SubscriptionScreen/MBTI fixes + corrected Feed pill placement), `38e81a6` (ring smoothing + site-color variants + tighter sizing, Muses card height, quest deep-link, image-fallback sweep, BTS stats)
+`a788f18` (reapplied StreakWidget/SubscriptionScreen/MBTI fixes + corrected Feed pill placement), `38e81a6` (ring smoothing + site-color variants + tighter sizing, Muses card height, quest deep-link, image-fallback sweep, BTS stats), `b189fdb`/`223022b` (this handover entry, Feed pill glyph merge), `8f8da05` (merge commit reconciling wyzmind's follow-up push `0beb15a`)
+
+### Second reconciliation this session (wyzmind's 0beb15a push)
+wyzmind pushed again mid-session (`70bc588`..`0beb15a`) while I was mid-punchlist. Diffed against the shared base (`b9e291c`) rather than assuming a reset was needed this time, since a real `git merge` was cleaner here:
+- **`src/app/api/muse/route.ts`** — added `"audience"` to `ALLOWED_PROFILE_FIELDS` (regression fix, backend, picked up as-is, no conflict).
+- **`FeedScreen.tsx` status pill** — wyzmind independently landed the same left-column/above-avatar repositioning I'd already applied, plus a real follow-up: the pill's text was overflowing/clipping unreliably at 52px width, so they compacted it to a single glyph (first char of status, full text still in the `title` attr). Merged their glyph-compaction on top of my positioning; kept the pill fully rounded (`borderRadius:99`) since Torreé's own word for it was "pill" (wyzmind's version had gone to `borderRadius:8`). One real merge conflict (both sides touched the same lines) resolved by hand — not a reset-and-reapply this time.
+- Merge commit `8f8da05` — re-verified `tsc`/`build`/146 tests after resolving.
 
 ### Open items / follow-ups
 - `post/[id]` and `profile/[id]` (public share routes, server components) still don't run the client-side image-fallback logic — their `<img>` tags are already truthy-guarded so they can't hit the empty-src bug, but a genuinely dead remote URL there would show a native broken icon since there's no client JS on those routes. Would need a small client-component wrapper to fix; left alone as lower-priority (not what Torreé reported).
