@@ -180,7 +180,7 @@ const ACTIONS: Record<string, ActionHandler> = {};
 // ═══ PROFILE ═══
 
 ACTIONS["profile"] = async ({ sb, profile, rest }) => {
-  const ALLOWED_PROFILE_FIELDS = ["name", "bio", "styles", "loc", "city", "type", "zodiac", "chinese", "mbti", "life_path", "looking", "avatar"];
+  const ALLOWED_PROFILE_FIELDS = ["name", "bio", "styles", "loc", "city", "type", "zodiac", "chinese", "mbti", "life_path", "looking", "avatar", "audience"];
   const updates: Record<string, unknown> = {};
   for (const k of ALLOWED_PROFILE_FIELDS) {
     if (rest[k] !== undefined) updates[k] = rest[k];
