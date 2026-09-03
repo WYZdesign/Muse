@@ -939,7 +939,7 @@ img{background-color:#1a0a2e}
   right:0;
   top:0;
   bottom:0;
-  width:36px;
+  width:50px;
   background:linear-gradient(90deg,transparent,rgba(10,6,18,1));
   pointer-events:none;
   z-index:2;
@@ -952,7 +952,7 @@ img{background-color:#1a0a2e}
   left:0;
   top:0;
   bottom:0;
-  width:28px;
+  width:36px;
   background:linear-gradient(-90deg,transparent,rgba(10,6,18,1));
   pointer-events:none;
   z-index:2;
@@ -1547,7 +1547,7 @@ img{background-color:#1a0a2e}
   right:0;
   top:0;
   bottom:0;
-  width:28px;
+  width:44px;
   background:linear-gradient(90deg,transparent,rgba(10,6,18,0.95));
   pointer-events:none;
   z-index:2;
@@ -1560,7 +1560,7 @@ img{background-color:#1a0a2e}
   left:0;
   top:0;
   bottom:0;
-  width:20px;
+  width:32px;
   background:linear-gradient(-90deg,transparent,rgba(10,6,18,0.95));
   pointer-events:none;
   z-index:2;
