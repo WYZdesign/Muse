@@ -610,6 +610,42 @@ Per Torreé: **Claude does ALL kinetic + frontend work. Every time.** wyzmind do
 
 Rule: when a handover desk contains kinetic or frontend items, they route to Claude. wyzmind focuses on backend/data/push/deploy. Don't double-own the same file — pick one owner per file per session. If a change spans both (e.g. a component + its API), wyzmind does the API half, Claude does the component half.
 
+## Session 79 (Claude) — frontend polish + live deploy verification
+
+### What happened
+- **Vercel deploy verification wired up** — `W:\WYZ_Command_Center\wyz_deploy_check.py <sha>` queries the Vercel API for the Muse project and asserts the pushed SHA reached `READY` (not `BUILDING`/`ERROR`). Now a standing gate in `AGENTS.md` §5. Old `wyzdesign_VERCEL_API_KEY` was a limited-scope token (0 projects, 403 on teams) — replaced with a Full Account token stored as `vercel_TOKEN_FULL` (Muse project ID stored as `muse_VERCEL_PROJECT_ID`). Every push is now machine-verified live, not assumed.
+- **Permanent work division committed** (`e82a71a`): Claude owns kinetic + frontend; wyzmind owns backend/data/deploy. One owner per file per session.
+
+### 5 frontend fixes (all live, verified)
+1. **Creative-type label** — `.card-hero-type` 11.5px → 16px (~40% larger). `muse.css:1285`
+2. **MBTI badge** — no stray oversized font override; `.card-hero-badge` (10px) now matches zodiac/life-path/skills badges exactly.
+3. **Radial match-action buttons** — pushed ~10% further out (radius ~100px → ~110px). `DiscoverScreen.tsx:508-513`
+4. **Feed status pill** — moved off the post-top (was overlapped by the filter bar) to a 52px pill inside the composer box above the avatar. `FeedScreen.tsx:345-370`
+5. **Filter/sort bar shadows** — static shadow → pulsing `edgeGlow`/`edgeGlowLeft` animation with GPU layer promotion (`will-change`). `muse.css:933-960`
+
+### Audit findings + fixes from this session's screenshots
+- **Feed status pill clipped** by the filter bar above it — fixed by repositioning inside the composer box.
+- **Filter chips clipped at right edge** ("Hirin…", "Lik…") — widened edge-fade overlays: `.filter-scroll-row` 36→50px / 28→36px; `.conn-tab-sub-scroll` 28→44px / 20→32px.
+- **Desktop phone frame renders black** — confirmed NOT a bug. The test account was mid-auth; `_verify_live.py` confirms `AUTH BOOT: OK`, `NAV RENDER: OK`, no JS errors (only expected 401 auth-gated fetch + 501 Replicate depth soft-fail). Phone frame is fine.
+
+### Verification
+- `tsc --noEmit` clean
+- `npm run build` clean
+- `npx vitest run` 146/146 passing
+- `wyz_deploy_check.py` → `DEPLOY IS LIVE ✅` for `d2fc449`
+- `_audit_full.py` → 10 screenshots re-captured
+
+### Commits this session
+`e82a71a` (work division), `e445cb3` (5 frontend fixes), `d2fc449` (status pill layout + wider scroll fade)
+
+### Open items (for whoever picks up next)
+- **Cross-account status sync** still not live-verified (two-account check: set status as A, log in as B, confirm A's status shows on Feed/Profile).
+- **`bootstrapData`/`use*Data.ts` double-fetch** — Claude traced it and found a plausibly legitimate reason (prefetch before login resolves), so it's left alone.
+- **Visual real-device pass** from Session 66 (global-cursor card tilt, static nav gradient) still unverified.
+- **Stash `stash@{0}` "my audit fixes"** still uncommitted — contains `page.tsx` (intent-picker refactor, `doSwipe("right")`, `setUserDefaultIntent("")`) + `route.tsx` (`audience` field added to `ALLOWED_PROFILE_FIELDS`). Was left staged but never committed. If still wanted, apply it; otherwise drop it.
+- **Stash `stash@{1}`** — temp `_screenshots/01_auth.png`, safe to drop.
+- **`_verify_live.py`** + `screenshot_*.png` are now committed to the Muse repo (were untracked artifacts).
+
 ## Session 78 (wyzmind) — status feature fully complete across both screens
 
 Closed out the remaining Session 77 punch-list items:
