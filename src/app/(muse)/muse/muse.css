@@ -531,7 +531,7 @@ img{background-color:#1a0a2e}
 .match-card-grid .match-badge{background:rgba(255,255,255,0.15);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.6);font-size:9px}
 .match-time{font-size:11px;color:var(--muted);flex-shrink:0}
 .match-card-grid{display:block;position:relative;width:100%;overflow:hidden;border-radius:16px;padding:0;border:1px solid rgba(255,255,255,0.08);background:#1a0a2e;box-shadow:0 4px 16px rgba(0,0,0,0.35)}
-.match-card-grid::before{content:"";display:block;padding-top:213.33%}
+.match-card-grid::before{content:"";display:block;padding-top:277.33%}
 .match-card-grid .match-avatar-wrap{position:absolute;inset:0;width:100%;height:100%;display:block}
 .match-card-grid .match-avatar{width:100%;height:100%;border-radius:0;border:none;object-fit:cover;position:relative;left:50%;top:50%;transform:translate(-50%,-50%)}
 .match-card-grid .match-info{position:absolute;bottom:0;left:0;right:0;padding:14px 12px;background:linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.6) 60%,transparent 100%);max-height:62%;overflow-y:auto}
@@ -589,30 +589,30 @@ img{background-color:#1a0a2e}
 .profile-avatar-wrap{position:relative;margin-bottom:16px}
 .profile-avatar{width:100px;height:100px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-origin:border-box;background-clip:padding-box,border-box;background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(135deg,var(--gold),var(--amber),var(--pink),var(--lavender));background-size:100% 100%,200% 200%;animation:avatarGrad 4s ease-in-out infinite}
 @keyframes avatarGrad{0%,100%{background-position:0% 0%,0% 50%}50%{background-position:0% 0%,100% 50%}}
-.profile-ring{position:absolute;top:50%;left:50%;width:110px;height:110px;border-radius:50%;border:2px solid transparent;border-top-color:var(--gold);border-right-color:var(--amber);border-bottom-color:var(--pink);border-left-color:var(--lavender);transform:translate(-50%,-50%);animation:orbitSpin 5s linear infinite}
-@keyframes orbitSpin{
-  0%  {transform:translate(calc(-50% + 0px),calc(-50% - 7px)) rotate(0deg)}
-  8%  {transform:translate(calc(-50% + 3.5px),calc(-50% - 6px)) rotate(30deg)}
-  16% {transform:translate(calc(-50% + 6px),calc(-50% - 3.5px)) rotate(60deg)}
-  25% {transform:translate(calc(-50% + 7px),calc(-50% + 0px)) rotate(90deg)}
-  33% {transform:translate(calc(-50% + 6px),calc(-50% + 3.5px)) rotate(120deg)}
-  41% {transform:translate(calc(-50% + 3.5px),calc(-50% + 6px)) rotate(150deg)}
-  50% {transform:translate(calc(-50% + 0px),calc(-50% + 7px)) rotate(180deg)}
-  58% {transform:translate(calc(-50% - 3.5px),calc(-50% + 6px)) rotate(210deg)}
-  66% {transform:translate(calc(-50% - 6px),calc(-50% + 3.5px)) rotate(240deg)}
-  75% {transform:translate(calc(-50% - 7px),calc(-50% + 0px)) rotate(270deg)}
-  83% {transform:translate(calc(-50% - 6px),calc(-50% - 3.5px)) rotate(300deg)}
-  91% {transform:translate(calc(-50% - 3.5px),calc(-50% - 6px)) rotate(330deg)}
-  100%{transform:translate(calc(-50% + 0px),calc(-50% - 7px)) rotate(360deg)}
-}
+/* Ring band is a true conic-gradient (no hard 4-color quadrant seams) masked into a
+   thin ring, rotating in place with a single 0%->100% keyframe so timing is perfectly
+   uniform (the old orbitSpin wobble used unevenly-spaced keyframes AND drifted the
+   ring off-center by up to 7px, which is what read as "skipping/glitching" and could
+   let the ring's near edge brush the avatar at its closest point of orbit). Sized ~15%
+   tighter to the avatar than before while staying purely rotational (no wobble), so the
+   gap to the avatar is constant and never closes to zero. */
+.profile-ring{position:absolute;top:50%;left:50%;width:108px;height:108px;border-radius:50%;background:conic-gradient(from 0deg,var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));transform:translate(-50%,-50%);animation:ringSpin 5s linear infinite;will-change:transform}
+@keyframes ringSpin{0%{transform:translate(-50%,-50%) rotate(0deg)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
 
-/* ═══ SWIRL RING VARIANTS ═══ */
-.swirl-ring-1{animation-duration:5s;border-top-color:#FFD700;border-right-color:#FF8C00;border-bottom-color:#FF69B4;border-left-color:#9B59B6}
-.swirl-ring-2{animation-duration:7s;animation-direction:reverse;border-top-color:#00CED1;border-right-color:#FFD700;border-bottom-color:#FF4500;border-left-color:#32CD32}
-.swirl-ring-3{animation-duration:6s;border-top-color:#FF69B4;border-right-color:#9B59B6;border-bottom-color:#00CED1;border-left-color:#FFD700}
-.swirl-ring-4{animation-duration:8s;animation-direction:reverse;border-top-color:#FF4500;border-right-color:#32CD32;border-bottom-color:#FFD700;border-left-color:#00CED1}
-.swirl-ring-5{animation-duration:5.5s;border-top-color:#9B59B6;border-right-color:#FF69B4;border-bottom-color:#FF8C00;border-left-color:#00CED1}
-.swirl-ring-6{animation-duration:6.5s;animation-direction:reverse;border-top-color:#32CD32;border-right-color:#00CED1;border-bottom-color:#9B59B6;border-left-color:#FF4500}
+/* ═══ SITE-COLOR RING GRADIENT VARIANTS (5) — all built from the active theme's own
+   --gold/--coral/--pink/--lavender/--mint/--amber/--sky/--honey vars, so every variant
+   re-themes automatically when the user switches site color themes ═══ */
+.ring-v1{background:conic-gradient(from 0deg,var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));animation-duration:5s}
+.ring-v2{background:conic-gradient(from 0deg,var(--coral),var(--gold),var(--peach),var(--sunset),var(--coral));animation-duration:6.5s;animation-direction:reverse}
+.ring-v3{background:conic-gradient(from 0deg,var(--sky),var(--mint),var(--lavender),var(--sky));animation-duration:5.8s}
+.ring-v4{background:conic-gradient(from 0deg,var(--pink),var(--lavender),var(--coral),var(--pink));animation-duration:7s;animation-direction:reverse}
+.ring-v5{background:conic-gradient(from 0deg,var(--amber),var(--honey),var(--gold),var(--amber));animation-duration:6.2s}
+/* legacy aliases kept so any existing references keep working */
+.swirl-ring-1{background:conic-gradient(from 0deg,var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));animation-duration:5s}
+.swirl-ring-2{background:conic-gradient(from 0deg,var(--coral),var(--gold),var(--peach),var(--sunset),var(--coral));animation-duration:6.5s;animation-direction:reverse}
+.swirl-ring-3{background:conic-gradient(from 0deg,var(--sky),var(--mint),var(--lavender),var(--sky));animation-duration:5.8s}
+.swirl-ring-4{background:conic-gradient(from 0deg,var(--pink),var(--lavender),var(--coral),var(--pink));animation-duration:7s;animation-direction:reverse}
+.swirl-ring-5{background:conic-gradient(from 0deg,var(--amber),var(--honey),var(--gold),var(--amber));animation-duration:6.2s}
 .swirl-avatar-1{animation:avatarGrad 5s ease-in-out infinite}
 .swirl-avatar-2{animation:avatarGrad 7s ease-in-out infinite}
 .swirl-avatar-3{animation:avatarGrad 6s ease-in-out infinite reverse}

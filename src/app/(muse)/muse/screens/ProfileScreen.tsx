@@ -438,7 +438,17 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
         </div>
         <div className="section">
-          <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label="Open quests"
+            title="Open quests"
+            onClick={() => setShowQuests(true)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowQuests(true); } }}
+            style={{ cursor: "pointer" }}
+          >
+            <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
+          </div>
           <div className="section-title">Activity</div>
           <div className="section-text" style={{ marginBottom: 10 }}>Recent interactions</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

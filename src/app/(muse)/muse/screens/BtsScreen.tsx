@@ -405,6 +405,14 @@ export const BtsScreen = memo(function BtsScreen({
           {filteredStories.map((s) => {
             const isRevealed = revealedNsfw.has(String(s.id));
             const isNsfw = s.nsfw && !isRevealed;
+            // View count + weighted engagement score, matching the Feed page's X/Twitter-style
+            // stat row: views fall back to an approximation (baseline + likes*8 + comments*15)
+            // when the backend hasn't supplied a real `views` field yet; engagement weights
+            // comments 2x likes, same formula as FeedScreen so the numbers read consistently
+            // across the app.
+            const btsViews = typeof (s as any).views === "number" ? (s as any).views : 40 + (s.likes || 0) * 8 + (s.comments || 0) * 15;
+            const btsEngagement = (s.likes || 0) + (s.comments || 0) * 2;
+            const btsFmt = (n: number) => (n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K" : String(n));
 
             return (
               <div
@@ -582,6 +590,30 @@ export const BtsScreen = memo(function BtsScreen({
                     )}
                   </div>
                 )}
+
+                {/* View count + engagement (X/Twitter-style stat row, matches Feed) */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 10,
+                    padding: "8px 12px 0",
+                  }}
+                >
+                  <span
+                    title="Views"
+                    style={{ fontSize: 11, color: "var(--muted, #999)", display: "inline-flex", alignItems: "center", gap: 4 }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                    {btsFmt(btsViews)}
+                  </span>
+                  <span
+                    title="Engagement: likes + comments×2"
+                    style={{ fontSize: 11, color: btsEngagement > 0 ? "var(--gold)" : "var(--muted, #999)", fontWeight: btsEngagement > 0 ? 700 : 400 }}
+                  >
+                    ✦ {btsFmt(btsEngagement)}
+                  </span>
+                </div>
 
                 {/* Action row */}
                 <div

@@ -17,9 +17,10 @@ interface ActivityPanelProps {
   loginStreak: number;
   setShowHamburger: (v: boolean) => void;
   showScreen: (s: Screen) => void;
+  setShowQuests?: (v: boolean) => void;
 }
 
-function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen }: ActivityPanelProps) {
+function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen, setShowQuests }: ActivityPanelProps) {
   const [hubTab, setHubTab] = useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
   const [myReports, setMyReports] = useState<any[] | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -78,7 +79,17 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
 
   return (
     <>
-      <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label="Open quests"
+        title="Open quests"
+        onClick={() => setShowQuests?.(true)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowQuests?.(true); } }}
+        style={{ cursor: "pointer" }}
+      >
+        <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
+      </div>
       <div style={{ textAlign: "center", fontSize: 13, color: "var(--gold)", fontWeight: 700, margin: "2px 0 10px" }}>Your Activity</div>
       <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
         {tabBtn("notif", "Notifications")}
@@ -866,7 +877,7 @@ export const MenuModal = memo(function MenuModal({
             )}
             {hamburgerScreen === "activity" && (
               <div className="conn-scroll">
-                <ActivityPanel authFetch={authFetch} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={bookingsForHub} weeklyLogins={weeklyLogins} loginStreak={loginStreak} setShowHamburger={setShowHamburger} showScreen={showScreen} />
+                <ActivityPanel authFetch={authFetch} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={bookingsForHub} weeklyLogins={weeklyLogins} loginStreak={loginStreak} setShowHamburger={setShowHamburger} showScreen={showScreen} setShowQuests={setShowQuests} />
               </div>
             )}
           </>
