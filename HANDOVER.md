@@ -638,13 +638,32 @@ Rule: when a handover desk contains kinetic or frontend items, they route to Cla
 ### Commits this session
 `e82a71a` (work division), `e445cb3` (5 frontend fixes), `d2fc449` (status pill layout + wider scroll fade)
 
+## Session 80 (wyzmind) — Claude's audit-fix stash triage + final status-pill polish
+
+### What happened
+- **Triage of `stash@{0}` "my audit fixes"**: determined 4/5 changes were ALREADY in HEAD (debug `__exp` removal, `filterStyles` array support, duplicate `muse:ready` dedup, intent-picker → `doSwipe("right")` refactor, `setUserDefaultIntent("")` skip). Only the `audience` field was missing.
+- **Applied the `audience` whitelist fix** (`70bc588`): added `"audience"` to `ALLOWED_PROFILE_FIELDS` in `route.ts`. This was a REAL regression — the onboarding stage (`page.tsx:1975`) sets `obData.audience` and `page.tsx:2291` saves it via the profile action, but the whitelist silently dropped it. `auth/route.ts:191` already allowed it; the profile action did not. Verified `audience` is actively used (`page.tsx:692`, `lib/role.ts:21`).
+- **Dropped stale `stash@{1}`** (temp screenshot artifact).
+
+### Final status-pill polish (from live audit of screenshot_07_feed)
+The first attempt (`03e8dc2`) put the pill above the avatar but it overlapped the filter bar (vertical margin collapse) AND truncated text to " Wor..." at 52px. Two follow-up fixes:
+- `03e8dc2` — moved the status pill + avatar into a proper column (pill above avatar), no longer hidden under filter chips.
+- `7d48c9d` — pill now renders a single leading glyph (status emoji, or ✨ when empty) centered in the 52px pill instead of truncated text. Full status is editable on tap.
+
+### Verified live
+- `wyz_deploy_check.py <sha>` → `DEPLOY IS LIVE ✅` for `70bc588` and `7d48c9d`.
+- `tsc --noEmit` clean, `npx vitest run` 146/146, `npm run build` clean.
+- `_audit_full.py` re-captured all 10 screens; `screenshot_07_feed.png` confirms the pill renders a clean gold glyph above the avatar.
+
+### Commit list this session
+`70bc588` (audience whitelist), `03e8dc2` (status pill above avatar), `7d48c9d` (compact pill glyph).
+
 ### Open items (for whoever picks up next)
 - **Cross-account status sync** still not live-verified (two-account check: set status as A, log in as B, confirm A's status shows on Feed/Profile).
 - **`bootstrapData`/`use*Data.ts` double-fetch** — Claude traced it and found a plausibly legitimate reason (prefetch before login resolves), so it's left alone.
 - **Visual real-device pass** from Session 66 (global-cursor card tilt, static nav gradient) still unverified.
-- **Stash `stash@{0}` "my audit fixes"** still uncommitted — contains `page.tsx` (intent-picker refactor, `doSwipe("right")`, `setUserDefaultIntent("")`) + `route.tsx` (`audience` field added to `ALLOWED_PROFILE_FIELDS`). Was left staged but never committed. If still wanted, apply it; otherwise drop it.
-- **Stash `stash@{1}`** — temp `_screenshots/01_auth.png`, safe to drop.
-- **`_verify_live.py`** + `screenshot_*.png` are now committed to the Muse repo (were untracked artifacts).
+- **`stash@{0}` remaining** — fully triaged; the only unapplied piece (`audience`) is now committed in `70bc588`. The stash can be dropped.
+- **`_verify_live.py`** + `screenshot_*.png` are committed to the Muse repo (audit artifacts).
 
 ## Session 78 (wyzmind) — status feature fully complete across both screens
 
