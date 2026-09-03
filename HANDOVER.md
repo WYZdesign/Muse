@@ -660,3 +660,39 @@ Commits this session: `09f22da` (migration docs), `3d7369d` (ProfileScreen pill)
 - **Cross-account status sync** was not live-verified (Chrome browser bridge disconnected in Claude's session). Now that the migration is confirmed applied, worth a two-account check: set a status as account A, log in as account B, confirm A's status shows.
 - **`bootstrapData`/`use*Data.ts` double-fetch**: Claude traced it and found a plausibly legitimate reason (prefetch before login resolves), so it's left alone — not confirmed dead code.
 - **Visual real-device pass** from Session 66 (global-cursor card tilt, static nav gradient) still unverified.
+
+## Session 82 (Claude) — reconciled with wyzmind's b9e291c push, then a full Torreé punch-list
+
+### Reconciliation (wyzmind's b9e291c/d2fc449/e445cb3 push)
+wyzmind's push covered most of the Session 79 punch-list but three fixes weren't in it and had to be reapplied on top of origin's new base:
+1. **StreakWidget** (`components/StreakWidget.tsx`) — origin still had the old fixed Mon-Sun `Date.getDay()` day labels. `weeklyLogins` is actually a rolling 7-day window ending today (`page.tsx` builds it as `for(i=6..0) push(today-i days)`), so index 6 is always today. Restored the dynamic `WEEKDAY_LETTERS`-derived label array + `todayIdx = length-1`.
+2. **SubscriptionScreen promo Apply button** — origin dropped `flex:"0 0 auto",width:"auto"`, so the global `.btn{width:100%}` rule was hijacking the button's flex-basis again (input rendered unusably small). Re-added.
+3. **Discover MBTI badge** — origin's still had a stray `fontSize:"1.1rem"` making it visibly bigger than the sibling zodiac/chinese/life-path tag badges. Removed again.
+
+Also corrected origin's Feed status-pill placement: origin put it in a new row above the textarea (right column) — Torreé's ask was specifically "a small pill right above profile pic circle," i.e. in the left column stacked above the avatar. Moved it back there.
+
+Kept origin's versions where they were equal-or-better: Discover radial button spacing (independently matches mine exactly) and the `muse.css` scroll-edge glow animation (origin's is a superset — it also covers `.filter-scroll-row`, which my version had missed).
+
+### New Torreé punch-list (all done this session)
+1. **Avatar ring "gradient video" skip/glitch** — root cause found: `.profile-ring` (and `.swirl-ring-N`) used 4 flat border-side colors (hard quadrant seams, not a real gradient) animated via a 12-keyframe `orbitSpin` with unevenly-spaced percentages (0,8,16,25,33,41...) that produced visibly uneven angular speed — plus the ring wobbled up to 7px off-center each rotation. Replaced with a true `conic-gradient` ring masked into a thin band, rotated via a single uniform `0%→100%` keyframe (`ringSpin`) — smooth, no seams, no timing jitter, and no wobble (so the gap to the avatar is now constant).
+2. **5 site-color ring gradient variants** — added `ring-v1`..`ring-v5` (aurora/sunset/ocean/berry/citrus), all built from the theme's own `--gold/--coral/--pink/--lavender/--mint/--sky/--amber/--honey` vars so they re-theme automatically with the site's color theme switcher. `MatchCard` now assigns a variant per profile (hashed off id, same pattern as ring speed). `swirl-ring-1..5` kept as aliases for ProfileScreen/MenuModal's existing usage.
+3. **Rings tightened ~15%** to the avatar, non-touching: MatchCard ring 99px→96px (78px avatar), default/profile ring 110px→108px (100px avatar). Safe now that there's no orbit wobble eating into the gap.
+4. **Muses page card-grid view** — match card photos 30% taller (`::before` aspect padding-top 213.33%→277.33%).
+5. **Streak widget → Quest page deep link** — tapping the streak widget on the Activity panel (MenuModal's `ActivityPanel`, the actual "activity page") and on ProfileScreen's Activity section now calls `setShowQuests(true)`. Threaded `setShowQuests` through `ActivityPanel`'s props (it was already on `MenuModalProps` and passed from `page.tsx`, just not forwarded).
+6. **Broken image icons audit** — the existing document-level capture-phase `error` listener in `page.tsx` only fires for real load failures; an `<img>` with no `src` / `src=""` (common for placeholder/notification avatars — CommunityScreen already had a comment flagging this exact gotcha for one spot) doesn't reliably fire `error` in every browser, so it can fall through to the native broken-image icon. Added a `MutationObserver` + initial `document.body` sweep that proactively applies the same placeholder styling to any empty-src `<img>` anywhere in the app tree, current or added later — covers every screen without needing a per-file audit, since they're all mounted under `page.tsx`.
+7. **BTS post view count + engagement** — Feed posts already had an X/Twitter-style stat row (views + weighted engagement); BTS page cards didn't. Added the same row to BTS cards (`screens/BtsScreen.tsx`): views approximate until backend supplies a real field, engagement = likes + comments×2.
+
+### Not done (flagged for Torreé, not code)
+- **Facebook-style shareable/repostable profile feed** — Torreé asked whether this makes sense to build. This is a product/scope call, not something to just build silently — flagged back to him rather than assumed.
+
+### Verification
+- `tsc --noEmit` clean
+- `npm run build` clean
+- `npx vitest run` 146/146 passing
+
+### Commits this session
+`a788f18` (reapplied StreakWidget/SubscriptionScreen/MBTI fixes + corrected Feed pill placement), `38e81a6` (ring smoothing + site-color variants + tighter sizing, Muses card height, quest deep-link, image-fallback sweep, BTS stats)
+
+### Open items / follow-ups
+- `post/[id]` and `profile/[id]` (public share routes, server components) still don't run the client-side image-fallback logic — their `<img>` tags are already truthy-guarded so they can't hit the empty-src bug, but a genuinely dead remote URL there would show a native broken icon since there's no client JS on those routes. Would need a small client-component wrapper to fix; left alone as lower-priority (not what Torreé reported).
+- View/engagement counts on both Feed and BTS are approximated client-side until wyzmind wires a real `views` column/increment — flagging so the fallback formula doesn't get mistaken for real analytics.
