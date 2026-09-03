@@ -2,7 +2,7 @@
 
 import React from "react";
 
-const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
+const WEEKDAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"]; // Date.getDay() index: 0=Sun..6=Sat
 
 export default function StreakWidget({
   weeklyLogins,
@@ -13,8 +13,15 @@ export default function StreakWidget({
   loginStreak: number;
   compact?: boolean;
 }) {
-  const today = new Date().getDay();
-  const todayIdx = today === 0 ? 6 : today - 1;
+  // `weeklyLogins` is a rolling 7-day window ENDING today (built as
+  // `for (i=6..0) push(today - i days)`, so index 6 is always today,
+  // index 0 is 6 days ago) — not a fixed Monday-Sunday calendar week.
+  const DAY_LABELS = Array.from({ length: weeklyLogins.length || 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - ((weeklyLogins.length || 7) - 1 - i));
+    return WEEKDAY_LETTERS[d.getDay()];
+  });
+  const todayIdx = (weeklyLogins.length || 7) - 1;
 
   if (compact) {
     return (
