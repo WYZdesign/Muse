@@ -931,10 +931,42 @@ img{background-color:#1a0a2e}
 .pro-skill-chip.active{background:rgba(144,202,249,0.12);border-color:rgba(144,202,249,0.45);color:#90caf9}
 
 /* ═══ FILTER SCROLL ROWS ═══ */
-.filter-scroll-row{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:4px;position:relative}
+.filter-scroll-row{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:4px;position:relative;will-change:transform}
 .filter-scroll-row::-webkit-scrollbar{display:none}
-.filter-scroll-row::after{content:'';position:absolute;right:0;top:0;bottom:0;width:36px;background:linear-gradient(90deg,transparent,rgba(10,6,18,1));pointer-events:none;z-index:2}
-.filter-scroll-row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:28px;background:linear-gradient(-90deg,transparent,rgba(10,6,18,1));pointer-events:none;z-index:2}
+.filter-scroll-row::after{
+  content:"";
+  position:absolute;
+  right:0;
+  top:0;
+  bottom:0;
+  width:36px;
+  background:linear-gradient(90deg,transparent,rgba(10,6,18,1));
+  pointer-events:none;
+  z-index:2;
+  animation:edgeGlow 2s ease-in-out infinite alternate;
+  will-change:transform,opacity
+}
+.filter-scroll-row::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:28px;
+  background:linear-gradient(-90deg,transparent,rgba(10,6,18,1));
+  pointer-events:none;
+  z-index:2;
+  animation:edgeGlowLeft 2s ease-in-out infinite alternate;
+  will-change:transform,opacity
+}
+@keyframes edgeGlow{
+  0%{opacity:0.45}
+  100%{opacity:1}
+}
+@keyframes edgeGlowLeft{
+  0%{opacity:0.45}
+  100%{opacity:1}
+}
 .filter-chip{flex-shrink:0;white-space:nowrap;font-family:inherit}
 
 /* ═══ DISCOVER CARD HERO CHIPS ═══ */
@@ -1282,7 +1314,7 @@ img{background-color:#1a0a2e}
 .card-hero-info.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
 .card-hero-name{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:800;color:#fff;font-family:"Playfair Display",serif;font-style:italic;text-shadow:0 2px 8px rgba(0,0,0,0.7),0 4px 20px rgba(0,0,0,0.5),0 0 40px rgba(10,6,18,0.8)}
 .card-verified-mark{font-size:18px;color:var(--gold)}
-.card-hero-type{font-family:"Playfair Display",serif;font-style:italic;font-size:11.5px;font-weight:600;color:#FFD700;margin:4px 0 4px;text-shadow:0 1px 6px rgba(0,0,0,0.6),0 2px 12px rgba(0,0,0,0.4),0 0 20px rgba(255,215,0,0.4)}
+.card-hero-type{font-family:"Playfair Display",serif;font-style:italic;font-size:16px;font-weight:600;color:#FFD700;margin:4px 0 4px;text-shadow:0 1px 6px rgba(0,0,0,0.6),0 2px 12px rgba(0,0,0,0.4),0 0 20px rgba(255,215,0,0.4)}
 .card-hero-bio{font-size:13px;color:rgba(255,255,255,0.85);line-height:1.4;text-shadow:0 1px 4px rgba(0,0,0,0.5)}
 .card-hero-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .card-hero-tag{font-size:10px;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85)}
@@ -1508,7 +1540,7 @@ img{background-color:#1a0a2e}
 
 /* Horizontal-scroll glow indicator — subtle edge fade + pulsing dots */
 .conn-tab-sub-scroll::-webkit-scrollbar{height:0;width:0;display:none}
-.conn-tab-sub-scroll{scrollbar-width:none;-ms-overflow-style:none;position:relative}
+.conn-tab-sub-scroll{scrollbar-width:none;-ms-overflow-style:none;position:relative;will-change:transform}
 .conn-tab-sub-scroll::after{
   content:"";
   position:absolute;
@@ -1519,6 +1551,8 @@ img{background-color:#1a0a2e}
   background:linear-gradient(90deg,transparent,rgba(10,6,18,0.95));
   pointer-events:none;
   z-index:2;
+  animation:edgeGlow 2s ease-in-out infinite alternate;
+  will-change:transform,opacity
 }
 .conn-tab-sub-scroll::before{
   content:"";
@@ -1530,6 +1564,8 @@ img{background-color:#1a0a2e}
   background:linear-gradient(-90deg,transparent,rgba(10,6,18,0.95));
   pointer-events:none;
   z-index:2;
+  animation:edgeGlowLeft 2s ease-in-out infinite alternate;
+  will-change:transform,opacity
 }
 
 

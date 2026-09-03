@@ -342,9 +342,8 @@ export const FeedScreen = memo(function FeedScreen({
             </div>
           ))}
         </div>
-        <div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", gap: 10, alignItems: "flex-start" }}>
-          <img loading="lazy" src={currentUser.avatar} alt="Avatar" className="feed-avatar" style={{ width: 52, height: 52, flexShrink: 0 }} onError={handleImgError} />
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+<div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", gap: 10, alignItems: "flex-start" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
             {editingStatus ? (
               <input
                 className="inp"
@@ -354,18 +353,22 @@ export const FeedScreen = memo(function FeedScreen({
                 onKeyDown={e => { if (e.key === "Enter") { setEditingStatus(false); saveUserStatus(userStatus); } }}
                 autoFocus
                 maxLength={80}
-                placeholder="What's your status?"
-                style={{ margin: 0, fontSize: 13, padding: "6px 10px", minHeight: "auto", background: "var(--glass)", border: "1px solid rgba(255,215,0,0.3)", color: "#FFD700" }}
+                placeholder="Status"
+                style={{ width: 52, textAlign: "center", margin: 0, fontSize: 10, padding: "4px 4px", background: "var(--glass)", border: "1px solid rgba(255,215,0,0.3)", color: "#FFD700", borderRadius: 8 }}
               />
             ) : (
               <div
                 onClick={() => setEditingStatus(true)}
-                style={{ fontSize: 13, color: "#FFD700", fontWeight: 600, padding: "6px 10px", borderRadius: 10, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.15)", cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textShadow: "0 0 10px rgba(255,215,0,0.3)" }}
+                title={userStatus || "Set status"}
+                style={{ width: 52, height: 20, lineHeight: "20px", textAlign: "center", cursor: "pointer", fontSize: 9, color: "#FFD700", fontWeight: 700, padding: "0 2px", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
               >
-                {userStatus || "Set your status..."}
+                {userStatus || "+ status"}
               </div>
             )}
-            <textarea className="inp" placeholder="Share your work, ideas, or find collaborators..." rows={2} value={feedText} onChange={e => setFeedText(e.target.value)} style={{ resize: "none", margin: 0, minHeight: 52, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)" }} />
+            <img loading="lazy" src={currentUser.avatar} alt="Avatar" className="feed-avatar" style={{ width: 52, height: 52, flexShrink: 0 }} onError={handleImgError} />
+          </div>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+              <textarea className="inp" placeholder="Share your work, ideas, or find collaborators..." rows={2} value={feedText} onChange={e => setFeedText(e.target.value)} style={{ resize: "none", margin: 0, minHeight: 52, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)" }} />
             <div style={{ display: "flex", gap: 8, alignItems: "center", width: "100%" }}>
               <label style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }}>
                 <FiImage size={16} />
