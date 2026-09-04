@@ -23,6 +23,10 @@ const AVATAR_SIZE = 78;
 const RING_SIZE = 90; // wyzmind's live-verified sizing (Session 81/82 — 83 was too tight)
 const RING_SPEEDS = [3.2, 4.5, 5.8, 3.8, 5.1, 4.2, 6.0, 3.5, 4.8, 5.5];
 const RING_VARIANTS = ["ring-v1", "ring-v2", "ring-v3", "ring-v4", "ring-v5"];
+// Hoolah-hoop speeds for the outer orbit ring — deliberately offset from RING_SPEEDS
+// (different array, different modulo base) so the hoop and its halo are never
+// spinning in sync, and different cards' hoops visibly vary in pace from each other.
+const ORBIT_SPEEDS = [7.5, 5.5, 9, 6.8, 8.2];
 
 const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) {
   const {
@@ -35,6 +39,7 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
   const isList = view === "list";
   const ringSpeed = RING_SPEEDS[parseInt(mid, 10) % RING_SPEEDS.length] || 4;
   const ringVariant = RING_VARIANTS[parseInt(mid, 10) % RING_VARIANTS.length] || RING_VARIANTS[0];
+  const orbitSpeed = ORBIT_SPEEDS[parseInt(mid, 10) % ORBIT_SPEEDS.length] || 7;
 
   return (
     <div
@@ -46,7 +51,7 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
       }}
     >
       <div className="match-avatar-wrap" style={isList ? { position: "relative", width: AVATAR_SIZE, height: AVATAR_SIZE, flexShrink: 0 } : undefined}>
-        {isList && <div className="avatar-orbit orbit-full orbit-med" />}
+        {isList && <div className="avatar-orbit orbit-full orbit-outer" style={{ animationDuration: `${orbitSpeed}s` }} />}
         {isList && <div className={`profile-ring ${ringVariant}`} style={{ width: RING_SIZE, height: RING_SIZE, animationDuration: `${ringSpeed}s` }} />}
         <img
           loading="lazy"
