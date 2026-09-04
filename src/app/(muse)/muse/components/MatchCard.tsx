@@ -22,6 +22,7 @@ export interface MatchCardProps {
 const AVATAR_SIZE = 78;
 const RING_SIZE = 90;
 const RING_SPEEDS = [3.2, 4.5, 5.8, 3.8, 5.1, 4.2, 6.0, 3.5, 4.8, 5.5];
+const RING_VARIANTS = ["ring-v1", "ring-v2", "ring-v3", "ring-v4", "ring-v5"];
 
 const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) {
   const {
@@ -33,6 +34,7 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
   const mid = String(m.id);
   const isList = view === "list";
   const ringSpeed = RING_SPEEDS[parseInt(mid, 10) % RING_SPEEDS.length] || 4;
+  const ringVariant = RING_VARIANTS[parseInt(mid, 10) % RING_VARIANTS.length] || RING_VARIANTS[0];
 
   return (
     <div
@@ -44,7 +46,7 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
       }}
     >
       <div className="match-avatar-wrap" style={isList ? { position: "relative", width: AVATAR_SIZE, height: AVATAR_SIZE, flexShrink: 0 } : undefined}>
-        {isList && <div className="profile-ring" style={{ width: RING_SIZE, height: RING_SIZE, animationDuration: `${ringSpeed}s` }} />}
+        {isList && <div className={`profile-ring ${ringVariant}`} style={{ width: RING_SIZE, height: RING_SIZE, animationDuration: `${ringSpeed}s` }} />}
         <img
           loading="lazy"
           src={m.img}
