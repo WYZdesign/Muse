@@ -46,6 +46,7 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
       }}
     >
       <div className="match-avatar-wrap" style={isList ? { position: "relative", width: AVATAR_SIZE, height: AVATAR_SIZE, flexShrink: 0 } : undefined}>
+        {isList && <div className="avatar-orbit orbit-med" />}
         {isList && <div className={`profile-ring ${ringVariant}`} style={{ width: RING_SIZE, height: RING_SIZE, animationDuration: `${ringSpeed}s` }} />}
         <img
           loading="lazy"

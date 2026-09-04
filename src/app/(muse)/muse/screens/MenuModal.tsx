@@ -614,6 +614,7 @@ export const MenuModal = memo(function MenuModal({
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
                   <div className="profile-avatar-wrap">
                     <img loading="lazy" src={currentUser.avatar} alt="You" className="profile-avatar" onError={handleImgError} />
+                    <div className="avatar-orbit orbit-slow" />
                     <div className="profile-ring swirl-ring-1" />
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>{currentUser.name}</div>
