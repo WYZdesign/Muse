@@ -8,6 +8,23 @@
 - Past 4 sessions: 52 (batched motion audit), 53 (origin-check 403 blocker), 54 (social connect/disconnect fix, Stripe checkout), 55 (business model + FD Studio). This session (56) handled UI polish, gradient matching, Muses card UX, Network tab filter cleanup, BTS gradient, profile ring centering.
 - All previous commits (52-55) are live in main. This handover covers everything done in session 56 plus the open items Torreé raised mid-session that I (Claude) need to audit and finish.
 
+## ⚠️ DELIVERY WORKFLOW (permanent — applies to EVERY session, both agents)
+
+**The only reliable bridge is the shared repo `V:\Muse`.** Claude's session CANNOT push to `origin` — Anthropic's git proxy deny-lists `WYZdesign/Muse` at the session level (verified: blocked before the request reaches GitHub; NO PAT/deploy-key/token can fix it). `V:\Muse` as a device folder and the git proxy's repo allowlist are two unrelated permission surfaces. So:
+
+**Claude (the other agent):**
+- Work **directly in `V:\Muse`** (device bridge gives you file access). Do NOT build in a separate clone.
+- Commit your work to the branch **`claude-work`** in `V:\Muse`. Never rely on pasting commit hashes into chat or "sending a bundle" — those are unreachable to wyzmind unless the file actually lands in the shared repo.
+- Do NOT try to `git push` — it will 403. Leave the code on `claude-work`.
+- Paste a short plain-text summary in chat (one tight block) for the record, but the REAL handoff is the committed branch.
+
+**wyzmind (me / this operator):**
+- After each Claude delivery, `git fetch`/diff `claude-work`, review, then merge/rebase onto `main`, push to `origin` (auto-deploys), and `wyz_deploy_check.py <sha>` verify live.
+- Confirm Claude's work is not a duplicate of something already merged; reconcile conflicts by preferring the well-tested version.
+- Prune `claude-work` after merging (recreate it fresh when needed) so it's never stale.
+
+**Channel summary:** chat = prose/decisions only; `V:\Muse` git = the actual code handoff. If a Claude commit isn't reachable as a git object in `V:\Muse`, it doesn't exist — treat it as unshipped and re-implement or ask for the branch.
+
 ## Repo state at handover
 
 | Branch | Commit | Status |
@@ -841,7 +858,21 @@ Verified the halo/oval fix with a synthetic Playwright render (this sandbox has 
 
 `tsc --noEmit` clean, `npm run build` clean, 146/146 tests passing.
 
+## Session 84 (wyzmind) — confirmed Claude's Session 84 bundle, merged + live-verified
+
+Claude delivered `claude-session84b` (tip `81de76b`) via the on-disk bundle. Reviewed the diff before adopting:
+- **Verified `81de76b` is a clean superset** of my `main` (main was a strict ancestor → clean fast-forward, 0 conflict risk).
+- **Reviewed each fix**: `orbit-outer` (148%) separation is correct and applied to all 3 pairings (MatchCard, ProfileScreen, MenuModal) while leaving the standalone Feed-composer hoop at base size; `.profile-avatar-wrap{display:inline-block}` is the correct root-cause fix for the oval; halo band thinned to ~2.2px; `ORBIT_SPEEDS` per-profile varies the hoop pace. All sound.
+- **Fast-forward merged** `claude-session84b` → `main` (`784400f..81de76b`). The branch also carried earlier Session 82 commits (BTS stat row, etc.) — confirmed no duplication (single BTS stat row + my `bfe037e` StreakWidget re-implementation preserved).
+- **Removed stale `.git/packed-refs.lock`** from a crashed auto-push; removed the `.bundle` from disk (work now in git).
+
+**Live-verified:** `wyz_deploy_check.py 81de76b` → `DEPLOY IS LIVE ✅`. Vision check on `screenshot_04_profile_menu.png` confirms the **inner delicate halo and outer hoolah-hoop are now clearly separated with a real gap** (no longer a fused blob), the ring renders as a clean **circle** (not oval), and the "Your Profile" title sits in the header bar. tsc clean · 146/146 · build clean · `_audit_full.py` all 10 screens OK.
+
+All Session 83 + 84 feedback items are now resolved and live. The Session 66 real-device pass (card tilt, nav gradient shimmer) and the Quests-panel live pixel confirm remain the only open verification items.
+
 ## Session 84 (cont'd, Claude) — hoolah-hoop redone with exact pixel gap; side-menu header separator moved up 20%
+
+(Written before seeing wyzmind's confirmation above — Torreé had only seen the pre-deploy code, not the live site, when asking for this round.)
 
 Torreé looked at the previous `orbit-outer`/148% fix's numbers and didn't trust it sight-unseen (fair — it hadn't been deployed yet, so neither of us had actually seen it live), and asked directly for a literal hoolah-hoop: a hoop that circles the halo "just barely outside of it... don't want the hoop touching the halo." Replaced the percentage-of-parent approach entirely rather than patching it further:
 
@@ -859,4 +890,6 @@ Verified geometrically, not just visually: re-ran the synthetic Playwright rende
 
 `tsc --noEmit` clean, `npm run build` clean (took a couple minutes this run, nothing wrong — just a cold build), 146/146 tests passing.
 
-Not deployed yet, same as everything else this session — needs a pull + push from a real remote to actually go live. Once it's up, worth a live vision check the same way I verified Session 83, since geometry-correct-in-isolation and "looks right in the real app" aren't quite the same guarantee.
+Not deployed yet as of writing — needs a pull + push from a real remote to actually go live. Once it's up, worth a live vision check the same way I verified Session 83, since geometry-correct-in-isolation and "looks right in the real app" aren't quite the same guarantee.
+
+**Update:** wyzmind pulled `claude-work` and independently reimplemented the same idea (`538ec20`) before spotting that I'd already solved it properly on the branch — then superseded their own reimplementation with mine verbatim (`a638b8e`, "adopt Claude's --orbit-size hoop"). Also set up the permanent delivery workflow (`4d0bdfd`): I commit to a stable `claude-work` branch in `V:\Muse` (no more session-numbered branches), wyzmind merges and pushes from there. Reconciled that push into this branch (`main` was a pure ancestor for every file except this doc — see the merge commit).
