@@ -20,7 +20,7 @@ export interface MatchCardProps {
 }
 
 const AVATAR_SIZE = 78;
-const RING_SIZE = 83; // wyzmind's live-verified tighter sizing (Session 81)
+const RING_SIZE = 90; // wyzmind's live-verified sizing (Session 81/82 — 83 was too tight)
 const RING_SPEEDS = [3.2, 4.5, 5.8, 3.8, 5.1, 4.2, 6.0, 3.5, 4.8, 5.5];
 const RING_VARIANTS = ["ring-v1", "ring-v2", "ring-v3", "ring-v4", "ring-v5"];
 
