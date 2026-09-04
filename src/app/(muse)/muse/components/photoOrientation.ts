@@ -65,7 +65,6 @@ export const PORTRAIT_IMG: Record<string, boolean> = {
   "/models/ANGELICA/ANGELICA-124.webp": false,
   "/models/ANGELICA/ANGELICA-133.webp": true,
   "/models/ANGELICA/ANGELICA-141.webp": true,
-  "/models/ANGELICA/ANGELICA-162.webp": true,
   "/models/ANGELICA/ANGELICA-171.webp": true,
   "/models/ANGELICA/ANGELICA-193.webp": true,
   "/models/ANGELICA/ANGELICA-263.webp": true,

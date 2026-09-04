@@ -382,6 +382,7 @@ export const MenuModal = memo(function MenuModal({
           </button>
         )}
         {!hamburgerScreen && <div className="hamburger-menu-title">Menu</div>}
+        {(hamburgerScreen === "settings" || hamburgerScreen === "profile") && <div className="hamburger-menu-title">{hamburgerScreen === "settings" ? "Settings" : "Your Profile"}</div>}
         {!hamburgerScreen ? (
           <>
             {[
@@ -610,7 +611,6 @@ export const MenuModal = memo(function MenuModal({
             )}
             {hamburgerScreen === "profile" && (
               <div className="conn-scroll">
-                <div className="hamburger-title" style={{ textAlign: "center" }}>Your Profile</div>
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
                   <div className="profile-avatar-wrap">
                     <img loading="lazy" src={currentUser.avatar} alt="You" className="profile-avatar" onError={handleImgError} />
@@ -700,7 +700,6 @@ export const MenuModal = memo(function MenuModal({
             )}
             {hamburgerScreen === "settings" && (
               <div className="conn-scroll">
-                <div className="hamburger-title">Settings</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "0 0 10px" }}>Discovery Preferences</div>
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Age Range</div>
