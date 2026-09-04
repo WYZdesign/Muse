@@ -840,3 +840,23 @@ Verified the halo/oval fix with a synthetic Playwright render (this sandbox has 
 **3. Quests panel ("squished", wanted more breathing room).** Bumped padding/gaps across every module in `muse.css`'s `═══ QUESTS ═══` block: header padding, hero XP/streak row padding and internal gaps, near-completion cards' padding/gaps/margins, the filter-pill row, the Tracking/All-Quests tab row, the quest-card grid gap, and each quest card's own internal padding/gaps. Nothing structural changed — same components, same data — just more room between and inside every module, per Torreé's ask. This one I could only verify by reading the numbers (no local render available) — worth a live look once deployed to confirm it reads as intended rather than just larger.
 
 `tsc --noEmit` clean, `npm run build` clean, 146/146 tests passing.
+
+## Session 84 (cont'd, Claude) — hoolah-hoop redone with exact pixel gap; side-menu header separator moved up 20%
+
+Torreé looked at the previous `orbit-outer`/148% fix's numbers and didn't trust it sight-unseen (fair — it hadn't been deployed yet, so neither of us had actually seen it live), and asked directly for a literal hoolah-hoop: a hoop that circles the halo "just barely outside of it... don't want the hoop touching the halo." Replaced the percentage-of-parent approach entirely rather than patching it further:
+
+**Root problem with the % approach:** `avatar-orbit`'s size was always a % of its *wrapping element*, not of the halo (`profile-ring`) it needed to clear. The wrap's own size varies by context (a shrink-wrapped 100px avatar vs. a fixed 78px list-row box), so a single percentage produced a different, unpredictable gap in each place — sometimes reading as fused, sometimes too wide, never a guaranteed "just outside, not touching" distance. That's also exactly the class of bug that caused the earlier oval-ring issue (percentages of an ambiguous parent box).
+
+**Fix:** `.avatar-orbit` now sizes off `var(--orbit-size, 118%)` — a literal pixel diameter passed inline per usage, computed directly from the halo it's paired with (halo diameter + 5px gap on each side, so orbit diameter = halo + 10px):
+- `MatchCard.tsx`: halo 90px → hoop 100px (`ORBIT_SIZE = RING_SIZE + 10`, a real constant now instead of a class-driven %).
+- `ProfileScreen.tsx` top avatar: halo 115px (CSS default) → hoop 125px.
+- `MenuModal.tsx` side-panel avatar: same, 115 → 125.
+- Removed the now-unused `.orbit-outer` class entirely. Left the Feed composer's standalone small `avatar-orbit` (no halo paired with it) on the base 118% fallback — untouched.
+
+Verified geometrically, not just visually: re-ran the synthetic Playwright render (same technique as before — this sandbox still has no Supabase creds to log into the real app) and read back the actual computed pixel widths of the ring and orbit elements for all three usages. Confirmed exactly 5px of gap on every side in all three, with no overlap — that's a stronger check than eyeballing a screenshot. (Caught and fixed my own mistake mid-verification too: the first version of this synthetic test render came back completely blank because I forgot to substitute the CSS into the test HTML file — worth mentioning so it's clear the "5px confirmed" claim is from the corrected, actually-populated render, not the broken one.)
+
+**Side-menu header separator, pushed up 20%:** `.hamburger-panel::before` is the gradient header strip behind the "Menu" title/close/bell icons; its `border-bottom` is the separator line Torreé meant. It was `height:calc(104px + safe-area-inset-top)`. Reduced to `83px` (104 × 0.8 = 83.2, rounded).
+
+`tsc --noEmit` clean, `npm run build` clean (took a couple minutes this run, nothing wrong — just a cold build), 146/146 tests passing.
+
+Not deployed yet, same as everything else this session — needs a pull + push from a real remote to actually go live. Once it's up, worth a live vision check the same way I verified Session 83, since geometry-correct-in-isolation and "looks right in the real app" aren't quite the same guarantee.
