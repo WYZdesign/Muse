@@ -8,6 +8,23 @@
 - Past 4 sessions: 52 (batched motion audit), 53 (origin-check 403 blocker), 54 (social connect/disconnect fix, Stripe checkout), 55 (business model + FD Studio). This session (56) handled UI polish, gradient matching, Muses card UX, Network tab filter cleanup, BTS gradient, profile ring centering.
 - All previous commits (52-55) are live in main. This handover covers everything done in session 56 plus the open items Torreé raised mid-session that I (Claude) need to audit and finish.
 
+## ⚠️ DELIVERY WORKFLOW (permanent — applies to EVERY session, both agents)
+
+**The only reliable bridge is the shared repo `V:\Muse`.** Claude's session CANNOT push to `origin` — Anthropic's git proxy deny-lists `WYZdesign/Muse` at the session level (verified: blocked before the request reaches GitHub; NO PAT/deploy-key/token can fix it). `V:\Muse` as a device folder and the git proxy's repo allowlist are two unrelated permission surfaces. So:
+
+**Claude (the other agent):**
+- Work **directly in `V:\Muse`** (device bridge gives you file access). Do NOT build in a separate clone.
+- Commit your work to the branch **`claude-work`** in `V:\Muse`. Never rely on pasting commit hashes into chat or "sending a bundle" — those are unreachable to wyzmind unless the file actually lands in the shared repo.
+- Do NOT try to `git push` — it will 403. Leave the code on `claude-work`.
+- Paste a short plain-text summary in chat (one tight block) for the record, but the REAL handoff is the committed branch.
+
+**wyzmind (me / this operator):**
+- After each Claude delivery, `git fetch`/diff `claude-work`, review, then merge/rebase onto `main`, push to `origin` (auto-deploys), and `wyz_deploy_check.py <sha>` verify live.
+- Confirm Claude's work is not a duplicate of something already merged; reconcile conflicts by preferring the well-tested version.
+- Prune `claude-work` after merging (recreate it fresh when needed) so it's never stale.
+
+**Channel summary:** chat = prose/decisions only; `V:\Muse` git = the actual code handoff. If a Claude commit isn't reachable as a git object in `V:\Muse`, it doesn't exist — treat it as unshipped and re-implement or ask for the branch.
+
 ## Repo state at handover
 
 | Branch | Commit | Status |
