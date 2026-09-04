@@ -588,16 +588,19 @@ img{background-color:#1a0a2e}
    back-and-forth stutter the ring's old orbitSpin had — I'd only fixed the ring
    overlay, not the avatar underneath it. Sizing (104px ring / 100px avatar) is
    tighter than my first pass and confirmed non-touching via live screenshot. */
-.profile-avatar{width:85px;height:85px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-origin:border-box;background-clip:padding-box,border-box;background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(var(--grad-angle,135deg),var(--gold),var(--amber),var(--pink),var(--lavender));background-size:100% 100%;animation:avatarEccentric 6s linear infinite}
+.profile-avatar{width:100px;height:100px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-origin:border-box;background-clip:padding-box,border-box;background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(var(--grad-angle,135deg),var(--gold),var(--amber),var(--pink),var(--lavender));background-size:100% 100%;animation:avatarEccentric 6s linear infinite}
 /* Torreé's Session 84 ask: halo band trimmed thinner (was a 3.7px band, now ~2.2px)
    so it reads as a delicate halo rather than a thick ring, especially now that
    avatar-orbit sits clearly outside it (see .orbit-outer) instead of fusing with it.
-   Session 85: Torreé asked for the halo decreased 15% more across the board — scaled
-   the whole avatar+halo unit down together (100→85px avatar, 115→98px halo) rather
-   than just the ring alone, so the halo still reads as sitting just outside the photo
-   at the same proportion instead of shrinking into/through it. Same 0.85× applied to
-   MatchCard's RING_SIZE/AVATAR_SIZE below. */
-.profile-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4.5px),#000 calc(100% - 2.3px));mask:radial-gradient(farthest-side,transparent calc(100% - 4.5px),#000 calc(100% - 2.3px));width:98px;height:98px;box-shadow:0 0 14px rgba(255,215,0,0.3);animation:ringSpin 5s linear infinite}
+   Session 85 correction: Torreé's "decrease the halo 15% more" meant the ring's LINE
+   THICKNESS, not its diameter — my first pass shrank the whole avatar+halo diameter,
+   which was wrong and got reverted (avatar back to 100px, ring back to 115px). The
+   actual fix: thinned the mask band another ~15%, from a 2.2px band down to ~1.9px
+   (outer mask edge calc(100% - 4.5px) → calc(100% - 4.2px), inner edge unchanged at
+   calc(100% - 2.3px)). This is an absolute-px band width, so it applies identically to
+   every .profile-ring usage (ProfileScreen, MenuModal, MatchCard) regardless of that
+   instance's diameter — no per-usage changes needed. */
+.profile-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4.2px),#000 calc(100% - 2.3px));mask:radial-gradient(farthest-side,transparent calc(100% - 4.2px),#000 calc(100% - 2.3px));width:115px;height:115px;box-shadow:0 0 14px rgba(255,215,0,0.3);animation:ringSpin 5s linear infinite}
 @keyframes ringSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
 /* Theme-aware ring color variants — rotate per-match-card for varied gradient hues + speeds */
 .ring-v1{background:conic-gradient(var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));animation-duration:5s}

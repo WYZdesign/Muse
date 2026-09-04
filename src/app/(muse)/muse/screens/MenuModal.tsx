@@ -614,11 +614,13 @@ export const MenuModal = memo(function MenuModal({
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
                   <div className="profile-avatar-wrap">
                     <img loading="lazy" src={currentUser.avatar} alt="You" className="profile-avatar" onError={handleImgError} />
-                    {/* Hoolah-hoop: halo (.profile-ring) is the CSS-default 98px (Session
-                        85: was 115px, decreased 15% along with the avatar); hoop diameter
-                        is 106px — a fixed ~4px gap past the halo's edge on every side,
-                        close enough to read as circling it, never touching. */}
-                    <div className="avatar-orbit orbit-slow" style={{ "--orbit-size": "106px" } as React.CSSProperties} />
+                    {/* Hoolah-hoop: halo (.profile-ring) is the CSS-default 115px (Session
+                        85: a "decrease the halo" ask turned out to mean the ring's line
+                        thickness, not diameter — see the .profile-ring comment in
+                        muse.css; diameter here reverted back to 115px/125px); hoop
+                        diameter is 125px — a fixed 5px gap past the halo's edge on every
+                        side, close enough to read as circling it, never touching. */}
+                    <div className="avatar-orbit orbit-slow" style={{ "--orbit-size": "125px" } as React.CSSProperties} />
                     <div className="profile-ring swirl-ring-1" />
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>{currentUser.name}</div>
