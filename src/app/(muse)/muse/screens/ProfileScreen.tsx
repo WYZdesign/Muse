@@ -178,10 +178,11 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div className="profile-top">
           <div className="profile-avatar-wrap">
             <img loading="lazy" src={currentUser.avatar} alt={currentUser.name} className="profile-avatar" onError={handleImgError} />
-            {/* Hoolah-hoop: halo (.profile-ring) is the CSS-default 115px; hoop diameter
-                is 125px — a fixed 5px gap past the halo's edge on every side, close
-                enough to read as circling it, never touching. */}
-            <div className="avatar-orbit orbit-med" style={{ "--orbit-size": "125px" } as React.CSSProperties} />
+            {/* Hoolah-hoop: halo (.profile-ring) is the CSS-default 98px (Session 85: was
+                115px, decreased 15% along with the avatar); hoop diameter is 106px — a
+                fixed ~4px gap past the halo's edge on every side, close enough to read
+                as circling it, never touching. */}
+            <div className="avatar-orbit orbit-med" style={{ "--orbit-size": "106px" } as React.CSSProperties} />
             <div className="profile-ring swirl-ring-1" />
           </div>
           <div className="profile-name">{currentUser.name}</div>

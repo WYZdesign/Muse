@@ -334,7 +334,12 @@ a{color:inherit;text-decoration:none}
 .hamburger-bell{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));right:12px;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);cursor:pointer;font-size:16px;transition:all .2s;z-index:1;animation:floatySmall 4s ease-in-out infinite}
 .hamburger-bell:hover{background:rgba(255,255,255,0.12);color:var(--gold)}
 .hamburger-bell-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--coral);border:1.5px solid rgba(10,6,18,0.9)}
-.hamburger-menu-title{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-size:28px;font-weight:800;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(135deg,var(--gold),var(--lavender));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:1;pointer-events:none;line-height:36px;margin:0}
+/* white-space:nowrap + width:max-content: without these, this is an absolutely
+   positioned block with no explicit width, so its shrink-to-fit width gets computed
+   against the panel's available space and can wrap ("Your Profile" was breaking onto
+   two lines). nowrap forces it to size to its actual one-line content, and
+   left:50%/translateX(-50%) still centers that single-line box correctly. */
+.hamburger-menu-title{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-size:28px;font-weight:800;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(135deg,var(--gold),var(--lavender));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:1;pointer-events:none;line-height:36px;margin:0;white-space:nowrap;width:max-content;text-align:center}
 .side-group{margin-bottom:8px}
 .side-label{font-size:14px;font-weight:800;color:var(--gold);margin-bottom:4px;letter-spacing:0.02em}
 .side-sub{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5}
@@ -583,11 +588,16 @@ img{background-color:#1a0a2e}
    back-and-forth stutter the ring's old orbitSpin had — I'd only fixed the ring
    overlay, not the avatar underneath it. Sizing (104px ring / 100px avatar) is
    tighter than my first pass and confirmed non-touching via live screenshot. */
-.profile-avatar{width:100px;height:100px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-origin:border-box;background-clip:padding-box,border-box;background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(var(--grad-angle,135deg),var(--gold),var(--amber),var(--pink),var(--lavender));background-size:100% 100%;animation:avatarEccentric 6s linear infinite}
+.profile-avatar{width:85px;height:85px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-origin:border-box;background-clip:padding-box,border-box;background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(var(--grad-angle,135deg),var(--gold),var(--amber),var(--pink),var(--lavender));background-size:100% 100%;animation:avatarEccentric 6s linear infinite}
 /* Torreé's Session 84 ask: halo band trimmed thinner (was a 3.7px band, now ~2.2px)
    so it reads as a delicate halo rather than a thick ring, especially now that
-   avatar-orbit sits clearly outside it (see .orbit-outer) instead of fusing with it. */
-.profile-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4.5px),#000 calc(100% - 2.3px));mask:radial-gradient(farthest-side,transparent calc(100% - 4.5px),#000 calc(100% - 2.3px));width:115px;height:115px;box-shadow:0 0 14px rgba(255,215,0,0.3);animation:ringSpin 5s linear infinite}
+   avatar-orbit sits clearly outside it (see .orbit-outer) instead of fusing with it.
+   Session 85: Torreé asked for the halo decreased 15% more across the board — scaled
+   the whole avatar+halo unit down together (100→85px avatar, 115→98px halo) rather
+   than just the ring alone, so the halo still reads as sitting just outside the photo
+   at the same proportion instead of shrinking into/through it. Same 0.85× applied to
+   MatchCard's RING_SIZE/AVATAR_SIZE below. */
+.profile-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4.5px),#000 calc(100% - 2.3px));mask:radial-gradient(farthest-side,transparent calc(100% - 4.5px),#000 calc(100% - 2.3px));width:98px;height:98px;box-shadow:0 0 14px rgba(255,215,0,0.3);animation:ringSpin 5s linear infinite}
 @keyframes ringSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
 /* Theme-aware ring color variants — rotate per-match-card for varied gradient hues + speeds */
 .ring-v1{background:conic-gradient(var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));animation-duration:5s}
@@ -615,8 +625,16 @@ img{background-color:#1a0a2e}
    front (0°/360°), smallest at the back (180°). hulaOrbit bakes that scale breathing
    into the same keyframes as the rotation (8 stops, cosine-shaped: scale = 1 ± 0.08)
    so the "in and out" is locked to rotation phase rather than drifting independently
-   against it. Deliberately keeps rotation itself linear/constant-speed — only the
-   scale breathes — so it still reads as one continuous orbit, not a wobble. */
+   against it.
+   Session 85 update: Torreé said the pure scale-breathe read as "just pulsating" and
+   asked for the rotation itself to be a tad offset — "kind of eccentric motion". Added
+   a small (4px) translate that orbits its own tiny circle in step with the main
+   rotation, phase-shifted 90° ahead of it. Because CSS transform functions compose in
+   order, this offset shifts WHERE the element's rotation is centered each frame — so
+   the ring's own center visibly traces a small loop as it spins, instead of spinning
+   perfectly in place. That's what makes it read as eccentric/off-balance rather than a
+   clean concentric orbit. Kept the same rotation speed and scale breathing as before;
+   this is additive, not a replacement. */
 .avatar-orbit{position:absolute;top:50%;left:50%;width:var(--orbit-size,118%);height:var(--orbit-size,118%);transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
   background:conic-gradient(from 0deg,transparent 0deg,transparent 120deg,var(--gold) 175deg,var(--coral) 210deg,transparent 265deg,transparent 360deg);
   -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 1px));
@@ -624,15 +642,15 @@ img{background-color:#1a0a2e}
   animation:hulaOrbit var(--orbit-speed,6.5s) linear infinite;
   filter:drop-shadow(0 0 4px rgba(255,215,0,0.6))}
 @keyframes hulaOrbit{
-  0%{transform:translate(-50%,-50%) rotate(0deg) scale(1.08)}
-  12.5%{transform:translate(-50%,-50%) rotate(45deg) scale(1.057)}
-  25%{transform:translate(-50%,-50%) rotate(90deg) scale(1)}
-  37.5%{transform:translate(-50%,-50%) rotate(135deg) scale(0.943)}
-  50%{transform:translate(-50%,-50%) rotate(180deg) scale(0.92)}
-  62.5%{transform:translate(-50%,-50%) rotate(225deg) scale(0.943)}
-  75%{transform:translate(-50%,-50%) rotate(270deg) scale(1)}
-  87.5%{transform:translate(-50%,-50%) rotate(315deg) scale(1.057)}
-  100%{transform:translate(-50%,-50%) rotate(360deg) scale(1.08)}
+  0%{transform:translate(-50%,-50%) translate(0px,4px) rotate(0deg) scale(1.08)}
+  12.5%{transform:translate(-50%,-50%) translate(-2.8px,2.8px) rotate(45deg) scale(1.057)}
+  25%{transform:translate(-50%,-50%) translate(-4px,0px) rotate(90deg) scale(1)}
+  37.5%{transform:translate(-50%,-50%) translate(-2.8px,-2.8px) rotate(135deg) scale(0.943)}
+  50%{transform:translate(-50%,-50%) translate(0px,-4px) rotate(180deg) scale(0.92)}
+  62.5%{transform:translate(-50%,-50%) translate(2.8px,-2.8px) rotate(225deg) scale(0.943)}
+  75%{transform:translate(-50%,-50%) translate(4px,0px) rotate(270deg) scale(1)}
+  87.5%{transform:translate(-50%,-50%) translate(2.8px,2.8px) rotate(315deg) scale(1.057)}
+  100%{transform:translate(-50%,-50%) translate(0px,4px) rotate(360deg) scale(1.08)}
 }
 /* All speed variants kept in a slow-medium band per Torreé's ask — no "fast" option
    (the old 3.2s .orbit-fast is removed; it wasn't used anywhere and read as too quick

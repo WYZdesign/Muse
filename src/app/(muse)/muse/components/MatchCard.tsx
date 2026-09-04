@@ -19,8 +19,8 @@ export interface MatchCardProps {
   };
 }
 
-const AVATAR_SIZE = 78;
-const RING_SIZE = 90; // wyzmind's live-verified sizing (Session 81/82 — 83 was too tight)
+const AVATAR_SIZE = 66; // Session 85: halo decreased 15% more per Torreé — scaled avatar+ring together (was 78)
+const RING_SIZE = 77; // wyzmind's live-verified sizing (Session 81/82 — 83 was too tight), ×0.85 for Session 85 (was 90)
 // Hoolah-hoop diameter: halo (RING_SIZE) + a fixed 5px gap on each side. A literal
 // pixel target, not a % of the wrap — see the --orbit-size comment in muse.css for why.
 const ORBIT_SIZE = RING_SIZE + 10;
