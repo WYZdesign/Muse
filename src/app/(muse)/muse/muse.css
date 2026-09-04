@@ -1019,6 +1019,24 @@ img{background-color:#1a0a2e}
 .filter-scroll-row::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.35);border-radius:99px}
 .filter-chip{flex-shrink:0;white-space:nowrap;font-family:inherit}
 
+/* ═══ H-SCROLL AFFORDANCE — thin visible gold scrollbar on every horizontal row ═══
+   Without this, horizontally-scrolling chip/tab rows (Network filter chips, BTS
+   category tabs, chat icebreakers, album/quest filters, moments rows) are cut off
+   at the screen edge with no hint they scroll. The thin gold thumb shows only when
+   content overflows, so it's the unobtrusive "this scrolls" cue. */
+.chip-scroll,.conn-tabs,.quest-filters,.pro-skill-row,.quick-replies,.moments-story-row,.moments-tab-row,.album-tabs,.bts-cat-row,.icebreaker-row{scrollbar-width:thin;scrollbar-color:rgba(255,215,0,0.35) transparent;-ms-overflow-style:none;padding-bottom:6px}
+.chip-scroll::-webkit-scrollbar,.conn-tabs::-webkit-scrollbar,.quest-filters::-webkit-scrollbar,.pro-skill-row::-webkit-scrollbar,.quick-replies::-webkit-scrollbar,.moments-story-row::-webkit-scrollbar,.moments-tab-row::-webkit-scrollbar,.album-tabs::-webkit-scrollbar,.bts-cat-row::-webkit-scrollbar,.icebreaker-row::-webkit-scrollbar{height:4px}
+.chip-scroll::-webkit-scrollbar-track,.conn-tabs::-webkit-scrollbar-track,.quest-filters::-webkit-scrollbar-track,.pro-skill-row::-webkit-scrollbar-track,.quick-replies::-webkit-scrollbar-track,.moments-story-row::-webkit-scrollbar-track,.moments-tab-row::-webkit-scrollbar-track,.album-tabs::-webkit-scrollbar-track,.bts-cat-row::-webkit-scrollbar-track,.icebreaker-row::-webkit-scrollbar-track{background:transparent}
+.chip-scroll::-webkit-scrollbar-thumb,.conn-tabs::-webkit-scrollbar-thumb,.quest-filters::-webkit-scrollbar-thumb,.pro-skill-row::-webkit-scrollbar-thumb,.quick-replies::-webkit-scrollbar-thumb,.moments-story-row::-webkit-scrollbar-thumb,.moments-tab-row::-webkit-scrollbar-thumb,.album-tabs::-webkit-scrollbar-thumb,.bts-cat-row::-webkit-scrollbar-thumb,.icebreaker-row::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.35);border-radius:99px}
+
+/* Rows that set inline scrollbar-width:none beat the class rules above, so force a thin
+   visible gold scrollbar on any horizontally-scrolling container. Broad but safe: only
+   affects elements that actually overflow horizontally. */
+[style*="overflowX: auto"],[style*="overflow-x: auto"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,215,0,0.35) transparent!important;-ms-overflow-style:none}
+[style*="overflowX: auto"]::-webkit-scrollbar,[style*="overflow-x: auto"]::-webkit-scrollbar{height:4px}
+[style*="overflowX: auto"]::-webkit-scrollbar-thumb,[style*="overflow-x: auto"]::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.35);border-radius:99px}
+[style*="overflowX: auto"]::-webkit-scrollbar-track,[style*="overflow-x: auto"]::-webkit-scrollbar-track{background:transparent}
+
 /* ═══ DISCOVER CARD HERO CHIPS ═══ */
 .card-hero-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;pointer-events:none}
 .card-hero-chip{padding:3px 9px;border-radius:99px;background:rgba(10,6,18,0.55);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.85);font-size:10px;font-weight:600;white-space:nowrap}
