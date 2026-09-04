@@ -10,14 +10,13 @@
 
 ## ⚠️ DELIVERY WORKFLOW (permanent — applies to EVERY session, both agents)
 
-**The only reliable bridge is the shared repo `V:\Muse`.** Claude's session has historically been **unable to push** to `origin` — Anthropic's git proxy deny-listed `WYZdesign/Muse` at the session level (verified: blocked before the request reaches GitHub). Torreé has since granted Claude a GitHub token (push + content on `WYZdesign/Muse`). **Whether that fully unblocks Claude now is UNVERIFIED** — a GitHub token is necessary but NOT sufficient if the repo is still on Claude's session-side proxy deny-list. If Claude can now push directly, use the simpler path below; if it still 403s ("not in this session's authorized repository set"), use the `claude-work` bridge.
+**The only reliable bridge is the shared repo `V:\Muse`.** Claude's session is **unable to push** to `origin` — Anthropic's git proxy denies `WYZdesign/Muse` at the session level (verified: blocked before the request reaches GitHub, so no token helps). **Decision (final): Claude works directly in `V:\Muse` and commits to branches; wyzmind merges + pushes.** Do not chase a token/push path again — it's confirmed impossible.
 
 **Claude (the other agent):**
 - Work **directly in `V:\Muse`** (device bridge gives you file access). Do NOT build in a separate clone.
-- **Preferred:** if your push now works (post-token), just commit to `main` and `push origin main` — auto-deploys, no wyzmind merge needed. Test it with a throwaway commit first.
-- **Fallback (if push still 403s):** commit your work to the branch **`claude-work`** in `V:\Muse`. Never rely on pasting commit hashes into chat or "sending a bundle" — those are unreachable to wyzmind unless the file actually lands in the shared repo.
-- Do NOT try to push if it 403s — leave the code on `claude-work`.
-- Paste a short plain-text summary in chat (one tight block) for the record, but the REAL handoff is the committed branch/push.
+- Commit your work to the branch **`claude-work`** in `V:\Muse`. Never rely on pasting commit hashes into chat or "sending a bundle" — those are unreachable to wyzmind unless the file actually lands in the shared repo.
+- Do NOT try to `push` — it 403s at the proxy; leave the code on `claude-work`.
+- Paste a short plain-text summary in chat (one tight block) for the record, but the REAL handoff is the committed branch.
 
 **wyzmind (me / this operator):**
 - After each Claude delivery, `git fetch`/diff `claude-work`, review, then merge/rebase onto `main`, push to `origin` (auto-deploys), and `wyz_deploy_check.py <sha>` verify live.
