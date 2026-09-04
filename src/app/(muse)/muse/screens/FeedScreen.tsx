@@ -4,7 +4,6 @@ import React, { memo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { FiArrowLeft, FiImage, FiX, FiFlag, FiSend } from "react-icons/fi";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
-import { safeGetItem, safeSetItem } from "../lib/safe-storage";
 import Nav from "../components/Nav";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
 import type { Screen } from "../components/types";
@@ -171,26 +170,6 @@ export const FeedScreen = memo(function FeedScreen({
   const [recording, setRecording] = useState(false);
   const [recSecs, setRecSecs] = useState(0);
   const [capturing, setCapturing] = useState(false);
-  const [userStatus, setUserStatus] = useState<string>(() => currentUser?.status || safeGetItem("muse_status_" + (currentUser?.id || "anon")) || "🎨 Working on something new");
-  const [editingStatus, setEditingStatus] = useState(false);
-
-  const saveUserStatus = async (status: string) => {
-    const value = (status || "").trim();
-    setUserStatus(value);
-    // Per-device mirror so the value is never lost even if the DB write fails
-    // or the migration hasn't been applied yet.
-    safeSetItem("muse_status_" + (currentUser?.id || "anon"), value);
-    onStatusSaved(value);
-    try {
-      const r = await authFetch("/api/muse/auth", {
-        method: "POST",
-        body: JSON.stringify({ action: "update-profile", status: value }),
-      });
-      if (!r.ok) showToast("Couldn't save status — try again");
-    } catch {
-      showToast("Couldn't save status — try again");
-    }
-  };
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach(t => t.stop());
@@ -344,27 +323,6 @@ export const FeedScreen = memo(function FeedScreen({
         </div>
 <div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", gap: 10, alignItems: "flex-start" }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-            {editingStatus ? (
-              <input
-                className="inp"
-                value={userStatus}
-                onChange={e => setUserStatus(e.target.value)}
-                onBlur={() => { setEditingStatus(false); saveUserStatus(userStatus); }}
-                onKeyDown={e => { if (e.key === "Enter") { setEditingStatus(false); saveUserStatus(userStatus); } }}
-                autoFocus
-                maxLength={80}
-                placeholder="Status"
-                style={{ width: 52, textAlign: "center", margin: 0, fontSize: 10, padding: "4px 4px", background: "var(--glass)", border: "1px solid rgba(255,215,0,0.3)", color: "#FFD700", borderRadius: 8 }}
-              />
-            ) : (
-              <div
-                onClick={() => setEditingStatus(true)}
-                title={userStatus || "Set status"}
-                style={{ width: 52, height: 20, lineHeight: "20px", textAlign: "center", cursor: "pointer", fontSize: 12, color: "var(--gold)", fontWeight: 700, padding: "0 2px", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 8, overflow: "hidden", whiteSpace: "nowrap" }}
-              >
-                {(userStatus || "✨").trim().charAt(0)}
-              </div>
-            )}
             <img loading="lazy" src={currentUser.avatar} alt="Avatar" className="feed-avatar" style={{ width: 52, height: 52, flexShrink: 0 }} onError={handleImgError} />
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>

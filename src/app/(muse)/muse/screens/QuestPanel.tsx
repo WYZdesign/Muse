@@ -29,6 +29,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
   const [allQuests, setAllQuests] = useState<any[]>([]);
   const [xp, setXp] = useState({ total_xp: 0, level: 1 });
   const [filter, setFilter] = useState<string>("all");
+  const [view, setView] = useState<"tracking" | "all">("tracking");
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [nearQuests, setNearQuests] = useState<any[]>([]);
 
@@ -69,6 +70,9 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
   };
 
   const filtered = filter === "all" ? quests : quests.filter(q => q.quest_tier === filter);
+  // "Tracking" = quests currently in progress (started, not yet completed/claimed), claimable, or near completion
+  const tracking = quests.filter(q => !q.completed || (q.completed && !q.claimed));
+  const visible = (view === "tracking" ? tracking : quests).filter(q => filter === "all" || q.quest_tier === filter);
   const tiers = ["starter", "daily", "weekly", "monthly", "season", "legendary"];
   const claimableCount = quests.filter(q => q.completed && !q.claimed).length;
 
@@ -142,7 +146,17 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
           </div>
         )}
 
-        {/* Filter Tabs */}
+        {/* View Tabs: Tracking vs All */}
+        <div className="quest-view-tabs">
+          <button className={`quest-view-tab ${view === "tracking" ? "active" : ""}`} onClick={() => setView("tracking")}>
+            <FiStar size={13} /> Tracking <span className="quest-view-count">{tracking.length}</span>
+          </button>
+          <button className={`quest-view-tab ${view === "all" ? "active" : ""}`} onClick={() => setView("all")}>
+            <FiCheck size={13} /> All Quests <span className="quest-view-count">{quests.length}</span>
+          </button>
+        </div>
+
+        {/* Filter Tabs (tier) */}
         <div className="quest-filters">
           <button className={`quest-filter-btn ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>All</button>
           {tiers.map(t => {
@@ -156,31 +170,34 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
           })}
         </div>
 
-        {/* Quest Grid */}
+        {/* Quest List — full-width rectangle rows */}
         <div className="quest-grid">
-          {filtered.length === 0 && (
+          {visible.length === 0 && (
             <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, textAlign: "center", gap: 12 }}>
               <div style={{ fontSize: 36 }}>📋</div>
-<div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>No quests in this category</div>
-<div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 280 }}>Switch to "All" or check back later — new quests appear daily.</div>
+<div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{view === "tracking" ? "No quests in progress" : "No quests in this category"}</div>
+<div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 280 }}>{view === "tracking" ? "Start a quest to see it here — they populate as you engage on Muse." : "Switch to a different filter or check back later."}</div>
             </div>
           )}
-          {filtered.map((q: any) => {
+          {visible.map((q: any) => {
             const tier = TIER_CONFIG[q.quest_tier] || TIER_CONFIG.weekly;
             const pct = Math.min(100, (q.progress / q.target) * 100);
             const isClaimable = q.completed && !q.claimed;
 
             return (
               <div key={q.id} className={`quest-card ${q.completed ? "completed" : ""} ${isClaimable ? "claimable" : ""}`} style={{ borderLeftColor: tier.color }}>
-                <div className="quest-card-top">
+                <div className="quest-card-row">
                   <div className="quest-card-icon" style={{ background: tier.bg, border: `1px solid ${tier.border}` }}>
                     {q.icon}
                   </div>
-                  <div className="quest-card-reward" style={{ color: tier.color }}>
-                    {q.reward_amount > 1 ? `${q.reward_amount}× ` : ""}{q.reward_label}
+                  <div className="quest-card-main">
+                    <div className="quest-card-title">{q.title}</div>
+                    <div className="quest-card-sub">
+                      <span style={{ color: tier.color }}>{tier.label}</span>
+                      <span className="quest-card-reward" style={{ color: tier.color }}>{q.reward_amount > 1 ? `${q.reward_amount}× ` : ""}{q.reward_label}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="quest-card-title">{q.title}</div>
 
                 {/* Progress Bar */}
                 <div className="quest-progress-wrap">
