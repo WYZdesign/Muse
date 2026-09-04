@@ -10,12 +10,12 @@
 
 ## ⚠️ DELIVERY WORKFLOW (permanent — applies to EVERY session, both agents)
 
-**The only reliable bridge is the shared repo `V:\Muse`.** Claude's session CANNOT push to `origin` — Anthropic's git proxy deny-lists `WYZdesign/Muse` at the session level (verified: blocked before the request reaches GitHub; NO PAT/deploy-key/token can fix it). `V:\Muse` as a device folder and the git proxy's repo allowlist are two unrelated permission surfaces. So:
+**The only reliable bridge is the shared repo `V:\Muse`.** Claude's session is **unable to push** to `origin` — Anthropic's git proxy denies `WYZdesign/Muse` at the session level (verified: blocked before the request reaches GitHub, so no token helps). **Decision (final): Claude works directly in `V:\Muse` and commits to branches; wyzmind merges + pushes.** Do not chase a token/push path again — it's confirmed impossible.
 
 **Claude (the other agent):**
 - Work **directly in `V:\Muse`** (device bridge gives you file access). Do NOT build in a separate clone.
 - Commit your work to the branch **`claude-work`** in `V:\Muse`. Never rely on pasting commit hashes into chat or "sending a bundle" — those are unreachable to wyzmind unless the file actually lands in the shared repo.
-- Do NOT try to `git push` — it will 403. Leave the code on `claude-work`.
+- Do NOT try to `push` — it 403s at the proxy; leave the code on `claude-work`.
 - Paste a short plain-text summary in chat (one tight block) for the record, but the REAL handoff is the committed branch.
 
 **wyzmind (me / this operator):**
