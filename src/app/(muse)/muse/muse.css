@@ -574,12 +574,13 @@ img{background-color:#1a0a2e}
 @keyframes ringSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
 
 /* ═══ SWIRL RING VARIANTS ═══ */
+/* Theme-aware palettes (drive from CSS vars so sunrise/deepspace/nebula recolor). */
 .swirl-ring-1{animation-duration:5s;background:conic-gradient(var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold))}
-.swirl-ring-2{animation-duration:7s;animation-direction:reverse;background:conic-gradient(#00CED1,#FFD700,#FF4500,#32CD32,#00CED1)}
-.swirl-ring-3{animation-duration:6s;background:conic-gradient(#FF69B4,#9B59B6,#00CED1,#FFD700,#FF69B4)}
-.swirl-ring-4{animation-duration:8s;animation-direction:reverse;background:conic-gradient(#FF4500,#32CD32,#FFD700,#00CED1,#FF4500)}
-.swirl-ring-5{animation-duration:5.5s;background:conic-gradient(#9B59B6,#FF69B4,#FF8C00,#00CED1,#9B59B6)}
-.swirl-ring-6{animation-duration:6.5s;animation-direction:reverse;background:conic-gradient(#32CD32,#00CED1,#9B59B6,#FF4500,#32CD32)}
+.swirl-ring-2{animation-duration:7s;animation-direction:reverse;background:conic-gradient(var(--coral),var(--gold),var(--pink),var(--peach),var(--coral))}
+.swirl-ring-3{animation-duration:6s;background:conic-gradient(var(--pink),var(--lavender),var(--amber),var(--gold),var(--pink))}
+.swirl-ring-4{animation-duration:8s;animation-direction:reverse;background:conic-gradient(var(--sunset),var(--mint),var(--gold),var(--sky),var(--sunset))}
+.swirl-ring-5{animation-duration:5.5s;background:conic-gradient(var(--lavender),var(--pink),var(--peach),var(--coral),var(--lavender))}
+.swirl-ring-6{animation-duration:6.5s;animation-direction:reverse;background:conic-gradient(var(--mint),var(--sky),var(--lavender),var(--amber),var(--mint))}
 .swirl-avatar-1{animation:avatarEccentric 5s linear infinite}
 .swirl-avatar-2{animation:avatarEccentric 7s linear infinite}
 .swirl-avatar-3{animation:avatarEccentric 6s linear infinite reverse}

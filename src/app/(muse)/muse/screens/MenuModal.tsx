@@ -17,9 +17,10 @@ interface ActivityPanelProps {
   loginStreak: number;
   setShowHamburger: (v: boolean) => void;
   showScreen: (s: Screen) => void;
+  onStreakTap?: () => void;
 }
 
-function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen }: ActivityPanelProps) {
+function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen, onStreakTap }: ActivityPanelProps) {
   const [hubTab, setHubTab] = useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
   const [myReports, setMyReports] = useState<any[] | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -78,7 +79,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
 
   return (
     <>
-      <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
+      <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} onTap={onStreakTap} />
       <div style={{ textAlign: "center", fontSize: 13, color: "var(--gold)", fontWeight: 700, margin: "2px 0 10px" }}>Your Activity</div>
       <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
         {tabBtn("notif", "Notifications")}
@@ -866,7 +867,7 @@ export const MenuModal = memo(function MenuModal({
             )}
             {hamburgerScreen === "activity" && (
               <div className="conn-scroll">
-                <ActivityPanel authFetch={authFetch} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={bookingsForHub} weeklyLogins={weeklyLogins} loginStreak={loginStreak} setShowHamburger={setShowHamburger} showScreen={showScreen} />
+                <ActivityPanel authFetch={authFetch} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={bookingsForHub} weeklyLogins={weeklyLogins} loginStreak={loginStreak} setShowHamburger={setShowHamburger} showScreen={showScreen} onStreakTap={() => { setShowHamburger(false); setShowQuests?.(true); }} />
               </div>
             )}
           </>

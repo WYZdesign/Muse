@@ -365,7 +365,37 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       img.removeAttribute("src");
     };
     document.addEventListener("error", onImgError, true);
-    return () => document.removeEventListener("error", onImgError, true);
+    // MutationObserver catches <img> mounted with an empty/missing or broken src
+    // (blank or "undefined") which never fires an error event. Reuse the same
+    // fallback treatment when we detect one app-wide.
+    const sweepImg = (img: HTMLImageElement) => {
+      if (img.dataset.fallback) return;
+      const src = (img.getAttribute("src") || "").trim().toLowerCase();
+      const broken = !src || src === "undefined" || src === "null" || src === "none";
+      if (broken) {
+        img.dataset.fallback = "1";
+        img.style.background = "linear-gradient(135deg, #FF6B9D 0%, #C86BFF 50%, #FFB366 100%)";
+        img.style.display = "flex";
+        img.style.alignItems = "center";
+        img.style.justifyContent = "center";
+        img.style.color = "#fff";
+        img.style.fontSize = "1.6em";
+        img.style.fontWeight = "700";
+        img.style.fontFamily = "'Playfair Display', serif";
+        img.alt = img.alt?.trim().charAt(0) || "👤";
+        img.textContent = img.alt || "👤";
+        img.removeAttribute("src");
+      }
+    };
+    const mo = new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === "childList") m.addedNodes.forEach(n => { if (n.nodeType === 1 && (n as Element).querySelectorAll) (n as Element).querySelectorAll("img").forEach(img => sweepImg(img as HTMLImageElement)); });
+        if (m.type === "attributes" && m.target.nodeName === "IMG") sweepImg(m.target as HTMLImageElement);
+      }
+    });
+    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["src"] });
+    document.querySelectorAll<HTMLImageElement>("img").forEach(sweepImg);
+    return () => { document.removeEventListener("error", onImgError, true); mo.disconnect(); };
   }, []);
 
   // iOS 13+ only fires deviceorientation events after DeviceOrientationEvent.

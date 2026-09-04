@@ -438,7 +438,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
         </div>
         <div className="section">
-          <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
+          <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} onTap={() => setShowQuests?.(true)} />
           <div className="section-title">Activity</div>
           <div className="section-text" style={{ marginBottom: 10 }}>Recent interactions</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
