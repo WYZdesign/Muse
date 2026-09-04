@@ -429,7 +429,7 @@ export const FeedScreen = memo(function FeedScreen({
                     <div style={{ position: "relative", flexShrink: 0 }}>
                       <img loading="lazy" src={post.avatar} alt={`${post.author}'s avatar`} className="feed-avatar" style={{ width: 40, height: 40, flexShrink: 0, borderRadius: "50%", objectFit: "cover", cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: post.rid || post.id, name: post.author, avatar: post.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: post.rid || post.id, name: post.author, img: post.avatar, type: "Creative" }); } }} />
                       {isOnline && <span title="Online" style={{ position: "absolute", right: -1, bottom: -1, width: 12, height: 12, borderRadius: "50%", background: "#22c55e", border: "2px solid #0a0612", boxShadow: "0 0 6px rgba(34,197,94,0.7)" }} />}
-                      <div className="avatar-orbit orbit-slow" />
+
                    </div>
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700 }}>{post.author}</div>
