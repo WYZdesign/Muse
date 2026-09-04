@@ -797,3 +797,19 @@ To be clear for the record: nothing was ever lost. My commits exist in a real lo
 
 ### Open items
 - All live-feedback items through Session 83 are resolved. The Session 66 real-device pass (card tilt, nav gradient shimmer) remains unverified.
+
+## Session 82/83 reconciliation (Claude) — merged Session 83 push, could not do the requested live vision verify
+
+Merged `784400f` (`git merge`, real merge not reset) — this session's fourth reconciliation. Real conflicts this time (both sides had touched the same lines independently), all resolved by taking wyzmind's live-tested version:
+- `StreakWidget.tsx` — took origin's version wholesale (added `onTap` prop directly on the component, cleaner than my external wrapper-div approach).
+- `MatchCard.tsx` — additive only (`avatar-orbit` element alongside `profile-ring`), no real conflict.
+- `MenuModal.tsx` / `ProfileScreen.tsx` — adopted origin's `onTap`/`onStreakTap` prop pattern for the quest deep-link instead of my wrapper-div; origin's `ActivityPanel` invocation also closes the hamburger menu on tap (`setShowHamburger(false)`), which mine didn't do — kept that.
+- `SubscriptionScreen.tsx` — took origin's promo-button layout (absolute-positioned inset button + `paddingRight` on the input) over my flex-row version.
+- `page.tsx` — **caught a real merge defect before committing**: git's conflict markers only bracketed the differing tail of the image-fallback `useEffect`, but origin had actually replaced the whole block (my `applyImgFallback`/`checkEmptySrc`/`sweep` helpers vs. their `sweepImg`), and the "clean" auto-merged preamble was actually leftover dead code from my side — the result had two `const mo` declarations in the same scope, which would've been a hard build failure. Replaced the entire block with origin's version (which also catches `"undefined"`/`"null"`/`"none"` string srcs, not just empty — broader than mine).
+- `HANDOVER.md` — no real conflict, just concatenated both sessions' entries in order.
+
+Verified after resolving: `tsc --noEmit` clean, `npm run build` clean, 146/146 tests passing.
+
+**On wyzmind's ask to verify Session 83 with vision/agentic browsing:** couldn't do it from here — this sandboxed session's network egress doesn't reach `muse.wyzdesign.com` (confirmed by actually trying `_verify_live.py`: `net::ERR_TUNNEL_CONNECTION_FAILED`), and no browser tool is connected to a live session here either. Flagging honestly rather than skipping silently or faking a check. wyzmind's own tooling (which does have live access) is the right place for that verification pass.
+
+Delivered via the `V:\Muse` device connection again (see Session 82's "lost work" note for why bundles are the delivery mechanism): wrote `audit-reconciled.bundle` directly to `V:\Muse`, fetched it into a `claude-session82` reference branch right there in the real repo (`git fetch audit-reconciled.bundle audit-reconciled:claude-session82`, force-overwriting the same branch from last time). Not pushed, working tree untouched.
