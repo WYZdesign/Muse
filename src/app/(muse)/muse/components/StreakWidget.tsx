@@ -2,26 +2,29 @@
 
 import React from "react";
 
-const WEEKDAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"]; // Date.getDay() index: 0=Sun..6=Sat
+const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 
 export default function StreakWidget({
   weeklyLogins,
   loginStreak,
   compact = false,
+  onTap,
 }: {
   weeklyLogins: boolean[];
   loginStreak: number;
   compact?: boolean;
+  onTap?: () => void;
 }) {
-  // `weeklyLogins` is a rolling 7-day window ENDING today (built as
-  // `for (i=6..0) push(today - i days)`, so index 6 is always today,
-  // index 0 is 6 days ago) — not a fixed Monday-Sunday calendar week.
-  const DAY_LABELS = Array.from({ length: weeklyLogins.length || 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - ((weeklyLogins.length || 7) - 1 - i));
-    return WEEKDAY_LETTERS[d.getDay()];
+  // weeklyLogins is a rolling 7-day window: index 0 = 6 days ago, index 6 = today.
+  // Derive each slot's weekday letter from the actual date so labels always line up
+  // with the day they represent (rather than a fixed Mon–Sun order).
+  const today = new Date();
+  const dayLabels = weeklyLogins.map((_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (6 - i));
+    return DAY_LETTERS[d.getDay()];
   });
-  const todayIdx = (weeklyLogins.length || 7) - 1;
+  const todayIdx = 6;
 
   if (compact) {
     return (
@@ -48,7 +51,7 @@ export default function StreakWidget({
           {weeklyLogins.map((on, i) => (
             <div key={i} className={"streak-compact-dot" + (on ? " on" : "") + (i === todayIdx ? " today" : "")}>
               <div className="streak-compact-pip" />
-              <span className="streak-compact-label">{DAY_LABELS[i]}</span>
+              <span className="streak-compact-label">{dayLabels[i]}</span>
             </div>
           ))}
         </div>
@@ -57,7 +60,7 @@ export default function StreakWidget({
   }
 
   return (
-    <div className="streak-widget">
+    <div className="streak-widget" style={onTap ? { cursor: "pointer" } : undefined} onClick={onTap} role={onTap ? "button" : undefined} tabIndex={onTap ? 0 : undefined}>
       <div className="streak-widget-header">
         <div className="streak-widget-flame">
           <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
@@ -102,7 +105,7 @@ export default function StreakWidget({
                 <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7.5" stroke="rgba(255,255,255,0.15)" strokeWidth="1" fill="rgba(255,255,255,0.03)" /></svg>
               )}
             </div>
-            <span className="streak-day-label">{DAY_LABELS[i]}</span>
+            <span className="streak-day-label">{dayLabels[i]}</span>
           </div>
         ))}
       </div>

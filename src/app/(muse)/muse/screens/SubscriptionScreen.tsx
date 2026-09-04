@@ -66,9 +66,9 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
             <div className="sub-title">Unlock Your Potential</div>
             <div className="sub-subtitle">Choose the plan for your creative journey</div>
           </div>
-          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-            <input className="inp" placeholder="Promo code" value={promo} onChange={e => { setPromo(e.target.value); setPromoApplied(false); }} style={{ flex: 1, textTransform: "uppercase", letterSpacing: 1 }} />
-            <button className="btn btn-outline" style={{ padding: "0 16px", opacity: applyingPromo ? 0.6 : 1, flex: "0 0 auto", width: "auto" }} disabled={applyingPromo} onClick={async () => {
+          <div style={{ position: "relative", marginBottom: 8 }}>
+            <input className="inp" placeholder="Promo code" value={promo} onChange={e => { setPromo(e.target.value); setPromoApplied(false); }} style={{ width: "100%", textTransform: "uppercase", letterSpacing: 1, paddingRight: 84 }} />
+            <button className="btn btn-outline" style={{ position: "absolute", top: 5, right: 5, padding: "8px 16px", opacity: applyingPromo ? 0.6 : 1 }} disabled={applyingPromo} onClick={async () => {
               const p = promo.trim().toUpperCase();
               if (!p) { showToast("Enter a promo code first"); return; }
               if (!apiFetch) { showToast("Can't apply promo right now"); return; }

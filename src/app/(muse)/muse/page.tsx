@@ -351,8 +351,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   }, []);
 
   useEffect(() => {
-    const applyImgFallback = (img: HTMLImageElement) => {
-      if (img.dataset.fallback) return;
+    const onImgError = (e: Event) => {
+      const img = e.target as HTMLImageElement;
+      if (img.tagName !== "IMG" || img.dataset.fallback) return;
       img.dataset.fallback = "1";
       img.style.background = "linear-gradient(135deg, #FF6B9D 0%, #C86BFF 50%, #FFB366 100%)";
       img.style.display = "flex";
@@ -363,44 +364,38 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       img.alt = img.alt?.charAt(0) || "👤";
       img.removeAttribute("src");
     };
-    const onImgError = (e: Event) => {
-      const img = e.target as HTMLImageElement;
-      if (img.tagName !== "IMG") return;
-      applyImgFallback(img);
+    document.addEventListener("error", onImgError, true);
+    // MutationObserver catches <img> mounted with an empty/missing or broken src
+    // (blank or "undefined") which never fires an error event. Reuse the same
+    // fallback treatment when we detect one app-wide.
+    const sweepImg = (img: HTMLImageElement) => {
+      if (img.dataset.fallback) return;
+      const src = (img.getAttribute("src") || "").trim().toLowerCase();
+      const broken = !src || src === "undefined" || src === "null" || src === "none";
+      if (broken) {
+        img.dataset.fallback = "1";
+        img.style.background = "linear-gradient(135deg, #FF6B9D 0%, #C86BFF 50%, #FFB366 100%)";
+        img.style.display = "flex";
+        img.style.alignItems = "center";
+        img.style.justifyContent = "center";
+        img.style.color = "#fff";
+        img.style.fontSize = "1.6em";
+        img.style.fontWeight = "700";
+        img.style.fontFamily = "'Playfair Display', serif";
+        img.alt = img.alt?.trim().charAt(0) || "👤";
+        img.textContent = img.alt || "👤";
+        img.removeAttribute("src");
+      }
     };
-    // Real load failures (404s, broken URLs) are caught by the capture-phase
-    // "error" listener above. But an <img> with no src, or src="" (a common
-    // shape for seed/placeholder data across the app — empty avatar fields,
-    // notifications with no actor image, etc.) doesn't reliably fire an
-    // "error" event in every browser, so it can fall through and render the
-    // native broken-image icon instead of our placeholder. Proactively sweep
-    // for that case on mount and on every DOM change, app-wide, so no image
-    // anywhere — current or dynamically added later — is left showing a
-    // broken icon just because it never got a real load error to react to.
-    const checkEmptySrc = (img: HTMLImageElement) => {
-      if (!img.getAttribute("src")) applyImgFallback(img);
-    };
-    const sweep = (node: Node) => {
-      if (node.nodeType !== 1) return;
-      const el = node as Element;
-      if (el.tagName === "IMG") checkEmptySrc(el as HTMLImageElement);
-      el.querySelectorAll?.("img").forEach((img) => checkEmptySrc(img as HTMLImageElement));
-    };
-    sweep(document.body);
-    const mo = new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        m.addedNodes.forEach(sweep);
-        if (m.type === "attributes" && m.target.nodeType === 1 && (m.target as Element).tagName === "IMG") {
-          checkEmptySrc(m.target as HTMLImageElement);
-        }
+    const mo = new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === "childList") m.addedNodes.forEach(n => { if (n.nodeType === 1 && (n as Element).querySelectorAll) (n as Element).querySelectorAll("img").forEach(img => sweepImg(img as HTMLImageElement)); });
+        if (m.type === "attributes" && m.target.nodeName === "IMG") sweepImg(m.target as HTMLImageElement);
       }
     });
     mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["src"] });
-    document.addEventListener("error", onImgError, true);
-    return () => {
-      document.removeEventListener("error", onImgError, true);
-      mo.disconnect();
-    };
+    document.querySelectorAll<HTMLImageElement>("img").forEach(sweepImg);
+    return () => { document.removeEventListener("error", onImgError, true); mo.disconnect(); };
   }, []);
 
   // iOS 13+ only fires deviceorientation events after DeviceOrientationEvent.

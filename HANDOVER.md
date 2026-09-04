@@ -750,3 +750,50 @@ Both delivered via `git merge` (not reset), each verified clean (`tsc`/`build`/1
 
 ### On the "lost work" concern (Session 82, wyzmind's note)
 To be clear for the record: nothing was ever lost. My commits exist in a real local clone of `WYZdesign/Muse` (same `origin`, verified via `git log`) — they were just unpushed because **this session's git proxy refuses to push to this repo** (`403: not in this session's authorized repository set`), which is a session-authorization setting, not a GitHub permissions issue and not something fixable from inside this session. I've flagged this to Torreé directly as the root cause worth fixing so this doesn't keep recurring. In the meantime I'm delivering a `git bundle` of my unpushed commits to Torreé every session (portable, applies with full commit history via `git fetch <bundle> audit-reconciled:audit-reconciled`) instead of relying on this file alone to carry the work across.
+
+## Session 83 (wyzmind) — photo-integrity fix, hoolah-hoop/orbit work, hamburger header title
+
+### Ask for Claude: VERIFY ALL OF THIS WITH VISION + agentic browsing — I did a large visual/motion pass this session and want an independent double-check.
+
+**1. Angelica wrong-person photo FIXED (verify live)**
+- Profile `ANGELICA` (id 26) had `/models/ANGELICA/ANGELICA-162.webp` (long dark hair, green sweater, no face paint) mixed into her `photos` array — a different person from the rest (pink/blue body paint, curly hair, same earrings).
+- Fix (`types.ts`): card `photos` array `141,162,133,171` → `141,193,133,171`; Film album `162,171,193` → `124,171,193`. Dropped `162` from `photoOrientation.ts`. **Importantly: do NOT revert `162`, it's genuinely a different person.**
+- VERIFY: load Angelica's Discover card in a browser and page through all 4 photos — every frame must be the same person, no repeats.
+
+**2. Discover card photo dedup (verify)**
+- `DiscoverScreen.tsx` now dedupes `allPhotos` and only tops-up from unused images, so no frame repeats on a card. VERIFY no card shows the same image twice.
+
+**3. Hoolah-hoop / orbit rings (verify with vision — motion)**
+- `.avatar-orbit` thin conic arc that loops around the halo, speeds `orbit-slow 8s` / `orbit-med 6s` / `orbit-med-fast 4.5s`. Applied to: ProfileScreen avatar, MenuModal side-panel avatar, Feed composer profile pic (127), MatchCard list view. Removed from feed post-author avatars.
+- `.orbit-full` (continuous 4-color full-circle hoop) applied to MatchCard list view (Muses + Discover list).
+- `.profile-ring` halo thickness reduced (was 3.8px → now 2.3px). Halo/orbit must be visible but NOT touch the avatar.
+- **VERIFY with screenshots/vision**: profile ring, feed composer, side panel, and Muses list all show the hoop. Confirm the Collab `.brief-avatar` now spins smoothly (was jumping) — I replaced its discrete `background-image` keyframes with `var(--grad-angle)` monotonic rotation.
+
+**4. Hamburger header title (verify)**
+- Settings + "Your Profile" sub-screens now render their title IN the header bar (`.hamburger-menu-title`, 28px) via `MenuModal.tsx`; removed the duplicated 32px in-content `.hamburger-title`. VERIFY no double-title and no layout overlap with the back button.
+
+**5. Premium page (verify)**
+- Promo input now full-width with the Apply button inset in its right edge (`SubscriptionScreen.tsx`).
+- Referral code box + Copy Link stacked (code on top, full-width button below) on the Profile screen.
+
+**6. Menu gap (verify)**
+- Reverted the 30% downshift; header separator at 104px with content starting at 128px (a 24px gap). Menu top title bumped to 28px to match other headers.
+
+**7. Other recent fixes (verify no regressions)**
+- Online dot 13px → 15px; Discover card yellow type text 16px → 21px; halo thin.
+- `audience` field whitelist fix in api/muse/route.ts.
+- StreakWidget day labels now derive from the rolling 7-day window.
+- Change Password item + form in Settings Account group (calls `update-password`).
+- BTS posts show view-count + engagement stat row.
+
+### Verified by me (pre-handover)
+- `tsc --noEmit` clean · 146/146 tests · `npm run build` clean.
+- `_audit_full.py` → all 10 screens OK.
+- `wyz_deploy_check.py <sha>` → `DEPLOY IS LIVE ✅`.
+- Deployed commits this session: `9f239d3`, `11f9c9b`, `7d31add`, `1190713`.
+
+### Known limitation
+- Test-account auto-login was flaky in fresh Playwright browsers this session (hit the auth gate rather than advancing to the app); a couple of visual frames weren't captured live. The Angelica fix is deterministic from source, but a human/agentic-browser check is worthwhile for the motion rings.
+
+### Open items
+- All live-feedback items through Session 83 are resolved. The Session 66 real-device pass (card tilt, nav gradient shimmer) remains unverified.

@@ -178,6 +178,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div className="profile-top">
           <div className="profile-avatar-wrap">
             <img loading="lazy" src={currentUser.avatar} alt={currentUser.name} className="profile-avatar" onError={handleImgError} />
+            <div className="avatar-orbit orbit-med" />
             <div className="profile-ring swirl-ring-1" />
           </div>
           <div className="profile-name">{currentUser.name}</div>
@@ -272,9 +273,9 @@ export const ProfileScreen = memo(function ProfileScreen({
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text2)" }}>Your Referral Code</div>
                   <FiExternalLink size={16} style={{ color: "var(--muted)" }} />
                 </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <div style={{ 
-                    flex: 1, 
+                    width: "100%", 
                     fontSize: 20, 
                     fontWeight: 800, 
                     letterSpacing: 2, 
@@ -283,13 +284,14 @@ export const ProfileScreen = memo(function ProfileScreen({
                     background: "rgba(0,0,0,0.2)",
                     padding: "12px 16px",
                     borderRadius: 8,
-                    border: "1px solid rgba(255,215,0,0.3)"
+                    border: "1px solid rgba(255,215,0,0.3)",
+                    textAlign: "center"
                   }}>
                     {referralData.code || "—"}
                   </div>
                   <button 
                     className="btn btn-gold" 
-                    style={{ whiteSpace: "nowrap" }}
+                    style={{ width: "100%" }}
                     onClick={async () => { 
                       try { 
                         const res = await apiFetch("/api/muse/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "generate" }) }); 
@@ -438,17 +440,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
         </div>
         <div className="section">
-          <div
-            role="button"
-            tabIndex={0}
-            aria-label="Open quests"
-            title="Open quests"
-            onClick={() => setShowQuests(true)}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowQuests(true); } }}
-            style={{ cursor: "pointer" }}
-          >
-            <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
-          </div>
+          <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} onTap={() => setShowQuests?.(true)} />
           <div className="section-title">Activity</div>
           <div className="section-text" style={{ marginBottom: 10 }}>Recent interactions</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

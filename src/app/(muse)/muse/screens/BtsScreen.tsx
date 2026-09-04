@@ -550,7 +550,26 @@ export const BtsScreen = memo(function BtsScreen({
                   </div>
                 </div>
 
-                {/* Reaction pills */}
+                {/* Reaction pills + views/engagement stats (Feed-style) */}
+                {(() => {
+                  const views = typeof (s as any).views === "number"
+                    ? (s as any).views
+                    : 50 + (s.likes || 0) * 8 + (s.comments || 0) * 15;
+                  const engagement = (s.likes || 0) + (s.comments || 0) * 2;
+                  const fmt = (n: number) => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K" : String(n);
+                  return (
+                    <div style={{ display: "flex", gap: 10, padding: "8px 12px 0", alignItems: "center", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 11, color: "var(--text2)", display: "inline-flex", alignItems: "center", gap: 4 }} title="Views">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                        {fmt(views)}
+                      </span>
+                      <span style={{ fontSize: 11, color: engagement > 0 ? "var(--gold)" : "var(--muted)", fontWeight: engagement > 0 ? 700 : 400, display: "inline-flex", alignItems: "center", gap: 4 }} title={`Engagement: likes(${s.likes || 0}) · comments×2(${s.comments || 0})`}>
+                        ✦ {fmt(engagement)}
+                      </span>
+                    </div>
+                  );
+                })()}
+
                 {(s.likes > 0 || s.comments > 0) && (
                   <div
                     style={{

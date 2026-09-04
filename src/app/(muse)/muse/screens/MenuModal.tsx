@@ -17,10 +17,10 @@ interface ActivityPanelProps {
   loginStreak: number;
   setShowHamburger: (v: boolean) => void;
   showScreen: (s: Screen) => void;
-  setShowQuests?: (v: boolean) => void;
+  onStreakTap?: () => void;
 }
 
-function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen, setShowQuests }: ActivityPanelProps) {
+function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen, onStreakTap }: ActivityPanelProps) {
   const [hubTab, setHubTab] = useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
   const [myReports, setMyReports] = useState<any[] | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -79,17 +79,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
 
   return (
     <>
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label="Open quests"
-        title="Open quests"
-        onClick={() => setShowQuests?.(true)}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowQuests?.(true); } }}
-        style={{ cursor: "pointer" }}
-      >
-        <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
-      </div>
+      <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} onTap={onStreakTap} />
       <div style={{ textAlign: "center", fontSize: 13, color: "var(--gold)", fontWeight: 700, margin: "2px 0 10px" }}>Your Activity</div>
       <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
         {tabBtn("notif", "Notifications")}
@@ -392,6 +382,7 @@ export const MenuModal = memo(function MenuModal({
           </button>
         )}
         {!hamburgerScreen && <div className="hamburger-menu-title">Menu</div>}
+        {(hamburgerScreen === "settings" || hamburgerScreen === "profile") && <div className="hamburger-menu-title">{hamburgerScreen === "settings" ? "Settings" : "Your Profile"}</div>}
         {!hamburgerScreen ? (
           <>
             {[
@@ -620,10 +611,10 @@ export const MenuModal = memo(function MenuModal({
             )}
             {hamburgerScreen === "profile" && (
               <div className="conn-scroll">
-                <div className="hamburger-title" style={{ textAlign: "center" }}>Your Profile</div>
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
                   <div className="profile-avatar-wrap">
                     <img loading="lazy" src={currentUser.avatar} alt="You" className="profile-avatar" onError={handleImgError} />
+                    <div className="avatar-orbit orbit-slow" />
                     <div className="profile-ring swirl-ring-1" />
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>{currentUser.name}</div>
@@ -709,7 +700,6 @@ export const MenuModal = memo(function MenuModal({
             )}
             {hamburgerScreen === "settings" && (
               <div className="conn-scroll">
-                <div className="hamburger-title">Settings</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "0 0 10px" }}>Discovery Preferences</div>
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Age Range</div>
@@ -877,7 +867,7 @@ export const MenuModal = memo(function MenuModal({
             )}
             {hamburgerScreen === "activity" && (
               <div className="conn-scroll">
-                <ActivityPanel authFetch={authFetch} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={bookingsForHub} weeklyLogins={weeklyLogins} loginStreak={loginStreak} setShowHamburger={setShowHamburger} showScreen={showScreen} setShowQuests={setShowQuests} />
+                <ActivityPanel authFetch={authFetch} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={bookingsForHub} weeklyLogins={weeklyLogins} loginStreak={loginStreak} setShowHamburger={setShowHamburger} showScreen={showScreen} onStreakTap={() => { setShowHamburger(false); setShowQuests?.(true); }} />
               </div>
             )}
           </>
