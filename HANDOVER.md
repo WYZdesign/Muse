@@ -840,3 +840,15 @@ Verified the halo/oval fix with a synthetic Playwright render (this sandbox has 
 **3. Quests panel ("squished", wanted more breathing room).** Bumped padding/gaps across every module in `muse.css`'s `═══ QUESTS ═══` block: header padding, hero XP/streak row padding and internal gaps, near-completion cards' padding/gaps/margins, the filter-pill row, the Tracking/All-Quests tab row, the quest-card grid gap, and each quest card's own internal padding/gaps. Nothing structural changed — same components, same data — just more room between and inside every module, per Torreé's ask. This one I could only verify by reading the numbers (no local render available) — worth a live look once deployed to confirm it reads as intended rather than just larger.
 
 `tsc --noEmit` clean, `npm run build` clean, 146/146 tests passing.
+
+## Session 84 (wyzmind) — confirmed Claude's Session 84 bundle, merged + live-verified
+
+Claude delivered `claude-session84b` (tip `81de76b`) via the on-disk bundle. Reviewed the diff before adopting:
+- **Verified `81de76b` is a clean superset** of my `main` (main was a strict ancestor → clean fast-forward, 0 conflict risk).
+- **Reviewed each fix**: `orbit-outer` (148%) separation is correct and applied to all 3 pairings (MatchCard, ProfileScreen, MenuModal) while leaving the standalone Feed-composer hoop at base size; `.profile-avatar-wrap{display:inline-block}` is the correct root-cause fix for the oval; halo band thinned to ~2.2px; `ORBIT_SPEEDS` per-profile varies the hoop pace. All sound.
+- **Fast-forward merged** `claude-session84b` → `main` (`784400f..81de76b`). The branch also carried earlier Session 82 commits (BTS stat row, etc.) — confirmed no duplication (single BTS stat row + my `bfe037e` StreakWidget re-implementation preserved).
+- **Removed stale `.git/packed-refs.lock`** from a crashed auto-push; removed the `.bundle` from disk (work now in git).
+
+**Live-verified:** `wyz_deploy_check.py 81de76b` → `DEPLOY IS LIVE ✅`. Vision check on `screenshot_04_profile_menu.png` confirms the **inner delicate halo and outer hoolah-hoop are now clearly separated with a real gap** (no longer a fused blob), the ring renders as a clean **circle** (not oval), and the "Your Profile" title sits in the header bar. tsc clean · 146/146 · build clean · `_audit_full.py` all 10 screens OK.
+
+All Session 83 + 84 feedback items are now resolved and live. The Session 66 real-device pass (card tilt, nav gradient shimmer) and the Quests-panel live pixel confirm remain the only open verification items.
