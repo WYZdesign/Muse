@@ -318,11 +318,17 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                     onPointerCancel={isTop ? onPointerCancel : undefined}
                   >
                     {(() => {
-                      const allPhotos: string[] = (profile as any).photos?.length ? (profile as any).photos : [profile.img];
+                      const allPhotosBase: string[] = (profile as any).photos?.length ? (profile as any).photos : [profile.img];
+                      // Dedupe so no image repeats on a card; each slot is a distinct photo.
+                      const allPhotos: string[] = allPhotosBase.filter((p: string, i: number, a: string[]) => p && a.indexOf(p) === i);
                       const portraitPics = allPhotos.filter((p: string) => !!PORTRAIT_IMG[p]);
                       const landscapePics = allPhotos.filter((p: string) => !PORTRAIT_IMG[p]);
                       const photos: string[] = [...portraitPics, ...landscapePics].slice(0, 6);
-                      if (photos.length < 4) photos.push(...allPhotos.slice(0, Math.max(0, 4 - photos.length)));
+                      if (photos.length < 4) {
+                        const used = new Set(photos);
+                        const extra = allPhotos.filter((p: string) => !used.has(p));
+                        photos.push(...extra.slice(0, Math.max(0, 4 - photos.length)));
+                      }
                       const heroSrc = photos[currentPhotoIdx ?? 0] || profile.img;
                       const heroPortrait = !!PORTRAIT_IMG[heroSrc];
                       return (
