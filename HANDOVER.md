@@ -927,3 +927,14 @@ Three fixes this round, all from Torreé directly:
 `tsc --noEmit` clean, `npm run build` clean, 146/146 tests passing. Working directly against `main` this round after merging wyzmind's `3e46467` (clean merge, no conflicts) — will land on `claude-work` per the new standing workflow, not a temp branch, assuming the lock issue above is cleared by the time this delivers.
 
 **Correction (same session):** Torreé clarified right after this landed — "decrease the halo" meant the ring's line thickness, not its overall diameter. My fix #1 above shrank the whole avatar+halo diameter by 0.85×, which was the wrong read. Reverted all of that back to the original sizes (avatar 100px, halo 115px, hoop 125px, MatchCard's AVATAR_SIZE 78 / RING_SIZE 90) and instead thinned `.profile-ring`'s mask band itself: outer mask edge `calc(100% - 4.5px)` → `calc(100% - 4.2px)` (inner edge unchanged), taking the band from ~2.2px down to ~1.9px. Since that's an absolute-px band width rather than a percentage, it applies identically wherever `.profile-ring` is used, no per-usage changes needed. Fixes #2 (eccentric hoop wobble) and #3 (title wrap) from the section above are unaffected by this correction. Re-verified: `tsc --noEmit` clean, `npm run build` clean, 146/146 tests.
+
+## Session 85 (wyzmind) — Claude's correction merged + live-verified
+
+Reviewed Claude's `claude-work` (tip `6559f82`) before adopting:
+- The **correction is correct**: "decrease the halo" = line thickness, not diameter. Confirmed Claude reverted the diameter shrink (back to avatar 100px / halo 115px / hoop 125px / MatchCard 78:90) and thinned the `.profile-ring` mask band ~15% (2.2px → ~1.9px), which applies uniformly regardless of diameter. Sound.
+- Also verified the eccentric hoop wobble (4px translate loop baked into `hulaOrbit`, kept the scale-breathe + rotation) and the side-panel title `white-space:nowrap;width:max-content` fix. All legitimate, matching Torreé's asks.
+- **Fast-forwarded `claude-work` → `main`** (clean, `0 7`). Pushed `6559f82`.
+
+**Live-verified:** `wyz_deploy_check.py 6559f82` → `DEPLOY IS LIVE ✅`. Vision check (`screenshot_04_profile_menu.png`): "Your Profile" title is now a single line, halo reads thinner, hoop keeps the 5px gap with the eccentric/breathing motion. tsc clean · 146/146 · build clean. Cleaned stray `audit-reconciled*.bundle` files from the repo root.
+
+All Session 85 feedback is resolved and live. Delivery workflow (Claude → `claude-work`, wyzmind → merge/push/verify) worked smoothly this round.
