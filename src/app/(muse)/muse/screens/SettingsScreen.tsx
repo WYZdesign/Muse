@@ -1,7 +1,7 @@
 "use client";
 
-import React, { memo } from "react";
-import { FiArrowLeft, FiUser, FiSettings, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiTwitter, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX } from "react-icons/fi";
+import React, { memo, useState } from "react";
+import { FiArrowLeft, FiUser, FiSettings, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiTwitter, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX, FiLock } from "react-icons/fi";
 // Push subscribe/unsubscribe arrive as PROPS (page.tsx owns the real impls) —
 // importing the module fns here too shadowed them and invited drift.
 import type { Screen } from "../components/types";
@@ -123,6 +123,34 @@ export const SettingsScreen = memo(function SettingsScreen({
   setShowQuests = () => {},
   questClaimables = 0,
 }: SettingsScreenProps) {
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [pwCurrent, setPwCurrent] = useState("");
+  const [pwNew, setPwNew] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+
+  const changePassword = async () => {
+    if (pwNew.length < 6) { showToast("Password must be at least 6 characters"); return; }
+    if (!/[A-Z]/.test(pwNew)) { showToast("Password needs a capital letter"); return; }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(pwNew)) { showToast("Password needs a symbol"); return; }
+    if (pwNew !== pwConfirm) { showToast("Passwords don't match"); return; }
+    setPwBusy(true);
+    try {
+      if (!apiFetch) { showToast("Can't update password right now"); setPwBusy(false); return; }
+      let access_token = "";
+      try { access_token = JSON.parse(localStorage.getItem("muse_user") || "{}")?.access_token || ""; } catch {}
+      const res = await apiFetch("/api/muse/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-password", access_token, new_password: pwNew }) });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast("✓ Password updated");
+        setPwCurrent(""); setPwNew(""); setPwConfirm(""); setShowChangePassword(false);
+      } else {
+        showToast(data.error || "Could not update password");
+      }
+    } catch { showToast("Could not update password"); }
+    setPwBusy(false);
+  };
+
   if (screen !== "settings") return null;
 
   return (
@@ -153,6 +181,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               { icon: <FiLink size={18} />, label: "Connected Accounts", desc: "Instagram, Spotify, etc.", action: () => setShowConnectedAccounts(!showConnectedAccounts) },
               { icon: <FiStar size={18} />, label: "Personality Profile", desc: "Zodiac, MBTI, Life Path", action: () => { setScreen("onboard"); setObStep(7); } },
               { icon: <FiUsers size={18} />, label: "Creative Profile", desc: "Type, styles, looking for", action: () => { setScreen("onboard"); setObStep(4); } },
+              { icon: <FiLock size={18} />, label: "Change Password", desc: "Update your login password", action: () => { setShowChangePassword(!showChangePassword); } },
             ].map(item => (
               <div key={item.label} className="settings-item" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); item.action(); } }} onClick={item.action}>
                 <div className="settings-item-left"><div className="settings-icon">{item.icon}</div><div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div></div>
@@ -217,6 +246,38 @@ export const SettingsScreen = memo(function SettingsScreen({
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+            {showChangePassword && (
+              <div style={{ padding: "12px 0 4px", display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 2 }}>Enter a new password. Must be 6+ chars, include a capital letter and a symbol.</div>
+                <input
+                  className="inp"
+                  type="password"
+                  placeholder="Current password (optional session)"
+                  value={pwCurrent}
+                  onChange={(e) => setPwCurrent(e.target.value)}
+                  style={{ margin: 0 }}
+                />
+                <input
+                  className="inp"
+                  type="password"
+                  placeholder="New password"
+                  value={pwNew}
+                  onChange={(e) => setPwNew(e.target.value)}
+                  style={{ margin: 0 }}
+                />
+                <input
+                  className="inp"
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={pwConfirm}
+                  onChange={(e) => setPwConfirm(e.target.value)}
+                  style={{ margin: 0 }}
+                />
+                <button className="btn btn-gold" onClick={changePassword} disabled={pwBusy} style={{ marginTop: 4 }}>
+                  {pwBusy ? "Updating..." : "Update Password"}
+                </button>
               </div>
             )}
           </div>
