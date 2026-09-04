@@ -893,3 +893,19 @@ Verified geometrically, not just visually: re-ran the synthetic Playwright rende
 Not deployed yet as of writing — needs a pull + push from a real remote to actually go live. Once it's up, worth a live vision check the same way I verified Session 83, since geometry-correct-in-isolation and "looks right in the real app" aren't quite the same guarantee.
 
 **Update:** wyzmind pulled `claude-work` and independently reimplemented the same idea (`538ec20`) before spotting that I'd already solved it properly on the branch — then superseded their own reimplementation with mine verbatim (`a638b8e`, "adopt Claude's --orbit-size hoop"). Also set up the permanent delivery workflow (`4d0bdfd`): I commit to a stable `claude-work` branch in `V:\Muse` (no more session-numbered branches), wyzmind merges and pushes from there. Reconciled that push into this branch (`main` was a pure ancestor for every file except this doc — see the merge commit).
+
+Live-checked the deploy afterward (Chrome extension, real production site): confirmed the halo and hoop now show a real gap in the Muses list — no longer fused. Screen went unresponsive mid-check on the side-panel avatar (CDP timeout, not an app bug — just the automated tab), so that one and the header-separator position are still owed a live look.
+
+## Session 84 (cont'd again, Claude) — hoolah-hoop now actually "hulas": in/out breathing synced to rotation, all speeds standardized slow-medium
+
+Torreé, after seeing the 5px-gap fix land, clarified what "hoolah hoop" was supposed to mean physically: not just a ring rotating in place, but a hoop that visibly moves *in and out* as it circles — like a real hula hoop, whose near side swings toward the viewer (looks bigger) and far side swings away (looks smaller) as it goes around. The old `orbitSpin` keyframe was pure rotation — technically "orbiting," but nothing about it read as a hoop actually being hula-hooped.
+
+**Fix:** new `hulaOrbit` keyframes replace `orbitSpin` on `.avatar-orbit`. Same continuous linear rotation as before, but now with a `scale` breathing baked into the same 8 keyframe stops (0/12.5/25/…/100%), cosine-shaped (`scale = 1 ± 0.08 × cos(angle)`): biggest (1.08×) at 0°/360° (hoop's near side, front), smallest (0.92×) at 180° (far side, back), passing through 1× at the 90°/270° sides. One full breathe per revolution, locked to rotation phase — deliberately baked into the same keyframes rather than a second independent `animation` with its own period, so the in/out motion can't drift out of sync with the spin over time. Rotation itself stays strictly linear (constant angular speed) so it still reads as one continuous orbit, not a wobble.
+
+Verified this isn't just a visual guess: sampled `element.getAnimations()[0].currentTime` and the computed `transform` matrix at 9 points across a cycle in a synthetic render, and derived the actual scale from the matrix (`scale = √(a²+b²)`) at each sample — confirmed 1.08 at t=0, ≈1.0 at the quarter mark, ≈0.92 at the half mark, matching the intended curve exactly.
+
+**Speeds standardized to a slow-medium band per Torreé's "various slow-medium speeds for all" ask:** removed `.orbit-fast` (3.2s — unused anywhere, and too quick for a hula read regardless). `.orbit-slow` 8s→8.5s, `.orbit-med` 6s→6.5s, `.orbit-med-fast` 4.5s→5s. MatchCard's per-profile `ORBIT_SPEEDS` (5.5s–9s) were already in-band, left as-is — that's the "various speeds" instance since it's the one place multiple hoops are visible on screen at once.
+
+Scoped to the hoop only — `.profile-ring` (the halo) keeps its steady, non-breathing rotation, since the ask was specifically about the hoop moving in/out around a stationary halo, not the halo itself pulsing.
+
+`tsc --noEmit` clean, `npm run build` clean, 146/146 tests passing. Not deployed yet as of writing.

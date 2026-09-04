@@ -607,17 +607,40 @@ img{background-color:#1a0a2e}
    touching" distance. A literal pixel diameter keyed off the actual halo size we're
    orbiting is the only way to guarantee that gap. Falls back to 118% for the one
    standalone usage with no halo underneath it (the small Feed composer avatar). */
+/* Torreé: "hoolah hoop is supposed to loop around the halo in and out like a hoolah
+   hoop" — a flat rotation alone (the old orbitSpin) doesn't read as a hoop being
+   hula-hooped, it reads as a ring just spinning in place. A real hula hoop viewed from
+   the front visibly grows as its near side swings toward the viewer and shrinks as its
+   far side swings away — one full grow/shrink breath per revolution, biggest at the
+   front (0°/360°), smallest at the back (180°). hulaOrbit bakes that scale breathing
+   into the same keyframes as the rotation (8 stops, cosine-shaped: scale = 1 ± 0.08)
+   so the "in and out" is locked to rotation phase rather than drifting independently
+   against it. Deliberately keeps rotation itself linear/constant-speed — only the
+   scale breathes — so it still reads as one continuous orbit, not a wobble. */
 .avatar-orbit{position:absolute;top:50%;left:50%;width:var(--orbit-size,118%);height:var(--orbit-size,118%);transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
   background:conic-gradient(from 0deg,transparent 0deg,transparent 120deg,var(--gold) 175deg,var(--coral) 210deg,transparent 265deg,transparent 360deg);
   -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 1px));
   mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 1px));
-  animation:orbitSpin var(--orbit-speed,6s) linear infinite;
+  animation:hulaOrbit var(--orbit-speed,6.5s) linear infinite;
   filter:drop-shadow(0 0 4px rgba(255,215,0,0.6))}
-@keyframes orbitSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
-.orbit-slow{--orbit-speed:8s}
-.orbit-med{--orbit-speed:6s}
-.orbit-med-fast{--orbit-speed:4.5s}
-.orbit-fast{--orbit-speed:3.2s}
+@keyframes hulaOrbit{
+  0%{transform:translate(-50%,-50%) rotate(0deg) scale(1.08)}
+  12.5%{transform:translate(-50%,-50%) rotate(45deg) scale(1.057)}
+  25%{transform:translate(-50%,-50%) rotate(90deg) scale(1)}
+  37.5%{transform:translate(-50%,-50%) rotate(135deg) scale(0.943)}
+  50%{transform:translate(-50%,-50%) rotate(180deg) scale(0.92)}
+  62.5%{transform:translate(-50%,-50%) rotate(225deg) scale(0.943)}
+  75%{transform:translate(-50%,-50%) rotate(270deg) scale(1)}
+  87.5%{transform:translate(-50%,-50%) rotate(315deg) scale(1.057)}
+  100%{transform:translate(-50%,-50%) rotate(360deg) scale(1.08)}
+}
+/* All speed variants kept in a slow-medium band per Torreé's ask — no "fast" option
+   (the old 3.2s .orbit-fast is removed; it wasn't used anywhere and read as too quick
+   for a hula motion anyway). MatchCard additionally varies per-profile within this same
+   band via its own ORBIT_SPEEDS (5.5s-9s) rather than picking one of these classes. */
+.orbit-slow{--orbit-speed:8.5s}
+.orbit-med{--orbit-speed:6.5s}
+.orbit-med-fast{--orbit-speed:5s}
 /* Full-circle hoolah-hoop: a continuous 4-color ring that loops entirely around the halo */
 .avatar-orbit.orbit-full{
   background:conic-gradient(from var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));
