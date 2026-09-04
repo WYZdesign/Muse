@@ -178,7 +178,10 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div className="profile-top">
           <div className="profile-avatar-wrap">
             <img loading="lazy" src={currentUser.avatar} alt={currentUser.name} className="profile-avatar" onError={handleImgError} />
-            <div className="avatar-orbit orbit-outer orbit-med" style={{ width: 125, height: 125 }} />
+            {/* Hoolah-hoop: halo (.profile-ring) is the CSS-default 115px; hoop diameter
+                is 125px — a fixed 5px gap past the halo's edge on every side, close
+                enough to read as circling it, never touching. */}
+            <div className="avatar-orbit orbit-med" style={{ "--orbit-size": "125px" } as React.CSSProperties} />
             <div className="profile-ring swirl-ring-1" />
           </div>
           <div className="profile-name">{currentUser.name}</div>

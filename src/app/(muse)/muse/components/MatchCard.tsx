@@ -21,6 +21,9 @@ export interface MatchCardProps {
 
 const AVATAR_SIZE = 78;
 const RING_SIZE = 90; // wyzmind's live-verified sizing (Session 81/82 — 83 was too tight)
+// Hoolah-hoop diameter: halo (RING_SIZE) + a fixed 5px gap on each side. A literal
+// pixel target, not a % of the wrap — see the --orbit-size comment in muse.css for why.
+const ORBIT_SIZE = RING_SIZE + 10;
 const RING_SPEEDS = [3.2, 4.5, 5.8, 3.8, 5.1, 4.2, 6.0, 3.5, 4.8, 5.5];
 const RING_VARIANTS = ["ring-v1", "ring-v2", "ring-v3", "ring-v4", "ring-v5"];
 // Hoolah-hoop speeds for the outer orbit ring — deliberately offset from RING_SPEEDS
@@ -51,7 +54,7 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
       }}
     >
       <div className="match-avatar-wrap" style={isList ? { position: "relative", width: AVATAR_SIZE, height: AVATAR_SIZE, flexShrink: 0 } : undefined}>
-        {isList && <div className="avatar-orbit orbit-full orbit-outer" style={{ width: RING_SIZE + 10, height: RING_SIZE + 10, animationDuration: `${orbitSpeed}s` }} />}
+        {isList && <div className="avatar-orbit orbit-full" style={{ "--orbit-size": `${ORBIT_SIZE}px`, animationDuration: `${orbitSpeed}s` } as React.CSSProperties} />}
         {isList && <div className={`profile-ring ${ringVariant}`} style={{ width: RING_SIZE, height: RING_SIZE, animationDuration: `${ringSpeed}s` }} />}
         <img
           loading="lazy"
