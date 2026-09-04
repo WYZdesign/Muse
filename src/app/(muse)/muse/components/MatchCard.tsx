@@ -51,7 +51,7 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
       }}
     >
       <div className="match-avatar-wrap" style={isList ? { position: "relative", width: AVATAR_SIZE, height: AVATAR_SIZE, flexShrink: 0 } : undefined}>
-        {isList && <div className="avatar-orbit orbit-full orbit-outer" style={{ animationDuration: `${orbitSpeed}s` }} />}
+        {isList && <div className="avatar-orbit orbit-full orbit-outer" style={{ width: RING_SIZE + 10, height: RING_SIZE + 10, animationDuration: `${orbitSpeed}s` }} />}
         {isList && <div className={`profile-ring ${ringVariant}`} style={{ width: RING_SIZE, height: RING_SIZE, animationDuration: `${ringSpeed}s` }} />}
         <img
           loading="lazy"

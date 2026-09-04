@@ -325,8 +325,8 @@ a{color:inherit;text-decoration:none}
 .chip-scroll::-webkit-scrollbar{display:none}
 .chip-scroll>*{flex:0 0 auto}
 .hamburger-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)}
-.hamburger-panel{width:78%;max-width:340px;height:100%;background:linear-gradient(180deg,rgba(15,8,30,0.98) 0%,rgba(10,6,18,0.99) 100%);backdrop-filter:blur(40px);padding:calc(128px + env(safe-area-inset-top,0px)) 20px calc(32px + env(safe-area-inset-bottom,0px));overflow-y:auto;overflow-x:hidden;position:relative;border-left:1px solid rgba(212,165,255,0.08);animation:hamburgerSlide .35s cubic-bezier(.4,0,.2,1)}
-.hamburger-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:calc(104px + env(safe-area-inset-top,0px));background:linear-gradient(135deg,rgba(212,165,255,0.14) 0%,rgba(255,215,0,0.08) 50%,rgba(15,8,30,0.02) 100%);border-bottom:1px solid rgba(212,165,255,0.12);pointer-events:none}
+.hamburger-panel{width:78%;max-width:340px;height:100%;background:linear-gradient(180deg,rgba(15,8,30,0.98) 0%,rgba(10,6,18,0.99) 100%);backdrop-filter:blur(40px);padding:calc(107px + env(safe-area-inset-top,0px)) 20px calc(32px + env(safe-area-inset-bottom,0px));overflow-y:auto;overflow-x:hidden;position:relative;border-left:1px solid rgba(212,165,255,0.08);animation:hamburgerSlide .35s cubic-bezier(.4,0,.2,1)}
+.hamburger-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:calc(83px + env(safe-area-inset-top,0px));background:linear-gradient(135deg,rgba(212,165,255,0.14) 0%,rgba(255,215,0,0.08) 50%,rgba(15,8,30,0.02) 100%);border-bottom:1px solid rgba(212,165,255,0.12);pointer-events:none}
 .hamburger-close{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));left:12px;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text);cursor:pointer;font-size:16px;transition:all .2s;z-index:1}
 .hamburger-close:hover{background:rgba(255,255,255,0.12);color:var(--gold)}
 .hamburger-bell{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));right:12px;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);cursor:pointer;font-size:16px;transition:all .2s;z-index:1;animation:floatySmall 4s ease-in-out infinite}
@@ -612,7 +612,7 @@ img{background-color:#1a0a2e}
    with a hoop orbiting clearly outside it. orbit-outer pushes the hoop's diameter well
    past the halo's so there's a real gap between them. Standalone avatar-orbit usages
    with no ring underneath (e.g. the small Feed composer avatar) keep the base 118%. */
-.avatar-orbit.orbit-outer{width:148%;height:148%}
+.avatar-orbit.orbit-outer{}
 /* Full-circle hoolah-hoop: a continuous 4-color ring that loops entirely around the halo */
 .avatar-orbit.orbit-full{
   background:conic-gradient(from var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));

@@ -178,7 +178,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div className="profile-top">
           <div className="profile-avatar-wrap">
             <img loading="lazy" src={currentUser.avatar} alt={currentUser.name} className="profile-avatar" onError={handleImgError} />
-            <div className="avatar-orbit orbit-outer orbit-med" />
+            <div className="avatar-orbit orbit-outer orbit-med" style={{ width: 125, height: 125 }} />
             <div className="profile-ring swirl-ring-1" />
           </div>
           <div className="profile-name">{currentUser.name}</div>
