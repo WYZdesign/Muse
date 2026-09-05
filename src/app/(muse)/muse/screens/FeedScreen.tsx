@@ -415,7 +415,16 @@ export const FeedScreen = memo(function FeedScreen({
         </div>
         {!bootstrapped ? (
           <ScreenSkeleton rows={4} image />
-        ) : feedPosts.length === 0 && feedPostsStatic.length === 0 ? (
+        ) : feedPosts.length === 0 && (!demo || feedPostsStatic.length === 0) ? (
+          // Bug fix (live-verified): this used to check `feedPostsStatic.length
+          // === 0` directly, but feedPostsStatic always holds its 4 baked-in
+          // demo entries regardless of `demo` mode — only the render below
+          // actually gates them on `demo`. With demo mode off in production
+          // and zero real feedPosts, that made this condition always false
+          // (4 !== 0) even though nothing was ever going to render, so the
+          // map below ran over an empty array and the Feed tab rendered a
+          // blank void instead of this message. Now mirrors the same `demo`
+          // gate the render list below uses.
           <div className="empty-state" style={{ paddingTop: 60 }}>
             <div className="empty-icon" style={{ fontSize: 48 }}>📝</div>
             <div className="empty-title">No posts yet</div>
