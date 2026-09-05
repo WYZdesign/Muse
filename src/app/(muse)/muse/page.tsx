@@ -12,7 +12,7 @@ import { FiArrowLeft, FiX, FiLink, FiTwitter, FiInstagram } from "react-icons/fi
 import BackgroundScene from "./components/BackgroundScene";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
-import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, QUOTA_MSG } from "./lib/safe-storage";
+import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, setRefreshToken, getRefreshToken, clearRefreshToken, QUOTA_MSG } from "./lib/safe-storage";
 import { getAccessToken, authFetch } from "./lib/api";
 import { uid } from "./lib/uid";
 import { getProfileShareUrl, getPostShareUrl, getMuseUrl } from "@/lib/urls";
@@ -694,7 +694,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         if (d.success && d.user) {
           const userObj = { id: d.user.id, email: d.user.email, profile: d.profile };
           setAuthUser(userObj);
-          safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken || "", user: userObj }));
+          if (refreshToken) setRefreshToken(refreshToken);
+          safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, user: userObj }));
           ensureMusePushRegistered();
           // Sync the Settings toggle with the browser's actual push
           // subscription state — previously always initialized to false
@@ -784,6 +785,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           // callback is defined before showToast's declaration.)
           if (d.code === "ACCOUNT_SUSPENDED") {
             try { safeRemoveItem("muse_user"); } catch {}
+            clearRefreshToken();
             try { window.dispatchEvent(new CustomEvent("muse:toast", { detail: "Your account has been suspended. Contact support@wyzdesign.com" })); } catch {}
           }
           setAuthUser(null);
@@ -919,7 +921,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (savedUser) {
         try {
           const parsed = JSON.parse(savedUser);
-          if (parsed?.access_token && !sessionAppliedRef.current) { sessionAppliedRef.current = true; applySession(parsed.access_token, parsed.refresh_token); }
+          if (parsed?.access_token && !sessionAppliedRef.current) { sessionAppliedRef.current = true; applySession(parsed.access_token, getRefreshToken() || parsed.refresh_token || ""); }
         } catch(e) {}
       } else {
         // No session and no saved user — new visitor, show auth after brief splash
@@ -946,7 +948,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           if (raw) {
             const parsed = JSON.parse(raw);
             if (parsed?.access_token && parsed.access_token !== session.access_token) {
-              safeSetItem("muse_user", JSON.stringify({ ...parsed, access_token: session.access_token, refresh_token: session.refresh_token || parsed.refresh_token || "" }));
+              if (session.refresh_token) setRefreshToken(session.refresh_token);
+              safeSetItem("muse_user", JSON.stringify({ ...parsed, access_token: session.access_token }));
             }
           }
         } catch {}
@@ -1089,6 +1092,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     // supabase-js session survives and silently re-logs the user on next load
     // (shared-device risk). The backend call alone was a no-op for this.
     try { await supabase.auth.signOut(); } catch {}
+    clearRefreshToken();
     const keys = ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium","muse_referral_code","muse_open_count","muse_hide_premium"];
     keys.forEach(k => { try { safeRemoveItem(k); } catch {} });
     setAuthUser(null); setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free", foundingTier:"", proExpiresAt:"" })); setUserTier("free"); setScreen("auth"); showToast("Logged out");
@@ -1332,7 +1336,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       const refreshToken = j.session?.refresh_token || "";
       const userObj = { id: j.user.id, email: j.user.email, profile: j.profile || null };
       setAuthUser(userObj);
-      safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken, user: userObj }));
+      if (refreshToken) setRefreshToken(refreshToken);
+      safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, user: userObj }));
       // Attach session to browser supabase client so realtime works under RLS.
       if (accessToken) {
         supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).catch(() => {});

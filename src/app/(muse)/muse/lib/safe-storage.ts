@@ -79,6 +79,19 @@ export function safeRemoveItem(key: string): void {
   idbRemove(key);
 }
 
+// Refresh token is a long-lived credential. Never persist it to durable
+// localStorage/IndexedDB (an XSS target). Keep it in sessionStorage so it's
+// cleared when the tab/window closes, reducing the blast radius.
+export function setRefreshToken(tok: string): void {
+  try { sessionStorage.setItem("muse_refresh_token", tok); } catch {}
+}
+export function getRefreshToken(): string {
+  try { return sessionStorage.getItem("muse_refresh_token") || ""; } catch { return ""; }
+}
+export function clearRefreshToken(): void {
+  try { sessionStorage.removeItem("muse_refresh_token"); } catch {}
+}
+
 export async function safeGetItemAsync(key: string): Promise<string | null> {
   const cached = safeGetItem(key);
   if (cached) return cached;
