@@ -52,19 +52,13 @@ wyzmind finished the cleanly-bounded domains. The remaining handlers are **inter
 4. Tidy any now-unused imports from route.ts.
 5. `npx tsc --noEmit` + `npx vitest run` (must stay 157/157) + `npm run build` before each commit.
 
-**Already extracted (DON'T re-do):** `shared.ts`, `quests.ts`, `albums.ts`, `feedback.ts` (get-notifications, mark-all-notifications-read, report-bug, submit-idea). route.ts is now ~1851 L.
+**Already extracted (DON'T re-do):** `shared`, `quests`, `albums`, `feedback`, `admin`, `disclosures`, `communities`, `sessions` (8 modules). route.ts is now ~1090 L, 74 unique actions all registered, no duplicates. 157 tests + build green.
 
-**Remaining (interleaved — extract one domain per commit):**
-- **admin-\***: admin-resolve-appeal (861), admin-brain (1203), admin-reports (1342), admin-strikes (1351), admin-suspend-user (1360), admin-scan-nsfw (1387), admin-content-scans (1441), admin-resolve-incident (1490) — internal-only, lowest risk.
-- **disclosures**: create-disclosure (716), confirm-disclosure (802), get-disclosures (837).
-- **strikes**: get-strikes (846), appeal-strike (851).
-- **communities**: join-community (458), leave-community (474), create-community (485).
-- **events**: create-event (510), rsvp (529), cancel-rsvp (542).
-- **sessions/bookings**: book-session (554), create-session (581), respond-booking (885), cancel-booking (924), complete-booking (963), submit-review (1009), respond-checkin (1032), get-checkins (1060), share-safety-details (1066), save-safety-profile (1135), get-safety-profile (1154), get-prompts (1161), save-prompt-response (1169), get-prompt-responses (1196).
-- Leave for LAST (highest-risk, most frontend call sites): profile, match, message, feed, forum, connect.
-- **GET `type=` switch (~460 L)** — split only AFTER POST fully migrated.
+**Remaining (24 inline, HIGHEST-RISK — most frontend call sites):** profile, match, unmatch, message, feed, like-feed-post, feed-comment, create-moment, like-moment, brief, brief-apply, forum, report, block, unblock, get-blocks, connect, save-preferences, apply-promo, mark-read, sync, get-payments, search, track-view. Extract ONE domain per commit (e.g. `feed.ts` = feed/like-feed-post/feed-comment/create-moment/like-moment/forum/brief; `match.ts` = match/unmatch/message/block/unblock/get-blocks/report/connect; `prefs.ts` = profile/save-preferences/apply-promo/mark-read/sync/get-payments/search). These touch the most `apiFetch("/api/muse", {action:...})` call sites — keep dispatch + frontend UNCHANGED, verify each commit with tsc + 157 tests + build. If any is ambiguous, leave it inline rather than risk it.
 
-**Goal:** after all cuts, `route.ts` should be down to the POST dispatcher + GET type-switch + ACTIONS registry wiring (~<400 L). Commit to `claude-work`; wyzmind reviews, merges, pushes, verifies live per domain.
+**GET `type=` switch (~460 L)** — split only AFTER POST fully migrated.
+
+**Goal:** after all cuts, route.ts → POST dispatcher + GET type-switch + ACTIONS wiring (<400 L). Commit to `claude-work`; wyzmind reviews, merges, pushes, verifies live per domain.
 
 ## 📐 (Claude → wyzmind) — MONOLITH SPLIT PLAN (advice, no code changed)
 
