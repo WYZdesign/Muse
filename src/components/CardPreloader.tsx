@@ -12,6 +12,7 @@ export function CardPreloader({ currentIdx, profiles }: {
   profiles: any[];
 }) {
   const preloaded = useRef(new Set<string>());
+  const links = useRef(new Map<string, HTMLLinkElement>());
 
   useEffect(() => {
     if (!profiles.length) return;
@@ -32,10 +33,17 @@ export function CardPreloader({ currentIdx, profiles }: {
       link.href = src;
       link.setAttribute("fetchpriority", "low");
       document.head.appendChild(link);
+      links.current.set(src, link);
     }
 
     return () => {
-      if (preloaded.current.size > 20) preloaded.current.clear();
+      // Remove DOM nodes so abandoned preload <link>s don't accumulate in <head>.
+      // If the Set grows unbounded, prune the oldest nodes to bound memory.
+      if (links.current.size > 20) {
+        links.current.forEach((link) => { try { link.remove(); } catch {} });
+        links.current.clear();
+        preloaded.current.clear();
+      }
     };
   }, [currentIdx, profiles]);
 
