@@ -20,6 +20,8 @@ import { disclosureCreate, disclosureConfirm, disclosureGet, strikesGet, strikeA
 import { communityJoin, communityLeave, communityCreate, eventCreate, eventRsvp, eventCancelRsvp } from "@/lib/muse-actions/communities";
 import { sessionBook, sessionCreate, bookingRespond, bookingCancel, bookingComplete, reviewSubmit, checkinRespond, checkinsGet, safetyDetailsShare, safetyProfileSave, safetyProfileGet, promptsGet, promptResponseSave, promptResponsesGet } from "@/lib/muse-actions/sessions";
 import { connectRequest } from "@/lib/muse-actions/connect";
+import { profileUpdate } from "@/lib/muse-actions/profile";
+import { matchCreate, matchDelete, profileViewTrack } from "@/lib/muse-actions/matching";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ACTION HANDLER REGISTRY
@@ -28,73 +30,16 @@ import { connectRequest } from "@/lib/muse-actions/connect";
 const ACTIONS: Record<string, ActionHandler> = {};
 
 // ═══ PROFILE ═══
+// Handler extracted to lib/muse-actions/profile.ts (monolith split, interleaved-domain pass).
 
-ACTIONS["profile"] = async ({ sb, profile, rest }) => {
-  const ALLOWED_PROFILE_FIELDS = ["name", "bio", "styles", "loc", "city", "type", "zodiac", "chinese", "mbti", "life_path", "looking", "avatar", "audience"];
-  const updates: Record<string, unknown> = {};
-  for (const k of ALLOWED_PROFILE_FIELDS) {
-    if (rest[k] !== undefined) updates[k] = rest[k];
-  }
-  if (typeof updates.name === "string") updates.name = sanitizeText(updates.name as string, 80);
-  if (typeof updates.bio === "string") updates.bio = sanitizeText(updates.bio as string, 500);
-  if (typeof updates.styles === "string") updates.styles = sanitizeText(updates.styles as string, 200);
-  if (typeof updates.looking === "string") updates.looking = sanitizeText(updates.looking as string, 200);
-  if (Object.keys(updates).length === 0) return NextResponse.json({ error: "No updatable fields" }, { status: 400 });
-  const { error } = await sb.from("muse_profiles").update(updates).eq("id", profile.id);
-  if (error) return safeServerError(error, "db op");
-  return NextResponse.json({ success: true });
-};
+ACTIONS["profile"] = profileUpdate;
 
 // ═══ MATCHING & DISCOVERY ═══
+// Handlers extracted to lib/muse-actions/matching.ts (monolith split, interleaved-domain pass).
 
-ACTIONS["match"] = async ({ sb, profile, rest, ip }) => {
-  if (!await checkRate(ip, "match", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-  const { target_id } = rest;
-  if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
-  if (target_id === profile.id) return NextResponse.json({ error: "Cannot match yourself" }, { status: 400 });
-  if (!UUID_RE.test(String(target_id))) {
-    await sb.from("muse_notifications").insert({ user_id: profile.id, type: "match", body: "You matched with a new creative!", read: false });
-    return NextResponse.json({ success: true, demo: true });
-  }
-  const { data: target } = await sb.from("muse_profiles").select("id, suspended").eq("id", target_id).maybeSingle();
-  if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
-  if (target.suspended) return NextResponse.json({ error: "Unable to match with this user" }, { status: 403 });
-  const { data: matchBlock } = await sb.from("muse_blocks").select("id").or(`and(user_id.eq.${profile.id},target_id.eq.${target_id}),and(user_id.eq.${target_id},target_id.eq.${profile.id})`).limit(1).maybeSingle();
-  if (matchBlock) return NextResponse.json({ error: "Unable to match with this user" }, { status: 403 });
-  const { error } = await sb.from("muse_matches").upsert(
-    { user_id: profile.id, target_id },
-    { onConflict: "user_id,target_id", ignoreDuplicates: true }
-  );
-  if (error) return safeServerError(error, "db op");
-  await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id } });
-  await sb.from("muse_notifications").insert({ user_id: target_id, from_id: profile.id, type: "match", body: `${profile.name} matched with you!`, read: false });
-  await emailProfile(sb, target_id, "Someone matched with you ✦", "New match on Muse", `${profile.name} matched with you. Open Muse to say hi.`, "See who it is", "https://muse.wyzdesign.com/muse", "match");
-  await bumpQuest(sb, profile.id, "match");
-  return NextResponse.json({ success: true });
-};
-
-ACTIONS["unmatch"] = async ({ sb, profile, rest }) => {
-  const { target_id } = rest;
-  if (!target_id) return NextResponse.json({ error: "target_id required" }, { status: 400 });
-  if (UUID_RE.test(String(target_id))) {
-    await sb.from("muse_matches").delete().eq("user_id", profile.id).eq("target_id", target_id);
-    await sb.from("muse_matches").delete().eq("user_id", target_id).eq("target_id", profile.id);
-    await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "unmatch", details: { target_id } });
-  }
-  return NextResponse.json({ success: true });
-};
-
-ACTIONS["track-view"] = async ({ sb, profile, rest, ip }) => {
-  if (!await checkRateUser(profile.id, "track-view", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-  const { target_id } = rest;
-  if (!target_id || target_id === profile.id) return NextResponse.json({ success: true });
-  if (!UUID_RE.test(String(target_id))) return NextResponse.json({ success: true, demo: true });
-  const { data: cur } = await sb.from("muse_profiles").select("views_count").eq("id", target_id).maybeSingle();
-  const next = ((cur as any)?.views_count || 0) + 1;
-  const { error } = await sb.from("muse_profiles").update({ views_count: next }).eq("id", target_id);
-  if (error) return safeServerError(error, "db op");
-  return NextResponse.json({ success: true });
-};
+ACTIONS["match"] = matchCreate;
+ACTIONS["unmatch"] = matchDelete;
+ACTIONS["track-view"] = profileViewTrack;
 
 // ═══ MESSAGING ═══
 
