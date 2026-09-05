@@ -470,11 +470,24 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       // setters. Skip the redundant request when the hook has already populated
       // state (avoids ~6 duplicate GETs per load). If the hook is profileId-
       // gated and hasn't fired yet, the fetch still runs as a safe fallback.
+      //
+      // Live-verified regression (this session): FeedScreen does NOT actually
+      // render from `liveFeed` — it renders `feedPosts` (this effect's own
+      // mapped output) plus `feedPostsStatic` when DEMO_MODE is on. `liveFeed`
+      // is only used there for id-matching (isLivePost) and dedup-by-text, not
+      // as the displayed list. useFeedData's separate profileId-gated effect
+      // DOES populate `liveFeed` independently — so once that resolved first,
+      // this dedup's `liveFeed.length>0` check skipped the fetch that's the
+      // ONLY thing that ever populates `feedPosts`, leaving the Feed screen
+      // permanently blank (confirmed live: no `type=feed` GET fired at all,
+      // and with DEMO_MODE now gating off feedPostsStatic too there was no
+      // fallback content either). Fixed by keying the skip on `feedPosts`
+      // alone — the thing actually rendered — not on `liveFeed`.
       const skipWrap = (already: boolean, type: string) => already ? Promise.resolve(null) : apiFetch("/api/muse?type=" + type).then(r => r.ok ? r.json() : null).catch(() => null);
       const [matchData, briefs, feed, forum, events, communities, sessions, professionals] = await Promise.all([
         matchPromise,
         skipWrap((liveBriefs?.length ?? 0) > 0, "briefs"),
-        skipWrap((liveFeed?.length ?? 0) > 0 || (feedPosts?.length ?? 0) > 0, "feed"),
+        skipWrap((feedPosts?.length ?? 0) > 0, "feed"),
         skipWrap((liveForum?.length ?? 0) > 0 || (forumPosts?.length ?? 0) > 0, "forum"),
         skipWrap((liveEvents?.length ?? 0) > 0, "events"),
         skipWrap((liveCommunities?.length ?? 0) > 0, "communities"),

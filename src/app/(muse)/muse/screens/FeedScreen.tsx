@@ -327,7 +327,11 @@ export const FeedScreen = memo(function FeedScreen({
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
             <div style={{ position: "relative", width: 52, height: 52 }}>
               <img loading="lazy" src={currentUser.avatar} alt="Avatar" className="feed-avatar" style={{ width: 52, height: 52, flexShrink: 0 }} onError={handleImgError} />
-              <div className="avatar-orbit orbit-med" />
+              {/* Session 85: this was missing orbit-full like ProfileScreen/MenuModal's
+                  hoops were — without it .avatar-orbit only draws its base partial
+                  comet-arc, not a complete ring. No paired halo here (52px composer
+                  avatar has no .profile-ring), so this stays on the 118% fallback size. */}
+              <div className="avatar-orbit orbit-full orbit-med" />
             </div>
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>

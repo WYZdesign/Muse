@@ -1,5 +1,27 @@
 # HANDOVER — Muse Sessions 52-55+ (complete continuity brief for next Claude)
 
+## ✅ Session (this round) — CRITICAL Feed regression found + fixed, hoop tightened, advice still owed
+
+**Found and fixed a live production bug** while running wyzmind's push-to-10/10 verification checklist: the Feed screen was rendering permanently blank in prod. Root cause was in `page.tsx`'s `bootstrapData`, in the dedup optimization added for the "no duplicate GETs" work:
+
+- Old: `skipWrap((liveFeed?.length ?? 0) > 0 || (feedPosts?.length ?? 0) > 0, "feed")`
+- `FeedScreen.tsx` does NOT render from `liveFeed` — it renders `feedPosts` (+ `feedPostsStatic` only under `DEMO_MODE`). `liveFeed`/`baseFeed`/`hasLiveFeed` exist in `FeedScreen.tsx` only for the `isLivePost` id-matching helper, never for the displayed list or the empty-state check.
+- `useFeedData.ts` has its own `profileId`-gated `useEffect` that populates `liveFeed` via an independent `/api/muse?type=feed` fetch — but it never calls `setFeedPosts`.
+- Net effect: once `useFeedData`'s effect resolved first, `liveFeed.length > 0` went true, so `bootstrapData`'s dedup permanently skipped the ONLY fetch that populates `feedPosts` — and since a recent commit (`f4aad2c`, gating `feedPostsStatic` behind `DEMO_MODE`) removed the demo fallback, the Feed screen rendered blank with no loading skeleton and no empty-state message either.
+- Confirmed live via Chrome network/console inspection: no `type=feed` GET ever fired, zero console errors — a silent skip, not a crash.
+- **Fix**: `skipWrap((feedPosts?.length ?? 0) > 0, "feed")` — key the skip on the state that's actually rendered, not on the unrelated `liveFeed`. Forum's equivalent dedup was checked and is fine as-is (`NetworkScreen.tsx`/`MenuModal.tsx` genuinely render from `liveForum`).
+- Verified: `tsc --noEmit` clean, `npm run test -- --run` 157/157, `npm run build` clean.
+
+**Other fixes this round** (per Torreé's direct asks — hoop should never touch the halo, ~10% tighter, and the Feed composer avatar was still using the old fragmented-arc look):
+- `MatchCard.tsx`: `ORBIT_SIZE = RING_SIZE + 9` (was `+10`, i.e. a flat 5px gap/side) — tightened to ~4.5px/side, still clear of the halo.
+- `ProfileScreen.tsx` / `MenuModal.tsx`: matching `--orbit-size` shrunk 125px→124px on the top-of-profile and side-panel "Your Profile" avatars for the same tightened gap.
+- `FeedScreen.tsx`: composer avatar was missing `orbit-full` (same bug class fixed earlier for Profile/Menu — without it the hoop renders as `.avatar-orbit`'s base partial comet-arc, not a full ring). Added.
+- All previously-fixed this-session items still hold: hoop de-pulsed (removed `scale()` from `hulaOrbit`, kept only `rotate()` + a small eccentric `translate()` wobble), full-ring `orbit-full` added everywhere a real ring was intended, side-panel avatar top-crop fixed (`.conn-scroll` has zero top-padding; added `paddingTop:20` to the wrapping div), Quests page restructured to `"top"|"all"` 2-tab view (top 4 claimable/closest, all + tier bubbles only on the "all" tab), quest header padding now matches the hamburger menu's safe-area-aware offset.
+
+**Still outstanding / not yet done:**
+- The monolith-split architectural advice request below (`ACTIONS wanted: MONOLITH SPLIT PLAN`) has NOT been answered yet — only preliminary research done (72-76 `ACTIONS[...]` entries enumerated, existing per-domain route pattern confirmed, ~102 frontend `apiFetch("/api/muse"...)` call sites / 99 `action:"..."` literals counted as the blast radius of any URL-based split). A full phased plan is still owed.
+- Verification checklist partially done this round: confirmed live — Feed composer disabled/counter states, Discover "0 matches" live badge + "No matches here" empty state (funnel icon, "Try widening your filters..." subtext, Reset button — correctly NOT reusing "All caught up!"). Still unchecked: Discover loading skeleton on first load, active-pref dots + map/boost glow on header icons, toast error(✕red)/success(✓green) accent rendering, Menu sheet Escape-to-close + focus-trap + focus-restore. Server-side security items (NSFW gating, rate-limit fail-closed, stripped auth fields) are API-level, not pure-vision — flagging for wyzmind's own route-test coverage rather than claiming visually verified.
+
 ## 🧭 (Claude) — ADVICE WANTED: MONOLITH SPLIT PLAN
 wyzmind is about to split the two monoliths and wants your architectural advice (research/advice only, no code changes unless you see a clear bug). Read and respond with a concrete, phased split plan:
 - **`src/app/api/muse/route.ts`** (~2504 lines, 76 `ACTIONS` handlers: auth, matches, chat, briefs, sessions, bookings, forum, quests, strikes, notifications, admin). The clean per-domain pattern already exists (`api/muse/auth|connect|referral|verification/route.ts` each own a file). How to split the 76 actions into per-domain route modules WITHOUT breaking the `ACTIONS`-registry dispatch or the existing `type=` GET switch? What's the safe cut order (which domains first), and how to keep the `enforceRequestSafety`/rate-limit/`getAuthedProfile`/`ACTIONS` wiring shared?

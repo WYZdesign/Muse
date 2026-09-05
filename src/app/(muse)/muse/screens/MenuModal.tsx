@@ -631,13 +631,13 @@ export const MenuModal = memo(function MenuModal({
                     {/* Hoolah-hoop: halo (.profile-ring) is the CSS-default 115px (Session
                         85: a "decrease the halo" ask turned out to mean the ring's line
                         thickness, not diameter — see the .profile-ring comment in
-                        muse.css; diameter here reverted back to 115px/125px); hoop
-                        diameter is 125px — a fixed 5px gap past the halo's edge on every
-                        side, close enough to read as circling it, never touching.
-                        orbit-full added (Session 85 final correction): without it this
-                        rendered as a partial comet-arc, not a full ring — see the
-                        .avatar-orbit comment in muse.css. */}
-                    <div className="avatar-orbit orbit-full orbit-slow" style={{ "--orbit-size": "125px" } as React.CSSProperties} />
+                        muse.css; diameter here reverted back to 115px/125px, then the gap
+                        tightened ~10% to 124px — a ~4.5px gap past the halo's edge on
+                        every side, close enough to read as circling/hovering just above
+                        it, still never touching. orbit-full added (Session 85 final
+                        correction): without it this rendered as a partial comet-arc, not
+                        a full ring — see the .avatar-orbit comment in muse.css. */}
+                    <div className="avatar-orbit orbit-full orbit-slow" style={{ "--orbit-size": "124px" } as React.CSSProperties} />
                     <div className="profile-ring swirl-ring-1" />
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>{currentUser.name}</div>

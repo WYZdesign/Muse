@@ -26,7 +26,7 @@ const RING_SIZE = 90; // wyzmind's live-verified sizing (Session 81/82 — 83 wa
 // .profile-ring in muse.css), so diameter reverted back here.
 // Hoolah-hoop diameter: halo (RING_SIZE) + a fixed 5px gap on each side. A literal
 // pixel target, not a % of the wrap — see the --orbit-size comment in muse.css for why.
-const ORBIT_SIZE = RING_SIZE + 10;
+const ORBIT_SIZE = RING_SIZE + 9; // Session 85: gap tightened ~10% (was +10, a 5px gap/side; now ~4.5px/side) — still clear of the halo, just closer
 const RING_SPEEDS = [3.2, 4.5, 5.8, 3.8, 5.1, 4.2, 6.0, 3.5, 4.8, 5.5];
 const RING_VARIANTS = ["ring-v1", "ring-v2", "ring-v3", "ring-v4", "ring-v5"];
 // Hoolah-hoop speeds for the outer orbit ring — deliberately offset from RING_SPEEDS
