@@ -24,6 +24,30 @@
 - The monolith-split architectural advice request below (`ACTIONS wanted: MONOLITH SPLIT PLAN`) has NOT been answered yet — only preliminary research done (72-76 `ACTIONS[...]` entries enumerated, existing per-domain route pattern confirmed, ~102 frontend `apiFetch("/api/muse"...)` call sites / 99 `action:"..."` literals counted as the blast radius of any URL-based split). A full phased plan is still owed.
 - Verification checklist partially done this round: confirmed live — Feed composer disabled/counter states, Discover "0 matches" live badge + "No matches here" empty state (funnel icon, "Try widening your filters..." subtext, Reset button — correctly NOT reusing "All caught up!"). Still unchecked: Discover loading skeleton on first load, active-pref dots + map/boost glow on header icons, toast error(✕red)/success(✓green) accent rendering, Menu sheet Escape-to-close + focus-trap + focus-restore. Server-side security items (NSFW gating, rate-limit fail-closed, stripped auth fields) are API-level, not pure-vision — flagging for wyzmind's own route-test coverage rather than claiming visually verified.
 
+## 🧩 (Claude → wyzmind) — MONOLITH SPLIT: YOUR TURN (interleaved domains)
+wyzmind finished the cleanly-bounded domains. The remaining handlers are **interleaved** and need careful per-handler extraction. **Follow the proven pattern** so nothing breaks:
+
+**Pattern (verified safe, 4 domains, 157 tests green):**
+1. Create `src/lib/muse-actions/<domain>.ts`, export each handler as a named function taking `ActionContext` (import `type ActionContext` from `./shared`).
+2. In `route.ts`: `import { <fn> } from "@/lib/muse-actions/<domain>";` and replace the inline `ACTIONS["x"] = async ({...}) => {...}` body with `ACTIONS["x"] = <fn>;`.
+3. Keep the dispatch registry + frontend call sites UNCHANGED (no URL change, no blank-screen risk).
+4. Tidy any now-unused imports from route.ts.
+5. `npx tsc --noEmit` + `npx vitest run` (must stay 157/157) + `npm run build` before each commit.
+
+**Already extracted (DON'T re-do):** `shared.ts`, `quests.ts`, `albums.ts`, `feedback.ts` (get-notifications, mark-all-notifications-read, report-bug, submit-idea). route.ts is now ~1851 L.
+
+**Remaining (interleaved — extract one domain per commit):**
+- **admin-\***: admin-resolve-appeal (861), admin-brain (1203), admin-reports (1342), admin-strikes (1351), admin-suspend-user (1360), admin-scan-nsfw (1387), admin-content-scans (1441), admin-resolve-incident (1490) — internal-only, lowest risk.
+- **disclosures**: create-disclosure (716), confirm-disclosure (802), get-disclosures (837).
+- **strikes**: get-strikes (846), appeal-strike (851).
+- **communities**: join-community (458), leave-community (474), create-community (485).
+- **events**: create-event (510), rsvp (529), cancel-rsvp (542).
+- **sessions/bookings**: book-session (554), create-session (581), respond-booking (885), cancel-booking (924), complete-booking (963), submit-review (1009), respond-checkin (1032), get-checkins (1060), share-safety-details (1066), save-safety-profile (1135), get-safety-profile (1154), get-prompts (1161), save-prompt-response (1169), get-prompt-responses (1196).
+- Leave for LAST (highest-risk, most frontend call sites): profile, match, message, feed, forum, connect.
+- **GET `type=` switch (~460 L)** — split only AFTER POST fully migrated.
+
+**Goal:** after all cuts, `route.ts` should be down to the POST dispatcher + GET type-switch + ACTIONS registry wiring (~<400 L). Commit to `claude-work`; wyzmind reviews, merges, pushes, verifies live per domain.
+
 ## 📐 (Claude → wyzmind) — MONOLITH SPLIT PLAN (advice, no code changed)
 
 Researched both files fully. Recommendation is below — **advice only, nothing implemented**, per your instruction. Order-of-operations, safest-first.
