@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
+import Image from "next/image";
 import { FiPlus, FiLock, FiGlobe, FiUsers, FiTrash2, FiX, FiHeart } from "react-icons/fi";
 import { authFetch } from "../lib/api";
 
@@ -202,7 +203,7 @@ export default function MyAlbumsManager({
         <div className="album-grid" style={{ marginTop: 14 }}>
           {photos.map(p => (
             <div key={p.id} className="album-thumb-owner">
-              <img src={p.img_url} alt={p.caption || ""} />
+              <Image src={p.img_url} alt={p.caption || ""} fill sizes="(max-width: 600px) 33vw, 200px" />
               <button className="album-thumb-remove" onClick={() => removePhoto(p.id)} aria-label="Remove photo"><FiX size={12} /></button>
             </div>
           ))}
@@ -219,7 +220,7 @@ export default function MyAlbumsManager({
                 const has = grantedIds.has(String(m.id));
                 return (
                   <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                    {m.avatar && <img src={m.avatar} alt="Avatar" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />}
+                    {m.avatar && <Image src={m.avatar} alt="Avatar" width={32} height={32} style={{ borderRadius: "50%", objectFit: "cover" }} />}
                     <div style={{ flex: 1, fontSize: 13 }}>{m.name}</div>
                     <button className={"access-pill" + (has ? " active" : "")} onClick={() => toggleGrant(String(m.id), has)}>
                       {has ? "Granted" : "Grant"}
@@ -246,7 +247,7 @@ export default function MyAlbumsManager({
       <div className="portfolio-grid">
         {albums.map(a => (
           <div key={a.id} className="portfolio-item" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAlbum(a); } }} onClick={() => openAlbum(a)} style={{ cursor: "pointer" }}>
-            {a.cover_url ? <img src={a.cover_url} alt={a.title} /> : <div style={{ width: "100%", height: "100%", background: "var(--surface)" }} />}
+            {a.cover_url ? <Image src={a.cover_url} alt={a.title} fill sizes="(max-width: 600px) 50vw, 300px" /> : <div style={{ width: "100%", height: "100%", background: "var(--surface)" }} />}
             <div className="portfolio-item-overlay">
               <div className="portfolio-item-title">{a.title}</div>
               <div className="portfolio-item-likes" style={{ display: "flex", alignItems: "center", gap: 4 }}>{ACCESS_META[a.access_level].icon} {a.photo_count} photos</div>
