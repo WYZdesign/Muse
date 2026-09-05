@@ -15,7 +15,7 @@ import { preferencesSave, promoApply } from "@/lib/muse-actions/misc";
 
 function makeQuery() {
   const q: any = {
-    select: () => q, eq: () => q, in: () => q, order: () => q, limit: () => q, update: () => q,
+    select: () => q, eq: () => q, in: () => q, order: () => q, limit: () => q,
     insert: (v: any) => { state.inserts.push(v); return q; },
     update: (v: any) => { state.updates.push(v); return q; },
     delete: () => q, maybeSingle: async () => ({ data: state.row ?? null }),
