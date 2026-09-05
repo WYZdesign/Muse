@@ -465,14 +465,20 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       const matchPromise = token
         ? apiFetch("/api/muse/match?limit=50").then(r => r.ok ? r.json() : null).catch(() => null)
         : Promise.resolve(null);
+      // Dedup: useFeedData/useCommunityData/useBriefsData/useSessionData already
+      // fetch briefs/feed/forum/events/communities/sessions and write the SAME
+      // setters. Skip the redundant request when the hook has already populated
+      // state (avoids ~6 duplicate GETs per load). If the hook is profileId-
+      // gated and hasn't fired yet, the fetch still runs as a safe fallback.
+      const skipWrap = (already: boolean, type: string) => already ? Promise.resolve(null) : apiFetch("/api/muse?type=" + type).then(r => r.ok ? r.json() : null).catch(() => null);
       const [matchData, briefs, feed, forum, events, communities, sessions, professionals] = await Promise.all([
         matchPromise,
-        apiFetch("/api/muse?type=briefs").then(r => r.ok ? r.json() : null).catch(() => null),
-        apiFetch("/api/muse?type=feed").then(r => r.ok ? r.json() : null).catch(() => null),
-        apiFetch("/api/muse?type=forum").then(r => r.ok ? r.json() : null).catch(() => null),
-        apiFetch("/api/muse?type=events").then(r => r.ok ? r.json() : null).catch(() => null),
-        apiFetch("/api/muse?type=communities").then(r => r.ok ? r.json() : null).catch(() => null),
-        apiFetch("/api/muse?type=sessions").then(r => r.ok ? r.json() : null).catch(() => null),
+        skipWrap((liveBriefs?.length ?? 0) > 0, "briefs"),
+        skipWrap((liveFeed?.length ?? 0) > 0 || (feedPosts?.length ?? 0) > 0, "feed"),
+        skipWrap((liveForum?.length ?? 0) > 0 || (forumPosts?.length ?? 0) > 0, "forum"),
+        skipWrap((liveEvents?.length ?? 0) > 0, "events"),
+        skipWrap((liveCommunities?.length ?? 0) > 0, "communities"),
+        skipWrap((liveSessions?.length ?? 0) > 0, "sessions"),
         apiFetch("/api/muse?type=professionals").then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
       if (matchData?.profiles?.length) setLiveProfiles(matchData.profiles.map((p: any) => ({
