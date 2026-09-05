@@ -4,6 +4,7 @@ import React, { memo, useEffect, useRef, useState, useCallback } from "react";
 import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiActivity, FiDollarSign, FiUsers as FiUsersIcon, FiGift, FiX, FiBell } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import StreakWidget from "../components/StreakWidget";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import { COMMUNITIES, EVENTS, SESSIONS, PROFESSIONALS, FORUM_POSTS } from "../components/types";
 import { getCommunityShareUrl, getEventShareUrl, getProShareUrlWithRef, getMuseUrl } from "@/lib/urls";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
@@ -324,19 +325,12 @@ export const MenuModal = memo(function MenuModal({
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Escape-to-close: closing the sheet should be keyboard reachable. If on a
-  // sub-screen, Escape goes back to the menu root; otherwise it closes the sheet.
-  useEffect(() => {
-    if (!showHamburger) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.preventDefault();
-      if (hamburgerScreen) { setHamburgerScreen(null as any); }
-      else { setShowHamburger(false); }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [showHamburger, hamburgerScreen, setHamburgerScreen, setShowHamburger]);
+  // Focus trap + Escape-to-close + focus restore while the sheet is open.
+  // On a sub-screen Escape steps back to the menu root; otherwise it closes.
+  const hamburgerRef = useFocusTrap<HTMLDivElement>(showHamburger, () => {
+    if (hamburgerScreen) setHamburgerScreen(null as any);
+    else setShowHamburger(false);
+  });
 
   useEffect(() => {
     if (showHamburger) {
@@ -374,7 +368,7 @@ export const MenuModal = memo(function MenuModal({
   return (
     <div className={"hamburger-overlay" + (closing ? " closing" : "")} role="dialog" aria-modal="true" aria-label="Menu">
       <div className="hamburger-backdrop" role="presentation" aria-hidden="true" onClick={() => setShowHamburger(false)} />
-      <div className="hamburger-panel">
+      <div className="hamburger-panel" ref={hamburgerRef}>
         <div
           className="hamburger-close"
           onClick={() => { if (hamburgerScreen) setHamburgerScreen(null as any); else setShowHamburger(false); }}
