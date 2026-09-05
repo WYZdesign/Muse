@@ -22,6 +22,7 @@ import AgeVerificationModal from "./components/AgeVerificationModal";
 import { useChatState } from "./hooks/useChatState";
 import { useBriefsState } from "./hooks/useBriefsState";
 import { useModalVisibility } from "./hooks/useModalVisibility";
+import { useQuestsState } from "./hooks/useQuestsState";
 import { requestMotionPermission } from "./hooks/useDeviceTilt";
 import SupportChat from "./components/SupportChat";
 import FeatureTour from "./components/FeatureTour";
@@ -289,11 +290,13 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [ageVerified, setAgeVerified] = useState(false);
   const [pendingDisclosureConfirm, setPendingDisclosureConfirm] = useState<string | null>(null);
   const [pendingDisclosureCreate, setPendingDisclosureCreate] = useState<Record<string, unknown> | null>(null);
-  const [claimableQuests, setClaimableQuests] = useState(0);
-  const [nearQuests, setNearQuests] = useState(0);
-  const [topQuests, setTopQuests] = useState<{id:string;title:string;icon:string;progress:number;target:number;color:string}[]>([]);
-  const [loginStreak, setLoginStreak] = useState(0);
-  const [weeklyLogins, setWeeklyLogins] = useState<boolean[]>([false,false,false,false,false,false,false]);
+  const {
+    claimableQuests, setClaimableQuests,
+    nearQuests, setNearQuests,
+    topQuests, setTopQuests,
+    loginStreak, setLoginStreak,
+    weeklyLogins, setWeeklyLogins,
+  } = useQuestsState();
 
   useEffect(() => {
     try {
