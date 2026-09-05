@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
+import Image from "next/image";
 
 export interface MatchCardProps {
   m: any;
@@ -59,14 +60,28 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
       <div className="match-avatar-wrap" style={isList ? { position: "relative", width: AVATAR_SIZE, height: AVATAR_SIZE, flexShrink: 0 } : undefined}>
         {isList && <div className="avatar-orbit orbit-full" style={{ "--orbit-size": `${ORBIT_SIZE}px`, animationDuration: `${orbitSpeed}s` } as React.CSSProperties} />}
         {isList && <div className={`profile-ring ${ringVariant}`} style={{ width: RING_SIZE, height: RING_SIZE, animationDuration: `${ringSpeed}s` }} />}
-        <img
-          loading="lazy"
-          src={m.img}
-          alt={m.name}
-          className="match-avatar"
-          style={isList ? { width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: "50%", objectFit: "cover", border: "2.5px solid transparent", background: "#1a0a2e", position: "relative", zIndex: 1 } : undefined}
-          onError={handleImgError}
-        />
+        {isList ? (
+          <Image
+            loading="lazy"
+            src={m.img}
+            alt={m.name}
+            width={AVATAR_SIZE}
+            height={AVATAR_SIZE}
+            className="match-avatar"
+            style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: "50%", objectFit: "cover", border: "2.5px solid transparent", background: "#1a0a2e", position: "relative", zIndex: 1 }}
+            onError={handleImgError}
+          />
+        ) : (
+          <Image
+            loading="lazy"
+            src={m.img}
+            alt={m.name}
+            fill
+            sizes="(max-width: 600px) 50vw, 300px"
+            className="match-avatar"
+            onError={handleImgError}
+          />
+        )}
         {m.online && <div className="online-dot" style={{ position: "absolute", bottom: 2, right: 2, zIndex: 2 }} />}
       </div>
       <div className="match-info" style={isList ? { marginLeft: 14, textAlign: "left" } : undefined}>
