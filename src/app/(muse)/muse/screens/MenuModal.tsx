@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo, useEffect, useRef, useState, useCallback } from "react";
+import Image from "next/image";
 import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiActivity, FiDollarSign, FiUsers as FiUsersIcon, FiGift, FiX, FiBell } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import StreakWidget from "../components/StreakWidget";
@@ -105,7 +106,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
             ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No notifications yet. Activity will appear here.</div>
             : notifications.map(a => (
                 <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1, background: a.read ? "transparent" : "rgba(255,215,0,0.03)", borderRadius: 8, marginBottom: 4 }}>
-                  <img loading="lazy" src={a.avatar} alt="Avatar" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
+                  <Image loading="lazy" src={a.avatar} alt="Avatar" width={40} height={40} style={{ borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, color: "var(--text)" }}><strong>{a.from}</strong> {a.text}</div>
                     <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{new Date(a.created_at).toLocaleString()}</div>
@@ -477,7 +478,7 @@ export const MenuModal = memo(function MenuModal({
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "0 0 10px" }}>Channels &amp; Groups</div>
                 {(liveCommunities?.length ? liveCommunities : COMMUNITIES).filter(c => showNsfw || !c.nsfw).map(c => (
                   <div key={c.id} className="conn-card" style={{ margin: "0 0 10px" }}>
-                    <img loading="lazy" src={c.img} alt={c.name} className="conn-avatar" style={{ width: 102, height: 102 }} onError={handleImgError} />
+                    <Image loading="lazy" src={c.img} alt={c.name} width={102} height={102} className="conn-avatar" onError={handleImgError} />
                     <div className="conn-content">
                       <div className="conn-name">{c.name}</div>
                       <div className="conn-meta">{c.members} members · {c.desc}</div>
@@ -509,7 +510,7 @@ export const MenuModal = memo(function MenuModal({
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "0 0 10px" }}>One-on-One Sessions</div>
                 {SESSIONS.map(s => (
                   <div key={s.id} className="conn-card" style={{ margin: "0 0 10px" }}>
-                    <img loading="lazy" src={s.img} alt={s.name} className="conn-avatar" style={{ borderRadius: "50%" }} onError={handleImgError} />
+                    <Image loading="lazy" src={s.img} alt={s.name} width={68} height={68} className="conn-avatar" style={{ borderRadius: "50%" }} onError={handleImgError} />
                     <div className="conn-content">
                       <div className="conn-name">{s.name}</div>
                       <div className="conn-meta">{s.type} · {s.rate} · ★ {s.rating}</div>
@@ -532,7 +533,7 @@ export const MenuModal = memo(function MenuModal({
                 ) : (
                   matches.filter(m => m.booked).map(m => (
                     <div key={m.id} className="conn-card" style={{ margin: "0 0 10px" }}>
-                      <img loading="lazy" src={m.img} alt={m.name} className="conn-avatar" onError={handleImgError} />
+                      <Image loading="lazy" src={m.img} alt={m.name} width={68} height={68} className="conn-avatar" onError={handleImgError} />
                       <div className="conn-content">
                         <div className="conn-name">{m.name}</div>
                         <div className="conn-meta">{m.type} · Booked Session</div>
@@ -553,7 +554,9 @@ export const MenuModal = memo(function MenuModal({
                 {/* Was always the static seed list — liveProfessionals wasn't a prop at all */}
                 {(liveProfessionals?.length ? liveProfessionals : PROFESSIONALS).filter((p: any) => showNsfw || !p.nsfw).map((p: any) => (
                   <div key={p.id} className="conn-card" style={{ margin: "0 0 10px", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "0 0 16px 0", gap: 0 }}>
-                    <img loading="lazy" src={p.img} alt={p.name} style={{ width: "100%", height: 150, objectFit: "fill", borderRadius: "16px 16px 0 0" }} onError={handleImgError} />
+                    <div style={{ position: "relative", width: "100%", height: 150 }}>
+                      <Image loading="lazy" src={p.img} alt={p.name} fill sizes="(max-width: 600px) 100vw, 400px" style={{ objectFit: "fill", borderRadius: "16px 16px 0 0" }} onError={handleImgError} />
+                    </div>
                     <div className="conn-content" style={{ padding: "12px 16px 0", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "100%" }}>
                       <div className="conn-name">{p.name}</div>
                       <div className="conn-meta">{p.type} · {p.loc} · {p.exp}</div>
@@ -599,7 +602,7 @@ export const MenuModal = memo(function MenuModal({
                         <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{post.title}</div>
                         <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5, marginBottom: 8 }}>{post.body}</div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--muted)", flexWrap: "wrap" }}>
-                          <img loading="lazy" src={post.avatar} alt="Avatar" style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover" }} /> <span style={{ fontWeight: 600, color: "var(--text)" }}>{post.author}</span>
+                          <Image loading="lazy" src={post.avatar} alt="Avatar" width={18} height={18} style={{ borderRadius: "50%", objectFit: "cover" }} /> <span style={{ fontWeight: 600, color: "var(--text)" }}>{post.author}</span>
                           <span>·</span><span>{post.time}</span><span>·</span><span>{post.cat}</span><span>·</span><span>{post.comments.length} replies</span>
                         </div>
                         {expandedPost === post.id && (
@@ -627,7 +630,7 @@ export const MenuModal = memo(function MenuModal({
                     room to clear it. */}
                 <div style={{ textAlign: "center", marginBottom: 20, paddingTop: 20 }}>
                   <div className="profile-avatar-wrap">
-                    <img loading="lazy" src={currentUser.avatar} alt="You" className="profile-avatar" onError={handleImgError} />
+                    <Image loading="lazy" src={currentUser.avatar} alt="You" width={100} height={100} className="profile-avatar" onError={handleImgError} />
                     {/* Hoolah-hoop: halo (.profile-ring) is the CSS-default 115px (Session
                         85: a "decrease the halo" ask turned out to mean the ring's line
                         thickness, not diameter — see the .profile-ring comment in
