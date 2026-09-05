@@ -6,6 +6,7 @@ import { FiArrowLeft, FiImage, FiX, FiFlag, FiSend } from "react-icons/fi";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import Nav from "../components/Nav";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
+import Image from "next/image";
 import type { Screen } from "../components/types";
 
 export interface FeedScreenProps {
@@ -326,7 +327,7 @@ export const FeedScreen = memo(function FeedScreen({
 <div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", gap: 10, alignItems: "flex-start" }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
             <div style={{ position: "relative", width: 52, height: 52 }}>
-              <img loading="lazy" src={currentUser.avatar} alt="Avatar" className="feed-avatar" style={{ width: 52, height: 52, flexShrink: 0 }} onError={handleImgError} />
+              <Image loading="lazy" src={currentUser.avatar} alt="Avatar" width={52} height={52} className="feed-avatar" style={{ flexShrink: 0 }} onError={handleImgError} />
               {/* Session 85: this was missing orbit-full like ProfileScreen/MenuModal's
                   hoops were — without it .avatar-orbit only draws its base partial
                   comet-arc, not a complete ring. No paired halo here (52px composer
@@ -366,7 +367,7 @@ export const FeedScreen = memo(function FeedScreen({
                   {url.endsWith(".mp4") || url.includes("video") ? (
                     <video src={url} style={{ width: 36, height: 36, borderRadius: 8, objectFit: "cover" }} />
                   ) : (
-                    <img loading="lazy" src={url} alt="Photo" style={{ width: 36, height: 36, borderRadius: 8, objectFit: "cover" }} />
+                    <Image loading="lazy" src={url} alt="Photo" width={36} height={36} style={{ borderRadius: 8, objectFit: "cover" }} />
                   )}
                   <button onClick={() => setFeedMedia(prev => prev.filter((_, j) => j !== i))} aria-label="Remove media" style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: "var(--coral)", border: "none", color: "#fff", fontSize: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiX size={10} /></button>
                 </div>
@@ -447,7 +448,7 @@ export const FeedScreen = memo(function FeedScreen({
               <div key={post.id} className="conn-card" style={{ flexDirection: "column", margin: "0 20px 14px", padding: 0, overflow: "hidden", position: "relative" }}>
                 <div style={{ padding: "14px 18px 0", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPostDetail(post.id); } }} onClick={() => openPostDetail(post.id)}>
                     <div style={{ position: "relative", flexShrink: 0 }}>
-                      <img loading="lazy" src={post.avatar} alt={`${post.author}'s avatar`} className="feed-avatar" style={{ width: 40, height: 40, flexShrink: 0, borderRadius: "50%", objectFit: "cover", cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: post.rid || post.id, name: post.author, avatar: post.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: post.rid || post.id, name: post.author, img: post.avatar, type: "Creative" }); } }} />
+                      <Image loading="lazy" src={post.avatar} alt={`${post.author}'s avatar`} width={40} height={40} className="feed-avatar" style={{ flexShrink: 0, borderRadius: "50%", objectFit: "cover", cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: post.rid || post.id, name: post.author, avatar: post.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: post.rid || post.id, name: post.author, img: post.avatar, type: "Creative" }); } }} />
                       {isOnline && <span title="Online" style={{ position: "absolute", right: -1, bottom: -1, width: 12, height: 12, borderRadius: "50%", background: "#22c55e", border: "2px solid #0a0612", boxShadow: "0 0 6px rgba(34,197,94,0.7)" }} />}
 
                    </div>
@@ -501,7 +502,7 @@ export const FeedScreen = memo(function FeedScreen({
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
                     {(postReplies[post.id] || []).map((reply: any, i: number) => (
                       <div key={i} style={{ display: "flex", gap: 10, padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-                        <img loading="lazy" src={reply.avatar || currentUser.avatar} alt={`${reply.author || "User"}'s avatar`} className="feed-avatar" style={{ width: 28, height: 28, flexShrink: 0, cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: reply.author, name: reply.author, img: reply.avatar, type: "Creative" }); } }} />
+                        <Image loading="lazy" src={reply.avatar || currentUser.avatar} alt={`${reply.author || "User"}'s avatar`} width={28} height={28} className="feed-avatar" style={{ flexShrink: 0, cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: reply.author, name: reply.author, img: reply.avatar, type: "Creative" }); } }} />
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 12, fontWeight: 700 }}>{reply.author || "User"}</div>
                           <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5 }}>{reply.text}</div>
@@ -565,7 +566,7 @@ export const FeedScreen = memo(function FeedScreen({
             </div>
             <div className="modal-body">
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                <img loading="lazy" src={dp.avatar} alt="Avatar" className="feed-avatar" style={{ width: 46, height: 46, backgroundColor: "#1a0a2e" }} onError={handleImgError} />
+                <Image loading="lazy" src={dp.avatar} alt="Avatar" width={46} height={46} className="feed-avatar" style={{ backgroundColor: "#1a0a2e" }} onError={handleImgError} />
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 800 }}>{dp.author}</div>
                   <div style={{ fontSize: 12, color: "var(--muted)" }}>{dp.time}</div>
@@ -594,7 +595,7 @@ export const FeedScreen = memo(function FeedScreen({
               )}
               {replies.map((reply: any, i: number) => (
                 <div key={i} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                   <img loading="lazy" src={reply.avatar || currentUser.avatar} alt={`${reply.author || "User"}'s avatar`} className="feed-avatar" style={{ width: 30, height: 30, flexShrink: 0, borderRadius: "50%", objectFit: "cover", cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: reply.author, name: reply.author, img: reply.avatar, type: "Creative" }); } }} />
+                   <Image loading="lazy" src={reply.avatar || currentUser.avatar} alt={`${reply.author || "User"}'s avatar`} width={30} height={30} className="feed-avatar" style={{ flexShrink: 0, borderRadius: "50%", objectFit: "cover", cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: reply.author, name: reply.author, img: reply.avatar, type: "Creative" }); } }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12, fontWeight: 700 }}>{reply.author || "User"} <span style={{ fontWeight: 400, color: "var(--muted)", fontSize: 11 }}>· {reply.time || "now"}</span></div>
                     <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5 }}>{reply.text}</div>
