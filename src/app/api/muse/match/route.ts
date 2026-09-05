@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 
     // Fetch candidates WITH their stored embeddings (single read, no token cost).
     const { data: allProfiles } = await sb.from("muse_profiles")
-      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, photos, collabs, verified, tier, profile_completion_pct, embedding, preferences, nsfw")
+      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, photos, collabs, verified, tier, profile_completion_pct, embedding, preferences, nsfw, suspended")
       .limit(200);
 
     // Blocks (either direction) were never consulted here — the swipe deck could
