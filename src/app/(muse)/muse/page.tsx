@@ -21,6 +21,8 @@ import DisclosureModal from "./components/DisclosureModal";
 import AgeVerificationModal from "./components/AgeVerificationModal";
 import { useChatState } from "./hooks/useChatState";
 import { useBriefsState } from "./hooks/useBriefsState";
+import { useModalVisibility } from "./hooks/useModalVisibility";
+import { useQuestsState } from "./hooks/useQuestsState";
 import { requestMotionPermission } from "./hooks/useDeviceTilt";
 import SupportChat from "./components/SupportChat";
 import FeatureTour from "./components/FeatureTour";
@@ -168,14 +170,42 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [promptIdx, setPromptIdx] = useState(0);
    const [discoverSearchOpen, setDiscoverSearchOpen] = useState(false);
    const { savedBriefs, setSavedBriefs, appliedBriefs, setAppliedBriefs, showPostBrief, setShowPostBrief, briefTitle, setBriefTitle, briefDesc, setBriefDesc, briefBudget, setBriefBudget, briefCat, setBriefCat, userBriefs, setUserBriefs } = useBriefsState();
-   const [showAgeGate, setShowAgeGate] = useState(false);
+  const {
+    showFilterModal, setShowFilterModal,
+    showEditProfile, setShowEditProfile,
+    showShareProfile, setShowShareProfile,
+    showReport, setShowReport,
+    showNotificationsSettings, setShowNotificationsSettings,
+    showConnectedAccounts, setShowConnectedAccounts,
+    showTerms, setShowTerms,
+    showPrivacy, setShowPrivacy,
+    showGuidelines, setShowGuidelines,
+    showDeleteConfirm, setShowDeleteConfirm,
+    showNewPost, setShowNewPost,
+    showLikesYou, setShowLikesYou,
+    showDiscoveryPrefs, setShowDiscoveryPrefs,
+    showActivityFeed, setShowActivityFeed,
+    showHamburger, setShowHamburger,
+    showDisclosureModal, setShowDisclosureModal,
+    showAgeVerification, setShowAgeVerification,
+    showSafetyCheckin, setShowSafetyCheckin,
+    showPromptBank, setShowPromptBank,
+    showReferral, setShowReferral,
+    showConnect, setShowConnect,
+    showPaymentHistory, setShowPaymentHistory,
+    showQuests, setShowQuests,
+    showDailyLogin, setShowDailyLogin,
+    showFeatureTour, setShowFeatureTour,
+    showAgeGate, setShowAgeGate,
+    showIntentPicker, setShowIntentPicker,
+    showStories, setShowStories,
+    showEmojiPicker, setShowEmojiPicker,
+  } = useModalVisibility();
   const [pendingNsfw, setPendingNsfw] = useState(false);
   const [userTier, setUserTier] = useState<string>("free");
-  const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterStyles, setFilterStyles] = useState<string[]>([]);
    const [filterScore, setFilterScore] = useState(50);
   const [liveProfessionals, setLiveProfessionals] = useState<any[] | null>(null);
-  const [showEditProfile, setShowEditProfile] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editLoc, setEditLoc] = useState("");
@@ -183,17 +213,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [editType, setEditType] = useState("");
   const [editLooking, setEditLooking] = useState<string[]>([]);
   const [editNsfw, setEditNsfw] = useState(false);
-  const [showShareProfile, setShowShareProfile] = useState(false);
   const [shareTarget, setShareTarget] = useState<{id:number|string;text:string;img:string;author:string} | null>(null);
-  const [showReport, setShowReport] = useState(false);
   const [reportTarget, setReportTarget] = useState<{id:number|string;type:string;name:string} | null>(null);
-  const [showNotificationsSettings, setShowNotificationsSettings] = useState(false);
-  const [showConnectedAccounts, setShowConnectedAccounts] = useState(false);
   const [_showBlockedUsers, _setShowBlockedUsers] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
-  const [showPrivacy, setShowPrivacy] = useState(false);
-  const [showGuidelines, setShowGuidelines] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>({match:true,message:true,brief:true,like:true});
   const [pushEnabled, setPushEnabled] = useState<boolean>(false);
   const [connTab, setConnTab] = useState<"community"|"events"|"sessions"|"forum"|"feed"|"professional">("community");
@@ -217,14 +239,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [forumCategory, setForumCategory] = useState<string>("all");
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostBody, setNewPostBody] = useState("");
-  const [showNewPost, setShowNewPost] = useState(false);
   const [expandedPost, setExpandedPost] = useState<number|null>(null);
   const [commentText, setCommentText] = useState("");
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [_eventsFilter, _setEventsFilter] = useState<"all"|"upcoming"|"past">("all");
   const [feedText, setFeedText] = useState("");
   const [feedMedia, setFeedMedia] = useState<string[]>([]);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [_feedReactions, _setFeedReactions] = useState<Record<number,string[]>>({});
   const [feedPostsStatic, setFeedPostsStatic] = useState<{id:number;author:string;avatar:string;type:string;text:string;likes:number;comments:number;shares:number;time:string;liked:boolean;saved:boolean;img?:string}[]>([{id:401,author:"Maya Chen",avatar:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",type:"photo",text:"Golden hour never gets old. Shot this at El Matador Beach last weekend.",likes:234,comments:18,shares:5,time:"2h ago",img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600",liked:false,saved:false},{id:402,author:"Jordan Rivera",avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",type:"text",text:"Just wrapped principal photography on a 30-min short. 14-hour days for 12 days straight. The footage is incredible!",likes:189,comments:32,shares:12,time:"5h ago",liked:false,saved:false},{id:403,author:"Sam Taylor",avatar:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",type:"photo",text:"New album art I designed. Surreal dreamlike aesthetic.",likes:312,comments:24,shares:8,time:"8h ago",img:"https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=600",liked:false,saved:false},{id:404,author:"Riley Patel",avatar:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",type:"photo",text:"Motion graphics reel. 6 months of work in 90 seconds.",likes:567,comments:45,shares:23,time:"1d ago",liked:false,saved:false}]);
   const [feedFilter, setFeedFilter] = useState<"all"|"photos"|"videos"|"text"|"bts">("all");
@@ -253,7 +273,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [obPortfolioItems, setObPortfolioItems] = useState<{img:string;title:string}[]>([]);
   const portfolioInputRef = useRef<HTMLInputElement>(null);
   const [obPortfolioSlot, setObPortfolioSlot] = useState<number | null>(null);
-  const [showLikesYou, setShowLikesYou] = useState(false);
   const [matchesView, setMatchesView] = useState<"list"|"grid">("list");
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
@@ -262,33 +281,22 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
   const [discoveryPrefs, setDiscoveryPrefs] = useState<{ageMin:number;ageMax:number;distance:number;gender:string}>({ageMin:18,ageMax:50,distance:50,gender:"all"});
   const [myGeo, setMyGeo] = useState<{lat:number;long:number;city:string;state:string;requiresIdVerification:boolean}|null>(null);
-  const [showDiscoveryPrefs, setShowDiscoveryPrefs] = useState(false);
-  const [showActivityFeed, setShowActivityFeed] = useState(false);
-  const [showHamburger, setShowHamburger] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
 
   // ═══ TRUST & SAFETY STATE ═══
-  const [showDisclosureModal, setShowDisclosureModal] = useState(false);
   const [disclosureTarget, setDisclosureTarget] = useState<{id:string;name:string} | null>(null);
   const [disclosureBookingId, setDisclosureBookingId] = useState<string | undefined>();
   const [existingDisclosure, setExistingDisclosure] = useState<Record<string, unknown> | null>(null);
-  const [showAgeVerification, setShowAgeVerification] = useState(false);
   const [ageVerified, setAgeVerified] = useState(false);
   const [pendingDisclosureConfirm, setPendingDisclosureConfirm] = useState<string | null>(null);
   const [pendingDisclosureCreate, setPendingDisclosureCreate] = useState<Record<string, unknown> | null>(null);
-  const [showSafetyCheckin, setShowSafetyCheckin] = useState(false);
-  const [showPromptBank, setShowPromptBank] = useState(false);
-  const [showReferral, setShowReferral] = useState(false);
-  const [showConnect, setShowConnect] = useState(false);
-  const [showPaymentHistory, setShowPaymentHistory] = useState(false);
-  const [showQuests, setShowQuests] = useState(false);
-  const [claimableQuests, setClaimableQuests] = useState(0);
-  const [nearQuests, setNearQuests] = useState(0);
-  const [topQuests, setTopQuests] = useState<{id:string;title:string;icon:string;progress:number;target:number;color:string}[]>([]);
-  const [showDailyLogin, setShowDailyLogin] = useState(false);
-  const [showFeatureTour, setShowFeatureTour] = useState(false);
-  const [loginStreak, setLoginStreak] = useState(0);
-  const [weeklyLogins, setWeeklyLogins] = useState<boolean[]>([false,false,false,false,false,false,false]);
+  const {
+    claimableQuests, setClaimableQuests,
+    nearQuests, setNearQuests,
+    topQuests, setTopQuests,
+    loginStreak, setLoginStreak,
+    weeklyLogins, setWeeklyLogins,
+  } = useQuestsState();
 
   useEffect(() => {
     try {
@@ -316,7 +324,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [viewProfileReviews, setViewProfileReviews] = useState<any[]>([]);
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
-   const [showStories, setShowStories] = useState(false);
    const [blockTarget, setBlockTarget] = useState<{id:string;name:string}|null>(null);
    const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -1373,7 +1380,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   }, [authMode, authEmail, authPass, authName, authLoading, flash]);
 
   const swipeLocked = useRef(false);
-  const [showIntentPicker, setShowIntentPicker] = useState(false);
   const [intentProfile, setIntentProfile] = useState<Profile|null>(null);
   const [userDefaultIntent, setUserDefaultIntent] = useState<string>("");
   const [showNoteTooltip, setShowNoteTooltip] = useState(() => !safeGetItem("muse_note_seen"));
