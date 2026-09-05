@@ -6,6 +6,21 @@ vi.mock("@/lib/aiDocs", () => ({
   museSystemPrompt: () => "test",
 }));
 
+// rate-limit fails CLOSED without Supabase. The support route's limit is 10/min;
+// allow 10 calls then deny (429) so the behavior paths (200/400) AND the
+// "rate limits after the threshold" test (429 on the 11th+ for a given IP) hold.
+// Track per-IP so the distinct-IP tests in this file don't trip each other's caps.
+const supportCallsByIp = new Map<string, number>();
+vi.mock("@/lib/rate-limit", () => ({
+  checkRate: vi.fn(async (ip: string) => {
+    const n = (supportCallsByIp.get(ip) || 0) + 1;
+    supportCallsByIp.set(ip, n);
+    return n <= 10;
+  }),
+  checkRateUser: vi.fn(async () => true),
+  clientIp: vi.fn((r: any) => r?.headers?.get?.("x-forwarded-for")?.split(",")[0]?.trim() || "10.0.0.1"),
+}));
+
 import { POST } from "@/app/api/muse/support/route";
 import { askMuseAI, retrieveContext } from "@/lib/aiDocs";
 
@@ -21,6 +36,7 @@ function mockReq(body: unknown) {
 describe("support route (integration)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    supportCallsByIp.clear();
   });
 
   it("returns 400 when question is missing", async () => {

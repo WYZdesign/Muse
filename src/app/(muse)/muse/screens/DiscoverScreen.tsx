@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useState, useEffect } from "react";
-import { FiSearch, FiSettings, FiCompass, FiZap, FiCamera, FiX, FiChevronRight } from "react-icons/fi";
+import { FiSearch, FiSettings, FiCompass, FiZap, FiCamera, FiX, FiChevronRight, FiFilter } from "react-icons/fi";
 import Nav from "../components/Nav";
 import MuseMap from "../components/MuseMap";
 import type { Screen, Profile } from "../components/types";
@@ -117,6 +117,7 @@ export interface DiscoverScreenProps {
   mapView: boolean;
   setMapView: (v: boolean | ((p: boolean) => boolean)) => void;
   filteredProfiles: Profile[];
+  isLoading?: boolean;
   currentIdx: number;
   setCurrentIdx: (v: number | ((p: number) => number)) => void;
   boostActive: boolean;
@@ -200,6 +201,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   safeSetItem = () => {},
   safeRemoveItem = () => {},
   filteredProfiles,
+  isLoading = false,
   myGeo,
   myStyles = [],
   currentIdx,
@@ -305,7 +307,19 @@ export const DiscoverScreen = memo(function DiscoverScreen({
         {!mapView && (
           <>
             <div className="card-stack" role="application" aria-label="Swipe cards to discover creatives" aria-roledescription="card carousel">
-              {filteredProfiles.slice(currentIdx, currentIdx + 3).map((profile, idx) => {
+              {isLoading && filteredProfiles.length === 0 && (
+                Array.from({ length: 3 }).map((_, idx) => (
+                  <div key={"skel-" + idx} className="swipe-card" style={{ position: idx === 0 ? "relative" : "absolute", top: idx === 0 ? 0 : idx * 10, left: 0, right: 0, opacity: idx === 0 ? 1 : 0.6, zIndex: 3 - idx, height: "100%", borderRadius: 24, overflow: "hidden", background: "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))" }}>
+                    <div style={{ height: "76%", background: "linear-gradient(110deg, rgba(255,255,255,0.08) 8%, rgba(255,255,255,0.03) 18%, rgba(255,255,255,0.08) 33%)", backgroundSize: "200% 100%", animation: "skeletonPulse 1.6s ease-in-out infinite" }} />
+                    <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div style={{ width: "55%", height: 22, borderRadius: 8, background: "linear-gradient(110deg, rgba(255,255,255,0.1) 8%, rgba(255,255,255,0.04) 18%, rgba(255,255,255,0.1) 33%)", backgroundSize: "200% 100%", animation: "skeletonPulse 1.6s ease-in-out infinite" }} />
+                      <div style={{ width: "35%", height: 14, borderRadius: 6, background: "linear-gradient(110deg, rgba(255,215,0,0.14) 8%, rgba(255,215,0,0.05) 18%, rgba(255,215,0,0.14) 33%)", backgroundSize: "200% 100%", animation: "skeletonPulse 1.8s ease-in-out infinite" }} />
+                      <div style={{ width: "28%", height: 12, borderRadius: 6, background: "rgba(255,255,255,0.07)" }} />
+                    </div>
+                  </div>
+                ))
+              )}
+              {!isLoading && filteredProfiles.slice(currentIdx, currentIdx + 3).map((profile, idx) => {
                 const isTop = idx === 0;
                 return (
                   <div
@@ -526,11 +540,11 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                   </div>
                 );
               })}
-              {currentIdx >= filteredProfiles.length && (
+              {!isLoading && currentIdx >= filteredProfiles.length && (
                 <div className="empty-state">
-                  <div className="empty-icon"><FiCompass size={48} /></div>
-                  <div className="empty-title">All caught up!</div>
-                  <div className="empty-sub">Check back later for more creatives</div>
+                  <div className="empty-icon"><FiFilter size={44} /></div>
+                  <div className="empty-title">No matches here</div>
+                  <div className="empty-sub">Try widening your filters or resetting the deck</div>
                   <button className="btn btn-gold" onClick={() => { setCurrentIdx(0); }}>Reset</button>
                 </div>
               )}

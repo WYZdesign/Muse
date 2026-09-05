@@ -1,5 +1,15 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// checkRate now fails CLOSED if the durable RPC errors. These tests exercise the
+// in-memory backstop + limit logic, so mock the durable RPC to always be within
+// limit (the per-IP memory check is what actually enforces the test's cap).
+let rpcLimit = 999;
+vi.mock("@/lib/supabase", () => ({
+  getServiceClient: vi.fn(() => ({ rpc: vi.fn(async (_: string, args: any) => ({ data: args?.p_limit <= rpcLimit, error: null })) })),
+}));
 import { checkRate, clientIp } from "./rate-limit";
+
+beforeEach(() => { rpcLimit = 999; });
 
 describe("clientIp", () => {
   function mockHeaders(get: (name: string) => string | null) {
