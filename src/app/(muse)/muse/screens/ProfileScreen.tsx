@@ -186,7 +186,7 @@ export const ProfileScreen = memo(function ProfileScreen({
                 circling/hovering just above it, still never touching. orbit-full added
                 (Session 85 final correction): without it this rendered as a partial
                 comet-arc, not a full ring — see the .avatar-orbit comment in muse.css. */}
-            <div className="avatar-orbit orbit-full orbit-med" style={{ "--orbit-size": "124px" } as React.CSSProperties} />
+            <div className="avatar-orbit orbit-full orbit-med" style={{ "--orbit-size": "130px" } as React.CSSProperties} />
             <div className="profile-ring swirl-ring-1" />
           </div>
           <div className="profile-name">{currentUser.name}</div>

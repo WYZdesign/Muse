@@ -600,7 +600,7 @@ img{background-color:#1a0a2e}
    calc(100% - 2.3px)). This is an absolute-px band width, so it applies identically to
    every .profile-ring usage (ProfileScreen, MenuModal, MatchCard) regardless of that
    instance's diameter — no per-usage changes needed. */
-.profile-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4.2px),#000 calc(100% - 2.3px));mask:radial-gradient(farthest-side,transparent calc(100% - 4.2px),#000 calc(100% - 2.3px));width:115px;height:115px;box-shadow:0 0 14px rgba(255,215,0,0.3);animation:ringSpin 5s linear infinite}
+.profile-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.2px),#000 calc(100% - 1.1px));mask:radial-gradient(farthest-side,transparent calc(100% - 2.2px),#000 calc(100% - 1.1px));width:115px;height:115px;box-shadow:0 0 12px rgba(255,215,0,0.28);animation:ringSpin 5s linear infinite}
 @keyframes ringSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
 /* Theme-aware ring color variants — rotate per-match-card for varied gradient hues + speeds */
 .ring-v1{background:conic-gradient(var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));animation-duration:5s}
