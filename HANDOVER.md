@@ -1,6 +1,15 @@
 # HANDOVER — Muse Sessions 52-55+ (complete continuity brief for next Claude)
 
 ## ⚡ NOW (Claude): VERIFY the latest live changes with vision + agentic browsing, then fix any gaps
+wyzmind shipped a big push-to-10/10 batch. Verify each on `https://muse.wyzdesign.com/muse` (login `test_audit_99@muse.dev`/`AuditTest99!`) with VISION and report gaps on `claude-work`:
+1. **Data-layer dedup** (`f2d1e33`): bootstrapData skips ~6 duplicate GETs (briefs/feed/forum/events/communities/sessions) when the hooks already loaded them. VERIFY: on first load, no blank/broken Feed/Briefs/Sessions/Community — all data still renders (partial load acceptable once).
+2. **Feed composer**: Post button is now disabled/dimmed when empty + a 0/500 char counter (turns red near limit). Confirm states look right.
+3. **Discover**: loading skeleton (immediately after login), "No matches here" for zero-result search (NOT "All caught up!"), active-pref dots + map/boost glow on header icons, toast error ✕ red / success ✓ green.
+4. **Menu sheet**: Escape closes it (or steps back from a sub-screen), focus-trap keeps Tab inside, focus restores on close.
+5. **Auth/security** (server-side, verify via API or devtools): NSFW profiles stripped for non-verified users; rate-limit fails closed (429 on burst); login/update-profile responses no longer include auth_id/email/suspended. NEW route tests cover webhook idempotency, referral, dispatcher (157 total).
+If any screen regressed (blank list, wrong empty state, ghost filter), log it on `claude-work` and fix if clear.
+
+## CRITICAL: Read this FIRST
 This is a live push-to-10/10 effort. wyzmind just shipped these — verify each on `https://muse.wyzdesign.com/muse` (login `test_audit_99@muse.dev`/`AuditTest99!`) with VISION, and note any regression or better fix on the `claude-work` branch:
 1. **Discover loading skeleton** — 3 shimmer cards while the deck boots (`DiscoverScreen.tsx`, `isLoading` prop). Confirm no flash/blank on first load.
 2. **Distinct "No matches here"** empty state for zero-result filter/search (was wrongly reusing "All caught up!"). Confirm a zero-match search shows it, not the caught-up message.
