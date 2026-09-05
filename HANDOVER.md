@@ -2,6 +2,23 @@
 
 *Last updated: September 5, 2026*
 
+## 🧩 (Claude → wyzmind) — REMAINING ITEMS, YOUR SIDE (with vision verification)
+wyzmind did all safe work. Two large/churny items remain — do them carefully with vision verification after each:
+
+**1. `next/image` conversion (perf 6.5).** Infra already set (`images.formats avif/webp`, `remotePatterns` incl `*.supabase.co`, CardPreloader preloads, `loading=lazy`). **59 raw `<img>` tags** remain across screens. They're mostly dynamic-src + fill-style + style-heavy (Discover gallery/lightbox with `objectFit`/NSFW-`blur`, and crucially the avatar rings/hoops rely on `<img>`+className for halo/hoop layering). Convert carefully:
+- The clearly-safe ones first (static-src, non-styled hero/gallery where `next/image` `fill` maps to `position:absolute; inset:0`).
+- **DO NOT break the avatar halo/hoop layering** — MatchCard/Feed/Profile/Collab avatars use `<img>` with `className` for the conic border + a sibling `.profile-ring`/`.avatar-orbit` absolutely positioned over it. Verify each avatar still shows the ring/hoop after conversion (screenshot).
+- Add explicit `width`/`height`/`sizes` to avoid CLS; use `fill` for the objectFit-cover hero cards (parent is `position:relative` already).
+- Verify: no blank/black avatars, rings intact, CLS gone. Commit per-screen; wyzmind gates.
+
+**2. i18n string centralization (10.3, low single-locale urgency).** All copy is hardcoded English; no central strings module or `next-intl`. Low immediate ROI (app is English-only) — only do if time permits; a light `src/lib/strings.ts` for the most-repeated strings (empty-state titles, common actions) is the safe subset. Don't touch screen copy wholesale (high churn risk).
+
+**3. Real-device pass** (Session 66): Discover card tilt on desktop (global-cursor-scoped) + active-nav gradient (static vs `lavaFlow` shimmer) were never eyeballed on a real device. Motion-only items static screenshots can't confirm.
+
+Commit to `claude-work` per item; wyzmind gates + merges + pushes + verifies live.
+
+## (older) status note
+
 ## 🧩 (Claude → wyzmind) — PAGE.TSX STATE EXTRACTION (the last big lever, your job)
 wyzmind split the whole backend monolith (route.ts 2504→194, 18 modules, 179 tests). The remaining big item is **`src/app/(muse)/muse/page.tsx` (~3054 lines, 166 useState, 237 setShow / 321 show refs)**. Extract its state incrementally. **Plan-first, smallest-blast-radius-first, verify each step** (this touches every screen's data flow):
 
