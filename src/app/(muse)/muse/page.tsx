@@ -23,6 +23,7 @@ import { useChatState } from "./hooks/useChatState";
 import { useBriefsState } from "./hooks/useBriefsState";
 import { useModalVisibility } from "./hooks/useModalVisibility";
 import { useQuestsState } from "./hooks/useQuestsState";
+import { useAuthOnboardingState } from "./hooks/useAuthOnboardingState";
 import { requestMotionPermission } from "./hooks/useDeviceTilt";
 import SupportChat from "./components/SupportChat";
 import FeatureTour from "./components/FeatureTour";
@@ -111,15 +112,31 @@ function initialsAvatarUrl(name: string, key: string | number): string {  const 
 
 function MusePage() {
   const [screen, setScreen] = useState<Screen>("auth");
-  const [authMode, setAuthMode] = useState<"login"|"signup">("signup");
-  const [authEmail, setAuthEmail] = useState("");
-  const [authPass, setAuthPass] = useState("");
-  const [authName, setAuthName] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
+  const {
+    authMode, setAuthMode,
+    authEmail, setAuthEmail,
+    authPass, setAuthPass,
+    authName, setAuthName,
+    authLoading, setAuthLoading,
+    formErrors, setFormErrors,
+    obStep, setObStep,
+    obData, setObData,
+    testScreen, setTestScreen,
+    testBirthMonth, setTestBirthMonth,
+    testBirthDay, setTestBirthDay,
+    testBirthYear, setTestBirthYear,
+    testMbtiAnswers, setTestMbtiAnswers,
+    testLevels, setTestLevels,
+    obSelects, setObSelects,
+    obTestKey, setObTestKey,
+    obTestStep, setObTestStep,
+    obProfilePic, setObProfilePic,
+    obConnectedSocials, setObConnectedSocials,
+    obPortfolioItems, setObPortfolioItems,
+    obPortfolioSlot, setObPortfolioSlot,
+  } = useAuthOnboardingState();
   const [showPass, setShowPass] = useState(false);
   const [authUser, setAuthUser] = useState<{id:string;email:string;profile?:{id:string;[key:string]:unknown}}|null>(null);
-  const [obStep, setObStep] = useState(0);
-   const [obData, setObData] = useState<{name?:string;loc?:string;bio?:string;type?:string;looking?:string[];conn?:string[];styles?:string[];zodiac?:string;chinese?:string;mbti?:string;lifePath?:number;referralCode?:string}>({});
    const [currentUser, setCurrentUser] = useState({ id:"you", name:"You", type:"Photographer", exp:"New here", avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", stats:{matches:0,likes:0,superLikes:0,passes:0,bookingsCompleted:0,matchesReceived:0,messagesSent:0}, createdAt:Date.now(), referrals:0, portfolios:[] as {img:string;title:string;type:string}[], foundingTier:"" as string, proExpiresAt:"" as string, tier:"free", nsfw:false as boolean, status:"" as string });
 const [excludedPortfolios, _setExcludedPortfolios] = useState<string[]>(EXCLUDED_PORTFOLIOS);
   const [portfolioAccess, _setPortfolioAccess] = useState<{[key: string]: "public" | "private" | "invite"}>({});
@@ -258,21 +275,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   // Personality Discovery
   const [_obStep10Known, _setObStep10Known] = useState<"yes"|"no"|"test"|null>(null);
-  const [testScreen, setTestScreen] = useState<"zodiac"|"mbti"|"chinese"|"lifepath"|"done"|null>(null);
-  const [testBirthMonth, setTestBirthMonth] = useState("");
-  const [testBirthDay, setTestBirthDay] = useState("");
-  const [testBirthYear, setTestBirthYear] = useState("");
-  const [testMbtiAnswers, setTestMbtiAnswers] = useState<Record<string,string>>({});
-  const [formErrors, setFormErrors] = useState<Record<string,string>>({});
-  const [testLevels, setTestLevels] = useState<{zodiac:number;mbti:number;chinese:number;lifePath:number}>({zodiac:1,mbti:1,chinese:1,lifePath:1});
-  const [obSelects, setObSelects] = useState<string[]>([]);
-  const [obTestKey, setObTestKey] = useState<string>("");
-  const [obTestStep, setObTestStep] = useState(0);
-  const [obProfilePic, setObProfilePic] = useState<string | null>(null);
-  const [obConnectedSocials, setObConnectedSocials] = useState<Record<string, boolean>>({});
-  const [obPortfolioItems, setObPortfolioItems] = useState<{img:string;title:string}[]>([]);
   const portfolioInputRef = useRef<HTMLInputElement>(null);
-  const [obPortfolioSlot, setObPortfolioSlot] = useState<number | null>(null);
   const [matchesView, setMatchesView] = useState<"list"|"grid">("list");
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
