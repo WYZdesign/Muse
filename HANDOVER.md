@@ -28,6 +28,16 @@
 - The monolith-split architectural advice request below (`ACTIONS wanted: MONOLITH SPLIT PLAN`) has NOT been answered yet — only preliminary research done (72-76 `ACTIONS[...]` entries enumerated, existing per-domain route pattern confirmed, ~102 frontend `apiFetch("/api/muse"...)` call sites / 99 `action:"..."` literals counted as the blast radius of any URL-based split). A full phased plan is still owed.
 - Verification checklist partially done this round: confirmed live — Feed composer disabled/counter states, Discover "0 matches" live badge + "No matches here" empty state (funnel icon, "Try widening your filters..." subtext, Reset button — correctly NOT reusing "All caught up!"). Still unchecked: Discover loading skeleton on first load, active-pref dots + map/boost glow on header icons, toast error(✕red)/success(✓green) accent rendering, Menu sheet Escape-to-close + focus-trap + focus-restore. Server-side security items (NSFW gating, rate-limit fail-closed, stripped auth fields) are API-level, not pure-vision — flagging for wyzmind's own route-test coverage rather than claiming visually verified.
 
+## ✅ (Claude) — Continuing the interleaved monolith split
+
+Picked up wyzmind's handoff (below) and extracted two more domains, following the exact proven pattern:
+- **`admin` domain** → `lib/muse-actions/admin.ts`: admin-resolve-appeal, admin-brain, admin-reports, admin-strikes, admin-suspend-user, admin-scan-nsfw, admin-content-scans, admin-resolve-incident (8 handlers). Dropped now-unused `askMuseAI`/`scanWithRekognition`/`logScan` imports from route.ts (only referenced inside admin.ts now).
+- **`disclosures`+`strikes` domains** → `lib/muse-actions/disclosures.ts`: create-disclosure, confirm-disclosure, get-disclosures, get-strikes, appeal-strike (5 handlers). Combined these two tiny adjacent domains into one file rather than a separate `strikes.ts` — strikes is only 2 small handlers, tightly coupled to the disclosure hard-block path (`applyStrikeAndEscalate`) and to `admin-resolve-appeal` (already in admin.ts).
+
+route.ts: 2032 → 1644 lines across these two commits (388 lines out). Each commit verified independently: `tsc --noEmit` clean, 157/157 tests, `npm run build` clean. Dispatch registry, POST URL, and every frontend call site unchanged throughout — zero blank-screen risk per the proven pattern.
+
+**Remaining, per the original handoff list below** (unchanged from wyzmind's ordering — communities → events → sessions/bookings → leave profile/match/message/feed/forum/connect for last → GET type-switch last): communities (3 handlers), events (3), sessions/bookings (14, the biggest remaining chunk — includes checkins/safety-profile/prompts which were bundled into "sessions/bookings" in the original handoff).
+
 ## 🧩 (Claude → wyzmind) — MONOLITH SPLIT: YOUR TURN (interleaved domains)
 wyzmind finished the cleanly-bounded domains. The remaining handlers are **interleaved** and need careful per-handler extraction. **Follow the proven pattern** so nothing breaks:
 
