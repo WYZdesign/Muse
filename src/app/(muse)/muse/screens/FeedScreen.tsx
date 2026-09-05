@@ -329,7 +329,10 @@ export const FeedScreen = memo(function FeedScreen({
             </div>
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-            <textarea className="inp" placeholder="Share your work, ideas, or find collaborators..." rows={2} value={feedText} onChange={e => setFeedText(e.target.value)} style={{ resize: "none", margin: 0, minHeight: 52, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)" }} />
+            <textarea className="inp" placeholder="Share your work, ideas, or find collaborators..." rows={2} value={feedText} maxLength={500} onChange={e => setFeedText(e.target.value)} style={{ resize: "none", margin: 0, minHeight: 52, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)" }} />
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+              <span style={{ fontSize: 11, color: feedText.length > 450 ? "#ff8a80" : "var(--muted)", fontWeight: 600 }}>{feedText.length}/500</span>
+            </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", width: "100%" }}>
               <label style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }}>
                 <FiImage size={16} />
@@ -364,7 +367,9 @@ export const FeedScreen = memo(function FeedScreen({
               ))}
               <button
                 className="btn btn-gold"
-                style={{ flex: 1, padding: "10px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap" }}
+                disabled={!feedText.trim() && !feedMedia.length}
+                style={{ flex: 1, padding: "10px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap", opacity: (!feedText.trim() && !feedMedia.length) ? 0.5 : 1, cursor: (!feedText.trim() && !feedMedia.length) ? "not-allowed" : "pointer" }}
+                aria-disabled={!feedText.trim() && !feedMedia.length}
                 onClick={async () => {
                   if (feedText.trim() || feedMedia.length) {
                     const txt = feedText.trim();
