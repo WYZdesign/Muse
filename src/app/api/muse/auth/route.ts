@@ -13,6 +13,15 @@ function validatePassword(pw: string): string | null {
   return null;
 }
 
+// Never leak internal/account rows wholesale to the client. Strip auth_id, email
+// (the client reads email from the Supabase user object, not the profile), and
+// internal/enforcement flags; keep only what the app's screens/normalizers read.
+function pubProfile(p: any): any {
+  if (!p) return p;
+  const { auth_id, suspended, created_at, updated_at, tier, ...safe } = p;
+  return safe;
+}
+
 function bearerOrBodyToken(req: NextRequest, body: Record<string, unknown>): string {
   const header = req.headers.get("authorization") || "";
   const bearer = header.replace(/^Bearer\s+/i, "").trim();
@@ -90,7 +99,7 @@ export async function POST(req: NextRequest) {
       const sb = getServiceClient();
       const { data: profile } = await sb.from("muse_profiles").select("*").eq("auth_id", authData.user.id).maybeSingle();
 
-      return NextResponse.json({ success: true, user: authData.user, profile, session: authData.session });
+      return NextResponse.json({ success: true, user: authData.user, profile: pubProfile(profile), session: authData.session });
     }
 
     if (action === "session") {
@@ -139,7 +148,7 @@ export async function POST(req: NextRequest) {
         sb.from("muse_profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", profile.id).then(() => {}, () => {});
       }
 
-      return NextResponse.json({ success: true, user, profile });
+      return NextResponse.json({ success: true, user, profile: pubProfile(profile) });
     }
 
     if (action === "logout") {
@@ -207,7 +216,7 @@ export async function POST(req: NextRequest) {
       }
       const { data, error } = await sb.from("muse_profiles").update(updates).eq("auth_id", user.id).select("*").maybeSingle();
       if (error) return safeServerError(error, "update-profile update");
-      return NextResponse.json({ success: true, profile: data });
+      return NextResponse.json({ success: true, profile: pubProfile(data) });
     }
 
     if (action === "delete-account") {
