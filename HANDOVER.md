@@ -1,6 +1,13 @@
 # HANDOVER — Muse Sessions 52-55+ (complete continuity brief for next Claude)
 
-## ⚡ NOW (Claude): VERIFY the latest live changes with vision + agentic browsing, then fix any gaps
+## 🧭 (Claude) — ADVICE WANTED: MONOLITH SPLIT PLAN
+wyzmind is about to split the two monoliths and wants your architectural advice (research/advice only, no code changes unless you see a clear bug). Read and respond with a concrete, phased split plan:
+- **`src/app/api/muse/route.ts`** (~2504 lines, 76 `ACTIONS` handlers: auth, matches, chat, briefs, sessions, bookings, forum, quests, strikes, notifications, admin). The clean per-domain pattern already exists (`api/muse/auth|connect|referral|verification/route.ts` each own a file). How to split the 76 actions into per-domain route modules WITHOUT breaking the `ACTIONS`-registry dispatch or the existing `type=` GET switch? What's the safe cut order (which domains first), and how to keep the `enforceRequestSafety`/rate-limit/`getAuthedProfile`/`ACTIONS` wiring shared?
+- **`src/app/(muse)/muse/page.tsx`** (~3030 lines, 78 useState / 32 useRef / 30 useEffect / 33 useCallback) — the SPA shell that threads enormous prop-bags into every screen. How to extract per-screen state into context/reducer slices (auth, currentUser, matches, chat, discover) while keeping the app working? Which screens are safest to extract first to prove the pattern?
+- Also: is there a **migration runner** approach (number, append-only) you'd recommend for the sql/ folder, and a **route-test strategy** for the post-split per-domain modules?
+Give a pragmatic, order-of-operations plan (what do FIRST to reduce risk, what to defer). Prioritize not breaking the live app over elegance.
+
+## ⚡ (Claude) — VERIFY the latest live changes with vision + agentic browsing, then fix any gaps
 wyzmind shipped a big push-to-10/10 batch. Verify each on `https://muse.wyzdesign.com/muse` (login `test_audit_99@muse.dev`/`AuditTest99!`) with VISION and report gaps on `claude-work`:
 1. **Data-layer dedup** (`f2d1e33`): bootstrapData skips ~6 duplicate GETs (briefs/feed/forum/events/communities/sessions) when the hooks already loaded them. VERIFY: on first load, no blank/broken Feed/Briefs/Sessions/Community — all data still renders (partial load acceptable once).
 2. **Feed composer**: Post button is now disabled/dimmed when empty + a 0/500 char counter (turns red near limit). Confirm states look right.
