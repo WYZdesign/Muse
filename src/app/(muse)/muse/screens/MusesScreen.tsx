@@ -2,6 +2,7 @@
 
 import React, { memo, useEffect } from "react";
 import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../hooks/useDeviceTilt";
+import Image from "next/image";
 import { FiArrowLeft, FiSearch, FiGrid, FiList } from "react-icons/fi";
 import MatchCard from "../components/MatchCard";
 import Nav from "../components/Nav";
@@ -160,7 +161,7 @@ export const MusesScreen = memo(function MusesScreen({
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 }}>
               {likedBy.map(p => (
                 <div key={p.id} className="muse-likes-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (currentUser.tier !== "muse_pro") { showToast("Upgrade to Muse Pro to view profiles"); } else { setViewProfile(p); } } }} style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "3/4", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }} onClick={() => { if (currentUser.tier !== "muse_pro") { showToast("Upgrade to Muse Pro to view profiles"); } else { setViewProfile(p); } }}>
-                  <img loading="lazy" src={p.img} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", filter: currentUser.tier !== "muse_pro" ? "blur(4px)" : undefined }} />
+                  <Image loading="lazy" src={p.img} alt={p.name} fill sizes="(max-width: 600px) 50vw, 300px" style={{ objectFit: "cover", filter: currentUser.tier !== "muse_pro" ? "blur(4px)" : undefined }} />
                   <div className="muse-likes-info" style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 10px", background: "linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.6) 60%,transparent 100%)" }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{p.name}</div>
                     <div style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600 }}>{p.type}</div>

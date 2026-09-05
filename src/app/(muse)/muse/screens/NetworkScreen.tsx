@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, memo } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import { createSpatialScene } from "../hooks/useDeviceTilt";
 import { FiArrowLeft, FiShare2, FiMapPin, FiBriefcase, FiStar, FiFlag, FiMessageCircle, FiChevronDown, FiChevronUp, FiUserPlus, FiSearch, FiTarget, FiZap, FiArrowUpRight, FiDollarSign } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
@@ -554,15 +555,13 @@ export const NetworkScreen = memo(function NetworkScreen({
                 height: 570,
               }}
             >
-              <img
+              <Image
                 loading="lazy"
                 src={p.img}
                 alt={p.name}
+                fill
+                sizes="(max-width: 600px) 100vw, 500px"
                 style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
                   objectFit: "cover",
                 }}
                 onError={handleImgError}
@@ -1253,10 +1252,12 @@ export const NetworkScreen = memo(function NetworkScreen({
             </button>
 
             <div style={{ position: "relative", height: 420, flexShrink: 0 }}>
-              <img
+              <Image
                 src={proDetail.img}
                 alt={proDetail.name}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                fill
+                sizes="(max-width: 600px) 100vw, 500px"
+                style={{ objectFit: "cover" }}
                 onError={handleImgError}
               />
               <div

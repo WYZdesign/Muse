@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
+import Image from "next/image";
 import { FiArrowLeft, FiImage, FiSend } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
@@ -73,7 +74,7 @@ export const ChatScreen = memo(function ChatScreen({
         <div className="chat-wrap">
           <div className="chat-header">
             <button className="chat-back" onClick={() => showScreen("matches")}><FiArrowLeft size={20} /></button>
-            <img loading="lazy" src={chatTarget.img} alt={chatTarget.name} className="chat-avatar" onError={handleImgError} onClick={() => setViewProfile(chatTarget)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewProfile(chatTarget); } }} style={{ cursor: "pointer" }} />
+            <Image loading="lazy" src={chatTarget.img} alt={chatTarget.name} width={40} height={40} className="chat-avatar" onError={handleImgError} onClick={() => setViewProfile(chatTarget)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewProfile(chatTarget); } }} style={{ cursor: "pointer" }} />
             <div className="chat-info">
               <div className="chat-name">{chatTarget.name}</div>
               <div className="chat-type">{typingTarget === chatTarget.id ? <span style={{ color: "var(--gold)", fontStyle: "italic" }}>typing…</span> : chatTarget.type}</div>

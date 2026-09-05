@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo, useState, useEffect } from "react";
+import Image from "next/image";
 import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
@@ -154,7 +155,9 @@ export const CommunityScreen = memo(function CommunityScreen({
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 100px" }}>
               {/* Same img:'' seed-data gap as the card views — gradient-initial fallback */}
               {detailItem.img ? (
-                <img src={detailItem.img} alt="Photo" style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 16, marginBottom: 16 }} onError={handleImgError} />
+                <div style={{ position: "relative", width: "100%", height: 200, borderRadius: 16, marginBottom: 16, overflow: "hidden" }}>
+                  <Image src={detailItem.img} alt="Photo" fill sizes="(max-width: 600px) 100vw, 500px" style={{ objectFit: "cover" }} onError={handleImgError} />
+                </div>
               ) : (
                 <div style={{ width: "100%", height: 200, borderRadius: 16, marginBottom: 16, background: "linear-gradient(135deg, #2a1a3e 0%, #1a0a2e 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,215,0,0.6)", fontSize: "2.5em", fontWeight: 700 }}>
                   {((detailType === "group" ? detailItem.name : detailItem.title) || "").trim().charAt(0).toUpperCase()}
@@ -231,7 +234,9 @@ export const CommunityScreen = memo(function CommunityScreen({
                 <img src=""> doesn't reliably fire onError, so guard explicitly and render an
                 initials-gradient banner instead of a blank hole. */}
             {c.img ? (
-              <img loading="lazy" src={c.img} alt={c.name} className="comm-banner" style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }} onError={handleImgError} />
+              <div style={{ position: "relative", width: "100%", height: 140 }}>
+                <Image loading="lazy" src={c.img} alt={c.name} fill sizes="(max-width: 600px) 100vw, 500px" className="comm-banner" style={{ objectFit: "cover" }} onError={handleImgError} />
+              </div>
             ) : (
               <div style={{ width: "100%", height: 140, background: "linear-gradient(135deg, #2a1a3e 0%, #1a0a2e 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,215,0,0.6)", fontSize: "2em", fontWeight: 700 }}>
                 {(c.name || "").trim().charAt(0).toUpperCase()}
@@ -269,7 +274,9 @@ export const CommunityScreen = memo(function CommunityScreen({
         {commTab === "events" && events.map((ev: any) => (
           <div key={ev.id} className="conn-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openEventDetail(ev); } }} style={{ flexDirection: "column", alignItems: "center", marginBottom: 10, padding: 0, overflow: "hidden", borderRadius: 16, cursor: "pointer" }} onClick={() => openEventDetail(ev)}>
             {ev.img ? (
-              <img loading="lazy" src={ev.img} alt={ev.title} className="comm-banner" style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} onError={handleImgError} />
+              <div style={{ position: "relative", width: "100%", height: 160 }}>
+                <Image loading="lazy" src={ev.img} alt={ev.title} fill sizes="(max-width: 600px) 100vw, 500px" className="comm-banner" style={{ objectFit: "cover" }} onError={handleImgError} />
+              </div>
             ) : (
               <div style={{ width: "100%", height: 160, background: "linear-gradient(135deg, #2a1a3e 0%, #1a0a2e 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,215,0,0.6)", fontSize: "2em", fontWeight: 700 }}>
                 {(ev.title || "").trim().charAt(0).toUpperCase()}

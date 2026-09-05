@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
+import Image from "next/image";
 import { FiArrowLeft, FiPlus } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen, Brief } from "../components/types";
@@ -143,7 +144,7 @@ export const CollabScreen = memo(function CollabScreen({
           return ordered.map(brief => (
             <div key={brief.id} className="brief-card">
               <div className="brief-header" style={{ flexWrap: "wrap", gap: 6 }}>
-                <img loading="lazy" src={brief.authorImg} alt={brief.author} className="brief-avatar" />
+                <Image loading="lazy" src={brief.authorImg} alt={brief.author} width={86} height={86} className="brief-avatar" />
                 <div className="brief-info" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <div className="brief-author"><strong>{brief.author}</strong></div>
                   <div className="brief-meta" style={{ flexDirection: "column", alignItems: "center", gap: 2 }}>
