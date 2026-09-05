@@ -41,6 +41,7 @@ export interface FeedScreenProps {
   bootstrapped?: boolean;
   feedPostsStatic?: any[];
   setFeedPostsStatic?: React.Dispatch<React.SetStateAction<any[]>>;
+  demo?: boolean;
   feedReactions?: Record<string, string[]>;
   replyingTo?: any;
   setReplyingTo?: (id: any) => void;
@@ -87,6 +88,7 @@ export const FeedScreen = memo(function FeedScreen({
   bootstrapped = false,
   feedPostsStatic = [],
   setFeedPostsStatic = () => {},
+  demo = true,
   feedReactions = {},
   replyingTo = null,
   setReplyingTo = () => {},
@@ -416,7 +418,7 @@ export const FeedScreen = memo(function FeedScreen({
             <div className="empty-sub">Be the first to share your creative work!</div>
           </div>
         ) : (
-          [...feedPostsStatic, ...feedPosts].sort((a, b) => b.id - a.id).filter(p => feedFilter === "all" || (feedFilter === "bts" ? (p.isBts || p.type === "video" && !p.text) : p.type === feedFilter)).map(post => {
+          [...(demo ? feedPostsStatic : []), ...feedPosts].sort((a, b) => b.id - a.id).filter(p => feedFilter === "all" || (feedFilter === "bts" ? (p.isBts || p.type === "video" && !p.text) : p.type === feedFilter)).map(post => {
             const feedReactionArr = feedReactions[post.id] || [];
             const totalReactions = ["❤️", "🔥", "😍", "😂", "😢", "😡"].reduce((s, r) => s + (feedReactionArr.filter(x => x === r).length || 0), (post.liked ? 1 : 0));
             // Views: approximation if backend doesn't supply a `views` field yet.
