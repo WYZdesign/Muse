@@ -2005,7 +2005,15 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "profiles") {
-      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, photos, suspended").limit(100);
+      // NSFW gating: only surface nsfw profiles/photos if the requesting user
+      // has passed age verification. Enforced server-side (the client blur is
+      // cosmetic, not a control). Default deny unless the viewer is verified.
+      let viewerVerified = false;
+      if (profileId) {
+        const { data: vp } = await sb.from("muse_profiles").select("age_verified").eq("id", profileId).maybeSingle();
+        viewerVerified = !!(vp && (vp as any).age_verified);
+      }
+      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, photos, suspended, nsfw").limit(100);
       // Blocks were write-only until now — muse_blocks was never consulted
       // anywhere, so a blocked user could still show up in Discover, match,
       // and message the person who blocked them. Filter both directions:
@@ -2019,9 +2027,14 @@ export async function GET(req: NextRequest) {
         if (profileId && String(p.id) === String(profileId)) return false;
         if (blockedIds.has(String(p.id))) return false;
         if (p.suspended) return false;
+        if (p.nsfw && !viewerVerified) return false;
         const hasAvatar = typeof p.avatar === "string" && p.avatar.trim().length > 0;
         const hasPhotos = Array.isArray(p.photos) && p.photos.length > 0;
         return hasAvatar || hasPhotos;
+      }).map((p: any) => {
+        // Strip NSFW photos entirely unless the viewer is verified.
+        if (p.nsfw && !viewerVerified) return { ...p, photos: undefined, avatar: undefined };
+        return p;
       });
       return NextResponse.json({ profiles: visible });
     }

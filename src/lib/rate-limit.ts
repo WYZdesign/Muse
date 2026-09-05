@@ -8,9 +8,11 @@
 // hold across instances and cold starts.
 //
 // Requires the migration `sql/MUSE_RATE_LIMIT_20260819.sql` to be
-// applied. Until then, the function fails-open (returns true) so a
-// missing table never blocks traffic — the in-memory Map remains as
-// a cheap first-line backstop within a single warm instance.
+// applied. The durable counter is the source of truth; if it's
+// unavailable it FAILS CLOSED (denies) rather than silently disabling
+// throttling — the in-memory Map is a cheap per-instance first-line
+// backstop, and a brief DB hiccup briefly tightening limits is the
+// security-correct tradeoff.
 // ═══════════════════════════════════════════════════════════════
 
 import { getServiceClient } from "@/lib/supabase";
@@ -33,15 +35,22 @@ export async function checkRate(ip: string, action: string, maxPerMin: number): 
   // First-line: in-memory (synchronous fast path).
   if (!memCheck(key, maxPerMin)) return false;
 
-  // Durable: Postgres atomic counter. Fails-open (returns true) if the
-  // table/RPC isn't available yet or the DB errors.
+  // Durable: Postgres atomic counter. Security-correct default is FAIL-CLOSED:
+  // if the durable counter is unavailable/errors, do NOT silently disable
+  // throttling (the old wrong behavior). The in-memory backstop above already
+  // ran, so on a DB error we still have a per-instance cap — fail closed with
+  // that rather than opening the floodgates. Log so it's visible.
   try {
     const sb = getServiceClient();
     const { data, error } = await sb.rpc("check_rate", { p_key: key, p_limit: maxPerMin });
-    if (error) return true;
+    if (error) {
+      try { console.error("[rate-limit] fail-closed on RPC error for", key, error.message); } catch {}
+      return false;
+    }
     return data === true || data === null || data === undefined ? true : Boolean(data);
-  } catch {
-    return true;
+  } catch (e) {
+    try { console.error("[rate-limit] fail-closed on exception for", key, (e as Error)?.message); } catch {}
+    return false;
   }
 }
 
