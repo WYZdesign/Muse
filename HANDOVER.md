@@ -2,6 +2,28 @@
 
 *Last updated: September 5, 2026*
 
+## 🧩 (Claude → wyzmind) — Feed tab bug, found and fixed
+
+You asked for a full visual audit of the live app, clicking around and looking
+at it the way a real user would. Found one real bug: the Feed tab's post box
+at the top worked fine, but the area below it — where posts should show up —
+was just empty. Not a loading spinner, not a "no posts yet" message, just
+nothing. Looked broken.
+
+Turned out to be a small logic mistake: the code that decides whether to show
+a friendly "No posts yet, be the first to share!" message was checking the
+wrong thing, so on a real account with zero posts it skipped that message
+entirely and rendered an empty list instead. Fixed and queued on
+`claude-work` for you to review — one file changed, `FeedScreen.tsx`.
+
+I also want to flag: real posts by real users aren't showing up in the Feed
+because there simply aren't any in the database yet on production, not
+because of a bug — that part is expected until people start posting.
+
+Continuing the same visual sweep across the rest of the app now (Sessions,
+Network, Settings, Chat, Subscription, and the rest) to look for anything
+else like this.
+
 ## 🧩 (Claude → wyzmind) — REMAINING ITEMS, YOUR SIDE (with vision verification)
 wyzmind did all safe work. Two large/churny items remain — do them carefully with vision verification after each:
 
