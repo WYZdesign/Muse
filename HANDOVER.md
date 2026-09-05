@@ -1,5 +1,20 @@
 # HANDOVER — Muse Sessions 52-55+ (complete continuity brief for next Claude)
 
+## 🎉 (Claude → wyzmind) — Monolith split: ALL 74 POST actions now out of route.ts
+
+Finished every remaining domain from the "highest-traffic, save for last" list plus the small leftover cluster:
+- **`connect`** → `lib/muse-actions/connect.ts` (1 handler).
+- **`profile`** → `lib/muse-actions/profile.ts` (1 handler).
+- **`matching`** (match, unmatch, track-view) → `lib/muse-actions/matching.ts` (3 handlers).
+- **`messaging`** (message) → `lib/muse-actions/messaging.ts` (1 handler; dropped one genuinely-dead `[userA, userB] = ...sort()` destructure along the way — never read, matchId already recomputes the sorted pair independently).
+- **`feed`** (feed, like-feed-post, feed-comment, create-moment, like-moment, brief, brief-apply) → `lib/muse-actions/feed.ts` (7 handlers, grouped per wyzmind's own suggested split).
+- **`forum`** (forum's multi-verb `rawType` dispatch preserved as-is, report, block, unblock, get-blocks) → `lib/muse-actions/forum.ts` (5 handlers).
+- **`misc`** (save-preferences, apply-promo, mark-read, sync, get-payments, search) → `lib/muse-actions/misc.ts` (6 handlers; dropped one unused `cursor` destructure from search).
+
+`route.ts`: 2032 → 699 lines total across this whole split effort (~66% smaller). Every commit verified independently: `tsc --noEmit` clean, 157/157 tests, `npm run build` clean. Dispatch registry, POST URL, and every one of the ~102 frontend `apiFetch("/api/muse", {action:...})` call sites unchanged throughout — zero blank-screen risk, same pattern proven across all 12 domain modules now (8 done between us earlier, 7 more this pass... `shared`, `quests`, `albums`, `feedback`, `admin`, `disclosures`, `communities`, `sessions`, `connect`, `profile`, `matching`, `messaging`, `feed`, `forum`, `misc` — 15 modules total under `lib/muse-actions/`). Also cleaned up a trail of now-dead imports left behind as each domain's code moved out (moderateText, sendEmail, notify, screenText, sanitizeText, validateInput, emailProfile, pushToProfile, bumpQuest, setQuestProgress, MAX_LENGTHS, STRIKE_SUSPENSION_THRESHOLD, getAuthUser, checkRateUser, askMuseAI, scanWithRekognition, logScan, Stripe, parseRateToCents — all now only referenced inside the domain module that took over their call sites).
+
+**What's left**, per the original goal stated in the handoff below ("route.ts → POST dispatcher + GET type-switch + ACTIONS wiring, <400 L"): route.ts is at 699 L now, which is dispatcher + registry wiring + the `GET` `type=...` switch (~460 L of that total). The handoff explicitly said to split GET only after POST was fully migrated — that condition is now met. Splitting GET is a genuinely different shape of change (a big `if (type===...)` chain, not a registry of named handlers) so I stopped here rather than free-lancing a new pattern without a check-in — happy to take it on next if you want the same treatment, or it's a reasonable place for you to take over given GET's shape doesn't match the ACTIONS-registry pattern this whole effort has been mechanically repeating.
+
 ## ✅ Session (this round) — CRITICAL Feed regression found + fixed, hoop tightened, advice still owed
 
 **Found and fixed a live production bug** while running wyzmind's push-to-10/10 verification checklist: the Feed screen was rendering permanently blank in prod. Root cause was in `page.tsx`'s `bootstrapData`, in the dedup optimization added for the "no duplicate GETs" work:
