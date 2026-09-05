@@ -637,7 +637,7 @@ export const MenuModal = memo(function MenuModal({
                         it, still never touching. orbit-full added (Session 85 final
                         correction): without it this rendered as a partial comet-arc, not
                         a full ring — see the .avatar-orbit comment in muse.css. */}
-                    <div className="avatar-orbit orbit-full orbit-slow" style={{ "--orbit-size": "130px" } as React.CSSProperties} />
+                    <div className="avatar-orbit orbit-full orbit-slow" style={{ "--orbit-size": "124px" } as React.CSSProperties} />
                     <div className="profile-ring swirl-ring-1" />
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>{currentUser.name}</div>

@@ -588,7 +588,7 @@ img{background-color:#1a0a2e}
    back-and-forth stutter the ring's old orbitSpin had — I'd only fixed the ring
    overlay, not the avatar underneath it. Sizing (104px ring / 100px avatar) is
    tighter than my first pass and confirmed non-touching via live screenshot. */
-.profile-avatar{width:100px;height:100px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-origin:border-box;background-clip:padding-box,border-box;background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(var(--grad-angle,135deg),var(--gold),var(--amber),var(--pink),var(--lavender));background-size:100% 100%;animation:avatarEccentric 6s linear infinite}
+.profile-avatar{width:100px;height:100px;box-sizing:border-box;border-radius:50%;object-fit:cover;background-color:var(--bg);animation:avatarEccentric 6s linear infinite}
 /* Torreé's Session 84 ask: halo band trimmed thinner (was a 3.7px band, now ~2.2px)
    so it reads as a delicate halo rather than a thick ring, especially now that
    avatar-orbit sits clearly outside it (see .orbit-outer) instead of fusing with it.
