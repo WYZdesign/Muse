@@ -47,7 +47,16 @@ export async function checkRate(ip: string, action: string, maxPerMin: number): 
       try { console.error("[rate-limit] fail-closed on RPC error for", key, error.message); } catch {}
       return false;
     }
-    return data === true || data === null || data === undefined ? true : Boolean(data);
+    // check_rate() always RETURNS BOOLEAN from a single-row upsert, so a
+    // successful call should only ever hand back `true`/`false` — but the
+    // previous version treated null/undefined as an implicit ALLOW, which
+    // silently contradicts the fail-closed design documented above (e.g. if
+    // the RPC signature ever changes, or some client/proxy layer swallows
+    // the returned value). Require an explicit `true`; anything else denies.
+    if (data === true) return true;
+    if (data === false) return false;
+    try { console.error("[rate-limit] fail-closed on unexpected RPC result for", key, JSON.stringify(data)); } catch {}
+    return false;
   } catch (e) {
     try { console.error("[rate-limit] fail-closed on exception for", key, (e as Error)?.message); } catch {}
     return false;

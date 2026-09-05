@@ -18,7 +18,12 @@ function validatePassword(pw: string): string | null {
 // internal/enforcement flags; keep only what the app's screens/normalizers read.
 function pubProfile(p: any): any {
   if (!p) return p;
-  const { auth_id, suspended, created_at, updated_at, tier, ...safe } = p;
+  // Note: this only ever wraps the caller's own profile (login/session/
+  // update-profile all fetch by the authed user's own auth_id), so `email`
+  // slipping through here was never a cross-user leak — but the comment
+  // above has always claimed email is stripped, and it wasn't actually in
+  // this destructure list. Fixed to match the stated intent.
+  const { auth_id, email, suspended, created_at, updated_at, tier, ...safe } = p;
   return safe;
 }
 
