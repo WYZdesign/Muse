@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { authFetch } from "../lib/auth-client";
 
 type ReferralData = {
@@ -112,7 +113,7 @@ export default function ReferralPanel({ onClose }: Props) {
             {data.referrals.slice(0, 5).map((r: any) => (
               <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                 <div style={{ width: 32, height: 32, borderRadius: 16, background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>
-                  {r.referee_id?.avatar ? <img src={r.referee_id.avatar} alt="Avatar" style={{ width: 32, height: 32, borderRadius: 16, objectFit: "cover" }} /> : "👤"}
+                  {r.referee_id?.avatar ? <Image src={r.referee_id.avatar} alt="Avatar" width={32} height={32} style={{ width: 32, height: 32, borderRadius: 16, objectFit: "cover" }} /> : "👤"}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, color: "#f5f0ff" }}>{r.referee_id?.name || "Friend"}</div>

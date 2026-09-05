@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { getServiceClient } from "@/lib/supabase";
 import type { Metadata } from "next";
 import { getPostShareUrl } from "@/lib/urls";
@@ -48,7 +49,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
       <Link href="/muse" style={{color:"#FFD700",textDecoration:"none",fontSize:14}}>← Back to Muse</Link>
       {authorAvatar ? (
         <div style={{display:"flex",gap:12,alignItems:"center",marginTop:20}}>
-          <img src={authorAvatar} alt={authorName} style={{width:48,height:48,borderRadius:14,objectFit:"cover"}} />
+          <Image src={authorAvatar} alt={authorName} width={48} height={48} style={{width:48,height:48,borderRadius:14,objectFit:"cover"}} />
           <div>
             <div style={{fontWeight:700}}>{authorName}</div>
             <div style={{color:"#aaa",fontSize:12}}>{time}</div>

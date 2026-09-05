@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { getServiceClient } from "@/lib/supabase";
 import type { Metadata } from "next";
 import { getProfileShareUrl } from "@/lib/urls";
@@ -40,7 +41,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
     <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#0a0612,#1a0a2e)",color:"#fff",fontFamily:"'Inter',system-ui,sans-serif",padding:24,maxWidth:640,margin:"0 auto"}}>
       <Link href="/muse" style={{color:"#FFD700",textDecoration:"none",fontSize:14}}>← Back to Muse</Link>
       <div style={{display:"flex",gap:18,alignItems:"center",marginTop:20}}>
-        {p.avatar ? <img src={p.avatar} alt={p.name} style={{width:96,height:96,borderRadius:24,objectFit:"cover",border:"2px solid rgba(255,215,0,0.3)"}} /> : null}
+        {p.avatar ? <Image src={p.avatar} alt={p.name} width={96} height={96} style={{width:96,height:96,borderRadius:24,objectFit:"cover",border:"2px solid rgba(255,215,0,0.3)"}} /> : null}
         <div>
           <h1 style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:30,margin:0}}>
             {p.name} {p.verified ? "✔" : ""}
