@@ -97,17 +97,36 @@ export const paymentsGet = async ({ sb, profile }: ActionContext) => {
   return NextResponse.json({ payments: deduped });
 };
 
+// Builds a safe quoted ilike pattern for embedding into a Supabase/PostgREST
+// `.or()` filter string. Without this, a raw `%${q}%` interpolation lets
+// user input containing `,` `(` `)` inject extra filter clauses (PostgREST's
+// `.or()` string splits on comma / groups on parens), and `%`/`_` in the
+// query act as unintended ilike wildcards. Fix: escape backslash first (the
+// ilike escape char), escape the wildcards and any embedded double-quote,
+// then wrap the whole value in double quotes — PostgREST's quoted-value
+// syntax treats everything inside as a literal, so `,`/`.`/`()` can no
+// longer break out of the filter string.
+function ilikeContainsPattern(raw: string): string {
+  const escaped = raw
+    .replace(/\\/g, "\\\\")
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_")
+    .replace(/"/g, '\\"');
+  return `"%${escaped}%"`;
+}
+
 export const searchAll = async ({ sb, rest, ip }: ActionContext) => {
   if (!await checkRate(ip, "search", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { query, type = "all", limit = 20 } = rest;
   if (!query || query.trim().length < 2) return NextResponse.json({ error: "Query must be at least 2 characters" }, { status: 400 });
   const q = query.trim();
+  const pattern = ilikeContainsPattern(q);
   const results: any = { users: [], briefs: [], communities: [] };
 
   if (type === "all" || type === "users") {
     const { data: users } = await sb.from("muse_profiles")
       .select("id, name, type, avatar, loc, bio, styles, looking, verified, tier")
-      .or(`name.ilike.%${q}%,bio.ilike.%${q}%,loc.ilike.%${q}%`)
+      .or(`name.ilike.${pattern},bio.ilike.${pattern},loc.ilike.${pattern}`)
       .limit(limit);
     results.users = users || [];
   }
@@ -115,7 +134,7 @@ export const searchAll = async ({ sb, rest, ip }: ActionContext) => {
   if (type === "all" || type === "briefs") {
     const { data: briefs } = await sb.from("muse_briefs")
       .select("id, title, description, type, budget, status, creator_id(name, avatar)")
-      .or(`title.ilike.%${q}%,description.ilike.%${q}%`)
+      .or(`title.ilike.${pattern},description.ilike.${pattern}`)
       .eq("status", "open")
       .limit(limit);
     results.briefs = briefs || [];
@@ -124,7 +143,7 @@ export const searchAll = async ({ sb, rest, ip }: ActionContext) => {
   if (type === "all" || type === "communities") {
     const { data: communities } = await sb.from("muse_communities")
       .select("id, name, description, cat, members, nsfw, img")
-      .or(`name.ilike.%${q}%,description.ilike.%${q}%,cat.ilike.%${q}%`)
+      .or(`name.ilike.${pattern},description.ilike.${pattern},cat.ilike.${pattern}`)
       .limit(limit);
     results.communities = communities || [];
   }
