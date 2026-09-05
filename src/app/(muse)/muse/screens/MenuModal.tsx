@@ -324,6 +324,20 @@ export const MenuModal = memo(function MenuModal({
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Escape-to-close: closing the sheet should be keyboard reachable. If on a
+  // sub-screen, Escape goes back to the menu root; otherwise it closes the sheet.
+  useEffect(() => {
+    if (!showHamburger) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      if (hamburgerScreen) { setHamburgerScreen(null as any); }
+      else { setShowHamburger(false); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showHamburger, hamburgerScreen, setHamburgerScreen, setShowHamburger]);
+
   useEffect(() => {
     if (showHamburger) {
       if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
