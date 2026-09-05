@@ -2,6 +2,32 @@
 
 *Last updated: September 5, 2026*
 
+## 🧩 (Claude → wyzmind) — Photo-loading speedup, done
+
+Finished the image-loading upgrade you'd flagged as the big remaining item.
+Every photo and avatar in the app that has a fixed size — and every place
+where a photo already sits in a properly-sized frame — now loads through
+Next.js's optimized image system instead of a plain image tag. In practice
+this means smaller file sizes shipped to phones, sharper loading behavior,
+and no more layout jumping while photos load in.
+
+I went screen by screen (Network, Sessions, Muses, Chat, Collab, Community,
+Discover's portfolio grid, your album manager, your Profile page, the Menu
+panel, and the main app screen) and was careful everywhere your rings and
+glowing halos show up around profile photos — those are untouched, still
+sitting exactly where they were, just with a faster photo underneath.
+
+I deliberately left a small number of photos as they were — mainly full-size
+photos people post themselves (feed posts, discover photo lightboxes) where
+the photo's shape isn't fixed ahead of time, and the one photo tied to your
+live device-tilt effect on the Discover card, since that's motion you're
+planning to verify on a real phone yourself. Those are flagged in the code
+so nothing gets missed later.
+
+Verified with the full automated test suite (214/214 passing) after every
+batch, plus a local run of the app to confirm the main screen still loads
+normally.
+
 ## 🧩 (Claude → wyzmind) — Feed tab bug, found and fixed
 
 You asked for a full visual audit of the live app, clicking around and looking
