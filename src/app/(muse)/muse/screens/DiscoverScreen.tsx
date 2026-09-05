@@ -294,6 +294,9 @@ export const DiscoverScreen = memo(function DiscoverScreen({
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 6, animation: "fadeIn .2s ease" }}>
                 <input className="inp" placeholder="Search..." value={discoverSearch} onChange={e => setDiscoverSearch(e.target.value)} autoFocus style={{ margin: 0, padding: "10px 14px", fontSize: 14, flex: 1, borderRadius: 14, minWidth: 0 }} />
+                {discoverSearch.trim() && (
+                  <span style={{ fontSize: 11, fontWeight: 700, color: filteredProfiles.length ? "var(--gold)" : "#ff8a80", padding: "3px 9px", borderRadius: 99, background: "rgba(255,255,255,0.06)", whiteSpace: "nowrap" }}>{filteredProfiles.length} {filteredProfiles.length === 1 ? "match" : "matches"}</span>
+                )}
                 <button className="hdr-btn" aria-label="Close search" style={{ width: 30, height: 30, borderRadius: "50%", fontSize: 12 }} onClick={() => { setDiscoverSearchOpen(false); setDiscoverSearch(""); }}>✕</button>
               </div>
             )}
