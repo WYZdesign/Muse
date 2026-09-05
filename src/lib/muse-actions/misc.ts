@@ -117,10 +117,16 @@ function ilikeContainsPattern(raw: string): string {
 
 export const searchAll = async ({ sb, rest, ip }: ActionContext) => {
   if (!await checkRate(ip, "search", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-  const { query, type = "all", limit = 20 } = rest;
+  const { query, type = "all", limit: rawLimit = 20 } = rest;
   if (!query || query.trim().length < 2) return NextResponse.json({ error: "Query must be at least 2 characters" }, { status: 400 });
   const q = query.trim();
   const pattern = ilikeContainsPattern(q);
+  // Client-supplied limit was passed straight into .limit() unchecked — a
+  // huge value could pull far more rows than the UI ever needs (cheap
+  // scraping/DoS vector), and a negative or non-numeric value could produce
+  // an unexpected Supabase error instead of a clean 400. Clamp to 1-50.
+  const parsedLimit = Number(rawLimit);
+  const limit = Number.isFinite(parsedLimit) ? Math.min(50, Math.max(1, Math.floor(parsedLimit))) : 20;
   const results: any = { users: [], briefs: [], communities: [] };
 
   if (type === "all" || type === "users") {
