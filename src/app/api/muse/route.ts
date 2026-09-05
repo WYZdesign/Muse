@@ -19,6 +19,7 @@ import { adminResolveAppeal, adminBrain, adminReports, adminStrikes, adminSuspen
 import { disclosureCreate, disclosureConfirm, disclosureGet, strikesGet, strikeAppeal } from "@/lib/muse-actions/disclosures";
 import { communityJoin, communityLeave, communityCreate, eventCreate, eventRsvp, eventCancelRsvp } from "@/lib/muse-actions/communities";
 import { sessionBook, sessionCreate, bookingRespond, bookingCancel, bookingComplete, reviewSubmit, checkinRespond, checkinsGet, safetyDetailsShare, safetyProfileSave, safetyProfileGet, promptsGet, promptResponseSave, promptResponsesGet } from "@/lib/muse-actions/sessions";
+import { connectRequest } from "@/lib/muse-actions/connect";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ACTION HANDLER REGISTRY
@@ -471,20 +472,9 @@ ACTIONS["book-session"] = sessionBook;
 ACTIONS["create-session"] = sessionCreate;
 
 // ═══ CONNECTIONS ═══
+// Handler extracted to lib/muse-actions/connect.ts (monolith split, interleaved-domain pass).
 
-ACTIONS["connect"] = async ({ sb, profile, rest, ip }) => {
-  if (!await checkRate(ip, "connect", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-  const { targetId } = rest;
-  if (!targetId) return NextResponse.json({ error: "targetId required" }, { status: 400 });
-  if (targetId === profile.id) return NextResponse.json({ error: "Cannot connect with yourself" }, { status: 400 });
-  if (!UUID_RE.test(String(targetId))) return NextResponse.json({ success: true, demo: true });
-  const { data: target } = await sb.from("muse_profiles").select("id").eq("id", targetId).maybeSingle();
-  if (!target) return NextResponse.json({ error: "Target not found" }, { status: 400 });
-  await sb.from("muse_connections").upsert({ user_id: profile.id, target_id: targetId, status: "pending" }, { onConflict: "user_id,target_id", ignoreDuplicates: true }).select();
-  await sb.from("muse_notifications").insert({ user_id: targetId, from_id: profile.id, type: "connection", body: `${profile.name} wants to connect`, read: false });
-  await emailProfile(sb, targetId, "New connection request ✦", "Someone wants to connect", `${profile.name} sent you a connection request.`, "View request", "https://muse.wyzdesign.com/muse");
-  return NextResponse.json({ success: true });
-};
+ACTIONS["connect"] = connectRequest;
 
 // ═══ PREFERENCES & SYNC ═══
 
