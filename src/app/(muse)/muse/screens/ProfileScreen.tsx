@@ -1,4 +1,5 @@
 import React, { memo, useState, useEffect } from "react";
+import Image from "next/image";
 import { FiArrowLeft, FiEdit2, FiSettings, FiUsers, FiShoppingBag, FiDollarSign, FiClock, FiExternalLink, FiTrendingUp } from "react-icons/fi";
 import { getReferralUrl } from "@/lib/urls";
 import Nav from "../components/Nav";
@@ -177,7 +178,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         </div>
         <div className="profile-top">
           <div className="profile-avatar-wrap">
-            <img loading="lazy" src={currentUser.avatar} alt={currentUser.name} className="profile-avatar" onError={handleImgError} />
+            <Image loading="lazy" src={currentUser.avatar} alt={currentUser.name} width={100} height={100} className="profile-avatar" onError={handleImgError} />
             {/* Hoolah-hoop: halo (.profile-ring) is the CSS-default 115px (Session 85:
                 a "decrease the halo" ask turned out to mean the ring's line thickness,
                 not diameter — see the .profile-ring comment in muse.css; diameter here
@@ -417,7 +418,7 @@ export const ProfileScreen = memo(function ProfileScreen({
               });
               if (filtered.length > 0) return filtered.slice(0, 9).map((p: any, i: number) => (
                 <div key={i} style={{ aspectRatio: "3/4", borderRadius: 12, overflow: "hidden", background: "#1a0a2e", position: "relative", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedPortfolio(p); } }} onClick={() => setSelectedPortfolio(p)}>
-                  <img loading="lazy" src={p.img} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={handleImgError} />
+                  <Image loading="lazy" src={p.img} alt={p.title} fill sizes="(max-width: 600px) 33vw, 200px" style={{ objectFit: "cover" }} onError={handleImgError} />
                   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px", background: "linear-gradient(to top,rgba(10,6,18,0.9),transparent)" }}>
                     <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.title}</div>
                     <div style={{ fontSize: 9, color: "var(--muted)" }}>{p.type}</div>
@@ -436,8 +437,8 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div className="section-text" style={{ marginBottom: 10 }}>Your latest connections</div>
           <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, scrollbarWidth: "none" }}>
             {matches.length > 0 ? matches.slice(0, 5).map(m => (
-              <div key={m.id} style={{ flexShrink: 0, width: 60, height: 60, borderRadius: "50%", overflow: "hidden", background: "#1a0a2e", border: "2px solid rgba(255,215,0,0.2)" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setChatTarget(m); showScreen("chat"); } }} onClick={() => { setChatTarget(m); showScreen("chat"); }}>
-                <img loading="lazy" src={m.img} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={handleImgError} />
+              <div key={m.id} style={{ flexShrink: 0, position: "relative", width: 60, height: 60, borderRadius: "50%", overflow: "hidden", background: "#1a0a2e", border: "2px solid rgba(255,215,0,0.2)" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setChatTarget(m); showScreen("chat"); } }} onClick={() => { setChatTarget(m); showScreen("chat"); }}>
+                <Image loading="lazy" src={m.img} alt={m.name} fill sizes="60px" style={{ objectFit: "cover" }} onError={handleImgError} />
               </div>
             )) : (
               <div style={{ flexShrink: 0, width: 60, height: 60, borderRadius: "50%", background: "rgba(255,255,255,0.03)", border: "2px dashed rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 10, textAlign: "center", gap: 2 }}>
@@ -454,7 +455,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {activityFeed.length > 0 ? activityFeed.slice(0, 4).map(a => (
               <div key={a.id} style={{ display: "flex", gap: 10, padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.04)" }}>
-                <img loading="lazy" src={a.avatar} alt="" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", background: "#1a0a2e" }} onError={handleImgError} />
+                <Image loading="lazy" src={a.avatar} alt="" width={36} height={36} style={{ borderRadius: "50%", objectFit: "cover", background: "#1a0a2e" }} onError={handleImgError} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><strong>{a.from}</strong> {a.text}</div>
                   <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{a.time}</div>
