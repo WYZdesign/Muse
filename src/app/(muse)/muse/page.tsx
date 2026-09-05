@@ -24,6 +24,7 @@ import { useBriefsState } from "./hooks/useBriefsState";
 import { useModalVisibility } from "./hooks/useModalVisibility";
 import { useQuestsState } from "./hooks/useQuestsState";
 import { useAuthOnboardingState } from "./hooks/useAuthOnboardingState";
+import { useDiscoverState } from "./hooks/useDiscoverState";
 import { requestMotionPermission } from "./hooks/useDeviceTilt";
 import SupportChat from "./components/SupportChat";
 import FeatureTour from "./components/FeatureTour";
@@ -146,32 +147,37 @@ const [excludedPortfolios, _setExcludedPortfolios] = useState<string[]>(EXCLUDED
   const [cardAlbums, setCardAlbums] = useState<{id:string;title:string;cover_url:string;access_level:string;photo_count:number}[]>([]);
   const [cardAlbumIdx, setCardAlbumIdx] = useState(0);
   const [cardAlbumPhotos, setCardAlbumPhotos] = useState<string[]>([]);
-  const [currentIdx, setCurrentIdx] = useState(0);
+  const {
+    currentIdx, setCurrentIdx,
+    showMatchOverlay, setShowMatchOverlay,
+    showConfetti, setShowConfetti,
+    swipeDir, setSwipeDir,
+    expandedMatchId, setExpandedMatchId,
+    boostActive, setBoostActive,
+    boostEnd, setBoostEnd,
+    discoverSearch, setDiscoverSearch,
+    mapView, setMapView,
+    discoverLoading, setDiscoverLoading,
+    dailyLikes, setDailyLikes,
+    superLikes, setSuperLikes,
+    screenFlash, setScreenFlash,
+    rewindStack, setRewindStack,
+    discoverSearchOpen, setDiscoverSearchOpen,
+    filterStyles, setFilterStyles,
+    filterScore, setFilterScore,
+  } = useDiscoverState();
 const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setShowMatchMenu, unmatchTarget, setUnmatchTarget, chatImages, setChatImages, typingTarget, setTypingTarget, themTyping, setThemTyping } = useChatState();
   const [_connFilter, _setConnFilter] = useState("all");
   const [showNsfw, setShowNsfw] = useState(false);
   const [showOnline, setShowOnline] = useState(true);
   const [showDistance, setShowDistance] = useState(true);
-  const [showMatchOverlay, setShowMatchOverlay] = useState<Match | null>(null);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [swipeDir, setSwipeDir] = useState<"left"|"right"|null>(null);
-  const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   // (debug artifact removed)
-  const [boostActive, setBoostActive] = useState(false);
-  const [boostEnd, setBoostEnd] = useState(0);
-  const [discoverSearch, setDiscoverSearch] = useState("");
-  const [mapView, setMapView] = useState(false);
   const [bootstrapped, setBootstrapped] = useState(false);
-  const [discoverLoading, setDiscoverLoading] = useState(true);
-  const [dailyLikes, setDailyLikes] = useState(10);
-  const [superLikes, setSuperLikes] = useState(3);
-  const [screenFlash, setScreenFlash] = useState<string | null>(null);
   // Defaults true — this is a dismissible "you have unlimited likes" badge
   // gated behind isUnlimited at the render site, not a modal that should
   // start hidden. Starting it false meant the badge (and its dismiss button)
   // could never actually appear for any Pro user.
   const [showUnlimitedBadge, setShowUnlimitedBadge] = useState(true);
-  const [rewindStack, setRewindStack] = useState<number[]>([]);
   const [showLikeNote, setShowLikeNote] = useState(false);
   const [likeNoteText, setLikeNoteText] = useState("");
   const [noteTargetProfile, setNoteTargetProfile] = useState<any>(null);
@@ -185,7 +191,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [lightboxIdx, setLightboxIdx] = useState<number>(0);
   const [portfolioPhotoIdx, setPortfolioPhotoIdx] = useState(0);
   const [promptIdx, setPromptIdx] = useState(0);
-   const [discoverSearchOpen, setDiscoverSearchOpen] = useState(false);
    const { savedBriefs, setSavedBriefs, appliedBriefs, setAppliedBriefs, showPostBrief, setShowPostBrief, briefTitle, setBriefTitle, briefDesc, setBriefDesc, briefBudget, setBriefBudget, briefCat, setBriefCat, userBriefs, setUserBriefs } = useBriefsState();
   const {
     showFilterModal, setShowFilterModal,
@@ -220,8 +225,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   } = useModalVisibility();
   const [pendingNsfw, setPendingNsfw] = useState(false);
   const [userTier, setUserTier] = useState<string>("free");
-  const [filterStyles, setFilterStyles] = useState<string[]>([]);
-   const [filterScore, setFilterScore] = useState(50);
   const [liveProfessionals, setLiveProfessionals] = useState<any[] | null>(null);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
