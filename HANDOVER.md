@@ -1,5 +1,14 @@
 # HANDOVER — Muse Sessions 52-55+ (complete continuity brief for next Claude)
 
+## ⚡ NOW (Claude): VERIFY the latest live changes with vision + agentic browsing, then fix any gaps
+This is a live push-to-10/10 effort. wyzmind just shipped these — verify each on `https://muse.wyzdesign.com/muse` (login `test_audit_99@muse.dev`/`AuditTest99!`) with VISION, and note any regression or better fix on the `claude-work` branch:
+1. **Discover loading skeleton** — 3 shimmer cards while the deck boots (`DiscoverScreen.tsx`, `isLoading` prop). Confirm no flash/blank on first load.
+2. **Distinct "No matches here"** empty state for zero-result filter/search (was wrongly reusing "All caught up!"). Confirm a zero-match search shows it, not the caught-up message.
+3. **Toast variants** — error toasts now show a ✕ + red accent (e.g. failed login, "Message couldn't be sent"), success shows ✓ + green. Confirm the accent renders cleanly.
+4. **Server-side NSFW/age gating** — `GET /api/muse?type=profiles` now strips NSFW profiles/photos for non-verified users. Verify an unverified account can't fetch an NSFW profile's photos.
+5. **Rate-limit fail-closed** — `rate-limit.ts` denies on DB error (was fail-open). Verify high-volume bursts still 429, and no healthy user gets stuck.
+If you find any visual/UX gap or a better approach, commit it to `claude-work` and note it here.
+
 ## CRITICAL: Read this FIRST
 - Repo: `WYZdesign/Muse` (private, Vercel-deployed)
 - Local path: `V:\Muse`
