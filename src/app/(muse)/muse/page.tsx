@@ -3,6 +3,7 @@
 import "./muse.css";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import React from "react";
+import Image from "next/image";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
@@ -1862,7 +1863,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         </div>
       </div>
       <div className="splash-content">
-        <img src="/muse-app-icon.png" alt="" className="splash-logo-icon" />
+        <Image src="/muse-app-icon.png" alt="" width={120} height={120} className="splash-logo-icon" />
         <div className="splash-logo-text">Muse</div>
         <div className="splash-tagline">Creative Professional Network</div>
         <div className="splash-loader"><div className="splash-loader-bar" /></div>
@@ -1901,8 +1902,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           <div className="match-subtitle">You and <strong style={{color:"var(--gold)"}}>{showMatchOverlay.name}</strong> both felt the spark.</div>
           <div className="match-avatars"
           >
-            <img loading="lazy" className="match-av" src={currentUser.avatar} alt="You" />
-            <img loading="lazy" className="match-av" src={showMatchOverlay.img} alt={showMatchOverlay.name} onError={handleImgError} />
+            <Image loading="lazy" className="match-av" src={currentUser.avatar} alt="You" width={80} height={80} />
+            <Image loading="lazy" className="match-av" src={showMatchOverlay.img} alt={showMatchOverlay.name} width={80} height={80} onError={handleImgError} />
           </div>
           <button className="match-btn" onClick={() => { setShowMatchOverlay(null); openChat(showMatchOverlay); }}
           >
@@ -1914,7 +1915,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         <div className="intent-overlay" role="presentation" aria-hidden="true" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null)}}>
           <div className="intent-modal" onClick={e=>e.stopPropagation()}>
             <div style={{textAlign:"center",marginBottom:16}}>
-              <img loading="lazy" src={intentProfile.img} alt="Avatar" style={{width:60,height:60,borderRadius:"50%",objectFit:"cover",marginBottom:8}} onError={handleImgError} />
+              <Image loading="lazy" src={intentProfile.img} alt="Avatar" width={60} height={60} style={{borderRadius:"50%",objectFit:"cover",marginBottom:8}} onError={handleImgError} />
               <div style={{fontSize:16,fontWeight:700,color:"var(--text)"}}>{intentProfile.name}</div>
               <div style={{fontSize:12,color:"var(--muted)"}}>{intentProfile.type}</div>
             </div>
@@ -2261,7 +2262,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <div className="step-sub">Add a profile picture so people can see the real you</div>
                     <input ref={photoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setObProfilePic(url);showToast("Photo added!")}}}} />
                     <div className="ob-upload-zone" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); photoInputRef.current?.click(); } }} onClick={() => photoInputRef.current?.click()}>
-                      {obProfilePic ? <img loading="lazy" src={obProfilePic} alt="Profile" /> : (
+                      {obProfilePic ? <Image loading="lazy" src={obProfilePic} alt="Profile" fill sizes="130px" style={{ objectFit: "cover", borderRadius: "50%" }} /> : (
                         <>
                           <div className="ob-upload-icon">📸</div>
                           <div className="ob-upload-text">Tap to add photo</div>
@@ -2302,7 +2303,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                            setObPortfolioSlot(i);
                            portfolioInputRef.current?.click();
                          }}>
-                          {obPortfolioItems[i] ? <img loading="lazy" src={obPortfolioItems[i].img} alt="Work" /> : <div className="ob-portfolio-plus">+</div>}
+                          {obPortfolioItems[i] ? <Image loading="lazy" src={obPortfolioItems[i].img} alt="Work" fill sizes="(max-width: 600px) 33vw, 200px" style={{ objectFit: "cover", borderRadius: 10 }} /> : <div className="ob-portfolio-plus">+</div>}
                         </div>
                       ))}
                     </div>
@@ -2485,7 +2486,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           </div>
           <div className="modal-body" style={{display:"flex",flexDirection:"column",gap:16,paddingTop:20}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <img loading="lazy" src={noteTargetProfile.img} alt={noteTargetProfile.name} style={{width:48,height:48,borderRadius:"50%",objectFit:"cover"}} onError={handleImgError} />
+              <Image loading="lazy" src={noteTargetProfile.img} alt={noteTargetProfile.name} width={48} height={48} style={{borderRadius:"50%",objectFit:"cover"}} onError={handleImgError} />
               <div>
                 <div style={{fontWeight:700,fontSize:16,color:"var(--text)"}}>{noteTargetProfile.name}</div>
                 <div style={{fontSize:13,color:"var(--muted)"}}>{noteTargetProfile.type}</div>
@@ -2725,7 +2726,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             <div style={{textAlign:"center",pointerEvents:"none"}}>
               <img loading="lazy" src={stories[showStory].img} alt="Photo" style={{maxWidth:"90%",maxHeight:"70vh",borderRadius:16,objectFit:"contain",backgroundColor:"#1a0a2e"}} />
               <div style={{display:"flex",alignItems:"center",gap:10,justifyContent:"center",marginTop:16}}>
-                <img loading="lazy" src={stories[showStory].avatar} alt="Avatar" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",backgroundColor:"#1a0a2e"}} />
+                <Image loading="lazy" src={stories[showStory].avatar} alt="Avatar" width={32} height={32} style={{borderRadius:"50%",objectFit:"cover",backgroundColor:"#1a0a2e"}} />
                 <span style={{color:"#fff",fontWeight:700}}>{stories[showStory].author}</span>
                 <span style={{color:"rgba(255,255,255,0.5)",fontSize:12}}>{stories[showStory].time}</span>
               </div>
@@ -2740,7 +2741,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={()=>setViewProfile(null)}>
           <div className="modal-panel" onClick={e=>e.stopPropagation()} style={{maxWidth:400,width:"90%",maxHeight:"85vh",overflowY:"auto",borderRadius:24,padding:0,background:"linear-gradient(180deg,#0f081e,#0a0612)"}}>
             <div style={{position:"relative",width:"100%",aspectRatio:"3/4",overflow:"hidden"}}>
-              <img loading="lazy" src={viewProfile.img} alt={viewProfile.name} style={{width:"100%",height:"100%",objectFit:"cover",filter:viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))?"blur(26px) brightness(0.7)":"none",transition:"filter .3s"}} />
+              <Image loading="lazy" src={viewProfile.img} alt={viewProfile.name} fill sizes="(max-width: 600px) 100vw, 400px" style={{objectFit:"cover",filter:viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))?"blur(26px) brightness(0.7)":"none",transition:"filter .3s"}} />
               {viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))&&(
                 <button onClick={(e)=>{e.stopPropagation();setRevealedNsfw(prev=>{const n=new Set(prev);n.add(String(viewProfile.id));return n;})}} style={{position:"absolute",inset:0,zIndex:5,background:"rgba(10,6,18,0.45)",border:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer"}}>
                   <div style={{fontSize:30,fontWeight:800,color:"#ff8a80"}}>18+</div>
@@ -2836,7 +2837,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           <div className="modal-body">
             <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
               <div style={{position:"relative"}}>
-                <img src={editAvatar || currentUser.avatar} alt="Avatar" style={{width:88,height:88,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--gold)",background:"#1a0a2e"}} onError={handleImgError} />
+                <Image src={editAvatar || currentUser.avatar} alt="Avatar" width={88} height={88} style={{borderRadius:"50%",objectFit:"cover",border:"3px solid var(--gold)",background:"#1a0a2e"}} onError={handleImgError} />
                 <button type="button" onClick={()=>editAvatarInputRef.current?.click()} style={{position:"absolute",bottom:0,right:0,width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#ffd700,#ff8a80)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#0a0612"}} title="Upload profile photo" aria-label="Upload profile photo">+</button>
                 <input ref={editAvatarInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setEditAvatar(url);showToast("Photo added!")}}}} />
               </div>
