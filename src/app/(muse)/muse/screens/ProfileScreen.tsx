@@ -183,8 +183,10 @@ export const ProfileScreen = memo(function ProfileScreen({
                 not diameter — see the .profile-ring comment in muse.css; diameter here
                 reverted back to 115px/125px); hoop diameter is 125px — a fixed 5px gap
                 past the halo's edge on every side, close enough to read as circling it,
-                never touching. */}
-            <div className="avatar-orbit orbit-med" style={{ "--orbit-size": "125px" } as React.CSSProperties} />
+                never touching. orbit-full added (Session 85 final correction): without
+                it this rendered as a partial comet-arc, not a full ring — see the
+                .avatar-orbit comment in muse.css. */}
+            <div className="avatar-orbit orbit-full orbit-med" style={{ "--orbit-size": "125px" } as React.CSSProperties} />
             <div className="profile-ring swirl-ring-1" />
           </div>
           <div className="profile-name">{currentUser.name}</div>

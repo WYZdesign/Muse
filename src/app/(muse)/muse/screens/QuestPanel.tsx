@@ -29,9 +29,12 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
   const [allQuests, setAllQuests] = useState<any[]>([]);
   const [xp, setXp] = useState({ total_xp: 0, level: 1 });
   const [filter, setFilter] = useState<string>("all");
-  const [view, setView] = useState<"tracking" | "all">("tracking");
+  // Session 85: Torreé asked for two tabs — "top" shows the 4 quests closest to being
+  // claimed (or already claimable), "all" shows the full list with the tier bubbles.
+  // This replaces the old "tracking" (in-progress) vs "all" split and the separate
+  // "Almost there" near-completion widget, which the new top-4 tab supersedes.
+  const [view, setView] = useState<"top" | "all">("top");
   const [claimingId, setClaimingId] = useState<string | null>(null);
-  const [nearQuests, setNearQuests] = useState<any[]>([]);
 
   const quests = rotateQuests(allQuests);
 
@@ -42,7 +45,6 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
       setAllQuests(data.quests || []);
       setXp(data.xp || { total_xp: 0, level: 1 });
       onClaimablesChange?.((data.quests || []).filter((q: any) => q.completed && !q.claimed).length);
-      setNearQuests((data.quests || []).filter((q: any) => !q.completed && q.progress / q.target >= 0.5).sort((a: any, b: any) => (b.progress / b.target) - (a.progress / a.target)).slice(0, 3));
       onQuestsChange?.();
     } catch (e) { console.warn("[Quests] fetch failed:", e); }
   }, [apiFetch, onClaimablesChange, onQuestsChange]);
@@ -69,10 +71,20 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
     setClaimingId(null);
   };
 
-  const filtered = filter === "all" ? quests : quests.filter(q => q.quest_tier === filter);
-  // "Tracking" = quests currently in progress (started, not yet completed/claimed), claimable, or near completion
-  const tracking = quests.filter(q => !q.completed || (q.completed && !q.claimed));
-  const visible = (view === "tracking" ? tracking : quests).filter(q => filter === "all" || q.quest_tier === filter);
+  // "Top 4" tab: quests closest to being claimed. Claimable quests (100%, just waiting
+  // to be claimed) sort first since they're literally as close as it gets; everything
+  // else ranks by progress ratio descending. Already-claimed quests are excluded — they
+  // have nothing left to work toward.
+  const topFour = [...quests]
+    .filter(q => !(q.completed && q.claimed))
+    .sort((a, b) => {
+      const aClaimable = a.completed && !a.claimed;
+      const bClaimable = b.completed && !b.claimed;
+      if (aClaimable !== bClaimable) return aClaimable ? -1 : 1;
+      return (b.progress / b.target) - (a.progress / a.target);
+    })
+    .slice(0, 4);
+  const visible = view === "top" ? topFour : quests.filter(q => filter === "all" || q.quest_tier === filter);
   const tiers = ["starter", "daily", "weekly", "monthly", "season", "legendary"];
   const claimableCount = quests.filter(q => q.completed && !q.claimed).length;
 
@@ -119,64 +131,39 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
           <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
         </div>
 
-        {/* Near-Completion Widget */}
-        {nearQuests.length > 0 && (
-          <div className="quest-near-section">
-            <div className="quest-near-title">Almost there</div>
-            {nearQuests.map((q: any) => {
-              const pct = Math.round((q.progress / q.target) * 100);
-              const tier = TIER_CONFIG[q.quest_tier] || TIER_CONFIG.weekly;
-              return (
-                <div key={q.id} className="quest-near-card">
-                  <div className="quest-near-icon" style={{ background: tier.bg, border: `1px solid ${tier.border}` }}>
-                    {q.icon}
-                  </div>
-                  <div className="quest-near-info">
-                    <div className="quest-near-name">{q.title}</div>
-                    <div className="quest-near-progress-row">
-                      <div className="quest-near-bar">
-                        <div className="quest-near-fill" style={{ width: `${pct}%`, background: tier.color }} />
-                      </div>
-                      <span className="quest-near-pct" style={{ color: tier.color }}>{pct}%</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* View Tabs: Tracking vs All */}
+        {/* View Tabs: Top 4 (closest to claim) vs All (full category list) */}
         <div className="quest-view-tabs">
-          <button className={`quest-view-tab ${view === "tracking" ? "active" : ""}`} onClick={() => setView("tracking")}>
-            <FiStar size={13} /> Tracking <span className="quest-view-count">{tracking.length}</span>
+          <button className={`quest-view-tab ${view === "top" ? "active" : ""}`} onClick={() => setView("top")}>
+            <FiStar size={13} /> Top 4 {claimableCount > 0 && <span className="quest-view-count">{claimableCount}</span>}
           </button>
           <button className={`quest-view-tab ${view === "all" ? "active" : ""}`} onClick={() => setView("all")}>
             <FiCheck size={13} /> All Quests <span className="quest-view-count">{quests.length}</span>
           </button>
         </div>
 
-        {/* Filter Tabs (tier) */}
-        <div className="quest-filters">
-          <button className={`quest-filter-btn ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>All</button>
-          {tiers.map(t => {
-            const cfg = TIER_CONFIG[t];
-            const count = quests.filter(q => q.quest_tier === t && !q.completed).length;
-            return (
-              <button key={t} className={`quest-filter-btn ${filter === t ? "active" : ""}`} style={filter === t ? { borderColor: cfg.color, color: cfg.color } : {}} onClick={() => setFilter(t)}>
-                {cfg.label} {count > 0 && <span className="quest-filter-count" style={filter === t ? { background: `${cfg.color}22`, color: cfg.color } : {}}>{count}</span>}
-              </button>
-            );
-          })}
-        </div>
+        {/* Filter Tabs (tier) — only meaningful once you're looking at the full list */}
+        {view === "all" && (
+          <div className="quest-filters">
+            <button className={`quest-filter-btn ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>All</button>
+            {tiers.map(t => {
+              const cfg = TIER_CONFIG[t];
+              const count = quests.filter(q => q.quest_tier === t && !q.completed).length;
+              return (
+                <button key={t} className={`quest-filter-btn ${filter === t ? "active" : ""}`} style={filter === t ? { borderColor: cfg.color, color: cfg.color } : {}} onClick={() => setFilter(t)}>
+                  {cfg.label} {count > 0 && <span className="quest-filter-count" style={filter === t ? { background: `${cfg.color}22`, color: cfg.color } : {}}>{count}</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Quest List — full-width rectangle rows */}
         <div className="quest-grid">
           {visible.length === 0 && (
             <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, textAlign: "center", gap: 12 }}>
               <div style={{ fontSize: 36 }}>📋</div>
-<div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{view === "tracking" ? "No quests in progress" : "No quests in this category"}</div>
-<div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 280 }}>{view === "tracking" ? "Start a quest to see it here — they populate as you engage on Muse." : "Switch to a different filter or check back later."}</div>
+<div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{view === "top" ? "No quests to claim yet" : "No quests in this category"}</div>
+<div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 280 }}>{view === "top" ? "Start a quest to see it here — they populate as you engage on Muse." : "Switch to a different filter or check back later."}</div>
             </div>
           )}
           {visible.map((q: any) => {

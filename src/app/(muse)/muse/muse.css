@@ -620,24 +620,19 @@ img{background-color:#1a0a2e}
    touching" distance. A literal pixel diameter keyed off the actual halo size we're
    orbiting is the only way to guarantee that gap. Falls back to 118% for the one
    standalone usage with no halo underneath it (the small Feed composer avatar). */
-/* Torreé: "hoolah hoop is supposed to loop around the halo in and out like a hoolah
-   hoop" — a flat rotation alone (the old orbitSpin) doesn't read as a hoop being
-   hula-hooped, it reads as a ring just spinning in place. A real hula hoop viewed from
-   the front visibly grows as its near side swings toward the viewer and shrinks as its
-   far side swings away — one full grow/shrink breath per revolution, biggest at the
-   front (0°/360°), smallest at the back (180°). hulaOrbit bakes that scale breathing
-   into the same keyframes as the rotation (8 stops, cosine-shaped: scale = 1 ± 0.08)
-   so the "in and out" is locked to rotation phase rather than drifting independently
-   against it.
-   Session 85 update: Torreé said the pure scale-breathe read as "just pulsating" and
-   asked for the rotation itself to be a tad offset — "kind of eccentric motion". Added
-   a small (4px) translate that orbits its own tiny circle in step with the main
-   rotation, phase-shifted 90° ahead of it. Because CSS transform functions compose in
-   order, this offset shifts WHERE the element's rotation is centered each frame — so
-   the ring's own center visibly traces a small loop as it spins, instead of spinning
-   perfectly in place. That's what makes it read as eccentric/off-balance rather than a
-   clean concentric orbit. Kept the same rotation speed and scale breathing as before;
-   this is additive, not a replacement. */
+/* Session 85 final correction: Torreé's actual ask was (1) no pulsating — the scale
+   breathing from earlier this session read as the ring puffing in/out in place, which
+   is NOT what they wanted; (2) the hoop should go all the way round the halo as a
+   complete ring, not the partial comet-arc this base rule draws (transparent
+   0deg-120deg / a short gold-to-coral streak / transparent again) — that partial arc
+   was fine for MatchCard because MatchCard always paired it with the .orbit-full
+   modifier below, which replaces it with a full ring, but ProfileScreen/MenuModal were
+   never given that modifier, so their hoop was only ever a swinging comet segment, not
+   a ring; and (3) simply hula-hoop with a slight offset — i.e. keep the eccentric
+   wobble (a small translate that loops in sync with rotation, phase-shifted 90° ahead)
+   without any scaling. Fixed by dropping scale() from every hulaOrbit stop (rotation +
+   offset only now) and adding .orbit-full to the ProfileScreen/MenuModal hoop elements
+   (see those files) so every hoop usage is a complete ring. */
 .avatar-orbit{position:absolute;top:50%;left:50%;width:var(--orbit-size,118%);height:var(--orbit-size,118%);transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
   background:conic-gradient(from 0deg,transparent 0deg,transparent 120deg,var(--gold) 175deg,var(--coral) 210deg,transparent 265deg,transparent 360deg);
   -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 1px));
@@ -645,15 +640,15 @@ img{background-color:#1a0a2e}
   animation:hulaOrbit var(--orbit-speed,6.5s) linear infinite;
   filter:drop-shadow(0 0 4px rgba(255,215,0,0.6))}
 @keyframes hulaOrbit{
-  0%{transform:translate(-50%,-50%) translate(0px,4px) rotate(0deg) scale(1.08)}
-  12.5%{transform:translate(-50%,-50%) translate(-2.8px,2.8px) rotate(45deg) scale(1.057)}
-  25%{transform:translate(-50%,-50%) translate(-4px,0px) rotate(90deg) scale(1)}
-  37.5%{transform:translate(-50%,-50%) translate(-2.8px,-2.8px) rotate(135deg) scale(0.943)}
-  50%{transform:translate(-50%,-50%) translate(0px,-4px) rotate(180deg) scale(0.92)}
-  62.5%{transform:translate(-50%,-50%) translate(2.8px,-2.8px) rotate(225deg) scale(0.943)}
-  75%{transform:translate(-50%,-50%) translate(4px,0px) rotate(270deg) scale(1)}
-  87.5%{transform:translate(-50%,-50%) translate(2.8px,2.8px) rotate(315deg) scale(1.057)}
-  100%{transform:translate(-50%,-50%) translate(0px,4px) rotate(360deg) scale(1.08)}
+  0%{transform:translate(-50%,-50%) translate(0px,4px) rotate(0deg)}
+  12.5%{transform:translate(-50%,-50%) translate(-2.8px,2.8px) rotate(45deg)}
+  25%{transform:translate(-50%,-50%) translate(-4px,0px) rotate(90deg)}
+  37.5%{transform:translate(-50%,-50%) translate(-2.8px,-2.8px) rotate(135deg)}
+  50%{transform:translate(-50%,-50%) translate(0px,-4px) rotate(180deg)}
+  62.5%{transform:translate(-50%,-50%) translate(2.8px,-2.8px) rotate(225deg)}
+  75%{transform:translate(-50%,-50%) translate(4px,0px) rotate(270deg)}
+  87.5%{transform:translate(-50%,-50%) translate(2.8px,2.8px) rotate(315deg)}
+  100%{transform:translate(-50%,-50%) translate(0px,4px) rotate(360deg)}
 }
 /* All speed variants kept in a slow-medium band per Torreé's ask — no "fast" option
    (the old 3.2s .orbit-fast is removed; it wasn't used anywhere and read as too quick
@@ -897,7 +892,12 @@ img{background-color:#1a0a2e}
    gaps and margins throughout so each block gets real breathing room. */
 .quest-overlay{position:fixed;inset:0;z-index:900;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);animation:fadeIn .2s}
 .quest-panel{width:100%;max-width:480px;max-height:92vh;background:rgba(15,10,30,0.97);backdrop-filter:blur(30px);border-radius:24px 24px 0 0;border-top:1px solid rgba(255,215,0,0.15);display:flex;flex-direction:column;animation:slideUp .3s cubic-bezier(.4,0,.2,1)}
-.quest-header{display:flex;justify-content:space-between;align-items:center;padding:26px 24px 20px;border-bottom:1px solid rgba(255,255,255,0.06)}
+/* Torreé: the icon/title/close row here read as sitting too high, and asked for it to
+   match the side-menu (hamburger) header's height. The hamburger header positions its
+   title/icons at top:calc(30px + env(safe-area-inset-top,0px)) — using that exact same
+   offset here (was a flat 26px, no safe-area awareness at all) so both headers sit at
+   the same vertical rhythm and this one also clears a device's notch/safe-area properly. */
+.quest-header{display:flex;justify-content:space-between;align-items:center;padding:calc(30px + env(safe-area-inset-top,0px)) 24px 20px;border-bottom:1px solid rgba(255,255,255,0.06)}
 .quest-hero-stats{padding:22px 24px;border-bottom:1px solid rgba(255,255,255,0.06)}
 .quest-hero-xp{display:flex;align-items:center;gap:18px;margin-bottom:18px}
 .quest-hero-level{display:flex;flex-direction:column;align-items:center;min-width:52px}

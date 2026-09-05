@@ -619,7 +619,13 @@ export const MenuModal = memo(function MenuModal({
             )}
             {hamburgerScreen === "profile" && (
               <div className="conn-scroll">
-                <div style={{ textAlign: "center", marginBottom: 20 }}>
+                {/* paddingTop: .conn-scroll itself has no top padding, and the halo/hoop
+                    rings extend ~13px past the 100px avatar photo on every side. With
+                    this wrap sitting flush at the scroll container's top edge, that
+                    overflow was getting clipped by the scroll boundary — the top of the
+                    rings rendered with a flat cut instead of curving. This gives them
+                    room to clear it. */}
+                <div style={{ textAlign: "center", marginBottom: 20, paddingTop: 20 }}>
                   <div className="profile-avatar-wrap">
                     <img loading="lazy" src={currentUser.avatar} alt="You" className="profile-avatar" onError={handleImgError} />
                     {/* Hoolah-hoop: halo (.profile-ring) is the CSS-default 115px (Session
@@ -627,8 +633,11 @@ export const MenuModal = memo(function MenuModal({
                         thickness, not diameter — see the .profile-ring comment in
                         muse.css; diameter here reverted back to 115px/125px); hoop
                         diameter is 125px — a fixed 5px gap past the halo's edge on every
-                        side, close enough to read as circling it, never touching. */}
-                    <div className="avatar-orbit orbit-slow" style={{ "--orbit-size": "125px" } as React.CSSProperties} />
+                        side, close enough to read as circling it, never touching.
+                        orbit-full added (Session 85 final correction): without it this
+                        rendered as a partial comet-arc, not a full ring — see the
+                        .avatar-orbit comment in muse.css. */}
+                    <div className="avatar-orbit orbit-full orbit-slow" style={{ "--orbit-size": "125px" } as React.CSSProperties} />
                     <div className="profile-ring swirl-ring-1" />
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>{currentUser.name}</div>
