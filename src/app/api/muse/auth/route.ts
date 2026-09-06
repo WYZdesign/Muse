@@ -202,9 +202,16 @@ export async function POST(req: NextRequest) {
       const accessToken = bearerOrBodyToken(req, body);
       const { data: { user }, error: authErr } = await supabase.auth.getUser(accessToken);
       if (authErr || !user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-      const allowed = ["name", "bio", "loc", "city", "lat", "long", "avatar", "type", "styles", "looking", "photos", "preferences", "zodiac", "chinese", "mbti", "life_path", "audience", "nsfw", "status"];
+      const allowed = ["name", "bio", "loc", "city", "lat", "long", "avatar", "type", "styles", "looking", "photos", "preferences", "zodiac", "chinese", "mbti", "life_path", "audience", "nsfw", "status", "media_kit_url"];
       const updates: Record<string, unknown> = {};
       for (const k of allowed) if (body[k] !== undefined) updates[k] = body[k];
+      if (typeof updates.media_kit_url === "string") {
+        const url = updates.media_kit_url.trim();
+        if (url && !/^https:\/\/[^\s]+$/i.test(url)) {
+          return NextResponse.json({ error: "Media kit link must be a valid https:// URL" }, { status: 400 });
+        }
+        updates.media_kit_url = url;
+      }
       if (Object.keys(updates).length === 0) return NextResponse.json({ error: "No updatable fields" }, { status: 400 });
       const sb = getServiceClient();
       const { data: existing } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();

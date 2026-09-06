@@ -26,7 +26,7 @@ export function useAuthOnboardingState() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const [obStep, setObStep] = useState(0);
-  const [obData, setObData] = useState<{ name?: string; loc?: string; bio?: string; type?: string; looking?: string[]; conn?: string[]; styles?: string[]; zodiac?: string; chinese?: string; mbti?: string; lifePath?: number; referralCode?: string }>({});
+  const [obData, setObData] = useState<{ name?: string; loc?: string; bio?: string; type?: string; looking?: string[]; conn?: string[]; styles?: string[]; zodiac?: string; chinese?: string; mbti?: string; lifePath?: number; referralCode?: string; mediaKitUrl?: string }>({});
 
   const [testScreen, setTestScreen] = useState<"zodiac" | "mbti" | "chinese" | "lifepath" | "done" | null>(null);
   const [testBirthMonth, setTestBirthMonth] = useState("");

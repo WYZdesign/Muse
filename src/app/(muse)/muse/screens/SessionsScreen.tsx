@@ -6,7 +6,7 @@ import { FiArrowLeft } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
 import FdStudioWidget from "../components/FdStudioWidget";
-import type { Screen, Match } from "../components/types";
+import type { Screen, Match, SessionListing } from "../components/types";
 import { SESSIONS } from "../components/types";
 import { STRINGS } from "@/lib/strings";
 
@@ -28,7 +28,7 @@ export interface SessionsScreenProps {
   setShowAgeVerification: (v: boolean) => void;
   openHamburger?: () => void;
   unreadNotificationCount?: number;
-  liveSessions?: any[];
+  liveSessions?: SessionListing[];
   myBookings?: { asBooker: any[]; asHost: any[] };
   setMyBookings?: React.Dispatch<React.SetStateAction<{ asBooker: any[]; asHost: any[] }>>;
   setDisclosureTarget?: (t: any) => void;
@@ -175,7 +175,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                   <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Available Sessions</div>
             </div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Browse creatives offering sessions — pick one, book, and pay securely.</div>
-            {(liveSessions?.length ? liveSessions : SESSIONS).map(s => (
+            {(liveSessions?.length ? liveSessions : SESSIONS as SessionListing[]).map(s => (
               <div key={s.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
                 <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0 }}>
                   {s.img && (
@@ -183,8 +183,14 @@ export const SessionsScreen = memo(function SessionsScreen({
                   )}
                 </div>
                 <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <div className="conn-name" style={{ fontSize: 15 }}>{s.name}</div>
+                  <div className="conn-name" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6 }}>
+                    {s.name}
+                    {s.hostVerified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
+                  </div>
                   <div className="conn-meta" style={{ fontSize: 12 }}>{s.type} · {s.rate} · ★ {s.rating}</div>
+                  {!!s.hostCompletedSessions && (
+                    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{s.hostCompletedSessions} session{s.hostCompletedSessions === 1 ? "" : "s"} completed</div>
+                  )}
                   <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
                     {(s.skills || []).map((sk: string) => <span key={sk} className="conn-tag" style={{ fontSize: 10, padding: "3px 8px" }}>{sk}</span>)}
                   </div>
@@ -257,7 +263,10 @@ export const SessionsScreen = memo(function SessionsScreen({
                   </div>
                   <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                      <div className="conn-name" style={{ fontSize: 15 }}>{host.name || "Host"}</div>
+                      <div className="conn-name" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6 }}>
+                        {host.name || "Host"}
+                        {host.verified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
+                      </div>
                       <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: sc.bg, color: sc.c, border: `1px solid ${sc.bd}`, whiteSpace: "nowrap" }}>{label}</span>
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
@@ -311,7 +320,10 @@ export const SessionsScreen = memo(function SessionsScreen({
                   </div>
                   <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                      <div className="conn-name" style={{ fontSize: 15 }}>{booker.name || "Booker"}</div>
+                      <div className="conn-name" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6 }}>
+                        {booker.name || "Booker"}
+                        {booker.verified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
+                      </div>
                       <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: sc.bg, border: `1px solid ${sc.bd}`, color: sc.c, whiteSpace: "nowrap" }}>{label}</span>
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>

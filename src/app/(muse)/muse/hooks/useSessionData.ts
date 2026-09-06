@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { trackError } from "@/lib/errorTracker";
 import { normalizeSession } from "./normalizers";
+import type { SessionListing } from "../components/types";
 
 export type UseSessionDataArgs = {
   authFetch: (url: string, init?: RequestInit) => Promise<Response>;
@@ -11,7 +12,7 @@ export type UseSessionDataArgs = {
 
 export function useSessionData({ authFetch, profileId }: UseSessionDataArgs) {
   const [myBookings, setMyBookings] = useState<{ asBooker: any[]; asHost: any[] }>({ asBooker: [], asHost: [] });
-  const [liveSessions, setLiveSessions] = useState<any[] | null>(null);
+  const [liveSessions, setLiveSessions] = useState<SessionListing[] | null>(null);
 
   // ═══ BOOKINGS: fetch real bookings (booker + host) ═══
   useEffect(() => {

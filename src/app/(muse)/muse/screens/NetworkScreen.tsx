@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { createSpatialScene } from "../hooks/useDeviceTilt";
 import { FiArrowLeft, FiShare2, FiMapPin, FiBriefcase, FiStar, FiFlag, FiMessageCircle, FiChevronDown, FiChevronUp, FiUserPlus, FiSearch, FiTarget, FiZap, FiArrowUpRight, FiDollarSign } from "react-icons/fi";
-import type { Screen, Match } from "../components/types";
+import type { Screen, Match, Professional } from "../components/types";
 import { PROFESSIONALS, FORUM_POSTS } from "../components/types";
 import { BADGE_COLORS } from "../components/badgeColors";
 import { viewerSide } from "@/lib/role";
@@ -40,7 +40,7 @@ export interface NetworkScreenProps {
   uid: () => any;
   setShowReport?: (v: boolean) => void;
   setReportTarget?: (t: any) => void;
-  liveProfessionals: any[] | null;
+  liveProfessionals: Professional[] | null;
   /** One-shot request to switch the internal pros/forum tab (e.g. so the
    *  Forum tutorial can be started from anywhere and land on the right
    *  tab). Not a controlled value — the user's own taps on the tab pills
@@ -589,6 +589,9 @@ export const NetworkScreen = memo(function NetworkScreen({
               >
                 <div
                   style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
                     fontSize: 22,
                     fontWeight: 800,
                     color: "#fff",
@@ -596,6 +599,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                   }}
                 >
                   {p.name}
+                  {p.verified && <span className="card-verified-mark" title="Identity verified">✓</span>}
                 </div>
                 <div
                   style={{
@@ -610,6 +614,19 @@ export const NetworkScreen = memo(function NetworkScreen({
                 >
                   <FiBriefcase size={13} /> {p.type}
                 </div>
+                {!!p.reviewCount && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "rgba(255,255,255,0.75)",
+                      textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+                    }}
+                  >
+                    <FiStar size={12} style={{ marginRight: 4, verticalAlign: -1, color: "var(--gold)" }} />
+                    {p.reviewRating}★ ({p.reviewCount} review{p.reviewCount === 1 ? "" : "s"})
+                  </div>
+                )}
                 <div
                   style={{
                     display: "flex",

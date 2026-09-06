@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiEdit2, FiSettings, FiUsers, FiShoppingBag, FiDollarSign, FiClock, FiExternalLink, FiTrendingUp } from "react-icons/fi";
+import { FiArrowLeft, FiEdit2, FiSettings, FiUsers, FiShoppingBag, FiDollarSign, FiClock, FiExternalLink, FiTrendingUp, FiFileText } from "react-icons/fi";
 import { getReferralUrl } from "@/lib/urls";
 import Nav from "../components/Nav";
 import StreakWidget from "../components/StreakWidget";
@@ -25,6 +25,7 @@ export interface ProfileScreenProps {
   setEditType: (v: string) => void;
   setEditLooking: (v: string[]) => void;
   setEditNsfw: (v: boolean) => void;
+  setEditMediaKit?: (v: string) => void;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   promptResponses: any[];
   promptBankData: any[];
@@ -76,6 +77,7 @@ export const ProfileScreen = memo(function ProfileScreen({
   setEditType,
   setEditLooking,
   setEditNsfw,
+  setEditMediaKit = () => {},
   showToast,
   promptResponses,
   promptBankData,
@@ -159,7 +161,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         </div>
         <div className="logo-link" style={{ position: "relative", margin: 0, padding: 0, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 24, fontWeight: 800, background: "linear-gradient(90deg,#FFD700,#F48FB1,#CE93D8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Your Profile</div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="hdr-btn" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setEditNsfw(!!currentUser.nsfw); setShowEditProfile(true); }} aria-label="Edit Profile"><FiEdit2 size={18} /></button>
+          <button className="hdr-btn" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setEditNsfw(!!currentUser.nsfw); setEditMediaKit(obData.mediaKitUrl || ""); setShowEditProfile(true); }} aria-label="Edit Profile"><FiEdit2 size={18} /></button>
         </div>
       </div>
       <div className="profile-scroll">
@@ -240,6 +242,16 @@ export const ProfileScreen = memo(function ProfileScreen({
             <div><div className="section-title">Show NSFW</div><div className="avail-sub">Fine art, figure, body art</div></div>
             <div role="switch" aria-checked={showNsfw} tabIndex={0} className={"toggle" + (showNsfw ? " on" : "")} onClick={() => setShowNsfw(!showNsfw)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowNsfw(!showNsfw); } }}><div className="toggle-dot" /></div>
           </div>
+        </div>
+        <div className="section">
+          <div className="section-title">Media Kit</div>
+          {obData.mediaKitUrl ? (
+            <a href={obData.mediaKitUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, textDecoration: "none", padding: "14px 0" }}>
+              <FiFileText size={16} /> View Media Kit
+            </a>
+          ) : (
+            <div className="section-text">No media kit yet — add a link in Edit Profile.</div>
+          )}
         </div>
         <div className="section">
           <div className="section-title">Subscription</div>
@@ -466,7 +478,7 @@ export const ProfileScreen = memo(function ProfileScreen({
             )}
           </div>
         </div>
-        <div className="profile-btn"><button className="btn btn-outline" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setEditNsfw(!!currentUser.nsfw); setShowEditProfile(true); }}>Edit Profile</button></div>
+        <div className="profile-btn"><button className="btn btn-outline" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setEditNsfw(!!currentUser.nsfw); setEditMediaKit(obData.mediaKitUrl || ""); setShowEditProfile(true); }}>Edit Profile</button></div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => setScreen("analytics")}><FiTrendingUp size={16} style={{ marginRight: 6 }} /> Insights</button></div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => setScreen("settings")}><FiSettings size={16} style={{ marginRight: 6 }} /> Account Settings</button></div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => setShowShareProfile(true)}>Share Profile</button></div>

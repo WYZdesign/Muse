@@ -235,6 +235,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [editType, setEditType] = useState("");
   const [editLooking, setEditLooking] = useState<string[]>([]);
   const [editNsfw, setEditNsfw] = useState(false);
+  const [editMediaKit, setEditMediaKit] = useState("");
   const [shareTarget, setShareTarget] = useState<{id:number|string;text:string;img:string;author:string} | null>(null);
   const [reportTarget, setReportTarget] = useState<{id:number|string;type:string;name:string} | null>(null);
   const [_showBlockedUsers, _setShowBlockedUsers] = useState(false);
@@ -1791,7 +1792,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   const saveProfileEdits = useCallback(async () => {
     setCurrentUser(prev => ({ ...prev, name: editName || prev.name, avatar: editAvatar || prev.avatar, type: editType || prev.type }));
-    setObData(prev => ({ ...prev, bio: editBio, loc: editLoc, type: editType || prev.type, looking: editLooking.length ? editLooking : prev.looking }));
+    setObData(prev => ({ ...prev, bio: editBio, loc: editLoc, type: editType || prev.type, looking: editLooking.length ? editLooking : prev.looking, mediaKitUrl: editMediaKit }));
     let geo: { lat: number; long: number; city?: string } | null = null;
     try { geo = await getGeolocation(); } catch {}
     setShowEditProfile(false);
@@ -1811,6 +1812,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           type: editType,
           looking: editLooking,
           nsfw: nsfwValue,
+          media_kit_url: editMediaKit.trim(),
           ...(geo ? { lat: geo.lat, long: geo.long, city: geo.city } : {}),
         }),
       });
@@ -1823,7 +1825,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     } catch {
       showToast("Failed to save — try again");
     }
-  }, [editName, editBio, editLoc, editAvatar, editType, editLooking, editNsfw, showToast, currentUser.nsfw, trackQuest]);
+  }, [editName, editBio, editLoc, editAvatar, editType, editLooking, editNsfw, editMediaKit, showToast, currentUser.nsfw, trackQuest]);
 
   const toggleObSelect = (key: string, val: string | number) => {
     setObData(prev => ({ ...prev, [key]: val }));
@@ -2446,7 +2448,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             <PortfolioScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Profile">
-            <ProfileScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditType={setEditType} setEditLooking={setEditLooking} setEditNsfw={setEditNsfw} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={_setSelectedPortfolio} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} setShowQuests={setShowQuests} loginStreak={loginStreak} weeklyLogins={weeklyLogins} questClaimables={claimableQuests} />
+            <ProfileScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditType={setEditType} setEditLooking={setEditLooking} setEditNsfw={setEditNsfw} setEditMediaKit={setEditMediaKit} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={_setSelectedPortfolio} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} setShowQuests={setShowQuests} loginStreak={loginStreak} weeklyLogins={weeklyLogins} questClaimables={claimableQuests} />
             </ScreenErrorBoundary>
           </div>
         </div>
@@ -2859,6 +2861,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             <input className="inp" placeholder="Display Name" value={editName} onChange={e=>setEditName(e.target.value)} />
             <textarea className="inp" placeholder="Bio" rows={3} value={editBio} onChange={e=>setEditBio(e.target.value)} />
             <input className="inp" placeholder="Location" value={editLoc} onChange={e=>setEditLoc(e.target.value)} />
+            <input className="inp" placeholder="Media Kit link (PDF or portfolio one-pager)" value={editMediaKit} onChange={e=>setEditMediaKit(e.target.value)} />
             <div style={{ marginBottom: 12 }}>
               <div className="side-label">Creative Type</div>
               <div className="side-sub" style={{ marginBottom: 6 }}>🎬 Behind the Camera</div>

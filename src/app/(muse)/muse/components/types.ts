@@ -133,6 +133,11 @@ export const SESSIONS = [
   {id:205,name:"Riley Patel",type:"Designer",img:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",rate:"$85/hr",rating:4.6,sessions:94,available:true,skills:["Brand","UI/UX","Motion"]},
 ];
 
+// Trust signals joined in server-side from muse_profiles/muse_bookings for real
+// (non-demo) listings — see get.ts's `type=sessions` handler. Demo SESSIONS
+// rows above never carry these, so callers must treat them as optional.
+export type SessionListing = typeof SESSIONS[number] & { hostVerified?: boolean; hostCompletedSessions?: number };
+
 export const FORUM_POSTS = [
   {id:301,title:"Best lighting setup for outdoor portraits?",body:"I've been struggling with harsh shadows during midday shoots. What modifiers do you swear by?",author:"Maya Chen",avatar:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",votes:47,comments:[{author:"Jordan R.",text:"Reflector + fill flash combo. Game changer."},{author:"Alex K.",text:"Overcast days or golden hour."}],cat:"Photography",time:"2h ago",pinned:true},
   {id:302,title:"How do you price music video production?",body:"I'm getting more requests but have no idea what the market rate is in LA.",author:"Jordan Rivera",avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",votes:32,comments:[{author:"Sam T.",text:"$5K-25K for indie."}],cat:"Business",time:"5h ago",pinned:false},
@@ -205,6 +210,17 @@ export const PROFESSIONALS = [
   {id:4,name:"Dante Cruz",type:"Fine Art Agent",img:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200",loc:"Miami, FL",exp:"10 years",openings:7,rate:"$110/hr",skills:["Body Art","Fine Art","Fashion"],looking:["Figure Models","Body Painters"],nsfw:true},
   {id:5,name:"Lena Park",type:"Creative Director",img:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",loc:"Austin, TX",exp:"15 years",openings:4,rate:"$160/hr",skills:["Branding","Commercial","Experimental"],looking:["Motion Designers","Copywriters"],nsfw:false},
 ];
+
+// Trust signals joined in server-side from muse_profiles/muse_reviews for real
+// (non-demo) rows — see get.ts's `type=professionals` handler. Demo
+// PROFESSIONALS rows above never carry these, so callers must treat them as
+// optional.
+export type Professional = typeof PROFESSIONALS[number] & {
+  profileId?: string | null;
+  verified?: boolean;
+  reviewRating?: number | null;
+  reviewCount?: number;
+};
 export const CONNECTIONS = [
   { name:"Creative Mornings LA",type:"Community",cat:"community",img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=200&h=120&fit=crop",desc:"Weekly creative networking events in LA",tag:"Events" },
   { name:"AFI Conservatory",type:"Film School",cat:"education",img:"https://images.unsplash.com/photo-1523050854058-8df90110c7f1?w=200&h=120&fit=crop",desc:"American Film Institute alumni network",tag:"Film" },

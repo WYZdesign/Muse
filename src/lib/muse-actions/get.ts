@@ -161,7 +161,29 @@ export async function GET(req: NextRequest) {
 
     if (type === "sessions") {
       const { data } = await sb.from("muse_sessions").select("*").order("date", { ascending: true }).limit(20);
-      return NextResponse.json({ sessions: data || [] });
+      const rows = data || [];
+      // Trust signals for the browse cards: whether the host is identity-verified
+      // and how many sessions they've actually completed as a host — both real
+      // counts, not derived from the session's own (self-reported) `rating`.
+      const hostIds = [...new Set(rows.map((s: any) => s.host_id).filter(Boolean))];
+      let verifiedByHost = new Map<string, boolean>();
+      let completedByHost = new Map<string, number>();
+      if (hostIds.length) {
+        const { data: hosts } = await sb.from("muse_profiles").select("id, verified").in("id", hostIds);
+        verifiedByHost = new Map((hosts || []).map((h: any) => [h.id, !!h.verified]));
+        const { data: completed } = await sb.from("muse_bookings").select("host_id").in("host_id", hostIds).eq("status", "completed");
+        for (const b of completed || []) {
+          const hid = String((b as any).host_id);
+          completedByHost.set(hid, (completedByHost.get(hid) || 0) + 1);
+        }
+      }
+      return NextResponse.json({
+        sessions: rows.map((s: any) => ({
+          ...s,
+          hostVerified: !!verifiedByHost.get(s.host_id),
+          hostCompletedSessions: completedByHost.get(s.host_id) || 0,
+        })),
+      });
     }
 
     if (type === "professionals") {
@@ -172,11 +194,41 @@ export async function GET(req: NextRequest) {
       const rows = data || [];
       const userIds = rows.map((p: any) => p.user_id).filter(Boolean);
       let profileIdByAuthId = new Map<string, string>();
+      let verifiedByProfileId = new Map<string, boolean>();
       if (userIds.length) {
-        const { data: profiles } = await sb.from("muse_profiles").select("id, auth_id").in("auth_id", userIds);
+        const { data: profiles } = await sb.from("muse_profiles").select("id, auth_id, verified").in("auth_id", userIds);
         profileIdByAuthId = new Map((profiles || []).map((pr: any) => [pr.auth_id, pr.id]));
+        verifiedByProfileId = new Map((profiles || []).map((pr: any) => [pr.id, !!pr.verified]));
       }
-      return NextResponse.json({ professionals: rows.map((p: any) => ({ ...p, profileId: profileIdByAuthId.get(p.user_id) || null })) });
+      // Trust line ("N★ (M reviews)") sourced from real muse_reviews rows keyed
+      // by the professional's resolved profile id — never a made-up number.
+      const profileIds = [...profileIdByAuthId.values()];
+      const reviewStatsByProfileId = new Map<string, { rating: number; count: number }>();
+      if (profileIds.length) {
+        const { data: reviews } = await sb.from("muse_reviews").select("reviewee_id, rating").in("reviewee_id", profileIds);
+        const sums = new Map<string, { sum: number; count: number }>();
+        for (const r of reviews || []) {
+          const rid = String((r as any).reviewee_id);
+          const cur = sums.get(rid) || { sum: 0, count: 0 };
+          cur.sum += (r as any).rating || 0;
+          cur.count += 1;
+          sums.set(rid, cur);
+        }
+        for (const [rid, s] of sums) reviewStatsByProfileId.set(rid, { rating: s.count ? Math.round((s.sum / s.count) * 10) / 10 : 0, count: s.count });
+      }
+      return NextResponse.json({
+        professionals: rows.map((p: any) => {
+          const profileId = profileIdByAuthId.get(p.user_id) || null;
+          const stats = profileId ? reviewStatsByProfileId.get(profileId) : undefined;
+          return {
+            ...p,
+            profileId,
+            verified: profileId ? !!verifiedByProfileId.get(profileId) : false,
+            reviewRating: stats?.rating ?? null,
+            reviewCount: stats?.count ?? 0,
+          };
+        }),
+      });
     }
 
     if (type === "reviews") {
@@ -203,10 +255,10 @@ export async function GET(req: NextRequest) {
     if (type === "bookings") {
       if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
       const { data: asBooker } = await sb.from("muse_bookings")
-        .select("id, status, created_at, completed_at, session_id(id, title, type, rate, duration, img), host_id(id, name, avatar, type)")
+        .select("id, status, created_at, completed_at, session_id(id, title, type, rate, duration, img), host_id(id, name, avatar, type, verified)")
         .eq("user_id", profileId).order("created_at", { ascending: false });
       const { data: asHost } = await sb.from("muse_bookings")
-        .select("id, status, created_at, completed_at, session_id(id, title, type, rate, duration, img), user_id(id, name, avatar, type)")
+        .select("id, status, created_at, completed_at, session_id(id, title, type, rate, duration, img), user_id(id, name, avatar, type, verified)")
         .eq("host_id", profileId).order("created_at", { ascending: false });
       // The "Pay" button (client) needs to know whether a booking has already
       // been paid for (held in escrow or fully captured) so it can hide once

@@ -87,6 +87,8 @@ export function normalizeSession(s: any) {
     ...s,
     name: s.name ?? s.title ?? "Creative Pro",
     sessions: s.sessions ?? 0,
+    hostVerified: !!s.hostVerified,
+    hostCompletedSessions: s.hostCompletedSessions ?? 0,
   };
 }
 

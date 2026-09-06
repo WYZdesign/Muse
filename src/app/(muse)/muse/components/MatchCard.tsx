@@ -85,7 +85,10 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
         {m.online && <div className="online-dot" style={{ position: "absolute", bottom: 2, right: 2, zIndex: 2 }} />}
       </div>
       <div className="match-info" style={isList ? { marginLeft: 14, textAlign: "left" } : undefined}>
-        <div className="match-name" style={isList ? { fontSize: 15, lineHeight: 1.2 } : undefined}>{m.name}</div>
+        <div className="match-name" style={{ display: "flex", alignItems: "center", gap: 5, ...(isList ? { fontSize: 15, lineHeight: 1.2 } : {}) }}>
+          {m.name}
+          {m.verified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
+        </div>
         <div className="match-type" style={isList ? { fontSize: 11 } : undefined}>{m.type}</div>
         {isList && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap" }}>
