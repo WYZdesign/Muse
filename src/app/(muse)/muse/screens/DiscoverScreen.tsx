@@ -572,7 +572,13 @@ export const DiscoverScreen = memo(function DiscoverScreen({
             </>
           )}
           <div className="gallery-view-img-wrap" onClick={(e) => { e.stopPropagation(); }}>
-            <img loading="lazy" src={galleryView.photos[galleryView.idx]} alt={galleryView.name} onError={handleImgError} />
+            {/* .gallery-view-img-wrap is a definite-sized (100% x 78%), now
+                position:relative box purely for centering/letterboxing a photo
+                whose own aspect ratio varies -- a safe `fill` target unlike the
+                other variable-ratio photos in this file. object-fit/border-radius/
+                box-shadow keep coming from the existing `.gallery-view-img-wrap img`
+                CSS rule. */}
+            <Image loading="lazy" src={galleryView.photos[galleryView.idx]} alt={galleryView.name} fill sizes="100vw" onError={handleImgError} />
           </div>
           <div className="gallery-view-meta">
             <div className="gallery-view-name">{galleryView.name}</div>
@@ -590,7 +596,13 @@ export const DiscoverScreen = memo(function DiscoverScreen({
               <button onClick={(e) => { e.stopPropagation(); setLightboxIdx(i => (i + 1) % lightboxPhotos.length); }} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 22 }}>›</button>
             </>
           )}
-           <img src={lightboxPhotos[lightboxIdx] || lightboxPhotos[0]} alt="Photo" style={{ maxWidth: "100vw", maxHeight: "100vh", objectFit: "contain" }} onClick={(e) => e.stopPropagation()} onError={handleImgError} />
+           {/* The modal overlay above is already `position:"fixed"`, which is a
+               valid positioning context for `fill` -- the close/nav buttons are
+               already explicitly `position:absolute` with their own z-index, so
+               they stay on top and clickable. `fill` + objectFit:contain here
+               letterboxes identically to the old maxWidth/maxHeight:100vw/100vh
+               plain <img>, since both size to the viewport and preserve aspect. */}
+           <Image src={lightboxPhotos[lightboxIdx] || lightboxPhotos[0]} alt="Photo" fill sizes="100vw" style={{ objectFit: "contain" }} onClick={(e) => e.stopPropagation()} onError={handleImgError} />
           <div style={{ position: "absolute", bottom: 20, color: "rgba(255,255,255,0.5)", fontSize: 13 }}>{lightboxIdx + 1} / {lightboxPhotos.length}</div>
         </div>
       )}

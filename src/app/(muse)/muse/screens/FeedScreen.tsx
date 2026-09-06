@@ -462,7 +462,12 @@ export const FeedScreen = memo(function FeedScreen({
                 <div style={{ padding: "10px 18px", fontSize: 14, color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-wrap", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPostDetail(post.id); } }} onClick={() => openPostDetail(post.id)}>{post.text}</div>
                 {post.img && (
                   <div className="feed-post-img-wrap" style={{ position: "relative" }}>
-                    <img loading="lazy" src={post.img} alt="Photo" className="feed-post-img" style={{ width: "100%", maxHeight: 360, objectFit: "cover", display: "block" }} onError={handleImgError} />
+                    {/* Variable-aspect-ratio user photo, no fixed frame to `fill` into --
+                        width/height below are placeholders only (required by next/image),
+                        immediately overridden by the style object so the rendered box is
+                        pixel-identical to the previous plain <img> (full width, capped at
+                        360 tall, cropped to fill via objectFit:cover). */}
+                    <Image loading="lazy" src={post.img} alt="Photo" width={800} height={360} className="feed-post-img" style={{ width: "100%", height: "auto", maxHeight: 360, objectFit: "cover", display: "block" }} onError={handleImgError} />
                   </div>
                 )}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 18px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
@@ -574,7 +579,7 @@ export const FeedScreen = memo(function FeedScreen({
                 </div>
               </div>
               {dp.text && <div style={{ fontSize: 16, lineHeight: 1.6, whiteSpace: "pre-wrap", marginBottom: dp.img ? 14 : 18 }}>{dp.text}</div>}
-              {dp.img && <img loading="lazy" src={dp.img} alt="Photo" style={{ width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 16, marginBottom: 14, display: "block" }} onError={handleImgError} />}
+              {dp.img && <Image loading="lazy" src={dp.img} alt="Photo" width={800} height={420} style={{ width: "100%", height: "auto", maxHeight: 420, objectFit: "cover", borderRadius: 16, marginBottom: 14, display: "block" }} onError={handleImgError} />}
               {(() => {
                 const dReactions = feedReactions[dp.id] || [];
                 const dTotalReactions = ["❤️", "🔥", "😍", "😂", "😢", "😡"].reduce((s, r) => s + dReactions.filter(x => x === r).length, dp.liked ? 1 : 0);

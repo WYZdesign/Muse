@@ -2738,7 +2738,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           <button style={{position:"absolute",top:14,right:14,zIndex:5,background:"none",border:"none",color:"#fff",fontSize:26,cursor:"pointer",padding:6}} onClick={()=>setShowStory(null)} aria-label="Close story">✕</button>
           {stories[showStory] && (
             <div style={{textAlign:"center",pointerEvents:"none"}}>
-              <img loading="lazy" src={stories[showStory].img} alt="Photo" style={{maxWidth:"90%",maxHeight:"70vh",borderRadius:16,objectFit:"contain",backgroundColor:"#1a0a2e"}} />
+              <Image loading="lazy" src={stories[showStory].img} alt="Photo" width={800} height={1200} style={{width:"auto",height:"auto",maxWidth:"90%",maxHeight:"70vh",borderRadius:16,objectFit:"contain",backgroundColor:"#1a0a2e"}} />
               <div style={{display:"flex",alignItems:"center",gap:10,justifyContent:"center",marginTop:16}}>
                 <Image loading="lazy" src={stories[showStory].avatar} alt="Avatar" width={32} height={32} style={{borderRadius:"50%",objectFit:"cover",backgroundColor:"#1a0a2e"}} />
                 <span style={{color:"#fff",fontWeight:700}}>{stories[showStory].author}</span>
