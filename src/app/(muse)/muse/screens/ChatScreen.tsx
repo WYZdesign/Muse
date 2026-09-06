@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiImage, FiSend } from "react-icons/fi";
 import Nav from "../components/Nav";
@@ -68,6 +68,10 @@ export const ChatScreen = memo(function ChatScreen({
   showToast,
   uploadImage,
 }: ChatScreenProps) {
+  // Blur-then-reveal chat image messages (consistent with Discover/BTS/Portfolio):
+  // chat media can be sensitive, so it's blurred until the viewer taps to reveal,
+  // instead of rendering unblurred like a plain img.
+  const [revealedChatImgs, setRevealedChatImgs] = useState<Set<string>>(() => new Set());
   return (
     <div className={"screen-el" + (screen === "chat" && chatTarget ? " active" : "")}>
       {chatTarget && (
@@ -96,7 +100,14 @@ export const ChatScreen = memo(function ChatScreen({
             )}
             {(chatTarget.messages || []).map((msg: any, i: number) => (
               <div key={i} className={"msg " + (msg.from === "me" ? "msg-me" : "msg-them")}>
-                {msg.img && <Image loading="lazy" src={msg.img} alt="Photo" width={200} height={200} style={{ width: "auto", height: "auto", maxWidth: 200, borderRadius: 12, marginBottom: 6, display: "block" }} />}
+                {msg.img && (
+                  <div style={{ position: "relative", display: "inline-block" }} onClick={() => setRevealedChatImgs(prev => { const n = new Set(prev); n.add(String(msg.img)); return n; })} role="button" tabIndex={0} aria-label="Reveal image">
+                    <Image loading="lazy" src={msg.img} alt="Photo" width={200} height={200} style={{ width: "auto", height: "auto", maxWidth: 200, borderRadius: 12, marginBottom: 6, display: "block", filter: revealedChatImgs.has(String(msg.img)) ? "none" : "blur(24px)", transition: "filter .2s" }} />
+                    {!revealedChatImgs.has(String(msg.img)) && (
+                      <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 11, color: "#fff", background: "rgba(10,6,18,0.6)", padding: "4px 10px", borderRadius: 99, whiteSpace: "nowrap" }}>Tap to reveal</span>
+                    )}
+                  </div>
+                )}
                 {msg.text && <div>{msg.text}</div>}
                 <div className="msg-time" style={{ textAlign: msg.from === "me" ? "right" : "left", marginTop: 4, fontSize: 10, color: msg.from === "me" ? "rgba(10,6,18,0.4)" : "var(--muted)" }}>
                   {msg.time}{msg.from === "me" && <span style={{ marginLeft: 4 }}>{i === (chatTarget.messages || []).length - 1 ? "✓✓" : "✓"}</span>}
