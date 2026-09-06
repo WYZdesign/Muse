@@ -159,6 +159,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ communities: data || [] });
     }
 
+    // Real member roster for a group's detail view — admin/mod badges next to
+    // names come from the actual `role` column, ordered admin/moderator first.
+    if (type === "community-members") {
+      const communityId = req.nextUrl.searchParams.get("communityId") || "";
+      if (!UUID_RE.test(communityId)) return NextResponse.json({ members: [] });
+      const { data } = await sb.from("muse_community_members")
+        .select("user_id, user_name, user_avatar, role, joined_at")
+        .eq("community_id", communityId)
+        .order("joined_at", { ascending: true })
+        .limit(200);
+      const rolePriority: Record<string, number> = { admin: 0, moderator: 1, member: 2 };
+      const rows = (data || []).slice().sort((a: any, b: any) => (rolePriority[a.role] ?? 2) - (rolePriority[b.role] ?? 2));
+      return NextResponse.json({ members: rows });
+    }
+
     if (type === "sessions") {
       const { data } = await sb.from("muse_sessions").select("*").order("date", { ascending: true }).limit(20);
       const rows = data || [];

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { FiSearch, FiSettings, FiCompass, FiZap, FiCamera, FiX, FiChevronRight, FiFilter } from "react-icons/fi";
 import Nav from "../components/Nav";
 import MuseMap from "../components/MuseMap";
-import type { Screen, Profile } from "../components/types";
+import type { Screen, Profile, LikeAnchor } from "../components/types";
 import { CITY_GEO } from "../components/types";
 import { distanceMiles } from "@/app/muse-realtime";
 import { PORTRAIT_IMG } from "../components/photoOrientation";
@@ -168,7 +168,8 @@ export interface DiscoverScreenProps {
   showMatchMenu?: boolean;
   setShowMatchMenu?: (v: boolean | ((p: boolean) => boolean)) => void;
   doRewind?: () => void;
-  doLikeWithNote?: () => void;
+  doLikeWithNote?: (anchor?: LikeAnchor) => void;
+  onAnchorLike?: (anchor: LikeAnchor) => void;
   setDailyLikes?: (v: number) => void;
   setSuperLikes?: (v: number) => void;
   isUnlimited?: boolean;
@@ -233,6 +234,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   doRewind = () => {},
   doSwipe,
   doLikeWithNote = () => {},
+  onAnchorLike,
   setDailyLikes = () => {},
   setSuperLikes = () => {},
   isUnlimited = false,
@@ -254,6 +256,10 @@ export const DiscoverScreen = memo(function DiscoverScreen({
 }: DiscoverScreenProps) {
   const [badgeInfo, setBadgeInfo] = useState<{ name: string; desc: string; icon: string; color: string } | null>(null);
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
+  // Tapping a specific prompt or photo opens the like-with-note composer
+  // already anchored to that content (Hinge-style). Falls back to
+  // doLikeWithNote directly if the caller doesn't wire a dedicated handler.
+  const handleAnchorLike = onAnchorLike ?? ((anchor: LikeAnchor) => doLikeWithNote(anchor));
 
   useEffect(() => {
     if (screen !== "discover") return;
@@ -416,6 +422,15 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                           <div className={"card-photo-dots" + (cardScrolled ? " hidden" : "")}>
                             {photos.map((_: string, i: number) => <div key={i} className={"card-photo-dot" + (i === currentPhotoIdx ? " active" : "")} />)}
                           </div>
+                          {isTop && (!(profile as any).nsfw || revealedNsfw.has(String(profile.id))) && (
+                            <button
+                              className={"card-anchor-like-btn" + (cardScrolled ? " hidden" : "")}
+                              style={{ top: 12, right: 12 }}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onClick={(e) => { e.stopPropagation(); handleAnchorLike({ type: "photo", value: `Photo #${(currentPhotoIdx ?? 0) + 1}` }); }}
+                              aria-label={`Like photo ${(currentPhotoIdx ?? 0) + 1}`}
+                            >♥ Like this photo</button>
+                          )}
                           {showNoteTooltip && (
                             <div style={{ textAlign: "center", padding: "4px 16px 0", animation: "tooltipIn .4s ease" }}>
                               <div style={{ display: "inline-block", background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", borderRadius: 10, padding: "8px 14px", fontSize: 12, color: "var(--text2)", maxWidth: 280 }}>
@@ -443,6 +458,12 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                       <div className="card-prompt-a">{(profile as any).prompts[promptIdx ?? 0]?.a || ""}</div>
                                     </div>
                                     <button className="card-prompt-arrow" onClick={(e) => { e.stopPropagation(); setPromptIdx?.(prev => Math.min(((profile as any).prompts.length - 1), (prev ?? 0) + 1)); }} style={{ opacity: (promptIdx ?? 0) < ((profile as any).prompts.length - 1) ? 1 : 0.3 }}>›</button>
+                                    <button
+                                      className="card-prompt-like-btn"
+                                      onClick={(e) => { e.stopPropagation(); const p = (profile as any).prompts[promptIdx ?? 0]; if (p) handleAnchorLike({ type: "prompt", value: p.a || p.q || "" }); }}
+                                      aria-label="Like this prompt"
+                                      title="Like this prompt"
+                                    >♥</button>
                                   </div>
                                 </div>
                               )}
@@ -537,7 +558,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 <button className="match-radial-btn btn-nope" style={{ left: -106, top: -40 }} onClick={() => doSwipe("left")} aria-label="Pass">✕</button>
                                 <button className="match-radial-btn btn-super" style={{ left: -77, top: -77, width: 37, height: 37, fontSize: 16 }} onClick={() => doSwipe("super")} aria-label="Super Like">★</button>
                                 <button className="match-radial-btn btn-like" style={{ left: -40, top: -106 }} onClick={() => doSwipe("right")} aria-label="Like">♥</button>
-                                <button className="match-radial-btn btn-note" style={{ left: 7, top: -110 }} onClick={doLikeWithNote} aria-label="Like + Note">✎</button>
+                                <button className="match-radial-btn btn-note" style={{ left: 7, top: -110 }} onClick={() => doLikeWithNote()} aria-label="Like + Note">✎</button>
                               </div>
                             </div>
                           )}

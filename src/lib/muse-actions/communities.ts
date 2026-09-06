@@ -52,8 +52,10 @@ export const communityCreate = async ({ sb, profile, rest, ip }: ActionContext) 
     created_by: profile.id,
   }).select().single();
   if (error) return safeServerError(error, "db op");
+  // The creator is seeded as the group's admin — the real role source for the
+  // admin/mod badges shown in the member list, not a hardcoded label.
   await sb.from("muse_community_members").upsert(
-    { community_id: data.id, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar },
+    { community_id: data.id, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, role: "admin" },
     { onConflict: "community_id,user_id", ignoreDuplicates: true }
   );
   return NextResponse.json({ success: true, community: data });

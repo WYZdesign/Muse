@@ -1477,6 +1477,14 @@ img{background-color:#1a0a2e}
 .card-prompt-text{flex:1;text-align:center}
 .card-prompt-q{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:2px}
 .card-prompt-a{font-size:13px;color:var(--text2);line-height:1.4}
+.card-prompt-like-btn{background:none;border:none;color:var(--coral);font-size:16px;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0;transition:transform .15s ease}
+.card-prompt-like-btn:hover{transform:scale(1.15)}
+
+/* Hinge-style anchored like: tap to like a specific photo, opening the
+   like-with-note composer already anchored to it. */
+.card-anchor-like-btn{position:absolute;z-index:6;display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:99px;background:rgba(10,6,18,0.55);border:1px solid rgba(255,255,255,0.16);color:#fff;font-size:11px;font-weight:700;cursor:pointer;backdrop-filter:blur(8px);transition:opacity .3s ease,transform .15s ease}
+.card-anchor-like-btn:hover{transform:scale(1.05)}
+.card-anchor-like-btn.hidden{opacity:0;pointer-events:none}
 
 /* ═══ DESKTOP ═══ */
 @media(min-width:768px){

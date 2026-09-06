@@ -8,6 +8,19 @@ export type Match = Partial<Profile> & {
 };
 export type Screen = "auth"|"onboard"|"discover"|"connections"|"matches"|"chat"|"profile"|"briefs"|"portfolio"|"settings"|"subscription"|"community"|"sessions"|"bts"|"forum"|"network"|"codex"|"analytics";
 
+// Hinge-style anchored like: which specific piece of content on a Discover
+// card (a prompt answer or a photo) a like-with-note was attached to. Sent
+// server-side as anchor_type/anchor_value on the like record so the recipient
+// sees exactly what was liked, not just a generic note.
+export type LikeAnchor = { type: "prompt" | "photo"; value: string };
+
+// A group's numbered rules list (Community governance visibility). Read-only
+// display for now — no dedicated authoring UI yet.
+export type CommunityRule = { title: string; body: string };
+
+// A single row in a group's member list, with its real membership role.
+export type CommunityMember = { user_id: string; user_name: string; user_avatar?: string; role: "admin" | "moderator" | "member"; joined_at?: string };
+
 export const EXCLUDED_PORTFOLIOS = [
   "/models/NIK/",
   "/models/Nik/",

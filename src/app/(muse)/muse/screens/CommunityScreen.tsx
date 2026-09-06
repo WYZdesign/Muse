@@ -3,13 +3,18 @@
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
 import { STRINGS } from "@/lib/strings";
-import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX } from "react-icons/fi";
+import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX, FiShield } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
-import type { Screen } from "../components/types";
+import type { Screen, CommunityRule, CommunityMember } from "../components/types";
 import { COMMUNITIES, EVENTS } from "../components/types";
 import { getCommunityShareUrl, getEventShareUrl } from "@/lib/urls";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
+
+// Real (DB-backed) communities have a UUID id; the demo/fallback COMMUNITIES
+// dataset uses small numeric ids. Only real groups have a real member roster
+// to fetch — the member-list section is skipped (not faked) for demo groups.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface CommunityScreenProps {
   screen: Screen;
@@ -59,6 +64,8 @@ export const CommunityScreen = memo(function CommunityScreen({
   const [detailType, setDetailType] = useState<"group" | "event" | null>(null);
   const [rsvpLoading, setRsvpLoading] = useState<number | null>(null);
   const [joinLoading, setJoinLoading] = useState<string | null>(null);
+  const [groupMembers, setGroupMembers] = useState<CommunityMember[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
 
   useEffect(() => {
     if (screen !== "community") return;
@@ -125,7 +132,22 @@ export const CommunityScreen = memo(function CommunityScreen({
     } catch { showToast("Failed to create"); }
   };
 
-  const openGroupDetail = (c: any) => { setDetailItem(c); setDetailType("group"); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_community"] }) }).catch(() => {}); };
+  const openGroupDetail = (c: any) => {
+    setDetailItem(c);
+    setDetailType("group");
+    apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_community"] }) }).catch(() => {});
+    // Real member roster (with role) only exists for real, DB-backed groups —
+    // the demo/fallback dataset has no real members to fetch.
+    setGroupMembers([]);
+    if (UUID_RE.test(String(c.id))) {
+      setMembersLoading(true);
+      apiFetch("/api/muse?type=community-members&communityId=" + c.id)
+        .then(r => r.ok ? r.json() : { members: [] })
+        .then(d => setGroupMembers(Array.isArray(d.members) ? d.members : []))
+        .catch(() => setGroupMembers([]))
+        .finally(() => setMembersLoading(false));
+    }
+  };
   const openEventDetail = (ev: any) => { setDetailItem(ev); setDetailType("event"); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_event"] }) }).catch(() => {}); };
 
   const groups = (liveCommunities?.length ? liveCommunities : COMMUNITIES).filter((c: any) => showNsfw || !c.nsfw);
@@ -149,9 +171,24 @@ export const CommunityScreen = memo(function CommunityScreen({
         <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
           <div role="presentation" aria-hidden="true" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} onClick={() => setDetailItem(null)} />
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxHeight: "85vh", background: "linear-gradient(135deg,#1a0a2e,#2d1b4e)", borderRadius: "24px 24px 0 0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 20px 0" }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{detailType === "group" ? detailItem.name : detailItem.title}</div>
-              <button onClick={() => setDetailItem(null)} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(255,255,255,0.6)" }}><FiX size={16} /></button>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 20px 0" }}>
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{detailType === "group" ? detailItem.name : detailItem.title}</div>
+                {/* Vitality line: only real, tracked numbers — member count is
+                    always known; a created date only exists for real (DB-backed)
+                    groups, so it's omitted rather than faked for demo groups. */}
+                {detailType === "group" && (
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
+                    {detailItem.members} member{detailItem.members === 1 ? "" : "s"}
+                    {(() => {
+                      const created = detailItem.created_at ? new Date(detailItem.created_at) : null;
+                      if (!created || Number.isNaN(created.getTime())) return null;
+                      return <> · since {created.toLocaleDateString("en-US", { month: "short", year: "numeric" })}</>;
+                    })()}
+                  </div>
+                )}
+              </div>
+              <button onClick={() => setDetailItem(null)} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(255,255,255,0.6)", flexShrink: 0 }}><FiX size={16} /></button>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 100px" }}>
               {/* Same img:'' seed-data gap as the card views — gradient-initial fallback */}
@@ -172,6 +209,55 @@ export const CommunityScreen = memo(function CommunityScreen({
                     {detailItem.nsfw && <span style={{ fontSize: 12, padding: "4px 12px", borderRadius: 99, background: "rgba(255,69,0,0.15)", border: "1px solid rgba(255,69,0,0.3)", color: "#ff6b6b", fontWeight: 600 }}>18+</span>}
                   </div>
                   <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6, marginBottom: 20 }}>{detailItem.desc || "No description yet."}</div>
+
+                  {/* Rules — real, group-authored data (muse_communities.rules).
+                      No sample text: an empty/missing list just isn't shown. */}
+                  {Array.isArray(detailItem.rules) && detailItem.rules.length > 0 && (
+                    <div style={{ marginBottom: 20 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><FiShield size={13} /> Group Rules</div>
+                      <ol style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+                        {(detailItem.rules as CommunityRule[]).map((rule, i) => (
+                          <li key={i} style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>
+                            <span style={{ color: "#fff", fontWeight: 700 }}>{rule.title}</span>
+                            {rule.body && <div style={{ marginTop: 2 }}>{rule.body}</div>}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {/* Members — real roster fetched for DB-backed groups, with
+                      admin/mod role badges sourced from the actual role column. */}
+                  {UUID_RE.test(String(detailItem.id)) && (
+                    <div style={{ marginBottom: 20 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><FiUsers size={13} /> Members</div>
+                      {membersLoading ? (
+                        <div style={{ fontSize: 12, color: "var(--muted)" }}>Loading members…</div>
+                      ) : groupMembers.length === 0 ? (
+                        <div style={{ fontSize: 12, color: "var(--muted)" }}>No members yet.</div>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {groupMembers.slice(0, 20).map(m => {
+                            const roleBadge = m.role === "admin" ? BADGE_COLORS.gold : m.role === "moderator" ? BADGE_COLORS.blue : null;
+                            return (
+                              <div key={m.user_id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                {m.user_avatar ? (
+                                  <div style={{ position: "relative", width: 28, height: 28, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+                                    <Image src={m.user_avatar} alt={m.user_name} fill sizes="28px" style={{ objectFit: "cover" }} onError={handleImgError} />
+                                  </div>
+                                ) : (
+                                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "var(--muted)", flexShrink: 0 }}>{(m.user_name || "?").trim().charAt(0).toUpperCase()}</div>
+                                )}
+                                <span style={{ fontSize: 13, color: "var(--text2)", flex: 1 }}>{m.user_name || "Member"}</span>
+                                {roleBadge && <span style={{ fontSize: 10, padding: "2px 9px", borderRadius: 99, background: roleBadge.bg, border: `1px solid ${roleBadge.bd}`, color: roleBadge.c, fontWeight: 700, textTransform: "capitalize" }}>{m.role}</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div style={{ display: "flex", gap: 8 }}>
                     <button className={joinedIds.has(detailItem.id) ? "btn btn-outline" : "btn btn-gold"} style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 700, borderRadius: 12, opacity: joinLoading === String(detailItem.id) ? 0.6 : 1 }} onClick={() => toggleJoin(detailItem)} disabled={joinLoading === String(detailItem.id)}>{joinedIds.has(detailItem.id) ? "✓ Joined" : "Join"}</button>
                     <button className="btn btn-outline" style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 600, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={() => shareItem(detailItem.name, getCommunityShareUrl(detailItem.id), showToast)}><FiShare2 size={14} /> Share</button>

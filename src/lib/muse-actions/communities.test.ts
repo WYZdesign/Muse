@@ -11,7 +11,7 @@ vi.mock("@/lib/supabase", () => ({
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
-import { communityJoin, communityLeave, eventRsvp } from "@/lib/muse-actions/communities";
+import { communityJoin, communityLeave, communityCreate, eventRsvp } from "@/lib/muse-actions/communities";
 
 function makeQuery() {
   const q: any = {
@@ -57,5 +57,11 @@ describe("communities actions", () => {
   it("eventRsvp requires eventId (400)", async () => {
     const r = await eventRsvp(ctx({}, null));
     expect((r as Response).status).toBe(400);
+  });
+
+  it("communityCreate seeds the creator's membership with the admin role", async () => {
+    const r = await communityCreate(ctx({ name: "New Group" }, { id: "c1", name: "New Group" }));
+    expect((r as Response).status).toBe(200);
+    expect(state.upserts[0]).toMatchObject({ community_id: "c1", user_id: "me1", role: "admin" });
   });
 });

@@ -55,7 +55,7 @@ import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
 import StreakWidget from "./components/StreakWidget";
-import { PROFILES, AESTHETICS, BEHIND_CAMERA, IN_FRONT_CAMERA, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, ICEBREAKERS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen } from "./components/types";
+import { PROFILES, AESTHETICS, BEHIND_CAMERA, IN_FRONT_CAMERA, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, ICEBREAKERS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen, type LikeAnchor } from "./components/types";
 import { useDiscoveryData } from "./hooks/useDiscoveryData";
 import { useFeedData } from "./hooks/useFeedData";
 import { useCommunityData } from "./hooks/useCommunityData";
@@ -183,6 +183,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [showLikeNote, setShowLikeNote] = useState(false);
   const [likeNoteText, setLikeNoteText] = useState("");
   const [noteTargetProfile, setNoteTargetProfile] = useState<any>(null);
+  // Hinge-style anchored like: which specific prompt/photo (if any) the
+  // in-progress Like + Note composer is attached to.
+  const [likeNoteAnchor, setLikeNoteAnchor] = useState<LikeAnchor | null>(null);
   const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
    const [cardScrolled, setCardScrolled] = useState(false);
    const cardScrollRef = useRef<HTMLDivElement>(null);
@@ -1512,12 +1515,17 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     flash("#D4A5FF");
   }, [rewindStack, flash]);
 
-  const doLikeWithNote = useCallback(() => {
+  const doLikeWithNote = useCallback((anchor?: LikeAnchor) => {
     setShowNoteTooltip(false); safeSetItem("muse_note_seen","1");
     const p = filteredProfiles[currentIdx];
     if (!p || (!isUnlimited && dailyLikes <= 0)) { showToast("No likes left today!"); return; }
     setNoteTargetProfile(p);
-    setLikeNoteText("");
+    setLikeNoteAnchor(anchor ?? null);
+    // Prefill the note from the anchor (still editable) so the composer opens
+    // already pointed at what was tapped — Hinge-style anchored likes.
+    setLikeNoteText(anchor
+      ? (anchor.type === "prompt" ? `Loved your prompt: "${anchor.value}"` : `Loved your ${anchor.value.toLowerCase()}!`)
+      : "");
     setShowLikeNote(true);
   }, [currentIdx, dailyLikes, filteredProfiles, isUnlimited]);
 
@@ -2496,9 +2504,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       {showLikeNote && noteTargetProfile && (
         <div className="modal-overlay" style={{zIndex:500}}>
           <div className="modal-header">
-            <button className="modal-back" onClick={()=>setShowLikeNote(false)}><FiArrowLeft size={20} /></button>
+            <button className="modal-back" onClick={()=>{setShowLikeNote(false);setLikeNoteAnchor(null);}}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Like + Note</div>
-            <button className="modal-close" onClick={()=>setShowLikeNote(false)} aria-label="Close"><FiX size={18} /></button>
+            <button className="modal-close" onClick={()=>{setShowLikeNote(false);setLikeNoteAnchor(null);}} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body" style={{display:"flex",flexDirection:"column",gap:16,paddingTop:20}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -2508,18 +2516,33 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                 <div style={{fontSize:13,color:"var(--muted)"}}>{noteTargetProfile.type}</div>
               </div>
             </div>
+            {likeNoteAnchor && (
+              <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",borderRadius:10,background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.25)",fontSize:12,color:"var(--gold)",fontWeight:600}}>
+                ♥ Liking {likeNoteAnchor.type === "prompt" ? `their prompt: "${likeNoteAnchor.value}"` : likeNoteAnchor.value.toLowerCase()}
+              </div>
+            )}
             <textarea className="inp" placeholder="Send a note with your like…" rows={4} value={likeNoteText} onChange={e=>setLikeNoteText(e.target.value)} style={{fontSize:14,resize:"none",borderRadius:12}} />
             <div style={{fontSize:12,color:"var(--muted)",textAlign:"right"}}>{likeNoteText.length}/200</div>
             <button className="btn btn-gold" onClick={async ()=>{
               if (!noteTargetProfile) return;
               const target = noteTargetProfile;
+              const anchor = likeNoteAnchor;
               doSwipe("right");
-              const note = likeNoteText.trim();
+              const note = likeNoteText.trim().slice(0,200);
               setShowLikeNote(false);
               setLikeNoteText("");
               setNoteTargetProfile(null);
+              setLikeNoteAnchor(null);
+              // Persist the like with its anchor/note so the recipient sees
+              // exactly what was liked (in their notifications). doSwipe only
+              // calls the match action when it judges a mutual match, so an
+              // anchored/annotated like needs its own explicit record —
+              // matchCreate merges anchor/note into the existing row either way.
+              if (target?.id) {
+                apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: target.id, note, anchor_type: anchor?.type, anchor_value: anchor?.value }) }).catch(() => {});
+              }
               if (note) {
-                const msg = note.slice(0,200);
+                const msg = note;
                 const myId = authUser?.profile?.id || authUser?.id || "local";
                 const clientMsgId = `${myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
                 const userMsg = { from: "me", text: msg, time: "Just now", clientMsgId };
