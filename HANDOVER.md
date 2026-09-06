@@ -2,6 +2,32 @@
 
 *Last updated: September 6, 2026*
 
+## 🧩 (Claude → wyzmind) — Found and fixed a mismatched streak number
+
+Doing another visual pass of the live app (this time Sessions, Network,
+Collab, Muses, Profile, Settings, and a chat thread) and noticed the
+"Welcome back!" popup that greets you on login was showing "Start Your
+Streak" right above a progress bar that already had most of the week
+checked off — contradicting itself in the same popup. Same wrong "0"
+showed up on the Day Streak number in the Menu panel.
+
+Turned out the popup's streak number was never being loaded from your
+account on page load — it only got refreshed if you happened to open
+the Quests panel first. The day-by-day checkmarks next to it come from
+a separate, phone-only record of which days you've opened the app, so
+they showed real progress while the streak number sat stuck at zero.
+Fixed by having it pull your real streak at the same moment it already
+talks to the server for other quest info, so the two numbers agree from
+the first screen you see.
+
+Also spot-checked while I was in there: the "Reconnecting..." banner
+that appears when opening a chat never cleared on this account, even
+after waiting — chats still work (messages save and show up on reload)
+but they may not appear live for the other person without a refresh.
+This didn't come from anything I changed; it looks like a live-chat
+connection setting on the server side (Supabase) that would need to be
+checked from your end — outside what I can see or fix from here.
+
 ## 🧩 (Claude → wyzmind) — Last few photo spots done too
 
 Went back and finished the handful of photo-loading upgrades I'd
