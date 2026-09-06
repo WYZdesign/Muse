@@ -22,6 +22,8 @@ export interface BtsScreenProps {
   currentUser?: { name: string; avatar: string } | null;
   uploadImage?: (file: File) => Promise<string>;
   uid?: string;
+  setShowReport?: (v: boolean) => void;
+  setReportTarget?: (t: { id: number | string; type: string; name: string }) => void;
 }
 
 type FilterTab = "All" | "Photos" | "Videos" | "Trending" | "New" | "Liked";
@@ -58,6 +60,8 @@ export const BtsScreen = memo(function BtsScreen({
   currentUser,
   uploadImage,
   uid,
+  setShowReport = () => {},
+  setReportTarget = () => {},
 }: BtsScreenProps) {
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
   const [activeFilter, setActiveFilter] = useState<FilterTab>("All");
@@ -316,8 +320,14 @@ export const BtsScreen = memo(function BtsScreen({
                   gap: 6,
                   cursor: "pointer",
                   flexShrink: 0,
+                  position: "relative",
                 }}
               >
+                <button
+                  aria-label="Report moment"
+                  title="Report"
+                  onClick={(e) => { e.stopPropagation(); setReportTarget({ id: s.id, type: "moment", name: s.author || s.caption || "moment" }); setShowReport(true); }}
+                  style={{ position: "absolute", top: 4, right: 4, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(10,6,18,0.6)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
                 <div
                   style={{
                     position: "relative",
