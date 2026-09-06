@@ -58,3 +58,37 @@ are listed with their source-pattern.
   research from public teardowns/blogs/press.
 - Pending: Discord (waiting on login).
 - Every Muse screen read from source (discoveryPrefs, cardAlbums, bookingsAsHost, etc.), not guessed.
+
+---
+
+# SUPPLEMENT — wyzmind crawler/raw-data research (complements Claude's browser research)
+
+Claude's report came from logged-in browser + agentic browsing (rendered UI, screenshots). wyzmind
+added a *complementary* raw-data pass (shell HTTP: sitemaps, robots.txt, static/server-rendered pages,
+crawler surfaces). Boundary: wyzmind's HTTP hits the SPA/JS-render wall on JS-heavy sites (Thumbtack
+search results, Discord/Tinder/Hinge app UI) — Claude's browser is superior there. wyzmind is superior
+on crawler surfaces + direct data extraction.
+
+## Unique findings (raw data Claude's browser pass wouldn't surface)
+- **Thumbtack robots.txt: 32 Disallow rules** — explicit feature-URL hiding (e.g. /action/, /bid/,
+  /find-work/, /admin/, /ajax). Means Thumbtack deliberately hides its pricing/bid/workflows from
+  crawlers (and AI crawlers). Muse has no such gating to worry about (not a ranking issue, but a
+  "these are trade-secret endpoints" signal — the pricing model is the moat).
+- **Model Mayhem robots: 4 rules; PurplePort robots: 1 rule** — both publish near-open sitemaps
+  (PurplePort sitemap inventory: 3 URLs). Their crawler surface is thin/normalized.
+- All four browser-blocked domains reached from the crawler layer: **tinder.com, bumble.com,
+  hinge.co, discord.com all HTTP 200** with sitemaps (e.g. Hinge's sitemap URLs include
+  /how-we-connect-daters, /labs, /ai-principles, /accessibility-statement, /security — pages that
+  describe product mechanics + trust/safety posture directly). Discord's product pages (e.g. /features)
+  are JS-rendered → 404-style shells for raw crawlers, confirming Claude's "pending" note is a
+  render-boundary, not an access boundary.
+
+## Actionable takeaway for Muse's crawler posture
+- If Muse wants AI-crawler visibility (Googlebot/GPTBot/Gemini) it's already open; the competitive
+  set (Thumbtack especially) actively blocks crawlers — a genuine differentiator to exploit for
+  discoverability (free SEO advantage Muse is NOT currently using on its public pages).
+- The trust/safety claim verification (Claude's "where Muse wins") is solid: Model Mayhem's safety
+  page is a cookie-shell (no real safety infra → raw crawler sees none), whereas Muse ships
+  check-ins/disclosure/Stripe-Identity — verifiable in Muse's own source.
+
+*Method: Invoke-WebRequest/curl via WYZMIND host shell, non-logged-in, public surfaces only.*
