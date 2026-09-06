@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo, useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { FiArrowLeft, FiCamera, FiClock } from "react-icons/fi";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import Nav from "../components/Nav";
@@ -319,6 +320,7 @@ export const BtsScreen = memo(function BtsScreen({
               >
                 <div
                   style={{
+                    position: "relative",
                     width: 64,
                     height: 64,
                     borderRadius: "50%",
@@ -328,14 +330,13 @@ export const BtsScreen = memo(function BtsScreen({
                       : "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))",
                   }}
                 >
-                  <img
-                    loading="lazy"
+                  <Image
                     src={s.img || s.avatar}
                     alt="Photo"
+                    fill
+                    sizes="64px"
                     onError={handleImgError}
                     style={{
-                      width: "100%",
-                      height: "100%",
                       borderRadius: "50%",
                       objectFit: "cover",
                       border: "2px solid var(--bg, #0a0612)",
@@ -434,14 +435,13 @@ export const BtsScreen = memo(function BtsScreen({
                     padding: "12px 12px 0",
                   }}
                 >
-                  <img
-                    loading="lazy"
+                  <Image
                     src={s.avatar}
                     alt="Avatar"
+                    width={32}
+                    height={32}
                     onError={handleImgError}
                     style={{
-                      width: 32,
-                      height: 32,
                       borderRadius: "50%",
                       objectFit: "cover",
                     }}
@@ -466,19 +466,19 @@ export const BtsScreen = memo(function BtsScreen({
                 </div>
 
                 {/* Image area */}
-                <div className="bts-photo-wrap" style={{ position: "relative", marginTop: 8, maxWidth: "100%", overflow: "hidden" }}>
-                  <img
-                    loading="lazy"
+                <div
+                  className="bts-photo-wrap"
+                  style={{ position: "relative", marginTop: 8, width: "100%", maxWidth: "100%", aspectRatio: "1", overflow: "hidden" }}
+                >
+                  <Image
                     src={s.img || s.avatar}
                     alt="Photo"
+                    fill
+                    sizes="(max-width: 600px) 50vw, 300px"
                     className="bts-photo"
                     onError={handleImgError}
                     style={{
-                      width: "100%",
-                      maxWidth: "100%",
-                      aspectRatio: "1",
                       objectFit: "cover",
-                      display: "block",
                       filter: isNsfw ? "blur(26px) brightness(0.7)" : "none",
                       transition: "filter 0.3s",
                     }}

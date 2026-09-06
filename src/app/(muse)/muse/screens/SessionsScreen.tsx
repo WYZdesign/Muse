@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo, useState } from "react";
+import Image from "next/image";
 import { FiArrowLeft } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
@@ -170,7 +171,11 @@ export const SessionsScreen = memo(function SessionsScreen({
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Browse creatives offering sessions — pick one, book, and pay securely.</div>
             {(liveSessions?.length ? liveSessions : SESSIONS).map(s => (
               <div key={s.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
-                <img loading="lazy" src={s.img} alt={s.name} style={{ width: "25%", alignSelf: "stretch", minHeight: 120, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
+                <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0 }}>
+                  {s.img && (
+                    <Image src={s.img} alt={s.name} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
+                  )}
+                </div>
                 <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <div className="conn-name" style={{ fontSize: 15 }}>{s.name}</div>
                   <div className="conn-meta" style={{ fontSize: 12 }}>{s.type} · {s.rate} · ★ {s.rating}</div>
@@ -239,7 +244,11 @@ export const SessionsScreen = memo(function SessionsScreen({
               const sc = statusColors[b.status] || BADGE_COLORS.muted;
               return (
                 <div key={b.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
-                  <img loading="lazy" src={host.avatar || sess.img || ""} alt={host.name || "Host"} style={{ width: "25%", alignSelf: "stretch", minHeight: 120, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
+                  <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0 }}>
+                    {(host.avatar || sess.img) && (
+                      <Image src={host.avatar || sess.img} alt={host.name || "Host"} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
+                    )}
+                  </div>
                   <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                       <div className="conn-name" style={{ fontSize: 15 }}>{host.name || "Host"}</div>
@@ -289,7 +298,11 @@ export const SessionsScreen = memo(function SessionsScreen({
               const sc = statusColors[b.status] || BADGE_COLORS.muted;
               return (
                 <div key={b.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
-                  <img loading="lazy" src={booker.avatar || sess.img || ""} alt={booker.name || "Booker"} style={{ width: "25%", alignSelf: "stretch", minHeight: 110, objectFit: "cover", flexShrink: 0 }} onError={handleImgError} />
+                  <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 110, flexShrink: 0 }}>
+                    {(booker.avatar || sess.img) && (
+                      <Image src={booker.avatar || sess.img} alt={booker.name || "Booker"} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
+                    )}
+                  </div>
                   <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                       <div className="conn-name" style={{ fontSize: 15 }}>{booker.name || "Booker"}</div>
