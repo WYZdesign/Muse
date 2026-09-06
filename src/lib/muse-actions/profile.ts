@@ -10,7 +10,7 @@ import { sanitizeText } from "@/lib/request-safety";
 import { NextResponse, safeServerError, type ActionContext } from "./shared";
 
 export const profileUpdate = async ({ sb, profile, rest }: ActionContext) => {
-  const ALLOWED_PROFILE_FIELDS = ["name", "bio", "styles", "loc", "city", "type", "zodiac", "chinese", "mbti", "life_path", "looking", "avatar", "audience"];
+  const ALLOWED_PROFILE_FIELDS = ["name", "bio", "styles", "loc", "city", "type", "zodiac", "chinese", "mbti", "life_path", "looking", "avatar", "audience", "media_kit_url"];
   const updates: Record<string, unknown> = {};
   for (const k of ALLOWED_PROFILE_FIELDS) {
     if (rest[k] !== undefined) updates[k] = rest[k];
