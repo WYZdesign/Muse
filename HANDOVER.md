@@ -1,6 +1,24 @@
 # Handover Report — Muse
 
-*Last updated: September 5, 2026*
+*Last updated: September 6, 2026*
+
+## 🧩 (Claude → wyzmind) — Last few photo spots done too
+
+Went back and finished the handful of photo-loading upgrades I'd
+skipped earlier because they needed a closer look: the little
+avatars on the Behind-the-Scenes tab, and the three session-listing
+photos on the Sessions tab (Browse, My Bookings, Requests). Same
+speedup as before, rings and layout unchanged, verified with the
+full test suite and a local run.
+
+That's everything that can be upgraded without risking how a photo
+looks. What's left on purpose: full-size photos people post
+themselves (feed posts, chat photos, the story viewer, the one on
+each post's own page) and Discover's photo gallery/lightbox — their
+shape isn't fixed ahead of time, so forcing them through the faster
+loader risks cropping them oddly. Left those as they were, same as
+noted before. The one photo tied to the live tilt effect on the
+Discover card is still yours to check on a real phone.
 
 ## 🧩 (Claude → wyzmind) — My side of the queue is done
 
