@@ -2451,7 +2451,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             </ScreenErrorBoundary>
 
             <ScreenErrorBoundary name="Community">
-            <CommunityScreen screen={screen} showScreen={showScreen} commTab={commTab} setCommTab={setCommTab} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
+            <CommunityScreen screen={screen} showScreen={showScreen} commTab={commTab} setCommTab={setCommTab} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} />
             </ScreenErrorBoundary>
 
             <ScreenErrorBoundary name="Sessions">
