@@ -113,14 +113,20 @@ export const SessionsScreen = memo(function SessionsScreen({
     } catch { showToast("Failed to complete"); }
   };
 
-  const cancelBooking = async (bookingId: string) => {
-    if (!confirm("Cancel this booking? Any held payment will be released.")) return;
+  // Styled confirmation modal (replaces the one native confirm() in the app):
+  // open it on cancel intent, run the request only after the user confirms.
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const doCancel = async (bookingId: string) => {
+    setCancelBusy(true);
+    setCancelTarget(null);
     try {
       const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "cancel-booking", bookingId }) });
       if (!r.ok) throw new Error("failed");
       showToast("Booking cancelled");
       refreshBookings();
     } catch { showToast("Failed to cancel"); }
+    setCancelBusy(false);
   };
 
   const payBooking = async (booking: any) => {
@@ -263,7 +269,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                         <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete</button>
                       )}
                       {(b.status === "pending" || b.status === "confirmed") && (
-                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, borderColor: "rgba(255,100,100,0.2)", color: "#ff6464" }} onClick={() => cancelBooking(b.id)}>{STRINGS.cancel}</button>
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, borderColor: "rgba(255,100,100,0.2)", color: "#ff6464" }} onClick={() => setCancelTarget(b.id)}>{STRINGS.cancel}</button>
                       )}
                       {b.status === "completed" && (
                         <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setReviewTarget(b)}>Leave Review</button>
@@ -347,6 +353,18 @@ export const SessionsScreen = memo(function SessionsScreen({
               <input className="inp" placeholder="Location" value={newSession.location} onChange={e => setNewSession(p => ({ ...p, location: e.target.value }))} style={{ flex: 1 }} />
             </div>
             <button className="btn btn-gold" style={{ width: "100%", marginTop: 12, fontWeight: 700 }} onClick={submitSession} disabled={creating}>{creating ? "Listing..." : "List Session"}</button>
+          </div>
+        </div>
+      )}
+      {cancelTarget && (
+        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setCancelTarget(null)}>
+          <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 380, width: "90%", padding: 20 }}>
+            <div className="modal-title" style={{ marginBottom: 6 }}>Cancel this booking?</div>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 18 }}>Any held payment will be released back to the client.</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setCancelTarget(null)}>{STRINGS.cancel}</button>
+              <button className="btn btn-gold" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 700, borderRadius: 12, background: "linear-gradient(135deg,#ff6464,#ff8a5c)" }} onClick={() => doCancel(cancelTarget)} disabled={cancelBusy}>{cancelBusy ? "Cancelling..." : "Confirm Cancel"}</button>
+            </div>
           </div>
         </div>
       )}
