@@ -18,6 +18,7 @@ import { getAccessToken, authFetch } from "./lib/api";
 import { uid } from "./lib/uid";
 import { getProfileShareUrl, getPostShareUrl, getMuseUrl } from "@/lib/urls";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
+import { STRINGS } from "@/lib/strings";
 import DisclosureModal from "./components/DisclosureModal";
 import AgeVerificationModal from "./components/AgeVerificationModal";
 import { useChatState } from "./hooks/useChatState";
@@ -2611,7 +2612,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>This action is permanent and cannot be undone. All your data, matches, messages, and portfolio will be permanently deleted.</div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
                <button className="btn btn-gold" style={{width:"100%",borderColor:"var(--coral)",background:"linear-gradient(135deg,var(--coral),#ff4444)"}} onClick={async()=>{try{const res=await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"delete-account"})});if(!res.ok) throw new Error("failed");safeRemoveItem("muse_user");safeRemoveItem("muse_v1");safeRemoveItem("muse_geo");safeRemoveItem("muse_boost");safeRemoveItem("muse_last_reset");safeRemoveItem("muse_local");safeRemoveItem("muse_premium");safeRemoveItem("muse_referral_code");safeRemoveItem("muse_open_count");safeRemoveItem("muse_hide_premium");setAuthUser(null);setShowDeleteConfirm(false);setScreen("auth");showToast("Account deleted. We're sorry to see you go.");return}catch{showToast("Delete failed. Try again")}}}>Yes, Delete My Account</button>
-              <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setShowDeleteConfirm(false)}>Cancel</button>
+              <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setShowDeleteConfirm(false)}>{STRINGS.cancel}</button>
             </div>
           </div>
         </div>
@@ -2654,7 +2655,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
               // effect), they just were never sent. Persist on this explicit Save
               // click rather than debouncing every slider tick.
               apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: discoveryPrefs }) }).catch(() => {});
-            }}>Save</button>
+            }}>{STRINGS.save}</button>
           </div>
         </div>
       )}
@@ -2686,8 +2687,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                   setMatches(prevMatches);
                   showToast("Couldn't unmatch — try again");
                 }
-              }}>Unmatch</button>
-              <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setUnmatchTarget(null)}>Cancel</button>
+              }}>{STRINGS.unmatch}</button>
+              <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setUnmatchTarget(null)}>{STRINGS.cancel}</button>
             </div>
           </div>
         </div>
@@ -2704,8 +2705,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Block {blockTarget.name}?</div>
             <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>They won&apos;t be able to see your profile, message you, or match with you again. This cannot be undone.</div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <button className="btn btn-gold" style={{width:"100%",background:"linear-gradient(135deg,#ff4444,#8b0000)",borderColor:"#ff4444"}} onClick={async()=>{const t=blockTarget;setMatches(prev=>prev.filter(m=>m.name!==t.name));setBlockTarget(null);setBlockedUsers(prev=>prev.includes(String(t.id))?prev:[...prev,String(t.id)]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"block",target_id:t.id})});}catch{}showScreen("matches");showToast(t.name+" blocked")}}>Block</button>
-              <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setBlockTarget(null)}>Cancel</button>
+              <button className="btn btn-gold" style={{width:"100%",background:"linear-gradient(135deg,#ff4444,#8b0000)",borderColor:"#ff4444"}} onClick={async()=>{const t=blockTarget;setMatches(prev=>prev.filter(m=>m.name!==t.name));setBlockTarget(null);setBlockedUsers(prev=>prev.includes(String(t.id))?prev:[...prev,String(t.id)]);try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"block",target_id:t.id})});}catch{}showScreen("matches");showToast(t.name+" blocked")}}>{STRINGS.block}</button>
+              <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setBlockTarget(null)}>{STRINGS.cancel}</button>
             </div>
           </div>
         </div>
@@ -2822,7 +2823,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                 );
               })}
             </div>
-            <button className="btn btn-outline" style={{ width: "100%", fontSize: 13, fontWeight: 600 }} onClick={() => setShareTarget(null)}>Cancel</button>
+            <button className="btn btn-outline" style={{ width: "100%", fontSize: 13, fontWeight: 600 }} onClick={() => setShareTarget(null)}>{STRINGS.cancel}</button>
           </div>
         </div>
       )}
@@ -2875,7 +2876,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                 </div>
               </div>
             </div>
-            <button className="btn btn-gold" style={{width:"100%"}} onClick={saveProfileEdits}>Save</button>
+            <button className="btn btn-gold" style={{width:"100%"}} onClick={saveProfileEdits}>{STRINGS.save}</button>
           </div>
         </div>
       )}
@@ -2890,7 +2891,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
               <div className="share-opt" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const url=getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase());if(navigator.share){navigator.share({title:"My Muse Profile",text:"Check out my Muse profile!",url}).catch(()=>{});}else{navigator.clipboard?.writeText(url).then(()=>showToast("Link copied! Paste it in your IG bio or story")).catch(()=>window.open("https://www.instagram.com/"));}setShowShareProfile(false); } }} onClick={()=>{const url=getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase());if(navigator.share){navigator.share({title:"My Muse Profile",text:"Check out my Muse profile!",url}).catch(()=>{});}else{navigator.clipboard?.writeText(url).then(()=>showToast("Link copied! Paste it in your IG bio or story")).catch(()=>window.open("https://www.instagram.com/"));}setShowShareProfile(false)}}><span className="share-opt-icon"><FiInstagram size={24} /></span><span className="share-opt-label">IG</span></div>
             </div>
             <div className="share-link"><span className="share-link-text">{getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase()).replace(/^https?:\/\//, "")}</span><button className="share-link-copy" onClick={()=>{navigator.clipboard?.writeText(getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"))}}>Copy</button></div>
-            <button className="btn btn-outline" style={{marginTop:16,width:"100%"}} onClick={()=>setShowShareProfile(false)}>Close</button>
+            <button className="btn btn-outline" style={{marginTop:16,width:"100%"}} onClick={()=>setShowShareProfile(false)}>{STRINGS.close}</button>
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@
 
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
+import { STRINGS } from "@/lib/strings";
 import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
@@ -221,7 +222,7 @@ export const CommunityScreen = memo(function CommunityScreen({
             )}
             <div style={{ display: "flex", gap: 8 }}>
               <button className="btn btn-gold" style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 700, borderRadius: 12 }} onClick={submitCreate}>Create</button>
-              <button className="btn btn-outline" style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 600, borderRadius: 12 }} onClick={() => setShowCreate(false)}>Cancel</button>
+              <button className="btn btn-outline" style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 600, borderRadius: 12 }} onClick={() => setShowCreate(false)}>{STRINGS.cancel}</button>
             </div>
           </div>
         </div>

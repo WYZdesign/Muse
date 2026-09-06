@@ -7,6 +7,7 @@ import { BADGE_COLORS } from "../components/badgeColors";
 import FdStudioWidget from "../components/FdStudioWidget";
 import type { Screen, Match } from "../components/types";
 import { SESSIONS } from "../components/types";
+import { STRINGS } from "@/lib/strings";
 
 export interface SessionsScreenProps {
   screen: Screen;
@@ -253,7 +254,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                         <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete</button>
                       )}
                       {(b.status === "pending" || b.status === "confirmed") && (
-                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, borderColor: "rgba(255,100,100,0.2)", color: "#ff6464" }} onClick={() => cancelBooking(b.id)}>Cancel</button>
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, borderColor: "rgba(255,100,100,0.2)", color: "#ff6464" }} onClick={() => cancelBooking(b.id)}>{STRINGS.cancel}</button>
                       )}
                       {b.status === "completed" && (
                         <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setReviewTarget(b)}>Leave Review</button>

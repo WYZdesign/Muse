@@ -7,6 +7,7 @@ import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import Nav from "../components/Nav";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
 import Image from "next/image";
+import { STRINGS } from "@/lib/strings";
 import type { Screen } from "../components/types";
 
 export interface FeedScreenProps {
@@ -628,7 +629,7 @@ export const FeedScreen = memo(function FeedScreen({
             <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: 30, background: "#000" }}>
               <div style={{ fontSize: 40 }}>📷</div>
               <div style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", textAlign: "center", lineHeight: 1.6 }}>{camError}</div>
-              <button className="btn btn-gold" style={{ padding: "10px 28px", borderRadius: 99 }} onClick={closeCamera}>Close</button>
+              <button className="btn btn-gold" style={{ padding: "10px 28px", borderRadius: 99 }} onClick={closeCamera}>{STRINGS.close}</button>
             </div>
           )}
           {/* Top bar */}

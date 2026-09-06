@@ -9,6 +9,7 @@ import { useFocusTrap } from "../hooks/useFocusTrap";
 import { COMMUNITIES, EVENTS, SESSIONS, PROFESSIONALS, FORUM_POSTS } from "../components/types";
 import { getCommunityShareUrl, getEventShareUrl, getProShareUrlWithRef, getMuseUrl } from "@/lib/urls";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
+import { STRINGS } from "@/lib/strings";
 
 interface ActivityPanelProps {
   authFetch: any;
@@ -582,7 +583,7 @@ export const MenuModal = memo(function MenuModal({
                     <textarea className="inp" placeholder="What's on your mind?" rows={3} value={newPostBody} onChange={e => setNewPostBody(e.target.value)} style={{ marginBottom: 10, resize: "none" }} />
                     <div style={{ display: "flex", gap: 8, flexDirection: "column" }}>
                       <button className="btn btn-gold" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={async () => { if (newPostTitle.trim()) { const title = newPostTitle.trim(); const body = newPostBody.trim(); setForumPosts((prev: any[]) => [{ id: uid(), title, body, author: currentUser.name, avatar: currentUser.avatar, votes: 1, comments: [], cat: "General", time: "Just now", pinned: false }, ...prev]); setNewPostTitle(""); setNewPostBody(""); setShowNewPost(false); try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", title, body, userId: currentUser.id }) }); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["forum_post"] }) }).catch(() => {}); try { const rf = await apiFetch("/api/muse?type=forum"); const df = await rf.json(); if (df.posts) setLiveForum?.(df.posts); } catch {} showToast("Posted!"); } catch { showToast("Failed to post"); } } }}>Post</button>
-                      <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={() => setShowNewPost(false)}>Cancel</button>
+                      <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12 }} onClick={() => setShowNewPost(false)}>{STRINGS.cancel}</button>
                     </div>
                   </div>
                 )}
@@ -838,7 +839,7 @@ export const MenuModal = memo(function MenuModal({
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,107,107,0.15)", border: "1px solid rgba(255,107,107,0.3)", color: "#ff8a80" }} disabled={bugSubmitting || !bugDescription.trim()} onClick={async () => { setBugSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "report-bug", category: bugCategory, description: bugDescription, steps: bugSteps, expected: bugExpected, actual: bugActual }) }); if (!r.ok) throw new Error("failed"); showToast("Bug report sent — thank you!"); setShowBugForm(false); setBugDescription(""); setBugSteps(""); setBugExpected(""); setBugActual(""); } catch { showToast("Failed to send bug report"); } setBugSubmitting(false); }}>{bugSubmitting ? "Sending…" : "Submit Bug"}</button>
-                      <button className="btn btn-outline" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => setShowBugForm(false)}>Cancel</button>
+                      <button className="btn btn-outline" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => setShowBugForm(false)}>{STRINGS.cancel}</button>
                     </div>
                   </div>
                 )}
@@ -882,7 +883,7 @@ export const MenuModal = memo(function MenuModal({
                       <textarea value={ideaDescription} onChange={e => setIdeaDescription(e.target.value)} placeholder="Describe your idea — what should it do? Why would you love it?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
                       <div style={{ display: "flex", gap: 8 }}>
                         <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)" }} disabled={ideaSubmitting || !ideaTitle.trim() || !ideaDescription.trim()} onClick={async () => { setIdeaSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit-idea", title: ideaTitle, description: ideaDescription, category: ideaCategory }) }); if (!r.ok) throw new Error("failed"); showToast("Idea submitted — we love it!"); setShowIdeaForm(false); setIdeaTitle(""); setIdeaDescription(""); } catch { showToast("Failed to submit idea"); } setIdeaSubmitting(false); }}>{ideaSubmitting ? "Sending…" : "Submit Idea"}</button>
-                        <button className="btn btn-outline" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => setShowIdeaForm(false)}>Cancel</button>
+                        <button className="btn btn-outline" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => setShowIdeaForm(false)}>{STRINGS.cancel}</button>
                       </div>
                     </div>
                   )}

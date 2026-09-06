@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { STRINGS } from "@/lib/strings";
 
 type DisclosureForm = {
   compensationAmount: string;
@@ -144,7 +145,7 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
           <h2 style={{ fontSize: 20, fontWeight: 800, color: "#ff4444", marginBottom: 12 }}>Request Blocked</h2>
           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 8, lineHeight: 1.6 }}>{blockedReason}</p>
           <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 20 }}>This incident has been logged. Repeated violations may result in account suspension.</p>
-          <button onClick={onCancel} style={{ padding: "10px 24px", borderRadius: 12, background: "rgba(255,255,255,0.1)", border: "none", color: "#f5f0ff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Close</button>
+          <button onClick={onCancel} style={{ padding: "10px 24px", borderRadius: 12, background: "rgba(255,255,255,0.1)", border: "none", color: "#f5f0ff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>{STRINGS.close}</button>
         </div>
       </div>
     );
