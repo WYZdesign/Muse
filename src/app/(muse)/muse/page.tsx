@@ -1086,7 +1086,20 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     }
     apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-quests" }) })
       .then(r => r.json())
-      .then(d => { if (Array.isArray(d?.quests)) setClaimableQuests(d.quests.filter((q: any) => q.completed && !q.claimed).length); })
+      .then(d => {
+        if (Array.isArray(d?.quests)) setClaimableQuests(d.quests.filter((q: any) => q.completed && !q.claimed).length);
+        // Bug fix (live-verified): this boot-time fetch used to read only
+        // `quests` from the response, leaving `loginStreak` at its initial 0
+        // until the user happened to open the Quests panel (the only other
+        // place that reads `d.streak`, see handleQuestsChange above). That
+        // made the "Welcome back!" streak popup — which fires automatically
+        // right below this block — always show "Start Your Streak" even for
+        // an account with a real multi-day streak, while the day-checkmarks
+        // next to it (driven by the separate, purely-local `weeklyLogins`)
+        // could already show several days filled in. Now this fetch keeps
+        // `loginStreak` in sync with the server the same way it already does.
+        if (typeof d?.streak === "number") setLoginStreak(d.streak);
+      })
       .catch(() => {});
   }, [bootstrapped, authUser, trackQuest, apiFetch]);
 
