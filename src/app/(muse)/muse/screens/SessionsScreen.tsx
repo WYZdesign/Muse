@@ -26,6 +26,8 @@ export interface SessionsScreenProps {
   uid: () => any;
   currentUser: any;
   setShowAgeVerification: (v: boolean) => void;
+  setShowReport?: (v: boolean) => void;
+  setReportTarget?: (t: { id: number | string; type: string; name: string }) => void;
   openHamburger?: () => void;
   unreadNotificationCount?: number;
   liveSessions?: SessionListing[];
@@ -48,6 +50,8 @@ export const SessionsScreen = memo(function SessionsScreen({
   showToast,
   handleImgError,
   setShowAgeVerification,
+  setShowReport = () => {},
+  setReportTarget = () => {},
   uid,
   currentUser,
   apiFetch,
@@ -176,7 +180,8 @@ export const SessionsScreen = memo(function SessionsScreen({
             </div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Browse creatives offering sessions — pick one, book, and pay securely.</div>
             {(liveSessions?.length ? liveSessions : SESSIONS as SessionListing[]).map(s => (
-              <div key={s.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
+              <div key={s.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch", position: "relative" }}>
+                <button aria-label="Report session" title="Report" onClick={() => { setReportTarget({ id: s.id, type: "session", name: s.name || "session" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(10,6,18,0.6)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
                 <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0 }}>
                   {s.img && (
                     <Image src={s.img} alt={s.name} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
