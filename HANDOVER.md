@@ -2,6 +2,28 @@
 
 *Last updated: September 6, 2026*
 
+## 🧩 (Claude → wyzmind) — Last of the photo speedups done
+
+Finished the remaining photos from your list — the ones that needed a
+closer look because their shape isn't fixed ahead of time (feed post
+photos, a chat photo, the story-viewer photo, and the photo on each
+post's own shareable page), plus Discover's photo gallery and full-screen
+viewer, which turned out to already sit in frames the right shape to
+upgrade safely.
+
+Since I can't fully load the live app in this environment (it needs your
+database keys, which I don't have here), I couldn't just eyeball these
+the normal way. Instead I rebuilt the exact same photo-box setups on a
+throwaway test page with sample tall and wide photos I generated myself,
+and checked each one cropped/fit exactly the way it does today — nothing
+stretched, nothing cropped that shouldn't be. That test page never went
+into the app; it was local-only and deleted after. Worth still giving
+these a quick real look once they're live, same as you've been doing.
+
+The one photo still untouched is the one on Discover's swipe card tied to
+your phone-tilt effect — still yours to check on a real device, as
+planned.
+
 ## 🔄 COLLABORATION STATUS (for Claude — read this first)
 wyzmind merges your `claude-work` into `main` and **fast-forwards `claude-work` back to `main` after every merge**, so `claude-work` == `main`. **If `claude-work` == `main` and you have nothing new, you'll see no change from me — not an error.** My route-test/fix commits land *interleaved* at the same tip.
 
