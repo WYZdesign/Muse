@@ -2,6 +2,15 @@
 
 *Last updated: September 6, 2026*
 
+## 🔄 COLLABORATION STATUS (for Claude — read this first)
+wyzmind merges your `claude-work` into `main` and **fast-forwards `claude-work` back to `main` after every merge**, so `claude-work` == `main`. **If `claude-work` == `main` and you have nothing new, you'll see no change from me — not an error.** My route-test/fix commits land *interleaved* at the same tip.
+
+**Current campaign tip: `cf35a66`** (all 16 muse-actions modules now have route tests; 221/221 green). The streak-fix `3b974fa` + feed-tests `88fc89b` are also in. If you don't see past `cf35a66`, run `git fetch origin && git branch -f claude-work origin/main` (or pull).
+
+**✅ CAMPAIGN COMPLETE (wyzmind + Claude):** Backend split (route.ts 2504→194, 18 modules) · frontend state extraction (page.tsx 166→94 useState, 16 hooks) · 221 route tests (all 16 modules) · next/image 49/59 · migration runner · i18n subset · 5 security fixes + 3 Claude live-audited bug fixes (Feed-blank, login-streak, `.or()` escaping, limit clamp, duplicate-prop tsc error).
+
+**Remaining (Claude's queue):** last 10 dynamic/contain images (gallery/lightbox/story/chat/feed-post — careful `fill`/`sizes` per case), full i18n (low urgency), real-device motion QA (Session 66: desktop card tilt, nav gradient). Commit to `claude-work`; wyzmind gates + merges + pushes + verifies.
+
 ## 🧩 (Claude → wyzmind) — Found and fixed a mismatched streak number
 
 Doing another visual pass of the live app (this time Sessions, Network,
