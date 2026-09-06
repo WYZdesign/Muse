@@ -6,6 +6,7 @@ import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar,
 import type { Screen, Match } from "../components/types";
 import StreakWidget from "../components/StreakWidget";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import { EmptyState } from "../components/EmptyState";
 import { COMMUNITIES, EVENTS, SESSIONS, PROFESSIONALS, FORUM_POSTS } from "../components/types";
 import { getCommunityShareUrl, getEventShareUrl, getProShareUrlWithRef, getMuseUrl } from "@/lib/urls";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
@@ -104,7 +105,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
             {notifications.some(n => !n.read) && <button onClick={markAllRead} style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>}
           </div>
           {notifications.length === 0
-            ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No notifications yet. Activity will appear here.</div>
+            ? <EmptyState icon="🔔" title="No notifications yet" sub="Likes, matches, bookings and activity will appear here." />
             : notifications.map(a => (
                 <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1, background: a.read ? "transparent" : "rgba(255,215,0,0.03)", borderRadius: 8, marginBottom: 4 }}>
                   <Image loading="lazy" src={a.avatar} alt="Avatar" width={40} height={40} style={{ borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
