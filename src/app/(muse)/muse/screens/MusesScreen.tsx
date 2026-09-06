@@ -1,11 +1,12 @@
 "use client";
 
-import React, { memo, useEffect } from "react";
+import React, { memo, useEffect, useState } from "react";
 import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../hooks/useDeviceTilt";
 import Image from "next/image";
 import { FiArrowLeft, FiSearch, FiGrid, FiList } from "react-icons/fi";
 import MatchCard from "../components/MatchCard";
 import Nav from "../components/Nav";
+import UpsellModal from "../components/UpsellModal";
 import type { Screen, Match, Profile } from "../components/types";
 
 export interface MusesScreenProps {
@@ -63,6 +64,11 @@ export const MusesScreen = memo(function MusesScreen({
   expandedMatchId = null,
   matchActions,
 }: MusesScreenProps) {
+  // "Likes You" is already blurred/badged for free-tier viewers (the
+  // in-context paywall) — this only covers what used to happen on tap: a
+  // plain toast instead of a real upsell moment.
+  const [showLikesUpsell, setShowLikesUpsell] = useState(false);
+
   useEffect(() => {
     if (!showLikesYou) return;
     ensureDeviceTiltActive();
@@ -160,7 +166,7 @@ export const MusesScreen = memo(function MusesScreen({
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 }}>
               {likedBy.map(p => (
-                <div key={p.id} className="muse-likes-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (currentUser.tier !== "muse_pro") { showToast("Upgrade to Muse Pro to view profiles"); } else { setViewProfile(p); } } }} style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "3/4", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }} onClick={() => { if (currentUser.tier !== "muse_pro") { showToast("Upgrade to Muse Pro to view profiles"); } else { setViewProfile(p); } }}>
+                <div key={p.id} className="muse-likes-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (currentUser.tier !== "muse_pro") { setShowLikesUpsell(true); } else { setViewProfile(p); } } }} style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "3/4", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }} onClick={() => { if (currentUser.tier !== "muse_pro") { setShowLikesUpsell(true); } else { setViewProfile(p); } }}>
                   <Image loading="lazy" src={p.img} alt={p.name} fill sizes="(max-width: 600px) 50vw, 300px" style={{ objectFit: "cover", filter: currentUser.tier !== "muse_pro" ? "blur(4px)" : undefined }} />
                   <div className="muse-likes-info" style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 10px", background: "linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.6) 60%,transparent 100%)" }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{p.name}</div>
@@ -189,6 +195,15 @@ export const MusesScreen = memo(function MusesScreen({
         </div>
       )}
       <Nav active="matches" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
+      <UpsellModal
+        open={showLikesYou && showLikesUpsell}
+        onClose={() => setShowLikesUpsell(false)}
+        feature="See Who Likes You"
+        reason={`${likedBy.length > 0 ? likedBy.length + " people" : "People"} liked your profile — go Pro to reveal exactly who and match instantly.`}
+        icon="♥"
+        currentUser={currentUser}
+        showScreen={showScreen}
+      />
     </div>
   );
 });

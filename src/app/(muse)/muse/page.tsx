@@ -21,6 +21,7 @@ import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
 import { STRINGS } from "@/lib/strings";
 import DisclosureModal from "./components/DisclosureModal";
 import AgeVerificationModal from "./components/AgeVerificationModal";
+import UpsellModal from "./components/UpsellModal";
 import { useChatState } from "./hooks/useChatState";
 import { useBriefsState } from "./hooks/useBriefsState";
 import { useModalVisibility } from "./hooks/useModalVisibility";
@@ -1411,16 +1412,23 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   const isUnlimited = authUser?.email === OWNER_EMAIL;
 
+  // Contextual upsell modal — shown in place of a plain toast the moment a
+  // free-tier user hits a Pro-gated limit (daily likes, super likes, "Likes
+  // You" profiles, etc). `feature`/`reason` are set per-gate right before
+  // opening so the same modal can explain whichever benefit was just blocked.
+  const [upsell, setUpsell] = useState<{ feature: string; reason: string; icon?: string } | null>(null);
+  const closeUpsell = useCallback(() => setUpsell(null), []);
+
   const doSwipe = useCallback((dir: "left" | "right" | "super") => {
     if (swipeLocked.current) return;
     swipeLocked.current = true;
     setTimeout(() => { swipeLocked.current = false; }, 500);
     setSwipeDir(dir === "left" ? "left" : "right");
     setTimeout(() => setSwipeDir(null), 800);
-    if (!isUnlimited && dailyLikes <= 0 && dir === "right") { showToast("No likes left today!"); return; }
+    if (!isUnlimited && dailyLikes <= 0 && dir === "right") { setUpsell({ feature: "Unlimited Likes", reason: "You've used all your likes for today. Go Pro to like as many creatives as you want, with no daily limit.", icon: "💛" }); return; }
     const p = filteredProfiles[currentIdx];
     if (!p) return;
-    if (!isUnlimited && dir === "super" && superLikes <= 0) { showToast("No super likes left!"); return; }
+    if (!isUnlimited && dir === "super" && superLikes <= 0) { setUpsell({ feature: "More Super Likes", reason: "You're out of super likes for today. Muse Pro's unlimited likes means you're never stuck waiting for a reset.", icon: "💜" }); return; }
     trackEvent("swipe", { direction: dir, target_type: p.type });
     if (dir === "right" || dir === "super") {
       if (!userDefaultIntent) { setIntentProfile(p); setShowIntentPicker(true); swipeLocked.current = false; return; }
@@ -1518,7 +1526,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const doLikeWithNote = useCallback((anchor?: LikeAnchor) => {
     setShowNoteTooltip(false); safeSetItem("muse_note_seen","1");
     const p = filteredProfiles[currentIdx];
-    if (!p || (!isUnlimited && dailyLikes <= 0)) { showToast("No likes left today!"); return; }
+    if (!p) return;
+    if (!isUnlimited && dailyLikes <= 0) { setUpsell({ feature: "Unlimited Likes", reason: "You've used all your likes for today. Go Pro to like as many creatives as you want, with no daily limit.", icon: "💛" }); return; }
     setNoteTargetProfile(p);
     setLikeNoteAnchor(anchor ?? null);
     // Prefill the note from the anchor (still editable) so the composer opens
@@ -3003,6 +3012,16 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           }}
         />
       )}
+      {/* ══════ CONTEXTUAL UPSELL MODAL ══════ */}
+      <UpsellModal
+        open={upsell !== null}
+        onClose={closeUpsell}
+        feature={upsell?.feature || ""}
+        reason={upsell?.reason || ""}
+        icon={upsell?.icon}
+        currentUser={currentUser}
+        showScreen={showScreen}
+      />
       {/* ══════ SAFETY CHECK-IN MODAL ══════ */}
       {showSafetyCheckin && (
         <SafetyCheckinModal
