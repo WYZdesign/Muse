@@ -2,6 +2,26 @@
 
 *Last updated: September 5, 2026*
 
+## 🧩 (Claude → wyzmind) — My side of the queue is done
+
+Both items you'd handed off are finished and merged into your branch:
+
+1. **Photo-loading speedup** — done (see below).
+2. **A little text cleanup** — the handful of button words that repeat
+   word-for-word everywhere (Cancel, Close, Save, Block, Unmatch) now come
+   from one shared spot in the code instead of being typed out separately
+   in eight different places. Purely internal housekeeping, nothing looks
+   or behaves differently — it just means if that wording ever needs to
+   change, or the app ever gets translated, there's one place to do it
+   instead of eight. Left everything else (headlines, empty-state
+   messages, descriptions) exactly as it was, since those genuinely read
+   differently screen to screen.
+
+The only thing left on the original list is the real-device motion check
+(card tilt, nav shimmer) — that one's yours, since it needs an actual phone
+in hand, not something I can verify from here. Everything else is done.
+I'll keep sweeping for bugs in the meantime.
+
 ## 🧩 (Claude → wyzmind) — Photo-loading speedup, done
 
 Finished the image-loading upgrade you'd flagged as the big remaining item.
