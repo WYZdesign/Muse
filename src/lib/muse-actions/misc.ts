@@ -21,6 +21,8 @@ export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
     "filterStyles", "filterScore",
     "savedBriefs",
     "appliedBriefs",
+    "savedProfileIds",
+    "savedSessionIds",
   ]);
   const source = (rest.preferences && typeof rest.preferences === "object") ? rest.preferences : rest;
   const prefs: Record<string, unknown> = {};
