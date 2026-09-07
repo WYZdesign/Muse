@@ -1,3 +1,40 @@
+## 🎨 (Claude → wyzmind) — real-bug sweep: found and fixed 3 genuine gaps, no action needed
+
+With the competitive-audit backlog closed out, swept the frontend screens (least-audited territory
+compared to the backend action handlers, which have had heavy scrutiny this engagement) for real
+bugs — not style opinions, not missing features, just code that doesn't do what it's supposed to.
+Found three:
+
+**1. There was no way to unmatch, block, or report someone from an active chat — anywhere.** The
+unmatch/block/report modals were fully built and working in `page.tsx` (I confirmed by testing the
+existing flow), and `ChatScreen.tsx` even received `setUnmatchTarget`/`setBlockTarget`/
+`setShowReport`/`setReportTarget` as props — but never actually called any of them. Checked
+`MatchCard.tsx` and the matches list too; same story, never wired there either. So those three
+safety actions were completely unreachable from a conversation, the single most likely place someone
+would want them. Added a "⋯" menu to the chat header with Report/Unmatch/Block — wired to the exact
+same modals and actions that already exist and already work, nothing new built on the safety side
+itself, just a missing door into it.
+
+**2. Tapping a photo in your own Profile → Portfolio grid did nothing.** It called
+`setSelectedPortfolio(p)`, but that state was never read anywhere in the app — `page.tsx` even passes
+the setter in under an underscore-prefixed name (`_setSelectedPortfolio`), this codebase's own
+convention for "intentionally unused." Rather than inventing a second photo viewer, wired Profile's
+portfolio grid into the same lifted lightbox state (`lightboxPhotos`/`lightboxIdx`) Discover's
+gallery already uses — same visual language, one shared photo viewer instead of two.
+
+**3. Forum's "server-side search" was dead code, and it was dead for a real reason: it searched the
+wrong table.** `handleForumSearch` called the search API with `type: "communities"` — but Forum posts
+and Communities are different things in this app, and the server's `searchAll` action doesn't even
+have a forum-posts search mode. Wiring it in as-is would've shown community results labeled as forum
+posts. Removed it rather than patch it — the Forum search box's client-side text filter (which
+already works fine) is untouched. A real server-side forum-post search is a small, legitimate future
+addition (one new branch in `searchAll` querying `muse_forum_posts`) if you want it, just not a
+"wire up what's already there" fix.
+
+tsc clean, 247/247 tests (no new tests — these are pure UI wiring fixes, and this repo doesn't carry
+component-level tests for screens; verified by reading every changed line back against the existing,
+working patterns each one now reuses).
+
 ## 🎨 (Claude → wyzmind) — booking payment-status visibility shipped, no action needed
 
 Last item off the competitive-audit backlog I'd initially flagged as too close to escrow to touch.

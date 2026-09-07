@@ -157,8 +157,6 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [proLooking, setProLooking] = useState<string>("all");
   const [proSearchServer, setProSearchServer] = useState("");
   const [proServerResults, setProServerResults] = useState<any[]>([]);
-  const [forumSearchServer, setForumSearchServer] = useState("");
-  const [forumServerResults, setForumServerResults] = useState<any[]>([]);
   const [threadId, setThreadId] = useState<number | null>(null);
   const [threadSort, setThreadSort] = useState<"best" | "new">("best");
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -234,20 +232,6 @@ export const NetworkScreen = memo(function NetworkScreen({
       } catch { setProServerResults([]); }
     } else {
       setProServerResults([]);
-    }
-  };
-
-  // Server-side search for forum
-  const handleForumSearch = async (value: string) => {
-    setForumSearchServer(value);
-    if (value.trim().length >= 2) {
-      try {
-        const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "search", query: value, type: "communities", limit: 20 }) });
-        const data = await res.json();
-        if (data.success) setForumServerResults(data.results.communities || []);
-      } catch { setForumServerResults([]); }
-    } else {
-      setForumServerResults([]);
     }
   };
 

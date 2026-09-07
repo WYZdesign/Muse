@@ -2,7 +2,7 @@
 
 import React, { memo, useState } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiImage, FiSend } from "react-icons/fi";
+import { FiArrowLeft, FiImage, FiSend, FiMoreVertical, FiFlag, FiUserX, FiSlash } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 
@@ -72,6 +72,11 @@ export const ChatScreen = memo(function ChatScreen({
   // chat media can be sensitive, so it's blurred until the viewer taps to reveal,
   // instead of rendering unblurred like a plain img.
   const [revealedChatImgs, setRevealedChatImgs] = useState<Set<string>>(() => new Set());
+  // Report/Unmatch/Block were fully wired end-to-end (setters passed as props,
+  // modals built and rendered in page.tsx) but had no entry point anywhere in
+  // the app to actually reach them from an active conversation — a real gap,
+  // not a style choice. This menu is that entry point.
+  const [showChatMenu, setShowChatMenu] = useState(false);
   return (
     <div className={"screen-el" + (screen === "chat" && chatTarget ? " active" : "")}>
       {chatTarget && (
@@ -82,6 +87,25 @@ export const ChatScreen = memo(function ChatScreen({
             <div className="chat-info">
               <div className="chat-name">{chatTarget.name}</div>
               <div className="chat-type">{typingTarget === chatTarget.id ? <span style={{ color: "var(--gold)", fontStyle: "italic" }}>typing…</span> : chatTarget.type}</div>
+            </div>
+            <div style={{ position: "relative" }}>
+              <button
+                className="chat-back"
+                aria-label="Chat options"
+                aria-haspopup="menu"
+                aria-expanded={showChatMenu}
+                onClick={() => setShowChatMenu(v => !v)}
+              ><FiMoreVertical size={20} /></button>
+              {showChatMenu && (
+                <>
+                  <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 998 }} onClick={() => setShowChatMenu(false)} />
+                  <div role="menu" style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 999, minWidth: 168, background: "#1a0a2e", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: 6, boxShadow: "0 12px 32px rgba(0,0,0,0.5)" }}>
+                    <button role="menuitem" onClick={() => { setShowChatMenu(false); setShowReport(true); setReportTarget({ id: chatTarget.id, type: "user", name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiFlag size={14} /> Report</button>
+                    <button role="menuitem" onClick={() => { setShowChatMenu(false); setUnmatchTarget({ id: chatTarget.id, name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiUserX size={14} /> Unmatch</button>
+                    <button role="menuitem" onClick={() => { setShowChatMenu(false); setBlockTarget({ id: chatTarget.id, name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "#ff6b6b", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiSlash size={14} /> Block</button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           {realtimeStatus === "disconnected" && (

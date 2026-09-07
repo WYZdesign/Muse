@@ -41,6 +41,14 @@ export interface ProfileScreenProps {
   portfolioTab?: "all" | "portrait" | "landscape" | "sets";
   setPortfolioTab?: (t: "all" | "portrait" | "landscape" | "sets") => void;
   setSelectedPortfolio?: (p: any) => void;
+  // Portfolio grid photos were wired to setSelectedPortfolio, but that state
+  // was never read anywhere — tapping a photo silently did nothing. Reusing
+  // the same lifted lightbox state DiscoverScreen already uses (page.tsx)
+  // instead of inventing a second photo-viewer.
+  lightboxPhotos?: string[];
+  lightboxIdx?: number;
+  setLightboxPhotos?: (p: string[]) => void;
+  setLightboxIdx?: (i: number | ((p: number) => number)) => void;
   activityFeed?: any[];
   setShowShareProfile?: (v: boolean) => void;
   setScreen?: (s: Screen) => void;
@@ -95,6 +103,10 @@ export const ProfileScreen = memo(function ProfileScreen({
   portfolioTab = "all",
   setPortfolioTab = () => {},
   setSelectedPortfolio = () => {},
+  lightboxPhotos = [],
+  lightboxIdx = 0,
+  setLightboxPhotos = () => {},
+  setLightboxIdx = () => {},
   activityFeed = [],
   setShowShareProfile = () => {},
   setScreen = () => {},
@@ -428,15 +440,18 @@ export const ProfileScreen = memo(function ProfileScreen({
                 if (portfolioTab === "landscape") return p.type === "landscape";
                 return true;
               });
-              if (filtered.length > 0) return filtered.slice(0, 9).map((p: any, i: number) => (
-                <div key={i} style={{ aspectRatio: "3/4", borderRadius: 12, overflow: "hidden", background: "#1a0a2e", position: "relative", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedPortfolio(p); } }} onClick={() => setSelectedPortfolio(p)}>
+              if (filtered.length > 0) return filtered.slice(0, 9).map((p: any, i: number) => {
+                const openLightbox = () => { setSelectedPortfolio(p); setLightboxPhotos(filtered.slice(0, 9).map((x: any) => x.img)); setLightboxIdx(i); };
+                return (
+                <div key={i} style={{ aspectRatio: "3/4", borderRadius: 12, overflow: "hidden", background: "#1a0a2e", position: "relative", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLightbox(); } }} onClick={openLightbox}>
                   <Image loading="lazy" src={p.img} alt={p.title} fill sizes="(max-width: 600px) 33vw, 200px" style={{ objectFit: "cover" }} onError={handleImgError} />
                   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px", background: "linear-gradient(to top,rgba(10,6,18,0.9),transparent)" }}>
                     <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.title}</div>
                     <div style={{ fontSize: 9, color: "var(--muted)" }}>{p.type}</div>
                   </div>
                 </div>
-              ));
+                );
+              });
               return [1, 2, 3, 4, 5, 6].map(i => (
                 <div key={i} style={{ aspectRatio: "3/4", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "2px dashed rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 11, cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setScreen("portfolio"); } }} onClick={() => setScreen("portfolio")}>Add</div>
               ));
@@ -486,6 +501,23 @@ export const ProfileScreen = memo(function ProfileScreen({
             previously duplicated SettingsScreen's Log Out. doLogout prop kept (optional,
             default no-op) so callers don't need touching. */}
       </div>
+      {/* Portfolio photo lightbox — shares the same lifted state DiscoverScreen
+          already uses (page.tsx), so tapping a photo here actually opens it. */}
+      {lightboxPhotos.length > 0 && (
+        <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.95)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => { setLightboxPhotos([]); setLightboxIdx(0); }}>
+          <button onClick={(e) => { e.stopPropagation(); setLightboxPhotos([]); setLightboxIdx(0); }} aria-label="Close" style={{ position: "absolute", top: 16, right: 16, zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 18 }}>✕</button>
+          {lightboxPhotos.length > 1 && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); setLightboxIdx((i: number) => (i - 1 + lightboxPhotos.length) % lightboxPhotos.length); }} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 22 }}>‹</button>
+              <button onClick={(e) => { e.stopPropagation(); setLightboxIdx((i: number) => (i + 1) % lightboxPhotos.length); }} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 22 }}>›</button>
+            </>
+          )}
+          {/* The modal overlay above is already position:"fixed", a valid
+              positioning context for `fill` -- matches DiscoverScreen's lightbox. */}
+          <Image src={lightboxPhotos[lightboxIdx] || lightboxPhotos[0]} alt="Photo" fill sizes="100vw" style={{ objectFit: "contain" }} onClick={(e) => e.stopPropagation()} onError={handleImgError} />
+          <div style={{ position: "absolute", bottom: 20, color: "rgba(255,255,255,0.5)", fontSize: 13 }}>{lightboxIdx + 1} / {lightboxPhotos.length}</div>
+        </div>
+      )}
       <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );
