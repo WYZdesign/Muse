@@ -179,6 +179,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                   </div>
                   <div className="quest-card-main">
                     <div className="quest-card-title">{q.title}</div>
+                    {q.description && <div className="quest-card-desc">{q.description}</div>}
                     <div className="quest-card-sub">
                       <span style={{ color: tier.color }}>{tier.label}</span>
                       <span className="quest-card-reward" style={{ color: tier.color }}>{q.reward_amount > 1 ? `${q.reward_amount}× ` : ""}{q.reward_label}</span>
@@ -186,13 +187,19 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                   </div>
                 </div>
 
-                {/* Progress Bar */}
-                <div className="quest-progress-wrap">
-                  <div className="quest-progress-track">
-                    <div className="quest-progress-fill" style={{ width: `${pct}%`, background: tier.color }} />
+                {/* Progress bar OR complete/incomplete for single-task quests */}
+                {q.target > 1 ? (
+                  <div className="quest-progress-wrap">
+                    <div className="quest-progress-track">
+                      <div className="quest-progress-fill" style={{ width: `${pct}%`, background: tier.color }} />
+                    </div>
+                    <span className="quest-progress-text">{q.progress}/{q.target}</span>
                   </div>
-                  <span className="quest-progress-text">{q.progress}/{q.target}</span>
-                </div>
+                ) : (
+                  <div className="quest-single-status" style={{ fontSize: 12, fontWeight: 700, color: q.completed ? "var(--gold)" : "var(--muted)" }}>
+                    {q.completed ? "✓ Complete" : "Incomplete"}
+                  </div>
+                )}
 
                 {/* Claim Button */}
                 {isClaimable && (
