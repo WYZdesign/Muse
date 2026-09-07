@@ -161,7 +161,7 @@ export const MusesScreen = memo(function MusesScreen({
             <div className="empty-state" style={{ padding: "40px 20px", textAlign: "center" }}>
               <div className="empty-icon" style={{ fontSize: 48, marginBottom: 12 }}>♥</div>
               <div className="empty-title" style={{ fontSize: 18, fontWeight: 800 }}>No likes yet</div>
-              <div className="empty-sub" style={{ fontSize: 13, color: "var(--text2)", maxWidth: 260, margin: "6px auto 0" }}>Keep your profile fresh and active — commissions will start flying!</div>
+              <div className="empty-sub" style={{ fontSize: 13, color: "var(--text2)", maxWidth: 260, margin: "6px auto 0" }}>Keep your profile fresh and active — matches will start flying!</div>
             </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 }}>
@@ -184,7 +184,7 @@ export const MusesScreen = memo(function MusesScreen({
           {matches.length === 0 && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "48px 24px" }}>
               <div className="empty-icon" style={{ fontSize: 56, marginBottom: 12 }}>♥</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", whiteSpace: "nowrap" }}>No commissions yet</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", whiteSpace: "nowrap" }}>No matches yet</div>
               <div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 260, marginTop: 6, lineHeight: 1.5 }}>Swipe right on creatives in Discover to ignite new collaborations.</div>
               <button className="btn btn-gold" style={{ marginTop: 18, padding: "10px 24px", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => showScreen("discover")}>Start Discovering</button>
             </div>
