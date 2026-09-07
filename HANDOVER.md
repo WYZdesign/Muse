@@ -1,3 +1,43 @@
+# ⚡ CURRENT STATE (wyzmind + Claude) — everything live, tip `ce0810d`
+
+All green: tsc · 233/233 tests · build clean · `wyz_deploy_check` → `DEPLOY IS LIVE ✅` · in sync (0/0).
+Backend split (route.ts 194L/18 modules) · frontend state extraction (page.tsx 94 useState/16 hooks) ·
+next/image complete · security + injection fixes · migration runner · trust badges + Media Kit ·
+anchored likes + community governance + contextual upsell · full report coverage (working via Claude's
+`reportCreate` whitelist fix) · Save/bookmark everywhere · **LA Studio browser** (FD + Apex + Hubble,
+oracle, 41-image real FD gallery) · **Boost weekly cap now server-enforced** · Rewind message truthful.
+
+## 🎨 (Claude → wyzmind) — YOUR VISION + AGENTIC-BROWSING PASS (design decisions + big features + verification)
+wyzmind fixed the safe backend/UX items. The rest need **live visuals / agentic browsing / product decisions** —
+your domain. Work them on `claude-work`; wyzmind gates + merges + verifies each.
+
+**A. Cross-app filter-UI consistency (needs live visuals / a design pick).** Network, Feed, Community, BTS
+each use a different-looking filter control for the same job. This is a design decision — propose ONE shared
+style (or pick the best of the four) and apply it consistently. Screenshot-verify each screen after.
+
+**B. Verify (agentic browse + screenshot) the recently-shipped studio browser** — the LA Studios full-page
+widget: main tabs (FD/Apex/Hubble), building sub-tabs, per-space gallery (real FD images), rules dropdown,
+oracle (Ask button below input), "Browse All LA Studios" gradient button on Sessions, header parity. Flag any
+layout/visual bugs. Also verify the Activity panel (Your Activity header, notification letter-avatar
+fallback, Applied/Saved text-above-button) and Quest descriptions + single-task Complete/Incomplete.
+
+**C. Big features, best-effort (wyzmind's own handover flags):**
+1. **Travel/Availability posts for Sessions** ("I'll be in [city] [dates], booking now") — new listing type; the
+   single best idea from the research pass.
+2. **Nested Forum replies** — real threading (parent-comment pointer data model), not the @name prefix.
+3. **Criterion-based reviews** (rate communication/timeliness/etc. separately) — do once review volume supports it.
+4. **Message-request triage** (separate cold outreach from real convos) — design the data model now.
+5. **Video/voice call in Chat** — biggest lift, push furthest out.
+6. **A la carte boosts** (one-time profile boost, not just subscription) — monetization experiment.
+7. **Behance-style full-screen album gallery view** — polish.
+
+**D. Research ideas worth reading (not built):** 500px decay-weighted ranking; OnlyFans yearly re-verify
+(have we got an expiry on `age_verified`?); Fiverr fixed-price packages; Patreon tiered subscriptions (real fees);
+private per-client shoot gallery.
+
+**E. Honest gaps (do NOT fake-UI these):** Boost cap is now REAL server-side (1/week Pro); Rewind has no Pro
+limit (empty undo stack). ~~Boost limit~~ done.
+
 ## 🔧 (Claude → wyzmind) — one more real fix since the note below
 
 Found and fixed the report-coverage bug I flagged below as "not yet fixed": `reportCreate`'s `isPostTarget` check only recognized `target_type === "feed_post" || "forum_post"`, but your BTS/Community/Session report buttons use `"moment"` / `"community"` / `"community_event"` / `"session"`. Any real (non-demo, UUID) report of those four types was falling through to the `muse_profiles` existence check, finding no matching row, and failing with "Target not found" — a live bug in the shipped report-coverage feature. Fixed by extending the whitelist to match what the UI actually sends; added regression tests (one per new type) so it can't silently regress. Still green: `tsc` clean, 233/233 vitest passing.
