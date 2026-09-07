@@ -57,8 +57,8 @@ export const StudiosScreen = memo(function StudiosScreen({
         {/* Main studio tabs */}
         <div style={{ display: "flex", gap: 8, padding: "8px 0 14px" }}>
           {ALL_STUDIOS.map((s) => (
-            <button key={s.id} onClick={() => selectStudio(s.id)} style={{ flex: 1, minWidth: 0, padding: "10px 8px", borderRadius: 12, border: "1px solid", borderColor: activeStudio === s.id ? s.color[0] : "rgba(255,255,255,0.08)", background: activeStudio === s.id ? `linear-gradient(135deg, ${s.color[0]}22, ${s.color[1]}22)` : "rgba(255,255,255,0.03)", cursor: "pointer", textAlign: "center" }}>
-              <div style={{ fontSize: 12.5, fontWeight: 800, color: activeStudio === s.id ? s.color[0] : "var(--text2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
+            <button key={s.id} onClick={() => selectStudio(s.id)} style={{ flex: "1 1 0", minWidth: 0, padding: "10px 6px", borderRadius: 12, border: "1px solid", borderColor: activeStudio === s.id ? s.color[0] : "rgba(255,255,255,0.08)", background: activeStudio === s.id ? `linear-gradient(135deg, ${s.color[0]}22, ${s.color[1]}22)` : "rgba(255,255,255,0.03)", cursor: "pointer", textAlign: "center" }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: activeStudio === s.id ? s.color[0] : "var(--text2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
               <div style={{ fontSize: 9.5, color: "var(--muted)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.buildings.reduce((n, b) => n + b.studios.length, 0)} spaces</div>
             </button>
           ))}

@@ -638,7 +638,7 @@ img{background-color:#1a0a2e}
    without any scaling. Fixed by dropping scale() from every hulaOrbit stop (rotation +
    offset only now) and adding .orbit-full to the ProfileScreen/MenuModal hoop elements
    (see those files) so every hoop usage is a complete ring. */
-.avatar-orbit{position:absolute;top:50%;left:50%;width:var(--orbit-size,106%);height:var(--orbit-size,106%);transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+.avatar-orbit{position:absolute;top:50%;left:50%;width:var(--orbit-size,102%);height:var(--orbit-size,102%);transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
   background:conic-gradient(from var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));
   -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 1px));
   mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 1px));
@@ -1466,15 +1466,24 @@ img{background-color:#1a0a2e}
 .match-radial-btn.btn-super{transition-delay:.06s}
 .match-radial-btn.btn-like{transition-delay:.09s}
 .match-radial-btn.btn-note{transition-delay:.12s}
-.match-radial:not(.open) .match-radial-btn{transition-delay:0ms!important}
+/* Collapse reverses the expand: keep the staggered delays so buttons fold back in
+   the reverse order with the same cubic-bezier (mirrors the expand animation). */
+.match-radial:not(.open) .match-radial-btn{transition-delay:.15s}
+.match-radial:not(.open) .match-radial-btn.btn-note{transition-delay:.12s}
+.match-radial:not(.open) .match-radial-btn.btn-like{transition-delay:.09s}
+.match-radial:not(.open) .match-radial-btn.btn-super{transition-delay:.06s}
+.match-radial:not(.open) .match-radial-btn.btn-nope{transition-delay:.03s}
+.match-radial:not(.open) .match-radial-btn.btn-rewind{transition-delay:0ms}
 .match-radial.open .match-radial-btn{opacity:1;transform:scale(1)}
-.match-radial.open .match-radial-btn{animation:radialFloat 2.8s ease-in-out infinite}
-.match-radial.open .match-radial-btn.btn-rewind{animation-delay:.5s}
-.match-radial.open .match-radial-btn.btn-nope{animation-delay:.53s}
-.match-radial.open .match-radial-btn.btn-super{animation-delay:.56s}
-.match-radial.open .match-radial-btn.btn-like{animation-delay:.59s}
-.match-radial.open .match-radial-btn.btn-note{animation-delay:.62s}
-@keyframes radialFloat{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.05) translateY(-3px)}}
+/* Individually bobbed — each button floats at its own slow, gradual rhythm so they
+   don't move together. Different durations + delays = organic, staggered motion. */
+.match-radial.open .match-radial-btn{animation:radialFloat 5s ease-in-out infinite}
+.match-radial.open .match-radial-btn.btn-rewind{animation-delay:0s;animation-duration:5.6s}
+.match-radial.open .match-radial-btn.btn-nope{animation-delay:.9s;animation-duration:4.4s}
+.match-radial.open .match-radial-btn.btn-super{animation-delay:1.8s;animation-duration:6s}
+.match-radial.open .match-radial-btn.btn-like{animation-delay:.4s;animation-duration:4.8s}
+.match-radial.open .match-radial-btn.btn-note{animation-delay:1.3s;animation-duration:5.2s}
+@keyframes radialFloat{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.04) translateY(-4px)}}
 .match-radial-btn:active{transform:scale(0.85)!important;animation:none!important}
 .match-radial-btn.btn-super{background:linear-gradient(135deg,#533483,#e94560)}
 .match-radial-btn.btn-like{background:linear-gradient(135deg,#e94560,#ffa07a)}

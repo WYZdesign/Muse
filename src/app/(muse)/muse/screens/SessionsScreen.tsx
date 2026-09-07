@@ -190,10 +190,11 @@ export const SessionsScreen = memo(function SessionsScreen({
 <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
             {sessTab === "sessions" && (
               <>
-                <div style={{ margin: "4px 0 10px" }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Available Sessions</div>
+                <button className="btn btn-gold" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, marginTop: 4, marginBottom: 12 }} onClick={() => setShowCreate(true)}>+ List a Session</button>
+                <div style={{ margin: "0 0 10px" }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>Available Sessions</div>
             </div>
-            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Browse creatives offering sessions — pick one, book, and pay securely.</div>
+            <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 12 }}>Browse creatives offering sessions — pick one, book, and pay securely.</div>
             {(liveSessions?.length ? liveSessions : SESSIONS as SessionListing[]).map(s => (
               <div key={s.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch", position: "relative" }}>
                 <button aria-label="Report session" title="Report" onClick={() => { setReportTarget({ id: s.id, type: "session", name: s.name || "session" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(10,6,18,0.6)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
@@ -246,7 +247,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                     <button className="btn btn-outline" style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap" }} onClick={() => setViewProfile(s)}>View Profile</button>
                     <button
                       className="btn btn-outline"
-                      style={{ padding: "12px 14px", fontSize: 12, fontWeight: 600, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: savedSessionIds.includes(s.id) ? "var(--gold)" : undefined }}
+                      style={{ flex: "0 0 48px", width: 48, padding: "12px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: savedSessionIds.includes(s.id) ? "var(--gold)" : undefined }}
                       onClick={() => toggleSaveSession(s.id)}
                       aria-label={savedSessionIds.includes(s.id) ? "Unsave session" : "Save session"}
                       title={savedSessionIds.includes(s.id) ? "Saved" : "Save"}
@@ -257,9 +258,9 @@ export const SessionsScreen = memo(function SessionsScreen({
                 </div>
               </div>
             ))}
-            <button className="btn btn-gold" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, marginTop: 6 }} onClick={() => setShowCreate(true)}>+ List a Session</button>
-            <div style={{ height: 1, margin: "20px 0 4px", background: "linear-gradient(90deg, transparent, rgba(233,30,99,0.4), transparent)" }} />
-            <button className="btn ls-gradient" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 800, borderRadius: 12, marginTop: 6 }} onClick={() => showScreen("studios")}>✦ Browse All LA Studios</button>
+            <div style={{ height: 1, margin: "20px 0 8px", background: "linear-gradient(90deg, transparent, rgba(233,30,99,0.4), transparent)" }} />
+            <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", marginBottom: 8 }}>Looking to shoot in LA? Browse partner photo studios and book direct.</div>
+            <button className="btn ls-gradient" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 800, borderRadius: 12 }} onClick={() => showScreen("studios")}>✦ Browse All LA Studios</button>
           </>
         )}
         {sessTab === "bookings" && (
