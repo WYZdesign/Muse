@@ -138,7 +138,7 @@ export const MusesScreen = memo(function MusesScreen({
           style={{ flex: 1, padding: "16px 0", borderRadius: 13, border: "none", background: showLikesYou ? "linear-gradient(135deg,rgba(255,20,147,0.25),rgba(255,105,180,0.15))" : "transparent", color: showLikesYou ? "#FF69B4" : "var(--text2)", fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all .25s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: showLikesYou ? "0 2px 8px rgba(255,20,147,0.15)" : "none" }}
           onClick={() => setShowLikesYou(true)}
         >
-          <span>♥ Likes You</span>
+          <span>✦ Interested In You</span>
           {likedBy.length > 0 && (
             <span style={{ padding: "2px 7px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 11, fontWeight: 800, color: "#fff" }}>{likedBy.length}</span>
           )}
@@ -156,12 +156,12 @@ export const MusesScreen = memo(function MusesScreen({
 
       {showLikesYou ? (
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
-          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14 }}>People who liked your profile and want to connect</div>
+          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14 }}>People who are interested in connecting with you</div>
           {likedBy.length === 0 ? (
             <div className="empty-state" style={{ padding: "40px 20px", textAlign: "center" }}>
-              <div className="empty-icon" style={{ fontSize: 48, marginBottom: 12 }}>♥</div>
-              <div className="empty-title" style={{ fontSize: 18, fontWeight: 800 }}>No likes yet</div>
-              <div className="empty-sub" style={{ fontSize: 13, color: "var(--text2)", maxWidth: 260, margin: "6px auto 0" }}>Keep your profile fresh and active — matches will start flying!</div>
+              <div className="empty-icon" style={{ fontSize: 48, marginBottom: 12 }}>✦</div>
+              <div className="empty-title" style={{ fontSize: 18, fontWeight: 800 }}>No interest yet</div>
+              <div className="empty-sub" style={{ fontSize: 13, color: "var(--text2)", maxWidth: 260, margin: "6px auto 0" }}>Keep your profile fresh and active — connections will start flying!</div>
             </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 }}>
@@ -172,7 +172,7 @@ export const MusesScreen = memo(function MusesScreen({
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{p.name}</div>
                     <div style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600 }}>{p.type}</div>
                   </div>
-                  <div style={{ position: "absolute", top: 8, right: 8, padding: "3px 8px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 9, fontWeight: 800, color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>♥ Liked You</div>
+                  <div style={{ position: "absolute", top: 8, right: 8, padding: "3px 8px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 9, fontWeight: 800, color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>✦ Interested</div>
                   {currentUser.tier !== "muse_pro" && (<div style={{ position: "absolute", top: 8, left: 8, padding: "2px 7px", borderRadius: 99, background: "rgba(0,0,0,0.65)", fontSize: 9, fontWeight: 700, color: "var(--gold)", border: "1px solid rgba(255,215,0,0.3)" }}>PRO</div>)}
                 </div>
               ))}
@@ -183,7 +183,7 @@ export const MusesScreen = memo(function MusesScreen({
         <div className="match-list" style={matchesView === "grid" ? { flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "repeat(2,1fr)", gridAutoFlow: "row", gridAutoRows: "auto", columnGap: 14, rowGap: 14, alignContent: "flex-start", overflowY: "auto", padding: "14px 14px 112px", boxSizing: "border-box" } : { flex: 1, display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "flex-start", overflowY: "auto", padding: "0 16px 80px", gap: 10 }}>
           {matches.length === 0 && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "48px 24px" }}>
-              <div className="empty-icon" style={{ fontSize: 56, marginBottom: 12 }}>♥</div>
+              <div className="empty-icon" style={{ fontSize: 56, marginBottom: 12 }}>✦</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", whiteSpace: "nowrap" }}>No matches yet</div>
               <div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 260, marginTop: 6, lineHeight: 1.5 }}>Swipe right on creatives in Discover to ignite new collaborations.</div>
               <button className="btn btn-gold" style={{ marginTop: 18, padding: "10px 24px", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => showScreen("discover")}>Start Discovering</button>
@@ -198,9 +198,9 @@ export const MusesScreen = memo(function MusesScreen({
       <UpsellModal
         open={showLikesYou && showLikesUpsell}
         onClose={() => setShowLikesUpsell(false)}
-        feature="See Who Likes You"
-        reason={`${likedBy.length > 0 ? likedBy.length + " people" : "People"} liked your profile — go Pro to reveal exactly who and match instantly.`}
-        icon="♥"
+        feature="See Who's Interested"
+        reason={`${likedBy.length > 0 ? likedBy.length + " people" : "People"} are interested in your profile — go Pro to reveal exactly who and connect instantly.`}
+        icon="✦"
         currentUser={currentUser}
         showScreen={showScreen}
       />

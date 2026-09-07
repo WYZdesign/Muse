@@ -1718,7 +1718,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     setTypingTarget(Number(chatTarget.id));
     setTimeout(() => {
       setTypingTarget(null);
-      const replies = ["That resonates with me ✨","I'd love to collaborate on that","Let's make it happen, when are you free?","This is exactly what I've been wanting","The energy is right, let's create","Real connections make the best art","You get it. Most people don't.","I've been thinking about this for months","Say less, I'm already visualizing it","This is the spark. Let's not waste it."];
+      const replies = ["That resonates with me ✨","I'd love to collaborate on that","Let's make it happen, when are you free?","This is exactly what I've been wanting","The energy is right, let's create","Real connections make the best art","You get it. Most people don't.","I've been thinking about this for months","Say less, I'm already visualizing it","This is a great opportunity. Let's not waste it."];
       const reply = { from: "them" as const, text: replies[~~(Math.random() * replies.length)], time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
       setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, reply] } : prev);
       setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, reply] } : m));
@@ -1924,7 +1924,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       {showMatchOverlay && (
         <div
           className="match-overlay"
-          role="dialog" aria-modal="true" aria-label="It's a Match!"
+          role="dialog" aria-modal="true" aria-label="It's a Connection!"
           onClick={() => setShowMatchOverlay(null)}
         >
           <button className="match-overlay-close" onClick={(e)=>{e.stopPropagation();setShowMatchOverlay(null)}} aria-label="Close match overlay"><FiX size={22} /></button>
@@ -1941,9 +1941,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           <div
             className="match-title"
           >
-            Its a Match!
+            It&apos;s a Connection!
           </div>
-          <div className="match-subtitle">You and <strong style={{color:"var(--gold)"}}>{showMatchOverlay.name}</strong> both felt the spark.</div>
+          <div className="match-subtitle">You and <strong style={{color:"var(--gold)"}}>{showMatchOverlay.name}</strong> are both ready to collaborate.</div>
           <div className="match-avatars"
           >
             <Image loading="lazy" className="match-av" src={currentUser.avatar} alt="You" width={80} height={80} />
@@ -2543,7 +2543,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             </div>
             {likeNoteAnchor && (
               <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",borderRadius:10,background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.25)",fontSize:12,color:"var(--gold)",fontWeight:600}}>
-                ♥ Liking {likeNoteAnchor.type === "prompt" ? `their prompt: "${likeNoteAnchor.value}"` : likeNoteAnchor.value.toLowerCase()}
+                ✦ Liking {likeNoteAnchor.type === "prompt" ? `their prompt: "${likeNoteAnchor.value}"` : likeNoteAnchor.value.toLowerCase()}
               </div>
             )}
             <textarea className="inp" placeholder="Send a note with your like…" rows={4} value={likeNoteText} onChange={e=>setLikeNoteText(e.target.value)} style={{fontSize:14,resize:"none",borderRadius:12}} />
@@ -2582,7 +2582,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                 }
               }
             }} style={{width:"100%",padding:"14px"}}>
-              ♥ Send Like & Note
+              ✦ Send Like & Note
             </button>
           </div>
         </div>

@@ -87,7 +87,7 @@ export const FD_STUDIO: StudioProfile = {
       { id: "hill-2", name: "Hill 2", feature: "Light Wall · true blackout, dimmable light wall", slug: "hill-2", price: "$39.99" },
       { id: "hill-3", name: "Hill 3", feature: "Mirror Wall · full mirror wall, white brick", slug: "hill-3", price: "$44.99" },
       { id: "hill-4", name: "Hill 4", feature: "Tuscan/Jungle · corner stage + Vespa scooter", slug: "hill-4", price: "$39.99" },
-      { id: "hill-5", name: "Hill 5", feature: "Pink Wall · romantic white stage + French wall", slug: "hill-5", price: "$29.99" },
+      { id: "hill-5", name: "Hill 5", feature: "Pink Wall · elegant white stage + French wall", slug: "hill-5", price: "$29.99" },
       { id: "hill-6", name: "Hill 6", feature: "Moroccan Shower · shower, bathtub, lots of props", slug: "hill-6", price: "$44.99" },
       { id: "hill-7", name: "Hill 7", feature: "Rain Room · aqua stage, rain feature + platform", slug: "hill-7", price: "$44.99" },
       { id: "hill-8", name: "Hill 8", feature: "Concrete Wall · phone booth, rusted wall, barn doors", slug: "hill-8", price: "$34.99" },

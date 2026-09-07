@@ -878,7 +878,7 @@ export const MenuModal = memo(function MenuModal({
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Help &amp; Support</div>
                 {[
-                  { q: "How does matching work?", a: "Swipe right on creators you'd like to connect with. If they swipe right back, it's a match! You can then message each other." },
+                  { q: "How does matching work?", a: "Swipe right on creators you'd like to connect with. If they swipe right back, it's a connection! You can then message each other." },
                   { q: "What are Quests?", a: "Quests are creative opportunities posted by brands and clients. Find them under Collab — apply to paid ones, or respond to vision quests. Track everything you've applied to or saved in Menu → Your Activity." },
                   { q: "How do I upgrade to Premium?", a: "Go to Menu → Settings → Payments & Subscription → Subscription to see plan options." },
                   { q: "How do I report someone?", a: "Tap the ⚑ Report button on any feed or forum post, the ••• menu on a match, or Report inside a chat conversation. Choose a reason and we'll review it — track your reports in Menu → Your Activity → Reports." },

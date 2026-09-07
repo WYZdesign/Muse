@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useEffect, useState } from "react";
-import { FiArrowLeft, FiEye, FiHeart, FiMessageSquare, FiFileText, FiCalendar, FiDollarSign, FiTrendingUp, FiUsers } from "react-icons/fi";
+import { FiArrowLeft, FiEye, FiStar, FiMessageSquare, FiFileText, FiCalendar, FiDollarSign, FiTrendingUp, FiUsers } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 
@@ -57,7 +57,7 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
 
   const statCards = [
     { label: "Profile Views", value: analytics?.views?.toLocaleString() || "0", icon: FiEye, color: "#FFD700", trend: analytics?.viewsLast30Days ? `+${analytics.viewsLast30Days} (30d)` : null },
-    { label: "Matches Received", value: analytics?.matchesReceived?.toLocaleString() || "0", icon: FiHeart, color: "#FF69B4", trend: null },
+    { label: "Matches Received", value: analytics?.matchesReceived?.toLocaleString() || "0", icon: FiStar, color: "#FF69B4", trend: null },
     { label: "Messages Sent", value: analytics?.messagesSent?.toLocaleString() || "0", icon: FiMessageSquare, color: "#87CEEB", trend: null },
     { label: "Quest Applications", value: analytics?.briefApplications?.toLocaleString() || "0", icon: FiFileText, color: "#90caf9", trend: null },
     { label: "Bookings (Host)", value: analytics?.bookingsAsHost?.toLocaleString() || "0", icon: FiCalendar, color: "#98FB98", trend: null },

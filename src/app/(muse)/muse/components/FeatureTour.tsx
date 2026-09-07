@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import {
-  FiCompass, FiUsers, FiZap, FiHeart, FiCamera, FiCalendar,
+  FiCompass, FiUsers, FiZap, FiCamera, FiCalendar,
   FiMessageCircle, FiUser, FiStar, FiX, FiArrowRight, FiArrowLeft,
 } from "react-icons/fi";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
@@ -60,8 +60,8 @@ const ALL_PAGES: TourPage[] = [
     id: "muses",
     eyebrow: "Muses",
     title: "Your matches",
-    body: "Every mutual connection lands here. Jump into a conversation, revisit a profile, or see who's liked you.",
-    icon: <FiHeart size={40} />,
+    body: "Every mutual connection lands here. Jump into a conversation, revisit a profile, or see who's interested in you.",
+    icon: <FiStar size={40} />,
     from: "#FF4500",
     to: "#FFD700",
   },

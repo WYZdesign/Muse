@@ -98,7 +98,7 @@ const STYLE_FULL: Record<string, string> = {
 
 const CONN_FULL: Record<string, string> = {
   collab: "Wants to make work together, like a project, a shoot, or a commission.",
-  partner: "Open to a deeper romantic or creative-life partnership.",
+  partner: "Open to a deeper, long-term creative-life partnership.",
   friend: "Looking for creative community and real friendship, not just work.",
   mentor: "Seeking guidance, teaching, or someone to learn from, or to be that for someone else.",
 };
@@ -428,7 +428,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               onPointerDown={(e) => e.stopPropagation()}
                               onClick={(e) => { e.stopPropagation(); handleAnchorLike({ type: "photo", value: `Photo #${(currentPhotoIdx ?? 0) + 1}` }); }}
                               aria-label={`Like photo ${(currentPhotoIdx ?? 0) + 1}`}
-                            >♥ Like this photo</button>
+                            >✦ Like this photo</button>
                           )}
                           {showNoteTooltip && (
                             <div style={{ textAlign: "center", padding: "4px 16px 0", animation: "tooltipIn .4s ease" }}>
@@ -462,7 +462,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                       onClick={(e) => { e.stopPropagation(); const p = (profile as any).prompts[promptIdx ?? 0]; if (p) handleAnchorLike({ type: "prompt", value: p.a || p.q || "" }); }}
                                       aria-label="Like this prompt"
                                       title="Like this prompt"
-                                    >♥</button>
+                                    >✦</button>
                                   </div>
                                 </div>
                               )}
@@ -556,7 +556,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 <button className="match-radial-btn btn-rewind" style={{ left: -110, top: 7 }} onClick={doRewind} aria-label="Rewind">↺</button>
                                 <button className="match-radial-btn btn-nope" style={{ left: -106, top: -40 }} onClick={() => doSwipe("left")} aria-label="Pass">✕</button>
                                 <button className="match-radial-btn btn-super" style={{ left: -77, top: -77, width: 37, height: 37, fontSize: 16 }} onClick={() => doSwipe("super")} aria-label="Super Like">★</button>
-                                <button className="match-radial-btn btn-like" style={{ left: -40, top: -106 }} onClick={() => doSwipe("right")} aria-label="Like">♥</button>
+                                <button className="match-radial-btn btn-like" style={{ left: -40, top: -106 }} onClick={() => doSwipe("right")} aria-label="Like">✦</button>
                                 <button className="match-radial-btn btn-note" style={{ left: 7, top: -110 }} onClick={() => doLikeWithNote()} aria-label="Like + Note">✎</button>
                               </div>
                             </div>

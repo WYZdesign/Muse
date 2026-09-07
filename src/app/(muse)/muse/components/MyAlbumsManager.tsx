@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
-import { FiPlus, FiLock, FiGlobe, FiUsers, FiTrash2, FiX, FiHeart } from "react-icons/fi";
+import { FiPlus, FiLock, FiGlobe, FiUsers, FiTrash2, FiX, FiStar } from "react-icons/fi";
 import { authFetch } from "../lib/api";
 
 type Album = {
@@ -173,7 +173,7 @@ export default function MyAlbumsManager({
             <div style={{ fontSize: 16, fontWeight: 700 }}>{selected.title}</div>
             <div style={{ fontSize: 12, color: "var(--muted)" }}>{selected.photo_count} photos · {selected.view_count} views · {selected.like_count} likes</div>
           </div>
-          <button className="hdr-btn" onClick={likeAlbum} aria-label="Like album" style={{ color: liked ? "var(--coral)" : undefined }}><FiHeart size={16} /></button>
+          <button className="hdr-btn" onClick={likeAlbum} aria-label="Like album" style={{ color: liked ? "var(--gold)" : undefined }}><FiStar size={16} /></button>
           <button className="hdr-btn" onClick={() => deleteAlbum(selected.id)}><FiTrash2 size={16} /></button>
         </div>
 

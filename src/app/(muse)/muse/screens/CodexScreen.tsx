@@ -18,7 +18,7 @@ export interface CodexScreenProps {
 // ── BADGE MASTER GLOSSARY ────────────────────────────────────────────────────
 const GI = icons as Record<string, any>;
 const FI: Record<string, any> = {
-  FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiBookOpen, FiHeart,
+  FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiBookOpen, FiHeart, FiTarget,
   // MBTI — one glyph per type
   INTJ: FiTarget ?? null, INTP: FiCpu ?? null, ENTJ: FiTrendingUp ?? null, ENTP: FiEdit3 ?? null,
   INFJ: FiEye ?? null, INFP: FiFeather ?? null, ENFJ: FiUsers ?? null, ENFP: FiSmile ?? null,
@@ -47,8 +47,8 @@ const BADGES: BadgeDef[] = [
   { name: "Verified Pro", icon: "✓", color: "#FFD700", tier: "trust", short: "Identity verified by Muse", long: "We checked this member's government ID and professional credentials. A Verified Pro is a confirmed real person with a real creative identity, and it's the strongest trust signal on the platform." },
   { name: "Top Creator", icon: "★", color: "#FF8A80", tier: "achievement", short: "80+ collaborations completed", long: "Earned after completing 80 or more collaborations on Muse. Top Creators are seasoned pros with a long, proven record of shipped work." },
   { name: "Creative Sage", icon: "◊", color: "#FFB5C2", tier: "achievement", short: "47+ collaborations completed", long: "Earned after 47+ completed collaborations. Creative Sages are trusted veterans with deep experience, the step between Rising Star and Top Creator." },
-  { name: "Super Collab", icon: "♥", color: "#FF69B4", tier: "engagement", short: "High match compatibility", long: "This profile scores really well against your own compatibility, whether it's shared styles, complementary roles, aligned personality, or shared interests. A Super Collab is a strong nudge to say hi." },
-  { name: "Match Magnet", icon: "♥", color: "#FF69B4", tier: "engagement", short: "10+ matches this month", long: "Got 10 or more matches this month. Match Magnets are in demand right now, so expect a busy inbox and quick replies." },
+  { name: "Super Collab", icon: "✧", color: "#FF69B4", tier: "engagement", short: "High match compatibility", long: "This profile scores really well against your own compatibility, whether it's shared styles, complementary roles, aligned personality, or shared interests. A Super Collab is a strong nudge to say hi." },
+  { name: "Match Magnet", icon: "✧", color: "#FF69B4", tier: "engagement", short: "10+ matches this month", long: "Got 10 or more matches this month. Match Magnets are in demand right now, so expect a busy inbox and quick replies." },
   { name: "Quick Responder", icon: "FiZap", color: "#FFD700", tier: "engagement", short: "Responds within 2 hours", long: "This member replies within 2 hours on average. A Quick Responder badge means fast, reliable communication, perfect when you're on a deadline." },
   { name: "Style Icon", icon: "✦", color: "#D4A5FF", tier: "community", short: "Recognized for outstanding style", long: "The community has spotlighted their portfolio for standout aesthetic, composition, or a distinctive voice. A Style Icon is someone worth studying." },
   { name: "Local Legend", icon: "FiMapPin", color: "#87CEEB", tier: "community", short: "Top creative in their city", long: "Ranked among the most active and highest-rated creatives in their city. Local Legends are the go-to collaborators in their market." },
@@ -64,7 +64,7 @@ const CONN_TYPES = [
   { name: "Collaborator", icon: "FiBriefcase", color: "#FFD700", desc: "You want to make work together, like a project, a shoot, or a commission." },
   { name: "Friend", icon: "FiUsers", color: "#87CEEB", desc: "You're looking for creative community and genuine friendship, not just work." },
   { name: "Mentor", icon: "FiBookOpen", color: "#98FB98", desc: "You want guidance, teaching, or someone to learn from (or to be that for others)." },
-  { name: "Partner", icon: "FiHeart", color: "#FF69B4", desc: "You're open to a deeper romantic or creative-life partnership." },
+  { name: "Partner", icon: "FiTarget", color: "#FF69B4", desc: "You're open to a deeper, long-term creative-life partnership." },
 ];
 
 export const CodexScreen = memo(function CodexScreen({
