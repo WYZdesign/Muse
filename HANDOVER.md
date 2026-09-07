@@ -485,3 +485,59 @@ I'll keep sweeping the codebase for real problems (security gaps, bugs,
 broken UX) rather than producing more written reports on their own — if
 something's worth telling you about, it'll be a short update right here, in
 plain English, attached to the batch that found it.
+
+## Latest batch #3 (Torreé's list: tilt/parallax gaps, Quests crop, scrollbars)
+
+**Tilt/parallax was only really "alive" on Discover — fixed the two pages
+that had none at all.** Torreé noticed the tilt-on-mouse-move effect on
+Discover but nothing on Muses or Collab. Traced every screen's wiring: the
+whole app shares one tilt engine (mouse-move on desktop, phone
+gyroscope/`deviceorientation` on mobile — `useDeviceTilt.ts`), and most
+screens (Feed, BTS, Community, Network) already had it hooked up to their
+post/card images. Two screens genuinely had zero tilt code at all:
+
+- **Muses main grid** — the effect only existed inside the "Likes You"
+  sub-view; the main grid you land on by default never had it. Added the
+  same spatial-tilt treatment Discover's card uses (`.match-card-grid`)
+  since those are full-bleed photo cards just like Discover's.
+- **Collab (briefs)** — had no tilt code anywhere. Brief cards don't have a
+  big hero photo (just a small round avatar), so full 3D image-tilt would
+  look wrong there — gave it the lighter "container floats with your
+  mouse/tilt" treatment Feed/BTS/Community use instead.
+
+**Mobile motion — I could confirm the code is wired correctly, but I
+can't confirm it's actually firing on your phone, and want to be upfront
+about why.** The gyroscope listener and the iOS permission prompt (wired to
+the app's very first tap, since iOS 13+ requires that) are both in place
+and look correct reading the code. But there are two things outside what I
+can verify from here that would silently produce exactly "no motion at all
+on mobile, mouse still works on desktop": (1) iOS/Android's own "Reduce
+Motion" accessibility setting — if that's on for your phone, the app
+correctly and silently turns off *all* ambient motion everywhere, which is
+the right thing to do for accessibility, not a bug; (2) if the permission
+prompt didn't actually fire or got denied (easy to happen without noticing,
+especially testing inside an in-app/webview browser rather than plain
+Safari/Chrome). I can't rule either in or out without hands on an actual
+phone, which is the same screenshot/live-testing limitation flagged
+earlier in this doc. If you check your phone's Reduce Motion setting is
+off and it's still dead, that'd point at #2 and is worth a live device
+console-log check.
+
+**Quests panel — "All Quests" filter row was clipping the buttons, root
+cause found.** The row was flex-shrink-able inside the panel's flex-column
+layout, and it also has `overflow-y:hidden` (intentional — that's what
+forces it to stay a single horizontal-scrolling row rather than wrapping).
+On a short viewport, the flex column could squeeze this row below its own
+content height, and the hidden y-overflow clipped the tops/bottoms of the
+buttons instead of the row just rendering full height. Added
+`flex-shrink:0` so it can never be squeezed, and bumped the padding another
+~30% per Torreé's ask (21/16px → 27/21px).
+
+**All horizontal scrollbars, 50% thinner** — every `height:4px` scrollbar
+rule for horizontally-scrolling rows (filter chips, tabs, quest filters,
+etc.) is now `height:2px`, app-wide.
+
+Verified: `tsc` clean, 233/233 tests passing. Same honest caveat as every
+batch — no live/visual pass done by me (screenshot tool still times out,
+and I won't log in to reach gated screens), so please eyeball the Muses
+grid and Collab tilt, and the Quests panel, when you get a chance.

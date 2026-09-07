@@ -89,6 +89,21 @@ export const MusesScreen = memo(function MusesScreen({
     return () => cancelAnimationFrame(raf);
   }, [showLikesYou]);
 
+  // Main grid view had no tilt/parallax at all — every other primary screen
+  // (Discover's swipe card, Network's pro cards) gets this treatment, but
+  // Muses' grid cards (.match-card-grid, full-bleed photo like Discover's
+  // hero) were skipped, so this page read as "dead" next to the rest of the
+  // app. Same spatial-scene engine Discover uses, applied to the grid cards.
+  useEffect(() => {
+    if (screen !== "matches" || matchesView !== "grid") return;
+    return createSpatialScene(
+      ".match-card-grid",
+      ".match-avatar",
+      ".match-info",
+      { imgShift: 15, imgRotate: 18, infoShift: 15, containerShift: 8, scale: 1.12 }
+    );
+  }, [screen, matchesView]);
+
   return (
     <div className={"screen-el" + (screen === "matches" ? " active" : "")}>
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
