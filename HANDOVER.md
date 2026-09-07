@@ -1,3 +1,56 @@
+## 🎨 (Claude → wyzmind) — closed the last leftover items from the competitive-audit backlog
+
+Torreé asked me to verify the full audit backlog was actually done, not just claimed done in the
+report. It mostly was, but four "cross-app consistency" items from `COMPETITIVE_UX_REPORT.md` had
+been flagged and never actually closed out. Fixed all four, plus one small real bug found along the
+way, no action needed on your end:
+
+**1. A quest-completion notification pointed at a section that doesn't exist.** `questEngine.ts`
+told users to "claim your reward in Profile → Commissions" — there's no Commissions section anywhere
+in `ProfileScreen.tsx`; quests live under "Referral & Quests". Fixed the copy to point at the real
+place.
+
+**2. "Matches"/"Muses"/"Commissions" were three names for the same concept.** The bottom nav already
+called it "Muses"; the Profile and Menu stat labels still said "Matches", which read like a different
+feature to a new user. Aligned the two stat labels (and Profile's "Recent Matches" section title, and
+the Muses screen's own empty-state copy) to say "Muses", matching the nav. Left internal state/prop
+names (`matches`, `setMatches`) and the DB table (`muse_matches`) alone — renaming those is a much
+bigger, riskier change for zero user-facing benefit.
+
+**3. Empty states were rich in some screens, terse in others, with no shared component.** A shared
+`EmptyState` component already existed but was only used in one place. Converted Feed, Collab,
+Discover, Sessions (both bookings lists), and Muses (both the Likes-You and no-matches states) to use
+it — same visuals, one component instead of six hand-rolled copies.
+
+**4. Filter UI had converged on a shared pill pattern everywhere except Community.** Network, Feed,
+and BTS already share the `.filter-scroll-row`/`.filter-chip` pattern; Community had no filtering at
+all beyond its Groups/Events tab toggle. Added a category filter row for Groups (the one side that has
+a reliable `cat` field to filter on — the demo event dataset doesn't), using the same shared pill
+classes so it reads as the same control as the other three screens.
+
+**5. Portfolio data source reconciliation — this one was worse than "drifted."** Profile's inline
+Portfolio grid read `currentUser.portfolios`, a field that's initialized to `[]` on mount and is never
+written to *anywhere* in the app — it just round-trips through localStorage empty forever. It always
+showed the "Add" placeholder tiles, which happened to look like an intentional empty state, so nobody
+noticed it was actually dead. The real portfolio data lives in the separate Portfolio/Albums screen
+(`MyAlbumsManager.tsx`), which fetches `/api/muse?type=albums&profile_id=me`. Wired Profile's inline
+grid to fetch and render that same real data — album covers instead of a permanently-empty array — and
+tapping a tile now opens the real lightbox with that album's actual photos (`type=album-photos`),
+matching the same lifted lightbox state pattern used elsewhere. The portrait/landscape/sets tab filter
+now checks each album's real `tags` field instead of a `type` field that individual portfolio items
+never had.
+
+No new tests this batch (pure UI wiring + a copy fix, matching this repo's existing convention of not
+carrying component-level tests for screens) — verified each change by reading it back against the real
+data shapes (`get.ts`'s `albums`/`album-photos` handlers, the `muse_communities`/`muse_events` seed
+data) rather than guessing. tsc clean, 251/251 tests still passing (no regressions).
+
+That closes every open item from the competitive-audit backlog I'm aware of. Remaining untouched
+territory is only what's explicitly off-limits per your instruction (Travel/Availability, nested Forum
+threading, criterion reviews, message-request triage, video/voice chat, à la carte boosts, full-screen
+gallery) or protected (age/identity verification, NSFW gating, booking escrow, per-album privacy,
+reporting) — those still need your sign-off before I touch them.
+
 ## 🎨 (Claude → wyzmind) — closed an NSFW-gating gap in Matches, built only after Torreé's explicit go-ahead
 
 Found this while looking at the Matches list for the last real-bug sweep, but stopped and flagged it

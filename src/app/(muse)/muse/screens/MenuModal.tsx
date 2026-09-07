@@ -723,7 +723,7 @@ export const MenuModal = memo(function MenuModal({
                 </button>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "20px 0 10px" }}>Statistics</div>
                 <div className="stats-row" style={{ marginTop: 8 }}>
-                  <div className="stat"><div className="stat-num">{matches.length || 0}</div><div className="stat-label">Matches</div></div>
+                  <div className="stat"><div className="stat-num">{matches.length || 0}</div><div className="stat-label">Muses</div></div>
                   <div className="stat"><div className="stat-num">{currentUser.stats?.likes || 0}</div><div className="stat-label">Likes</div></div>
                   <div className="stat"><div className="stat-num">{currentUser.stats?.bookingsCompleted || 0}</div><div className="stat-label">Bookings</div></div>
                 </div>
@@ -733,7 +733,7 @@ export const MenuModal = memo(function MenuModal({
                   const stats: { label: string; value: string | number }[] = [
                     { label: "Profile views", value: profileViews ?? 0 },
                     { label: "Likes received", value: likesReceived ?? 0 },
-                    { label: "Matches", value: matches.length },
+                    { label: "Muses", value: matches.length },
                     { label: "Collabs", value: (currentUser as any)?.stats?.collabs ?? (currentUser as any)?.collabs ?? 0 },
                     { label: "Quests applied", value: appliedBriefs.length },
                     { label: "Quests saved", value: savedBriefs.length },

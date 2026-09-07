@@ -4,6 +4,7 @@ import React, { memo, useEffect } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiPlus } from "react-icons/fi";
 import Nav from "../components/Nav";
+import { EmptyState } from "../components/EmptyState";
 import type { Screen, Brief } from "../components/types";
 import { BRIEFS } from "../components/types";
 import { viewerSide } from "@/lib/role";
@@ -157,11 +158,7 @@ export const CollabScreen = memo(function CollabScreen({
             : [...filtered.filter(b => !ownIds.has(b.id)), ...filtered.filter(b => ownIds.has(b.id))];
           if (filtered.length === 0) {
             return (
-              <div className="empty-state">
-                <div className="empty-icon"><FiPlus size={48} /></div>
-                <div className="empty-title">No posts yet</div>
-                <div className="empty-sub">{museCat === "all" ? "Post a project, collab, or idea" : "No " + museCat + " posts yet, be the first!"}</div>
-              </div>
+              <EmptyState icon={<FiPlus size={48} />} title="No posts yet" sub={museCat === "all" ? "Post a project, collab, or idea" : "No " + museCat + " posts yet, be the first!"} />
             );
           }
           return ordered.map((brief, bi) => (

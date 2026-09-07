@@ -62,6 +62,11 @@ export const CommunityScreen = memo(function CommunityScreen({
   apiFetch,
 }: CommunityScreenProps) {
   const [showCreate, setShowCreate] = useState(false);
+  // Category filter for Groups — the one dimension Network/Feed/BTS already
+  // let you filter by (via the shared .filter-scroll-row/.filter-chip pill
+  // pattern) that Community never got. Events aren't included: unlike groups,
+  // the event dataset has no reliable `cat` field to filter on.
+  const [groupCatFilter, setGroupCatFilter] = useState<string>("all");
   const [form, setForm] = useState({ name: "", title: "", description: "", date: "", location: "", category: "", isNsfw: false });
   const [joinedIds, setJoinedIds] = useState<Set<number | string>>(new Set());
   const [detailItem, setDetailItem] = useState<any>(null);
@@ -156,6 +161,8 @@ export const CommunityScreen = memo(function CommunityScreen({
 
   const groups = (liveCommunities?.length ? liveCommunities : COMMUNITIES).filter((c: any) => showNsfw || !c.nsfw);
   const events = (liveEvents?.length ? liveEvents : EVENTS).filter((e: any) => showNsfw || !e.nsfw);
+  const groupCategories = Array.from(new Set(groups.map((c: any) => c.cat).filter(Boolean))) as string[];
+  const filteredGroups = groupCatFilter === "all" ? groups : groups.filter((c: any) => c.cat === groupCatFilter);
 
   return (
     <div className={"screen-el" + (screen === "community" ? " active" : "")}>
@@ -169,6 +176,34 @@ export const CommunityScreen = memo(function CommunityScreen({
           <button key={t} role="tab" tabIndex={0} aria-selected={commTab === t} className={"conn-tab" + (commTab === t ? " active" : "")} onClick={() => setCommTab(t)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCommTab(t); } }}>{t === "groups" ? "Groups" : "Events"}</button>
         ))}
       </div>
+
+      {/* Category filter for Groups — same pill shape/metrics as Feed's, Network's,
+          and BTS's content-filter chips (.filter-scroll-row/.filter-chip), so
+          Community reads as the same control instead of a screen with no filtering
+          at all. */}
+      {commTab === "groups" && groupCategories.length > 1 && (
+        <div className="filter-scroll-row" style={{ padding: "10px 16px 2px" }}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={groupCatFilter === "all"}
+            className="filter-chip"
+            style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: groupCatFilter === "all" ? "#0a0612" : "var(--gold)", background: groupCatFilter === "all" ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)", border: groupCatFilter === "all" ? "1.5px solid rgba(255,215,0,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
+            onClick={() => setGroupCatFilter("all")}
+          >All</button>
+          {groupCategories.map((cat) => (
+            <button
+              type="button"
+              role="tab"
+              key={cat}
+              aria-selected={groupCatFilter === cat}
+              className="filter-chip"
+              style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: groupCatFilter === cat ? "#0a0612" : "var(--gold)", background: groupCatFilter === cat ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)", border: groupCatFilter === cat ? "1.5px solid rgba(255,215,0,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
+              onClick={() => setGroupCatFilter(cat)}
+            >{cat.charAt(0).toUpperCase() + cat.slice(1)}</button>
+          ))}
+        </div>
+      )}
 
       {/* DETAIL MODAL */}
       {detailItem && detailType && (
@@ -319,7 +354,7 @@ export const CommunityScreen = memo(function CommunityScreen({
       )}
 
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
-        {commTab === "groups" && groups.map((c: any) => (
+        {commTab === "groups" && filteredGroups.map((c: any) => (
           <div key={c.id} className="conn-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openGroupDetail(c); } }} style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "column", alignItems: "center", cursor: "pointer", position: "relative" }} onClick={() => openGroupDetail(c)}>
             {/* Top-banner layout (matches Events). Seeded communities have img:"" — a bare
                 <img src=""> doesn't reliably fire onError, so guard explicitly and render an

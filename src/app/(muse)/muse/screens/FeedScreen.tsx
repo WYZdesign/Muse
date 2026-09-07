@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { FiArrowLeft, FiImage, FiX, FiFlag, FiSend } from "react-icons/fi";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import Nav from "../components/Nav";
+import { EmptyState } from "../components/EmptyState";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
 import Image from "next/image";
 import { STRINGS } from "@/lib/strings";
@@ -432,11 +433,7 @@ export const FeedScreen = memo(function FeedScreen({
           // map below ran over an empty array and the Feed tab rendered a
           // blank void instead of this message. Now mirrors the same `demo`
           // gate the render list below uses.
-          <div className="empty-state" style={{ paddingTop: 60 }}>
-            <div className="empty-icon" style={{ fontSize: 48 }}>📝</div>
-            <div className="empty-title">No posts yet</div>
-            <div className="empty-sub">Be the first to share your creative work!</div>
-          </div>
+          <EmptyState icon="📝" title="No posts yet" sub="Be the first to share your creative work!" style={{ paddingTop: 60 }} />
         ) : (
           [...(demo ? feedPostsStatic : []), ...feedPosts].sort((a, b) => b.id - a.id).filter(p => feedFilter === "all" || (feedFilter === "bts" ? (p.isBts || p.type === "video" && !p.text) : p.type === feedFilter)).map(post => {
             // Views: approximation if backend doesn't supply a `views` field yet.

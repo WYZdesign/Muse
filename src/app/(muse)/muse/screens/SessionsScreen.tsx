@@ -5,6 +5,7 @@ import Image from "next/image";
 import { FiArrowLeft, FiBookmark } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
+import { EmptyState } from "../components/EmptyState";
 
 import type { Screen, Match, SessionListing } from "../components/types";
 import { SESSIONS } from "../components/types";
@@ -287,11 +288,7 @@ export const SessionsScreen = memo(function SessionsScreen({
           <div style={{ padding: "0 0 20px" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>My Bookings</div>
             {myBookings.asBooker.length === 0 && (
-              <div style={{ textAlign: "center", padding: "24px 20px" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>No bookings yet</div>
-                <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>Book a session from the Browse tab. Your bookings will show up here.</div>
-              </div>
+              <EmptyState icon="📅" title="No bookings yet" sub="Book a session from the Browse tab. Your bookings will show up here." style={{ padding: "24px 20px" }} />
             )}
             {myBookings.asBooker.map(b => {
               const host = b.host_id || {};
@@ -348,11 +345,7 @@ export const SessionsScreen = memo(function SessionsScreen({
           <div style={{ padding: "0 0 20px" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>Incoming Requests</div>
             {myBookings.asHost.length === 0 && (
-              <div style={{ textAlign: "center", padding: "24px 20px" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>🗓️</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>No requests yet</div>
-                <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>When someone books one of your sessions, you'll see their request here to accept or decline.</div>
-              </div>
+              <EmptyState icon="🗓️" title="No requests yet" sub="When someone books one of your sessions, you'll see their request here to accept or decline." style={{ padding: "24px 20px" }} />
             )}
             {myBookings.asHost.map(b => {
               const booker = b.user_id || {};

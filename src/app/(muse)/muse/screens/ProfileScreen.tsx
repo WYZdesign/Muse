@@ -166,6 +166,37 @@ export const ProfileScreen = memo(function ProfileScreen({
     fetchReferralData();
   }, [apiFetch]);
 
+  // Portfolio section below previously read currentUser.portfolios, a field
+  // that's initialized to [] on mount and never written to anywhere in the
+  // app — it just round-trips through localStorage empty, forever. The real
+  // portfolio data (create/upload/manage) lives in the separate Portfolio/
+  // Albums screen (MyAlbumsManager.tsx), which fetches the same
+  // "type=albums" endpoint used here. Fetching it here too, instead of the
+  // dead array, so this preview grid actually shows real work.
+  const [portfolioAlbums, setPortfolioAlbums] = useState<{ id: string; title: string; cover_url: string; tags: string[] }[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch("/api/muse?type=albums&profile_id=me")
+      .then((r: any) => r.json())
+      .then((d: any) => { if (!cancelled) setPortfolioAlbums(Array.isArray(d.albums) ? d.albums : []); })
+      .catch(() => { if (!cancelled) setPortfolioAlbums([]); });
+    return () => { cancelled = true; };
+  }, [apiFetch]);
+
+  // Tapping a tile opens the real lightbox with that album's actual photos
+  // (same lifted lightboxPhotos/lightboxIdx state Discover already uses),
+  // falling back to just the cover if the album turns out to be empty.
+  const openAlbumLightbox = async (albumId: string, coverUrl: string) => {
+    setLightboxPhotos([coverUrl]);
+    setLightboxIdx(0);
+    try {
+      const res = await apiFetch(`/api/muse?type=album-photos&album_id=${albumId}`);
+      const d = await res.json();
+      const urls = (Array.isArray(d.photos) ? d.photos : []).map((p: any) => p.img_url).filter(Boolean);
+      if (urls.length) { setLightboxPhotos(urls); setLightboxIdx(0); }
+    } catch { /* keep the cover-only fallback already set */ }
+  };
+
   return (
     <div className={"screen-el" + (screen === "profile" ? " active" : "")}>
       <div className="hdr" style={{ justifyContent: "space-between", borderBottom: "1px solid rgba(255,215,0,0.15)" }}>
@@ -217,7 +248,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           ) : null}
         </div>
         <div className="stats-row">
-          <div className="stat"><div className="stat-num">{matches.length}</div><div className="stat-label">Matches</div></div>
+          <div className="stat"><div className="stat-num">{matches.length}</div><div className="stat-label">Muses</div></div>
           <div className="stat"><div className="stat-num">{matchStreak}</div><div className="stat-label">Streak</div></div>
           <div className="stat"><div className="stat-num">{currentUser.stats.likes}</div><div className="stat-label">Likes</div></div>
           <div className="stat"><div className="stat-num">{currentUser.stats.superLikes}</div><div className="stat-label">Superlikes</div></div>
@@ -434,20 +465,21 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
             {(() => {
-              const filtered = (currentUser.portfolios || []).filter((p: any) => {
+              const filtered = portfolioAlbums.filter((a: any) => {
                 if (portfolioTab === "all") return true;
-                if (portfolioTab === "portrait") return p.type === "portrait";
-                if (portfolioTab === "landscape") return p.type === "landscape";
-                return true;
+                return Array.isArray(a.tags) && a.tags.includes(portfolioTab);
               });
-              if (filtered.length > 0) return filtered.slice(0, 9).map((p: any, i: number) => {
-                const openLightbox = () => { setSelectedPortfolio(p); setLightboxPhotos(filtered.slice(0, 9).map((x: any) => x.img)); setLightboxIdx(i); };
+              if (filtered.length > 0) return filtered.slice(0, 9).map((a: any) => {
+                const openLightbox = () => openAlbumLightbox(a.id, a.cover_url);
                 return (
-                <div key={i} style={{ aspectRatio: "3/4", borderRadius: 12, overflow: "hidden", background: "#1a0a2e", position: "relative", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLightbox(); } }} onClick={openLightbox}>
-                  <Image loading="lazy" src={p.img} alt={p.title} fill sizes="(max-width: 600px) 33vw, 200px" style={{ objectFit: "cover" }} onError={handleImgError} />
+                <div key={a.id} style={{ aspectRatio: "3/4", borderRadius: 12, overflow: "hidden", background: "#1a0a2e", position: "relative", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLightbox(); } }} onClick={openLightbox}>
+                  {a.cover_url ? (
+                    <Image loading="lazy" src={a.cover_url} alt={a.title} fill sizes="(max-width: 600px) 33vw, 200px" style={{ objectFit: "cover" }} onError={handleImgError} />
+                  ) : (
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,215,0,0.6)", fontSize: "1.6em", fontWeight: 700 }}>{(a.title || "").trim().charAt(0).toUpperCase()}</div>
+                  )}
                   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px", background: "linear-gradient(to top,rgba(10,6,18,0.9),transparent)" }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.title}</div>
-                    <div style={{ fontSize: 9, color: "var(--muted)" }}>{p.type}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.title}</div>
                   </div>
                 </div>
                 );
@@ -460,7 +492,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           <button className="btn btn-outline" style={{ width: "100%", marginTop: 12, fontSize: 13, padding: "10px 0" }} onClick={() => setScreen("portfolio")}>Manage Albums</button>
         </div>
         <div className="section">
-          <div className="section-title">Recent Matches</div>
+          <div className="section-title">Recent Muses</div>
           <div className="section-text" style={{ marginBottom: 10 }}>Your latest connections</div>
           <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, scrollbarWidth: "none" }}>
             {matches.length > 0 ? matches.slice(0, 5).map(m => (

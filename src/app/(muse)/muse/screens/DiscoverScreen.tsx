@@ -5,6 +5,7 @@ import Image from "next/image";
 import { FiSearch, FiSettings, FiCompass, FiZap, FiCamera, FiX, FiChevronRight, FiFilter, FiInfo } from "react-icons/fi";
 import Nav from "../components/Nav";
 import MuseMap from "../components/MuseMap";
+import { EmptyState } from "../components/EmptyState";
 import type { Screen, Profile, LikeAnchor } from "../components/types";
 import { CITY_GEO } from "../components/types";
 import { distanceMiles } from "@/app/muse-realtime";
@@ -570,12 +571,9 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                 );
               })}
               {!isLoading && currentIdx >= filteredProfiles.length && (
-                <div className="empty-state">
-                  <div className="empty-icon"><FiFilter size={44} /></div>
-                  <div className="empty-title">No matches here</div>
-                  <div className="empty-sub">Try widening your filters or resetting the deck</div>
+                <EmptyState icon={<FiFilter size={44} />} title="No matches here" sub="Try widening your filters or resetting the deck">
                   <button className="btn btn-gold" onClick={() => { setCurrentIdx(0); }}>Reset</button>
-                </div>
+                </EmptyState>
               )}
             </div>
             {!isUnlimited && (dailyLikes < 10 || superLikes < 3) && <div className="limit-bars">{dailyLikes < 10 && <div className="limit-bar"><div className="limit-dots">{Array.from({ length: 10 }, (_, i) => <div key={i} className={"limit-dot" + (i < dailyLikes ? " filled" : "")} />)}</div><div className="limit-text">{dailyLikes} likes left</div></div>}{superLikes < 3 && <div className="limit-bar"><div className="limit-dots">{Array.from({ length: 3 }, (_, i) => <div key={i} className={"limit-dot" + (i < superLikes ? " super-filled" : "")} />)}</div><div className="limit-text">{superLikes} super likes left</div></div>}</div>}

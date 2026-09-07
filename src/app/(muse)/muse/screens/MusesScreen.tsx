@@ -7,6 +7,7 @@ import { FiArrowLeft, FiSearch, FiGrid, FiList } from "react-icons/fi";
 import MatchCard from "../components/MatchCard";
 import Nav from "../components/Nav";
 import UpsellModal from "../components/UpsellModal";
+import { EmptyState } from "../components/EmptyState";
 import type { Screen, Match, Profile } from "../components/types";
 
 export interface MusesScreenProps {
@@ -173,11 +174,7 @@ export const MusesScreen = memo(function MusesScreen({
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
           <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14 }}>People who are interested in connecting with you</div>
           {likedBy.length === 0 ? (
-            <div className="empty-state" style={{ padding: "40px 20px", textAlign: "center" }}>
-              <div className="empty-icon" style={{ fontSize: 48, marginBottom: 12 }}>✦</div>
-              <div className="empty-title" style={{ fontSize: 18, fontWeight: 800 }}>No interest yet</div>
-              <div className="empty-sub" style={{ fontSize: 13, color: "var(--text2)", maxWidth: 260, margin: "6px auto 0" }}>Keep your profile fresh and active — connections will start flying!</div>
-            </div>
+            <EmptyState icon="✦" title="No interest yet" sub="Keep your profile fresh and active — connections will start flying!" style={{ padding: "40px 20px" }} />
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 }}>
               {likedBy.map(p => (
@@ -197,12 +194,9 @@ export const MusesScreen = memo(function MusesScreen({
       ) : (
         <div className="match-list" style={matchesView === "grid" ? { flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "repeat(2,1fr)", gridAutoFlow: "row", gridAutoRows: "auto", columnGap: 14, rowGap: 14, alignContent: "flex-start", overflowY: "auto", padding: "14px 14px 112px", boxSizing: "border-box" } : { flex: 1, display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "flex-start", overflowY: "auto", padding: "0 16px 80px", gap: 10 }}>
           {matches.length === 0 && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "48px 24px" }}>
-              <div className="empty-icon" style={{ fontSize: 56, marginBottom: 12 }}>✦</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", whiteSpace: "nowrap" }}>No matches yet</div>
-              <div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 260, marginTop: 6, lineHeight: 1.5 }}>Swipe right on creatives in Discover to ignite new collaborations.</div>
-              <button className="btn btn-gold" style={{ marginTop: 18, padding: "10px 24px", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => showScreen("discover")}>Start Discovering</button>
-            </div>
+            <EmptyState icon="✦" title="No Muses yet" sub="Swipe right on creatives in Discover to ignite new collaborations.">
+              <button className="btn btn-gold" style={{ padding: "10px 24px", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => showScreen("discover")}>Start Discovering</button>
+            </EmptyState>
           )}
           {matches.filter(m => searchQuery === "" || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(m => (
             <MatchCard key={m.id} m={m} view={matchesView} actions={matchActions} />
