@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useState, useEffect, useCallback } from "react";
+import React, { memo, useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiCamera, FiClock } from "react-icons/fi";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
@@ -149,6 +149,33 @@ export const BtsScreen = memo(function BtsScreen({
     },
     [showToast]
   );
+
+  // Hold-to-report on the stories-row circles: the old "⋯" button sat directly
+  // on top of the circle and overlapped the photo. Now reporting is a long-press
+  // (works for touch AND mouse via Pointer Events) with no icon in the way; a
+  // click that isn't a long-press still opens the story as before.
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFiredRef = useRef(false);
+  const HOLD_MS = 550;
+
+  const cancelHold = useCallback(() => {
+    if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null; }
+  }, []);
+
+  const startHold = useCallback((s: any) => {
+    longPressFiredRef.current = false;
+    cancelHold();
+    holdTimerRef.current = setTimeout(() => {
+      longPressFiredRef.current = true;
+      setReportTarget({ id: s.id, type: "moment", name: s.author || s.caption || "moment" });
+      setShowReport(true);
+    }, HOLD_MS);
+  }, [cancelHold, setReportTarget, setShowReport]);
+
+  const reportStory = useCallback((s: any) => {
+    setReportTarget({ id: s.id, type: "moment", name: s.author || s.caption || "moment" });
+    setShowReport(true);
+  }, [setReportTarget, setShowReport]);
 
   const trendingCutoff = (() => {
     const scores = stories.map((s) => (s.likes || 0) + (s.comments || 0)).sort((a, b) => b - a);
@@ -311,8 +338,13 @@ export const BtsScreen = memo(function BtsScreen({
                 key={s.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => setShowStory(i)}
+                title="Hold to report"
+                onClick={() => { if (longPressFiredRef.current) { longPressFiredRef.current = false; return; } setShowStory(i); }}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowStory(i); } }}
+                onPointerDown={() => startHold(s)}
+                onPointerUp={cancelHold}
+                onPointerLeave={cancelHold}
+                onPointerCancel={cancelHold}
                 style={{
                   display: "flex",
                   flexDirection: "column",
@@ -323,12 +355,8 @@ export const BtsScreen = memo(function BtsScreen({
                   position: "relative",
                 }}
               >
-                <button
-                  aria-label="Report moment"
-                  title="Report"
-                  onClick={(e) => { e.stopPropagation(); setReportTarget({ id: s.id, type: "moment", name: s.author || s.caption || "moment" }); setShowReport(true); }}
-                  style={{ position: "absolute", top: 4, right: 4, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(10,6,18,0.6)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
                 <div
+                  className="bts-story-circle"
                   style={{
                     position: "relative",
                     width: 64,
@@ -352,6 +380,16 @@ export const BtsScreen = memo(function BtsScreen({
                       border: "2px solid var(--bg, #0a0612)",
                     }}
                   />
+                  {/* Desktop-only: a small report affordance sitting on the OUTER edge of
+                      the circle (not overlapping the photo), revealed on hover. Touch
+                      devices have no hover, so they rely on hold-to-report instead. */}
+                  <button
+                    aria-label="Report moment"
+                    title="Report"
+                    className="bts-story-report-btn"
+                    onClick={(e) => { e.stopPropagation(); reportStory(s); }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    style={{ position: "absolute", bottom: -2, right: -2, zIndex: 2, width: 16, height: 16, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(10,6,18,0.85)", color: "var(--muted)", fontSize: 9, lineHeight: 1, cursor: "pointer", alignItems: "center", justifyContent: "center" }}>⋯</button>
                 </div>
                 <span
                   style={{
@@ -415,14 +453,6 @@ export const BtsScreen = memo(function BtsScreen({
           {filteredStories.map((s) => {
             const isRevealed = revealedNsfw.has(String(s.id));
             const isNsfw = s.nsfw && !isRevealed;
-            // View count + weighted engagement score, matching the Feed page's X/Twitter-style
-            // stat row: views fall back to an approximation (baseline + likes*8 + comments*15)
-            // when the backend hasn't supplied a real `views` field yet; engagement weights
-            // comments 2x likes, same formula as FeedScreen so the numbers read consistently
-            // across the app.
-            const btsViews = typeof (s as any).views === "number" ? (s as any).views : 40 + (s.likes || 0) * 8 + (s.comments || 0) * 15;
-            const btsEngagement = (s.likes || 0) + (s.comments || 0) * 2;
-            const btsFmt = (n: number) => (n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K" : String(n));
 
             return (
               <div
@@ -619,30 +649,6 @@ export const BtsScreen = memo(function BtsScreen({
                   </div>
                 )}
 
-                {/* View count + engagement (X/Twitter-style stat row, matches Feed) */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: 10,
-                    padding: "8px 12px 0",
-                  }}
-                >
-                  <span
-                    title="Views"
-                    style={{ fontSize: 11, color: "var(--muted, #999)", display: "inline-flex", alignItems: "center", gap: 4 }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                    {btsFmt(btsViews)}
-                  </span>
-                  <span
-                    title="Engagement: likes + comments×2"
-                    style={{ fontSize: 11, color: btsEngagement > 0 ? "var(--gold)" : "var(--muted, #999)", fontWeight: btsEngagement > 0 ? 700 : 400 }}
-                  >
-                    ✦ {btsFmt(btsEngagement)}
-                  </span>
-                </div>
-
                 {/* Action row */}
                 <div
                   style={{
@@ -663,15 +669,15 @@ export const BtsScreen = memo(function BtsScreen({
                       padding: "7px 0",
                       borderRadius: 10,
                       border: "none",
-                      background: s.liked ? "rgba(255,20,147,0.15)" : "rgba(255,255,255,0.06)",
-                      color: s.liked ? "#FF69B4" : "var(--muted, #999)",
+                      background: s.liked ? "rgba(255,215,0,0.15)" : "rgba(255,255,255,0.06)",
+                      color: s.liked ? "var(--gold)" : "var(--muted, #999)",
                       fontSize: 12,
                       fontWeight: 700,
                       cursor: "pointer",
                       transition: "background 0.2s",
                     }}
                   >
-                    {s.liked ? "\u2665" : "\u2661"} {s.likes || 0}
+                    {s.liked ? "\u2726" : "\u2727"} {s.likes || 0}
                   </button>
                   <button
                     onClick={() => {
