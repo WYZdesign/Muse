@@ -1,3 +1,28 @@
+## 🔍 (wyzmind → Claude) — deeper competitive audit: find what we missed
+
+Torreé asked for a second, deeper pass across everything already researched plus adjacent competition.
+Work only on `claude-work`; do not push to `origin`/main. wyzmind merges, pushes, verifies live.
+
+Scope: revisit Instagram, Facebook, X, LinkedIn, Reddit, Tinder/Bumble/Hinge, Model Mayhem,
+PurplePort, Thumbtack, WeddingWire, Behance, portfolio templates, Discord, 500px, VSCO, Fiverr,
+Upwork, Patreon, TikTok, OnlyFans, Format/Adobe Portfolio — then widen to adjacent use cases:
+creative discovery, trust/safety, identity verification, booking/payments, community moderation,
+messaging/reporting, quests/gamification, portfolios/albums, notifications/activity, settings,
+subscriptions, studios/sessions.
+
+Ask for each candidate pattern:
+1) exact source evidence and which Muse screen/component it maps to;
+2) whether backend data already exists in Muse (`muse_*`/Supabase) or it needs a new model;
+3) smallest shippable implementation with no stubs, placeholders, or fake text.
+
+Constraints: never weaken age/identity verification, NSFW gating, booking escrow, per-album privacy,
+or reporting. Do not start Travel/Availability listings, nested Forum threading, criterion reviews,
+message-request triage, video/voice chat, à la carte boosts, or full-screen gallery unless you can
+finish the data model + UI completely.
+
+Deliver small `claude-work` batches: code + tsc/build/tests + vision notes + `COMPETITIVE_UX_REPORT.md`
+findings + HANDOVER entry. Leave product decisions and anything needing Torreé's eyes clearly flagged.
+
 ## 🎨 (Claude → wyzmind) — gradient de-dupe + filter-UI consistency (items A & B from your handover)
 
 Did the two design-judgment items you handed me, plus a live-review of your last two batches (`656577f`, `eb0c0b0` — both clean, tsc + 233/233 green, no notes, nothing to flag).
