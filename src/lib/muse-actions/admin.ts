@@ -160,7 +160,11 @@ export const adminReports = async ({ sb, profile }: ActionContext) => {
   if (!isAdminEmail(profile.email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  // Queue semantics: only open (unresolved) reports by default, same as the
+  // scans tab's "pending_review" filter — a resolved report shouldn't sit in
+  // the working queue forever once actioned or dismissed.
   const { data: reports } = await sb.from("muse_reports").select("*, reporter_id(id, name, avatar), target_id(id, name, avatar)")
+    .eq("status", "open")
     .order("created_at", { ascending: false }).limit(50);
   return NextResponse.json({ reports: reports || [] });
 };
@@ -179,7 +183,7 @@ export const adminSuspendUser = async ({ sb, profile, rest, ip }: ActionContext)
   if (!isAdminEmail(profile.email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  const { targetUserId, reason, durationDays } = rest;
+  const { targetUserId, reason, durationDays, reportId } = rest;
   if (!targetUserId) return NextResponse.json({ error: "targetUserId required" }, { status: 400 });
   if (targetUserId === profile.id) return NextResponse.json({ error: "Cannot suspend yourself" }, { status: 400 });
   const suspensionEnd = durationDays ? new Date(Date.now() + (durationDays as number) * 86400000).toISOString() : null;
@@ -197,7 +201,35 @@ export const adminSuspendUser = async ({ sb, profile, rest, ip }: ActionContext)
     body: suspensionEnd ? `Your account has been suspended until ${new Date(suspensionEnd).toLocaleDateString()}` : "Your account has been permanently banned",
     read: false
   });
+  // If this suspension was taken directly off a report row (the Reports tab's
+  // Suspend/Ban buttons), close the report out as actioned so it doesn't sit
+  // in the queue forever with no record that anything happened — and so the
+  // reporter's own report-status view (my-reports) reflects the outcome.
+  if (reportId && UUID_RE.test(String(reportId))) {
+    await sb.from("muse_reports").update({ status: "actioned", resolved_at: new Date().toISOString(), resolved_by: profile.id }).eq("id", reportId);
+  }
   await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `suspend_user:${targetUserId}:${suspensionEnd ? "until " + suspensionEnd : "permanent"}:${String(reason || "").slice(0, 300)}` });
+  return NextResponse.json({ success: true });
+};
+
+// A report doesn't always warrant suspending the target (false alarm, already
+// handled elsewhere, insufficient evidence) — until now there was no way to
+// close one out at all short of suspending someone, so reports with no
+// action taken just accumulated in the queue forever. Mirrors
+// adminResolveIncident's shape.
+export const adminResolveReport = async ({ sb, profile, rest }: ActionContext) => {
+  if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { reportId, resolution, note } = rest;
+  if (!reportId || !UUID_RE.test(String(reportId))) return NextResponse.json({ error: "reportId required" }, { status: 400 });
+  if (!["actioned", "dismissed"].includes(resolution as string)) return NextResponse.json({ error: "resolution must be 'actioned' or 'dismissed'" }, { status: 400 });
+  const { error } = await sb.from("muse_reports").update({
+    status: resolution,
+    resolved_at: new Date().toISOString(),
+    resolved_by: profile.id,
+    resolution_note: typeof note === "string" ? note.slice(0, 500) : "",
+  }).eq("id", reportId);
+  if (error) return safeServerError(error, "db op");
+  await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `resolve_report:${reportId}:${resolution}` });
   return NextResponse.json({ success: true });
 };
 

@@ -8,6 +8,8 @@ type Report = {
   target_id: { id: string; name: string; avatar: string } | null;
   reason: string; details: string; created_at: string;
 };
+
+type ResolveResolution = "actioned" | "dismissed";
 type Strike = {
   id: string; user_id: { id: string; name: string; avatar: string } | null;
   reason: string; category: string; severity: string;
@@ -63,11 +65,23 @@ export default function AdminModerationPanel() {
     } finally { setLoading(false); }
   };
 
-  const suspendUser = async (userId: string, reason: string, days: number | null) => {
-    const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-suspend-user", targetUserId: userId, reason, durationDays: days }) });
+  const suspendUser = async (userId: string, reason: string, days: number | null, reportId?: string) => {
+    const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-suspend-user", targetUserId: userId, reason, durationDays: days, reportId }) });
     if (r.ok) {
       setStrikes(s => [...s, { id: "new", user_id: { id: userId, name: "", avatar: "" }, reason, category: "high_severity", severity: days ? "suspension" : "permanent_ban", suspension_ends_at: days ? new Date(Date.now() + days * 86400000).toISOString() : null, appeal_status: "none", created_at: new Date().toISOString() }]);
+      // Suspending/banning off a report closes that report too (server-side)
+      // — drop it from the local queue view to match.
+      if (reportId) setReports(rs => rs.filter(rp => rp.id !== reportId));
     }
+  };
+
+  const [resolvingReport, setResolvingReport] = useState<string | null>(null);
+  const resolveReport = async (reportId: string, resolution: ResolveResolution) => {
+    setResolvingReport(reportId);
+    try {
+      const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-resolve-report", reportId, resolution }) });
+      if (r.ok) setReports(rs => rs.filter(rp => rp.id !== reportId));
+    } finally { setResolvingReport(null); }
   };
 
   const [resolvingAppeal, setResolvingAppeal] = useState<string | null>(null);
@@ -153,10 +167,11 @@ export default function AdminModerationPanel() {
                 </div>
                 <div style={{ fontSize: 12, color: "#f5f0ff", marginBottom: 4 }}><strong>Reason:</strong> {r.reason}</div>
                 {r.details && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>{r.details}</div>}
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => suspendUser(r.target_id?.id || "", `Reported: ${r.reason}`, 7)} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(255,150,0,0.15)", border: "1px solid rgba(255,150,0,0.3)", color: "#ff9600", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Suspend 7d</button>
-                  <button onClick={() => suspendUser(r.target_id?.id || "", `Reported: ${r.reason}`, 30)} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(255,100,0,0.15)", border: "1px solid rgba(255,100,0,0.3)", color: "#ff6400", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Suspend 30d</button>
-                  <button onClick={() => suspendUser(r.target_id?.id || "", `Reported: ${r.reason} — permanent ban`, null)} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(255,50,50,0.15)", border: "1px solid rgba(255,50,50,0.3)", color: "#ff3232", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Ban</button>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button onClick={() => suspendUser(r.target_id?.id || "", `Reported: ${r.reason}`, 7, r.id)} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(255,150,0,0.15)", border: "1px solid rgba(255,150,0,0.3)", color: "#ff9600", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Suspend 7d</button>
+                  <button onClick={() => suspendUser(r.target_id?.id || "", `Reported: ${r.reason}`, 30, r.id)} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(255,100,0,0.15)", border: "1px solid rgba(255,100,0,0.3)", color: "#ff6400", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Suspend 30d</button>
+                  <button onClick={() => suspendUser(r.target_id?.id || "", `Reported: ${r.reason} — permanent ban`, null, r.id)} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(255,50,50,0.15)", border: "1px solid rgba(255,50,50,0.3)", color: "#ff3232", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Ban</button>
+                  <button disabled={resolvingReport === r.id} onClick={() => resolveReport(r.id, "dismissed")} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(120,255,150,0.1)", border: "1px solid rgba(120,255,150,0.25)", color: "#7ee2a0", fontSize: 11, fontWeight: 600, cursor: resolvingReport === r.id ? "default" : "pointer", opacity: resolvingReport === r.id ? 0.5 : 1 }}>Dismiss (no action needed)</button>
                 </div>
               </div>
             ))}

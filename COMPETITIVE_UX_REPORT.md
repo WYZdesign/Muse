@@ -164,11 +164,49 @@ unparseable timestamp, fresh, just-inside-window, just-outside-window, and a pol
 the constant itself stays inside Torreé's stated 3-6 month range. tsc clean, 240/240 tests passing
 (233 previous + 7 new).
 
+## Shipped this pass (follow-up #2) — report resolution / moderation queue
+
+Re-investigated the "Discord AutoMod / Reddit modqueue" finding I'd initially waved off as too big. On
+closer look it wasn't "build automated pre-screening from scratch" — Muse already had almost the whole
+loop built (users can file reports, admins can view them, `get.ts`'s `my-reports` endpoint already
+fetched a `status` field for the reporter's own view, `MenuModal.tsx` already rendered a Reports tab).
+What was actually missing was much smaller and very concrete: **there was no way for an admin to ever
+close a report out.** The Reports tab could suspend/ban the reported user, but nothing ever wrote to
+`muse_reports.status` — so every report sat in the queue forever, and the reporter-facing status the
+client already fetched was never anything real to show.
+
+Bigger finding along the way: `status` was never actually added to the `muse_reports` schema by any
+file in `sql/` or `sql/migrations/` — only `target_type` and `ai_classification` got added after the
+fact (the exact same "code shipped ahead of schema" gap `MUSE_DASHBOARD_FIX_20260806.sql` had already
+fixed once for `target_type`). Added `sql/migrations/0004_add_report_resolution_columns.sql`
+(idempotent — `status`, `resolved_at`, `resolved_by`, `resolution_note`, plus defensive re-adds of the
+two older columns) — **this one needs `python scripts/run_migrations.py --apply` run against the live
+DB before the resolve action will work end to end**, flagging that clearly since I can't run it myself
+(no live Supabase credentials, consistent with every prior migration in this project).
+
+What shipped:
+- `adminResolveReport` — a new admin action (`admin-resolve-report`) that marks a report `actioned` or
+  `dismissed` with an optional note, writes `resolved_at`/`resolved_by`, and logs to the existing admin
+  audit trail. Mirrors the existing `adminResolveIncident` pattern exactly.
+- `adminSuspendUser` now optionally closes the originating report (`status: actioned`) when the
+  Suspend/Ban buttons are used directly off a report row — previously acting on a report left it open
+  forever with no link back to what happened.
+- The admin Reports tab (`ModerationPanel.tsx`) now only lists `open` reports (real queue semantics —
+  resolved reports drop out) and has a new "Dismiss (no action needed)" button alongside the existing
+  Suspend/Ban ones, for the very common case where a report doesn't warrant suspending anyone.
+- The reporter-facing Reports list (`MenuModal.tsx`) now actually renders the status it was already
+  fetching — "Under review" / "Action taken" / "Reviewed — no action needed" — plus the admin's note
+  when one was left. Before this it fetched `status` and silently never displayed it.
+
+New tests in `admin.test.ts`: `adminResolveReport`'s admin gate, UUID validation, resolution validation,
+and the actual DB writes for both dismiss and action outcomes; plus coverage that `adminSuspendUser`
+only touches `muse_reports` when a `reportId` is actually supplied. tsc clean, 247/247 tests (240
+previous + 7 new).
+
 ## Research findings not pursued (either out of scope per your constraints, or no small safe slice found)
 
 - Upwork "Boosted Proposals" / LinkedIn Premium profile-boost mechanics → maps to à la carte boosts (forbidden this round).
 - LinkedIn InMail / dating-app message-request separation (Hinge/Bumble triage inbox) → maps to message-request triage (forbidden this round).
-- Discord AutoMod / Reddit modqueue-style automated pre-screening → maps to community moderation but the smallest honest version (a real moderation-action queue with audit trail) is not a one-sitting slice; flagging for a future dedicated pass rather than shipping a half version.
 - Duolingo/Strava streak-and-badge gamification patterns → Muse's Quests system already covers this ground (tiers, rewards, filters) reasonably well; no clear small addition beyond what already shipped in the previous batch (one-line quest cards, filter-row fix).
 - Calendly+Stripe combined booking/payment confirmation UX, Airbnb-style host/guest dual confirmation → overlaps booking/escrow, which is explicitly protected ("never weaken booking escrow") and not a small slice — flagging for a dedicated review rather than touching it here.
 - Substack/Patreon tiered-subscription messaging (what a subscriber tier unlocks, shown inline) → Muse's subscription/tier model exists but a full audit of where tier benefits are (or aren't) surfaced in-app is a bigger investigation than fits in this batch; noting as a candidate for the next pass.

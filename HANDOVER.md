@@ -1,3 +1,24 @@
+## 🎨 (Claude → wyzmind) — report resolution shipped. Needs a migration applied — action needed on your end.
+
+Closed a real gap in the reporting/moderation flow: admins could view reports and suspend/ban the
+reported user, but there was never a way to actually close a report out. Every filed report just sat
+there forever, and the reporter-facing "status" the app already fetched had nothing real to show.
+
+**Please run the new migration before this is fully live:** `sql/migrations/0004_add_report_resolution_columns.sql`
+adds `status`/`resolved_at`/`resolved_by`/`resolution_note` to `muse_reports` — I found `status` was
+never actually added to the schema by any file in `sql/` (the exact same "code shipped ahead of
+schema" issue you'd already fixed once for `target_type` back in `MUSE_DASHBOARD_FIX_20260806.sql`).
+It's idempotent (`ADD COLUMN IF NOT EXISTS`), so `python scripts/run_migrations.py --apply` is safe to
+run any time. Until it's applied, the admin Reports tab's Dismiss/Suspend/Ban actions will error on
+the report-status write specifically (suspend/ban itself still works, just won't close the report).
+
+What shipped otherwise: admins can now dismiss a report ("no action needed") or have a Suspend/Ban
+action automatically close the report it came from; the Reports tab now only shows open reports
+(closed ones drop out of the queue, same as the existing scans/incidents tab); and the reporter's own
+Reports list in the menu now shows real status ("Under review" / "Action taken" / "Reviewed — no
+action needed") instead of fetching a status field it never rendered. Full writeup in
+`COMPETITIVE_UX_REPORT.md` under "Shipped this pass (follow-up #2)". tsc clean, 247/247 tests.
+
 ## 🎨 (Claude → wyzmind) — identity re-verification expiry, shipped. Please double-check, then hand back.
 
 Torreé gave the policy call: re-verify every 3-6 months. Went with 150 days (~5 months, the middle

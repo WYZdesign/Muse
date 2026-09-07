@@ -11,7 +11,7 @@ import {
 import { questGetQuests, questTrackQuest, questClaimQuest } from "@/lib/muse-actions/quests";
 import { albumCreate, albumUpdate, albumDelete, albumAddPhoto, albumRemovePhoto, albumGrantAccess, albumRevokeAccess, albumListAccess, albumView, albumLike } from "@/lib/muse-actions/albums";
 import { feedbackGetNotifications, feedbackMarkAllRead, feedbackReportBug, feedbackSubmitIdea } from "@/lib/muse-actions/feedback";
-import { adminResolveAppeal, adminBrain, adminReports, adminStrikes, adminSuspendUser, adminScanNsfw, adminContentScans, adminResolveIncident } from "@/lib/muse-actions/admin";
+import { adminResolveAppeal, adminBrain, adminReports, adminStrikes, adminSuspendUser, adminScanNsfw, adminContentScans, adminResolveIncident, adminResolveReport } from "@/lib/muse-actions/admin";
 import { disclosureCreate, disclosureConfirm, disclosureGet, strikesGet, strikeAppeal } from "@/lib/muse-actions/disclosures";
 import { communityJoin, communityLeave, communityCreate, eventCreate, eventRsvp, eventCancelRsvp } from "@/lib/muse-actions/communities";
 import { sessionBook, sessionCreate, bookingRespond, bookingCancel, bookingComplete, reviewSubmit, checkinRespond, checkinsGet, safetyDetailsShare, safetyProfileSave, safetyProfileGet, promptsGet, promptResponseSave, promptResponsesGet } from "@/lib/muse-actions/sessions";
@@ -165,6 +165,7 @@ ACTIONS["admin-content-scans"] = adminContentScans;
 ACTIONS["search"] = searchAll;
 
 ACTIONS["admin-resolve-incident"] = adminResolveIncident;
+ACTIONS["admin-resolve-report"] = adminResolveReport;
 
 ACTIONS["get-notifications"] = feedbackGetNotifications;
 ACTIONS["mark-all-notifications-read"] = feedbackMarkAllRead;

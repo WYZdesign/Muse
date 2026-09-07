@@ -186,15 +186,29 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
         ? <div style={{ textAlign: "center", padding: 30, color: "var(--muted)", fontSize: 13 }}>Loading…</div>
         : myReports.length === 0
           ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>You haven't reported anything.</div>
-          : myReports.map((r: any) => (
-            <div key={r.id} style={{ padding: "10px 12px", background: "rgba(255,100,100,0.05)", borderRadius: 12, border: "1px solid rgba(255,100,100,0.12)", marginBottom: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-                <span style={{ fontWeight: 700, textTransform: "capitalize", color: "#ff8a80" }}>{String(r.target_type).replace("_", " ")}</span>
-                <span style={{ color: "var(--muted)", fontSize: 11 }}>{new Date(r.created_at).toLocaleDateString()}</span>
+          : myReports.map((r: any) => {
+            const status = r.status || "open";
+            const statusMeta: Record<string, { label: string; color: string }> = {
+              open: { label: "Under review", color: "#ffd166" },
+              actioned: { label: "Action taken", color: "#7ee2a0" },
+              dismissed: { label: "Reviewed — no action needed", color: "rgba(255,255,255,0.5)" },
+            };
+            const meta = statusMeta[status] || statusMeta.open;
+            return (
+              <div key={r.id} style={{ padding: "10px 12px", background: "rgba(255,100,100,0.05)", borderRadius: 12, border: "1px solid rgba(255,100,100,0.12)", marginBottom: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                  <span style={{ fontWeight: 700, textTransform: "capitalize", color: "#ff8a80" }}>{String(r.target_type).replace("_", " ")}</span>
+                  <span style={{ color: "var(--muted)", fontSize: 11 }}>{new Date(r.created_at).toLocaleDateString()}</span>
+                </div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 3 }}>{r.reason}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: meta.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, fontWeight: 600, color: meta.color }}>{meta.label}</span>
+                </div>
+                {r.resolution_note && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 3 }}>{r.resolution_note}</div>}
               </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 3 }}>{r.reason}</div>
-            </div>
-          )))}
+            );
+          }))}
     </>
   );
 }

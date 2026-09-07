@@ -9,7 +9,7 @@ vi.mock("@/lib/supabase", () => ({
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
-import { adminContentScans, adminSuspendUser, adminReports, adminStrikes } from "@/lib/muse-actions/admin";
+import { adminContentScans, adminSuspendUser, adminReports, adminStrikes, adminResolveReport } from "@/lib/muse-actions/admin";
 
 function makeQuery() {
   const q: any = {
@@ -53,5 +53,55 @@ describe("admin actions (isAdminEmail gate)", () => {
   it("adminSuspendUser returns 403 for a non-admin", async () => {
     const r = await adminSuspendUser(ctx({}, "user@example.com", null));
     expect((r as Response).status).toBe(403);
+  });
+});
+
+describe("adminResolveReport — closing out a report (moderation queue)", () => {
+  const REPORT_ID = "11111111-1111-1111-1111-111111111111";
+
+  it("returns 403 for a non-admin", async () => {
+    const r = await adminResolveReport(ctx({ reportId: REPORT_ID, resolution: "dismissed" }, "user@example.com", null));
+    expect((r as Response).status).toBe(403);
+  });
+
+  it("requires a valid UUID reportId", async () => {
+    const r = await adminResolveReport(ctxAdmin({ reportId: "not-a-uuid", resolution: "dismissed" }, null));
+    expect((r as Response).status).toBe(400);
+  });
+
+  it("rejects an invalid resolution value", async () => {
+    const r = await adminResolveReport(ctxAdmin({ reportId: REPORT_ID, resolution: "ignored" }, null));
+    expect((r as Response).status).toBe(400);
+  });
+
+  it("dismisses a report: writes status=dismissed + resolved_at/by, and an audit log entry", async () => {
+    const r = await adminResolveReport(ctxAdmin({ reportId: REPORT_ID, resolution: "dismissed", note: "False alarm" }, null));
+    expect((r as any).status ?? 200).not.toBe(403);
+    const reportUpdate = state.updates.find((u: any) => u.status === "dismissed");
+    expect(reportUpdate).toBeTruthy();
+    expect(reportUpdate.resolved_by).toBe("me1");
+    expect(reportUpdate.resolution_note).toBe("False alarm");
+    expect(state.inserts.some((i: any) => String(i.query_text || "").startsWith(`resolve_report:${REPORT_ID}:dismissed`))).toBe(true);
+  });
+
+  it("actions a report: writes status=actioned", async () => {
+    await adminResolveReport(ctxAdmin({ reportId: REPORT_ID, resolution: "actioned" }, null));
+    expect(state.updates.some((u: any) => u.status === "actioned")).toBe(true);
+  });
+});
+
+describe("adminSuspendUser off a report row closes the report too", () => {
+  const REPORT_ID = "22222222-2222-2222-2222-222222222222";
+
+  it("updates the report to status=actioned when reportId is supplied", async () => {
+    await adminSuspendUser(ctxAdmin({ targetUserId: "target1", reason: "spam", durationDays: 7, reportId: REPORT_ID }, null));
+    const reportUpdate = state.updates.find((u: any) => u.status === "actioned");
+    expect(reportUpdate).toBeTruthy();
+    expect(reportUpdate.resolved_by).toBe("me1");
+  });
+
+  it("does not touch muse_reports when no reportId is supplied", async () => {
+    await adminSuspendUser(ctxAdmin({ targetUserId: "target2", reason: "spam", durationDays: 7 }, null));
+    expect(state.updates.some((u: any) => u.status === "actioned")).toBe(false);
   });
 });
