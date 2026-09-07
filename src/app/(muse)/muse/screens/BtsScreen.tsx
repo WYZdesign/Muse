@@ -371,30 +371,29 @@ export const BtsScreen = memo(function BtsScreen({
           </div>
         )}
 
-        {/* Filter tabs */}
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            padding: "12px 14px 4px",
-            overflowX: "auto",
-            scrollbarWidth: "none",
-          }}
-        >
+        {/* Filter tabs — same pill shape/metrics (99px radius, 6px 14px padding, 11px/600
+            weight) as Feed's and Network's content-filter chips, so it reads as the same
+            control across the app; keeps BTS's own established pink/gold gradient fill
+            for the active state rather than borrowing another page's accent color. */}
+        <div className="filter-scroll-row" style={{ padding: "12px 14px 4px" }}>
           {FILTER_TABS.map((t) => (
             <button
+              type="button"
               key={t}
+              role="tab"
+              aria-selected={activeFilter === t}
               onClick={() => setActiveFilter(t)}
               style={{
-                padding: "7px 16px",
-                borderRadius: 20,
-                border: "none",
-                fontSize: 12,
-                fontWeight: 700,
+                padding: "6px 14px",
+                borderRadius: 99,
+                border: activeFilter === t ? "1.5px solid rgba(255,20,147,0.4)" : "1px solid rgba(255,255,255,0.08)",
+                fontSize: 11,
+                fontWeight: 600,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 flexShrink: 0,
-                background: activeFilter === t ? activePill : "rgba(255,255,255,0.08)",
+                transition: "all .15s",
+                background: activeFilter === t ? activePill : "rgba(255,255,255,0.06)",
                 color: activeFilter === t ? "#fff" : "var(--muted, #999)",
               }}
             >

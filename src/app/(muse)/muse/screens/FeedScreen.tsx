@@ -311,19 +311,27 @@ export const FeedScreen = memo(function FeedScreen({
         <div style={{ width: 42 }} />
       </div>
       <div className="conn-scroll" style={{ padding: "0 0 80px" }}>
-        <div className="conn-tab-sub-scroll feed-filter-scroll" style={{ display: "flex", gap: 6, margin: "0 20px 10px", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
+        {/* Content-type filter chips — same shape/metrics as Network's filter-scroll-row
+            (pill, 6px 14px padding, 11px/600 weight, colored fill on active) so this reads
+            as the same control system-wide, tinted with Feed's own nebula-blue accent
+            rather than Network's per-category rainbow (this row is one facet, not many). */}
+        <div className="filter-scroll-row" style={{ margin: "0 20px 10px" }}>
           {([
             { k: "all", l: "All", icon: "" },
             { k: "photos", l: "Photos", icon: "📸" },
             { k: "text", l: "Text", icon: "✍️" },
             { k: "videos", l: "Videos", icon: "🎬" },
             { k: "bts", l: "BTS", icon: "🎥" },
-          ] as const).map(f => (
-            <div key={f.k} className={"conn-tab-sub" + (feedFilter === f.k ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFeedFilter(f.k as any); } }} onClick={() => setFeedFilter(f.k as any)} style={{ fontSize: 11, padding: "5px 12px", borderRadius: 99, whiteSpace: "nowrap", flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
-              {f.icon && <span style={{ fontSize: 12 }}>{f.icon}</span>}
-              {f.l}
-            </div>
-          ))}
+          ] as const).map(f => {
+            const active = feedFilter === f.k;
+            return (
+              <button type="button" key={f.k} role="tab" aria-selected={active} onClick={() => setFeedFilter(f.k as any)}
+                style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: active ? "#0a0612" : "#90CAF9", background: active ? "rgba(144,202,249,0.3)" : "rgba(255,255,255,0.06)", border: active ? "1.5px solid rgba(144,202,249,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
+                {f.icon && <span style={{ fontSize: 12 }}>{f.icon}</span>}
+                {f.l}
+              </button>
+            );
+          })}
         </div>
 <div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", gap: 10, alignItems: "flex-start" }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
