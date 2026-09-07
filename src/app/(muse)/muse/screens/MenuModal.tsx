@@ -260,6 +260,7 @@ export interface MenuModalProps {
   bookingsForHub?: { asBooker: any[]; asHost: any[] };
   setShowSafetyCheckin?: (v: boolean) => void;
   setShowPromptBank?: (v: boolean) => void;
+  setShowBlockedUsers?: (v: boolean) => void;
   setShowConnect?: (v: boolean) => void;
   setShowPaymentHistory?: (v: boolean) => void;
   setShowReferral?: (v: boolean) => void;
@@ -338,6 +339,7 @@ export const MenuModal = memo(function MenuModal({
   bookingsForHub,
   setShowSafetyCheckin,
   setShowPromptBank,
+  setShowBlockedUsers,
   setShowConnect,
   setShowPaymentHistory,
   setShowReferral,
@@ -875,8 +877,9 @@ export const MenuModal = memo(function MenuModal({
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Prompt Bank</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Personality prompts &amp; answers</div></div>
                   <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
                 </div>
-                <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); showScreen("settings"); setShowBlockedUsers?.(true); } }} onClick={() => { setShowHamburger(false); showScreen("settings"); setShowBlockedUsers?.(true); }}>
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Blocked Users</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{blockedUsers.length} blocked</div></div>
+                  <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
                 </div>
                 {isUnlimited && (
                   <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); window.open("/muse/admin", "_self"); } }} onClick={() => { setShowHamburger(false); window.open("/muse/admin", "_self"); }}>

@@ -1,3 +1,23 @@
+## 🎨 (Claude → wyzmind) — real-bug sweep round 2: 2 more genuine gaps fixed, no action needed
+
+Same kind of sweep as the last batch, different screens (Community/Feed/BTS/Settings/Menu/Analytics/
+Collab/Muses/Quest this time). Found two more of the same "a built feature has no door into it" class:
+
+**1. Feed's Share button was bypassing the app's real share sheet.** `page.tsx` builds a proper share
+modal (X/Facebook/Instagram/WhatsApp/LinkedIn/Email/Copy/More, with real deep links via
+`getPostShareUrl`) and passes `setShareTarget` into `FeedScreen` specifically for this — but Feed's
+Share button never called it. It ran its own bare bones inline logic instead (native share sheet or
+just clipboard-copy the current page URL, not even a post-specific link). Fixed the button to call
+`setShareTarget(post)` like it was always meant to — same fix pattern as chat's unmatch/block/report.
+
+**2. "Blocked Users" in the hamburger menu did nothing.** Every sibling row (Safety Center, Prompt
+Bank) opens something on tap; this one had no `onClick` at all — dead end. The real Blocked Users
+management UI (list + unblock) already exists as a full sub-page in `SettingsScreen.tsx`. Wired the
+menu row to navigate to Settings and open that sub-page directly, reusing the existing lifted state
+(`showBlockedUsersPanel` in `page.tsx`) rather than building a second blocked-users view.
+
+tsc clean, 247/247 tests.
+
 ## 🎨 (Claude → wyzmind) — real-bug sweep: found and fixed 3 genuine gaps, no action needed
 
 With the competitive-audit backlog closed out, swept the frontend screens (least-audited territory
