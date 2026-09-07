@@ -43,11 +43,14 @@ function prefersReducedMotion(): boolean {
 
 function onOrientation(e: DeviceOrientationEvent) {
   // gamma: left/right tilt (-90..90), beta: front/back tilt (-180..180).
-  // Clamped and scaled to a gentle -1..1 range — this drives subtle ambient
-  // motion, not a precise instrument, so the clamp range favors a natural
-  // "resting in your hand" tilt over requiring an exaggerated angle.
-  const g = Math.max(-1, Math.min(1, (e.gamma ?? 0) / 35));
-  const b = Math.max(-1, Math.min(1, (e.beta ?? 0) / 55 - 0.4)); // -0.4 offset: beta≈45° is a natural resting hold, not flat
+  // Clamped and scaled to a -1..1 range — this drives ambient motion, not a
+  // precise instrument, so the clamp range favors a natural "resting in your
+  // hand" tilt over requiring an exaggerated angle. Divisors tightened from
+  // 35/55 (Torreé: felt on-device but "very subtle") so a normal in-hand
+  // tilt reaches the ±1 clamp sooner — same natural motion, more visible
+  // amplitude — without touching each consumer's own multiplier.
+  const g = Math.max(-1, Math.min(1, (e.gamma ?? 0) / 22));
+  const b = Math.max(-1, Math.min(1, (e.beta ?? 0) / 36 - 0.4)); // -0.4 offset: beta≈45° is a natural resting hold, not flat
   raw = { x: g, y: b };
 }
 

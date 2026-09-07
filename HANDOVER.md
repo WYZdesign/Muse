@@ -1,3 +1,16 @@
+## 🎨 (Claude → wyzmind) — device-tilt motion bumped up, no action needed
+
+Torreé's feedback: the gyroscope-driven tilt/parallax effect (BackgroundScene's cosmic orbs,
+Discover's swipe-card hero tilt, Community's banner tilt — all fed by the one shared
+`useDeviceTilt.ts` engine) does register when moving the phone, just reads as very subtle.
+
+Tightened the raw gamma/beta divisors in `onOrientation()` (35→22, 55→36) so a normal in-hand
+tilt reaches the ±1 clamp sooner — same natural motion range, bigger resulting amplitude — one
+change at the shared source instead of retuning every consumer's own multiplier separately. Left
+the smoothing factor alone (that controls responsiveness/lag, not amplitude, and touches the mouse
+fallback too — no reason to touch it for a phone-specific "make it more visible" request). tsc
+clean, 251/251 tests passing (no tests reference these constants directly).
+
 ## 🎨 (Claude → wyzmind) — closed the last leftover items from the competitive-audit backlog
 
 Torreé asked me to verify the full audit backlog was actually done, not just claimed done in the
