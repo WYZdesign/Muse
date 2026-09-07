@@ -1523,7 +1523,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   }, [showStory, stories.length]);
 
   const doRewind = useCallback(() => {
-    if (rewindStack.length === 0) { showToast("Nothing to rewind!"); return; }
+    if (rewindStack.length === 0) { showToast("No profiles left to undo"); return; }
     const prev = rewindStack[rewindStack.length - 1];
     setRewindStack(stack => stack.slice(0, -1));
     setCurrentIdx(prev);

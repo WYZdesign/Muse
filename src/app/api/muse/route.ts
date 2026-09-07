@@ -21,7 +21,7 @@ import { matchCreate, matchDelete, profileViewTrack } from "@/lib/muse-actions/m
 import { messageSend } from "@/lib/muse-actions/messaging";
 import { feedPost, feedPostLike, feedCommentAdd, momentCreate, momentLike, briefCreate, briefApply } from "@/lib/muse-actions/feed";
 import { forumDispatch, reportCreate, userBlock, userUnblock, blocksGet } from "@/lib/muse-actions/forum";
-import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll } from "@/lib/muse-actions/misc";
+import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate } from "@/lib/muse-actions/misc";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ACTION HANDLER REGISTRY
@@ -92,6 +92,7 @@ ACTIONS["connect"] = connectRequest;
 
 ACTIONS["save-preferences"] = preferencesSave;
 ACTIONS["apply-promo"] = promoApply;
+ACTIONS["boost"] = boostActivate;
 ACTIONS["mark-read"] = notificationsMarkRead;
 ACTIONS["sync"] = clientSync;
 

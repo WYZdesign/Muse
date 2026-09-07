@@ -158,3 +158,29 @@ export const searchAll = async ({ sb, rest, ip }: ActionContext) => {
 
   return NextResponse.json({ success: true, results });
 };
+
+// ═══ BOOST — enforce a real weekly limit (the pricing page promises "1x/week" for Pro) ═══
+// Boost is currently client-only: anyone can spam localStorage muse_boost with no cap
+// and no server check. This action records each activation and enforces the cap
+// server-side so the Pro promise is real (1 boost/week, free users excluded).
+import { NextResponse as _NR } from "next/server";
+export async function boostActivate({ sb, profile }: ActionContext) {
+  const { data: prof } = await sb.from("muse_profiles").select("tier").eq("id", profile.id).maybeSingle();
+  const isPro = prof?.tier === "muse_pro" || prof?.tier === "pro";
+  if (!isPro) return _NR.json({ error: "Boost is a Pro perk — upgrade to boost your profile" }, { status: 403 });
+
+  // ISO week key (Mon-based) so the counter resets each week.
+  const now = new Date();
+  const day = (now.getDay() + 6) % 7;
+  const monday = new Date(now); monday.setDate(now.getDate() - day);
+  const weekKey = monday.toISOString().slice(0, 10);
+  const { count } = await sb.from("muse_activity_log")
+    .select("id", { head: true, count: "exact" })
+    .eq("user_id", profile.id).eq("action", "boost")
+    .gte("created_at", monday.toISOString());
+
+  if ((count ?? 0) >= 1) return _NR.json({ error: "Weekly boost already used — resets next week" }, { status: 429 });
+
+  await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "boost", details: { week: weekKey, at: now.toISOString() } });
+  return _NR.json({ success: true, week: weekKey });
+}
