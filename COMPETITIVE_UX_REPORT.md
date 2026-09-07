@@ -92,3 +92,69 @@ on crawler surfaces + direct data extraction.
   check-ins/disclosure/Stripe-Identity — verifiable in Muse's own source.
 
 *Method: Invoke-WebRequest/curl via WYZMIND host shell, non-logged-in, public surfaces only.*
+
+---
+
+# DEEPER PASS — second audit (Claude, Sept 2026)
+
+Torreé asked for a second, deeper pass across everything already researched plus adjacent
+competition (creative discovery, trust/safety, identity verification, booking/payments, community
+moderation, messaging/reporting, quests/gamification, portfolios/albums, notifications/activity,
+settings, subscriptions, studios/sessions). Method: two parallel research passes (web research
+across Fiverr, Upwork, Patreon, OnlyFans, TikTok, 500px, VSCO, Discord, Format, Adobe Portfolio,
+general portfolio UX conventions, plus named real products for the adjacent categories: TaskRabbit,
+Turo, Uber, Care.com, Airbnb, Thumbtack, Calendly+Stripe, Reddit modqueue, Discord AutoMod,
+Nextdoor, LinkedIn InMail, dating-app message-requests, Bumble block/report, Duolingo, Strava,
+Slack, GitHub, Substack, LinkedIn Premium), cross-referenced against Muse's actual source so nothing
+below is guessed at — every "already exists" claim is grep-verified.
+
+Per wyzmind's constraint, findings that map onto Travel/Availability listings, nested Forum
+threading, criterion reviews, message-request triage, video/voice chat, à la carte boosts, or
+full-screen gallery were noted but explicitly **not started** (e.g. Upwork's "Boosted Proposals" ≈
+à la carte boost; LinkedIn InMail / dating-app message-request UX ≈ message-request triage) — those
+stay off-limits until they can be finished completely, per your instruction.
+
+## Shipped this pass
+
+**"Why this match?" transparency affordance (Discover)** — source: TikTok's "Why this video?" — a
+tappable icon on any feed item that opens a plain-language explanation of why it surfaced, which
+research flagged as cheap and trust-building in exactly the kind of space (opaque matching/algorithms)
+where dating/creative-matching apps get the most user suspicion.
+- Muse already computes a real match score (`calcMatch()` in `components/types.ts` — shared styles,
+  looking-for overlap, complementary creative-side pairing, zodiac/MBTI/Chinese-zodiac/Life-Path
+  compatibility, verified status, collab count) and already showed the number (`profile.score`) on
+  every Discover card — but never showed *why*. That's the actual gap this pattern fills.
+- No new backend data needed — 100% derivable from data already on the client. Added a companion
+  `matchReasons(a, b): string[]` function directly beside `calcMatch()`, mirroring its exact scoring
+  branches 1:1 so every sentence traces to a real point value (nothing invented/templated beyond the
+  real logic already driving the score).
+- UI: a small info button next to the existing score bar on Discover's expanded card opens a popover
+  (reusing the same visual language as the existing badge-info popover) listing the real reasons —
+  "You share 3 styles: ...", "Your roles complement each other...", "You're both Leo", etc.
+- Files: `components/types.ts` (new `matchReasons` export), `page.tsx` (`filteredProfiles` computes
+  and attaches `matchReasons` alongside the live score, same place/pattern as the score itself),
+  `screens/DiscoverScreen.tsx` (info button + popover).
+
+## Flagged for your call — not implemented this pass
+
+**Identity re-verification expiry (age_verified).** Source pattern: OnlyFans/Turo-style periodic
+re-verification rather than a one-time check. On first read this looked like a real gap (an earlier
+grep pass only caught 3 of the 4 files touching `age_verified`), but on the deeper pass I found
+`api/muse/verification/route.ts` already writes `age_verified_at` on successful verification, and
+the column already exists in the schema (`sql/MUSE_VERIFICATION_SESSIONS_20260804.sql` and others).
+So the *data* isn't missing — nothing currently reads that timestamp to decide "this verification is
+stale, ask again." I did not add that enforcement logic this pass: it's a genuine identity-verification
+change (falls under "never weaken age/identity verification"), and doing it right needs a policy call
+only you can make — how long a verification stays valid, what happens to a user mid-expiry (blocked
+from NSFW immediately? booking? just a banner?), and whether it should be all-users or NSFW-only.
+Happy to build it the moment you tell me the expiry window and the enforcement behavior — the data
+plumbing is already there, so it'd be a small, safe follow-up once scoped.
+
+## Research findings not pursued (either out of scope per your constraints, or no small safe slice found)
+
+- Upwork "Boosted Proposals" / LinkedIn Premium profile-boost mechanics → maps to à la carte boosts (forbidden this round).
+- LinkedIn InMail / dating-app message-request separation (Hinge/Bumble triage inbox) → maps to message-request triage (forbidden this round).
+- Discord AutoMod / Reddit modqueue-style automated pre-screening → maps to community moderation but the smallest honest version (a real moderation-action queue with audit trail) is not a one-sitting slice; flagging for a future dedicated pass rather than shipping a half version.
+- Duolingo/Strava streak-and-badge gamification patterns → Muse's Quests system already covers this ground (tiers, rewards, filters) reasonably well; no clear small addition beyond what already shipped in the previous batch (one-line quest cards, filter-row fix).
+- Calendly+Stripe combined booking/payment confirmation UX, Airbnb-style host/guest dual confirmation → overlaps booking/escrow, which is explicitly protected ("never weaken booking escrow") and not a small slice — flagging for a dedicated review rather than touching it here.
+- Substack/Patreon tiered-subscription messaging (what a subscriber tier unlocks, shown inline) → Muse's subscription/tier model exists but a full audit of where tier benefits are (or aren't) surfaced in-app is a bigger investigation than fits in this batch; noting as a candidate for the next pass.

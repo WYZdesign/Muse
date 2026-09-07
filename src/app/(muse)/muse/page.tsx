@@ -58,7 +58,7 @@ import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
 import StreakWidget from "./components/StreakWidget";
-import { PROFILES, AESTHETICS, BEHIND_CAMERA, IN_FRONT_CAMERA, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, ICEBREAKERS, calcMatch, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen, type LikeAnchor } from "./components/types";
+import { PROFILES, AESTHETICS, BEHIND_CAMERA, IN_FRONT_CAMERA, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, ICEBREAKERS, calcMatch, matchReasons, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen, type LikeAnchor } from "./components/types";
 import { useDiscoveryData } from "./hooks/useDiscoveryData";
 import { useFeedData } from "./hooks/useFeedData";
 import { useCommunityData } from "./hooks/useCommunityData";
@@ -1278,11 +1278,10 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       // change). calcMatch is source-of-truth; static seed score is a floor only
       // when the user hasn't set a type yet.
       try {
-        const liveScore = calcMatch(
-          { type: obData.type || "", styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath },
-          p as any,
-        );
+        const meForMatch = { type: obData.type || "", styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath };
+        const liveScore = calcMatch(meForMatch, p as any);
         if (obData.type) boosted.score = Math.min(99, Math.max(boosted.score, liveScore));
+        (boosted as any).matchReasons = matchReasons(meForMatch, p as any);
       } catch {}
       if (boosted.badges?.length) {
         const badgeBoost = boosted.badges.reduce((acc: number, b: any) => {

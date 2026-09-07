@@ -2,7 +2,7 @@
 
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
-import { FiSearch, FiSettings, FiCompass, FiZap, FiCamera, FiX, FiChevronRight, FiFilter } from "react-icons/fi";
+import { FiSearch, FiSettings, FiCompass, FiZap, FiCamera, FiX, FiChevronRight, FiFilter, FiInfo } from "react-icons/fi";
 import Nav from "../components/Nav";
 import MuseMap from "../components/MuseMap";
 import type { Screen, Profile, LikeAnchor } from "../components/types";
@@ -257,6 +257,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   cardScrollRef,
 }: DiscoverScreenProps) {
   const [badgeInfo, setBadgeInfo] = useState<{ name: string; desc: string; icon: React.ReactNode; color: string } | null>(null);
+  const [whyInfo, setWhyInfo] = useState<{ score: number; reasons: string[] } | null>(null);
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
   // Tapping a specific prompt or photo opens the like-with-note composer
   // already anchored to that content (Hinge-style). Falls back to
@@ -545,7 +546,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                   );
                                 })()}
                               </div>
-                              <div className="match-score" style={{ marginBottom: 16 }}><div className="score-bar"><div className="score-fill" style={{ width: profile.score + "%" }} /></div><span className="score-text">{profile.score}%</span></div>
+                              <div className="match-score" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}><div className="score-bar" style={{ flex: 1 }}><div className="score-fill" style={{ width: profile.score + "%" }} /></div><span className="score-text">{profile.score}%</span>{(profile as any).matchReasons?.length > 0 && <button onClick={(e) => { e.stopPropagation(); setWhyInfo({ score: profile.score, reasons: (profile as any).matchReasons }); }} aria-label="Why this match?" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, flexShrink: 0, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: "var(--muted)", cursor: "pointer", padding: 0 }}><FiInfo size={12} /></button>}</div>
                               {(profile as any).badges?.length > 0 && <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges.map((b: any, i: number) => <button key={i} className="tag" onClick={(e) => { e.stopPropagation(); setBadgeInfo(b); }} style={{ background: `${b.color}20`, border: `1px solid ${b.color}40`, color: b.color, cursor: "pointer" }}>{b.icon} {b.name}</button>)}</div></div>}
                               <div className="card-section" style={{ fontSize: 12, color: "var(--muted)" }}>📍 {profile.loc}</div>
                             </div>
@@ -637,6 +638,26 @@ export const DiscoverScreen = memo(function DiscoverScreen({
             </div>
             <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6 }}>{badgeInfo.desc}</div>
             <button onClick={() => setBadgeInfo(null)} style={{ marginTop: 18, width: "100%", padding: "12px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))", color: "var(--gold)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Got it</button>
+          </div>
+        </div>
+      )}
+      {/* Why this match? popover — traces the score back to the real calcMatch factors */}
+      {whyInfo && (
+        <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setWhyInfo(null)}>
+          <div style={{ background: "#1a0a2e", border: "1px solid rgba(255,215,0,0.25)", borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)", flexShrink: 0 }}>{whyInfo.score}%</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Why this match?</div>
+            </div>
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
+              {whyInfo.reasons.map((r, i) => (
+                <li key={i} style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5, display: "flex", gap: 8 }}>
+                  <span style={{ color: "var(--gold)", flexShrink: 0 }}>✦</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => setWhyInfo(null)} style={{ marginTop: 18, width: "100%", padding: "12px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))", color: "var(--gold)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Got it</button>
           </div>
         </div>
       )}

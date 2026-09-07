@@ -276,6 +276,54 @@ export function calcMatch(a: { type?: string; styles: string[]; looking: string[
   return Math.min(s, 99);
 }
 
+// Companion to calcMatch — a plain-language breakdown of exactly which of the
+// same factors contributed to the score, in the same order calcMatch checks
+// them. Every line here traces to a real point value calcMatch already adds;
+// nothing here is invented copy. Powers the "why you might vibe" affordance
+// on Discover (see DiscoverScreen.tsx match-score section).
+export function matchReasons(a: { type?: string; styles: string[]; looking: string[]; zodiac?: string; chinese?: string; mbti?: string; lifePath?: number }, b: typeof PROFILES[number]): string[] {
+  const reasons: string[] = [];
+  const shared = a.styles.filter(x => b.styles.includes(x));
+  if (shared.length > 0) {
+    reasons.push(`You share ${shared.length} style${shared.length > 1 ? "s" : ""}: ${shared.slice(0, 3).join(", ")}${shared.length > 3 ? ", +" + (shared.length - 3) + " more" : ""}`);
+  }
+  if (a.looking.some(l => b.looking.some(bl => bl.toLowerCase().includes(l.toLowerCase()) || l.toLowerCase().includes(bl.toLowerCase())))) {
+    reasons.push("You're both looking for the same kind of collab");
+  }
+  if (a.looking.some(l => b.type.toLowerCase().includes(l.toLowerCase()))) {
+    reasons.push(`${b.name || "They"} is exactly what you said you're looking for`);
+  }
+  if (a.type && CREATIVE_SIDE[a.type] && CREATIVE_SIDE[b.type] && CREATIVE_SIDE[a.type] !== CREATIVE_SIDE[b.type]) {
+    const aLooks = a.looking.some(l => b.type.toLowerCase().includes(l.toLowerCase()));
+    const bLooks = (b.looking || []).some((l: string) => (a.type || "").toLowerCase().includes(l.toLowerCase()));
+    if (aLooks && bLooks) {
+      reasons.push(`Your roles complement each other (${a.type} + ${b.type}) and you're each actively looking for the other`);
+    } else {
+      reasons.push(`Your roles complement each other — ${a.type} pairs naturally with ${b.type}`);
+    }
+  }
+  const zCompat: Record<string, string[]> = {"Aries":["Leo","Sagittarius","Gemini","Aquarius"],"Taurus":["Virgo","Capricorn","Cancer","Pisces"],"Gemini":["Libra","Aquarius","Aries","Leo"],"Cancer":["Scorpio","Pisces","Taurus","Virgo"],"Leo":["Aries","Sagittarius","Gemini","Libra"],"Virgo":["Taurus","Capricorn","Cancer","Scorpio"],"Libra":["Gemini","Aquarius","Aries","Sagittarius"],"Scorpio":["Cancer","Pisces","Taurus","Capricorn"],"Sagittarius":["Aries","Leo","Gemini","Libra"],"Capricorn":["Taurus","Virgo","Cancer","Scorpio"],"Aquarius":["Gemini","Libra","Aries","Sagittarius"],"Pisces":["Cancer","Scorpio","Taurus","Virgo"]};
+  if (a.zodiac && b.zodiac) {
+    if (a.zodiac === b.zodiac) reasons.push(`You're both ${a.zodiac}`);
+    else if (zCompat[a.zodiac]?.includes(b.zodiac)) reasons.push(`${a.zodiac} and ${b.zodiac} are considered compatible signs`);
+  }
+  if (a.chinese && b.chinese && a.chinese === b.chinese) {
+    reasons.push(`You're both born in the year of the ${a.chinese}`);
+  }
+  const mCompat: Record<string, string[]> = {"INTJ":["ENTP","ENFP"],"INTP":["ENTJ","ENFJ"],"ENTJ":["INTP","INFP"],"ENTP":["INTJ","INFJ"],"INFJ":["ENFP","ENTP"],"INFP":["ENFJ","ENTJ"],"ENFJ":["INFP","INTP"],"ENFP":["INFJ","INTJ"],"ISTJ":["ESFP","ESTP"],"ISFJ":["ESFP","ESTP"],"ESTJ":["ISFP","ISTP"],"ESFJ":["ISFP","ISTP"],"ISTP":["ESFJ","ESTJ"],"ISFP":["ESFJ","ESTJ"],"ESTP":["ISTJ","ISFJ"],"ESFP":["ISTJ","ISFJ"]};
+  if (a.mbti && b.mbti) {
+    if (a.mbti === b.mbti) reasons.push(`You're both ${a.mbti}`);
+    else if (mCompat[a.mbti]?.includes(b.mbti)) reasons.push(`${a.mbti} and ${b.mbti} tend to pair well`);
+  }
+  if (a.lifePath && b.lifePath && a.lifePath === b.lifePath) {
+    reasons.push(`You share Life Path ${a.lifePath}`);
+  }
+  if (b.verified) reasons.push("Their identity is verified");
+  if (b.collabs > 50) reasons.push(`They've completed ${b.collabs}+ collabs on Muse`);
+  if (reasons.length === 0) reasons.push("A baseline match — add more to your profile (styles, what you're looking for, personality traits) to see richer reasons here");
+  return reasons;
+}
+
 export function calcZodiac(month: number, day: number): string {
   const signs = ["Capricorn","Aquarius","Pisces","Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius"];
   const cutoffs = [20,19,21,20,21,21,23,23,23,23,22,22];

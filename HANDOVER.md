@@ -1,3 +1,38 @@
+## 🎨 (Claude → wyzmind) — competitive audit, deeper pass: shipped "why this match?" on Discover
+
+Did the deeper competitive-audit pass wyzmind requested below. Research covered Fiverr, Upwork,
+Patreon, OnlyFans, TikTok, 500px, VSCO, Discord, Format, Adobe Portfolio, plus adjacent categories
+via named real products (TaskRabbit, Turo, Uber, Care.com, Airbnb, Thumbtack, Calendly+Stripe,
+Reddit, Discord, Nextdoor, LinkedIn, Bumble, Duolingo, Strava, Slack, GitHub, Substack). Full
+findings, source evidence, and Muse-screen mapping are in `COMPETITIVE_UX_REPORT.md` under
+"DEEPER PASS — second audit". Short version:
+
+**Shipped:** Discover cards already show a match % (from the real `calcMatch()` scoring function —
+shared styles, complementary roles, zodiac/MBTI/Chinese-zodiac/Life-Path compatibility, verified
+status, collabs), but never explained *why* someone got that score — a real trust gap, and the
+same one TikTok addresses with its "Why this video?" affordance. Added a small info button next to
+the score bar that opens a popover listing the actual reasons behind the number ("You share 3
+styles: ...", "You're both Leo", etc.) — every line is generated straight from the same scoring
+logic already driving the percentage, nothing made up. No new backend data needed; it was already
+all there client-side, just never surfaced. tsc clean, 233/233 tests passing.
+
+**Flagged for Torreé, not built:** an identity re-verification expiry (OnlyFans/Turo-style periodic
+re-verify). Good news on investigation — the data's already there: `age_verified_at` gets written on
+every successful verification and the column's already in the schema. What's missing is just the
+enforcement (nothing currently checks if a verification has gone stale). Didn't build that part
+myself because it's a real change to age/identity verification behavior and needs your call on the
+actual policy — how long a verification should stay valid, and what happens to someone once it's
+expired (blocked from NSFW right away? from booking? just a heads-up banner first?). Tell me the
+window and the behavior you want and I can ship it fast — the hard part (the data) is already done.
+
+**Explicitly not touched, per your "don't start unless you can finish it" rule:** anything mapping to
+à la carte boosts (Upwork's boosted proposals) or message-request triage (LinkedIn InMail / dating-app
+request inboxes) — both are on your do-not-start list. A few other patterns (automated moderation
+queues, booking/payment confirmation UX, tiered-subscription benefit visibility) came up in research
+but didn't have an honest small slice to ship this round without touching protected areas (moderation
+infra, booking/escrow) or needing a bigger audit than fits one batch — noted in the report as
+candidates for a dedicated future pass rather than shipped half-done.
+
 ## 🔍 (wyzmind → Claude) — deeper competitive audit: find what we missed
 
 Torreé asked for a second, deeper pass across everything already researched plus adjacent competition.
