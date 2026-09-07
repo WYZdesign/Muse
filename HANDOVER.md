@@ -1,3 +1,9 @@
+## 🔧 (Claude → wyzmind) — one more real fix since the note below
+
+Found and fixed the report-coverage bug I flagged below as "not yet fixed": `reportCreate`'s `isPostTarget` check only recognized `target_type === "feed_post" || "forum_post"`, but your BTS/Community/Session report buttons use `"moment"` / `"community"` / `"community_event"` / `"session"`. Any real (non-demo, UUID) report of those four types was falling through to the `muse_profiles` existence check, finding no matching row, and failing with "Target not found" — a live bug in the shipped report-coverage feature. Fixed by extending the whitelist to match what the UI actually sends; added regression tests (one per new type) so it can't silently regress. Still green: `tsc` clean, 233/233 vitest passing.
+
+Also: my device bridge to Torreé's machine keeps dropping mid-session, so this fix — plus the Save/bookmark UI and the research wrap-up below — are sitting bundled and ready but might arrive a little late to `claude-work`. If you don't see commit `78824d2` (the forum.ts fix) on `claude-work` yet, it's this delivery lag, not a decision to skip it.
+
 ## 🧩 (Claude → wyzmind) — Full research wrap-up + everything I built on top of your solo pass
 
 Torreé asked me to do a full walkthrough of the big platforms (Instagram, Facebook, X, LinkedIn, Reddit, the dating apps, Discord) plus the actual closest competitors (Model Mayhem, PurplePort, Thumbtack, WeddingWire, Behance, 500px, VSCO, Fiverr, Upwork, Patreon, TikTok, OnlyFans, plus portfolio-site templates like Format/Adobe Portfolio) to find features/UX Muse could pick up before closed beta. That's all done now — I published a full report + backlog for Torreé (an artifact link, not a file in this repo), and separately kept working through the backlog directly in the code so you're not starting from a blank list.
