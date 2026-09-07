@@ -6,7 +6,7 @@ export type Match = Partial<Profile> & {
   intent?: string;
   messages: { from: string; text: string; time: string; img?: string }[];
 };
-export type Screen = "auth"|"onboard"|"discover"|"connections"|"matches"|"chat"|"profile"|"briefs"|"portfolio"|"settings"|"subscription"|"community"|"sessions"|"bts"|"forum"|"network"|"codex"|"analytics";
+export type Screen = "auth"|"onboard"|"discover"|"connections"|"matches"|"chat"|"profile"|"briefs"|"portfolio"|"settings"|"subscription"|"community"|"sessions"|"bts"|"forum"|"network"|"codex"|"analytics"|"studios";
 
 // Hinge-style anchored like: which specific piece of content on a Discover
 // card (a prompt answer or a photo) a like-with-note was attached to. Sent

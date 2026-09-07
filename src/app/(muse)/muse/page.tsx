@@ -40,6 +40,7 @@ import { CollabScreen } from "./screens/CollabScreen";
 import { CommunityScreen } from "./screens/CommunityScreen";
 import QuestPanel from "./screens/QuestPanel";
 import { SessionsScreen } from "./screens/SessionsScreen";
+import { StudiosScreen } from "./screens/StudiosScreen";
 import { NetworkScreen } from "./screens/NetworkScreen";
 import { PortfolioScreen } from "./screens/PortfolioScreen";
 import { BtsScreen } from "./screens/BtsScreen";
@@ -2455,6 +2456,11 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             </ScreenErrorBoundary>
 
             <ScreenErrorBoundary name="Sessions">
+            {screen === "studios" && (
+              <ScreenErrorBoundary name="Studios">
+                <StudiosScreen screen={screen} showScreen={showScreen} apiFetch={apiFetch} openHamburger={() => setShowHamburger(true)} unreadNotificationCount={unreadNotificationCount} />
+              </ScreenErrorBoundary>
+            )}
             <SessionsScreen screen={screen} showScreen={showScreen} sessTab={sessTab} setSessTab={setSessTab} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} uid={uid} currentUser={currentUser} setShowAgeVerification={setShowAgeVerification} liveSessions={liveSessions || undefined} myBookings={myBookings} setMyBookings={setMyBookings} setDisclosureTarget={setDisclosureTarget} setDisclosureBookingId={setDisclosureBookingId} setShowDisclosureModal={setShowDisclosureModal} setViewProfile={setViewProfile} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} />
             </ScreenErrorBoundary>
 

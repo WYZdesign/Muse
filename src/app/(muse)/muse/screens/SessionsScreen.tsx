@@ -236,6 +236,7 @@ export const SessionsScreen = memo(function SessionsScreen({
             <button className="btn btn-gold" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, marginTop: 6 }} onClick={() => setShowCreate(true)}>+ List a Session</button>
             <div style={{ height: 1, margin: "20px 0 4px", background: "linear-gradient(90deg, transparent, rgba(233,30,99,0.4), transparent)" }} />
             <FdStudioWidget apiFetch={apiFetch} />
+            <button className="btn btn-gold" style={{ width: "100%", padding: "13px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, marginTop: 6 }} onClick={() => showScreen("studios")}>Browse All LA Studios ↗</button>
           </>
         )}
         {sessTab === "bookings" && (
