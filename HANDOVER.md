@@ -1,3 +1,41 @@
+## 🧩 (Claude → wyzmind) — Full research wrap-up + everything I built on top of your solo pass
+
+Torreé asked me to do a full walkthrough of the big platforms (Instagram, Facebook, X, LinkedIn, Reddit, the dating apps, Discord) plus the actual closest competitors (Model Mayhem, PurplePort, Thumbtack, WeddingWire, Behance, 500px, VSCO, Fiverr, Upwork, Patreon, TikTok, OnlyFans, plus portfolio-site templates like Format/Adobe Portfolio) to find features/UX Muse could pick up before closed beta. That's all done now — I published a full report + backlog for Torreé (an artifact link, not a file in this repo), and separately kept working through the backlog directly in the code so you're not starting from a blank list.
+
+Good news: while I was mid-implementation you'd already picked off report coverage, the save-preferences backend fields, and a visual pass — so I checked what you'd shipped before touching anything, and undid/renamed a few things on my end so we didn't end up with two versions of the same feature (a stray `savedSessions`/`savedProfessionals` naming on my side got renamed to match your `savedSessionIds`/`savedProfileIds`, and I dropped a duplicate set of report buttons I'd built for BTS/Community/Sessions since yours were already live). Should all be one clean history now, no leftover dead code either way.
+
+**What's new since your last note, all tested (`tsc` + 228 vitest, still green) and delivered to `claude-work` in small batches:**
+- Verified checkmark + real trust numbers (review rating/count, completed-session count) now show up on Discover cards, Network's Professional cards, and Session listing/booking cards — pulled from your existing Stripe Identity + reviews data, nothing made up.
+- Media Kit link field on Profile (new `media_kit_url` column, migration included) — editable from Edit Profile, shown as a labeled link when set.
+- Discover: liking a specific prompt or the top photo now anchors the like+note to that exact thing (like Hinge), and the person who gets liked sees what specifically was liked instead of a generic "someone liked you."
+- Community groups now show a real numbered rules list, real Admin/Moderator badges on members, and a small "member count + created date" line — all read from new columns, nothing hardcoded, and it just shows nothing when a group has no rules set yet (no fake placeholder text).
+- Replaced a few plain "upgrade to Pro" toasts (hitting the daily like limit, the super-like limit, tapping a blurred Likes-You card) with a real popup that names the actual perk and links straight to the subscription screen.
+- Save/bookmark buttons on Session listings and Professional cards, wired to the `savedSessionIds`/`savedProfileIds` fields you already added.
+
+**Two honest gaps I found and did NOT paper over — flagging so nobody "fixes" them with fake UI:**
+- **Rewind's "Nothing to rewind!" message isn't actually a Pro-tier limit** — it just means the undo stack is empty, everyone hits it. There's no real daily-rewind cap anywhere in the code even though it might feel like there should be one.
+- **Boost has zero usage limit anywhere**, client or server, even though the pricing page promises Pro gets "1x/week." Any user can currently spam it for free. If we want that promise to be real, it needs an actual counter + a server check before it's worth putting a paywall in front of it.
+
+**What's left, in plain terms, roughly in the order I'd tackle them:**
+
+1. *Filter UI cleanup* — Network, Feed, Community, and BTS each use a different-looking filter control for basically the same job. This is the one you flagged as needing "live visuals," and it's really a design decision more than a bug — happy to take a pass at picking one shared style once someone (you or Torreé) says which of the four looks should win, or I can just propose one.
+2. *Travel/Availability posts for Sessions* — a "I'll be in [city] from [date] to [date], booking now" post type, separate from a normal fixed-location session listing. This came up as one of the single best ideas in the whole research pass (it's basically Model Mayhem's one genuinely good feature) and nothing like it exists in Sessions today. Needs a new listing type, not just a UI tweak.
+3. *Nested replies in the Forum* — right now a reply just gets an "@name" prefix, it doesn't actually nest under the comment it's replying to. Real threading needs a data model change (a parent-comment pointer), not just a visual fix.
+4. *Video/voice call button in Chat* — for a "let's hop on a call before I book you" moment. This is the biggest lift on the list (real-time audio/video infrastructure), so it's the one I'd push furthest out.
+5. *Criterion-based reviews* (rate a booking on communication/timeliness/etc. separately, not just one star number) — worth doing once there's enough review volume for the breakdown to actually mean something, not urgent yet.
+6. *Message-request triage* (separating cold-outreach chats from real conversations) — not urgent at Muse's current size, but worth designing the data model for now so it's not a rewrite later.
+7. *A la carte boosts* (buy a one-time "boost my profile this week" instead of only a subscription tier) — a monetization experiment more than a UX fix.
+8. *A real Behance-style full-screen gallery view* for a single shoot/album — nice-to-have polish, not urgent.
+
+**New ideas from the research that weren't in the first pass (worth reading, not yet built):**
+- 500px ranks photos with a decay-weighted score instead of a raw like count, so old viral posts don't permanently dominate and new work gets a fair shot — could be a smarter way to sort Feed/Discover than what we have now.
+- OnlyFans makes people re-verify their ID once a year, not just once ever, with a live selfie each time. Given Muse gates NSFW behind identity verification, a one-time check might not be enough long-term.
+- Fiverr's model is fixed Basic/Standard/Premium price packages instead of Thumbtack-style "request a quote" — could be a second way to structure Sessions pricing that's more self-serve.
+- Patreon's tiered-membership model (cheap tier, mid tier, expensive tier, different perks each) is the reference if we ever want creators to sell ongoing access/subscriptions instead of one-off bookings — also a warning that Patreon's real fees run higher than advertised, so if we ever do this, whatever cut we quote should be the real number.
+- Photo/client-gallery sites like Format let a photographer share a private, unlisted gallery with just one client — something Sessions doesn't have today and could be a nice small add (a shoot's photos, shared privately with just the client who booked it).
+
+Full raw research notes (screenshots-level detail per platform) exist outside this repo if either of you ever wants the unabridged version — just ask Torreé, he has the report link.
+
 ## wyzmind final solo pass (pre-visual-audit)
 - Reported-provision COMPLETE: BTS + community groups + events + sessions all got report buttons (feed/forum already had it). Full report coverage.
 - shared EmptyState component (icon+title+sub+CTA), applied to terse notifications empty state.
