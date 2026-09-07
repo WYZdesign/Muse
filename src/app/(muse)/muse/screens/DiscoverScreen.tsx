@@ -288,8 +288,6 @@ export const DiscoverScreen = memo(function DiscoverScreen({
     };
   }, [screen, currentIdx]);
 
-  const prefsActive = !!(discoveryPrefs && (Number(discoveryPrefs.ageMin) !== 18 || Number(discoveryPrefs.ageMax) !== 50 || Number(discoveryPrefs.distance) !== 50 || discoveryPrefs.gender !== "all"));
-
   return (
     <div className={"screen-el" + (screen === "discover" ? " active" : "")}>
       <div className="discover-wrap">
@@ -310,7 +308,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
             )}
             {!discoverSearchOpen && (
               <>
-                <button className={"hdr-btn" + (prefsActive ? " hdr-btn-glow" : "")} onClick={() => setShowDiscoveryPrefs(true)} style={{ width: 34, height: 34 }} aria-label="Discovery Preferences"><FiSettings size={16} />{prefsActive && <span style={{ position: "absolute", top: 5, right: 5, width: 7, height: 7, borderRadius: "50%", background: "var(--gold)", border: "1px solid var(--bg)", boxShadow: "0 0 6px rgba(255,215,0,0.8)" }} />}</button>
+                <button className="hdr-btn" onClick={() => setShowDiscoveryPrefs(true)} style={{ width: 34, height: 34 }} aria-label="Discovery Preferences"><FiSettings size={16} /></button>
                 <button className={"hdr-btn" + (mapView ? " hdr-btn-glow" : "")} onClick={() => setMapView(v => !v)} title="Map View" style={{ width: 34, height: 34 }} aria-label="Map View"><FiCompass size={16} /></button>
                 <button className={"hdr-btn" + (boostActive ? " hdr-btn-glow" : "")} onClick={() => { if (boostActive) { setBoostActive(false); setBoostEnd(0); try { safeRemoveItem?.("muse_boost"); } catch {} showToast("Boost off"); return; } apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "boost" }) }).then((r: any) => { if (r.ok) { const end = Date.now() + 1800000; setBoostActive(true); setBoostEnd(end); try { safeSetItem?.("muse_boost", "" + end); } catch {} showToast("Boost on for 30 min!"); } else { r.json?.().then((d: any) => showToast((d && (d.error || "Boost unavailable")) || "Boost unavailable")).catch(() => showToast("Boost unavailable")); } }).catch(() => showToast("Boost unavailable")); }} style={{ width: 34, height: 34 }} aria-label="Boost"><FiZap size={16} /></button>
               </>

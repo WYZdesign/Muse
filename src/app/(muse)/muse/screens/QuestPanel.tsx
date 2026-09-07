@@ -172,16 +172,16 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
             const isClaimable = q.completed && !q.claimed;
 
             return (
-              <div key={q.id} className={`quest-card ${q.completed ? "completed" : ""} ${isClaimable ? "claimable" : ""}`} style={{ borderLeftColor: tier.color }}>
+              <div key={q.id} className={`quest-card ${q.completed ? "completed" : ""} ${isClaimable ? "claimable" : ""}`} style={{ borderLeftColor: tier.color, position: "relative" }}>
+                <span className="quest-tier-badge" style={{ position: "absolute", top: 8, right: 10, background: `${tier.border}`, color: tier.color, border: `1px solid ${tier.border}` }}>{tier.label}</span>
                 <div className="quest-card-row">
                   <div className="quest-card-icon" style={{ background: tier.bg, border: `1px solid ${tier.border}` }}>
                     {q.icon}
                   </div>
                   <div className="quest-card-main">
                     <div className="quest-card-title">{q.title}</div>
-                    {q.description && <div className="quest-card-desc">{q.description}</div>}
-                    <div className="quest-card-sub">
-                      <span style={{ color: tier.color }}>{tier.label}</span>
+                    <div className="quest-card-desc-reward">
+                      {q.description && <span className="quest-card-desc">{q.description}</span>}
                       <span className="quest-card-reward" style={{ color: tier.color }}>{q.reward_amount > 1 ? `${q.reward_amount}× ` : ""}{q.reward_label}</span>
                     </div>
                   </div>

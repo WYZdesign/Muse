@@ -24,6 +24,15 @@ interface ActivityPanelProps {
   onStreakTap?: () => void;
 }
 
+function NotificationAvatar({ name, src }: { name?: string; src?: string }) {
+  const [failed, setFailed] = useState(false);
+  const letter = (name || "A").charAt(0).toUpperCase();
+  if (!src || failed) {
+    return <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--pink),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{letter}</div>;
+  }
+  return <Image loading="lazy" src={src} alt="Avatar" width={40} height={40} onError={() => setFailed(true)} style={{ borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />;
+}
+
 function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen, onStreakTap }: ActivityPanelProps) {
   const [hubTab, setHubTab] = useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
   const [myReports, setMyReports] = useState<any[] | null>(null);
@@ -83,8 +92,12 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
 
   return (
     <>
+      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: "6px 18px 10px" }}>
+        <button className="chat-back" onClick={() => setShowHamburger(false)} aria-label="Back"><FiArrowLeft size={20} /></button>
+        <div className="logo-link" style={{ fontSize: 24, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", backgroundImage: "linear-gradient(90deg,#E1BEE7,#9C27B0,#FF4081,#E1BEE7,#9C27B0,#E1BEE7)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite" }}>Your Activity</div>
+        <div style={{ width: 42 }} />
+      </div>
       <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} onTap={onStreakTap} />
-      <div className="logo-link" style={{ textAlign: "center", fontSize: 24, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", backgroundImage: "linear-gradient(90deg,#E1BEE7,#9C27B0,#FF4081,#E1BEE7,#9C27B0,#E1BEE7)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", margin: "2px 0 10px", animation: "lavaFlow 7s ease-in-out infinite" }}>Your Activity</div>
       <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
         {tabBtn("notif", "Notifications")}
         {tabBtn("applied", `Applied (${appliedBriefs.length})`)}
@@ -108,11 +121,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
             ? <EmptyState icon="🔔" title="No notifications yet" sub="Likes, matches, bookings and activity will appear here." />
             : notifications.map(a => (
                 <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1, background: a.read ? "transparent" : "rgba(255,215,0,0.03)", borderRadius: 8, marginBottom: 4 }}>
-                  {a.avatar ? (
-                    <Image loading="lazy" src={a.avatar} alt="Avatar" width={40} height={40} style={{ borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />
-                  ) : (
-                    <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--pink),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{(a.from || "A").charAt(0).toUpperCase()}</div>
-                  )}
+                  <NotificationAvatar name={a.from} src={a.avatar} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, color: "var(--text)" }}><strong>{a.from}</strong> {a.text}</div>
                     <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{new Date(a.created_at).toLocaleString()}</div>
@@ -132,7 +141,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {ids.map((id, i) => (
               <div key={`${id}-${i}`} style={{ padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 10 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Quest #{id}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textAlign: "center" }}>{typeof id === "string" && /\s/.test(id) ? id : "Quest #" + id}</span>
                 <button className="btn btn-outline" style={{ width: "100%", fontSize: 11, padding: "5px 12px", borderRadius: 99 }} onClick={() => { setShowHamburger(false); showScreen("briefs"); }}>View in Collab</button>
               </div>
             ))}
@@ -435,35 +444,35 @@ export const MenuModal = memo(function MenuModal({
                 </div>
               );
             })}
-            {topQuests.length > 0 && (
-              <div style={{ marginTop: 16, padding: 16, borderRadius: 16, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.15)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                  {loginStreak > 0 && <div style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700 }}>🔥 {loginStreak} day streak</div>}
-                  {questClaimables > 0 && <div style={{ fontSize: 11, color: "#FF69B4", fontWeight: 600, padding: "3px 10px", borderRadius: 99, background: "rgba(255,105,180,0.1)", border: "1px solid rgba(255,105,180,0.2)" }}>{questClaimables} reward{questClaimables > 1 ? "s" : ""} ready</div>}
-                </div>
-                <div style={{ fontSize: 11, color: "var(--text2)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 10 }}>Your Quests</div>
-                {topQuests.map(q => {
-                  const pct = Math.round((q.progress / q.target) * 100);
-                  return (
-                    <div key={q.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                      <span style={{ fontSize: 16, flexShrink: 0 }}>{q.icon}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{q.title}</div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-                          <div style={{ flex: 1, height: 5, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                            <div style={{ height: "100%", borderRadius: 3, width: `${pct}%`, background: q.color, transition: "width .4s" }} />
-                          </div>
-                          <span style={{ fontSize: 10, fontWeight: 800, color: q.color, minWidth: 24, textAlign: "right" }}>{pct}%</span>
+            <div style={{ marginTop: 16, padding: 16, borderRadius: 16, background: "linear-gradient(135deg, rgba(212,165,255,0.10) 0%, rgba(255,105,180,0.10) 100%)", border: "1px solid rgba(212,165,255,0.18)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                {loginStreak > 0 && <div style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700 }}>🔥 {loginStreak} day streak</div>}
+                {questClaimables > 0 && <div style={{ fontSize: 11, color: "#FF69B4", fontWeight: 600, padding: "3px 10px", borderRadius: 99, background: "rgba(255,105,180,0.1)", border: "1px solid rgba(255,105,180,0.2)" }}>{questClaimables} reward{questClaimables > 1 ? "s" : ""} ready</div>}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text2)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 10 }}>Your Quests</div>
+              {topQuests.length === 0 ? (
+                <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>Complete challenges to earn rewards — streaks, likes, bookings and more.</div>
+              ) : topQuests.map(q => {
+                const pct = Math.round((q.progress / q.target) * 100);
+                return (
+                  <div key={q.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <span style={{ fontSize: 16, flexShrink: 0 }}>{q.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{q.title}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+                        <div style={{ flex: 1, height: 5, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                          <div style={{ height: "100%", borderRadius: 3, width: `${pct}%`, background: q.color, transition: "width .4s" }} />
                         </div>
+                        <span style={{ fontSize: 10, fontWeight: 800, color: q.color, minWidth: 24, textAlign: "right" }}>{pct}%</span>
                       </div>
                     </div>
-                  );
-                })}
-                <div style={{ marginTop: 10, textAlign: "right" }}>
-                  <button style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, cursor: "pointer", background: "none", border: "none", padding: 0 }} onClick={() => { setShowHamburger(false); setShowQuests?.(true); }}>View all →</button>
-                </div>
+                  </div>
+                );
+              })}
+              <div style={{ marginTop: 10, textAlign: "right" }}>
+                <button style={{ fontSize: 11, color: "#D4A5FF", fontWeight: 600, cursor: "pointer", background: "none", border: "none", padding: 0 }} onClick={() => { setShowHamburger(false); setShowQuests?.(true); }}>View all →</button>
               </div>
-            )}
+            </div>
             <button className="muse-pro-banner" onClick={() => { setShowHamburger(false); showScreen("subscription"); }} tabIndex={0} aria-label="Muse Pro">
               <div className="muse-pro-banner-shine" />
               <div className="muse-pro-banner-content">
