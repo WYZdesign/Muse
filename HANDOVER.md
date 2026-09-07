@@ -541,3 +541,44 @@ Verified: `tsc` clean, 233/233 tests passing. Same honest caveat as every
 batch — no live/visual pass done by me (screenshot tool still times out,
 and I won't log in to reach gated screens), so please eyeball the Muses
 grid and Collab tilt, and the Quests panel, when you get a chance.
+
+## Latest batch #4 (Quests one-line layout, personality-trait icon accuracy)
+
+**Quest cards, one line.** "Quick Browse - Swipe 5 Profiles: Free Like" now
+renders as a single line (title, description, reward), truncating with an
+ellipsis rather than wrapping if it's too long for the card — each part
+keeps its own text style (bold title, muted description, tier-colored
+reward), just inline instead of stacked on two lines.
+
+**Personality-trait icons — found real accuracy bugs, not just an emoji
+preference.** Torreé asked me to double-check every zodiac/MBTI/life-path
+icon for accuracy and swap any emoji for real vector icons. Auditing every
+place these render turned up two categories of problem:
+
+1. A genuine dead-code bug in the Codex glossary screen: MBTI and Life Path
+   icons were looked up by a function that only checked names starting
+   with "Gi"/"Fi" (react-icons' own naming convention, e.g. "FiTarget") —
+   but MBTI codes ("INTJ") and Life Path keys ("L7") don't start with
+   either prefix, so they silently fell through to a plain-text fallback
+   and *never actually rendered an icon*, for as long as this screen has
+   existed. Also found the glossary's icon map was flat-out missing ISFP
+   (15 of 16 MBTI types had an icon defined, ISFP didn't).
+2. Everywhere else in the app (Discover's swipe-card badges and info
+   popovers, your own Profile page's personality tags, Muses' match
+   badges), the "icon" for MBTI/Chinese-zodiac/Life-Path was one hardcoded
+   emoji standing in for every value — 🧠 for all 16 MBTI types, 🐉 for all
+   12 Chinese zodiac animals, 🔢/🔮 for every Life Path number. Your own
+   Profile page's zodiac tag was hardcoded to always show ♈ (Aries)
+   regardless of your actual sign.
+
+Fixed all of it by building one shared, accurate icon lookup
+(`components/traitIcons.tsx`) — a real Unicode zodiac glyph per sign (♈–♓,
+already correct, kept as-is), a distinct react-icons vector per MBTI type
+(all 16, ISFP included now), a distinct vector per Life Path number
+(1–9, 11, 22, 33), and a distinct vector per Chinese zodiac animal — and
+wired every screen that shows these (Codex glossary, Discover's card
+badges/popovers, Profile's tag pills, Muses' match badges) to the same
+source of truth instead of each screen guessing its own icon. No more
+generic emoji standing in for a specific trait value anywhere in the app.
+
+Verified: `tsc` clean, 233/233 tests passing.

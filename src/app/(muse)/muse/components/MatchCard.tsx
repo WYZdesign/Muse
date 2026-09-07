@@ -2,6 +2,7 @@
 
 import React, { memo } from "react";
 import Image from "next/image";
+import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon } from "./traitIcons";
 
 export interface MatchCardProps {
   m: any;
@@ -105,9 +106,9 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
         )}
         {isList && (
           <div className="match-badges" style={{ marginTop: 4 }}>
-            {m.zodiac && <span className="match-badge">{m.zodiac}</span>}
-            {m.mbti && <span className="match-badge">{m.mbti}</span>}
-            {m.lifePath && <span className="match-badge">LP {m.lifePath}</span>}
+            {m.zodiac && <span className="match-badge">{ZODIAC_GLYPH[m.zodiac] || "✦"} {m.zodiac}</span>}
+            {m.mbti && <span className="match-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MbtiIcon code={m.mbti} size={11} /> {m.mbti}</span>}
+            {m.lifePath && <span className="match-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><LifePathIcon n={Number(m.lifePath)} size={11} /> LP {m.lifePath}</span>}
             {(m.skills || []).slice(0, 3).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
           </div>
         )}
@@ -120,9 +121,9 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
         )}
         {!isList && (
           <div className="match-badges">
-            {m.zodiac && <span className="match-badge">{m.zodiac}</span>}
-            {m.mbti && <span className="match-badge">{m.mbti}</span>}
-            {m.lifePath && <span className="match-badge">LP {m.lifePath}</span>}
+            {m.zodiac && <span className="match-badge">{ZODIAC_GLYPH[m.zodiac] || "✦"} {m.zodiac}</span>}
+            {m.mbti && <span className="match-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MbtiIcon code={m.mbti} size={11} /> {m.mbti}</span>}
+            {m.lifePath && <span className="match-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><LifePathIcon n={Number(m.lifePath)} size={11} /> LP {m.lifePath}</span>}
             {(m.skills || []).slice(0, 2).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
           </div>
         )}
