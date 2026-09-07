@@ -739,6 +739,17 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     return () => { if (appliedBriefsTimerRef.current) clearTimeout(appliedBriefsTimerRef.current); };
   }, [appliedBriefs, authUser]);
 
+  // ─── CROSS-DEVICE: Persist showNsfw to server (debounced) ───
+  const showNsfwTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!authUser) return;
+    if (showNsfwTimerRef.current) clearTimeout(showNsfwTimerRef.current);
+    showNsfwTimerRef.current = setTimeout(() => {
+      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { nsfw: showNsfw } }) }).catch(() => {});
+    }, 2000);
+    return () => { if (showNsfwTimerRef.current) clearTimeout(showNsfwTimerRef.current); };
+  }, [showNsfw, authUser]);
+
   const applySession = useCallback((accessToken: string, refreshToken?: string, attempt = 0) => {
     if (accessToken) {
       supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || "" }).catch(() => {});
