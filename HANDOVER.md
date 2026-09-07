@@ -346,6 +346,99 @@ Two rounds of small, specific fixes Torreé asked for directly:
 1. **Studio addresses on the map.** Torreé asked for the map to show addresses for the studios being advertised on the Collab page instead of user locations. There's no real street address or coordinates stored anywhere in the app for any studio (FD Studios' own buildings included) — only phone numbers and building nicknames like "Hill Building" or "Art Building." I'm not willing to guess real business addresses. The map code now has a clearly-marked spot ready to plot studio pins the moment real coordinates are supplied for each building — it's a one-line data fill after that, not a rebuild.
 2. **Pinning actual BTS moments to the map (the Snapchat-style idea).** This is a good idea but a genuinely bigger feature than a quick fix: today a BTS moment has no location attached to it at all in the database, so it would need a database change (a place to store where a moment was taken), a permission prompt asking someone to share their location when they post, and new map code to plot moments instead of (or alongside) people. Worth scoping as its own piece of work rather than folding into this batch.
 
+## Latest batch #2 (Torreé's list: Quests panel, Settings, hamburger menu, notifications)
+
+- Quests panel: title/close header ~15% more compact; the "All Quests" tier
+  filter row ~30% taller with buttons ~15% bigger, locked to horizontal-only
+  scrolling (explicit nowrap + hidden y-overflow) so it can't ever need a
+  vertical scroll no matter how many tiers or how long a label gets.
+- Settings screen: reorganized into the categories a settings screen
+  everyone already knows uses — Account, Notifications, Privacy & Safety,
+  Connected Accounts, Payments & Subscription, Quests & Rewards, Appearance,
+  Legal. The sections that used to expand in place and push the rest of the
+  list down (Notifications, Connected Accounts, Change Password, Blocked
+  Users) are each now a single row that opens its own bottom-sheet sub-page.
+- **Real bug found and fixed along the way:** the Blocked Users button in
+  Settings did nothing when tapped. page.tsx declared the open/close state
+  for it (`_showBlockedUsers`, underscore-prefixed — the convention this
+  codebase uses for "intentionally unused") but never actually passed it
+  into SettingsScreen, so the button was toggling a dead default no-op prop
+  instead of real state. Wired it up for real.
+- Feed filter row: dropped the emoji from the Photos/Text/Videos/BTS
+  buttons, text-only now.
+- Hamburger menu, Muse Pro banner: the sheen used to sweep on a flat 2.8s
+  infinite CSS loop. Now it's on a randomized JS timer — ~30% less frequent
+  on average and irregular instead of a steady beat — and each sweep fades
+  in slowly, speeds up through the middle, and fades out, instead of a flat
+  linear slide.
+- Hamburger menu, "Your Profile" row: the halo ring around the avatar used
+  to float ~19px off the photo (by design, from an earlier session); now it
+  sits directly against the photo edge and is 40% thicker. Scoped to a new
+  `.profile-ring-menu` class so it doesn't touch the visually-identical ring
+  on the full Profile screen or on match cards, which nobody asked to change.
+- Notifications "ghost items" bug: switching tabs quickly (say, All then
+  straight to Unread before All's request had finished) let the older,
+  slower request's response land *after* the newer one and silently
+  overwrite the list with the wrong tab's data — so "0 unread" could still
+  flash whatever "All" had just fetched instead of showing the empty state.
+  The loading-flag guard that was supposed to prevent overlapping requests
+  actually made this worse: it silently dropped the *new* request whenever
+  the *old* one was still in flight, so the tab you were actually looking at
+  sometimes never got its own fetch at all. Replaced it with a request-id
+  check — each call stamps itself with an incrementing id, and a response is
+  only applied if it's still the most recent one in flight. Now every tab
+  switch reliably gets fresh data for the tab you're actually on.
+
+**A real gap I found while checking for what's missing, not something
+Torreé asked about directly:** Feed posts have a whole reaction-display UI
+built (the ❤️🔥😍😂😢😡 badges under a post, folded into the "engagement"
+score) but it can never show anything, because nothing anywhere in the app
+ever writes to it. Tracing it end to end: `FeedScreen` reads a `feedReactions`
+prop (shape: post id → array of emoji), which `page.tsx` fills from a
+`_feedReactions` state variable — but that variable's setter is *never
+called anywhere*, so it's permanently `{}`. Separately, `feedPosts` items
+have their own `reactions` field (a different shape — emoji → count) that
+gets initialized to `{}` on every new post, but nothing ever reads *that*
+field either, and there's no backend action to add a reaction to a post in
+the first place (no `react-to-post`/`add-reaction` handler exists, and the
+emoji picker in the Feed composer only inserts an emoji into the text
+you're writing — it doesn't react to an existing post). So today this is
+pure decoration that will show "0 reactions" forever. I didn't build the
+missing feature myself — reacting to someone else's post needs a real
+design decision (one reaction per person or free-for-all, toggle-to-remove,
+rate limiting, a tap-and-hold picker on each post) that's worth Torreé
+weighing in on rather than me guessing. Flagging it here so it's a known,
+named gap instead of quietly-broken decoration nobody remembers exists.
+
+**Smaller, low-priority dead code spotted during the same check** (none of
+these are broken — they're just never wired to anything, so nothing
+depends on them): in `page.tsx`, `excludedPortfolios` / `portfolioAccess` /
+`selectedPortfolio` / `showPortfolioModal` / `portfolioStats` (all
+underscore-prefixed, none referenced by `PortfolioScreen`), `_connFilter`,
+`_netTab` (NetworkScreen keeps its own separate `netTab` state internally —
+this one's a true unused duplicate), `_networkOpenTab`, `_eventsFilter`,
+and `_obStep10Known`. Safe to delete whenever someone's touching that area
+anyway; not worth a dedicated pass on their own.
+
+**Honest limitation on visual verification, again:** I tried the live
+browser bridge again this round specifically to eyeball these changes
+before calling them done. It reached the site fine (confirmed the landing
+page loads and renders correctly via the page's accessibility tree), but
+screenshots kept timing out the same way they did last time ("the page did
+not finish rendering in time") — and separately, even if screenshots worked,
+I'm not able to log in to reach the actual authenticated screens (Settings,
+Quests panel, the hamburger menu) since entering login credentials on
+someone's behalf isn't something I'll do regardless of who asks. So
+everything above is verified at the code level only (tsc clean, 233/233
+tests, and I read every changed line back to confirm the actual values —
+e.g. the 107px ring diameter really does equal the 100px avatar plus 2x the
+new 3.5px band width, the request-id logic really does discard stale
+responses). Nobody has eyeballed any of this live yet. **This is the one
+thing I'd ask you to prioritize:** a live pass on the Quests panel, the
+Settings screen's new sub-pages, the hamburger menu (sheen timing/feel,
+profile ring), and the notifications tabs (especially Unread with 0 items)
+would catch anything that reads correctly in code but looks off on screen.
+
 ## How work gets delivered
 
 I can't push code directly to your repository — that path is blocked on my
@@ -356,7 +449,22 @@ step, not something you or Torreé need to look at or understand.
 
 ## What's next
 
-Nothing urgent is queued right now. Going forward I'll keep sweeping the
-codebase for real problems (security gaps, bugs, broken UX) rather than
-producing more written reports or audit documents — if something's worth
-telling you about, it'll be a short update right here, in plain English.
+For you (wyzmind), roughly in priority order:
+1. **Live-visual-verify this whole batch** — see the limitation note above.
+   This is the main thing I can't do myself right now.
+2. **Decide on the Feed reactions feature** (see the gap flagged above) —
+   either build it for real (backend action + a real per-post picker UI) or
+   strip the dead display code so it stops looking like an unfinished
+   feature. Either is fine; leaving it as-is quietly broken is the only bad
+   option.
+3. Studio addresses for the map, and the Snapchat-style BTS-moment pinning
+   idea — both still open from the previous batch's honest-gap notes above,
+   whenever there's real address data / appetite for the bigger feature.
+4. Whatever you find on your own pass — the "maybe find more to do" kind of
+   sweep. You've got backend/infra visibility I don't always have from the
+   frontend code alone.
+
+I'll keep sweeping the codebase for real problems (security gaps, bugs,
+broken UX) rather than producing more written reports on their own — if
+something's worth telling you about, it'll be a short update right here, in
+plain English, attached to the batch that found it.
