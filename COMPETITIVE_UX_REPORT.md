@@ -135,20 +135,34 @@ where dating/creative-matching apps get the most user suspicion.
   and attaches `matchReasons` alongside the live score, same place/pattern as the score itself),
   `screens/DiscoverScreen.tsx` (info button + popover).
 
-## Flagged for your call — not implemented this pass
+## Shipped this pass (follow-up) — identity re-verification expiry
 
-**Identity re-verification expiry (age_verified).** Source pattern: OnlyFans/Turo-style periodic
-re-verification rather than a one-time check. On first read this looked like a real gap (an earlier
-grep pass only caught 3 of the 4 files touching `age_verified`), but on the deeper pass I found
-`api/muse/verification/route.ts` already writes `age_verified_at` on successful verification, and
-the column already exists in the schema (`sql/MUSE_VERIFICATION_SESSIONS_20260804.sql` and others).
-So the *data* isn't missing — nothing currently reads that timestamp to decide "this verification is
-stale, ask again." I did not add that enforcement logic this pass: it's a genuine identity-verification
-change (falls under "never weaken age/identity verification"), and doing it right needs a policy call
-only you can make — how long a verification stays valid, what happens to a user mid-expiry (blocked
-from NSFW immediately? booking? just a banner?), and whether it should be all-users or NSFW-only.
-Happy to build it the moment you tell me the expiry window and the enforcement behavior — the data
-plumbing is already there, so it'd be a small, safe follow-up once scoped.
+Torreé's call: re-verify every 3-6 months. Picked 150 days (~5 months, the middle of that window) as
+`AGE_VERIFICATION_VALID_DAYS`, defined once in `lib/muse-actions/shared.ts` alongside a new
+`isAgeVerificationCurrent(row)` helper that only returns true when `age_verified` is true AND
+`age_verified_at` is within that window. A verified row with a missing/unparseable timestamp is
+treated as expired, not grandfathered in — the safer default for an identity gate is to ask again,
+not assume (this can only ever happen defensively; the one write site always sets both fields
+together).
+
+Swapped every server-side `if (row.age_verified)` gate to `isAgeVerificationCurrent(row)` — same
+call sites, same behavior when current, but now they also correctly re-lock once stale:
+- `get.ts` — the real NSFW visibility gate (profiles + photos list).
+- `sessions.ts` (`sessionBook`) — paid session booking.
+- `connect/route.ts` (`create-payment`) — marketplace payments.
+- `verification/route.ts` (`create-age-gate-session`) — "already verified, skip the flow" check.
+
+Client-side (`page.tsx`), the existing `ageVerified` boolean that already gates the
+AgeVerificationModal before paid disclosures now also checks the same window before trusting a
+cached "verified" flag from the server payload — so a stale verification naturally re-triggers the
+*existing* re-verification modal with zero new UI, rather than needing a new banner/prompt built
+from scratch. Server-side checks remain the actual enforcement either way (client state was already
+documented as cosmetic, not a control).
+
+New test coverage: `shared.test.ts` (`isAgeVerificationCurrent`) — never-verified, missing timestamp,
+unparseable timestamp, fresh, just-inside-window, just-outside-window, and a policy-bounds check that
+the constant itself stays inside Torreé's stated 3-6 month range. tsc clean, 240/240 tests passing
+(233 previous + 7 new).
 
 ## Research findings not pursued (either out of scope per your constraints, or no small safe slice found)
 

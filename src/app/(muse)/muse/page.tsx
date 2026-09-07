@@ -74,6 +74,14 @@ const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL || "torree.marcel@gmail.
 // match inflation are active (for testing/demo). Set false for production.
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true" || false;
 
+// Identity re-verification window (Torreé's policy, Sept 2026) — mirrors
+// AGE_VERIFICATION_VALID_DAYS in src/lib/muse-actions/shared.ts. Kept as a
+// separate constant deliberately (server code shouldn't import from this
+// app-route file, and this one number isn't worth a shared cross-boundary
+// module) — the server is the real enforcement either way; this just keeps
+// the client's local ageVerified flag from lying about staleness.
+const AGE_VERIFICATION_VALID_DAYS = 150;
+
 const DEMO_MOMENTS: any[] = [
   { id: 9001, author: "Maya Chen", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800", time: "12m ago", text: "Golden hour setup for tonight's shoot. The light is unreal right now 🌅", likes: 87, comments: 12 },
   { id: 9002, author: "Jordan Rivera", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100", img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800", time: "28m ago", text: "Lens test on the new 85mm. Creamy bokeh for days 📷", likes: 143, comments: 21 },
@@ -773,7 +781,18 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                 return { ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, audience: (d.profile as any).audience || "creative", type: d.profile.type || prev.type, foundingTier: isOwner ? "founding" : (d.profile.founding_tier || ""), proExpiresAt: isOwner ? "" : (d.profile.pro_expires_at || ""), tier: effTier, stats: mergedStats, status: d.profile.status ?? prev.status };
               });
               if (effTier) setUserTier(effTier);
-              if (d.profile.age_verified) setAgeVerified(true);
+              // Mirrors the server's isAgeVerificationCurrent (shared.ts) —
+              // a verification older than AGE_VERIFICATION_VALID_DAYS is
+              // treated as expired client-side too, so the same "show
+              // AgeVerificationModal before a paid action" flow that already
+              // exists naturally re-prompts for re-verification instead of
+              // needing new UI. The server is still the real enforcement;
+              // this only keeps the local gate from lying about it.
+              if (d.profile.age_verified && d.profile.age_verified_at) {
+                const verifiedAt = new Date(d.profile.age_verified_at).getTime();
+                const isCurrent = !Number.isNaN(verifiedAt) && (Date.now() - verifiedAt < AGE_VERIFICATION_VALID_DAYS * 24 * 60 * 60 * 1000);
+                setAgeVerified(isCurrent);
+              }
               // Restore notifPrefs from server (source of truth across devices)
               if (d.profile.preferences?.notifications && typeof d.profile.preferences.notifications === "object") {
                 setNotifPrefs(prev => ({ ...prev, ...d.profile.preferences.notifications }));

@@ -3,6 +3,7 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { parseRateToCents } from "@/lib/money";
 import { MUSE_HOST_COMMISSION_RATE, MUSE_BUYER_SERVICE_FEE_RATE } from "@/lib/config";
+import { isAgeVerificationCurrent } from "@/lib/muse-actions/shared";
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
@@ -118,8 +119,8 @@ export async function POST(req: NextRequest) {
 
       // Same Stripe Identity 18+ enforcement book-session applies — this action
       // creates a real PaymentIntent for a paid interaction, so gate it the same way.
-      const { data: payer } = await sb.from("muse_profiles").select("age_verified").eq("id", profile.id).maybeSingle();
-      if (!payer?.age_verified) {
+      const { data: payer } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profile.id).maybeSingle();
+      if (!isAgeVerificationCurrent(payer as any)) {
         return NextResponse.json({ error: "Identity verification required", code: "VERIFICATION_REQUIRED" }, { status: 403 });
       }
 

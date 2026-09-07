@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { sendEmail, notify } from "@/lib/email";
+import { isAgeVerificationCurrent } from "@/lib/muse-actions/shared";
 import Stripe from "stripe";
 
 export async function POST(req: NextRequest) {
@@ -98,9 +99,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "create-age-gate-session") {
-      // For paid bookings - require age verification before proceeding
-      const { data: profileData } = await sb.from("muse_profiles").select("age_verified").eq("id", profile.id).maybeSingle();
-      if (profileData?.age_verified) {
+      // For paid bookings - require age verification before proceeding.
+      // "Already verified" only holds while that verification is still
+      // current — a verification older than the re-verification window
+      // (isAgeVerificationCurrent) is treated the same as never-verified.
+      const { data: profileData } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profile.id).maybeSingle();
+      if (isAgeVerificationCurrent(profileData as any)) {
         return NextResponse.json({ required: false, message: "Already age verified" });
       }
 

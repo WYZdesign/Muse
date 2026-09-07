@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
 import { sanitizeText } from "@/lib/request-safety";
-import { bearerTokenFromReq, isConvoParticipant, UUID_RE, isAdminEmail } from "./shared";
+import { bearerTokenFromReq, isConvoParticipant, UUID_RE, isAdminEmail, isAgeVerificationCurrent } from "./shared";
 
 export async function GET(req: NextRequest) {
   try {
@@ -29,12 +29,14 @@ export async function GET(req: NextRequest) {
 
     if (type === "profiles") {
       // NSFW gating: only surface nsfw profiles/photos if the requesting user
-      // has passed age verification. Enforced server-side (the client blur is
-      // cosmetic, not a control). Default deny unless the viewer is verified.
+      // has passed age verification AND that verification hasn't gone stale
+      // (re-verification window — see isAgeVerificationCurrent). Enforced
+      // server-side (the client blur is cosmetic, not a control). Default
+      // deny unless the viewer is verified and current.
       let viewerVerified = false;
       if (profileId) {
-        const { data: vp } = await sb.from("muse_profiles").select("age_verified").eq("id", profileId).maybeSingle();
-        viewerVerified = !!(vp && (vp as any).age_verified);
+        const { data: vp } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profileId).maybeSingle();
+        viewerVerified = isAgeVerificationCurrent(vp as any);
       }
       const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, photos, suspended, nsfw").limit(100);
       // Blocks were write-only until now — muse_blocks was never consulted

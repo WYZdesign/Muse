@@ -15,14 +15,14 @@ import { sendEmail, notify } from "@/lib/email";
 import { parseRateToCents } from "@/lib/money";
 import { bumpQuest } from "@/lib/questEngine";
 import Stripe from "stripe";
-import { UUID_RE, emailProfile, NextResponse, safeServerError, type ActionContext } from "./shared";
+import { UUID_RE, emailProfile, NextResponse, safeServerError, isAgeVerificationCurrent, type ActionContext } from "./shared";
 
 export const sessionBook = async ({ sb, profile, rest }: ActionContext) => {
   if (!await checkRateUser(profile.id, "book-session", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { sessionId } = rest;
   if (!sessionId) return NextResponse.json({ error: "sessionId required" }, { status: 400 });
-  const { data: booker } = await sb.from("muse_profiles").select("age_verified").eq("id", profile.id).maybeSingle();
-  if (!booker?.age_verified) {
+  const { data: booker } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profile.id).maybeSingle();
+  if (!isAgeVerificationCurrent(booker as any)) {
     return NextResponse.json({ error: "Identity verification required", code: "VERIFICATION_REQUIRED" }, { status: 403 });
   }
   if (!UUID_RE.test(String(sessionId))) return NextResponse.json({ success: true, demo: true });

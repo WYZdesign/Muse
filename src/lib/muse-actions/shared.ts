@@ -13,6 +13,35 @@ import { pushToProfile } from "@/lib/push";
 
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Identity re-verification window (Torreé's policy call, Sept 2026): a Stripe
+// Identity verification is only trusted for this many days before every gate
+// below (NSFW visibility, paid-session booking, marketplace payments, paid
+// disclosures) requires the user to re-verify. This only tightens an
+// existing permanent "true" into "true, but it expires" — it never weakens
+// any of the checks that were already there.
+// Mirrored client-side as AGE_VERIFICATION_VALID_DAYS in page.tsx (kept in
+// sync manually — small, rarely-changed constant, not worth a shared import
+// across the server/client boundary).
+export const AGE_VERIFICATION_VALID_DAYS = 150; // ~5 months — middle of Torreé's stated 3-6 month window
+
+/**
+ * True only when a profile's identity verification is both present and
+ * still fresh. Feed it the same row shape every existing age_verified check
+ * already selects, plus age_verified_at (all read sites below were updated
+ * to select it). A verified row with no timestamp (shouldn't happen — the
+ * one write site always sets both together — but defensive regardless) is
+ * treated as expired rather than grandfathered in, since we can't establish
+ * freshness for it and the safer default for an identity gate is to ask
+ * again, not to assume.
+ */
+export function isAgeVerificationCurrent(row: { age_verified?: boolean | null; age_verified_at?: string | null } | null | undefined): boolean {
+  if (!row?.age_verified) return false;
+  if (!row.age_verified_at) return false;
+  const verifiedAt = new Date(row.age_verified_at).getTime();
+  if (Number.isNaN(verifiedAt)) return false;
+  return Date.now() - verifiedAt < AGE_VERIFICATION_VALID_DAYS * 24 * 60 * 60 * 1000;
+}
+
 export function getAuthUser() {
   return supabase.auth.getUser();
 }
