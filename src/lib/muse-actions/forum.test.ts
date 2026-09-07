@@ -52,4 +52,30 @@ describe("forum/safety actions", () => {
     const r = await userBlock(ctx({ target_id: "me1" }, null));
     expect((r as Response).status).toBe(400);
   });
+
+  // Regression coverage for a real bug found during the wyzmind/Claude
+  // reconciliation pass: report coverage was extended to BTS moments,
+  // Community groups/events, and Session listings using target_type values
+  // "moment" / "community" / "community_event" / "session", but the
+  // isPostTarget whitelist only recognized "feed_post"/"forum_post". A real
+  // (UUID-format) report of these new types incorrectly fell into the
+  // muse_profiles existence check, found no matching profile, and failed
+  // with "Target not found" even though the target itself was valid.
+  const uuid = "11111111-1111-4111-8111-111111111111";
+  it.each(["moment", "community", "community_event", "session"])(
+    "reportCreate treats %s as a post-shaped target, not a profile lookup",
+    async (target_type) => {
+      // state.row stays null (no matching muse_profiles row) — if this type
+      // were still misclassified as a profile target, the missing row would
+      // produce a 400 "Target not found". Success here proves the fix.
+      const r = await reportCreate(ctx({ target_id: uuid, target_type, reason: "spam" }, null));
+      expect((r as Response).status ?? 200).not.toBe(400);
+      expect(state.inserts.some((i: any) => i.target_type === target_type)).toBe(true);
+    }
+  );
+
+  it("reportCreate still 400s a real feed_post-adjacent user-type report when the profile doesn't exist", async () => {
+    const r = await reportCreate(ctx({ target_id: uuid, target_type: "user", reason: "spam" }, null));
+    expect((r as Response).status).toBe(400);
+  });
 });

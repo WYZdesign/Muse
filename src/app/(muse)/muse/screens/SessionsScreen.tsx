@@ -2,7 +2,7 @@
 
 import React, { memo, useState } from "react";
 import Image from "next/image";
-import { FiArrowLeft } from "react-icons/fi";
+import { FiArrowLeft, FiBookmark } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
 
@@ -37,6 +37,8 @@ export interface SessionsScreenProps {
   setDisclosureBookingId?: (id: string) => void;
   setShowDisclosureModal?: (v: boolean) => void;
   setViewProfile?: (p: any) => void;
+  savedSessionIds?: (string | number)[];
+  setSavedSessionIds?: React.Dispatch<React.SetStateAction<(string | number)[]>>;
 }
 
 export const SessionsScreen = memo(function SessionsScreen({
@@ -66,6 +68,8 @@ export const SessionsScreen = memo(function SessionsScreen({
   setDisclosureBookingId = () => {},
   setShowDisclosureModal = () => {},
   setViewProfile = () => {},
+  savedSessionIds = [],
+  setSavedSessionIds = () => {},
 }: SessionsScreenProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [newSession, setNewSession] = useState({ title: "", description: "", type: "Photoshoot", rate: "", duration: "60 min", date: "", location: "" });
@@ -84,6 +88,17 @@ export const SessionsScreen = memo(function SessionsScreen({
     } finally {
       setCreating(false);
     }
+  };
+
+  // Save/bookmark toggle — same client+server pattern as Briefs' savedBriefs
+  // (id kept in local state and mirrored to muse_profiles.preferences via
+  // save-preferences, so it persists across devices/sessions).
+  const toggleSaveSession = (sessionId: string | number) => {
+    const isSaved = savedSessionIds.includes(sessionId);
+    const next = isSaved ? savedSessionIds.filter(x => x !== sessionId) : [...savedSessionIds, sessionId];
+    setSavedSessionIds(next);
+    showToast(isSaved ? "Unsaved" : "Saved!");
+    apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { savedSessionIds: next } }) }).catch(() => showToast(isSaved ? "Couldn't unsave — try again" : "Couldn't save — try again"));
   };
 
   const [reviewTarget, setReviewTarget] = useState<any>(null);
@@ -229,6 +244,15 @@ export const SessionsScreen = memo(function SessionsScreen({
                       {s.available ? "Book Session" : "Waitlist"}
                     </button>
                     <button className="btn btn-outline" style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap" }} onClick={() => setViewProfile(s)}>View Profile</button>
+                    <button
+                      className="btn btn-outline"
+                      style={{ padding: "12px 14px", fontSize: 12, fontWeight: 600, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: savedSessionIds.includes(s.id) ? "var(--gold)" : undefined }}
+                      onClick={() => toggleSaveSession(s.id)}
+                      aria-label={savedSessionIds.includes(s.id) ? "Unsave session" : "Save session"}
+                      title={savedSessionIds.includes(s.id) ? "Saved" : "Save"}
+                    >
+                      <FiBookmark size={14} fill={savedSessionIds.includes(s.id) ? "currentColor" : "none"} />
+                    </button>
                   </div>
                 </div>
               </div>

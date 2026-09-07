@@ -24,6 +24,7 @@ import AgeVerificationModal from "./components/AgeVerificationModal";
 import UpsellModal from "./components/UpsellModal";
 import { useChatState } from "./hooks/useChatState";
 import { useBriefsState } from "./hooks/useBriefsState";
+import { useSavedListingsState } from "./hooks/useSavedListingsState";
 import { useModalVisibility } from "./hooks/useModalVisibility";
 import { useQuestsState } from "./hooks/useQuestsState";
 import { useAuthOnboardingState } from "./hooks/useAuthOnboardingState";
@@ -199,6 +200,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [portfolioPhotoIdx, setPortfolioPhotoIdx] = useState(0);
   const [promptIdx, setPromptIdx] = useState(0);
    const { savedBriefs, setSavedBriefs, appliedBriefs, setAppliedBriefs, showPostBrief, setShowPostBrief, briefTitle, setBriefTitle, briefDesc, setBriefDesc, briefBudget, setBriefBudget, briefCat, setBriefCat, userBriefs, setUserBriefs } = useBriefsState();
+   const { savedSessionIds, setSavedSessionIds, savedProfileIds, setSavedProfileIds } = useSavedListingsState();
   const {
     showFilterModal, setShowFilterModal,
     showEditProfile, setShowEditProfile,
@@ -575,7 +577,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       const data = {
         v: STATE_VERSION,
         currentUser, obData, obStep, matches: matches.slice(-MAX_ITEMS), dailyLikes, superLikes,
-        savedBriefs, appliedBriefs, userBriefs: userBriefs.slice(-MAX_ITEMS), blockedUsers, notifPrefs,
+        savedBriefs, appliedBriefs, savedSessionIds, savedProfileIds, userBriefs: userBriefs.slice(-MAX_ITEMS), blockedUsers, notifPrefs,
         obConnectedSocials, showNsfw, showOnline, showDistance, rsvpdEvents, forumPosts: forumPosts.slice(-MAX_ITEMS), feedPosts: feedPosts.slice(-MAX_ITEMS),
         testLevels, obSelects, obProfilePic, obPortfolioItems,         likedBy: likedBy.slice(-MAX_ITEMS),
         profileViews: DEMO_MODE ? profileViews : 0, profileViewers: DEMO_MODE ? profileViewers.slice(-20) : [], stories: stories.slice(-20), theme, activityFeed: activityFeed.slice(-MAX_ITEMS),
@@ -590,7 +592,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs, stats: currentUser.stats }) }).catch(() => {});
       }
     } catch(e) {}
-  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,_connFilter,authUser,chatTarget]);
+  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,savedSessionIds,savedProfileIds,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,_connFilter,authUser,chatTarget]);
 
   const loadState = useCallback(async () => {
     try {
@@ -619,6 +621,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (d.superLikes!=null) setSuperLikes(d.superLikes);
       if (d.savedBriefs) setSavedBriefs(d.savedBriefs);
       if (d.appliedBriefs) setAppliedBriefs(d.appliedBriefs);
+      if (d.savedSessionIds) setSavedSessionIds(d.savedSessionIds);
+      if (d.savedProfileIds) setSavedProfileIds(d.savedProfileIds);
       if (d.userBriefs) setUserBriefs(d.userBriefs);
       if (d.blockedUsers) setBlockedUsers(d.blockedUsers);
       if (d.notifPrefs) setNotifPrefs(d.notifPrefs);
@@ -802,6 +806,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
               }
               if (Array.isArray(d.profile.preferences?.appliedBriefs)) {
                 setAppliedBriefs(d.profile.preferences.appliedBriefs);
+              }
+              if (Array.isArray(d.profile.preferences?.savedSessionIds)) {
+                setSavedSessionIds(d.profile.preferences.savedSessionIds);
+              }
+              if (Array.isArray(d.profile.preferences?.savedProfileIds)) {
+                setSavedProfileIds(d.profile.preferences.savedProfileIds);
               }
               if (typeof d.profile.preferences?.showOnline === "boolean") {
                 setShowOnline(d.profile.preferences.showOnline);
@@ -2461,11 +2471,11 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                 <StudiosScreen screen={screen} showScreen={showScreen} apiFetch={apiFetch} openHamburger={() => setShowHamburger(true)} unreadNotificationCount={unreadNotificationCount} />
               </ScreenErrorBoundary>
             )}
-            <SessionsScreen screen={screen} showScreen={showScreen} sessTab={sessTab} setSessTab={setSessTab} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} uid={uid} currentUser={currentUser} setShowAgeVerification={setShowAgeVerification} liveSessions={liveSessions || undefined} myBookings={myBookings} setMyBookings={setMyBookings} setDisclosureTarget={setDisclosureTarget} setDisclosureBookingId={setDisclosureBookingId} setShowDisclosureModal={setShowDisclosureModal} setViewProfile={setViewProfile} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} />
+            <SessionsScreen screen={screen} showScreen={showScreen} sessTab={sessTab} setSessTab={setSessTab} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} uid={uid} currentUser={currentUser} setShowAgeVerification={setShowAgeVerification} liveSessions={liveSessions || undefined} myBookings={myBookings} setMyBookings={setMyBookings} setDisclosureTarget={setDisclosureTarget} setDisclosureBookingId={setDisclosureBookingId} setShowDisclosureModal={setShowDisclosureModal} setViewProfile={setViewProfile} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} savedSessionIds={savedSessionIds} setSavedSessionIds={setSavedSessionIds} />
             </ScreenErrorBoundary>
 
             <ScreenErrorBoundary name="Network">
-            <NetworkScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} setLiveForum={setLiveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} setShowReport={setShowReport} setReportTarget={setReportTarget} liveProfessionals={liveProfessionals} openTab={_networkOpenTab} />
+            <NetworkScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} setLiveForum={setLiveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} setShowReport={setShowReport} setReportTarget={setReportTarget} liveProfessionals={liveProfessionals} openTab={_networkOpenTab} savedProfileIds={savedProfileIds} setSavedProfileIds={setSavedProfileIds} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Portfolio">
             <PortfolioScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} />

@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, memo } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { createSpatialScene } from "../hooks/useDeviceTilt";
-import { FiArrowLeft, FiShare2, FiMapPin, FiBriefcase, FiStar, FiFlag, FiMessageCircle, FiChevronDown, FiChevronUp, FiUserPlus, FiSearch, FiTarget, FiZap, FiArrowUpRight, FiDollarSign } from "react-icons/fi";
+import { FiArrowLeft, FiShare2, FiMapPin, FiBriefcase, FiStar, FiFlag, FiMessageCircle, FiChevronDown, FiChevronUp, FiUserPlus, FiSearch, FiTarget, FiZap, FiArrowUpRight, FiDollarSign, FiBookmark } from "react-icons/fi";
 import type { Screen, Match, Professional } from "../components/types";
 import { PROFESSIONALS, FORUM_POSTS } from "../components/types";
 import { BADGE_COLORS } from "../components/badgeColors";
@@ -46,6 +46,8 @@ export interface NetworkScreenProps {
    *  tab). Not a controlled value — the user's own taps on the tab pills
    *  still just use local state after this fires once. */
   openTab?: "pros" | "forum";
+  savedProfileIds?: (string | number)[];
+  setSavedProfileIds?: React.Dispatch<React.SetStateAction<(string | number)[]>>;
 }
 
 const SKILL_COLORS = [
@@ -101,7 +103,17 @@ export const NetworkScreen = memo(function NetworkScreen({
   setReportTarget = () => {},
   liveProfessionals,
   openTab,
+  savedProfileIds = [],
+  setSavedProfileIds = () => {},
 }: NetworkScreenProps) {
+  // Save/bookmark toggle — same client+server pattern as Briefs' savedBriefs.
+  const toggleSaveProfessional = (id: string | number) => {
+    const isSaved = savedProfileIds.includes(id);
+    const next = isSaved ? savedProfileIds.filter(x => x !== id) : [...savedProfileIds, id];
+    setSavedProfileIds(next);
+    showToast(isSaved ? "Unsaved" : "Saved!");
+    apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { savedProfileIds: next } }) }).catch(() => showToast(isSaved ? "Couldn't unsave — try again" : "Couldn't save — try again"));
+  };
   const [netTab, setNetTab] = useState<"pros" | "forum">("pros");
   // Session 55 closed beta: Forum is built but deferred, so ignore any
   // deep-link/tutorial request to open it while the flag is on — otherwise
@@ -574,6 +586,32 @@ export const NetworkScreen = memo(function NetworkScreen({
                     "linear-gradient(to top,rgba(10,6,18,0.88) 0%,rgba(10,6,18,0.25) 55%,rgba(10,6,18,0.1) 100%)",
                 }}
               />
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label={savedProfileIds.includes(p.id) ? "Unsave professional" : "Save professional"}
+                title={savedProfileIds.includes(p.id) ? "Saved" : "Save"}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); toggleSaveProfessional(p.id); } }}
+                onClick={(e) => { e.stopPropagation(); toggleSaveProfessional(p.id); }}
+                style={{
+                  position: "absolute",
+                  top: 12,
+                  right: 12,
+                  width: 34,
+                  height: 34,
+                  borderRadius: 10,
+                  background: savedProfileIds.includes(p.id) ? "rgba(255,215,0,0.22)" : "rgba(0,0,0,0.45)",
+                  border: savedProfileIds.includes(p.id) ? "1px solid rgba(255,215,0,0.4)" : "1px solid rgba(255,255,255,0.15)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: savedProfileIds.includes(p.id) ? "var(--gold)" : "#fff",
+                  zIndex: 2,
+                }}
+              >
+                <FiBookmark size={16} fill={savedProfileIds.includes(p.id) ? "currentColor" : "none"} />
+              </div>
               <div
                 className="pro-card-content"
                 style={{
