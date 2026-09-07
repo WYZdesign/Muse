@@ -47,7 +47,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
             className="logo-link"
             style={{
               fontSize: 30,
-              backgroundImage: "linear-gradient(90deg,#FFD700,#FFB5C2,#B388FF,#FFD700,#FFB5C2,#FFD700)",
+              backgroundImage: "linear-gradient(90deg,#E8A838,#F2CC8F,#F4A261,#E8A838,#F2CC8F,#E8A838)",
               backgroundSize: "300% 100%",
               WebkitBackgroundClip: "text",
               backgroundClip: "text",

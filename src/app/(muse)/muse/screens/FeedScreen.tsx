@@ -296,7 +296,7 @@ export const FeedScreen = memo(function FeedScreen({
           className="logo-link"
           style={{
             fontSize: 30,
-            backgroundImage: "linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF)",
+            backgroundImage: "linear-gradient(90deg,#90CAF9,#80DEEA,#B388FF,#90CAF9,#80DEEA,#90CAF9)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",
             backgroundClip: "text",

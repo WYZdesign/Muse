@@ -90,7 +90,7 @@ export const CollabScreen = memo(function CollabScreen({
           className="logo-link"
           style={{
             fontSize: 30,
-            backgroundImage: "linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA)",
+            backgroundImage: "linear-gradient(90deg,#FFB5C2,#FFD700,#D4A5FF,#FFB5C2,#FFD700,#FFB5C2)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",
             backgroundClip: "text",

@@ -94,7 +94,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
     <>
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: "6px 18px 10px" }}>
         <button className="chat-back" onClick={() => setShowHamburger(false)} aria-label="Back"><FiArrowLeft size={20} /></button>
-        <div className="logo-link" style={{ fontSize: 24, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", backgroundImage: "linear-gradient(90deg,#E1BEE7,#9C27B0,#FF4081,#E1BEE7,#9C27B0,#E1BEE7)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite" }}>Your Activity</div>
+        <div className="logo-link" style={{ fontSize: 24, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", backgroundImage: "linear-gradient(90deg,#CE93D8,#B388FF,#90CAF9,#CE93D8,#B388FF,#CE93D8)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite" }}>Your Activity</div>
         <div style={{ width: 42 }} />
       </div>
       <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} onTap={onStreakTap} />
@@ -655,7 +655,7 @@ export const MenuModal = memo(function MenuModal({
                         it, still never touching. orbit-full added (Session 85 final
                         correction): without it this rendered as a partial comet-arc, not
                         a full ring — see the .avatar-orbit comment in muse.css. */}
-                    <div className="profile-ring profile-ring-large swirl-ring-1" />
+                    <div className="profile-ring profile-ring-large swirl-ring-3" />
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>{currentUser.name}</div>
                   <div style={{ fontSize: 13, color: "var(--muted)" }}>{currentUser.type} · {currentUser.exp}</div>
