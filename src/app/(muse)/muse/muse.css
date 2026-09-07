@@ -600,8 +600,10 @@ img{background-color:#1a0a2e}
    calc(100% - 2.3px)). This is an absolute-px band width, so it applies identically to
    every .profile-ring usage (ProfileScreen, MenuModal, MatchCard) regardless of that
    instance's diameter — no per-usage changes needed. */
-.profile-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.2px),#000 calc(100% - 1.1px));mask:radial-gradient(farthest-side,transparent calc(100% - 2.2px),#000 calc(100% - 1.1px));width:115px;height:115px;box-shadow:0 0 12px rgba(255,215,0,0.28);animation:ringSpin 5s linear infinite}
+.profile-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 1.25px));mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 1.25px));width:115px;height:115px;box-shadow:0 0 12px rgba(255,215,0,0.28);animation:ringSpin 5s linear infinite}
 @keyframes ringSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+/* Halo enlarged 20% for spots without a hoolah-hoop (profile side-panel, feed composer avatar). */
+.profile-ring-large{width:138px;height:138px}
 /* Theme-aware ring color variants — rotate per-match-card for varied gradient hues + speeds */
 .ring-v1{background:conic-gradient(var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));animation-duration:5s}
 .ring-v2{background:conic-gradient(var(--coral),var(--gold),var(--peach),var(--sunset),var(--coral));animation-duration:6.5s;animation-direction:reverse}
@@ -634,7 +636,7 @@ img{background-color:#1a0a2e}
    offset only now) and adding .orbit-full to the ProfileScreen/MenuModal hoop elements
    (see those files) so every hoop usage is a complete ring. */
 .avatar-orbit{position:absolute;top:50%;left:50%;width:var(--orbit-size,118%);height:var(--orbit-size,118%);transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
-  background:conic-gradient(from 0deg,transparent 0deg,transparent 120deg,var(--gold) 175deg,var(--coral) 210deg,transparent 265deg,transparent 360deg);
+  background:conic-gradient(from var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));
   -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 1px));
   mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 1px));
   animation:hulaOrbit var(--orbit-speed,6.5s) linear infinite;
@@ -762,7 +764,14 @@ img{background-color:#1a0a2e}
   66%      { box-shadow: 0 0 0 3px rgba(255,215,0,0.05), 0 5px 20px rgba(233,69,96,0.3); }
   100%     { box-shadow: 0 0 0 0 rgba(255,215,0,0.0), 0 4px 18px rgba(233,69,96,0.25); }
 }
-.brief-avatar{ animation: avatarEccentric 7s linear infinite, brief-avatar-glow 4s ease-in-out infinite; }
+.brief-avatar{border-width:3.5px;animation:avatarEccentric 7s linear infinite,brief-avatar-glow 4s ease-in-out infinite}
+/* Per-card gradient variants on Collab (like Muses') — each brief card gets a
+   different hue rotation of the theme palette so the deck reads varied. */
+.brief-variant-0{background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(var(--grad-angle,135deg),var(--gold),var(--amber),var(--pink),var(--lavender))}
+.brief-variant-1{background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(var(--grad-angle,135deg),var(--coral),var(--gold),var(--peach),var(--sunset))}
+.brief-variant-2{background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(var(--grad-angle,135deg),var(--sky),var(--mint),var(--lavender),var(--gold))}
+.brief-variant-3{background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(var(--grad-angle,135deg),var(--pink),var(--lavender),var(--coral),var(--gold))}
+.brief-variant-4{background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(var(--grad-angle,135deg),var(--amber),var(--mint),var(--sky),var(--coral))}
 .brief-author{font-size:13px;color:var(--text2)}
 .brief-author strong{color:var(--text);font-weight:600}
 .brief-urgent{margin-left:auto;padding:4px 10px;border-radius:99px;background:rgba(255,107,107,0.15);border:1px solid rgba(255,107,107,0.2);font-size:10px;font-weight:700;color:var(--sunset);text-transform:uppercase;letter-spacing:1px}
