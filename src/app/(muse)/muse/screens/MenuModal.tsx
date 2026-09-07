@@ -37,7 +37,9 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
   const [hubTab, setHubTab] = useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
   const [myReports, setMyReports] = useState<any[] | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const notifLoadingRef = useRef(false);
+  // Bumped on every loadNotifications call, and stamped onto that call's own
+  // closure as reqId — see the comment below for why.
+  const notifReqIdRef = useRef(0);
   const [notifFilter, setNotifFilter] = useState<"all" | "unread" | "match" | "message" | "booking" | "quest" | "brief" | "community">("all");
   const [notifOffset, setNotifOffset] = useState(0);
   const [notifHasMore, setNotifHasMore] = useState(true);
@@ -49,8 +51,19 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
   }, [hubTab, myReports, authFetch]);
 
   const loadNotifications = useCallback(async (append = false) => {
-    if (!authFetch || notifLoadingRef.current) return;
-    notifLoadingRef.current = true;
+    if (!authFetch) return;
+    // Ghost-notification bug: switching tabs fast (e.g. All -> Unread before
+    // All's request finished) used to let the OLD, slower request's response
+    // land AFTER the new one and unconditionally overwrite `notifications`
+    // with the wrong tab's data — so "0 unread" could still show whatever
+    // items "All" had just fetched, instead of the empty state. A loading-
+    // flag guard here previously made it worse: it silently dropped the
+    // NEW request while the old one was still in flight, so nothing ever
+    // re-fetched for the tab actually being viewed. Stamping each call with
+    // an incrementing id and only applying the result if it's still the
+    // most recent one fixes both: stale responses are discarded, and every
+    // tab switch always gets its own fetch.
+    const reqId = ++notifReqIdRef.current;
     try {
       // "unread" is a read-state meta-filter, not a notification `type` — sending it as
       // type: "unread" (as this used to) filtered the query down to rows whose real
@@ -60,6 +73,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
       const isCategoryFilter = notifFilter !== "all" && notifFilter !== "unread";
       const res = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-notifications", limit: 30, offset: append ? notifOffset : 0, unreadOnly: notifFilter === "unread", type: isCategoryFilter ? notifFilter : undefined }) });
       const data = await res.json();
+      if (reqId !== notifReqIdRef.current) return; // superseded by a newer request — discard
       if (data.success) {
         const newNotifs = data.notifications || [];
         setNotifications(prev => append ? [...prev, ...newNotifs] : newNotifs);
@@ -70,7 +84,6 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
     } catch (e) {
       console.error("[ActivityPanel] loadNotifications failed:", e);
     }
-    notifLoadingRef.current = false;
   }, [authFetch, notifOffset, notifFilter]);
 
   useEffect(() => {
@@ -345,6 +358,22 @@ export const MenuModal = memo(function MenuModal({
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Muse Pro banner sheen: used to be a plain CSS `infinite` loop sweeping
+  // every 2.8s on a fixed metronome. Torreé asked for it ~30% less frequent
+  // and irregular rather than a steady beat, so this drives it with a
+  // randomized timer instead — each sweep is a one-shot animation
+  // (triggered by adding a class), and the *next* one is scheduled only
+  // after this one finishes, with a random wait. 2.8s was the old interval;
+  // averaging ~4s here (2.8-5.2s, randomized) is ~30% less often, and never
+  // lands on the same beat twice.
+  const [proShineOn, setProShineOn] = useState(false);
+  useEffect(() => {
+    if (proShineOn) return;
+    const delay = 2800 + Math.random() * 2400;
+    const t = setTimeout(() => setProShineOn(true), delay);
+    return () => clearTimeout(t);
+  }, [proShineOn]);
+
   // Focus trap + Escape-to-close + focus restore while the sheet is open.
   // On a sub-screen Escape steps back to the menu root; otherwise it closes.
   const hamburgerRef = useFocusTrap<HTMLDivElement>(showHamburger, () => {
@@ -486,7 +515,7 @@ export const MenuModal = memo(function MenuModal({
               </div>
             </div>
             <button className="muse-pro-banner" onClick={() => { setShowHamburger(false); showScreen("subscription"); }} tabIndex={0} aria-label="Muse Pro">
-              <div className="muse-pro-banner-shine" />
+              <div className={"muse-pro-banner-shine" + (proShineOn ? " shine-play" : "")} onAnimationEnd={() => setProShineOn(false)} />
               <div className="muse-pro-banner-content">
                 <div className="muse-pro-banner-icon"><FiStar size={16} /></div>
                 <div className="muse-pro-banner-text">
@@ -667,7 +696,7 @@ export const MenuModal = memo(function MenuModal({
                         it, still never touching. orbit-full added (Session 85 final
                         correction): without it this rendered as a partial comet-arc, not
                         a full ring — see the .avatar-orbit comment in muse.css. */}
-                    <div className="profile-ring profile-ring-large swirl-ring-3" />
+                    <div className="profile-ring profile-ring-large profile-ring-menu swirl-ring-3" />
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>{currentUser.name}</div>
                   <div style={{ fontSize: 13, color: "var(--muted)" }}>{currentUser.type} · {currentUser.exp}</div>

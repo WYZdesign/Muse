@@ -317,17 +317,16 @@ export const FeedScreen = memo(function FeedScreen({
             rather than Network's per-category rainbow (this row is one facet, not many). */}
         <div className="filter-scroll-row" style={{ margin: "0 20px 10px" }}>
           {([
-            { k: "all", l: "All", icon: "" },
-            { k: "photos", l: "Photos", icon: "📸" },
-            { k: "text", l: "Text", icon: "✍️" },
-            { k: "videos", l: "Videos", icon: "🎬" },
-            { k: "bts", l: "BTS", icon: "🎥" },
+            { k: "all", l: "All" },
+            { k: "photos", l: "Photos" },
+            { k: "text", l: "Text" },
+            { k: "videos", l: "Videos" },
+            { k: "bts", l: "BTS" },
           ] as const).map(f => {
             const active = feedFilter === f.k;
             return (
               <button type="button" key={f.k} role="tab" aria-selected={active} onClick={() => setFeedFilter(f.k as any)}
                 style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: active ? "#0a0612" : "#90CAF9", background: active ? "rgba(144,202,249,0.3)" : "rgba(255,255,255,0.06)", border: active ? "1.5px solid rgba(144,202,249,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
-                {f.icon && <span style={{ fontSize: 12 }}>{f.icon}</span>}
                 {f.l}
               </button>
             );
