@@ -310,11 +310,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [myGeo, setMyGeo] = useState<{lat:number;long:number;city:string;state:string;requiresIdVerification:boolean}|null>(null);
   const [supportOpen, setSupportOpen] = useState(false);
 
-  // ═══ TRUST & SAFETY STATE ═══
+// ═══ TRUST & SAFETY STATE ═══
   const [disclosureTarget, setDisclosureTarget] = useState<{id:string;name:string} | null>(null);
   const [disclosureBookingId, setDisclosureBookingId] = useState<string | undefined>();
   const [existingDisclosure, setExistingDisclosure] = useState<Record<string, unknown> | null>(null);
   const [ageVerified, setAgeVerified] = useState(false);
+  const [verificationExpiringSoon, setVerificationExpiringSoon] = useState(false);
   const [pendingDisclosureConfirm, setPendingDisclosureConfirm] = useState<string | null>(null);
   const [pendingDisclosureCreate, setPendingDisclosureCreate] = useState<Record<string, unknown> | null>(null);
   const {
@@ -802,7 +803,10 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
               if (d.profile.age_verified && d.profile.age_verified_at) {
                 const verifiedAt = new Date(d.profile.age_verified_at).getTime();
                 const isCurrent = !Number.isNaN(verifiedAt) && (Date.now() - verifiedAt < AGE_VERIFICATION_VALID_DAYS * 24 * 60 * 60 * 1000);
+                const daysSince = Number.isNaN(verifiedAt) ? 0 : (Date.now() - verifiedAt) / (24 * 60 * 60 * 1000);
                 setAgeVerified(isCurrent);
+                // Expiring in ≤30 days but still valid: warn with banner
+                setVerificationExpiringSoon(isCurrent === false || daysSince >= (AGE_VERIFICATION_VALID_DAYS - 30) && daysSince < AGE_VERIFICATION_VALID_DAYS);
               }
               // Restore notifPrefs from server (source of truth across devices)
               if (d.profile.preferences?.notifications && typeof d.profile.preferences.notifications === "object") {
@@ -2088,9 +2092,21 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 <div className={"phone-wrap"+((screen==="subscription"||screen==="settings")?" phone-wrap-standalone-hidden":"")}>
 <div className="phone" id="muse-app">
 <div className="notch" />
-            <div className={"screen-el"+(screen==="onboard"?" active":"")}>
-              <div className="onboard">
-                {obStep === 0 && (
+
+{/* ═══ VERIFICATION EXPIRY BANNER ═══ */}
+{((!ageVerified) || verificationExpiringSoon) && (
+  <div style={{ background: verificationExpiringSoon ? "linear-gradient(90deg, #ff8c00, #ffd700)" : "linear-gradient(90deg, #ff4444, #ff6b6b)", padding: "8px 16px", textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+    {verificationExpiringSoon ? (
+      <>⚠️ Identity verification expires in ≤30 days — <button onClick={() => setShowAgeVerification(true)} style={{ background: "none", border: "none", color: "#0a0612", textDecoration: "underline", cursor: "pointer", fontWeight: 800 }}>Re-verify now</button></>
+    ) : (
+      <>🔞 Identity verification expired — paid features locked. <button onClick={() => setShowAgeVerification(true)} style={{ background: "none", border: "none", color: "#0a0612", textDecoration: "underline", cursor: "pointer", fontWeight: 800 }}>Verify now</button></>
+    )}
+  </div>
+)}
+
+<div className={"screen-el"+(screen==="onboard"?" active":"")}>
+  <div className="onboard">
+    {obStep === 0 && (
                   <div className="onboard-content">
                     <div className="sparkle" style={{top:"10%",left:"6%",fontSize:24}}>✦</div>
                     <div className="sparkle" style={{top:"20%",right:"10%",fontSize:18}}>✧</div>
