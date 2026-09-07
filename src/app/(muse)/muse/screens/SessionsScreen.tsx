@@ -260,7 +260,7 @@ export const SessionsScreen = memo(function SessionsScreen({
             ))}
             <div style={{ height: 1, margin: "20px 0 8px", background: "linear-gradient(90deg, transparent, rgba(233,30,99,0.4), transparent)" }} />
             <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", marginBottom: 8 }}>Looking to shoot in LA? Browse partner photo studios and book direct.</div>
-            <button className="btn ls-gradient" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 800, borderRadius: 12 }} onClick={() => showScreen("studios")}>✦ Browse All LA Studios</button>
+            <button className="btn ls-gradient" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 800, borderRadius: 12 }} onClick={() => showScreen("studios")}>✦ Browse LA Studios</button>
           </>
         )}
         {sessTab === "bookings" && (

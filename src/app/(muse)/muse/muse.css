@@ -694,6 +694,17 @@ img{background-color:#1a0a2e}
 .ring-v3{background:conic-gradient(var(--sky),var(--mint),var(--lavender),var(--sky));animation-duration:5.8s}
 .ring-v4{background:conic-gradient(var(--pink),var(--lavender),var(--coral),var(--pink));animation-duration:7s;animation-direction:reverse}
 .ring-v5{background:conic-gradient(var(--amber),var(--honey),var(--gold),var(--amber));animation-duration:6.2s}
+/* Hoolah-hoop (outer .avatar-orbit) color variants matching each .ring-v halo above —
+   Torreé's ask: the hoop's colors should match the halo it's circling, not always the
+   flat default gold/amber/pink/lavender regardless of which ring-v the card landed on.
+   MatchCard applies orbit-vN alongside ring-vN using the same hashed index so a card's
+   hoop and halo are always the same palette. Same var-driven approach as ring-v1..5 so
+   both re-theme together when the site color theme changes. */
+.avatar-orbit.orbit-full.orbit-v1{background:conic-gradient(from var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold))}
+.avatar-orbit.orbit-full.orbit-v2{background:conic-gradient(from var(--grad-angle,0deg),var(--coral),var(--gold),var(--peach),var(--sunset),var(--coral))}
+.avatar-orbit.orbit-full.orbit-v3{background:conic-gradient(from var(--grad-angle,0deg),var(--sky),var(--mint),var(--lavender),var(--sky))}
+.avatar-orbit.orbit-full.orbit-v4{background:conic-gradient(from var(--grad-angle,0deg),var(--pink),var(--lavender),var(--coral),var(--pink))}
+.avatar-orbit.orbit-full.orbit-v5{background:conic-gradient(from var(--grad-angle,0deg),var(--amber),var(--honey),var(--gold),var(--amber))}
 .profile-name{font-size:26px;font-weight:800}
 .profile-type{font-size:16px;font-weight:600;margin-top:4px;background:linear-gradient(90deg,var(--gold),var(--amber),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .profile-loc{font-size:13px;color:var(--text2);margin-top:5px}

@@ -25,11 +25,16 @@ const RING_SIZE = 90; // wyzmind's live-verified sizing (Session 81/82 — 83 wa
 // Session 85: an earlier pass shrank this 15% (to 66/77) thinking "decrease the halo"
 // meant diameter — Torreé clarified it meant the ring's line thickness (see
 // .profile-ring in muse.css), so diameter reverted back here.
-// Hoolah-hoop diameter: halo (RING_SIZE) + a fixed 5px gap on each side. A literal
-// pixel target, not a % of the wrap — see the --orbit-size comment in muse.css for why.
-const ORBIT_SIZE = RING_SIZE + 6; // Session 85+ : smaller loop, loose gap so it never touchesd the halo, still never touching
+// Hoolah-hoop diameter: halo (RING_SIZE) scaled up ~8% so the hoop visibly hovers
+// above/outside the halo with a real gap between them (Torreé's ask: 5-10% bigger,
+// not touching). A % of RING_SIZE rather than a fixed px so the gap scales with it.
+const ORBIT_SIZE = Math.round(RING_SIZE * 1.08);
 const RING_SPEEDS = [3.2, 4.5, 5.8, 3.8, 5.1, 4.2, 6.0, 3.5, 4.8, 5.5];
 const RING_VARIANTS = ["ring-v1", "ring-v2", "ring-v3", "ring-v4", "ring-v5"];
+// Hoolah-hoop color variants — matched 1:1 to RING_VARIANTS by index (see the
+// .orbit-vN rules in muse.css) so a card's outer hoop is always the same palette as
+// its inner halo, instead of every hoop defaulting to the same flat gold/pink mix.
+const ORBIT_VARIANTS = ["orbit-v1", "orbit-v2", "orbit-v3", "orbit-v4", "orbit-v5"];
 // Hoolah-hoop speeds for the outer orbit ring — deliberately offset from RING_SPEEDS
 // (different array, different modulo base) so the hoop and its halo are never
 // spinning in sync, and different cards' hoops visibly vary in pace from each other.
@@ -45,7 +50,9 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
   const mid = String(m.id);
   const isList = view === "list";
   const ringSpeed = RING_SPEEDS[parseInt(mid, 10) % RING_SPEEDS.length] || 4;
-  const ringVariant = RING_VARIANTS[parseInt(mid, 10) % RING_VARIANTS.length] || RING_VARIANTS[0];
+  const ringIdx = parseInt(mid, 10) % RING_VARIANTS.length;
+  const ringVariant = RING_VARIANTS[ringIdx] || RING_VARIANTS[0];
+  const orbitVariant = ORBIT_VARIANTS[ringIdx] || ORBIT_VARIANTS[0];
   const orbitSpeed = ORBIT_SPEEDS[parseInt(mid, 10) % ORBIT_SPEEDS.length] || 7;
 
   return (
@@ -58,7 +65,7 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
       }}
     >
       <div className="match-avatar-wrap" style={isList ? { position: "relative", width: AVATAR_SIZE, height: AVATAR_SIZE, flexShrink: 0 } : undefined}>
-        {isList && <div className="avatar-orbit orbit-full" style={{ "--orbit-size": `${ORBIT_SIZE}px`, animationDuration: `${orbitSpeed}s` } as React.CSSProperties} />}
+        {isList && <div className={`avatar-orbit orbit-full ${orbitVariant}`} style={{ "--orbit-size": `${ORBIT_SIZE}px`, animationDuration: `${orbitSpeed}s` } as React.CSSProperties} />}
         {isList && <div className={`profile-ring ${ringVariant}`} style={{ width: RING_SIZE, height: RING_SIZE, animationDuration: `${ringSpeed}s` }} />}
         {isList ? (
           <Image
