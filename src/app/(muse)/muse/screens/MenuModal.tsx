@@ -797,7 +797,7 @@ export const MenuModal = memo(function MenuModal({
             )}
             {hamburgerScreen === "settings" && (
               <div className="conn-scroll">
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "0 0 10px" }}>Discovery Preferences</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "0 0 10px", textAlign: "center" }}>Discovery Preferences</div>
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Age Range</div>
                   <div style={{ display: "flex", gap: 6, alignItems: "center", overflow: "hidden" }}>
@@ -813,8 +813,8 @@ export const MenuModal = memo(function MenuModal({
                   <input type="range" min={1} max={100} value={discoveryPrefs.distance} onChange={e => setDiscoveryPrefs((p: any) => ({ ...p, distance: Number(e.target.value) }))} style={{ width: "100%", accentColor: "var(--gold)" }} />
                 </div>
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Show Me</div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8, textAlign: "center" }}>Show Me</div>
+                  <div className="filter-scroll-row" style={{ gap: 8, flexWrap: "nowrap" }}>
                     {["all", "women", "men", "non-binary"].map(g => (
                       <div key={g} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDiscoveryPrefs((p: any) => ({ ...p, gender: g })); } }} onClick={() => setDiscoveryPrefs((p: any) => ({ ...p, gender: g }))} style={{ padding: "8px 16px", borderRadius: 99, cursor: "pointer", fontSize: 12, fontWeight: 600, transition: "all .25s", background: discoveryPrefs.gender === g ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: "1px solid " + (discoveryPrefs.gender === g ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"), color: discoveryPrefs.gender === g ? "var(--gold)" : "var(--muted)" }}>{g.charAt(0).toUpperCase() + g.slice(1)}</div>
                     ))}
@@ -922,7 +922,7 @@ export const MenuModal = memo(function MenuModal({
                   ))}
                   <button className="btn" style={{ width: "100%", margin: "8px 0", background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontSize: 13, fontWeight: 700 }} onClick={() => { setShowHamburger(false); showScreen("codex"); }}>Glossary + Codex</button>
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Help &amp; Support</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px", textAlign: "center" }}>Help &amp; Support</div>
                 {[
                   { q: "How does matching work?", a: "Swipe right on creators you'd like to connect with. If they swipe right back, it's a connection! You can then message each other." },
                   { q: "What are Quests?", a: "Quests are creative opportunities posted by brands and clients. Find them under Collab — apply to paid ones, or respond to vision quests. Track everything you've applied to or saved in Menu → Your Activity." },

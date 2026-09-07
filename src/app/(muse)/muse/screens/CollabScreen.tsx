@@ -128,7 +128,7 @@ export const CollabScreen = memo(function CollabScreen({
         >Collab</div>
         <button className="hdr-btn" onClick={() => setShowPostBrief(true)} aria-label="Create Brief"><FiPlus size={18} /></button>
       </div>
-      <div className="conn-tabs" style={{ padding: "0 12px" }}>
+      <div className="conn-tabs" style={{ padding: "0 12px", justifyContent: "center" }}>
         {([["all", "All"], ["tfp", "TFP"], ["paid", "Paid"], ["opencall", "Open Call"], ["concept", "Concept"]] as const).map(([k, l]) => (
           <div key={k} className={"conn-tab" + (museCat === k ? " active" : "")} role="tab" aria-selected={museCat === k} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setMuseCat(k as any); } }} onClick={() => setMuseCat(k as any)}>{l}</div>
         ))}

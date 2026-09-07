@@ -314,7 +314,7 @@ export const FeedScreen = memo(function FeedScreen({
             (pill, 6px 14px padding, 11px/600 weight, colored fill on active) so this reads
             as the same control system-wide, tinted with Feed's own nebula-blue accent
             rather than Network's per-category rainbow (this row is one facet, not many). */}
-        <div className="filter-scroll-row" style={{ margin: "0 20px 10px" }}>
+        <div className="filter-scroll-row" style={{ margin: "0 20px 10px", justifyContent: "center" }}>
           {([
             { k: "all", l: "All" },
             { k: "photos", l: "Photos" },
