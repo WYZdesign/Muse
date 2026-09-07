@@ -79,7 +79,18 @@ export const reportCreate = async ({ sb, profile, rest, ip }: ActionContext) => 
   const { target_id, target_type, reason, details } = rest;
   if (!target_id || !reason) return NextResponse.json({ error: "target_id and reason required" }, { status: 400 });
   if (target_id === profile.id) return NextResponse.json({ error: "Cannot report yourself" }, { status: 400 });
-  const isPostTarget = target_type === "feed_post" || target_type === "forum_post";
+  // "Post-shaped" targets: content rows, not muse_profiles rows, so the
+  // profile-existence check below doesn't apply to them. feed_post/forum_post
+  // were the original two; moment/community/community_event/session were
+  // added when report coverage was extended to BTS, Community groups/events,
+  // and Session listings — this whitelist was missing them, which meant a
+  // real (non-demo) report of any of those four content types incorrectly
+  // fell through to the muse_profiles lookup below, found no matching
+  // profile row, and failed with "Target not found".
+  const POST_SHAPED_TARGET_TYPES = new Set([
+    "feed_post", "forum_post", "moment", "community", "community_event", "session",
+  ]);
+  const isPostTarget = POST_SHAPED_TARGET_TYPES.has(String(target_type));
   if (!isPostTarget) {
     if (!UUID_RE.test(String(target_id))) return NextResponse.json({ success: true, demo: true });
     const { data: targetProfile } = await sb.from("muse_profiles").select("id").eq("id", target_id).maybeSingle();
