@@ -118,7 +118,7 @@ export const OTHER_STUDIOS: StudioProfile[] = [
     name: "Apex Photo Studios",
     tagline: "Downtown LA · affordable hourly multi-set rentals, integrated lighting/grip, versatile cyc walls",
     color: ["#F4511E", "#FFB300"],
-    siteUrl: "https://www.apexphotostudios.com",
+    siteUrl: "https://maps.google.com/?q=Apex+Photo+Studios+Los+Angeles",
     oracle: [
       { q: "What's Apex known for?", a: "Affordable hourly multi-set studio rentals in Downtown LA with integrated lighting and grip packages and versatile cyc walls — very close to FD's self-service hourly model." },
       { q: "How do I book?", a: "Apex is ready to showcase — final site/gallery data and booking link are pending the partnership. Contact them via the listing to arrange a shoot." },

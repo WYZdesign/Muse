@@ -638,7 +638,7 @@ img{background-color:#1a0a2e}
    without any scaling. Fixed by dropping scale() from every hulaOrbit stop (rotation +
    offset only now) and adding .orbit-full to the ProfileScreen/MenuModal hoop elements
    (see those files) so every hoop usage is a complete ring. */
-.avatar-orbit{position:absolute;top:50%;left:50%;width:var(--orbit-size,118%);height:var(--orbit-size,118%);transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+.avatar-orbit{position:absolute;top:50%;left:50%;width:var(--orbit-size,106%);height:var(--orbit-size,106%);transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
   background:conic-gradient(from var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));
   -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 1px));
   mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 1px));
@@ -1036,7 +1036,7 @@ img{background-color:#1a0a2e}
    category tabs, chat icebreakers, album/quest filters, moments rows) are cut off
    at the screen edge with no hint they scroll. The thin gold thumb shows only when
    content overflows, so it's the unobtrusive "this scrolls" cue. */
-.chip-scroll,.conn-tabs,.quest-filters,.pro-skill-row,.quick-replies,.moments-story-row,.moments-tab-row,.album-tabs,.bts-cat-row,.icebreaker-row{scrollbar-width:thin;scrollbar-color:rgba(255,215,0,0.35) transparent;-ms-overflow-style:none;padding-bottom:6px}
+.chip-scroll,.conn-tabs,.quest-filters,.pro-skill-row,.quick-replies,.moments-story-row,.moments-tab-row,.album-tabs,.bts-cat-row,.icebreaker-row,.filter-scroll-row{scrollbar-width:thin;scrollbar-color:rgba(255,215,0,0.35) transparent;-ms-overflow-style:none;padding-bottom:10px}
 .chip-scroll::-webkit-scrollbar,.conn-tabs::-webkit-scrollbar,.quest-filters::-webkit-scrollbar,.pro-skill-row::-webkit-scrollbar,.quick-replies::-webkit-scrollbar,.moments-story-row::-webkit-scrollbar,.moments-tab-row::-webkit-scrollbar,.album-tabs::-webkit-scrollbar,.bts-cat-row::-webkit-scrollbar,.icebreaker-row::-webkit-scrollbar{height:4px}
 .chip-scroll::-webkit-scrollbar-track,.conn-tabs::-webkit-scrollbar-track,.quest-filters::-webkit-scrollbar-track,.pro-skill-row::-webkit-scrollbar-track,.quick-replies::-webkit-scrollbar-track,.moments-story-row::-webkit-scrollbar-track,.moments-tab-row::-webkit-scrollbar-track,.album-tabs::-webkit-scrollbar-track,.bts-cat-row::-webkit-scrollbar-track,.icebreaker-row::-webkit-scrollbar-track{background:transparent}
 .chip-scroll::-webkit-scrollbar-thumb,.conn-tabs::-webkit-scrollbar-thumb,.quest-filters::-webkit-scrollbar-thumb,.pro-skill-row::-webkit-scrollbar-thumb,.quick-replies::-webkit-scrollbar-thumb,.moments-story-row::-webkit-scrollbar-thumb,.moments-tab-row::-webkit-scrollbar-thumb,.album-tabs::-webkit-scrollbar-thumb,.bts-cat-row::-webkit-scrollbar-thumb,.icebreaker-row::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.35);border-radius:99px}
