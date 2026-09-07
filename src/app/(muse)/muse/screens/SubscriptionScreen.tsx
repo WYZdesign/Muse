@@ -42,11 +42,13 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
   return (
     <div className="phone-wrap">
       <div className="phone" id="muse-app">
-        <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
+        <div className="hdr" style={{ display: "grid", gridTemplateColumns: "42px 1fr 42px", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
+          <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
           <div
             className="logo-link"
             style={{
               fontSize: 30,
+              textAlign: "center",
               backgroundImage: "linear-gradient(90deg,#E8A838,#F2CC8F,#F4A261,#E8A838,#F2CC8F,#E8A838)",
               backgroundSize: "300% 100%",
               WebkitBackgroundClip: "text",
@@ -59,16 +61,16 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
               whiteSpace: "nowrap",
             }}
           >Muse Pro</div>
-          <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
+          <div style={{ width: 42 }} />
         </div>
         <div className="sub-scroll">
           <div className="sub-header">
             <div className="sub-title">Unlock Your Potential</div>
             <div className="sub-subtitle">Choose the plan for your creative journey</div>
           </div>
-          <div style={{ position: "relative", marginBottom: 8 }}>
-            <input className="inp" placeholder="Promo code" value={promo} onChange={e => { setPromo(e.target.value); setPromoApplied(false); }} style={{ width: "100%", textTransform: "uppercase", letterSpacing: 1, paddingRight: 84 }} />
-            <button className="btn btn-outline" style={{ position: "absolute", top: 5, right: 5, padding: "8px 16px", opacity: applyingPromo ? 0.6 : 1 }} disabled={applyingPromo} onClick={async () => {
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+            <input className="inp" placeholder="Promo code" value={promo} onChange={e => { setPromo(e.target.value); setPromoApplied(false); }} style={{ width: "100%", textTransform: "uppercase", letterSpacing: 1 }} />
+            <button className="btn btn-outline" style={{ width: "100%", padding: "10px 16px", opacity: applyingPromo ? 0.6 : 1 }} disabled={applyingPromo} onClick={async () => {
               const p = promo.trim().toUpperCase();
               if (!p) { showToast("Enter a promo code first"); return; }
               if (!apiFetch) { showToast("Can't apply promo right now"); return; }
