@@ -203,10 +203,34 @@ and the actual DB writes for both dismiss and action outcomes; plus coverage tha
 only touches `muse_reports` when a `reportId` is actually supplied. tsc clean, 247/247 tests (240
 previous + 7 new).
 
+## Shipped this pass (follow-up #3) — booking payment-status visibility
+
+Re-investigated the Calendly+Stripe/Airbnb "booking + payment confirmation" finding I'd initially
+ruled out as too close to escrow to touch. On closer look, the risky part (actually moving money,
+capturing/releasing escrow) was never what was missing — that logic is untouched here. What was
+missing was much smaller: **neither the booker nor the host could see the payment state of a booking
+at all.** `get.ts`'s bookings handler already computes and attaches `payment_status` (from
+`muse_booking_payments`, confirmed values `pending | held | succeeded | failed | refunded` per
+`sql/MUSE_BOOKING_PAYMENT_HELD_STATUS_20260831.sql`) onto every booking row — `SessionsScreen.tsx` was
+already receiving it as `b.payment_status` and never rendering it, on either side.
+
+Added a small read-only `paymentStatusPill()` — a plain-language pill next to the existing
+pending/confirmed/completed/cancelled badge: "Payment held" (blue), "Paid" (green), "Refunded"
+(muted), "Payment failed" (red). Nothing shown for `pending`/not-yet-attempted, so it never implies a
+payment happened when it hasn't. Shown on both the booker's "My Bookings" list and the host's
+"Requests" list — a host previously had zero visibility into whether a confirmed booking was actually
+paid for, which is the more valuable half of this (Airbnb/Calendly's core "someone will actually show
+up because money is on the line" reassurance). Pure UI addition: no new backend data, no writes, no
+escrow/capture/release code touched. tsc clean, 247/247 tests (no new tests — this repo doesn't carry
+component-level tests for screens, matching the existing convention; verified by reading every changed
+line back against the confirmed status values).
+
 ## Research findings not pursued (either out of scope per your constraints, or no small safe slice found)
 
 - Upwork "Boosted Proposals" / LinkedIn Premium profile-boost mechanics → maps to à la carte boosts (forbidden this round).
 - LinkedIn InMail / dating-app message-request separation (Hinge/Bumble triage inbox) → maps to message-request triage (forbidden this round).
 - Duolingo/Strava streak-and-badge gamification patterns → Muse's Quests system already covers this ground (tiers, rewards, filters) reasonably well; no clear small addition beyond what already shipped in the previous batch (one-line quest cards, filter-row fix).
-- Calendly+Stripe combined booking/payment confirmation UX, Airbnb-style host/guest dual confirmation → overlaps booking/escrow, which is explicitly protected ("never weaken booking escrow") and not a small slice — flagging for a dedicated review rather than touching it here.
-- Substack/Patreon tiered-subscription messaging (what a subscriber tier unlocks, shown inline) → Muse's subscription/tier model exists but a full audit of where tier benefits are (or aren't) surfaced in-app is a bigger investigation than fits in this batch; noting as a candidate for the next pass.
+- Substack/Patreon tiered-subscription messaging → checked `SubscriptionScreen.tsx`: tier features are
+  already listed clearly on the pricing screen itself (`tier.features.map`), and a separate earlier
+  batch this engagement (`contextual-upsell.bundle`) already covers in-context upsell prompts
+  elsewhere in the app. No fresh gap found here.

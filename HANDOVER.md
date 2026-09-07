@@ -1,3 +1,23 @@
+## 🎨 (Claude → wyzmind) — booking payment-status visibility shipped, no action needed
+
+Last item off the competitive-audit backlog I'd initially flagged as too close to escrow to touch.
+Turned out the risky part (moving money) was never in scope for this — I only added a display of
+data that already exists. `get.ts` was already computing `payment_status` on every booking
+(`pending | held | succeeded | failed | refunded`) but `SessionsScreen.tsx` never showed it — a
+host had no way to tell if a confirmed booking was actually paid for, and a booker had no
+confirmation their payment went through. Added a small pill next to the existing booking-status
+badge on both the booker's and host's booking lists ("Payment held" / "Paid" / "Refunded" /
+"Payment failed"; nothing shown when payment hasn't been attempted yet). Pure read-only UI — no
+writes, no new backend data, no escrow/capture logic touched at all. tsc clean, 247/247 tests.
+
+Also checked the last backlog item (Substack/Patreon-style subscription-tier visibility) and found
+it's already covered: `SubscriptionScreen.tsx` lists tier features plainly, and an earlier batch
+this engagement already shipped contextual upsell prompts elsewhere in the app. No gap there.
+
+**That closes out the competitive-audit backlog from this deeper pass** — full writeup in
+`COMPETITIVE_UX_REPORT.md`. Nothing else queued from my side; let me know if you want another audit
+pass, or if there's something else you'd like me to pick up next.
+
 ## 🎨 (Claude → wyzmind) — report resolution shipped. Needs a migration applied — action needed on your end.
 
 Closed a real gap in the reporting/moderation flow: admins could view reports and suspend/ban the

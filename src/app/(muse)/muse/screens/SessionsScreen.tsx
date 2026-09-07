@@ -41,6 +41,26 @@ export interface SessionsScreenProps {
   setSavedSessionIds?: React.Dispatch<React.SetStateAction<(string | number)[]>>;
 }
 
+// Booking/payment confirmation transparency (competitive-audit finding —
+// Calendly+Stripe / Airbnb both show both sides a plain-language payment
+// state, not just a booking state). muse_booking_payments.status is already
+// fetched into b.payment_status (see get.ts's "bookings" handler) but was
+// never shown anywhere — a booker had no visual confirmation their payment
+// actually went through, and a host had no way to tell a booking was paid
+// vs. still awaiting payment. Read-only display of data that already
+// exists; does not touch the escrow/payment-capture logic itself.
+// Status values confirmed via sql/MUSE_BOOKING_PAYMENT_HELD_STATUS_20260831.sql
+// and the webhook/connect-route write sites: pending | held | succeeded | failed | refunded.
+function paymentStatusPill(payment_status: string | null | undefined): { label: string; colors: typeof BADGE_COLORS[keyof typeof BADGE_COLORS] } | null {
+  switch (payment_status) {
+    case "held": return { label: "Payment held", colors: BADGE_COLORS.blue };
+    case "succeeded": return { label: "Paid", colors: BADGE_COLORS.green };
+    case "refunded": return { label: "Refunded", colors: BADGE_COLORS.muted };
+    case "failed": return { label: "Payment failed", colors: BADGE_COLORS.red };
+    default: return null; // "pending" / not yet attempted — nothing to confirm yet, don't imply otherwise
+  }
+}
+
 export const SessionsScreen = memo(function SessionsScreen({
   screen,
   sessTab,
@@ -284,6 +304,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                 pending: BADGE_COLORS.muted,
               };
               const sc = statusColors[b.status] || BADGE_COLORS.muted;
+              const pp = paymentStatusPill(b.payment_status);
               return (
                 <div key={b.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
                   <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0 }}>
@@ -297,7 +318,10 @@ export const SessionsScreen = memo(function SessionsScreen({
                         {host.name || "Host"}
                         {host.verified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
                       </div>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: sc.bg, color: sc.c, border: `1px solid ${sc.bd}`, whiteSpace: "nowrap" }}>{label}</span>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                        {pp && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap" }}>{pp.label}</span>}
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: sc.bg, color: sc.c, border: `1px solid ${sc.bd}`, whiteSpace: "nowrap" }}>{label}</span>
+                      </div>
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
@@ -341,6 +365,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                 pending: BADGE_COLORS.muted,
               };
               const sc = statusColors[b.status] || BADGE_COLORS.muted;
+              const pp = paymentStatusPill(b.payment_status);
               return (
                 <div key={b.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
                   <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 110, flexShrink: 0 }}>
@@ -354,7 +379,10 @@ export const SessionsScreen = memo(function SessionsScreen({
                         {booker.name || "Booker"}
                         {booker.verified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
                       </div>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: sc.bg, border: `1px solid ${sc.bd}`, color: sc.c, whiteSpace: "nowrap" }}>{label}</span>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                        {pp && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap" }}>{pp.label}</span>}
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: sc.bg, border: `1px solid ${sc.bd}`, color: sc.c, whiteSpace: "nowrap" }}>{label}</span>
+                      </div>
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
