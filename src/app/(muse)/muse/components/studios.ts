@@ -34,6 +34,9 @@ export interface StudioProfile {
   // "oracle" = FAQs / knowledge this studio's tab can answer from (FD has its
   // scraped guide; others start with general notes).
   oracle: { q: string; a: string }[];
+  // "rules" = detailed client guide (booking, check-in, fees, house rules) shown
+  // as a collapsible dropdown in this studio's tab.
+  rules?: { icon: string; title: string; items: string[] }[];
   buildings: StudioBuilding[];
 }
 
@@ -53,6 +56,16 @@ export const FD_STUDIO: StudioProfile = {
     { q: "What are the fees?", a: "5% card / 4% PayPal (or Venmo @FD-Studios). $7.50 utilities per booking. $75 late exit. Group of 10 included, $5/person extra. Overnight past 11pm needs a $525 deposit." },
     { q: "What's the cancellation policy?", a: "48+ hrs → full refund. 24–48 hrs → 50%. Under 24 hrs → non-refundable. Nothing refunded once the rental starts (except unsuitable + leave within 15 min)." },
     { q: "Any house rules?", a: "Leave it as you found it, no alcohol/smoking, no pyrotechnics, $500 fine for drugs/alcohol, hard-to-clean materials need advance approval + deposit. Not soundproof — keep music reasonable." },
+  ],
+  rules: [
+    { icon: "🧾", title: "How booking works", items: ["Pick a studio, check availability, submit a request. FD confirms + issues a payment link — 48 hrs to pay (unless last-minute).", "On payment you get a confirmation email with your access code + entry instructions. Help: 844-644-3377."] },
+    { icon: "🎟️", title: "Check-in & your time slot", items: ["Self check-in via access code — no key pickup. Code activates 10 min before your slot and deactivates 10 min after.", "Your time includes setup, the shoot, and breakdown. Every stage is private with a lockable door."] },
+    { icon: "💡", title: "What's included", items: ["Most stages: 3x AlienBees 800 lights on C-stands + modifiers, sandbags, apple boxes, makeup station, clothing racks, steamer.", "Bluetooth/aux sound system, Wi-Fi, mini-fridge. Fog machine $15/hr (reserve ahead). Specialty stages vary."] },
+    { icon: "💰", title: "Hourly vs packages — save money", items: ["4/8/12-hr packs save ~11%/22%/33% vs hourly. Pack hours never expire, split across sessions.", "Any fraction of an hour is billed as a full hour."] },
+    { icon: "🖼️", title: "Backdrops & extras", items: ["Paper backdrop free. One sweep $29.99, more $59, full roll $75.", "Cyc repaint: small $75, large $100. Setup with a car on the cyc $150. Call about amperage for your own gear."] },
+    { icon: "🧾", title: "Fees & fine print", items: ["5% card / 4% PayPal (or Venmo @FD-Studios). $7.50 utilities per booking.", "$75 late exit. Cleaning after a big mess from $150. Group of 10 included, $5/person extra. Overnight past 11pm needs a $525 deposit."] },
+    { icon: "↩️", title: "Cancellation & refunds", items: ["48+ hrs → full refund. 24–48 hrs → 50%. Under 24 hrs → non-refundable.", "No refund once the rental starts (except unsuitable + leave within 15 min)."] },
+    { icon: "⚠️", title: "House rules", items: ["Leave it as you found it. No alcohol/smoking/pyrotechnics/firearms. $500 fine for drugs or alcohol.", "Hard-to-clean materials (confetti, flour, body oil, fake blood) need approval + deposit. Studios are not soundproof."] },
   ],
   buildings: [
     { id: "main", label: "Main Building", phone: "+1 (323) 454-2323", hours: "24 hrs / 7 days", emoji: "🌆", studios: [
@@ -108,7 +121,7 @@ export const OTHER_STUDIOS: StudioProfile[] = [
     siteUrl: "https://www.apexphotostudios.com",
     oracle: [
       { q: "What's Apex known for?", a: "Affordable hourly multi-set studio rentals in Downtown LA with integrated lighting and grip packages and versatile cyc walls — very close to FD's self-service hourly model." },
-      { q: "How do I book?", a: "Book direct on Apex's site. (Muse embedding pending deal.)" },
+      { q: "How do I book?", a: "Apex is ready to showcase — final site/gallery data and booking link are pending the partnership. Contact them via the listing to arrange a shoot." },
     ],
     buildings: [
       { id: "apex-1", label: "Downtown LA", phone: "213-255-5000", hours: "Self-service hourly", emoji: "🏙️", studios: [
@@ -122,10 +135,10 @@ export const OTHER_STUDIOS: StudioProfile[] = [
     name: "Hubble Studio",
     tagline: "Arts District · flexible modular self-service boutique spaces for fashion, portrait, commercial",
     color: ["#1E88E5", "#00E5FF"],
-    siteUrl: "https://hubble.studio",
+    siteUrl: "https://www.hubblestudio.com",
     oracle: [
       { q: "What's Hubble known for?", a: "Flexible, modular boutique-style studio spaces in the Arts District designed for fashion, portrait, and commercial creators who want self-service hourly configurations — similar to FD." },
-      { q: "How do I book?", a: "Book Hubble directly. (Muse embedding pending deal.)" },
+      { q: "How do I book?", a: "Book via Hubble's site (hubblestudio.com). Full space gallery + booking embed pending the partnership." },
     ],
     buildings: [
       { id: "hubble-1", label: "Arts District", phone: "213-555-0168", hours: "Self-service hourly", emoji: "🎨", studios: [

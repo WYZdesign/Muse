@@ -25,6 +25,7 @@ export const StudiosScreen = memo(function StudiosScreen({
   const [activeBuilding, setActiveBuilding] = useState<string | null>(ALL_STUDIOS[0]?.buildings[0]?.id || null);
   const [oracleQ, setOracleQ] = useState("");
   const [oracleAnswer, setOracleAnswer] = useState<string | null>(null);
+  const [rulesOpen, setRulesOpen] = useState(false);
 
   const studio: StudioProfile = ALL_STUDIOS.find((s) => s.id === activeStudio) || ALL_STUDIOS[0];
   const building = studio.buildings.find((b) => b.id === activeBuilding) || studio.buildings[0];
@@ -47,10 +48,10 @@ export const StudiosScreen = memo(function StudiosScreen({
 
   return (
     <div className={"screen-el" + (screen === "studios" ? " active" : "")}>
-      <div style={{ height: 56, display: "flex", alignItems: "center", gap: 10, padding: "0 16px" }}>
-        <button className="hdr-btn" onClick={() => showScreen("sessions")} aria-label="Back"><FiArrowLeft size={20} /></button>
-        <div style={{ flex: 1, fontSize: 22, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", background: "linear-gradient(135deg,var(--gold),var(--lavender))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>LA Studios</div>
-        <div style={{ fontSize: 11, color: "var(--muted)", padding: "4px 8px", borderRadius: 99, background: "rgba(255,255,255,0.06)" }}>Browse · Book</div>
+      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
+        <button className="chat-back" onClick={() => showScreen("sessions")} aria-label="Back"><FiArrowLeft size={20} /></button>
+        <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#E1BEE7,#9C27B0,#FF4081,#E1BEE7,#9C27B0,#E1BEE7)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>LA Studios</div>
+        <div style={{ width: 42 }} />
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 90px" }}>
         {/* Main studio tabs */}
@@ -109,13 +110,32 @@ export const StudiosScreen = memo(function StudiosScreen({
           ))}
         </div>
 
+        {/* Studio rules dropdown (FD has the detailed client guide; others have a short one) */}
+        {studio.rules && (
+          <div style={{ marginTop: 16, padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div role="button" tabIndex={0} aria-expanded={rulesOpen} onClick={() => setRulesOpen(!rulesOpen)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRulesOpen(!rulesOpen); } }} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", color: "var(--text)" }}>
+              <div style={{ fontSize: 18 }}>📖</div>
+              <div style={{ flex: 1, fontSize: 13, fontWeight: 800 }}>Studio Guide — booking, rules & FAQs</div>
+              <div style={{ fontSize: 12, color: rulesOpen ? studio.color[0] : "var(--gold)", fontWeight: 700 }}>{rulesOpen ? "−" : "+"}</div>
+            </div>
+            {rulesOpen && (
+              <div style={{ marginTop: 10 }}>
+                {studio.rules.map((r) => (
+                  <div key={r.title} style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: studio.color[0], marginBottom: 3, display: "flex", alignItems: "center", gap: 5 }}>{r.icon} {r.title}</div>
+                    {r.items.map((it, i) => <div key={i} style={{ fontSize: 11, color: "var(--text2)", lineHeight: 1.6, paddingLeft: 10, position: "relative" }}><span style={{ position: "absolute", left: 0, color: "var(--gold)" }}>·</span>{it}</div>)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Oracle — FD tab only (has scraped knowledge); others show general FAQ */}
         <div style={{ marginTop: 16, padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>🔮 {studio.name} Oracle</div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input className="inp" placeholder={studio.id === "fd" ? "Ask about booking, pricing, what's included…" : "Ask about this studio…"} value={oracleQ} onChange={(e) => setOracleQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") askOracle(); }} style={{ margin: 0, flex: 1 }} />
-            <button className="btn btn-gold" style={{ padding: "8px 14px", borderRadius: 10, fontWeight: 700 }} onClick={askOracle}>Ask</button>
-          </div>
+          <input className="inp" placeholder={studio.id === "fd" ? "Ask about booking, pricing, what's included…" : "Ask about this studio…"} value={oracleQ} onChange={(e) => setOracleQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") askOracle(); }} style={{ margin: 0 }} />
+          <button className="btn btn-gold" style={{ marginTop: 8, padding: "10px 0", borderRadius: 10, fontWeight: 700, fontSize: 12.5 }} onClick={askOracle}>Ask</button>
           {oracleAnswer && <div style={{ marginTop: 10, fontSize: 12, color: "var(--text2)", lineHeight: 1.6, padding: "10px 12px", borderRadius: 10, background: "rgba(255,215,0,0.06)" }}>{oracleAnswer}</div>}
         </div>
       </div>
