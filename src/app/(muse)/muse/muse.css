@@ -971,8 +971,15 @@ img{background-color:#1a0a2e}
    (8/15px padding -> 9/17px, 11px font -> 13px), per Torreé's ask. Explicit
    nowrap + hidden y-overflow so this stays a single row that only ever
    scrolls horizontally, never vertically, regardless of how many tiers
-   exist or how wide the labels get. */
-.quest-filters{display:flex;flex-wrap:nowrap;align-items:center;gap:9px;padding:21px 24px 16px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:1px solid rgba(255,255,255,0.05)}
+   exist or how wide the labels get.
+   Follow-up: the buttons were still getting cropped — root cause was that
+   this row had no flex-shrink:0, so on a short viewport the flex column in
+   .quest-panel could squeeze this row below its own content height, and
+   overflow-y:hidden then clipped the button tops/bottoms instead of the row
+   just staying full height. Added flex-shrink:0 to guarantee it always
+   renders at its natural height, and bumped padding another ~30%
+   (21/16px -> 27/21px) per Torreé's follow-up ask. */
+.quest-filters{display:flex;flex-shrink:0;flex-wrap:nowrap;align-items:center;gap:9px;padding:27px 24px 21px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:1px solid rgba(255,255,255,0.05)}
 .quest-filters::-webkit-scrollbar{display:none}
 .quest-filter-btn{flex-shrink:0;padding:9px 17px;border-radius:99px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap}
 .quest-filter-btn.active{background:rgba(255,215,0,0.1);border-color:rgba(255,215,0,0.3);color:#FFD700}
@@ -991,10 +998,16 @@ img{background-color:#1a0a2e}
 .quest-card-main{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
 .quest-card-top{display:flex;align-items:center;justify-content:space-between}
 .quest-card-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.quest-card-reward{font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0}
-.quest-card-title{font-size:14px;font-weight:700;color:var(--text);line-height:1.3}
-.quest-card-desc{font-size:12px;color:var(--text2);line-height:1.45;margin-top:2px}
-.quest-card-desc-reward{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px}
+.quest-card-reward{font-size:12px;font-weight:700;white-space:nowrap}
+/* Title + description + reward on a single line ("Quick Browse - Swipe 5
+   Profiles: Free Like"), per Torreé's ask — was title on its own row with
+   desc/reward wrapping onto a second. Each part keeps its own text style
+   (bold title, muted desc, colored reward), just inline now instead of
+   stacked. Truncates with an ellipsis (full text still in the title
+   attribute) rather than wrapping to a second line or overflowing the card. */
+.quest-card-title{font-size:14px;font-weight:700;color:var(--text)}
+.quest-card-desc{font-size:12px;color:var(--text2)}
+.quest-card-line{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;line-height:1.3}
 .quest-tier-badge{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,0.06);line-height:1.4}
 .quest-single-status{display:flex;align-items:center;gap:6px}
 .quest-card-sub{display:flex;align-items:center;gap:8px;font-size:11px}
@@ -1071,7 +1084,7 @@ img{background-color:#1a0a2e}
 
 /* ═══ FILTER SCROLL ROWS ═══ */
 .filter-scroll-row{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(255,215,0,0.35) transparent;-ms-overflow-style:none;padding-bottom:6px;position:relative}
-.filter-scroll-row::-webkit-scrollbar{height:4px}
+.filter-scroll-row::-webkit-scrollbar{height:2px}
 .filter-scroll-row::-webkit-scrollbar-track{background:transparent}
 .filter-scroll-row::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.35);border-radius:99px}
 .filter-chip{flex-shrink:0;white-space:nowrap;font-family:inherit}
@@ -1082,7 +1095,7 @@ img{background-color:#1a0a2e}
    at the screen edge with no hint they scroll. The thin gold thumb shows only when
    content overflows, so it's the unobtrusive "this scrolls" cue. */
 .chip-scroll,.conn-tabs,.quest-filters,.pro-skill-row,.quick-replies,.moments-story-row,.moments-tab-row,.album-tabs,.bts-cat-row,.icebreaker-row,.filter-scroll-row{scrollbar-width:thin;scrollbar-color:rgba(255,215,0,0.35) transparent;-ms-overflow-style:none;padding-bottom:10px}
-.chip-scroll::-webkit-scrollbar,.conn-tabs::-webkit-scrollbar,.quest-filters::-webkit-scrollbar,.pro-skill-row::-webkit-scrollbar,.quick-replies::-webkit-scrollbar,.moments-story-row::-webkit-scrollbar,.moments-tab-row::-webkit-scrollbar,.album-tabs::-webkit-scrollbar,.bts-cat-row::-webkit-scrollbar,.icebreaker-row::-webkit-scrollbar{height:4px}
+.chip-scroll::-webkit-scrollbar,.conn-tabs::-webkit-scrollbar,.quest-filters::-webkit-scrollbar,.pro-skill-row::-webkit-scrollbar,.quick-replies::-webkit-scrollbar,.moments-story-row::-webkit-scrollbar,.moments-tab-row::-webkit-scrollbar,.album-tabs::-webkit-scrollbar,.bts-cat-row::-webkit-scrollbar,.icebreaker-row::-webkit-scrollbar{height:2px}
 .chip-scroll::-webkit-scrollbar-track,.conn-tabs::-webkit-scrollbar-track,.quest-filters::-webkit-scrollbar-track,.pro-skill-row::-webkit-scrollbar-track,.quick-replies::-webkit-scrollbar-track,.moments-story-row::-webkit-scrollbar-track,.moments-tab-row::-webkit-scrollbar-track,.album-tabs::-webkit-scrollbar-track,.bts-cat-row::-webkit-scrollbar-track,.icebreaker-row::-webkit-scrollbar-track{background:transparent}
 .chip-scroll::-webkit-scrollbar-thumb,.conn-tabs::-webkit-scrollbar-thumb,.quest-filters::-webkit-scrollbar-thumb,.pro-skill-row::-webkit-scrollbar-thumb,.quick-replies::-webkit-scrollbar-thumb,.moments-story-row::-webkit-scrollbar-thumb,.moments-tab-row::-webkit-scrollbar-thumb,.album-tabs::-webkit-scrollbar-thumb,.bts-cat-row::-webkit-scrollbar-thumb,.icebreaker-row::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.35);border-radius:99px}
 
@@ -1090,7 +1103,7 @@ img{background-color:#1a0a2e}
    visible gold scrollbar on any horizontally-scrolling container. Broad but safe: only
    affects elements that actually overflow horizontally. */
 [style*="overflowX: auto"],[style*="overflow-x: auto"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,215,0,0.35) transparent!important;-ms-overflow-style:none}
-[style*="overflowX: auto"]::-webkit-scrollbar,[style*="overflow-x: auto"]::-webkit-scrollbar{height:4px}
+[style*="overflowX: auto"]::-webkit-scrollbar,[style*="overflow-x: auto"]::-webkit-scrollbar{height:2px}
 [style*="overflowX: auto"]::-webkit-scrollbar-thumb,[style*="overflow-x: auto"]::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.35);border-radius:99px}
 [style*="overflowX: auto"]::-webkit-scrollbar-track,[style*="overflow-x: auto"]::-webkit-scrollbar-track{background:transparent}
 
@@ -1683,7 +1696,7 @@ img{background-color:#1a0a2e}
 
 /* Horizontal-scroll row — styled thin scrollbar as the scroll affordance */
 .conn-tab-sub-scroll{scrollbar-width:thin;scrollbar-color:rgba(255,215,0,0.3) transparent;-ms-overflow-style:none;position:relative}
-.conn-tab-sub-scroll::-webkit-scrollbar{height:4px}
+.conn-tab-sub-scroll::-webkit-scrollbar{height:2px}
 .conn-tab-sub-scroll::-webkit-scrollbar-track{background:transparent}
 .conn-tab-sub-scroll::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.3);border-radius:99px}
 

@@ -179,10 +179,10 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                     {q.icon}
                   </div>
                   <div className="quest-card-main">
-                    <div className="quest-card-title">{q.title}</div>
-                    <div className="quest-card-desc-reward">
-                      {q.description && <span className="quest-card-desc">{q.description}</span>}
-                      <span className="quest-card-reward" style={{ color: tier.color }}>{q.reward_amount > 1 ? `${q.reward_amount}× ` : ""}{q.reward_label}</span>
+                    <div className="quest-card-line" title={`${q.title}${q.description ? " - " + q.description : ""}: ${q.reward_amount > 1 ? `${q.reward_amount}× ` : ""}${q.reward_label}`}>
+                      <span className="quest-card-title">{q.title}</span>
+                      {q.description && <span className="quest-card-desc"> - {q.description}:</span>}
+                      <span className="quest-card-reward" style={{ color: tier.color }}>{" "}{q.reward_amount > 1 ? `${q.reward_amount}× ` : ""}{q.reward_label}</span>
                     </div>
                   </div>
                 </div>

@@ -5,8 +5,9 @@ import { FiArrowLeft, FiBookOpen } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 import { CODEX_ZODIAC, CODEX_CHINESE, CODEX_LIFE_PATH, CODEX_MBTI, CODEX_TYPES, CODEX_AESTHETICS } from "../components/codexData";
+import { MBTI_ICON, LIFE_PATH_ICON } from "../components/traitIcons";
 import * as icons from "react-icons/gi";
-import { FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiHeart, FiTarget, FiCpu, FiTrendingUp, FiEdit3, FiEye, FiFeather, FiSmile, FiCheckSquare, FiShield, FiPlay, FiTool, FiMusic, FiFlag, FiCompass, FiSearch, FiGlobe, FiLayers, FiAward } from "react-icons/fi";
+import { FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiHeart, FiTarget } from "react-icons/fi";
 
 export interface CodexScreenProps {
   screen: Screen;
@@ -17,28 +18,27 @@ export interface CodexScreenProps {
 
 // ── BADGE MASTER GLOSSARY ────────────────────────────────────────────────────
 const GI = icons as Record<string, any>;
+// MBTI and Life Path icons come from the shared traitIcons module (single
+// source of truth — DiscoverScreen and ProfileScreen use the same maps) so
+// all three stay consistent instead of drifting. Life Path is re-keyed
+// "L1".."L33" here to match this glossary's own icon-key convention.
 const FI: Record<string, any> = {
   FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiBookOpen, FiHeart, FiTarget,
-  // MBTI — one glyph per type
-  INTJ: FiTarget ?? null, INTP: FiCpu ?? null, ENTJ: FiTrendingUp ?? null, ENTP: FiEdit3 ?? null,
-  INFJ: FiEye ?? null, INFP: FiFeather ?? null, ENFJ: FiUsers ?? null, ENFP: FiSmile ?? null,
-  ISTJ: FiCheckSquare ?? null, ISFJ: FiShield ?? null, ESTJ: FiBriefcase ?? null, ESFJ: FiHeart ?? null,
-  ESTP: FiPlay ?? null, ISTP: FiTool ?? null, ESFP: FiMusic ?? null,
-  // Life Path — by archetype
-  L1: FiFlag ?? null, L2: FiUsers ?? null, L3: FiFeather ?? null, L4: FiTool ?? null,
-  L5: FiCompass ?? null, L6: FiHeart ?? null, L7: FiSearch ?? null, L8: FiZap ?? null,
-  L9: FiGlobe ?? null, L11: FiEye ?? null, L22: FiLayers ?? null, L33: FiAward ?? null,
+  ...MBTI_ICON,
+  ...Object.fromEntries(Object.entries(LIFE_PATH_ICON).map(([n, Icon]) => [`L${n}`, Icon])),
 };
 const LP_ICONS: Record<number, string> = { 1: "L1", 2: "L2", 3: "L3", 4: "L4", 5: "L5", 6: "L6", 7: "L7", 8: "L8", 9: "L9", 11: "L11", 22: "L22", 33: "L33" };
+// Was gated on the icon *name string* starting with "Gi"/"Fi" (react-icons'
+// own component-naming convention, e.g. "FiTarget"), but MBTI codes ("INTJ")
+// and Life Path keys ("L7") don't start with either prefix — so those two
+// glossary sections silently fell through to the plain-text fallback and
+// never rendered an icon at all. Just look the key up in both maps directly;
+// a missing key still safely falls through to the text fallback below.
 function IconGlyph({ name, size = 20 }: { name: string; size?: number }) {
-  if (name.startsWith("Gi")) {
-    const C = GI[name];
-    if (C) return <C size={size} />;
-  }
-  if (name.startsWith("Fi")) {
-    const C = FI[name];
-    if (C) return <C size={size} />;
-  }
+  const G = GI[name];
+  if (G) return <G size={size} />;
+  const F = FI[name];
+  if (F) return <F size={size} />;
   return <>{name}</>;
 }
 

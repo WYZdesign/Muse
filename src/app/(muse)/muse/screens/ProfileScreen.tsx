@@ -5,6 +5,7 @@ import { getReferralUrl } from "@/lib/urls";
 import Nav from "../components/Nav";
 import StreakWidget from "../components/StreakWidget";
 import type { Screen, Match } from "../components/types";
+import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 
 export interface ProfileScreenProps {
   screen: Screen;
@@ -229,10 +230,10 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div className="section">
           <div className="section-title">Personality</div>
           <div className="tag-row">
-            {obData.zodiac && <span className="tag-pill">♈ {obData.zodiac}</span>}
-            {obData.chinese && <span className="tag-pill">🐉 {obData.chinese}</span>}
-            {obData.mbti && <span className="tag-pill">🧠 {obData.mbti}</span>}
-            {obData.lifePath && <span className="tag-pill">🔮 Path {obData.lifePath}</span>}
+            {obData.zodiac && <span className="tag-pill">{ZODIAC_GLYPH[obData.zodiac] || "✦"} {obData.zodiac}</span>}
+            {obData.chinese && <span className="tag-pill" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><ChineseZodiacIcon animal={obData.chinese} size={12} /> {obData.chinese}</span>}
+            {obData.mbti && <span className="tag-pill" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><MbtiIcon code={obData.mbti} size={12} /> {obData.mbti}</span>}
+            {obData.lifePath && <span className="tag-pill" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><LifePathIcon n={Number(obData.lifePath)} size={12} /> Path {obData.lifePath}</span>}
             {!obData.zodiac && !obData.chinese && !obData.mbti && !obData.lifePath && <span className="tag-pill" style={{ opacity: 0.5 }}>Add personality traits</span>}
           </div>
         </div>

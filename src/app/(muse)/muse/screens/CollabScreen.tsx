@@ -1,12 +1,13 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useEffect } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiPlus } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen, Brief } from "../components/types";
 import { BRIEFS } from "../components/types";
 import { viewerSide } from "@/lib/role";
+import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 
 export interface CollabScreenProps {
   screen: Screen;
@@ -82,6 +83,28 @@ export const CollabScreen = memo(function CollabScreen({
       showToast("Brief posted!");
     } catch { showToast("Failed to post brief"); }
   };
+
+  // Collab had no tilt/parallax at all — every other primary screen (Discover's
+  // swipe card, Network's pro cards, Muses' grid) gets this ambient motion, so
+  // the page read as flat/dead next to the rest of the app. Brief cards don't
+  // have a big hero photo (just a small round avatar), so this applies the
+  // lighter container-level float used on Feed/BTS/Community rather than the
+  // full 3D image-tilt treatment, which would look wrong on a circular avatar.
+  useEffect(() => {
+    if (screen !== "briefs") return;
+    ensureDeviceTiltActive();
+    let raf = 0;
+    const tick = () => {
+      const { x, y } = getDeviceTilt();
+      document.querySelectorAll<HTMLElement>(".brief-card").forEach((card) => {
+        card.style.transform = `translate(${x * 8}px, ${y * 8}px)`;
+      });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [screen]);
+
   return (
     <div className={"screen-el" + (screen === "briefs" ? " active" : "")}>
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
