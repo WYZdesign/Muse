@@ -890,3 +890,33 @@ Torreé got a real Chrome tab connected for me this round (previous attempts wer
 - **Discover radial collapse**: opened and closed cleanly, no stuck buttons, no visual glitches, all five actions (rewind/nope/super/like/note) fan out correctly around the center button. I could not confirm the exact millisecond stagger *order* of the collapse from static screenshots — that needs frame-by-frame video or eyes on the live animation, not something a screenshot tool can settle. Functionally it looks right.
 
 Bonus: this same session let me confirm my own personality-trait-icon fix from the last batch is actually working live, not just passing tsc — pulled up a real Discover profile card and its badges show a real Libra glyph, a distinct MBTI icon per type (not the old generic brain emoji), a distinct Life Path icon, and a distinct Chinese-zodiac icon (a Snake-sign profile correctly does NOT show the old hardcoded dragon). Screenshots would be redundant to attach here since Torreé watched this happen live in their own tab.
+
+## Claude — quick-win fixes + final pre-beta competitive audit kickoff
+
+Two bugs Torreé caught, fixed before anything else per their ask:
+
+- **"Full Moon" Codex badge rendered as literal text.** Root cause: `icon: "GiFullMoon"` in `CodexScreen.tsx` — that icon doesn't exist in `react-icons/gi` (checked the package's own type defs), so `IconGlyph`'s lookup silently fell through to its plain-text fallback and rendered the string `"GiFullMoon"` instead of a glyph. Swapped to `"GiMoon"`, the real icon in the package closest to the badge's actual concept. Double-checked every other `Gi`-prefixed icon name used in that file and in `codexData.ts` (crown, butterfly, paintbrush, all 12 Chinese-zodiac icons) — all of those are valid, only Full Moon was broken.
+- **Scrollbar arrow buttons on horizontal filter rows.** Desktop WebKit (Chrome/Edge on Windows) draws small clickable arrow buttons at each end of a `overflow-x` scrollbar by default. None of the existing `muse.css` rules touched `::-webkit-scrollbar-button` (only `-thumb`/`-track`/base), so the arrows were showing on every filter/tab scroll row. Added `display:none;width:0;height:0` for that pseudo-element across all the relevant selector groups.
+
+Commit `0fcae13`. Verified: `tsc` clean, 251/251 tests passing.
+
+**Then a second, smaller round of alignment/scroll asks**, also shipped:
+
+- Centered the horizontal filter-chip row under the page title on Feed (All/Photos/Text/Videos/BTS), Collab (All/TFP/Paid/Open Call/Concept), and Sessions (Browse/My Bookings/Requests) — all three were left-hugging under their headers, now `justifyContent:"center"`.
+- In the Settings side panel, centered the section title texts (Discovery Preferences, Show Me, Help & Support) — but **left Age Range and Max Distance alone** per Torreé's explicit follow-up ("those can stay left aligned").
+- "Show Me" gender pills (All/Women/Men/Non-binary) now scroll horizontally on one line instead of wrapping to a second row (reused the existing `.filter-scroll-row` class instead of `flexWrap:"wrap"`).
+
+Commit `cb34cc0`. Verified: `tsc` clean, 251/251 tests passing. Both commits delivered to `claude-work` on Torreé's device via the usual bundle workflow.
+
+**Final pre-closed-beta competitive audit — now underway, visual this time.** Torreé asked for the same competitor/adjacent-site audit as before, but visual (not text-scrape) this time, cross-referenced against Muse's own live frontend, covering UI / accessibility / UX / retention / design / style / performance / formatting / layout / organization-sorting / color-coordination / immersion / dynamic-interaction / overall-visual-experience — each as a full category → subcategory → sub-subcategory breakdown. Chose "full list, multiple sessions" pacing rather than compressing it.
+
+Built a persistent tracker for it so progress survives across sessions instead of re-deriving the taxonomy each time: **Beta Readiness Audit**, a published Artifact with a live `db` backing it — 14 categories × subcategories × sub-subcategories, 36 competitor/adjacent sites across 8 tiers (direct dating, social & content, professional/portfolio, freelance/task marketplace, booking/scheduling, creative-booking niche, creator monetization, gamification/habit design), each site tracked `not_started → in_progress → done/blocked`, findings tagged strength/gap/idea and linked back to a taxonomy category. Torreé opens a fresh Chrome-extension tab per site and switches it to mobile view via the inspector before each audit, per their explicit process.
+
+Session 1 results: Tinder/Bumble/Hinge are blocked outright by the browser tool's own safety restrictions on dating-site domains — marked `blocked` in the tracker, not skipped silently. Fully audited so far: **Instagram, TikTok, X, Facebook, Reddit, Nextdoor, Discord** — 19 findings logged. Highlights worth flagging to wyzmind directly:
+
+- Muse's Feed filter chips (All/Photos/Text/Videos/BTS) are a **strength**, not a gap — Instagram's main feed has no content-type filtering at all, it leans on a single algorithmic stream. Don't remove Muse's filters to "match" IG.
+- Nextdoor's first-run onboarding checklist (icon + title + one-line benefit + chevron + social-proof copy like "118 neighbors added a profile photo") is a strong pattern worth adapting for Muse's own empty states, instead of a blank feed or generic illustration.
+- Facebook's permanently-docked "Open app" bar eating real screen space, and X's floating action rail overlapping its own compose FAB mid-scroll, are both logged as **negative** examples — cautionary, not things to imitate.
+- Reddit shows NSFW content with only a small text tag and no blur/gate on mobile web — logged as competitive context only, explicitly **not** a recommendation to loosen Muse's existing NSFW blur/reveal gating, which stays as-is.
+
+27 sites still queued (rest of Social & content: Slack; then Professional & portfolio, Freelance & task marketplace, Booking & scheduling, Creative-booking niche, Creator monetization, Gamification & habit design). Tracker link is with Torreé. wyzmind: no code changes came out of the audit yet, this is still the observation phase — flagging now per Torreé's request that we start trading handovers back and forth on this (review each other's work, suggest, move to next phase) rather than each running solo until "done."
