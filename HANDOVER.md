@@ -326,6 +326,26 @@ a separate task but because auditing this code surfaced them:
 - A UI bug where focus (e.g., while typing in a popup) could get yanked
   away unexpectedly. Fixed.
 
+## Latest batch (Torreé's list: Feed/Sessions/Muses/notifications, then BTS/Muses/map/terminology)
+
+Two rounds of small, specific fixes Torreé asked for directly:
+
+- Feed: the box/border around Like, Comment, Share, Save is gone — just the icon and count now.
+- Sessions: the studios button now says "Browse LA Studios."
+- Muses page: the outer ring around someone's photo now matches the color of the inner ring instead of always being the same default color, and there's a visible gap between the two rings instead of them touching.
+- The notification panel (bell icon): "Your Activity" now sits in the one header bar at the top, centered next to the single back arrow — there used to be a second, duplicate header further down with its own back button that (confusingly) closed the whole menu instead of going back one screen.
+- The notifications list bug ("no notifications, then 3 confusing items with a blank 'A' avatar appear") was a real backend bug: the database only stored *who* sent a notification as an internal ID, never a name or photo, so the screen had nothing to show and fell back to a blank circle. Fixed by resolving that ID to a real name/photo before sending it to the app. Separately, the Unread tab was silently sending an extra filter that couldn't match anything, which is why it behaved differently from every other tab — also fixed.
+- BTS page: removed a duplicate "views + engagement" stat row that was showing the same numbers twice on every card.
+- BTS page: the "•••" report button that sat on top of each story circle (covering part of the photo) is gone. Reporting is now a press-and-hold on the circle itself; on a desktop/mouse, hovering reveals a small report button on the outer edge of the circle instead of sitting on top of it.
+- Muses grid view: photos were badly cropped because a card's height was set to be almost 3x its width by mistake (a stray number in the styling). Fixed to a normal portrait photo ratio.
+- The "who's nearby" map used to drop a pin for every individual person with a popup showing their name — effectively a browsable list of who's in which city. Changed to an anonymous count per city (e.g. "Los Angeles: 12 creatives") with no names attached, so it's useful without exposing anyone's individual presence.
+- Wording pass: reworded the parts of the app that read like a dating app rather than a professional creative network — "It's a Match!" → "It's a Connection!", "felt the spark" → "ready to collaborate," heart icons on the like/match buttons → a star, and the "Partner" connection type (previously described as "a deeper romantic... partnership") now just says "a deeper, long-term creative-life partnership." The underlying swipe/match mechanic itself wasn't touched, just how it's described and pictured.
+
+**Two things from that list I did not fake, and want to flag honestly instead:**
+
+1. **Studio addresses on the map.** Torreé asked for the map to show addresses for the studios being advertised on the Collab page instead of user locations. There's no real street address or coordinates stored anywhere in the app for any studio (FD Studios' own buildings included) — only phone numbers and building nicknames like "Hill Building" or "Art Building." I'm not willing to guess real business addresses. The map code now has a clearly-marked spot ready to plot studio pins the moment real coordinates are supplied for each building — it's a one-line data fill after that, not a rebuild.
+2. **Pinning actual BTS moments to the map (the Snapchat-style idea).** This is a good idea but a genuinely bigger feature than a quick fix: today a BTS moment has no location attached to it at all in the database, so it would need a database change (a place to store where a moment was taken), a permission prompt asking someone to share their location when they post, and new map code to plot moments instead of (or alongside) people. Worth scoping as its own piece of work rather than folding into this batch.
+
 ## How work gets delivered
 
 I can't push code directly to your repository — that path is blocked on my
