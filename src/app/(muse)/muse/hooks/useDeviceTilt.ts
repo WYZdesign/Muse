@@ -54,12 +54,6 @@ function onOrientation(e: DeviceOrientationEvent) {
   raw = { x: g, y: b };
 }
 
-function onMouseFallback(e: MouseEvent) {
-  // Desktop/no-sensor fallback so the same effect still reads as "alive" on
-  // a laptop trackpad — mirrors the marketing landing page's own pattern.
-  raw = { x: (e.clientX / window.innerWidth - 0.5) * 2, y: (e.clientY / window.innerHeight - 0.5) * 2 };
-}
-
 function smoothTick() {
   smoothed.x += (raw.x - smoothed.x) * 0.06;
   smoothed.y += (raw.y - smoothed.y) * 0.06;
@@ -72,10 +66,10 @@ export function ensureDeviceTiltActive() {
   reducedMotion = prefersReducedMotion();
   if (reducedMotion) return; // never attach listeners; getDeviceTilt() stays {0,0}
   started = true;
+  // Mobile-only: only attach the gyroscope listener. Desktop gets no motion —
+  // no mouse-move fallback, no parallax, no ambient drift. Consumers reading
+  // getDeviceTilt() on desktop will always receive {0,0}.
   window.addEventListener("deviceorientation", onOrientation, { passive: true });
-  if (window.matchMedia?.("(hover: hover)").matches) {
-    window.addEventListener("mousemove", onMouseFallback, { passive: true });
-  }
   smoothRaf = requestAnimationFrame(smoothTick);
 }
 
