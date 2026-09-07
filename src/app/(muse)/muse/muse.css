@@ -1087,6 +1087,10 @@ img{background-color:#1a0a2e}
 .filter-scroll-row::-webkit-scrollbar{height:2px}
 .filter-scroll-row::-webkit-scrollbar-track{background:transparent}
 .filter-scroll-row::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.35);border-radius:99px}
+/* Desktop WebKit (Chrome/Edge on Windows) draws small clickable arrow
+   buttons at each end of a scrollbar by default — not wanted on these thin
+   filter-row scrollbars, which are just an unobtrusive "this scrolls" cue. */
+.filter-scroll-row::-webkit-scrollbar-button{display:none;width:0;height:0}
 .filter-chip{flex-shrink:0;white-space:nowrap;font-family:inherit}
 
 /* ═══ H-SCROLL AFFORDANCE — thin visible gold scrollbar on every horizontal row ═══
@@ -1098,6 +1102,7 @@ img{background-color:#1a0a2e}
 .chip-scroll::-webkit-scrollbar,.conn-tabs::-webkit-scrollbar,.quest-filters::-webkit-scrollbar,.pro-skill-row::-webkit-scrollbar,.quick-replies::-webkit-scrollbar,.moments-story-row::-webkit-scrollbar,.moments-tab-row::-webkit-scrollbar,.album-tabs::-webkit-scrollbar,.bts-cat-row::-webkit-scrollbar,.icebreaker-row::-webkit-scrollbar{height:2px}
 .chip-scroll::-webkit-scrollbar-track,.conn-tabs::-webkit-scrollbar-track,.quest-filters::-webkit-scrollbar-track,.pro-skill-row::-webkit-scrollbar-track,.quick-replies::-webkit-scrollbar-track,.moments-story-row::-webkit-scrollbar-track,.moments-tab-row::-webkit-scrollbar-track,.album-tabs::-webkit-scrollbar-track,.bts-cat-row::-webkit-scrollbar-track,.icebreaker-row::-webkit-scrollbar-track{background:transparent}
 .chip-scroll::-webkit-scrollbar-thumb,.conn-tabs::-webkit-scrollbar-thumb,.quest-filters::-webkit-scrollbar-thumb,.pro-skill-row::-webkit-scrollbar-thumb,.quick-replies::-webkit-scrollbar-thumb,.moments-story-row::-webkit-scrollbar-thumb,.moments-tab-row::-webkit-scrollbar-thumb,.album-tabs::-webkit-scrollbar-thumb,.bts-cat-row::-webkit-scrollbar-thumb,.icebreaker-row::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.35);border-radius:99px}
+.chip-scroll::-webkit-scrollbar-button,.conn-tabs::-webkit-scrollbar-button,.quest-filters::-webkit-scrollbar-button,.pro-skill-row::-webkit-scrollbar-button,.quick-replies::-webkit-scrollbar-button,.moments-story-row::-webkit-scrollbar-button,.moments-tab-row::-webkit-scrollbar-button,.album-tabs::-webkit-scrollbar-button,.bts-cat-row::-webkit-scrollbar-button,.icebreaker-row::-webkit-scrollbar-button{display:none;width:0;height:0}
 
 /* Rows that set inline scrollbar-width:none beat the class rules above, so force a thin
    visible gold scrollbar on any horizontally-scrolling container. Broad but safe: only
@@ -1106,6 +1111,7 @@ img{background-color:#1a0a2e}
 [style*="overflowX: auto"]::-webkit-scrollbar,[style*="overflow-x: auto"]::-webkit-scrollbar{height:2px}
 [style*="overflowX: auto"]::-webkit-scrollbar-thumb,[style*="overflow-x: auto"]::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.35);border-radius:99px}
 [style*="overflowX: auto"]::-webkit-scrollbar-track,[style*="overflow-x: auto"]::-webkit-scrollbar-track{background:transparent}
+[style*="overflowX: auto"]::-webkit-scrollbar-button,[style*="overflow-x: auto"]::-webkit-scrollbar-button{display:none;width:0;height:0}
 
 /* ═══ DISCOVER CARD HERO CHIPS ═══ */
 .card-hero-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;pointer-events:none}
@@ -1699,6 +1705,7 @@ img{background-color:#1a0a2e}
 .conn-tab-sub-scroll::-webkit-scrollbar{height:2px}
 .conn-tab-sub-scroll::-webkit-scrollbar-track{background:transparent}
 .conn-tab-sub-scroll::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.3);border-radius:99px}
+.conn-tab-sub-scroll::-webkit-scrollbar-button{display:none;width:0;height:0}
 
 
 .feed-avatar{box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.8px solid transparent;background-color:#1a0a2e;background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(var(--grad-angle,135deg),#533483,#e94560,#ffa07a,#ffd93d);background-origin:border-box;background-clip:padding-box,border-box;flex-shrink:0;animation:avatarEccentric 8s ease-in-out infinite}
