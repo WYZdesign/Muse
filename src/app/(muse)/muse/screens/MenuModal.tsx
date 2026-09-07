@@ -52,7 +52,13 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
     if (!authFetch || notifLoadingRef.current) return;
     notifLoadingRef.current = true;
     try {
-      const res = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-notifications", limit: 30, offset: append ? notifOffset : 0, unreadOnly: notifFilter === "unread", type: notifFilter === "all" ? undefined : notifFilter }) });
+      // "unread" is a read-state meta-filter, not a notification `type` — sending it as
+      // type: "unread" (as this used to) filtered the query down to rows whose real
+      // `type` column literally equals the string "unread" (none), which is why the
+      // Unread tab silently returned an empty/different list from every other tab.
+      // Only forward `type` for actual category filters (match/message/booking/etc).
+      const isCategoryFilter = notifFilter !== "all" && notifFilter !== "unread";
+      const res = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-notifications", limit: 30, offset: append ? notifOffset : 0, unreadOnly: notifFilter === "unread", type: isCategoryFilter ? notifFilter : undefined }) });
       const data = await res.json();
       if (data.success) {
         const newNotifs = data.notifications || [];
@@ -92,11 +98,9 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
 
   return (
     <>
-      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: "6px 18px 10px" }}>
-        <button className="chat-back" onClick={() => setShowHamburger(false)} aria-label="Back"><FiArrowLeft size={20} /></button>
-        <div className="logo-link" style={{ fontSize: 24, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", backgroundImage: "linear-gradient(90deg,#CE93D8,#B388FF,#90CAF9,#CE93D8,#B388FF,#CE93D8)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite" }}>Your Activity</div>
-        <div style={{ width: 42 }} />
-      </div>
+      {/* Own header removed — "Your Activity" now renders in the hamburger panel's
+          single top bar (centered next to its one back arrow) instead of duplicating
+          a second header+back-button combo here, further down the scrolling body. */}
       <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} onTap={onStreakTap} />
       <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
         {tabBtn("notif", "Notifications")}
@@ -407,6 +411,14 @@ export const MenuModal = memo(function MenuModal({
         )}
         {!hamburgerScreen && <div className="hamburger-menu-title">Menu</div>}
         {(hamburgerScreen === "settings" || hamburgerScreen === "profile") && <div className="hamburger-menu-title">{hamburgerScreen === "settings" ? "Settings" : "Your Profile"}</div>}
+        {/* Activity used to render its own separate .hdr bar (with a second back
+            button that closed the whole menu instead of returning to it) further down
+            inside the scrolling body — a duplicate, misplaced header. Now it uses the
+            same top bar every other hamburger sub-screen uses, centered next to the
+            existing back arrow, just like Settings/Your Profile above. */}
+        {hamburgerScreen === "activity" && (
+          <div className="hamburger-menu-title" style={{ backgroundImage: "linear-gradient(90deg,#CE93D8,#B388FF,#90CAF9,#CE93D8,#B388FF,#CE93D8)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", animation: "lavaFlow 7s ease-in-out infinite" }}>Your Activity</div>
+        )}
         {!hamburgerScreen ? (
           <>
             {[

@@ -14,12 +14,22 @@ import type { ActionContext } from "./shared";
 
 export async function feedbackGetNotifications({ sb, profile, rest }: ActionContext) {
   const { limit = 50, offset = 0, unreadOnly = false, type } = rest;
-  let query = sb.from("muse_notifications").select("*").eq("user_id", profile.id).order("created_at", { ascending: false }).range(offset, offset + limit - 1);
+  // Join from_id -> the sender's real name/avatar. The table only stores from_id
+  // (a UUID), but the frontend renders a.from/a.avatar directly — without this join
+  // every notification silently had no name and fell back to a blank "letter A"
+  // avatar (NotificationAvatar's default when name is missing), regardless of who
+  // actually sent it. That was the "confusing 3 items with a blank A avatar" bug.
+  let query = sb.from("muse_notifications").select("*, from_id(name, avatar)").eq("user_id", profile.id).order("created_at", { ascending: false }).range(offset, offset + limit - 1);
   if (unreadOnly) query = query.eq("read", false);
   if (type) query = query.eq("type", type);
   const { data, error } = await query;
   if (error) return safeServerError(error, "notifications fetch");
-  return NextResponse.json({ success: true, notifications: data || [] });
+  const notifications = (data || []).map((n: any) => ({
+    ...n,
+    from: n.from_id?.name || "Muse",
+    avatar: n.from_id?.avatar || "",
+  }));
+  return NextResponse.json({ success: true, notifications });
 }
 
 export async function feedbackMarkAllRead({ sb, profile }: ActionContext) {
