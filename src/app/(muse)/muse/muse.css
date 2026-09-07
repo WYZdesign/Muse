@@ -1522,14 +1522,14 @@ img{background-color:#1a0a2e}
 .match-radial-btn.btn-super{transition-delay:.06s}
 .match-radial-btn.btn-like{transition-delay:.09s}
 .match-radial-btn.btn-note{transition-delay:.12s}
-/* Collapse reverses the expand: keep the staggered delays so buttons fold back in
-   the reverse order with the same cubic-bezier (mirrors the expand animation). */
-.match-radial:not(.open) .match-radial-btn{transition-delay:.15s}
-.match-radial:not(.open) .match-radial-btn.btn-note{transition-delay:.12s}
-.match-radial:not(.open) .match-radial-btn.btn-like{transition-delay:.09s}
+/* Collapse reverses the expand: fold back in reverse order with the same staggered
+   timing and cubic-bezier as expansion (last-out folds first). */
+.match-radial:not(.open) .match-radial-btn{transition-delay:0ms}
+.match-radial:not(.open) .match-radial-btn.btn-note{transition-delay:0ms}
+.match-radial:not(.open) .match-radial-btn.btn-like{transition-delay:.03s}
 .match-radial:not(.open) .match-radial-btn.btn-super{transition-delay:.06s}
-.match-radial:not(.open) .match-radial-btn.btn-nope{transition-delay:.03s}
-.match-radial:not(.open) .match-radial-btn.btn-rewind{transition-delay:0ms}
+.match-radial:not(.open) .match-radial-btn.btn-nope{transition-delay:.09s}
+.match-radial:not(.open) .match-radial-btn.btn-rewind{transition-delay:.12s}
 .match-radial.open .match-radial-btn{opacity:1;transform:scale(1)}
 /* Individually bobbed — each button floats at its own slow, gradual rhythm so they
    don't move together. Different durations + delays = organic, staggered motion. */
