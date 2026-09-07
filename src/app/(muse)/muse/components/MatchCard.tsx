@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import Image from "next/image";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon } from "./traitIcons";
 
@@ -56,6 +56,16 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
   const orbitVariant = ORBIT_VARIANTS[ringIdx] || ORBIT_VARIANTS[0];
   const orbitSpeed = ORBIT_SPEEDS[parseInt(mid, 10) % ORBIT_SPEEDS.length] || 7;
 
+  // NSFW gating for matched-partner avatars (previously missing entirely —
+  // see get.ts's "matches" handler, the actual enforcement point). By the
+  // time an nsfw avatar URL reaches this component the viewer is already
+  // server-verified (get.ts strips it to "" otherwise, below), so this
+  // reveal state is a consent gate on top of that, matching Discover's and
+  // Chat's existing blur-then-reveal treatment of nsfw media.
+  const [revealed, setRevealed] = useState(false);
+  const isNsfwLocked = !!m.nsfw && !m.img; // stripped server-side: viewer isn't verified
+  const isNsfwBlurred = !!m.nsfw && !!m.img && !revealed;
+
   return (
     <div
       data-mid={mid}
@@ -68,27 +78,55 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
       <div className="match-avatar-wrap" style={isList ? { position: "relative", width: AVATAR_SIZE, height: AVATAR_SIZE, flexShrink: 0 } : undefined}>
         {isList && <div className={`avatar-orbit orbit-full ${orbitVariant}`} style={{ "--orbit-size": `${ORBIT_SIZE}px`, animationDuration: `${orbitSpeed}s` } as React.CSSProperties} />}
         {isList && <div className={`profile-ring ${ringVariant}`} style={{ width: RING_SIZE, height: RING_SIZE, animationDuration: `${ringSpeed}s` }} />}
-        {isList ? (
-          <Image
-            loading="lazy"
-            src={m.img}
-            alt={m.name}
-            width={AVATAR_SIZE}
-            height={AVATAR_SIZE}
-            className="match-avatar"
-            style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: "50%", objectFit: "cover", border: "2.5px solid transparent", background: "#1a0a2e", position: "relative", zIndex: 1 }}
-            onError={handleImgError}
-          />
+        {isNsfwLocked ? (
+          <div
+            style={isList
+              ? { width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: "50%", background: "#1a0a2e", position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#ff8a80", flexDirection: "column", gap: 2 }
+              : { position: "absolute", inset: 0, background: "#1a0a2e", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: "#ff8a80", flexDirection: "column", gap: 3 }}
+            title="Verify your identity to see this photo"
+          >
+            <span>🔒</span><span style={{ fontSize: 9 }}>18+</span>
+          </div>
+        ) : isList ? (
+          <div
+            role={isNsfwBlurred ? "button" : undefined}
+            tabIndex={isNsfwBlurred ? 0 : undefined}
+            onClick={isNsfwBlurred ? (e) => { e.stopPropagation(); setRevealed(true); } : undefined}
+            onKeyDown={isNsfwBlurred ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setRevealed(true); } } : undefined}
+            style={{ position: "relative", width: AVATAR_SIZE, height: AVATAR_SIZE, zIndex: 1, cursor: isNsfwBlurred ? "pointer" : undefined }}
+          >
+            <Image
+              loading="lazy"
+              src={m.img}
+              alt={m.name}
+              width={AVATAR_SIZE}
+              height={AVATAR_SIZE}
+              className="match-avatar"
+              style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: "50%", objectFit: "cover", border: "2.5px solid transparent", background: "#1a0a2e", filter: isNsfwBlurred ? "blur(10px)" : undefined, transition: "filter .2s" }}
+              onError={handleImgError}
+            />
+            {isNsfwBlurred && <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "#fff", textAlign: "center" }}>Tap to reveal</span>}
+          </div>
         ) : (
-          <Image
-            loading="lazy"
-            src={m.img}
-            alt={m.name}
-            fill
-            sizes="(max-width: 600px) 50vw, 300px"
-            className="match-avatar"
-            onError={handleImgError}
-          />
+          <div
+            role={isNsfwBlurred ? "button" : undefined}
+            tabIndex={isNsfwBlurred ? 0 : undefined}
+            onClick={isNsfwBlurred ? (e) => { e.stopPropagation(); setRevealed(true); } : undefined}
+            onKeyDown={isNsfwBlurred ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setRevealed(true); } } : undefined}
+            style={{ position: "absolute", inset: 0, cursor: isNsfwBlurred ? "pointer" : undefined }}
+          >
+            <Image
+              loading="lazy"
+              src={m.img}
+              alt={m.name}
+              fill
+              sizes="(max-width: 600px) 50vw, 300px"
+              className="match-avatar"
+              style={{ filter: isNsfwBlurred ? "blur(14px)" : undefined, transition: "filter .2s" }}
+              onError={handleImgError}
+            />
+            {isNsfwBlurred && <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", textAlign: "center", background: "rgba(0,0,0,0.15)" }}>Tap to reveal</span>}
+          </div>
         )}
         {m.online && <div className="online-dot" style={{ position: "absolute", bottom: 2, right: 2, zIndex: 2 }} />}
       </div>

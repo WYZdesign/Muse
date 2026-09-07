@@ -5,9 +5,10 @@ vi.mock("@/lib/request-safety", () => ({ sanitizeText: (s: string, n: number) =>
 vi.mock("@/lib/http", () => ({ safeServerError: (e: any) => ({ error: e?.message || "err" }) }));
 
 const state: any = { profiles: [], nsfw: false };
+(globalThis as any).__authUser = null;
 vi.mock("@/lib/supabase", () => ({
   getServiceClient: () => (globalThis as any).__sbMock,
-  supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
+  supabase: { auth: { getUser: async () => ({ data: { user: (globalThis as any).__authUser } }) } },
 }));
 
 import { GET } from "@/lib/muse-actions/get";
@@ -29,7 +30,7 @@ function req(type: string, token = "", extra: Record<string, string> = {}) {
   } as any;
 }
 
-beforeEach(() => { vi.clearAllMocks(); });
+beforeEach(() => { vi.clearAllMocks(); (globalThis as any).__authUser = null; (globalThis as any).__sbMock = { from: () => makeQuery() }; });
 
 describe("GET dispatcher (read-only)", () => {
   it("returns a shaped profiles response for an unauthenticated request", async () => {
@@ -64,5 +65,74 @@ describe("GET dispatcher (read-only)", () => {
     const body = await r.json();
     expect(body.members.map((m: any) => m.role)).toEqual(["admin", "moderator", "member"]);
     (globalThis as any).__sbMock = { from: () => makeQuery() };
+  });
+});
+
+// "matches" previously had NO nsfw gating at all — a matched partner's
+// avatar came through unconditionally regardless of the viewer's
+// verification, unlike "profiles" (Discover) right above it in get.ts.
+// These lock in the fix: same viewerVerified computation, same strip
+// pattern, now applied to target_id.avatar too.
+describe("GET matches — nsfw gating on the matched partner's avatar", () => {
+  // Two muse_profiles lookups happen in order for an authed "matches"
+  // request: (1) resolve profileId from auth_id, (2) read age_verified/
+  // age_verified_at for that profileId. muse_matches is the actual list.
+  function mockAuthedMatches(verifyRow: any, matchesRows: any[]) {
+    let profilesCallCount = 0;
+    (globalThis as any).__authUser = { id: "auth-1" };
+    (globalThis as any).__sbMock = {
+      from: (table: string) => {
+        if (table === "muse_profiles") {
+          profilesCallCount++;
+          const row = profilesCallCount === 1 ? { id: "profile-1" } : verifyRow;
+          return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: row }) }) }) };
+        }
+        if (table === "muse_matches") {
+          return { select: () => ({ eq: async () => ({ data: matchesRows }) }) };
+        }
+        return makeQuery();
+      },
+    };
+  }
+
+  it("strips the avatar for an nsfw match when the viewer is not verified", async () => {
+    mockAuthedMatches(
+      { age_verified: false, age_verified_at: null },
+      [{ id: "m1", user_id: "profile-1", target_id: { id: "t1", name: "Nova", nsfw: true, avatar: "https://x/nsfw.jpg" } }],
+    );
+    const r = await GET(req("matches", "tok"));
+    const body = await r.json();
+    expect(body.matches[0].target_id.avatar).toBeUndefined();
+  });
+
+  it("strips the avatar when the viewer WAS verified but it has expired", async () => {
+    const staleDate = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString(); // well past the re-verification window
+    mockAuthedMatches(
+      { age_verified: true, age_verified_at: staleDate },
+      [{ id: "m1", user_id: "profile-1", target_id: { id: "t1", name: "Nova", nsfw: true, avatar: "https://x/nsfw.jpg" } }],
+    );
+    const r = await GET(req("matches", "tok"));
+    const body = await r.json();
+    expect(body.matches[0].target_id.avatar).toBeUndefined();
+  });
+
+  it("keeps the avatar for an nsfw match when the viewer is currently verified", async () => {
+    mockAuthedMatches(
+      { age_verified: true, age_verified_at: new Date().toISOString() },
+      [{ id: "m1", user_id: "profile-1", target_id: { id: "t1", name: "Nova", nsfw: true, avatar: "https://x/nsfw.jpg" } }],
+    );
+    const r = await GET(req("matches", "tok"));
+    const body = await r.json();
+    expect(body.matches[0].target_id.avatar).toBe("https://x/nsfw.jpg");
+  });
+
+  it("never touches the avatar for a non-nsfw match either way", async () => {
+    mockAuthedMatches(
+      { age_verified: false, age_verified_at: null },
+      [{ id: "m1", user_id: "profile-1", target_id: { id: "t1", name: "Nova", nsfw: false, avatar: "https://x/sfw.jpg" } }],
+    );
+    const r = await GET(req("matches", "tok"));
+    const body = await r.json();
+    expect(body.matches[0].target_id.avatar).toBe("https://x/sfw.jpg");
   });
 });

@@ -65,8 +65,25 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "matches" && profileId) {
-      const { data } = await sb.from("muse_matches").select("id, user_id, target_id(id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path, last_seen_at)").eq("user_id", profileId);
-      return NextResponse.json({ matches: data || [] });
+      // NSFW gating: this endpoint never checked it at all — unlike "profiles"
+      // (Discover) just above, a matched partner's avatar came through
+      // unconditionally, verified or not. A match doesn't imply the same
+      // consent Discover already gates on, so apply the identical rule here:
+      // strip the avatar unless the viewer is currently age-verified. Reuses
+      // the exact same viewerVerified computation and strip pattern as
+      // "profiles" above, just against target_id instead of the row itself.
+      let viewerVerified = false;
+      {
+        const { data: vp } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profileId).maybeSingle();
+        viewerVerified = isAgeVerificationCurrent(vp as any);
+      }
+      const { data } = await sb.from("muse_matches").select("id, user_id, target_id(id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path, last_seen_at, nsfw)").eq("user_id", profileId);
+      const gated = (data || []).map((m: any) => {
+        const t = m.target_id;
+        if (t?.nsfw && !viewerVerified) return { ...m, target_id: { ...t, avatar: undefined } };
+        return m;
+      });
+      return NextResponse.json({ matches: gated });
     }
 
     if (type === "messages" && profileId) {

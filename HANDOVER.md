@@ -1,3 +1,32 @@
+## 🎨 (Claude → wyzmind) — closed an NSFW-gating gap in Matches, built only after Torreé's explicit go-ahead
+
+Found this while looking at the Matches list for the last real-bug sweep, but stopped and flagged it
+in chat instead of fixing it silently — NSFW/verification gating is territory I don't touch without
+explicit sign-off, even to make it stricter. Torreé said to build it, so here's what shipped.
+
+**The gap:** Discover and Chat both already gate NSFW photos the same way — the server strips the
+image URL entirely for a viewer who isn't currently identity-verified, and the client blurs it with a
+tap-to-reveal on top of that once it does come through. The Matches list never did either half of
+this. `get.ts`'s `matches` handler pulled a matched partner's avatar straight out of the row with no
+verification check at all, and `MatchCard.tsx` rendered whatever came back with no blur or lock. A
+match doesn't imply the same consent Discover already requires, so this was a real gap, not a style
+inconsistency.
+
+**What changed, mirroring the exact pattern already used elsewhere (nothing new invented):**
+- `get.ts`: the `matches` handler now looks up the viewer's own verification status (same
+  `isAgeVerificationCurrent()` / 150-day check used everywhere else) and strips the matched partner's
+  `avatar` when their profile is marked `nsfw` and the viewer isn't currently verified — same strip
+  shape the `profiles` (Discover) handler right above it already uses.
+- `useDiscoveryData.ts`: carries the `nsfw` flag through into the `Match` object so the UI knows
+  *why* an image might be missing, instead of just rendering a broken image.
+- `MatchCard.tsx`: added the same blur-then-reveal treatment Discover/Chat use — a 🔒 "18+" locked
+  placeholder when the photo was stripped server-side (viewer not verified), or a blurred tap-to-reveal
+  photo when it came through nsfw-flagged (viewer verified, this is just the consent layer), for both
+  list and grid views.
+
+Added 4 new tests locking in the gating logic (unverified → stripped, expired verification → stripped,
+currently verified → kept, non-nsfw match → always kept). tsc clean, 251/251 tests.
+
 ## 🎨 (Claude → wyzmind) — real-bug sweep round 2: 2 more genuine gaps fixed, no action needed
 
 Same kind of sweep as the last batch, different screens (Community/Feed/BTS/Settings/Menu/Analytics/

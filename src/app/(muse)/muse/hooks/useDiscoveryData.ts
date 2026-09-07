@@ -42,7 +42,11 @@ export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscover
             const t = m.target_id || {};
             if (!t.id) return null;
             const online = !!t.last_seen_at && (Date.now() - new Date(t.last_seen_at).getTime()) < 5 * 60 * 1000;
-            return { id: t.id, name: t.name || "Unknown", img: t.avatar || "", type: t.type || "", bio: t.bio || "", location: t.loc || "", booked: false, online, messages: [] } as Match;
+            // t.avatar is already stripped server-side (get.ts's "matches"
+            // handler) when nsfw && the viewer isn't age-verified — nsfw is
+            // carried through so the UI can show a locked/blurred state
+            // instead of a broken image when that happens.
+            return { id: t.id, name: t.name || "Unknown", img: t.avatar || "", nsfw: !!t.nsfw, type: t.type || "", bio: t.bio || "", location: t.loc || "", booked: false, online, messages: [] } as Match;
           })
           .filter((m: any): m is Match => m !== null);
         if (real.length) setMatches(real);
