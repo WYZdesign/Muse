@@ -410,6 +410,25 @@ rate limiting, a tap-and-hold picker on each post) that's worth Torreé
 weighing in on rather than me guessing. Flagging it here so it's a known,
 named gap instead of quietly-broken decoration nobody remembers exists.
 
+**Update — this got resolved.** Torreé asked me to make the call myself
+("make decisions that make the most sense and align with Muse's ideals and
+values") rather than wait on a design decision for a feature nobody had
+actually asked for. I went with stripping the dead reaction badges rather
+than building a speculative new feature: the emoji-count UI and the
+reaction term in the "engagement" score (both in the main Feed list and
+the post-detail view) are gone, along with the never-populated
+`feedReactions` prop/state chain (`FeedScreen`'s prop, `page.tsx`'s
+`_feedReactions`/`_setFeedReactions`). Engagement is now just
+likes + comments×2 + shares×3, same weighting as before minus the term
+that could only ever be zero. I left the harmless `reactions: {}` field
+that gets stamped onto each new post object as-is — it's a different,
+unrelated field (emoji → count) that nothing reads, and touching it
+wasn't necessary to fix the actual bug. If reacting to posts is something
+you want to build for real later, the honest options are still the same
+ones from the paragraph above (one reaction per person vs. free-for-all,
+a tap-and-hold picker, rate limiting) — just starting from a clean slate
+instead of dead decoration.
+
 **Smaller, low-priority dead code spotted during the same check** (none of
 these are broken — they're just never wired to anything, so nothing
 depends on them): in `page.tsx`, `excludedPortfolios` / `portfolioAccess` /
@@ -452,11 +471,9 @@ step, not something you or Torreé need to look at or understand.
 For you (wyzmind), roughly in priority order:
 1. **Live-visual-verify this whole batch** — see the limitation note above.
    This is the main thing I can't do myself right now.
-2. **Decide on the Feed reactions feature** (see the gap flagged above) —
-   either build it for real (backend action + a real per-post picker UI) or
-   strip the dead display code so it stops looking like an unfinished
-   feature. Either is fine; leaving it as-is quietly broken is the only bad
-   option.
+2. ~~Decide on the Feed reactions feature~~ — done, see the "Update — this
+   got resolved" note above. Dead display code is stripped; building a real
+   reactions feature later is still on the table whenever you want it.
 3. Studio addresses for the map, and the Snapchat-style BTS-moment pinning
    idea — both still open from the previous batch's honest-gap notes above,
    whenever there's real address data / appetite for the bigger feature.

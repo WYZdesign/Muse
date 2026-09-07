@@ -44,7 +44,6 @@ export interface FeedScreenProps {
   feedPostsStatic?: any[];
   setFeedPostsStatic?: React.Dispatch<React.SetStateAction<any[]>>;
   demo?: boolean;
-  feedReactions?: Record<string, string[]>;
   replyingTo?: any;
   setReplyingTo?: (id: any) => void;
   commentText?: string;
@@ -91,7 +90,6 @@ export const FeedScreen = memo(function FeedScreen({
   feedPostsStatic = [],
   setFeedPostsStatic = () => {},
   demo = true,
-  feedReactions = {},
   replyingTo = null,
   setReplyingTo = () => {},
   commentText = "",
@@ -441,15 +439,19 @@ export const FeedScreen = memo(function FeedScreen({
           </div>
         ) : (
           [...(demo ? feedPostsStatic : []), ...feedPosts].sort((a, b) => b.id - a.id).filter(p => feedFilter === "all" || (feedFilter === "bts" ? (p.isBts || p.type === "video" && !p.text) : p.type === feedFilter)).map(post => {
-            const feedReactionArr = feedReactions[post.id] || [];
-            const totalReactions = ["❤️", "🔥", "😍", "😂", "😢", "😡"].reduce((s, r) => s + (feedReactionArr.filter(x => x === r).length || 0), (post.liked ? 1 : 0));
             // Views: approximation if backend doesn't supply a `views` field yet.
             //   baseline 50 + likes*8 (each liker viewed it ~1-12 times) + comments*15 + shares*25
             const views = typeof post.views === "number"
               ? post.views
               : 50 + (post.likes || 0) * 8 + (post.comments || 0) * 15 + (post.shares || 0) * 25;
-            // Engagement: weighted (likes=1, comments=2, shares=3, reactions=1) — Twitter/X style.
-            const engagement = (post.likes || 0) + (post.comments || 0) * 2 + (post.shares || 0) * 3 + totalReactions;
+            // Engagement: weighted (likes=1, comments=2, shares=3) — Twitter/X style.
+            // Used to also fold in an emoji-reaction count, but there was never any way
+            // for a reaction to actually get recorded (no backend action existed to add
+            // one, and the emoji picker in the composer only inserts an emoji into the
+            // text you're writing) — that term was dead weight that always evaluated to
+            // just "1 if you liked your own post," which isn't a real engagement signal.
+            // Dropped rather than left as decoration; see HANDOVER.md for the full story.
+            const engagement = (post.likes || 0) + (post.comments || 0) * 2 + (post.shares || 0) * 3;
             const fmt = (n: number) => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K" : String(n);
             const isOnline = post.online === true || (post.lastSeen && (Date.now() - new Date(post.lastSeen).getTime() < 5 * 60 * 1000));
             return (
@@ -477,14 +479,7 @@ export const FeedScreen = memo(function FeedScreen({
                     <Image loading="lazy" src={post.img} alt="Photo" width={800} height={360} className="feed-post-img" style={{ width: "100%", height: "auto", maxHeight: 360, objectFit: "cover", display: "block" }} onError={handleImgError} />
                   </div>
                 )}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 18px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-                  <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                    {totalReactions > 0 && <span style={{ fontSize: 13, color: "var(--text2)" }}>{totalReactions}</span>}
-                    {(["❤️", "🔥", "😍", "😂", "😢", "😡"] as const).map(r => {
-                      const rc = feedReactionArr.filter(x => x === r).length;
-                      return rc > 0 ? <span key={r} style={{ fontSize: 15 }} title={rc + " reactions"}>{r}</span> : null;
-                    })}
-                  </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "8px 18px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <span style={{ fontSize: 12, color: "var(--text2)", display: "inline-flex", alignItems: "center", gap: 4 }} title="Views">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
@@ -589,17 +584,15 @@ export const FeedScreen = memo(function FeedScreen({
               {dp.text && <div style={{ fontSize: 16, lineHeight: 1.6, whiteSpace: "pre-wrap", marginBottom: dp.img ? 14 : 18 }}>{dp.text}</div>}
               {dp.img && <Image loading="lazy" src={dp.img} alt="Photo" width={800} height={420} style={{ width: "100%", height: "auto", maxHeight: 420, objectFit: "cover", borderRadius: 16, marginBottom: 14, display: "block" }} onError={handleImgError} />}
               {(() => {
-                const dReactions = feedReactions[dp.id] || [];
-                const dTotalReactions = ["❤️", "🔥", "😍", "😂", "😢", "😡"].reduce((s, r) => s + dReactions.filter(x => x === r).length, dp.liked ? 1 : 0);
                 const dViews = typeof dp.views === "number" ? dp.views : 50 + (dp.likes || 0) * 8 + (dp.comments || 0) * 15 + (dp.shares || 0) * 25;
-                const dEng = (dp.likes || 0) + (dp.comments || 0) * 2 + (dp.shares || 0) * 3 + dTotalReactions;
+                const dEng = (dp.likes || 0) + (dp.comments || 0) * 2 + (dp.shares || 0) * 3;
                 const dFmt = (n: number) => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K" : String(n);
                 return (
                   <div style={{ display: "flex", gap: 18, padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 14, fontSize: 13, color: "var(--muted)", flexWrap: "wrap" }}>
                     <span title="Views" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>👁 {dFmt(dViews)} views</span>
                     <span>✦ {dp.likes + (dp.liked ? 1 : 0)} likes</span>
                     <span>💬 {dp.comments} replies</span>
-                    <span style={{ color: dEng > 0 ? "var(--gold)" : "var(--muted)", fontWeight: dEng > 0 ? 700 : 400 }} title="Engagement: likes + comments×2 + shares×3 + reactions">✦ {dFmt(dEng)} engagement</span>
+                    <span style={{ color: dEng > 0 ? "var(--gold)" : "var(--muted)", fontWeight: dEng > 0 ? 700 : 400 }} title="Engagement: likes + comments×2 + shares×3">✦ {dFmt(dEng)} engagement</span>
                   </div>
                 );
               })()}
