@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { checkRateUser } from "@/lib/rate-limit";
 import { questPeriodKey, bumpLoginStreak, bumpQuest, awardQuestXp, refreshMetaQuest } from "@/lib/questEngine";
 import { UUID_RE, type ActionContext } from "./shared";
+import { pushToProfile } from "@/lib/push";
 
 export async function questGetQuests({ sb, profile }: ActionContext) {
   const { data: quests } = await sb.from("muse_quests").select("*").eq("active", true).order("sort_order");
@@ -40,6 +41,10 @@ export async function questGetQuests({ sb, profile }: ActionContext) {
 
   const streak = await bumpLoginStreak(sb, profile.id);
   await bumpQuest(sb, profile.id, "login");
+  const unclaimedCount = (userQuests || []).filter((uq: any) => uq.completed && !uq.claimed).length;
+  if (unclaimedCount > 0) {
+    pushToProfile(profile.id, "Rewards waiting!", `You have ${unclaimedCount} completed quest${unclaimedCount > 1 ? "s" : ""} ready to claim`, "/muse/quests").catch(() => {});
+  }
   return NextResponse.json({ quests: enriched, xp: xpData || { total_xp: 0, level: 1 }, streak });
 }
 
@@ -96,6 +101,7 @@ export async function questTrackQuest({ sb, profile, rest, ip }: ActionContext) 
     if (completed) {
       leveledUp = (await awardQuestXp(sb, profile.id, quest.xp_reward)) || leveledUp;
       await refreshMetaQuest(sb, profile.id);
+      pushToProfile(profile.id, "Quest Complete!", `${quest.title} — tap to claim your reward`, "/muse/quests").catch(() => {});
     }
 
     results.push({
