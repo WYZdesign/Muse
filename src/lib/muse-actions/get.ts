@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
         const { data: vp } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profileId).maybeSingle();
         viewerVerified = isAgeVerificationCurrent(vp as any);
       }
-      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, photos, suspended, nsfw").limit(100);
+      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, photos, suspended, nsfw, travel_dates, availability_status, budget_range, travel_destinations").limit(100);
       // Blocks were write-only until now — muse_blocks was never consulted
       // anywhere, so a blocked user could still show up in Discover, match,
       // and message the person who blocked them. Filter both directions:
