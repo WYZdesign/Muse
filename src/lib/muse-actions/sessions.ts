@@ -371,7 +371,15 @@ export const bookingReminders = async ({ sb, profile }: ActionContext) => {
     .select("id, status, session_id(id, title, date, time, location), user_id(id, name, avatar)")
     .eq("host_id", profile.id)
     .in("status", ["pending", "confirmed"]);
-  const allBookings = [...(upcomingAsBooker || []), ...(upcomingAsHost || [])];
+  // Audit fix (2026-09-08): isHost used to be inferred from `!!b.host_id`, but
+  // asBooker rows always join a truthy host_id object (the OTHER party) while
+  // asHost rows never select host_id at all — that read isHost backwards for
+  // both groups. Tagging each row with which query it came from instead of
+  // inferring from a column that means something different in each query.
+  const allBookings = [
+    ...(upcomingAsBooker || []).map((b: any) => ({ ...b, __isHost: false })),
+    ...(upcomingAsHost || []).map((b: any) => ({ ...b, __isHost: true })),
+  ];
   const reminders = allBookings.filter((b: any) => {
     const sessionDate = b.session_id?.date;
     if (!sessionDate) return false;
@@ -385,7 +393,7 @@ export const bookingReminders = async ({ sb, profile }: ActionContext) => {
     sessionTime: b.session_id?.time,
     sessionLocation: b.session_id?.location,
     otherParty: b.host_id || b.user_id,
-    isHost: !!b.host_id,
+    isHost: b.__isHost,
   }));
   return NextResponse.json({ reminders });
 };

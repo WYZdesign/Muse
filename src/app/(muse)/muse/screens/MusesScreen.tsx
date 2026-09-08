@@ -9,6 +9,7 @@ import Nav from "../components/Nav";
 import UpsellModal from "../components/UpsellModal";
 import { EmptyState } from "../components/EmptyState";
 import type { Screen, Match, Profile } from "../components/types";
+import { isPaidTier } from "../components/subscriptionTiers";
 
 export interface MusesScreenProps {
   screen: Screen;
@@ -156,10 +157,14 @@ export const MusesScreen = memo(function MusesScreen({
           Matches {matches.length > 0 ? `(${matches.length})` : ""}
         </button>
         <button
-          style={{ flex: 1, padding: "16px 0", borderRadius: 13, border: "none", background: showLikesYou ? "linear-gradient(135deg,rgba(255,20,147,0.25),rgba(255,105,180,0.15))" : "transparent", color: showLikesYou ? "#FF69B4" : "var(--text2)", fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all .25s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: showLikesYou ? "0 2px 8px rgba(255,20,147,0.15)" : "none" }}
+          style={{ flex: 1, padding: "16px 0", borderRadius: 13, border: "none", background: showLikesYou ? "linear-gradient(135deg,rgba(255,20,147,0.25),rgba(255,105,180,0.15))" : "transparent", color: showLikesYou ? "#FF69B4" : "var(--text2)", fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all .25s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: showLikesYou ? "0 2px 8px rgba(255,20,147,0.15)" : "none", whiteSpace: "nowrap" }}
           onClick={() => { setShowLikesYou(true); setShowRequests(false); }}
         >
-          <span>✦ Interested In You</span>
+          {/* Audit fix (2026-09-08): "✦ Interested In You" wrapped to a second
+              line in this 3-way flex:1 tab bar (it's the longest of the three
+              labels sharing equal width with "Matches (N)" and "Inbox").
+              Shortened to fit on one line, same as the other two tabs. */}
+          <span>✦ Interested</span>
           {likedBy.length > 0 && (
             <span style={{ padding: "2px 7px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 11, fontWeight: 800, color: "#fff" }}>{likedBy.length}</span>
           )}
@@ -233,17 +238,23 @@ export const MusesScreen = memo(function MusesScreen({
             <EmptyState icon="✦" title="No interest yet" sub="Keep your profile fresh and active — connections will start flying!" style={{ padding: "40px 20px" }} />
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 }}>
-              {likedBy.map(p => (
-                <div key={p.id} className="muse-likes-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (currentUser.tier !== "muse_pro") { setShowLikesUpsell(true); } else { setViewProfile(p); } } }} style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "3/4", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }} onClick={() => { if (currentUser.tier !== "muse_pro") { setShowLikesUpsell(true); } else { setViewProfile(p); } }}>
-                  <Image loading="lazy" src={p.img} alt={p.name} fill sizes="(max-width: 600px) 50vw, 300px" style={{ objectFit: "cover", filter: currentUser.tier !== "muse_pro" ? "blur(4px)" : undefined }} />
+              {likedBy.map(p => {
+                // Audit fix (2026-09-08): was a strict `tier !== "muse_pro"`
+                // check, so a muse_studio subscriber (a higher paid tier)
+                // saw the same locked/blurred/upsell state as a free user.
+                const unlocked = isPaidTier(currentUser.tier);
+                return (
+                <div key={p.id} className="muse-likes-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!unlocked) { setShowLikesUpsell(true); } else { setViewProfile(p); } } }} style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "3/4", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }} onClick={() => { if (!unlocked) { setShowLikesUpsell(true); } else { setViewProfile(p); } }}>
+                  <Image loading="lazy" src={p.img} alt={p.name} fill sizes="(max-width: 600px) 50vw, 300px" style={{ objectFit: "cover", filter: !unlocked ? "blur(4px)" : undefined }} />
                   <div className="muse-likes-info" style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 10px", background: "linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.6) 60%,transparent 100%)" }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{p.name}</div>
                     <div style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600 }}>{p.type}</div>
                   </div>
                   <div style={{ position: "absolute", top: 8, right: 8, padding: "3px 8px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 9, fontWeight: 800, color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>✦ Interested</div>
-                  {currentUser.tier !== "muse_pro" && (<div style={{ position: "absolute", top: 8, left: 8, padding: "2px 7px", borderRadius: 99, background: "rgba(0,0,0,0.65)", fontSize: 9, fontWeight: 700, color: "var(--gold)", border: "1px solid rgba(255,215,0,0.3)" }}>PRO</div>)}
+                  {!unlocked && (<div style={{ position: "absolute", top: 8, left: 8, padding: "2px 7px", borderRadius: 99, background: "rgba(0,0,0,0.65)", fontSize: 9, fontWeight: 700, color: "var(--gold)", border: "1px solid rgba(255,215,0,0.3)" }}>PRO</div>)}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
