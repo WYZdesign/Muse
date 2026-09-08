@@ -144,3 +144,31 @@ export const messageRequestsGet = async ({ sb, profile }: ActionContext) => {
   const { data: requests } = await sb.from("muse_message_requests").select("*, request_from:profiles!muse_message_requests_request_from_fkey(id,name,avatar,verified)").eq("request_to", profile.id).order("created_at", { ascending: false });
   return NextResponse.json({ success: true, requests: requests || [] });
 };
+
+export const blockUser = async ({ sb, profile, rest }: ActionContext) => {
+  const { targetId } = rest;
+  if (!targetId || !UUID_RE.test(String(targetId))) return NextResponse.json({ error: "Valid targetId required" }, { status: 400 });
+  if (targetId === profile.id) return NextResponse.json({ error: "Cannot block yourself" }, { status: 400 });
+  const { data: existing } = await sb.from("muse_blocks").select("id").eq("user_id", profile.id).eq("target_id", targetId).maybeSingle();
+  if (existing) return NextResponse.json({ success: true, alreadyBlocked: true });
+  const { error } = await sb.from("muse_blocks").insert({ user_id: profile.id, target_id: targetId });
+  if (error) return safeServerError(error, "block user");
+  await sb.from("muse_matches").delete().or(`and(user_id.eq.${profile.id},target_id.eq.${targetId}),and(user_id.eq.${targetId},target_id.eq.${profile.id})`);
+  await sb.from("muse_message_requests").update({ status: "blocked" }).or(`and(request_from.eq.${targetId},request_to.eq.${profile.id}),and(request_from.eq.${profile.id},request_to.eq.${targetId})`);
+  return NextResponse.json({ success: true });
+};
+
+export const unblockUser = async ({ sb, profile, rest }: ActionContext) => {
+  const { targetId } = rest;
+  if (!targetId || !UUID_RE.test(String(targetId))) return NextResponse.json({ error: "Valid targetId required" }, { status: 400 });
+  await sb.from("muse_blocks").delete().eq("user_id", profile.id).eq("target_id", targetId);
+  return NextResponse.json({ success: true });
+};
+
+export const blockedUsers = async ({ sb, profile }: ActionContext) => {
+  const { data } = await sb.from("muse_blocks").select("id, target_id:id, created_at").eq("user_id", profile.id);
+  const blockedIds = (data || []).map((r: any) => r.target_id);
+  if (blockedIds.length === 0) return NextResponse.json({ success: true, blocked: [] });
+  const { data: profiles } = await sb.from("muse_profiles").select("id, name, avatar").in("id", blockedIds);
+  return NextResponse.json({ success: true, blocked: profiles || [] });
+};
