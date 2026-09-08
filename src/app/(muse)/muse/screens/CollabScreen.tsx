@@ -3,6 +3,7 @@
 import React, { memo, useEffect, useState } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiPlus, FiSearch, FiGrid, FiRepeat, FiDollarSign, FiVolume2, FiZap } from "react-icons/fi";
+import { matchesBriefSearch } from "../components/searchMatch";
 import Nav from "../components/Nav";
 import { EmptyState } from "../components/EmptyState";
 import type { Screen, Brief } from "../components/types";
@@ -192,13 +193,7 @@ export const CollabScreen = memo(function CollabScreen({
           ];
           let filtered = (museCat === "all" ? allBriefs : allBriefs.filter(b => b.cat === museCat)).filter(b => !hiddenBriefIds.has(b.id));
           if (briefSearchQuery.trim()) {
-            const q = briefSearchQuery.trim().toLowerCase();
-            filtered = filtered.filter(b =>
-              (b.title || "").toLowerCase().includes(q) ||
-              (b.desc || "").toLowerCase().includes(q) ||
-              (b.author || "").toLowerCase().includes(q) ||
-              (b.tags || []).some((t: string) => t.toLowerCase().includes(q))
-            );
+            filtered = filtered.filter(b => matchesBriefSearch(b, briefSearchQuery));
           }
           // Duality P1 — industry (hiring) sees their own briefs first so
           // applicants stay front-of-mind; creatives browse others' work with
@@ -244,6 +239,17 @@ export const CollabScreen = memo(function CollabScreen({
                     {isOwnBrief(brief) && brief.cat !== "concept" && (
                       <span className="brief-meta-item" style={{ color: "var(--gold)" }}>
                         👥 {brief.applicantCount || 0} applied
+                      </span>
+                    )}
+                    {/* Competition signal for browsers, not just the poster (audit
+                        finding upwork-p2-1) — same applicantCount data already
+                        fetched for the owner's own view, just surfaced to everyone
+                        so a creative can gauge their odds before applying. Only
+                        shown once there's at least one applicant — "0 interested"
+                        on a fresh post would read as a discouraging non-signal. */}
+                    {!isOwnBrief(brief) && brief.cat !== "concept" && !!brief.applicantCount && (
+                      <span className="brief-meta-item" style={{ color: "var(--muted)" }}>
+                        👥 {brief.applicantCount} interested
                       </span>
                     )}
                   </div>

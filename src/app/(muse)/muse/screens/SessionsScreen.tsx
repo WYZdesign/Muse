@@ -6,6 +6,8 @@ import { FiArrowLeft, FiBookmark, FiSearch, FiCompass, FiCalendar, FiInbox } fro
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
 import { EmptyState } from "../components/EmptyState";
+import { sessionTier } from "../components/sessionTiers";
+import { matchesSessionSearch } from "../components/searchMatch";
 
 import type { Screen, Match, SessionListing } from "../components/types";
 import { SESSIONS } from "../components/types";
@@ -62,23 +64,8 @@ function paymentStatusPill(payment_status: string | null | undefined): { label: 
   }
 }
 
-// Tier badges (audit finding taskrabbit-p2-2 — Torreé asked for a small
-// ladder of tiers rather than one flat badge). Auto-computed entirely from
-// data Muse already tracks (completed sessions + average rating) — no admin
-// curation, nothing that can go stale, no new schema. Deliberately no badge
-// below "Rising Muse": a visible low tier reads as a demerit for creatives
-// still building a track record, which would work against onboarding new
-// hosts. Only the single highest tier a listing qualifies for is shown.
-const SESSION_TIERS = [
-  { key: "elite", label: "Muse Elite", icon: "✦", minSessions: 25, minRating: 4.8, bg: "rgba(255,215,0,0.16)", border: "rgba(255,215,0,0.4)", color: "var(--gold)" },
-  { key: "top", label: "Top Rated", icon: "★", minSessions: 10, minRating: 4.5, bg: "rgba(255,215,0,0.14)", border: "rgba(255,215,0,0.35)", color: "var(--gold)" },
-  { key: "rising", label: "Rising Muse", icon: "◆", minSessions: 3, minRating: 4.0, bg: "rgba(212,165,255,0.14)", border: "rgba(212,165,255,0.3)", color: "var(--lavender)" },
-] as const;
-function sessionTier(s: { hostCompletedSessions?: number; rating?: number }): typeof SESSION_TIERS[number] | null {
-  const sessions = s.hostCompletedSessions ?? 0;
-  const rating = s.rating ?? 0;
-  return SESSION_TIERS.find(t => sessions >= t.minSessions && rating >= t.minRating) ?? null;
-}
+// Tier threshold logic lives in components/sessionTiers.ts (plain module,
+// no JSX) so it can be unit-tested without pulling React/next/image in.
 
 export const SessionsScreen = memo(function SessionsScreen({
   screen,
@@ -258,13 +245,7 @@ export const SessionsScreen = memo(function SessionsScreen({
             {(() => {
               const base = (liveSessions?.length ? liveSessions : SESSIONS as SessionListing[]);
               const q = sessionSearchQuery.trim().toLowerCase();
-              const list = q
-                ? base.filter(s =>
-                    (s.name || "").toLowerCase().includes(q) ||
-                    (s.type || "").toLowerCase().includes(q) ||
-                    (s.skills || []).some((sk: string) => sk.toLowerCase().includes(q))
-                  )
-                : base;
+              const list = q ? base.filter(s => matchesSessionSearch(s, sessionSearchQuery)) : base;
               if (q && list.length === 0) {
                 return (
                   <EmptyState icon={<FiSearch size={44} />} title="No matches" sub={`Nothing found for "${sessionSearchQuery.trim()}"`}>
@@ -385,8 +366,8 @@ export const SessionsScreen = memo(function SessionsScreen({
                         {host.verified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
                       </div>
                       <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                        {pp && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap" }}>{pp.label}</span>}
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: sc.bg, color: sc.c, border: `1px solid ${sc.bd}`, whiteSpace: "nowrap" }}>{label}</span>
+                        {pp && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap" }}>{pp.label}</span>}
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: sc.bg, color: sc.c, border: `1px solid ${sc.bd}`, whiteSpace: "nowrap" }}>{label}</span>
                       </div>
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
@@ -442,8 +423,8 @@ export const SessionsScreen = memo(function SessionsScreen({
                         {booker.verified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
                       </div>
                       <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                        {pp && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap" }}>{pp.label}</span>}
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: sc.bg, border: `1px solid ${sc.bd}`, color: sc.c, whiteSpace: "nowrap" }}>{label}</span>
+                        {pp && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap" }}>{pp.label}</span>}
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: sc.bg, border: `1px solid ${sc.bd}`, color: sc.c, whiteSpace: "nowrap" }}>{label}</span>
                       </div>
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>

@@ -210,7 +210,12 @@ export const ProfileScreen = memo(function ProfileScreen({
       </div>
       <div className="profile-scroll">
         {isUnlimited && showUnlimitedBadge && (
-          <div style={{ position: "fixed", bottom: 100, left: "50%", transform: "translateX(-50%)", zIndex: 9998, padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,191,0,0.1))", border: "1px solid rgba(255,215,0,0.2)", fontSize: 11, fontWeight: 700, color: "var(--gold)", boxShadow: "0 4px 16px rgba(255,215,0,0.2)", display: "flex", alignItems: "center", gap: 6 }}>
+          // bottom:150 (was 100) — audit finding x-2: the global toast (page.tsx,
+          // fixed, bottom: calc(84px + safe-area)) can appear on any screen
+          // including Profile, and its ~40px height reached up to roughly the
+          // same band this pill occupied, risking a visual overlap if both
+          // showed at once. Bumped up for clear vertical separation.
+          <div style={{ position: "fixed", bottom: 150, left: "50%", transform: "translateX(-50%)", zIndex: 9998, padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,191,0,0.1))", border: "1px solid rgba(255,215,0,0.2)", fontSize: 11, fontWeight: 700, color: "var(--gold)", boxShadow: "0 4px 16px rgba(255,215,0,0.2)", display: "flex", alignItems: "center", gap: 6 }}>
             <span>⚡</span>∞ Unlimited Likes &amp; Super Likes
             <button onClick={() => setShowUnlimitedBadge(false)} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
           </div>

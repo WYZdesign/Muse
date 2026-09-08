@@ -451,7 +451,12 @@ export const MenuModal = memo(function MenuModal({
             aria-label="Notifications"
           >
             <FiBell size={18} />
-            {unreadCount ? <span className="hamburger-bell-dot" /> : null}
+            {/* Numeric pill (was a bare dot) to match the bottom nav's Menu
+                badge (Nav.tsx) — audit finding ig-2: the two unread-count
+                indicators in the app used different shapes (dot vs. pill)
+                for the same underlying unreadCount, which reads as an
+                inconsistent visual language for "you have unread items". */}
+            {unreadCount ? <span className="hamburger-bell-dot">{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
           </button>
         )}
         {!hamburgerScreen && <div className="hamburger-menu-title">Menu</div>}
