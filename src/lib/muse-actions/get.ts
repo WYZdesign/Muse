@@ -383,6 +383,37 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ viewers: result });
     }
 
+    if (type === "profile-completion" && user) {
+      const { data: p } = await sb.from("muse_profiles")
+        .select("id, name, bio, styles, looking, avatar, photos, type, age_verified, media_kit_url, zodiac, chinese, mbti, life_path")
+        .eq("id", profileId).maybeSingle();
+      if (!p) return NextResponse.json({ completion: 0, breakdown: {} });
+      const { count: promptCount } = await sb.from("muse_prompt_responses")
+        .select("*", { count: "exact", head: true }).eq("user_id", profileId);
+      const { count: totalPrompts } = await sb.from("muse_prompt_bank")
+        .select("*", { count: "exact", head: true }).eq("active", true);
+      const breakdown: Record<string, { done: boolean; weight: number }> = {
+        avatar: { done: !!(p as any).avatar, weight: 15 },
+        bio: { done: !!((p as any).bio && (p as any).bio.length >= 20), weight: 15 },
+        styles: { done: !!(p as any).styles && (p as any).styles.length > 0, weight: 10 },
+        looking: { done: !!(p as any).looking && (p as any).looking.length > 0, weight: 10 },
+        type: { done: !!(p as any).type, weight: 10 },
+        prompts: { done: (promptCount || 0) >= 3, weight: 15 },
+        verification: { done: !!(p as any).age_verified, weight: 10 },
+        photos: { done: !!(p as any).photos && (p as any as any).photos.length >= 2, weight: 10 },
+        personality: { done: !!((p as any).zodiac || (p as any).chinese || (p as any).mbti || (p as any).life_path), weight: 5 },
+      };
+      let totalWeight = 0;
+      let doneWeight = 0;
+      for (const item of Object.values(breakdown)) {
+        totalWeight += item.weight;
+        if (item.done) doneWeight += item.weight;
+      }
+      const completion = totalWeight > 0 ? Math.round((doneWeight / totalWeight) * 100) : 0;
+      await sb.from("muse_profiles").update({ profile_completion_pct: completion }).eq("id", profileId);
+      return NextResponse.json({ completion, breakdown });
+    }
+
     if (type === "my-analytics" && user) {
       // Profile views over time (last 30 days from activity log)
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
