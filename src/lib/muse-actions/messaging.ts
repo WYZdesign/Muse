@@ -12,6 +12,7 @@ import { checkRateUser } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/request-safety";
 import { screenText } from "@/lib/aiModeration";
 import { UUID_RE, emailProfile, validateInput, NextResponse, safeServerError, type ActionContext } from "./shared";
+import { pushToProfile } from "@/lib/push";
 
 export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
   if (!await checkRateUser(profile.id, "message", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
@@ -81,6 +82,7 @@ export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
       if (insErr) return safeServerError(insErr, "request insert");
       await sb.from("muse_notifications").insert({ user_id: String(toId), from_id: profile.id, type: "message", body: `${profile.name} wants to chat`, read: false });
       await emailProfile(sb, String(toId), "New message request on Muse ✦", "You have a new message request", `${profile.name} sent a message request.`, "Check Requests", "https://muse.wyzdesign.com/muse", "message");
+      pushToProfile(String(toId), "New Message Request", `${profile.name} wants to chat — tap to view`, "/muse/matches").catch(() => {});
     }
     return NextResponse.json({ success: true, pending: true, message: "Request sent — they'll see it in their Message Requests inbox" });
   }
@@ -101,6 +103,7 @@ export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
     await sb.from("muse_notifications").insert({ user_id: String(toId), from_id: profile.id, type: "message", body: `${profile.name} sent you a message`, read: false });
   }
   await emailProfile(sb, String(toId), "New message on Muse ✦", "You have a new message", `${profile.name} sent you a message.`, "Read it", "https://muse.wyzdesign.com/muse", "message");
+  pushToProfile(String(toId), "New Message", `${profile.name}: ${cleanText.slice(0, 80) || "sent an image"}`, "/muse/matches").catch(() => {});
   return NextResponse.json({ success: true, match_id: matchId });
 };
 
@@ -112,6 +115,7 @@ export const messageRequestAccept = async ({ sb, profile, rest }: ActionContext)
   const { error } = await sb.from("muse_message_requests").update({ status: "accepted", responded_at: new Date().toISOString() }).eq("id", req.id);
   if (error) return safeServerError(error, "accept request");
   await sb.from("muse_notifications").insert({ user_id: fromId, from_id: profile.id, type: "message_request_accepted", body: `${profile.name} accepted your message request`, read: false });
+  pushToProfile(fromId, "Request Accepted!", `${profile.name} accepted your message request — you can now chat`, "/muse/matches").catch(() => {});
   return NextResponse.json({ success: true });
 };
 
