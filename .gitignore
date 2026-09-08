@@ -13,6 +13,11 @@ _AUDIT_SHOTS/
 _audit_artifacts/
 _STATE/
 playwright-report/
+
+# Git-bundle delivery artifacts (transient handoff files, not app code —
+# wyzmind's ad37211 merge accidentally committed 4 of these; don't repeat)
+_to_delete/
+*.bundle
 scripts/capture_screens.mjs
 scripts/capture_regression.mjs
 scripts/diagnose.mjs
