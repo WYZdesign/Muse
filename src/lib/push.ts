@@ -108,12 +108,18 @@ export async function sendPushToUser(
   return { sent, failed, expired };
 }
 
-// Backwards compatibility wrapper
+// Backwards compatibility wrapper — checks notification prefs before sending
 export async function pushToProfile(
   userId: string,
   title: string,
   body: string,
   ctaUrl?: string
 ): Promise<void> {
+  try {
+    const sb = (await import("@/lib/supabase")).getServiceClient();
+    const { data } = await sb.from("muse_profiles").select("preferences").eq("id", userId).maybeSingle();
+    const prefs = (data as any)?.preferences?.notifications;
+    if (prefs && prefs.push === false) return;
+  } catch { /* fail-open: send anyway if prefs check fails */ }
   await sendPushToUser(userId, { title, body, data: { url: ctaUrl } });
 }
