@@ -288,7 +288,15 @@ a{color:inherit;text-decoration:none}
 @keyframes screenIn{from{opacity:0;transform:translateY(20px) scale(.985);filter:blur(4px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
 .glass{background:var(--glass);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.08);border-radius:18px}
 .hdr{padding:calc(12px + env(safe-area-inset-top,0px)) 18px 12px;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:10;overflow-x:hidden;max-width:100vw;flex-shrink:0}
-.logo-link{font-size:30px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;background:var(--title-gradient,linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500));background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite;text-decoration:none;cursor:pointer;line-height:1;padding:0 0.18em;display:inline-block;whiteSpace:nowrap;align-self:center}
+/* Audit fix (2026-09-08): line-height:1 sized this element's layout box to
+   exactly the font's em-square, and this gradient-fill title (background-clip:
+   text + an animated background) paints on a backing layer sized to that box —
+   so descenders on any title containing a "g"/"y"/"p"/"q"/"j" (e.g. "Settings")
+   got flat-clipped at the box edge even though overflow was computed as
+   visible. Titles without descenders (Discover, Muse Pro, Your Profile) never
+   showed it. A slightly taller line-height gives descenders room while the
+   flex/grid parents that hold this title all center it, so nothing shifts. */
+.logo-link{font-size:30px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;background:var(--title-gradient,linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500));background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite;text-decoration:none;cursor:pointer;line-height:1.3;padding:0 0.18em;display:inline-block;whiteSpace:nowrap;align-self:center}
 .logo-img{height:34px;width:auto;object-fit:contain;flex-shrink:0}
 @keyframes logoShimmer{0%,100%{filter:brightness(1) hue-rotate(0deg)}50%{filter:brightness(1.2) hue-rotate(5deg)}}
 @keyframes lavaFlow{0%{background-position:0% 50%}25%{background-position:50% 100%}50%{background-position:100% 50%}75%{background-position:50% 0%}100%{background-position:0% 50%}}
@@ -1322,8 +1330,14 @@ img{background-color:#1a0a2e}
 [data-theme="sunrise"]{--gold:#E8A838;--coral:#E07A5F;--pink:#F2CC8F;--lavender:#81B29A;--mint:#F4A261;--theme-gold:#E8A838;--theme-accent:#E07A5F;--theme-glow:rgba(224,122,95,0.12);--theme-bg-tint:rgba(232,168,56,0.04);--theme-border:rgba(224,122,95,0.15);--bg:#FFF8F0;--surface:rgba(0,0,0,0.04);--glass:rgba(0,0,0,0.06);--text:#2D2A26;--text2:rgba(45,42,38,0.6);--muted:rgba(45,42,38,0.35)}
 
 /* ═══ THEME PICKER ═══ */
-.theme-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-.theme-swatch{flex:1;min-width:56px;height:48px;border-radius:12px;cursor:pointer;border:2px solid transparent;transition:all .25s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
+/* Audit fix (2026-09-08): 6 themes with flex:1/flex-wrap wrapped unevenly
+   (5 fit one row, the 6th alone on its own row then flex-grew to fill the
+   entire row width) — a small square swatch turning into one giant
+   full-width bar, reading like a different, broken element instead of the
+   6th color option. A fixed 3-column grid gives 6 themes two even rows
+   with no leftover to stretch. */
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.theme-swatch{height:48px;border-radius:12px;cursor:pointer;border:2px solid transparent;transition:all .25s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
 .theme-swatch:hover{transform:scale(1.05)}
 .theme-swatch.active{border-color:#fff;box-shadow:0 0 12px currentColor}
 [data-theme="lasunset"] .theme-swatch[data-val="lasunset"]{background:linear-gradient(135deg,#FFD700,#FF8A80)}
@@ -1340,6 +1354,19 @@ img{background-color:#1a0a2e}
 .theme-swatch[data-val="sunrise"]{background:linear-gradient(135deg,#E8A838,#E07A5F);color:#2D2A26;text-shadow:none}
 
 /* ═══ SUNRISE LIGHT-MODE OVERRIDES ═══ */
+/* Audit fix (2026-09-08): tapping the sunrise swatch made the whole app look
+   "broken/dark" — reported live as the screen just going dark. Root cause:
+   .scene (the fixed full-screen backdrop behind the phone) and .phone (the
+   frosted glass frame itself, both desktop and the <768px fullscreen mobile
+   variant) both hardcode a dark space-gradient background instead of using
+   the --bg theme variable. Every other theme is itself dark, so this was
+   invisible, but sunrise sets --bg/--text to a light cream/dark-charcoal
+   pair — the phone frame and its backdrop stayed dark-glass regardless,
+   compositing into a near-black screen with dark-on-dark text. These three
+   overrides make the frame and backdrop follow the sunrise palette too. */
+[data-theme="sunrise"] .scene{background:linear-gradient(180deg,#FFF8F0 0%,#FCEFDD 40%,#FCE8D4 70%,#FFF8F0 100%)}
+[data-theme="sunrise"] .phone{background:rgba(255,248,240,0.55)}
+@media(max-width:767px){[data-theme="sunrise"] .phone{background:rgba(255,248,240,0.92)}}
 [data-theme="sunrise"] .swipe-card{background:#FFF8F0}
 [data-theme="sunrise"] .swipe-card img{background:#F5EDE3}
 [data-theme="sunrise"] .swipe-card .card-details{background:#FFF8F0;box-shadow:0 -8px 32px rgba(0,0,0,0.08)}

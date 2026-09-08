@@ -157,10 +157,14 @@ export const MusesScreen = memo(function MusesScreen({
           Matches {matches.length > 0 ? `(${matches.length})` : ""}
         </button>
         <button
-          style={{ flex: 1, padding: "16px 0", borderRadius: 13, border: "none", background: showLikesYou ? "linear-gradient(135deg,rgba(255,20,147,0.25),rgba(255,105,180,0.15))" : "transparent", color: showLikesYou ? "#FF69B4" : "var(--text2)", fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all .25s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: showLikesYou ? "0 2px 8px rgba(255,20,147,0.15)" : "none" }}
+          style={{ flex: 1, padding: "16px 0", borderRadius: 13, border: "none", background: showLikesYou ? "linear-gradient(135deg,rgba(255,20,147,0.25),rgba(255,105,180,0.15))" : "transparent", color: showLikesYou ? "#FF69B4" : "var(--text2)", fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all .25s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: showLikesYou ? "0 2px 8px rgba(255,20,147,0.15)" : "none", whiteSpace: "nowrap" }}
           onClick={() => { setShowLikesYou(true); setShowRequests(false); }}
         >
-          <span>✦ Interested In You</span>
+          {/* Audit fix (2026-09-08): "✦ Interested In You" wrapped to a second
+              line in this 3-way flex:1 tab bar (it's the longest of the three
+              labels sharing equal width with "Matches (N)" and "Inbox").
+              Shortened to fit on one line, same as the other two tabs. */}
+          <span>✦ Interested</span>
           {likedBy.length > 0 && (
             <span style={{ padding: "2px 7px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 11, fontWeight: 800, color: "#fff" }}>{likedBy.length}</span>
           )}

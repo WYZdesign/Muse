@@ -457,11 +457,15 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div className="section-title">Self Discovery</div>
           <div className="section-text" style={{ marginBottom: 10}}>Know yourself to find your creative match</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {/* Audit fix (2026-09-08): the empty-state label interpolated the
+                raw object key into copy — "Take mbti test", "Take lifePath
+                test" — instead of a proper display name. */}
             {(["zodiac", "mbti", "chinese", "lifePath"] as const).map(key => {
               const result = obData[key];
+              const testLabel = key === "mbti" ? "MBTI" : key === "lifePath" ? "Life Path" : key === "chinese" ? "Chinese Zodiac" : "Zodiac";
               return (
                 <button key={key} className="btn btn-outline" style={{ textAlign: "left", padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, fontSize: 14 }} onClick={() => { setObTestKey(key as any); setTestScreen(key as any); setObStep(13); setObTestStep(0); setScreen("onboard"); }}>
-                  <span style={{ flex: 1 }}>{result ? String(result) + " (Lv." + (testLevels[key] || 1) + ")" : "Take " + key + " test"}</span>
+                  <span style={{ flex: 1 }}>{result ? String(result) + " (Lv." + (testLevels[key] || 1) + ")" : "Take " + testLabel + " test"}</span>
                   <span style={{ fontSize: 12, color: "var(--gold)" }}>{result ? "Retake" : "Start"}</span>
                 </button>
               );

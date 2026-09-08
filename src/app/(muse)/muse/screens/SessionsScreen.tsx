@@ -401,18 +401,25 @@ export const SessionsScreen = memo(function SessionsScreen({
                       </div>
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
+                    {/* Audit fix (2026-09-08): these action buttons had padding:"10px 0" —
+                        zero horizontal padding — while sharing a flex:1 row with 1-3
+                        siblings and labels like "Complete", "Leave Review", "Confirm
+                        Cancel". With no side padding the button's own border/background
+                        edge sat flush against the text, reading as cramped/broken rather
+                        than a normal pill button. Added 6px of horizontal breathing room
+                        (kept small so multi-button rows still fit on narrow screens). */}
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                       {b.status === "confirmed" && b.payment_status !== "held" && b.payment_status !== "succeeded" && (
-                        <button className="btn btn-gold" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={() => payBooking(b)}>Pay</button>
+                        <button className="btn btn-gold" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={() => payBooking(b)}>Pay</button>
                       )}
                       {b.status === "confirmed" && (
-                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete</button>
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete</button>
                       )}
                       {(b.status === "pending" || b.status === "confirmed") && (
-                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, borderColor: "rgba(255,100,100,0.2)", color: "#ff6464" }} onClick={() => setCancelTarget(b.id)}>{STRINGS.cancel}</button>
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12, borderColor: "rgba(255,100,100,0.2)", color: "#ff6464" }} onClick={() => setCancelTarget(b.id)}>{STRINGS.cancel}</button>
                       )}
                       {b.status === "completed" && (
-                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setReviewTarget(b)}>Leave Review</button>
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setReviewTarget(b)}>Leave Review</button>
                       )}
                     </div>
                   </div>
@@ -461,15 +468,15 @@ export const SessionsScreen = memo(function SessionsScreen({
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                       {b.status === "pending" && (
                         <>
-                          <button className="btn btn-gold" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={() => respondBooking(b.id, "accept")}>Accept</button>
-                          <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => respondBooking(b.id, "decline")}>Decline</button>
+                          <button className="btn btn-gold" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={() => respondBooking(b.id, "accept")}>Accept</button>
+                          <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => respondBooking(b.id, "decline")}>Decline</button>
                         </>
                       )}
                       {b.status === "confirmed" && (
-                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete Shoot</button>
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete Shoot</button>
                       )}
                       {b.status === "completed" && (
-                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setReviewTarget(b)}>Leave Review</button>
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setReviewTarget(b)}>Leave Review</button>
                       )}
                     </div>
                   </div>
@@ -505,8 +512,8 @@ export const SessionsScreen = memo(function SessionsScreen({
             <div className="modal-title" style={{ marginBottom: 6 }}>Cancel this booking?</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 18 }}>Any held payment will be released back to the client.</div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setCancelTarget(null)}>{STRINGS.cancel}</button>
-              <button className="btn btn-gold" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 700, borderRadius: 12, background: "linear-gradient(135deg,#ff6464,#ff8a5c)" }} onClick={() => doCancel(cancelTarget)} disabled={cancelBusy}>{cancelBusy ? "Cancelling..." : "Confirm Cancel"}</button>
+              <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setCancelTarget(null)}>{STRINGS.cancel}</button>
+              <button className="btn btn-gold" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 700, borderRadius: 12, background: "linear-gradient(135deg,#ff6464,#ff8a5c)" }} onClick={() => doCancel(cancelTarget)} disabled={cancelBusy}>{cancelBusy ? "Cancelling..." : "Confirm Cancel"}</button>
             </div>
           </div>
         </div>

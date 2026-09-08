@@ -9,6 +9,10 @@ import { STRINGS } from "@/lib/strings";
 
 const SUPPORT_EMAIL = "info@wyzdesign.com";
 
+// See the theme-grid audit-fix comment below — unique 3-letter labels so no
+// two theme swatches read the same.
+const THEME_ABBR: Record<string, string> = { lasunset: "LAS", deepspace: "SPC", nebula: "NEB", villa: "VIL", deepsea: "SEA", sunrise: "SUN" };
+
 export interface SettingsScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
@@ -429,8 +433,12 @@ export const SettingsScreen = memo(function SettingsScreen({
           <div className="settings-group">
             <div className="settings-group-title">Appearance</div>
             <div className="theme-grid" style={{ margin: "12px 0 4px" }}>
+              {/* Audit fix (2026-09-08): t.slice(0,3) gave "deepspace" and
+                  "deepsea" the same "Dee" label — two swatches reading
+                  identically, distinguishable only by color/hover title. A
+                  fixed abbreviation map keeps every label unique. */}
               {(["lasunset", "deepspace", "nebula", "villa", "deepsea", "sunrise"] as const).map(t => (
-                <div key={t} role="radio" aria-checked={theme === t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme(t); } }} onClick={() => setTheme(t)} style={{ textTransform: "capitalize" }}>{theme === t ? "✓" : t.slice(0, 3)}</div>
+                <div key={t} role="radio" aria-checked={theme === t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme(t); } }} onClick={() => setTheme(t)} style={{ textTransform: "uppercase" }}>{theme === t ? "✓" : THEME_ABBR[t]}</div>
               ))}
             </div>
           </div>
