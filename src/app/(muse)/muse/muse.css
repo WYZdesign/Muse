@@ -1006,16 +1006,25 @@ img{background-color:#1a0a2e}
 .quest-card-main{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
 .quest-card-top{display:flex;align-items:center;justify-content:space-between}
 .quest-card-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.quest-card-reward{font-size:12px;font-weight:700;white-space:nowrap}
+.quest-card-reward{font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0}
 /* Title + description + reward on a single line ("Quick Browse - Swipe 5
    Profiles: Free Like"), per Torreé's ask — was title on its own row with
    desc/reward wrapping onto a second. Each part keeps its own text style
    (bold title, muted desc, colored reward), just inline now instead of
    stacked. Truncates with an ellipsis (full text still in the title
-   attribute) rather than wrapping to a second line or overflowing the card. */
+   attribute) rather than wrapping to a second line or overflowing the card.
+
+   Audit fix (2026-09-08): the original block-level nowrap+ellipsis truncated
+   the WHOLE line at its own edge, so on a long title the reward text (the
+   part that actually matters) got hard-clipped past the edge with no
+   ellipsis to mark it. quest-card-line is now a flex row: title+description
+   live in their own flex-shrinking, ellipsis-truncating span
+   (quest-card-titledesc) and the reward is flex-shrink:0 so it's always
+   shown in full. */
 .quest-card-title{font-size:14px;font-weight:700;color:var(--text)}
 .quest-card-desc{font-size:12px;color:var(--text2)}
-.quest-card-line{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;line-height:1.3}
+.quest-card-line{display:flex;align-items:baseline;min-width:0;line-height:1.3}
+.quest-card-titledesc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .quest-tier-badge{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,0.06);line-height:1.4}
 .quest-single-status{display:flex;align-items:center;gap:6px}
 .quest-card-sub{display:flex;align-items:center;gap:8px;font-size:11px}

@@ -436,9 +436,14 @@ export const SettingsScreen = memo(function SettingsScreen({
               {/* Audit fix (2026-09-08): t.slice(0,3) gave "deepspace" and
                   "deepsea" the same "Dee" label — two swatches reading
                   identically, distinguishable only by color/hover title. A
-                  fixed abbreviation map keeps every label unique. */}
+                  fixed abbreviation map keeps every label unique.
+                  Second audit fix (2026-09-08): the selected swatch used to
+                  replace its label outright with a bare "✓", so the one
+                  swatch you'd actually want to identify — the active theme —
+                  was the one swatch with no name on it. Now the checkmark is
+                  appended after the label instead of replacing it. */}
               {(["lasunset", "deepspace", "nebula", "villa", "deepsea", "sunrise"] as const).map(t => (
-                <div key={t} role="radio" aria-checked={theme === t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme(t); } }} onClick={() => setTheme(t)} style={{ textTransform: "uppercase" }}>{theme === t ? "✓" : THEME_ABBR[t]}</div>
+                <div key={t} role="radio" aria-checked={theme === t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme(t); } }} onClick={() => setTheme(t)} style={{ textTransform: "uppercase" }}>{theme === t ? `${THEME_ABBR[t]} ✓` : THEME_ABBR[t]}</div>
               ))}
             </div>
           </div>
