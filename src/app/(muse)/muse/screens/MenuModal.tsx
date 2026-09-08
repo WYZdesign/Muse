@@ -45,6 +45,20 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
   const [notifFilter, setNotifFilter] = useState<"all" | "unread" | "match" | "message" | "booking" | "quest" | "brief" | "community">("all");
   const [notifOffset, setNotifOffset] = useState(0);
   const [notifHasMore, setNotifHasMore] = useState(true);
+  // Robust brief lookup for the Applied/Saved tabs: fetch the real briefs once
+  // so titles resolve from live data instead of showing a bare "Quest #<id>"
+  // when briefTitleById (a precomputed map) doesn't happen to cover the id.
+  const [briefTitleMap, setBriefTitleMap] = useState<Record<string, string>>(briefTitleById || {});
+  useEffect(() => {
+    let cancelled = false;
+    authFetch("/api/muse?type=briefs").then((r: any) => r.json()).then((d: any) => {
+      if (cancelled) return;
+      const map: Record<string, string> = { ...(briefTitleById || {}) };
+      for (const b of (d.briefs || [])) { if (b?.id != null && (b.title || b.name)) map[String(b.id)] = b.title || b.name; }
+      setBriefTitleMap(map);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [authFetch, briefTitleById]);
 
   useEffect(() => {
     if (hubTab === "reports" && myReports === null && authFetch) {
@@ -192,7 +206,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
                     Look the real title up by id first; keep the old
                     heuristic only as a last-resort fallback for an id this
                     session's brief lists don't happen to cover. */}
-                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textAlign: "center" }}>{briefTitleById?.[String(id)] || (typeof id === "string" && /\s/.test(id) ? id : "Quest #" + id)}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textAlign: "center" }}>{briefTitleMap?.[String(id)] || (typeof id === "string" && /\s/.test(id) ? id : "Quest #" + id)}</span>
                 <button className="btn btn-outline" style={{ width: "100%", fontSize: 11, padding: "5px 12px", borderRadius: 99 }} onClick={() => { setShowHamburger(false); showScreen("briefs"); }}>View in Collab</button>
               </div>
             ))}

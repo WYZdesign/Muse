@@ -529,15 +529,25 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div className="section-title">Activity</div>
           <div className="section-text" style={{ marginBottom: 10 }}>Recent interactions</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {activityFeed.length > 0 ? activityFeed.slice(0, 4).map(a => (
-              <div key={a.id} style={{ display: "flex", gap: 10, padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.04)" }}>
-                <Image loading="lazy" src={a.avatar} alt="" width={36} height={36} style={{ borderRadius: "50%", objectFit: "cover", background: "#1a0a2e" }} onError={handleImgError} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><strong>{a.from}</strong> {a.text}</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{a.time}</div>
+            {activityFeed.length > 0 ? activityFeed.slice(0, 4).map(a => {
+              const avatar = a.avatar || "";
+              const from = a.from || "Someone";
+              const text = a.text || "interacted with your profile";
+              const time = a.time || "";
+              return (
+                <div key={a.id} style={{ display: "flex", gap: 10, padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.04)" }}>
+                  {avatar ? (
+                    <Image loading="lazy" src={avatar} alt="" width={36} height={36} style={{ borderRadius: "50%", objectFit: "cover", background: "#1a0a2e", flexShrink: 0 }} onError={handleImgError} />
+                  ) : (
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--pink),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{from.charAt(0).toUpperCase()}</div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><strong>{from}</strong> {text}</div>
+                    {time && <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{time}</div>}
+                  </div>
                 </div>
-              </div>
-            )) : (
+              );
+            }) : (
               <div style={{ padding: "16px", textAlign: "center", color: "var(--muted)", fontSize: 13 }}>No recent activity. Start swiping to see your interactions here!</div>
             )}
           </div>

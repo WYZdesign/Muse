@@ -11,7 +11,9 @@ const SUPPORT_EMAIL = "info@wyzdesign.com";
 
 // See the theme-grid audit-fix comment below — unique 3-letter labels so no
 // two theme swatches read the same.
-const THEME_ABBR: Record<string, string> = { lasunset: "LAS", deepspace: "SPC", nebula: "NEB", villa: "VIL", deepsea: "SEA", sunrise: "SUN" };
+const THEME_ABBR: Record<string, string> = { lasunset: "LAS", deepspace: "SPC", nebula: "NEB", villa: "VIL", deepsea: "SEA", sunrise: "SUN", daylight: "DAY" };
+const DARK_THEMES = ["lasunset", "deepspace", "nebula", "villa", "deepsea"] as const;
+const LIGHT_THEMES = ["sunrise", "daylight"] as const;
 
 export interface SettingsScreenProps {
   screen: Screen;
@@ -331,9 +333,10 @@ export const SettingsScreen = memo(function SettingsScreen({
   return (
     <div className="phone-wrap">
       <div className="phone" id="muse-app">
-        <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
+        <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px`, position: "relative", gap: 12 }}>
+          <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }}><FiArrowLeft size={18} /></button>
           <div className="logo-link" style={{
-            fontSize: 30,
+            fontSize: 22,
             backgroundImage: "linear-gradient(90deg,#CE93D8,#B388FF,#A5D6A7,#CE93D8,#B388FF,#CE93D8)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",
@@ -341,11 +344,11 @@ export const SettingsScreen = memo(function SettingsScreen({
             WebkitTextFillColor: "transparent",
             color: "transparent",
             position: "relative",
-            margin: 0,
+            margin: "0 auto",
             padding: 0,
             whiteSpace: "nowrap",
           }}>Settings</div>
-          <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
+          <span style={{ flex: "0 0 40px" }} aria-hidden="true" />
         </div>
         <div className="settings-scroll">
           {/* Audit fix (2026-09-08): the Menu's "Settings" card used to open
@@ -356,7 +359,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               (see MenuModal.tsx) would have silently dropped them. Ported
               here so nothing is lost. */}
           <div className="settings-group">
-            <div className="settings-group-title">Discovery Preferences</div>
+            <div className="settings-group-title" style={{ textAlign: "center" }}>Discovery Preferences</div>
             <div style={{ padding: "10px 0" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Age Range</div>
               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -441,8 +444,16 @@ export const SettingsScreen = memo(function SettingsScreen({
                   replace its label outright with a bare "✓", so the one
                   swatch you'd actually want to identify — the active theme —
                   was the one swatch with no name on it. Now the checkmark is
-                  appended after the label instead of replacing it. */}
-              {(["lasunset", "deepspace", "nebula", "villa", "deepsea", "sunrise"] as const).map(t => (
+                  appended after the label instead of replacing it.
+                  Torreé: light mode is now its own section under the dark
+                  themes instead of being mixed into the same grid. */}
+              {DARK_THEMES.map(t => (
+                <div key={t} role="radio" aria-checked={theme === t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme(t); } }} onClick={() => setTheme(t)} style={{ textTransform: "uppercase" }}>{theme === t ? `${THEME_ABBR[t]} ✓` : THEME_ABBR[t]}</div>
+              ))}
+            </div>
+            <div className="settings-group-title" style={{ marginTop: 16 }}>Light Mode</div>
+            <div className="theme-grid" style={{ margin: "10px 0 4px" }}>
+              {LIGHT_THEMES.map(t => (
                 <div key={t} role="radio" aria-checked={theme === t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme(t); } }} onClick={() => setTheme(t)} style={{ textTransform: "uppercase" }}>{theme === t ? `${THEME_ABBR[t]} ✓` : THEME_ABBR[t]}</div>
               ))}
             </div>

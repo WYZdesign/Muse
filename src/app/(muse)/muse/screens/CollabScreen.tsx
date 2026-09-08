@@ -2,7 +2,7 @@
 
 import React, { memo, useEffect, useState } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiPlus, FiSearch, FiGrid, FiRepeat, FiDollarSign, FiVolume2, FiZap } from "react-icons/fi";
+import { FiArrowLeft, FiPlus, FiSearch, FiGrid, FiRepeat, FiDollarSign, FiVolume2, FiZap, FiFlag } from "react-icons/fi";
 import { matchesBriefSearch } from "../components/searchMatch";
 import Nav from "../components/Nav";
 import { EmptyState } from "../components/EmptyState";
@@ -41,6 +41,8 @@ export interface CollabScreenProps {
   setBriefBudget?: (v: string) => void;
   briefCat?: "tfp" | "paid" | "opencall" | "concept";
   setBriefCat?: (c: "tfp" | "paid" | "opencall" | "concept") => void;
+  setShowReport?: (v: boolean) => void;
+  setReportTarget?: (t: any) => void;
 }
 
 export const CollabScreen = memo(function CollabScreen({
@@ -73,6 +75,8 @@ export const CollabScreen = memo(function CollabScreen({
   setBriefCat = () => {},
   openHamburger,
   unreadNotificationCount,
+  setShowReport = () => {},
+  setReportTarget = () => {},
 }: CollabScreenProps) {
   // Long brief descriptions used to always render in full, which could bloat
   // a card well past its neighbors in a scrolling list (LinkedIn's inline
@@ -87,7 +91,6 @@ export const CollabScreen = memo(function CollabScreen({
   // Collab had category chips only, no way to search briefs by title/desc —
   // this is a client-side filter over the already-fetched brief list, same
   // shape as MusesScreen's existing search-toggle pattern, no backend change.
-  const [briefSearchOpen, setBriefSearchOpen] = useState(false);
   const [briefSearchQuery, setBriefSearchQuery] = useState("");
 
   // "Not interested" / dismiss (audit finding up-3, LinkedIn/Facebook-style
@@ -136,12 +139,12 @@ export const CollabScreen = memo(function CollabScreen({
 
   return (
     <div className={"screen-el" + (screen === "briefs" ? " active" : "")}>
-      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
-        <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
+      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px`, position: "relative", gap: 12 }}>
+        <button className="chat-back" onClick={() => showScreen("discover")} aria-label="Back" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }}><FiArrowLeft size={20} /></button>
         <div
           className="logo-link"
           style={{
-            fontSize: 30,
+            fontSize: 22,
             backgroundImage: "linear-gradient(90deg,#FFB5C2,#FFD700,#D4A5FF,#FFB5C2,#FFD700,#FFB5C2)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",
@@ -149,15 +152,21 @@ export const CollabScreen = memo(function CollabScreen({
             WebkitTextFillColor: "transparent",
             color: "transparent",
             position: "relative",
-            margin: 0,
+            margin: "0 auto",
             padding: 0,
             whiteSpace: "nowrap",
           }}
         >Collab</div>
-        <div style={{ display: "flex", gap: 4 }}>
-          <button className="hdr-btn" onClick={() => setBriefSearchOpen(v => !v)} aria-label="Search briefs"><FiSearch size={17} /></button>
+        <div style={{ flex: "0 0 40px", display: "flex", justifyContent: "flex-end" }}>
           <button className="hdr-btn" onClick={() => setShowPostBrief(true)} aria-label="Create Brief"><FiPlus size={18} /></button>
         </div>
+      </div>
+      {/* Search moved out of the header (Torreé audit): a dedicated search bar
+          below the category tabs, with the search button INSIDE the bar. */}
+      <div style={{ margin: "0 12px 10px", display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "6px 12px" }}>
+        <FiSearch size={14} color="var(--muted)" />
+        <input className="inp" placeholder="Describe what you're looking for..." value={briefSearchQuery} onChange={e => setBriefSearchQuery(e.target.value)} style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
+        {briefSearchQuery && <button onClick={() => setBriefSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
       </div>
       <div className="conn-tabs" style={{ padding: "0 12px", justifyContent: "center" }}>
         {/* Small leading icon per tab (audit finding tu-2) — text-only tabs
@@ -170,13 +179,6 @@ export const CollabScreen = memo(function CollabScreen({
           </div>
         ))}
       </div>
-      {briefSearchOpen && (
-        <div style={{ margin: "0 12px 12px", display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "6px 12px", animation: "fadeIn .2s ease" }}>
-          <FiSearch size={14} color="var(--muted)" />
-          <input className="inp" placeholder="Describe what you're looking for..." value={briefSearchQuery} onChange={e => setBriefSearchQuery(e.target.value)} autoFocus style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
-          {briefSearchQuery && <button onClick={() => setBriefSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
-        </div>
-      )}
       <div className="briefs-scroll">
         {(() => {
           const allBriefs = [
@@ -226,9 +228,12 @@ export const CollabScreen = memo(function CollabScreen({
                   aria-label="Not interested"
                   title="Not interested"
                   onClick={() => hideBrief(brief.id)}
-                  style={{ position: "absolute", top: 14, right: 14, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(10,6,18,0.6)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  style={{ position: "absolute", top: 14, right: 14, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >✕</button>
               )}
+              {/* Report flag (Torreé audit): inverted-color flag icon so it reads
+                  as an action, sitting beside the Not-interested X. */}
+              {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ position: "absolute", top: 14, right: 42, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={13} /></button>)}
               <div className="brief-header" style={{ flexWrap: "wrap", gap: 6 }}>
                 <Image loading="lazy" src={brief.authorImg} alt={brief.author} width={86} height={86} className={"brief-avatar brief-variant-" + (bi % 5)} />
                 <div className="brief-info" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -331,7 +336,7 @@ export const CollabScreen = memo(function CollabScreen({
                 )}
                 <button
                   className={"brief-btn-save" + (savedBriefs.includes(brief.id) ? " saved" : "")}
-                  style={{ padding: "8px 14px", fontSize: 12 }}
+                  style={{ padding: "8px 14px", fontSize: 12, background: "transparent", border: "none", borderRadius: 0, color: savedBriefs.includes(brief.id) ? "var(--gold)" : "var(--text2)", flex: "0 0 auto" }}
                   onClick={() => {
                     const isSaved = savedBriefs.includes(brief.id);
                     if (isSaved) {

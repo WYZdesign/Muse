@@ -336,7 +336,7 @@ a{color:inherit;text-decoration:none}
 .hamburger-panel{width:78%;max-width:340px;height:100%;background:linear-gradient(180deg,rgba(15,8,30,0.98) 0%,rgba(10,6,18,0.99) 100%);backdrop-filter:blur(40px);padding:calc(128px + env(safe-area-inset-top,0px)) 20px calc(32px + env(safe-area-inset-bottom,0px));overflow-y:auto;overflow-x:hidden;position:relative;border-left:1px solid rgba(212,165,255,0.08);animation:hamburgerSlide .35s cubic-bezier(.4,0,.2,1)}
 /* Torreé's Session 84 ask: push the separator line (this pseudo-element's bottom
    border) up by 20% — was 104px down from the top, now 83px (104 × 0.8). */
-.hamburger-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:calc(83px + env(safe-area-inset-top,0px));background:linear-gradient(135deg,rgba(212,165,255,0.14) 0%,rgba(255,215,0,0.08) 50%,rgba(15,8,30,0.02) 100%);border-bottom:1px solid rgba(212,165,255,0.12);pointer-events:none}
+.hamburger-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:calc(83px + env(safe-area-inset-top,0px));background:linear-gradient(135deg,rgba(212,165,255,0.32) 0%,rgba(255,215,0,0.24) 30%,rgba(255,181,194,0.26) 55%,rgba(152,251,152,0.22) 80%,rgba(15,8,30,0.06) 100%);background-size:300% 100%;animation:gradientShift 8s ease-in-out infinite;border-bottom:1px solid rgba(212,165,255,0.32);pointer-events:none}
 .hamburger-close{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));left:12px;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text);cursor:pointer;font-size:16px;transition:all .2s;z-index:1}
 .hamburger-close:hover{background:rgba(255,255,255,0.12);color:var(--gold)}
 .hamburger-bell{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));right:12px;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);cursor:pointer;font-size:16px;transition:all .2s;z-index:1;animation:floatySmall 4s ease-in-out infinite}
@@ -347,7 +347,8 @@ a{color:inherit;text-decoration:none}
    against the panel's available space and can wrap ("Your Profile" was breaking onto
    two lines). nowrap forces it to size to its actual one-line content, and
    left:50%/translateX(-50%) still centers that single-line box correctly. */
-.hamburger-menu-title{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-size:28px;font-weight:800;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(135deg,var(--gold),var(--lavender));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:1;pointer-events:none;line-height:36px;margin:0;white-space:nowrap;width:max-content;text-align:center}
+.hamburger-menu-title{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-size:28px;font-weight:800;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(135deg,var(--gold),var(--lavender),var(--pink),var(--gold));background-size:400% 100%;animation:gradientShift 6s ease-in-out infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:1;pointer-events:none;line-height:36px;margin:0;white-space:nowrap;width:max-content;text-align:center}
+@media(prefers-reduced-motion:reduce){.hamburger-menu-title,.hamburger-panel::before{animation:none}}
 .side-group{margin-bottom:8px}
 .side-label{font-size:14px;font-weight:800;color:var(--gold);margin-bottom:4px;letter-spacing:0.02em}
 .side-sub{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5}
@@ -945,7 +946,7 @@ img{background-color:#1a0a2e}
    padding/gap with almost no visual rest between modules. Opened up padding, inter-card
    gaps and margins throughout so each block gets real breathing room. */
 .quest-overlay{position:fixed;inset:0;z-index:900;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);animation:fadeIn .2s}
-.quest-panel{width:100%;max-width:480px;max-height:92vh;background:rgba(15,10,30,0.97);backdrop-filter:blur(30px);border-radius:24px 24px 0 0;border-top:1px solid rgba(255,215,0,0.15);display:flex;flex-direction:column;animation:slideUp .3s cubic-bezier(.4,0,.2,1)}
+.quest-panel{width:100%;max-width:480px;max-height:92vh;background:rgba(15,10,30,0.97);backdrop-filter:blur(30px);border-radius:24px 24px 0 0;border-top:1px solid rgba(255,215,0,0.15);display:flex;flex-direction:column;animation:slideUp .3s cubic-bezier(.4,0,.2,1);overflow-x:hidden}
 /* Torreé: the icon/title/close row here read as sitting too high, and asked for it to
    match the side-menu (hamburger) header's height. The hamburger header positions its
    title/icons at top:calc(30px + env(safe-area-inset-top,0px)) — using that exact same
@@ -953,7 +954,7 @@ img{background-color:#1a0a2e}
    the same vertical rhythm and this one also clears a device's notch/safe-area properly. */
 /* Header shrunk ~15% (36/20px padding -> 31/17px) per Torreé's ask to lower/
    condense the title+close row on the Quests panel. */
-.quest-header{display:flex;justify-content:space-between;align-items:center;padding:calc(31px + env(safe-area-inset-top,0px)) 24px 17px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.quest-header{display:flex;justify-content:space-between;align-items:center;padding:calc(16px + env(safe-area-inset-top,0px)) 22px 16px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0}
 .quest-hero-stats{padding:22px 24px;border-bottom:1px solid rgba(255,255,255,0.06)}
 .quest-hero-xp{display:flex;align-items:center;gap:18px;margin-bottom:18px}
 .quest-hero-level{display:flex;flex-direction:column;align-items:center;min-width:52px}
@@ -998,11 +999,12 @@ img{background-color:#1a0a2e}
 .quest-view-tab.active{background:linear-gradient(135deg,rgba(255,215,0,0.16),rgba(255,138,128,0.12));border-color:rgba(255,215,0,0.35);color:var(--gold)}
 .quest-view-count{font-size:10px;background:rgba(255,255,255,0.1);color:var(--text2);padding:1px 7px;border-radius:99px;font-weight:700}
 .quest-view-tab.active .quest-view-count{background:rgba(255,215,0,0.2);color:var(--gold)}
-.quest-grid{flex:1;overflow-y:auto;padding:18px 24px 52px;display:grid;grid-template-columns:1fr;gap:14px;-webkit-overflow-scrolling:touch}
-.quest-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-left:3px solid;border-radius:14px;padding:12px 14px;transition:all .2s;display:flex;flex-direction:column;gap:10px}
+.quest-grid{flex:1;overflow-y:auto;overflow-x:hidden;padding:18px 18px 52px;display:grid;grid-template-columns:1fr;gap:14px;-webkit-overflow-scrolling:touch}
+.quest-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-left:3px solid;border-radius:14px;padding:12px 14px 12px 15px;transition:all .2s;display:flex;flex-direction:column;gap:10px;width:100%}
+.quest-tier-badge-vertical{position:absolute;left:0;top:0;bottom:0;width:40px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:12px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;line-height:1.25;text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);pointer-events:none}
 .quest-card.completed{opacity:0.6}
 .quest-card.claimable{opacity:1;border-color:rgba(255,215,0,0.2);box-shadow:0 0 20px rgba(255,215,0,0.05)}
-.quest-card-row{display:flex;align-items:center;gap:14px}
+.quest-card-row{display:flex;align-items:center;gap:14px;padding-left:46px;min-width:0}
 .quest-card-main{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
 .quest-card-top{display:flex;align-items:center;justify-content:space-between}
 .quest-card-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
@@ -1189,7 +1191,7 @@ img{background-color:#1a0a2e}
 .report-danger .report-option-icon{background:rgba(255,107,107,0.12)}
 .report-danger .report-option-text{color:var(--sunset)}
 
-@media(max-width:767px){.phone{width:100%!important;max-width:100vw!important;height:100vh;height:100dvh;margin:0;border:none;border-radius:0;position:fixed;top:0;left:0;z-index:100;background:rgba(10,6,18,0.73);backdrop-filter:blur(12px);display:flex;flex-direction:column;overflow:hidden}.app-wrap{padding:0}.notch{display:none}.swipe-card{height:calc(100% - 8px);width:calc(100% - 16px)}.screen-el{min-height:0;flex:1;overflow-y:auto}.nav{position:sticky;bottom:0;z-index:100;flex-shrink:0}}
+@media(max-width:767px){.phone{width:100%!important;max-width:100vw!important;height:100vh;height:100dvh;min-height:100dvh;margin:0;border:none;border-radius:0;position:fixed;top:0;left:0;z-index:100;background:rgba(10,6,18,0.73);backdrop-filter:blur(12px);display:flex;flex-direction:column;overflow:hidden}.app-wrap{padding:0}.notch{display:none}.swipe-card{height:calc(100% - 8px);width:calc(100% - 16px)}.screen-el{min-height:0;flex:1;overflow-y:auto}.nav{position:sticky;bottom:0;z-index:100;flex-shrink:0;height:calc(64px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px)}}html,body{height:100%}body{overflow-x:hidden}
 
 
 /* ═══ FADE IN ═══ */
@@ -1337,6 +1339,7 @@ img{background-color:#1a0a2e}
 [data-theme="villa"]{--gold:#FFD1A4;--coral:#FF6B6B;--pink:#F8BBD0;--lavender:#FFCC80;--mint:#A5D6A7;--theme-gold:#FFD1A4;--theme-accent:#FF6B6B;--theme-glow:rgba(255,107,75,0.12);--theme-bg-tint:rgba(180,120,60,0.05);--theme-border:rgba(255,140,100,0.15)}
 [data-theme="deepsea"]{--gold:#00BCD4;--coral:#4FC3F7;--pink:#80DEEA;--lavender:#4DD0E1;--mint:#4DB6AC;--theme-gold:#00BCD4;--theme-accent:#4FC3F7;--theme-glow:rgba(0,188,212,0.15);--theme-bg-tint:rgba(0,100,140,0.05);--theme-border:rgba(0,188,212,0.15)}
 [data-theme="sunrise"]{--gold:#E8A838;--coral:#E07A5F;--pink:#F2CC8F;--lavender:#81B29A;--mint:#F4A261;--theme-gold:#E8A838;--theme-accent:#E07A5F;--theme-glow:rgba(224,122,95,0.12);--theme-bg-tint:rgba(232,168,56,0.04);--theme-border:rgba(224,122,95,0.15);--bg:#FFF8F0;--surface:rgba(0,0,0,0.04);--glass:rgba(0,0,0,0.06);--text:#2D2A26;--text2:rgba(45,42,38,0.6);--muted:rgba(45,42,38,0.35)}
+[data-theme="daylight"]{--gold:#F2B234;--coral:#FFA07A;--pink:#FFB5C2;--lavender:#D4A5FF;--mint:#F9E79F;--peach:#FFDAB9;--cream:#FFF6E7;--sun:#F9D98A;--theme-gold:#F2B234;--theme-accent:#D4A5FF;--theme-glow:rgba(244,178,52,0.14);--theme-bg-tint:rgba(255,218,185,0.06);--theme-border:rgba(212,165,255,0.22);--bg:#FFF6E7;--surface:rgba(0,0,0,0.03);--glass:rgba(0,0,0,0.05);--text:#4A3F35;--text2:rgba(74,63,53,0.62);--muted:rgba(74,63,53,0.4)}
 
 /* ═══ THEME PICKER ═══ */
 /* Audit fix (2026-09-08): 6 themes with flex:1/flex-wrap wrapped unevenly
@@ -1361,6 +1364,7 @@ img{background-color:#1a0a2e}
 .theme-swatch[data-val="villa"]{background:linear-gradient(135deg,#FFD1A4,#E57373)}
 .theme-swatch[data-val="deepsea"]{background:linear-gradient(135deg,#00BCD4,#1E88E5)}
 .theme-swatch[data-val="sunrise"]{background:linear-gradient(135deg,#E8A838,#E07A5F);color:#2D2A26;text-shadow:none}
+.theme-swatch[data-val="daylight"]{background:linear-gradient(135deg,#FFDAB9,#FFB5C2 45%,#D4A5FF);color:#4A3F35;text-shadow:none}
 
 /* ═══ SUNRISE LIGHT-MODE OVERRIDES ═══ */
 /* Audit fix (2026-09-08): tapping the sunrise swatch made the whole app look
@@ -1412,6 +1416,45 @@ img{background-color:#1a0a2e}
 [data-theme="sunrise"] .theme-swatch.active{border-color:#2D2A26;box-shadow:0 0 12px rgba(232,168,56,0.3)}
 [data-theme="sunrise"] .story-ring{border-color:#E8A838}
 [data-theme="sunrise"] .moments-hero{color:#2D2A26}
+
+/* ═══ DAYLIGHT (pastel light mode) OVERRIDES ═══ */
+/* Torreé audit: light mode must be visually distinct from the dark themes and
+   use the site palette in pastel — peach, cream, pastel yellow, pastel pink,
+   lavender. These make the frame, backdrop, cards, nav, and panels follow the
+   pastel palette (mirrors the sunrise light-mode treatment, pastel-tuned). */
+[data-theme="daylight"] .scene{background:linear-gradient(180deg,#FFF6E7 0%,#FFE9F0 42%,#EBD9FF 72%,#FFF6E7 100%)}
+[data-theme="daylight"] .phone{background:rgba(255,246,231,0.6)}
+@media(max-width:767px){[data-theme="daylight"] .phone{background:rgba(255,246,231,0.94)}}
+[data-theme="daylight"] .swipe-card{background:#FFFBF4}
+[data-theme="daylight"] .swipe-card img{background:#FBF0E0}
+[data-theme="daylight"] .swipe-card .card-details{background:#FFFBF4;box-shadow:0 -8px 32px rgba(120,90,60,0.12)}
+[data-theme="daylight"] .match-card-grid{background:#FFFBF4;border-color:rgba(120,90,60,0.12);box-shadow:0 4px 16px rgba(120,90,60,0.1)}
+[data-theme="daylight"] .intent-modal{background:#FFFBF4}
+[data-theme="daylight"] .modal-panel{background:#FFFBF4!important}
+[data-theme="daylight"] .nav{background:rgba(255,246,231,0.94);border-color:rgba(120,90,60,0.1)}
+[data-theme="daylight"] .inp{background:rgba(0,0,0,0.04);border-color:rgba(120,90,60,0.14);color:#4A3F35}
+[data-theme="daylight"] .inp::placeholder{color:rgba(74,63,53,0.45)}
+[data-theme="daylight"] .chip{background:rgba(0,0,0,0.04);border-color:rgba(120,90,60,0.12);color:#4A3F35}
+[data-theme="daylight"] .btn-outline{border-color:rgba(120,90,60,0.16);color:#4A3F35}
+[data-theme="daylight"] .conn-btn-ghost{background:rgba(0,0,0,0.04);border-color:rgba(120,90,60,0.12);color:#4A3F35}
+[data-theme="daylight"] .online-dot{border-color:#FFFBF4}
+[data-theme="daylight"] .story-ring img{border-color:#FFFBF4}
+[data-theme="daylight"] .moments-story-ring img{border-color:#FFFBF4}
+[data-theme="daylight"] .hamburger-panel{background:linear-gradient(180deg,rgba(255,246,231,0.99) 0%,rgba(255,233,240,0.99) 100%);border-left-color:rgba(120,90,60,0.1)}
+[data-theme="daylight"] .hamburger-panel::before{background:linear-gradient(135deg,rgba(212,165,255,0.16) 0%,rgba(255,218,185,0.14) 50%,rgba(255,246,231,0.02) 100%);border-bottom-color:rgba(120,90,60,0.1)}
+[data-theme="daylight"] .hamburger-bell{background:rgba(0,0,0,0.04);border-color:rgba(120,90,60,0.14);color:rgba(74,63,53,0.62)}
+[data-theme="daylight"] .hamburger-item{background:rgba(0,0,0,0.02);border-color:rgba(120,90,60,0.08)}
+[data-theme="daylight"] .auth-tab{background:rgba(0,0,0,0.03);color:rgba(74,63,53,0.5)}
+[data-theme="daylight"] .auth-social-btn{background:rgba(0,0,0,0.04);border-color:rgba(120,90,60,0.12);color:#4A3F35}
+[data-theme="daylight"] .search-input{color:#4A3F35}
+[data-theme="daylight"] .album-tab{background:rgba(0,0,0,0.04);border-color:rgba(120,90,60,0.12);color:rgba(74,63,53,0.62)}
+[data-theme="daylight"] .moments-tab{background:rgba(0,0,0,0.03);border-color:rgba(120,90,60,0.1);color:rgba(74,63,53,0.62)}
+[data-theme="daylight"] .filter-chip{background:rgba(0,0,0,0.04);border-color:rgba(120,90,60,0.12);color:rgba(74,63,53,0.62)}
+[data-theme="daylight"] select.inp option{background:#FFFBF4;color:#4A3F35}
+[data-theme="daylight"] .chat-inp{background:rgba(0,0,0,0.04);border-color:rgba(120,90,60,0.12);color:#4A3F35}
+[data-theme="daylight"] .theme-swatch.active{border-color:#4A3F35;box-shadow:0 0 12px rgba(244,178,52,0.32)}
+[data-theme="daylight"] .story-ring{border-color:#F2B234}
+[data-theme="daylight"] .moments-hero{color:#4A3F35}
 
 /* ═══ NAV ICON HUE SHIFT ═══ */
 @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}

@@ -172,8 +172,11 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
             const isClaimable = q.completed && !q.claimed;
 
             return (
-              <div key={q.id} className={`quest-card ${q.completed ? "completed" : ""} ${isClaimable ? "claimable" : ""}`} style={{ borderLeftColor: tier.color, position: "relative" }}>
-                <span className="quest-tier-badge" style={{ position: "absolute", top: 8, right: 10, background: `${tier.border}`, color: tier.color, border: `1px solid ${tier.border}` }}>{tier.label}</span>
+              <div key={q.id} className={`quest-card ${q.completed ? "completed" : ""} ${isClaimable ? "claimable" : ""}`} style={{ borderLeftColor: tier.color, position: "relative", overflow: "hidden" }}>
+                {/* Vertical tier tab on the left edge (Torreé audit) — the badge
+                    was a small pill in the top-right corner; now it's a colored
+                    tab running down the left side with vertical label text. */}
+                <span className="quest-tier-badge-vertical" style={{ background: `${tier.color}1f`, borderRight: `1px solid ${tier.color}`, color: tier.color }}>{tier.label}</span>
                 <div className="quest-card-row">
                   <div className="quest-card-icon" style={{ background: tier.bg, border: `1px solid ${tier.border}` }}>
                     {q.icon}

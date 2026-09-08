@@ -305,7 +305,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
   const [showStory, setShowStory] = useState<number|null>(null);
-  const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"villa"|"deepsea"|"sunrise">("lasunset");
+  const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"villa"|"deepsea"|"sunrise"|"daylight">("lasunset");
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
   const [discoveryPrefs, setDiscoveryPrefs] = useState<{ageMin:number;ageMax:number;distance:number;gender:string}>({ageMin:18,ageMax:50,distance:50,gender:"all"});
   const [myGeo, setMyGeo] = useState<{lat:number;long:number;city:string;state:string;requiresIdVerification:boolean}|null>(null);
@@ -667,7 +667,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       }
       if (d.stories && d.stories.length) setStories(d.stories);
       else setStories(DEMO_MOMENTS);
-      if (d.theme) setTheme((["lasunset","deepspace","nebula","villa","deepsea","sunrise"].includes(d.theme) ? d.theme : "lasunset"));
+      if (d.theme) setTheme((["lasunset","deepspace","nebula","villa","deepsea","sunrise","daylight"].includes(d.theme) ? d.theme : "lasunset"));
       if (d.activityFeed) setActivityFeed(d.activityFeed);
       if (d.discoveryPrefs) setDiscoveryPrefs(d.discoveryPrefs);
       if (d.chatImages) setChatImages(d.chatImages);
@@ -2140,24 +2140,21 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 <div className="notch" />
 
 {/* ═══ VERIFICATION EXPIRY BANNER ═══ */}
-{/* Dismissible (X) + safe-area-inset-top padding so it no longer sits
-    flush against a real device's status bar/notch — audit feedback: it
-    was permanent and pushed every screen's header down. Status is never
-    lost: Settings > Privacy & Safety > Identity Verification always
-    shows the same live state, dismissed or not. */}
+{/* Floating bubbler/pill overlay (Torreé audit): no longer attached to the top
+    of the page — it floats over the app header as a rounded pill, so it doesn't
+    push every screen's header down. Caption + dashed link per spec. Status is
+    never lost: Settings > Privacy & Safety > Identity Verification always shows
+    the same live state, dismissed or not. */}
 {((!ageVerified) || verificationExpiringSoon) && !verificationBannerDismissed && (
-  <div style={{ background: verificationExpiringSoon ? "linear-gradient(90deg, #ff8c00, #ffd700)" : "linear-gradient(90deg, #ff4444, #ff6b6b)", padding: "calc(8px + env(safe-area-inset-top,0px)) 40px 8px 16px", textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, position: "relative", flexShrink: 0 }}>
-    {verificationExpiringSoon ? (
-      <>⚠️ Identity verification expires in ≤30 days — <button onClick={() => setShowAgeVerification(true)} style={{ background: "none", border: "none", color: "#0a0612", textDecoration: "underline", cursor: "pointer", fontWeight: 800 }}>Re-verify now</button></>
-    ) : (
-      <>🔞 Identity verification expired — paid features locked. <button onClick={() => setShowAgeVerification(true)} style={{ background: "none", border: "none", color: "#0a0612", textDecoration: "underline", cursor: "pointer", fontWeight: 800 }}>Verify now</button></>
-    )}
+  <div style={{ position: "absolute", top: "calc(12px + env(safe-area-inset-top,0px))", left: "50%", transform: "translateX(-50%)", zIndex: 60, maxWidth: "min(94%, 380px)", background: verificationExpiringSoon ? "linear-gradient(135deg, #ff8c00, #ffd700)" : "linear-gradient(135deg, #ff4444, #ff6b6b)", padding: "10px 38px 10px 16px", borderRadius: 24, boxShadow: "0 8px 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12)", textAlign: "center", fontSize: 12.5, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+    <span>Update Verification to Unlock Features</span>
+    <button onClick={() => setShowAgeVerification(true)} style={{ background: "none", border: "none", color: "#0a0612", textDecoration: "underline", cursor: "pointer", fontWeight: 800, padding: 0 }}>Verify</button>
     <button
       onClick={() => setVerificationBannerDismissed(true)}
       aria-label="Dismiss — find this later in Settings > Privacy & Safety"
-      style={{ position: "absolute", top: "calc(6px + env(safe-area-inset-top,0px))", right: 10, background: "none", border: "none", color: "#0a0612", opacity: 0.7, cursor: "pointer", padding: 4, display: "flex" }}
+      style={{ position: "absolute", top: "50%", right: 10, transform: "translateY(-50%)", background: "none", border: "none", color: "#0a0612", opacity: 0.75, cursor: "pointer", padding: 4, display: "flex" }}
     >
-      <FiX size={16} />
+      <FiX size={15} />
     </button>
   </div>
 )}
@@ -2567,7 +2564,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} messages={chatTarget?.messages || []} setMessages={((msgs: any) => setChatTarget((prev: any) => prev ? {...prev, messages: typeof msgs === "function" ? msgs(prev?.messages || []) : msgs} : prev)) as any} chatText={chatInput} setChatText={setChatInput} messagesEndRef={messagesEndRef} sendChat={sendMsg} sendChatImg={sendChatImg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} uploadImage={uploadImage} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Collab">
-            <CollabScreen screen={screen} showScreen={showScreen} museCat={museCat} setMuseCat={setMuseCat} userBriefs={userBriefs} setUserBriefs={setUserBriefs} showPostBrief={showPostBrief} setShowPostBrief={setShowPostBrief} liveBriefs={liveBriefs || []} showNsfw={showNsfw} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} uid={uid} appliedBriefs={appliedBriefs} setAppliedBriefs={setAppliedBriefs} savedBriefs={savedBriefs} setSavedBriefs={setSavedBriefs} setChatTarget={setChatTarget} briefTitle={briefTitle} setBriefTitle={setBriefTitle} briefDesc={briefDesc} setBriefDesc={setBriefDesc} briefBudget={briefBudget} setBriefBudget={setBriefBudget} briefCat={briefCat} setBriefCat={setBriefCat} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
+            <CollabScreen screen={screen} showScreen={showScreen} museCat={museCat} setMuseCat={setMuseCat} userBriefs={userBriefs} setUserBriefs={setUserBriefs} showPostBrief={showPostBrief} setShowPostBrief={setShowPostBrief} liveBriefs={liveBriefs || []} showNsfw={showNsfw} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} uid={uid} appliedBriefs={appliedBriefs} setAppliedBriefs={setAppliedBriefs} savedBriefs={savedBriefs} setSavedBriefs={setSavedBriefs} setChatTarget={setChatTarget} briefTitle={briefTitle} setBriefTitle={setBriefTitle} briefDesc={briefDesc} setBriefDesc={setBriefDesc} briefBudget={briefBudget} setBriefBudget={setBriefBudget} briefCat={briefCat} setBriefCat={setBriefCat} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} />
             </ScreenErrorBoundary>
 
             <ScreenErrorBoundary name="Community">

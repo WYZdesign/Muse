@@ -294,7 +294,7 @@ export const FeedScreen = memo(function FeedScreen({
         <div
           className="logo-link"
           style={{
-            fontSize: 30,
+            fontSize: 24,
             backgroundImage: "linear-gradient(90deg,#90CAF9,#80DEEA,#B388FF,#90CAF9,#80DEEA,#90CAF9)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",
@@ -466,7 +466,7 @@ export const FeedScreen = memo(function FeedScreen({
                     </div>
                     <div style={{ fontSize: 11, color: "var(--muted)" }}>{post.time}</div>
                   </div>
-                   <div style={{ position: "absolute", top: 10, right: 10, width: 28, height: 28, borderRadius: 8, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--gold)", fontSize: 13 }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); } }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }} aria-label="Report post"><FiFlag size={13} /></div>
+                   <div style={{ position: "absolute", top: 10, right: 10, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", fontSize: 13 }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); } }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }} aria-label="Report post"><FiFlag size={13} /></div>
                 </div>
                 <div
                   className="feed-caption-clamp"
@@ -477,13 +477,12 @@ export const FeedScreen = memo(function FeedScreen({
                   onClick={() => openPostDetail(post.id)}
                 >{post.text}</div>
                 {post.img && (
-                  <div className="feed-post-img-wrap" style={{ position: "relative" }}>
-                    {/* Variable-aspect-ratio user photo, no fixed frame to `fill` into --
-                        width/height below are placeholders only (required by next/image),
-                        immediately overridden by the style object so the rendered box is
-                        pixel-identical to the previous plain <img> (full width, capped at
-                        360 tall, cropped to fill via objectFit:cover). */}
-                    <Image loading="lazy" src={post.img} alt="Photo" width={800} height={360} className="feed-post-img" style={{ width: "100%", height: "auto", maxHeight: 360, objectFit: "cover", display: "block" }} onError={handleImgError} />
+                  <div className="feed-post-img-wrap" style={{ position: "relative", width: "100%", aspectRatio: "4/3", overflow: "hidden", background: "#12091f" }}>
+                    {/* Full-bleed contained media: a fixed aspect-ratio frame spans the
+                        full card width edge-to-edge and the image fills it (objectFit:cover),
+                        so photos/videos never letterbox, overflow, or leave a gap. Any
+                        source aspect ratio is cropped to 4:3 consistently. */}
+                    <Image loading="lazy" src={post.img} alt="Photo" width={800} height={600} className="feed-post-img" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }} onError={handleImgError} />
                   </div>
                 )}
                 <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "8px 18px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
