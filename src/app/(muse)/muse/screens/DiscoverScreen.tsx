@@ -395,6 +395,15 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               {profile.verified && <span className="card-verified-mark">✓</span>}
                               {profile.online && <span className="card-online-dot" />}
                             </div>
+                            {(() => {
+                              const ms = Number((profile as any).matchScore || 0);
+                              return ms >= 15 ? (
+                                <div className="card-hero-badge" style={{ background: "rgba(255,215,0,0.16)", border: "1px solid rgba(255,215,0,0.4)", color: "var(--gold)", fontWeight: 800 }}>✦ {ms}% match</div>
+                              ) : null;
+                            })()}
+                            {!!(profile as any).boosted && (
+                              <div className="card-hero-badge" style={{ background: "linear-gradient(135deg, rgba(255,215,0,0.28), rgba(233,30,99,0.28))", border: "1px solid rgba(255,215,0,0.55)", color: "#fff", fontWeight: 800, letterSpacing: 0.04 }}>⚡ BOOSTED</div>
+                            )}
                             <div className="card-hero-type">{profile.type}</div>
                             <div className="card-hero-loc">
                               {profile.loc && <span>{profile.loc}</span>}
