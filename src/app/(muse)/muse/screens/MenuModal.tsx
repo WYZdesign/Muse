@@ -327,8 +327,6 @@ nearQuests?: number;
   getReferralTier?: (count: number) => { tier: string; perks: string; discount?: number; nextThreshold?: number | null };
 }
 
-const SUPPORT_EMAIL = "info@wyzdesign.com";
-
 export const MenuModal = memo(function MenuModal({
   showHamburger,
   setShowHamburger,
@@ -452,20 +450,6 @@ export const MenuModal = memo(function MenuModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showHamburger]);
 
-  const [showBugForm, setShowBugForm] = useState(false);
-  const [bugCategory, setBugCategory] = useState("ui");
-  const [bugDescription, setBugDescription] = useState("");
-  const [bugSteps, setBugSteps] = useState("");
-  const [bugExpected, setBugExpected] = useState("");
-  const [bugActual, setBugActual] = useState("");
-  const [bugSubmitting, setBugSubmitting] = useState(false);
-
-  const [showIdeaForm, setShowIdeaForm] = useState(false);
-  const [ideaCategory, setIdeaCategory] = useState("feature");
-  const [ideaTitle, setIdeaTitle] = useState("");
-  const [ideaDescription, setIdeaDescription] = useState("");
-  const [ideaSubmitting, setIdeaSubmitting] = useState(false);
-
   if (!mounted) return null;
 
   return (
@@ -498,7 +482,6 @@ export const MenuModal = memo(function MenuModal({
           </button>
         )}
         {!hamburgerScreen && <div className="hamburger-menu-title">Menu</div>}
-        {(hamburgerScreen === "settings" || hamburgerScreen === "profile") && <div className="hamburger-menu-title">{hamburgerScreen === "settings" ? "Settings" : "Your Profile"}</div>}
         {/* Activity used to render its own separate .hdr bar (with a second back
             button that closed the whole menu instead of returning to it) further down
             inside the scrolling body — a duplicate, misplaced header. Now it uses the
@@ -523,12 +506,17 @@ export const MenuModal = memo(function MenuModal({
               { key: "settings", icon: <FiSettings size={22} />, label: "Settings", desc: "Preferences, safety & help", grad: "linear-gradient(135deg,#CE93D8,#B388FF,#A5D6A7)" },
             ].map(item => {
               const activate = () => {
-                if (item.key === "community" || item.key === "sessions" || item.key === "network") {
-                  setShowHamburger(false);
-                  showScreen(item.key as any);
-                } else {
-                  setHamburgerScreen(item.key);
-                }
+                // Audit fix (2026-09-08): "profile"/"settings" used to open older,
+                // separate inline tabs here (setHamburgerScreen) instead of the
+                // full-page ProfileScreen.tsx/SettingsScreen.tsx that every other
+                // menu item already routes to. The full pages are a strict superset
+                // of what the inline tabs had (SettingsScreen gained Discovery
+                // Preferences + Show Distance/Online toggles in the prior audit
+                // commit specifically to close that gap) and are already reachable
+                // today via "Edit Profile"/other indirect taps — this just makes the
+                // primary Menu entry point consistent with Sessions/Network/Community.
+                setShowHamburger(false);
+                showScreen(item.key as any);
               };
               return (
                 <div
@@ -733,293 +721,6 @@ export const MenuModal = memo(function MenuModal({
                     </div>
                   </div>
                 ))}
-              </div>
-            )}
-            {hamburgerScreen === "profile" && (
-              <div className="conn-scroll">
-                {/* paddingTop: .conn-scroll itself has no top padding, and the halo/hoop
-                    rings extend ~13px past the 100px avatar photo on every side. With
-                    this wrap sitting flush at the scroll container's top edge, that
-                    overflow was getting clipped by the scroll boundary — the top of the
-                    rings rendered with a flat cut instead of curving. This gives them
-                    room to clear it. */}
-                <div style={{ textAlign: "center", marginBottom: 20, paddingTop: 20 }}>
-                  <div className="profile-avatar-wrap">
-                    <Image loading="lazy" src={currentUser.avatar} alt="You" width={100} height={100} className="profile-avatar" onError={handleImgError} />
-                    {/* Hoolah-hoop: halo (.profile-ring) is the CSS-default 115px (Session
-                        85: a "decrease the halo" ask turned out to mean the ring's line
-                        thickness, not diameter — see the .profile-ring comment in
-                        muse.css; diameter here reverted back to 115px/125px, then the gap
-                        tightened ~10% to 124px — a ~4.5px gap past the halo's edge on
-                        every side, close enough to read as circling/hovering just above
-                        it, still never touching. orbit-full added (Session 85 final
-                        correction): without it this rendered as a partial comet-arc, not
-                        a full ring — see the .avatar-orbit comment in muse.css. */}
-                    <div className="profile-ring profile-ring-large profile-ring-menu swirl-ring-3" />
-                  </div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>{currentUser.name}</div>
-                  <div style={{ fontSize: 13, color: "var(--muted)" }}>{currentUser.type} · {currentUser.exp}</div>
-                </div>
-                <button className="hamburger-item" style={{ width: "100%", marginBottom: 6 }} onClick={() => { setHamburgerScreen(""); setShowHamburger(false); setScreen("profile"); }}>
-                  <div className="hamburger-item-icon" style={{ background: "linear-gradient(135deg,#FFD700,#FFBF00,#FF8A80)" }}><FiUser size={22} /></div>
-                  <div><div className="hamburger-item-label">Edit Profile</div><div className="hamburger-item-desc">Update your bio, skills, portfolio</div></div>
-                </button>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "20px 0 10px" }}>Statistics</div>
-                <div className="stats-row" style={{ marginTop: 8 }}>
-                  <div className="stat"><div className="stat-num">{matches.length || 0}</div><div className="stat-label">Muses</div></div>
-                  <div className="stat"><div className="stat-num">{currentUser.stats?.likes || 0}</div><div className="stat-label">Likes</div></div>
-                  {/* Audit fix (2026-09-08): this quick-glance tile and the
-                      "Bookings" tile in the full stats grid below both show
-                      a booking count, but used to read from two different
-                      sources — currentUser.stats?.bookingsCompleted here vs.
-                      the live bookingsForHub sum there — which could silently
-                      disagree. Now both read the same live source so they
-                      can never show two different "Bookings" numbers at once. */}
-                  <div className="stat"><div className="stat-num">{(bookingsForHub?.asBooker || []).length + (bookingsForHub?.asHost || []).length}</div><div className="stat-label">Bookings</div></div>
-                </div>
-                {/* PROFILE STATS — full transparency, no cap on what's visible */}
-                {(() => {
-                  const myForumPosts = (liveForum || []).filter((p: any) => p.author === currentUser?.name).length;
-                  const stats: { label: string; value: string | number }[] = [
-                    { label: "Profile views", value: profileViews ?? 0 },
-                    { label: "Likes received", value: likesReceived ?? 0 },
-                    { label: "Muses", value: matches.length },
-                    { label: "Collabs", value: (currentUser as any)?.stats?.collabs ?? (currentUser as any)?.collabs ?? 0 },
-                    { label: "Quests applied", value: appliedBriefs.length },
-                    { label: "Quests saved", value: savedBriefs.length },
-                    { label: "Bookings", value: (bookingsForHub?.asBooker || []).length + (bookingsForHub?.asHost || []).length },
-                    { label: "Forum posts", value: myForumPosts },
-                  ];
-                  const memberSince = (authUser as any)?.created_at || (authUser as any)?.user?.created_at;
-                  return (
-                    <>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                        {stats.map(s => (
-                          <div key={s.label} style={{ padding: "12px 10px", borderRadius: 14, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", textAlign: "center" }}>
-                            <div style={{ fontSize: 20, fontWeight: 800, color: "var(--gold)" }}>{s.value}</div>
-                            <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
-                          </div>
-                        ))}
-                      </div>
-                      {memberSince && (
-                        <div style={{ marginTop: 10, fontSize: 11, color: "var(--muted)", textAlign: "center" }}>
-                          Member since {new Date(memberSince).toLocaleDateString(undefined, { month: "long", year: "numeric" })}
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-                {/* YOUR ACTIVITY WIDGET */}
-                <div style={{ marginTop: 20, padding: 16, borderRadius: 16, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.15)" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Your Activity</div>
-                    <FiActivity size={20} style={{ color: "var(--gold)" }} />
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
-                      <div style={{ fontSize: 24, fontWeight: 800, color: "var(--gold)", fontFamily: "monospace" }}>{loginStreak || 0}</div>
-                      <div style={{ fontSize: 11, color: "var(--text2)", marginTop: 4 }}>Day Streak</div>
-                    </div>
-                    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
-                      <div style={{ fontSize: 24, fontWeight: 800, color: "#FF69B4", fontFamily: "monospace" }}>{questClaimables || 0}</div>
-                      <div style={{ fontSize: 11, color: "var(--text2)", marginTop: 4 }}>Rewards Ready</div>
-                    </div>
-                  </div>
-                  <div style={{ marginTop: 12, textAlign: "right" }}>
-                    <button style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, cursor: "pointer", background: "none", border: "none", padding: 0 }} onClick={() => { setShowHamburger(false); setShowQuests?.(true); }}>View all →</button>
-                  </div>
-                </div>
-                {/* REFERRAL PROGRAM LINK */}
-                <div style={{ marginTop: 16, padding: 16, borderRadius: 16, background: "rgba(255,105,180,0.08)", border: "1px solid rgba(255,105,180,0.15)" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <FiGift size={18} style={{ color: "#FF69B4" }} />
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Referral Program</span>
-                    </div>
-                    <FiDollarSign size={18} style={{ color: "var(--gold)" }} />
-                  </div>
-<div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 10 }}>
-                      Invite creatives. Earn rewards. Tier: <span style={{ color: "var(--gold)", fontWeight: 700 }}>{getReferralTier?.(currentUser.referrals || 0).tier || "None"}</span> · {currentUser.referrals || 0} joined
-                    </div>
-                  <button style={{ width: "100%", fontSize: 12, fontWeight: 600, color: "#FF69B4", background: "rgba(255,105,180,0.1)", border: "1px solid rgba(255,105,180,0.3)", padding: "10px 0", borderRadius: 12, cursor: "pointer" }} onClick={() => { setShowHamburger(false); setShowReferral?.(true); }}>Go to Referral Program</button>
-                </div>
-              </div>
-            )}
-            {hamburgerScreen === "settings" && (
-              <div className="conn-scroll">
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "0 0 10px", textAlign: "center" }}>Discovery Preferences</div>
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Age Range</div>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center", overflow: "hidden" }}>
-                    <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{discoveryPrefs.ageMin}</span>
-                    <input type="range" min={18} max={65} value={discoveryPrefs.ageMin} onChange={e => setDiscoveryPrefs((p: any) => ({ ...p, ageMin: Number(e.target.value) }))} style={{ flex: 1, minWidth: 0, accentColor: "var(--gold)" }} />
-                    <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>to</span>
-                    <input type="range" min={18} max={65} value={discoveryPrefs.ageMax} onChange={e => setDiscoveryPrefs((p: any) => ({ ...p, ageMax: Number(e.target.value) }))} style={{ flex: 1, minWidth: 0, accentColor: "var(--gold)" }} />
-                    <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{discoveryPrefs.ageMax}</span>
-                  </div>
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Max Distance: {discoveryPrefs.distance} mi</div>
-                  <input type="range" min={1} max={100} value={discoveryPrefs.distance} onChange={e => setDiscoveryPrefs((p: any) => ({ ...p, distance: Number(e.target.value) }))} style={{ width: "100%", accentColor: "var(--gold)" }} />
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8, textAlign: "center" }}>Show Me</div>
-                  <div className="filter-scroll-row" style={{ gap: 8, flexWrap: "nowrap" }}>
-                    {["all", "women", "men", "non-binary"].map(g => (
-                      <div key={g} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDiscoveryPrefs((p: any) => ({ ...p, gender: g })); } }} onClick={() => setDiscoveryPrefs((p: any) => ({ ...p, gender: g }))} style={{ padding: "8px 16px", borderRadius: 99, cursor: "pointer", fontSize: 12, fontWeight: 600, transition: "all .25s", background: discoveryPrefs.gender === g ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: "1px solid " + (discoveryPrefs.gender === g ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"), color: discoveryPrefs.gender === g ? "var(--gold)" : "var(--muted)" }}>{g.charAt(0).toUpperCase() + g.slice(1)}</div>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Notification Preferences</div>
-                  {[{ k: "match", l: "New Matches" }, { k: "message", l: "Messages" }, { k: "brief", l: "Quest Updates" }, { k: "like", l: "Likes" }].map(n => (
-                    <div key={n.k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                      <span style={{ fontSize: 13, color: "var(--text)" }}>{n.l}</span>
-                      <div role="switch" aria-checked={!!notifPrefs[n.k]} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNotifPrefs((p: any) => ({ ...p, [n.k]: !p[n.k] })); } }} onClick={() => setNotifPrefs((p: any) => ({ ...p, [n.k]: !p[n.k] }))} style={{ width: 44, height: 24, borderRadius: 12, background: notifPrefs[n.k] ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "all .25s" }}>
-                        <div style={{ width: 20, height: 20, borderRadius: "50%", background: notifPrefs[n.k] ? "var(--gold)" : "var(--muted)", position: "absolute", top: 2, left: notifPrefs[n.k] ? 22 : 2, transition: "all .25s" }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {/* Audit fix (2026-09-08): "Save Preferences" only ever
-                    persisted discoveryPrefs/notifPrefs/showOnline/
-                    showDistance (see its onClick body), but the button sat
-                    several unrelated sections below — after Account AND
-                    Payments & Subscription — reading as if it saved
-                    everything on the page, including account/payment rows
-                    that are separately saved as soon as they're tapped.
-                    Moved directly under the two preference blocks it
-                    actually applies to. */}
-                <button className="btn btn-gold" style={{ width: "100%", fontSize: 12, marginBottom: 16 }} onClick={async () => { try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { ...discoveryPrefs, notifications: notifPrefs, showOnline, showDistance } }) }); showToast("Preferences saved!"); } catch { showToast("Failed to save"); } }}>Save Preferences</button>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Account</div>
-                {[
-                  { label: "Edit Profile", desc: "Name, bio, photos", go: () => { setShowHamburger(false); showScreen("profile"); } },
-                  { label: "Personality Profile", desc: "Zodiac, MBTI, Life Path", go: () => { setScreen("onboard"); setObStep(7); } },
-                  { label: "Creative Profile", desc: "Type, styles, looking for", go: () => { setScreen("onboard"); setObStep(4); } },
-                ].map(r => (
-                  <div key={r.label} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); r.go(); } }} onClick={() => { setShowHamburger(false); r.go(); }} style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
-                    <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{r.label}</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{r.desc}</div></div>
-                    <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
-                  </div>
-                ))}
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Payments &amp; Subscription</div>
-                {[
-                  { label: "Subscription", desc: "Manage your plan — Muse Pro", go: () => { setShowHamburger(false); showScreen("subscription"); }, dot: false },
-                  ...(setShowQuests ? [{ label: "Quests", desc: questClaimables > 0 ? `${questClaimables} reward${questClaimables > 1 ? "s" : ""} ready to claim!` : "Complete challenges, earn free likes", go: () => { setShowHamburger(false); setShowQuests(true); }, dot: questClaimables > 0 }] : []),
-                  ...(setShowConnect ? [{ label: "Marketplace Payments", desc: "Connect Stripe to receive bookings", go: () => { setShowHamburger(false); setShowConnect(true); }, dot: false }] : []),
-                  ...(setShowPaymentHistory ? [{ label: "Payment History", desc: "Your charges and payouts", go: () => { setShowHamburger(false); setShowPaymentHistory(true); }, dot: false }] : []),
-                  ...(setShowReferral ? [{ label: "Referral Program", desc: "Invite friends, earn rewards", go: () => { setShowHamburger(false); setShowReferral(true); }, dot: false }] : []),
-                ].map(r => (
-                  <div key={r.label} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); r.go(); } }} onClick={() => r.go()} style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
-                    <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: 6 }}>{r.label}{r.dot && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#FF69B4", display: "inline-block" }} />}</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{r.desc}</div></div>
-                    <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
-                  </div>
-                ))}
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Safety &amp; Privacy</div>
-                <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Show Distance</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Display your approximate location</div></div>
-                  <div role="switch" aria-checked={!!showDistance} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const next = !showDistance; setShowDistance?.(next); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showDistance: next } }) }).catch(() => showToast("Couldn't save — try again")); } }} onClick={() => { const next = !showDistance; setShowDistance?.(next); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showDistance: next } }) }).catch(() => showToast("Couldn't save — try again")); }} style={{ width: 44, height: 24, borderRadius: 12, background: showDistance ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "all .25s" }}>
-                    <div style={{ width: 20, height: 20, borderRadius: "50%", background: showDistance ? "var(--gold)" : "var(--muted)", position: "absolute", top: 2, left: showDistance ? 22 : 2, transition: "all .25s" }} />
-                  </div>
-                </div>
-                <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Online Status</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Show when you're active</div></div>
-                  <div role="switch" aria-checked={!!showOnline} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const next = !showOnline; setShowOnline?.(next); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showOnline: next } }) }).catch(() => showToast("Couldn't save — try again")); } }} onClick={() => { const next = !showOnline; setShowOnline?.(next); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showOnline: next } }) }).catch(() => showToast("Couldn't save — try again")); }} style={{ width: 44, height: 24, borderRadius: 12, background: showOnline ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "all .25s" }}>
-                    <div style={{ width: 20, height: 20, borderRadius: "50%", background: showOnline ? "var(--gold)" : "var(--muted)", position: "absolute", top: 2, left: showOnline ? 22 : 2, transition: "all .25s" }} />
-                  </div>
-                </div>
-                <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); setShowSafetyCheckin?.(true); } }} onClick={() => { setShowHamburger(false); setShowSafetyCheckin?.(true); }}>
-                  <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Safety Center</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Check-ins · Strikes &amp; Disclosures</div></div>
-                  <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
-                </div>
-                <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); setShowPromptBank?.(true); } }} onClick={() => { setShowHamburger(false); setShowPromptBank?.(true); }}>
-                  <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Prompt Bank</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Personality prompts &amp; answers</div></div>
-                  <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
-                </div>
-                <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); showScreen("settings"); setShowBlockedUsers?.(true); } }} onClick={() => { setShowHamburger(false); showScreen("settings"); setShowBlockedUsers?.(true); }}>
-                  <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Blocked Users</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{blockedUsers.length} blocked</div></div>
-                  <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
-                </div>
-                {isUnlimited && (
-                  <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowHamburger(false); window.open("/muse/admin", "_self"); } }} onClick={() => { setShowHamburger(false); window.open("/muse/admin", "_self"); }}>
-                    <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--gold)" }}>Admin Dashboard</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Analytics &amp; moderation</div></div>
-                    <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
-                  </div>
-                )}
-                <button className="btn" style={{ width: "100%", marginTop: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 13 }} onClick={async () => { try { const res = await authFetch("/api/muse?type=export"); if (!res.ok) { showToast("Export failed"); return; } const j = await res.json(); const blob = new Blob([JSON.stringify(j, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "muse-my-data.json"; a.click(); URL.revokeObjectURL(url); showToast("Data exported"); } catch (e) { showToast("Export failed"); } }}>Export My Data</button>
-                {!showBugForm ? (
-                  <button className="btn" style={{ width: "100%", marginTop: 8, background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", color: "#ff8a80", fontSize: 13 }} onClick={() => setShowBugForm(true)}>Report a Bug</button>
-                ) : (
-                  <div style={{ marginTop: 8, padding: 14, background: "rgba(255,107,107,0.06)", border: "1px solid rgba(255,107,107,0.15)", borderRadius: 12 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#ff8a80", marginBottom: 10 }}>Report a Bug</div>
-                    <select value={bugCategory} onChange={e => setBugCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
-                      <option value="ui">UI / Visual Issue</option>
-                      <option value="crash">App Crash</option>
-                      <option value="payment">Payment Problem</option>
-                      <option value="matching">Matching Not Working</option>
-                      <option value="notification">Notification Issue</option>
-                      <option value="upload">Upload / Media Issue</option>
-                      <option value="other">Other</option>
-                    </select>
-                    <textarea value={bugDescription} onChange={e => setBugDescription(e.target.value)} placeholder="What happened?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
-                    <textarea value={bugSteps} onChange={e => setBugSteps(e.target.value)} placeholder="Steps to reproduce (optional)" rows={2} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
-                    <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                      <input value={bugExpected} onChange={e => setBugExpected(e.target.value)} placeholder="Expected behavior" style={{ flex: 1, padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
-                      <input value={bugActual} onChange={e => setBugActual(e.target.value)} placeholder="Actual behavior" style={{ flex: 1, padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,107,107,0.15)", border: "1px solid rgba(255,107,107,0.3)", color: "#ff8a80" }} disabled={bugSubmitting || !bugDescription.trim()} onClick={async () => { setBugSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "report-bug", category: bugCategory, description: bugDescription, steps: bugSteps, expected: bugExpected, actual: bugActual }) }); if (!r.ok) throw new Error("failed"); showToast("Bug report sent — thank you!"); setShowBugForm(false); setBugDescription(""); setBugSteps(""); setBugExpected(""); setBugActual(""); } catch { showToast("Failed to send bug report"); } setBugSubmitting(false); }}>{bugSubmitting ? "Sending…" : "Submit Bug"}</button>
-                      <button className="btn btn-outline" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => setShowBugForm(false)}>{STRINGS.cancel}</button>
-                    </div>
-                  </div>
-                )}
-                <button className="btn" style={{ width: "100%", marginTop: 8, background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.3)", color: "var(--coral)", fontSize: 13 }} onClick={async () => { if (confirm("Delete your account? This cannot be undone.")) { try { const r = await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "delete-account" }) }); if (!r.ok) { showToast("Failed to delete account"); return; } showToast("Account deleted"); setTimeout(() => window.location.reload(), 1500); } catch { showToast("Failed to delete account"); } } }}>Delete Account</button>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", margin: "16px 0 4px" }}>Legal</div>
-                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 14, padding: "4px 14px" }}>
-                  {[{ label: "Terms of Service", href: "/terms" }, { label: "Privacy Policy", href: "/privacy" }, { label: "DMCA / Copyright", href: "/dmca" }, { label: "Community Guidelines", href: "/safety" }].map(l => (
-                    <a key={l.href} href={l.href} onClick={() => setShowHamburger(false)} style={{ display: "block", padding: "10px 0", fontSize: 13, color: "var(--text2)", textDecoration: "none", transition: "color .15s", borderBottom: "1px solid rgba(255,255,255,0.04)" }} onMouseEnter={e => e.currentTarget.style.color = "#FFD700"} onMouseLeave={e => e.currentTarget.style.color = "var(--text2)"}>{l.label}</a>
-                  ))}
-                  <button className="btn" style={{ width: "100%", margin: "8px 0", background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontSize: 13, fontWeight: 700 }} onClick={() => { setShowHamburger(false); showScreen("codex"); }}>Glossary + Codex</button>
-                </div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px", textAlign: "center" }}>Help &amp; Support</div>
-                {[
-                  { q: "How does matching work?", a: "Swipe right on creators you'd like to connect with. If they swipe right back, it's a connection! You can then message each other." },
-                  { q: "What are Quests?", a: "Quests are creative opportunities posted by brands and clients. Find them under Collab — apply to paid ones, or respond to vision quests. Track everything you've applied to or saved in Menu → Your Activity." },
-                  { q: "How do I upgrade to Premium?", a: "Go to Menu → Settings → Payments & Subscription → Subscription to see plan options." },
-                  { q: "How do I report someone?", a: "Tap the ⚑ Report button on any feed or forum post, the ••• menu on a match, or Report inside a chat conversation. Choose a reason and we'll review it — track your reports in Menu → Your Activity → Reports." },
-                  { q: "How do I delete my account?", a: "Go to Menu → Settings → Safety & Privacy → Delete Account. This permanently removes all your data." },
-                ].map((faq, i) => (
-                  <div key={i} style={{ marginBottom: 10, padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{faq.q}</div>
-                    <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>{faq.a}</div>
-                  </div>
-                ))}
-                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-                  <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { setShowHamburger(false); setShowFeatureTour?.(true); }}>App Walkthrough</button>
-                  <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { setShowHamburger(false); setSupportOpen?.(true); }}>Help Guide</button>
-                  {!showIdeaForm ? (
-                    <button className="btn" style={{ width: "100%", fontSize: 13, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)" }} onClick={() => setShowIdeaForm(true)}>Have an Idea?</button>
-                  ) : (
-                    <div style={{ padding: 14, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 12 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginBottom: 10 }}>Share Your Idea</div>
-                      <select value={ideaCategory} onChange={e => setIdeaCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
-                        <option value="feature">New Feature</option>
-                        <option value="improvement">Improvement</option>
-                        <option value="new-category">New Category</option>
-                        <option value="partnership">Partnership Idea</option>
-                        <option value="other">Other</option>
-                      </select>
-                      <input value={ideaTitle} onChange={e => setIdeaTitle(e.target.value)} placeholder="Give it a name*" style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
-                      <textarea value={ideaDescription} onChange={e => setIdeaDescription(e.target.value)} placeholder="Describe your idea — what should it do? Why would you love it?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)" }} disabled={ideaSubmitting || !ideaTitle.trim() || !ideaDescription.trim()} onClick={async () => { setIdeaSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit-idea", title: ideaTitle, description: ideaDescription, category: ideaCategory }) }); if (!r.ok) throw new Error("failed"); showToast("Idea submitted — we love it!"); setShowIdeaForm(false); setIdeaTitle(""); setIdeaDescription(""); } catch { showToast("Failed to submit idea"); } setIdeaSubmitting(false); }}>{ideaSubmitting ? "Sending…" : "Submit Idea"}</button>
-                        <button className="btn btn-outline" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => setShowIdeaForm(false)}>{STRINGS.cancel}</button>
-                      </div>
-                    </div>
-                  )}
-                  <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => window.open("mailto:" + SUPPORT_EMAIL + "?subject=Muse%20Support%20Request")}>Email Support</button>
-                </div>
-                <button className="btn btn-gold" style={{ width: "100%", marginTop: 16, fontSize: 12, padding: "12px 0" }} onClick={doLogoutFull}>Log Out</button>
               </div>
             )}
             {hamburgerScreen === "activity" && (
