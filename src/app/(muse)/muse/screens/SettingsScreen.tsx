@@ -65,6 +65,12 @@ export interface SettingsScreenProps {
   questClaimables?: number;
   ageVerified?: boolean;
   verificationExpiringSoon?: boolean;
+  discoveryPrefs: { ageMin: number; ageMax: number; distance: number; gender: string };
+  setDiscoveryPrefs: React.Dispatch<React.SetStateAction<{ ageMin: number; ageMax: number; distance: number; gender: string }>>;
+  showOnline?: boolean;
+  setShowOnline?: (v: boolean) => void;
+  showDistance?: boolean;
+  setShowDistance?: (v: boolean) => void;
 }
 
 // Shared bottom-sheet wrapper for every Settings sub-page (Notifications,
@@ -169,6 +175,12 @@ export const SettingsScreen = memo(function SettingsScreen({
   questClaimables = 0,
   ageVerified = false,
   verificationExpiringSoon = false,
+  discoveryPrefs,
+  setDiscoveryPrefs,
+  showOnline,
+  setShowOnline,
+  showDistance,
+  setShowDistance,
 }: SettingsScreenProps) {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [pwCurrent, setPwCurrent] = useState("");
@@ -295,6 +307,40 @@ export const SettingsScreen = memo(function SettingsScreen({
           <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
         </div>
         <div className="settings-scroll">
+          {/* Audit fix (2026-09-08): the Menu's "Settings" card used to open
+              a separate, older inline settings tab instead of this
+              full-page screen — this section (age range, distance, gender)
+              and the Show Distance/Online Status toggles below existed
+              ONLY over there, so switching the Menu card to open this page
+              (see MenuModal.tsx) would have silently dropped them. Ported
+              here so nothing is lost. */}
+          <div className="settings-group">
+            <div className="settings-group-title">Discovery Preferences</div>
+            <div style={{ padding: "10px 0" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Age Range</div>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{discoveryPrefs.ageMin}</span>
+                <input type="range" min={18} max={65} value={discoveryPrefs.ageMin} onChange={e => setDiscoveryPrefs(p => ({ ...p, ageMin: Number(e.target.value) }))} style={{ flex: 1, minWidth: 0, accentColor: "var(--gold)" }} />
+                <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>to</span>
+                <input type="range" min={18} max={65} value={discoveryPrefs.ageMax} onChange={e => setDiscoveryPrefs(p => ({ ...p, ageMax: Number(e.target.value) }))} style={{ flex: 1, minWidth: 0, accentColor: "var(--gold)" }} />
+                <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{discoveryPrefs.ageMax}</span>
+              </div>
+            </div>
+            <div style={{ padding: "0 0 10px" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Max Distance: {discoveryPrefs.distance} mi</div>
+              <input type="range" min={1} max={100} value={discoveryPrefs.distance} onChange={e => setDiscoveryPrefs(p => ({ ...p, distance: Number(e.target.value) }))} style={{ width: "100%", accentColor: "var(--gold)" }} />
+            </div>
+            <div style={{ padding: "0 0 10px" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Show Me</div>
+              <div className="filter-scroll-row" style={{ gap: 8, flexWrap: "nowrap" }}>
+                {["all", "women", "men", "non-binary"].map(g => (
+                  <div key={g} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDiscoveryPrefs(p => ({ ...p, gender: g })); } }} onClick={() => setDiscoveryPrefs(p => ({ ...p, gender: g }))} style={{ padding: "8px 16px", borderRadius: 99, cursor: "pointer", fontSize: 12, fontWeight: 600, transition: "all .25s", background: discoveryPrefs.gender === g ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: "1px solid " + (discoveryPrefs.gender === g ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"), color: discoveryPrefs.gender === g ? "var(--gold)" : "var(--muted)" }}>{g.charAt(0).toUpperCase() + g.slice(1)}</div>
+                ))}
+              </div>
+            </div>
+            <button className="btn btn-gold" style={{ width: "100%", fontSize: 12 }} onClick={async () => { try { await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { ...discoveryPrefs } }) }); showToast("Preferences saved!"); } catch { showToast("Failed to save"); } }}>Save Discovery Preferences</button>
+          </div>
+
           <div className="settings-group">
             <div className="settings-group-title">Account</div>
             {accountItems.map(renderRow)}
@@ -308,6 +354,24 @@ export const SettingsScreen = memo(function SettingsScreen({
           <div className="settings-group">
             <div className="settings-group-title">Privacy & Safety</div>
             {privacyItems.map(renderRow)}
+            <ToggleRow
+              label="Show Distance"
+              checked={!!showDistance}
+              onToggle={() => {
+                const next = !showDistance;
+                setShowDistance?.(next);
+                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showDistance: next } }) }).catch(() => showToast("Couldn't save — try again"));
+              }}
+            />
+            <ToggleRow
+              label="Online Status"
+              checked={!!showOnline}
+              onToggle={() => {
+                const next = !showOnline;
+                setShowOnline?.(next);
+                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showOnline: next } }) }).catch(() => showToast("Couldn't save — try again"));
+              }}
+            />
           </div>
 
           <div className="settings-group">
