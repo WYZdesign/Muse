@@ -523,26 +523,12 @@ export const BtsScreen = memo(function BtsScreen({
                     }}
                   />
 
-                  {/* Time badge overlay */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      background: "rgba(0,0,0,0.55)",
-                      borderRadius: 8,
-                      padding: "3px 8px",
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                    }}
-                  >
-                    <FiClock size={10} />
-                    {typeof s.ts === "number" ? timeAgo(s.ts) : s.time || "now"}
-                  </div>
+                  {/* Audit fix (2026-09-08): this card already shows the
+                      same timestamp in the header, right under the author's
+                      name (line ~501) — this floating badge on the photo
+                      duplicated it verbatim (same s.ts/s.time value), so
+                      every BTS card showed "12m ago" twice at once. Removed
+                      the redundant copy; the header's is the single source. */}
 
                   {/* NSFW blur overlay */}
                   {isNsfw && (
@@ -609,45 +595,16 @@ export const BtsScreen = memo(function BtsScreen({
                   );
                 })()}
 
-                {(s.likes > 0 || s.comments > 0) && (
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 6,
-                      padding: "8px 12px 0",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    {s.likes > 0 && (
-                      <span
-                        style={{
-                          fontSize: 10,
-                          background: "rgba(255,20,147,0.15)",
-                          color: "#FF69B4",
-                          padding: "2px 8px",
-                          borderRadius: 10,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {s.likes} {s.likes === 1 ? "like" : "likes"}
-                      </span>
-                    )}
-                    {s.comments > 0 && (
-                      <span
-                        style={{
-                          fontSize: 10,
-                          background: "rgba(255,215,0,0.15)",
-                          color: "#FFD700",
-                          padding: "2px 8px",
-                          borderRadius: 10,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {s.comments} {s.comments === 1 ? "comment" : "comments"}
-                      </span>
-                    )}
-                  </div>
-                )}
+                {/* Audit fix (2026-09-08): this "N likes" / "N comments"
+                    pill row rendered the exact same s.likes/s.comments
+                    numbers as the interactive Like/Comment buttons in the
+                    Action row directly below it — every BTS card with any
+                    engagement showed each count twice back-to-back. The
+                    views/engagement row above already surfaces the same
+                    facts (engagement = likes + comments×2), and the action
+                    buttons keep the exact counts visible and tappable, so
+                    this static, non-interactive duplicate row is removed
+                    rather than the buttons. */}
 
                 {/* Action row */}
                 <div

@@ -44,6 +44,56 @@ Shipped 18 backend endpoints/features this session. All merged to main, deployed
 
 ---
 
+## Claude — live visual audit via Chrome (authenticated, real device viewport): 8 real bugs fixed, plus a significant Settings/Profile navigation split flagged for a product decision
+
+Torreé asked for a full, surgical visual audit of the live app in the actual Chrome browser (not the sandbox dev server — no Supabase/Stripe creds here, so this was the first real logged-in visual pass this whole engagement). Walked Discover, Feed, Collab, Muses, BTS, Sessions, Network, Profile, and Settings, screen by screen and sub-page by sub-page, looking specifically for things that contradict themselves — a stat shown two different ways, an empty state next to a nonzero count, that kind of thing — not just cosmetic nitpicks.
+
+**Confirmed early**: the live site was running a build from before commit `c5b312a` (tab-row icons, persona greeting) — Torreé had wyzmind deploy fresh mid-session, which is when the real bug-hunting below happened.
+
+**8 fixes, verified with tsc + vitest each time** (all on `claude-audit-fixes`):
+
+1. **Verification banner blocked phone UI, non-dismissible.** Torreé's own feedback: the "Identity verification expired" banner sat permanently at the very top of every screen, no `safe-area-inset-top` padding, so on a real phone it sat flush against the status bar and pushed every header down. Added an X (session-only dismiss) + safe-area padding; the same status now has a permanent, non-dismissible home in Settings → Privacy & Safety → Identity Verification, so dismissing the banner never loses the info. Enforcement (`hasPayment && !ageVerified`) is untouched — presentation-only.
+2. **Feed post detail: "45 replies" stat sat directly above "No replies yet — be the first."** Demo posts carry a seeded reply *count* but no seeded reply *content* — fixed the empty-state copy to stop asserting zero when the count says otherwise.
+3. **BTS cards showed the same time and the same like/comment counts twice.** A floating time badge duplicated the header timestamp verbatim; a "N likes"/"N comments" pill row duplicated the action-row buttons directly below it. Removed both duplicates, kept the interactive originals.
+4. **Hamburger bell unread count and the Activity panel's own unread count could silently disagree** — two different data sources (`activityFeed`, bootstrap-only vs. `notifications`, live-fetched) that were never reconciled. "Mark all read" in the panel now also clears the bell; a failed/empty fetch no longer leaves a stale "Load more" under an empty state.
+5. **Activity panel's Applied/Saved tabs showed "Quest #1" instead of the real brief title** — `appliedBriefs`/`savedBriefs` are bare id arrays with no title, so it always hit the generic fallback. Added a title lookup (mirrors the same `userBriefs`/`liveBriefs`/`BRIEFS` merge CollabScreen already uses) and pass it down as a prop.
+6. **Profile panel's "Bookings" tile appeared twice, from two different sources** — `currentUser.stats?.bookingsCompleted` vs. the live `bookingsForHub` sum — coincidentally both read 0 here, but they could diverge. Unified to one source.
+7. **Sessions' "My Bookings" tab heading just repeated the tab label**, unlike its sibling tabs (Browse → "Available Sessions", Requests → "Incoming Requests"). Renamed to "Your Booked Sessions".
+8. **A "Save Preferences" button sat several unrelated sections below the two preference blocks it actually saved** (Discovery + Notification prefs), after Account and Payments & Subscription — read like it saved the whole page. Moved it directly under what it saves.
+
+**Not fixed, flagged for a decision** — this is the big one: the Menu grid's "Profile" and "Settings" cards don't open the full-page `ProfileScreen.tsx`/`SettingsScreen.tsx` — they open older, separate inline tabs live inside the hamburger panel (`MenuModal.tsx`, `hamburgerScreen === "profile"/"settings"`), reached via `setHamburgerScreen` instead of `showScreen`. The two pairs have diverged real features, not just styling:
+- Inline Settings had **Discovery Preferences** (age/distance/gender) and **Show Distance/Online Status** toggles that the full `SettingsScreen.tsx` completely lacked — ported both over this session (new commit), so the full page now has everything the inline one does.
+- Full `ProfileScreen.tsx` has a completeness bar, Media Kit link, badges, the full portfolio grid, recent-Muses strip, and a much richer Referral/Quests panel that the inline Profile tab doesn't — none of that got ported (bigger scope, didn't want to guess at layout choices for something this visible).
+- `AnalyticsScreen.tsx` is doubly orphaned: only reachable via `ProfileScreen.tsx`, which is itself unreachable from the Menu.
+
+Given wyzmind is making fixes/updates concurrently right now, I deliberately did **not** flip the Menu's navigation to point at the full-page screens in this pass — that's a real "which screen is canonical" product call, not a bug fix, and better made directly with wyzmind than guessed at while both of us are touching the same files. The Settings parity port is safe either way (purely additive). Worth a quick conversation: does `ProfileScreen.tsx`/full `SettingsScreen.tsx` become the real destination, with the inline tabs retired, or is there a reason the inline versions are still the intended path?
+
+`tsc --noEmit` clean, `vitest run` 281/281 passing throughout. Three commits this round: verification banner + duplicate-stat fixes, the Bookings/heading/Save-button fixes, and the Discovery Preferences port.
+
+---
+
+## Claude — round-3 self-audit: closed out every one of the 116 tracker findings, fixed what the self-audit found, added test coverage the earlier rounds skipped
+
+After the judgment-based implementation pass below, Torreé asked directly what could've been done better across the whole audit. Honest answer at the time: only 17 of 116 findings had an explicit tracked decision — the rest were read once during the full-text dump but never individually triaged, despite "I like them all" implying a full pass; no visual QA had been done despite Chrome browser tools being available; and none of the new pure logic (tier thresholds, search matching) had test coverage. Torreé said to fix everything possible, then audit.
+
+**Fixed based on a targeted code investigation** (commit `65e8e39`) — a subagent checked 8 specific claims from the remaining findings against the real code:
+- `ig-2`: the Menu panel's unread bell used a bare dot while the bottom nav's Menu badge showed the real unreadCount for the same data — real inconsistency, now both are the same numeric pill.
+- `vs-2`: Sessions' booking/payment status pills used an 8px radius while every other pill in the app (brief tags, match badges, NSFW badge) uses a full 99px pill — unified.
+- `x-2`: ProfileScreen's fixed "Unlimited Likes" pill (bottom:100) and the global toast (bottom:~84) occupied overlapping vertical bands — real collision risk if both showed at once, moved the pill up.
+- `upwork-p2-1`: applicantCount was already fetched for every brief, not just the owner's, but only shown to the owner — now browsers see "N interested" on other people's open-call/paid briefs too, no new query needed.
+
+Also pulled `sessionTier` and the brief/session search-matching predicates out of their screen files into plain non-JSX modules (`components/sessionTiers.ts`, `components/searchMatch.ts`) with real unit tests (21 new, 260→281) — this logic had zero coverage despite being cheap and easy to regress silently.
+
+Ran an actual `next dev` boot + request against `/muse` as a runtime smoke test beyond tsc/vitest — confirms the app still compiles and serves under Turbopack, not just passes the type checker. Full logged-in visual QA of the specific screens changed across rounds 3a-3c isn't possible in this environment (no Supabase/Stripe credentials in `.env.local` here) — flagging this honestly rather than claiming a visual pass that didn't happen. wyzmind or Torreé checking the actual rendered screens once this merges is still worth doing.
+
+**Full tracker triage**: went through all 116 findings individually (not just the ~17 with an obvious keyword match) and gave each an explicit status — `implemented`, `implemented-partial`, `confirmed` (already true / not applicable, reviewed and closed), or `skipped` (with a real reason: asset-dependent, needs a new backend query, needs a product/business decision, marketing-copy dependent, or duplicate of another finding already resolved). Every one of the ~50 "strength" findings that were already true got a `confirmed` status instead of sitting untagged and indistinguishable from "never reviewed." The tracker is now a complete, closed-out record rather than a partial one.
+
+`tsc --noEmit` clean, `vitest run` 281/281 passing.
+
+Branch: `claude-audit-fixes` (same branch, continuing from `c5b312a`). One commit to review: `65e8e39`. Delivering via the usual bundle workflow.
+
+---
+
 ## Claude — round-3: Torreé said "you make decisions on them, I like all the ideas as long as they're integrated in ways that make most sense" — implemented a judgment-based batch from the full ~110-finding tracker
 
 Previous round ended with me having implemented 3 concrete fixes and leaving ~40 other ideas unaddressed pending explicit sign-off. Torreé's response removed that gate — asked me to use my own judgment on the rest, adapted to Muse's actual product rather than copied verbatim from whichever competitor logged the idea. Read all 116 tracker findings in full (exported via the tracker's `db` capability) before deciding anything.

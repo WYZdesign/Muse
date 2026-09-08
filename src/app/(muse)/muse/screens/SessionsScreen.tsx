@@ -2,10 +2,12 @@
 
 import React, { memo, useState } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiBookmark, FiSearch } from "react-icons/fi";
+import { FiArrowLeft, FiBookmark, FiSearch, FiCompass, FiCalendar, FiInbox } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
 import { EmptyState } from "../components/EmptyState";
+import { sessionTier } from "../components/sessionTiers";
+import { matchesSessionSearch } from "../components/searchMatch";
 
 import type { Screen, Match, SessionListing } from "../components/types";
 import { SESSIONS } from "../components/types";
@@ -61,6 +63,9 @@ function paymentStatusPill(payment_status: string | null | undefined): { label: 
     default: return null; // "pending" / not yet attempted — nothing to confirm yet, don't imply otherwise
   }
 }
+
+// Tier threshold logic lives in components/sessionTiers.ts (plain module,
+// no JSX) so it can be unit-tested without pulling React/next/image in.
 
 export const SessionsScreen = memo(function SessionsScreen({
   screen,
@@ -214,8 +219,12 @@ export const SessionsScreen = memo(function SessionsScreen({
         )}
       </div>
       <div className="conn-tabs" style={{ padding: "0 16px", justifyContent: "center" }}>
-        {(["sessions", "bookings", "requests"] as const).map(t => (
-          <div key={t} className={"conn-tab" + (sessTab === t ? " active" : "")} role="tab" aria-selected={sessTab === t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSessTab(t); } }} onClick={() => setSessTab(t)}>{t === "sessions" ? "Browse" : t === "bookings" ? "My Bookings" : "Requests"}</div>
+        {/* Small leading icon per tab (audit finding tu-2) — same treatment as
+            Collab's category row, for the same glance-ability reason. */}
+        {([["sessions", "Browse", FiCompass], ["bookings", "My Bookings", FiCalendar], ["requests", "Requests", FiInbox]] as const).map(([t, label, Icon]) => (
+          <div key={t} className={"conn-tab" + (sessTab === t ? " active" : "")} role="tab" aria-selected={sessTab === t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSessTab(t); } }} onClick={() => setSessTab(t)} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <Icon size={11} />{label}
+          </div>
         ))}
       </div>
       {sessTab === "sessions" && sessionSearchOpen && (
@@ -236,13 +245,7 @@ export const SessionsScreen = memo(function SessionsScreen({
             {(() => {
               const base = (liveSessions?.length ? liveSessions : SESSIONS as SessionListing[]);
               const q = sessionSearchQuery.trim().toLowerCase();
-              const list = q
-                ? base.filter(s =>
-                    (s.name || "").toLowerCase().includes(q) ||
-                    (s.type || "").toLowerCase().includes(q) ||
-                    (s.skills || []).some((sk: string) => sk.toLowerCase().includes(q))
-                  )
-                : base;
+              const list = q ? base.filter(s => matchesSessionSearch(s, sessionSearchQuery)) : base;
               if (q && list.length === 0) {
                 return (
                   <EmptyState icon={<FiSearch size={44} />} title="No matches" sub={`Nothing found for "${sessionSearchQuery.trim()}"`}>
@@ -259,9 +262,19 @@ export const SessionsScreen = memo(function SessionsScreen({
                   )}
                 </div>
                 <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <div className="conn-name" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6 }}>
+                  <div className="conn-name" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     {s.name}
                     {s.hostVerified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
+                    {(() => {
+                      const tier = sessionTier(s);
+                      if (!tier) return null;
+                      return (
+                        <span
+                          title={`${tier.minSessions}+ completed sessions and a ${tier.minRating}+ average rating`}
+                          style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.3, padding: "2px 7px", borderRadius: 20, background: tier.bg, border: `1px solid ${tier.border}`, color: tier.color, textTransform: "uppercase" }}
+                        >{tier.icon} {tier.label}</span>
+                      );
+                    })()}
                   </div>
                   <div className="conn-meta" style={{ fontSize: 12 }}>{s.type} · {s.rate} · ★ {s.rating}</div>
                   {!!s.hostCompletedSessions && (
@@ -321,7 +334,12 @@ export const SessionsScreen = memo(function SessionsScreen({
         )}
         {sessTab === "bookings" && (
           <div style={{ padding: "0 0 20px" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>My Bookings</div>
+            {/* Audit fix (2026-09-08): this heading just repeated the "My
+                Bookings" tab label verbatim, right under it — the other two
+                tabs (Browse -> "Available Sessions", Requests -> "Incoming
+                Requests") both use a distinct, more descriptive heading
+                instead of echoing the tab name. */}
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>Your Booked Sessions</div>
             {myBookings.asBooker.length === 0 && (
               <EmptyState icon="📅" title="No bookings yet" sub="Book a session from the Browse tab. Your bookings will show up here." style={{ padding: "24px 20px" }}>
                 <button className="btn ls-gradient" style={{ padding: "10px 20px", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => setSessTab("sessions")}>Browse Sessions</button>
@@ -353,8 +371,8 @@ export const SessionsScreen = memo(function SessionsScreen({
                         {host.verified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
                       </div>
                       <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                        {pp && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap" }}>{pp.label}</span>}
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: sc.bg, color: sc.c, border: `1px solid ${sc.bd}`, whiteSpace: "nowrap" }}>{label}</span>
+                        {pp && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap" }}>{pp.label}</span>}
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: sc.bg, color: sc.c, border: `1px solid ${sc.bd}`, whiteSpace: "nowrap" }}>{label}</span>
                       </div>
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
@@ -410,8 +428,8 @@ export const SessionsScreen = memo(function SessionsScreen({
                         {booker.verified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
                       </div>
                       <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                        {pp && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap" }}>{pp.label}</span>}
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: sc.bg, border: `1px solid ${sc.bd}`, color: sc.c, whiteSpace: "nowrap" }}>{label}</span>
+                        {pp && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap" }}>{pp.label}</span>}
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: sc.bg, border: `1px solid ${sc.bd}`, color: sc.c, whiteSpace: "nowrap" }}>{label}</span>
                       </div>
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>

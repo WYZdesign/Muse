@@ -22,6 +22,8 @@ interface ActivityPanelProps {
   setShowHamburger: (v: boolean) => void;
   showScreen: (s: Screen) => void;
   onStreakTap?: () => void;
+  onMarkAllRead?: () => void;
+  briefTitleById?: Record<string, string>;
 }
 
 function NotificationAvatar({ name, src }: { name?: string; src?: string }) {
@@ -33,7 +35,7 @@ function NotificationAvatar({ name, src }: { name?: string; src?: string }) {
   return <Image loading="lazy" src={src} alt="Avatar" width={40} height={40} onError={() => setFailed(true)} style={{ borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />;
 }
 
-function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen, onStreakTap }: ActivityPanelProps) {
+function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen, onStreakTap, onMarkAllRead, briefTitleById }: ActivityPanelProps) {
   const [hubTab, setHubTab] = useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
   const [myReports, setMyReports] = useState<any[] | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -80,9 +82,17 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
         setNotifHasMore(newNotifs.length >= 30);
         if (!append) setNotifOffset(newNotifs.length);
         else setNotifOffset(prev => prev + newNotifs.length);
+      } else {
+        // Root cause of the "Load more" under an empty state bug: this
+        // branch (API responded but data.success was false) used to leave
+        // notifHasMore at its initial `true` forever. The render guard
+        // above (notifications.length > 0) now masks it either way, but
+        // fixing it here too keeps the state itself honest.
+        setNotifHasMore(false);
       }
     } catch (e) {
       console.error("[ActivityPanel] loadNotifications failed:", e);
+      setNotifHasMore(false);
     }
   }, [authFetch, notifOffset, notifFilter]);
 
@@ -102,6 +112,15 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
     try {
       await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "mark-all-notifications-read" }) });
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      // Audit fix (2026-09-08): this only cleared THIS panel's own,
+      // separately-fetched `notifications` list — the bottom-nav bell badge
+      // is driven by a different state (page.tsx's activityFeed, via
+      // unreadCount/onOpenActivity), so tapping "Mark all read" here used to
+      // leave the bell showing a stale nonzero count. Same underlying fact
+      // ("do I have unread notifications"), two disconnected sources of
+      // truth — the same class of bug already fixed for the bell's shape
+      // (dot vs. pill) elsewhere in this app.
+      onMarkAllRead?.();
     } catch {}
   };
 
@@ -145,7 +164,15 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
                   </div>
                 </div>
               ))}
-          {notifHasMore && (
+          {/* Audit fix (2026-09-08): notifHasMore starts true and is only
+              flipped to false once a fetch actually resolves — if that
+              fetch errors (network hiccup, auth not ready yet) the catch
+              block below leaves it true forever, so "Load more" could sit
+              directly under the "No notifications yet" empty state,
+              offering to load more of a list that's empty. Gating on an
+              actual loaded item removes the contradiction regardless of
+              why the fetch didn't complete. */}
+          {notifHasMore && notifications.length > 0 && (
             <button onClick={() => loadNotifications(true)} style={{ width: "100%", padding: 10, marginTop: 12, fontSize: 12, color: "var(--gold)", fontWeight: 600, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 8, cursor: "pointer" }}>Load more</button>
           )}
         </>
@@ -158,7 +185,14 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {ids.map((id, i) => (
               <div key={`${id}-${i}`} style={{ padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 10 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textAlign: "center" }}>{typeof id === "string" && /\s/.test(id) ? id : "Quest #" + id}</span>
+                {/* Audit fix (2026-09-08): appliedBriefs/savedBriefs are
+                    just id arrays, so this used to always fall back to a
+                    generic "Quest #<id>" — never the brief's real title
+                    shown everywhere else in the app (Collab card, etc.).
+                    Look the real title up by id first; keep the old
+                    heuristic only as a last-resort fallback for an id this
+                    session's brief lists don't happen to cover. */}
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textAlign: "center" }}>{briefTitleById?.[String(id)] || (typeof id === "string" && /\s/.test(id) ? id : "Quest #" + id)}</span>
                 <button className="btn btn-outline" style={{ width: "100%", fontSize: 11, padding: "5px 12px", borderRadius: 99 }} onClick={() => { setShowHamburger(false); showScreen("briefs"); }}>View in Collab</button>
               </div>
             ))}
@@ -286,6 +320,8 @@ nearQuests?: number;
   uid: () => any;
   authUser: any;
   onOpenActivity?: () => void;
+  onMarkAllRead?: () => void;
+  briefTitleById?: Record<string, string>;
   unreadCount?: number;
   activityFeed?: {id:number;from:string;avatar:string;text:string;time:string;read:boolean}[];
   getReferralTier?: (count: number) => { tier: string; perks: string; discount?: number; nextThreshold?: number | null };
@@ -365,6 +401,8 @@ export const MenuModal = memo(function MenuModal({
   uid,
   authUser,
   onOpenActivity,
+  onMarkAllRead,
+  briefTitleById,
   unreadCount,
   activityFeed = [],
   liveProfessionals,
@@ -451,7 +489,12 @@ export const MenuModal = memo(function MenuModal({
             aria-label="Notifications"
           >
             <FiBell size={18} />
-            {unreadCount ? <span className="hamburger-bell-dot" /> : null}
+            {/* Numeric pill (was a bare dot) to match the bottom nav's Menu
+                badge (Nav.tsx) — audit finding ig-2: the two unread-count
+                indicators in the app used different shapes (dot vs. pill)
+                for the same underlying unreadCount, which reads as an
+                inconsistent visual language for "you have unread items". */}
+            {unreadCount ? <span className="hamburger-bell-dot">{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
           </button>
         )}
         {!hamburgerScreen && <div className="hamburger-menu-title">Menu</div>}
@@ -725,7 +768,14 @@ export const MenuModal = memo(function MenuModal({
                 <div className="stats-row" style={{ marginTop: 8 }}>
                   <div className="stat"><div className="stat-num">{matches.length || 0}</div><div className="stat-label">Muses</div></div>
                   <div className="stat"><div className="stat-num">{currentUser.stats?.likes || 0}</div><div className="stat-label">Likes</div></div>
-                  <div className="stat"><div className="stat-num">{currentUser.stats?.bookingsCompleted || 0}</div><div className="stat-label">Bookings</div></div>
+                  {/* Audit fix (2026-09-08): this quick-glance tile and the
+                      "Bookings" tile in the full stats grid below both show
+                      a booking count, but used to read from two different
+                      sources — currentUser.stats?.bookingsCompleted here vs.
+                      the live bookingsForHub sum there — which could silently
+                      disagree. Now both read the same live source so they
+                      can never show two different "Bookings" numbers at once. */}
+                  <div className="stat"><div className="stat-num">{(bookingsForHub?.asBooker || []).length + (bookingsForHub?.asHost || []).length}</div><div className="stat-label">Bookings</div></div>
                 </div>
                 {/* PROFILE STATS — full transparency, no cap on what's visible */}
                 {(() => {
@@ -831,6 +881,16 @@ export const MenuModal = memo(function MenuModal({
                     </div>
                   ))}
                 </div>
+                {/* Audit fix (2026-09-08): "Save Preferences" only ever
+                    persisted discoveryPrefs/notifPrefs/showOnline/
+                    showDistance (see its onClick body), but the button sat
+                    several unrelated sections below — after Account AND
+                    Payments & Subscription — reading as if it saved
+                    everything on the page, including account/payment rows
+                    that are separately saved as soon as they're tapped.
+                    Moved directly under the two preference blocks it
+                    actually applies to. */}
+                <button className="btn btn-gold" style={{ width: "100%", fontSize: 12, marginBottom: 16 }} onClick={async () => { try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { ...discoveryPrefs, notifications: notifPrefs, showOnline, showDistance } }) }); showToast("Preferences saved!"); } catch { showToast("Failed to save"); } }}>Save Preferences</button>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Account</div>
                 {[
                   { label: "Edit Profile", desc: "Name, bio, photos", go: () => { setShowHamburger(false); showScreen("profile"); } },
@@ -855,7 +915,6 @@ export const MenuModal = memo(function MenuModal({
                     <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
                   </div>
                 ))}
-                <button className="btn btn-gold" style={{ width: "100%", fontSize: 12 }} onClick={async () => { try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { ...discoveryPrefs, notifications: notifPrefs, showOnline, showDistance } }) }); showToast("Preferences saved!"); } catch { showToast("Failed to save"); } }}>Save Preferences</button>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Safety &amp; Privacy</div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Show Distance</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Display your approximate location</div></div>
@@ -965,7 +1024,7 @@ export const MenuModal = memo(function MenuModal({
             )}
             {hamburgerScreen === "activity" && (
               <div className="conn-scroll">
-                <ActivityPanel authFetch={authFetch} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={bookingsForHub} weeklyLogins={weeklyLogins} loginStreak={loginStreak} setShowHamburger={setShowHamburger} showScreen={showScreen} onStreakTap={() => { setShowHamburger(false); setShowQuests?.(true); }} />
+                <ActivityPanel authFetch={authFetch} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={bookingsForHub} weeklyLogins={weeklyLogins} loginStreak={loginStreak} setShowHamburger={setShowHamburger} showScreen={showScreen} onStreakTap={() => { setShowHamburger(false); setShowQuests?.(true); }} onMarkAllRead={onMarkAllRead} briefTitleById={briefTitleById} />
               </div>
             )}
           </>
