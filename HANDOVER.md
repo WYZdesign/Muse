@@ -1,3 +1,34 @@
+## Claude — round-3: Torreé said "you make decisions on them, I like all the ideas as long as they're integrated in ways that make most sense" — implemented a judgment-based batch from the full ~110-finding tracker
+
+Previous round ended with me having implemented 3 concrete fixes and leaving ~40 other ideas unaddressed pending explicit sign-off. Torreé's response removed that gate — asked me to use my own judgment on the rest, adapted to Muse's actual product rather than copied verbatim from whichever competitor logged the idea. Read all 116 tracker findings in full (exported via the tracker's `db` capability) before deciding anything.
+
+**Implemented, commit `6ca1d54`** — polish-level fixes, no product-model or backend-shape changes:
+
+- Feed posts show a verified checkmark next to the author name when `author.verified` is true (extended the existing `author_id(...)` join in `get.ts`, `authorVerified` added to `normalizeFeedPost` following the file's existing `??`-fallback idiom). Deliberately did **not** add a generic "Follow" button alongside it (the other half of the LinkedIn/Substack-style finding) — Muse has no follow concept distinct from matching/booking, and inventing one is a product-model change, not a UI fix.
+- Feed captions line-clamp to 4 lines so a long caption can't stretch a card past its neighbors; click-through to post-detail is unchanged.
+- The three onboarding steps with no Skip option (type/looking/styles) now show "Select ... to continue" under the disabled Next button, so it's clear why it's disabled. Left steps 5-9 alone — they already have explicit Skip buttons.
+- Discover's search placeholder now names what it actually matches ("Name, style, type, or city..." — verified against the real filter logic in `page.tsx`) instead of a bare "Search...".
+- Horizontal-scroll rows get a trailing-edge fade mask alongside the existing gold scrollbar thumb, as a second "there's more" cue — right edge only, since these rows always start scrolled to position 0.
+
+**Implemented, commit `2718045`** — two convergent findings (Thumbtack + TaskRabbit, both independently suggesting free-text project search) plus one dismiss action:
+
+- Collab and Sessions' Browse tab both get a header search toggle that filters the already-fetched list client-side (title/desc/author/tags for briefs; name/type/skills for sessions) — no backend change, same toggle pattern `MusesScreen` already uses. Empty state distinguishes "no search results" from "genuinely nothing posted yet."
+- Collab brief descriptions over 160 chars now clamp to 3 lines with a real Show more/less toggle (briefs have no detail screen to click into, unlike Feed posts, so this needed actual expand state rather than a CSS-only clamp).
+- Collab briefs (other people's, not your own) get a small "✕ Not interested" dismiss button — session-local state, same tier as the existing `savedBriefs`/`appliedBriefs` (no backend "hidden briefs" table exists or is being added here); a toast with tap-to-undo keeps the dismiss from being a trap.
+
+**Explicitly triaged as out of scope this round, with reasoning** (not silently skipped):
+
+- NSFW toggle placement and legal-disclaimer copy — protected territory per this repo's own sign-off rule, needs Torreé/wyzmind review regardless of how safe the change looks.
+- Tier/badge systems, "elite"-style status badges, mutual-connection social proof — no defined criteria in the codebase (tier) or requires new backend queries (mutual connections); these are business/schema decisions, not UI gaps.
+- Photo-driven pickers/collage grids/masonry conversion — needs real curated images or is structurally risky to convert blind; consistent with the same reasoning given in the round-1 handover entry for the onboarding style-picker.
+- A handful of smaller ideas (Menu modal's two-tier grouping, small leading icons on tab rows, persona-aware greeting copy, an onboarding "start here" callout) were left alone this round — each is a plausible small win, but none had a clear enough spec in its tracker note to implement confidently without guessing at a specific layout/copy choice; flagging them in the tracker rather than forcing a guess.
+
+`tsc --noEmit` clean, `vitest run` 260/260 passing (same count as last handover — this round is pure UI/UX, no new backend logic, so no new tests were added; existing coverage of the touched normalizers/join already covered `authorVerified`'s shape).
+
+Branch: `claude-audit-fixes` (same branch, continuing from `ffd97ce`). Two commits to review: `6ca1d54` and `2718045`. Delivering via the usual bundle workflow.
+
+---
+
 ## 🎨 (Claude → wyzmind) — device-tilt motion bumped up, no action needed
 
 Torreé's feedback: the gyroscope-driven tilt/parallax effect (BackgroundScene's cosmic orbs,
