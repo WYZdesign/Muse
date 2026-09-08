@@ -3164,9 +3164,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       {showDailyLogin && (
         <div className="daily-login-overlay" role="presentation" onClick={() => setShowDailyLogin(false)}>
           <div className="daily-login-card" onClick={e => e.stopPropagation()}>
-            <div className="daily-login-title">Welcome back!</div>
+            <div className="daily-login-title">Welcome back{currentUser?.name ? `, ${currentUser.name.split(" ")[0]}` : ""}!</div>
             <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
-            <div className="daily-login-sub">Check your quests and claim rewards</div>
+            {/* Persona-aware copy (audit finding fm-1) — Muse already collects
+                creative type in onboarding, so referencing it here costs
+                nothing new and beats identical copy for every user type. */}
+            <div className="daily-login-sub">{currentUser?.type ? `As a ${currentUser.type}, check your quests and claim rewards` : "Check your quests and claim rewards"}</div>
             <button className="daily-login-btn" onClick={() => { setShowDailyLogin(false); setShowQuests(true); }}>View Quests</button>
             <button className="daily-login-dismiss" onClick={() => setShowDailyLogin(false)}>Later</button>
           </div>

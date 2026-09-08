@@ -2,7 +2,7 @@
 
 import React, { memo, useState } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiBookmark, FiSearch } from "react-icons/fi";
+import { FiArrowLeft, FiBookmark, FiSearch, FiCompass, FiCalendar, FiInbox } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
 import { EmptyState } from "../components/EmptyState";
@@ -232,8 +232,12 @@ export const SessionsScreen = memo(function SessionsScreen({
         )}
       </div>
       <div className="conn-tabs" style={{ padding: "0 16px", justifyContent: "center" }}>
-        {(["sessions", "bookings", "requests"] as const).map(t => (
-          <div key={t} className={"conn-tab" + (sessTab === t ? " active" : "")} role="tab" aria-selected={sessTab === t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSessTab(t); } }} onClick={() => setSessTab(t)}>{t === "sessions" ? "Browse" : t === "bookings" ? "My Bookings" : "Requests"}</div>
+        {/* Small leading icon per tab (audit finding tu-2) — same treatment as
+            Collab's category row, for the same glance-ability reason. */}
+        {([["sessions", "Browse", FiCompass], ["bookings", "My Bookings", FiCalendar], ["requests", "Requests", FiInbox]] as const).map(([t, label, Icon]) => (
+          <div key={t} className={"conn-tab" + (sessTab === t ? " active" : "")} role="tab" aria-selected={sessTab === t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSessTab(t); } }} onClick={() => setSessTab(t)} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <Icon size={11} />{label}
+          </div>
         ))}
       </div>
       {sessTab === "sessions" && sessionSearchOpen && (

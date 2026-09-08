@@ -2,7 +2,7 @@
 
 import React, { memo, useEffect, useState } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiPlus, FiSearch } from "react-icons/fi";
+import { FiArrowLeft, FiPlus, FiSearch, FiGrid, FiRepeat, FiDollarSign, FiVolume2, FiZap } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { EmptyState } from "../components/EmptyState";
 import type { Screen, Brief } from "../components/types";
@@ -159,8 +159,14 @@ export const CollabScreen = memo(function CollabScreen({
         </div>
       </div>
       <div className="conn-tabs" style={{ padding: "0 12px", justifyContent: "center" }}>
-        {([["all", "All"], ["tfp", "TFP"], ["paid", "Paid"], ["opencall", "Open Call"], ["concept", "Concept"]] as const).map(([k, l]) => (
-          <div key={k} className={"conn-tab" + (museCat === k ? " active" : "")} role="tab" aria-selected={museCat === k} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setMuseCat(k as any); } }} onClick={() => setMuseCat(k as any)}>{l}</div>
+        {/* Small leading icon per tab (audit finding tu-2) — text-only tabs
+            work fine at this row length, but a glance-able icon removes a
+            beat of reading for a frequently-tapped row like this one. Kept
+            to a plain 11px icon, no extra vertical space taken. */}
+        {([["all", "All", FiGrid], ["tfp", "TFP", FiRepeat], ["paid", "Paid", FiDollarSign], ["opencall", "Open Call", FiVolume2], ["concept", "Concept", FiZap]] as const).map(([k, l, Icon]) => (
+          <div key={k} className={"conn-tab" + (museCat === k ? " active" : "")} role="tab" aria-selected={museCat === k} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setMuseCat(k as any); } }} onClick={() => setMuseCat(k as any)} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <Icon size={11} />{l}
+          </div>
         ))}
       </div>
       {briefSearchOpen && (
