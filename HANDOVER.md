@@ -1,3 +1,25 @@
+## Claude — round-3 self-audit: closed out every one of the 116 tracker findings, fixed what the self-audit found, added test coverage the earlier rounds skipped
+
+After the judgment-based implementation pass below, Torreé asked directly what could've been done better across the whole audit. Honest answer at the time: only 17 of 116 findings had an explicit tracked decision — the rest were read once during the full-text dump but never individually triaged, despite "I like them all" implying a full pass; no visual QA had been done despite Chrome browser tools being available; and none of the new pure logic (tier thresholds, search matching) had test coverage. Torreé said to fix everything possible, then audit.
+
+**Fixed based on a targeted code investigation** (commit `65e8e39`) — a subagent checked 8 specific claims from the remaining findings against the real code:
+- `ig-2`: the Menu panel's unread bell used a bare dot while the bottom nav's Menu badge showed the real unreadCount for the same data — real inconsistency, now both are the same numeric pill.
+- `vs-2`: Sessions' booking/payment status pills used an 8px radius while every other pill in the app (brief tags, match badges, NSFW badge) uses a full 99px pill — unified.
+- `x-2`: ProfileScreen's fixed "Unlimited Likes" pill (bottom:100) and the global toast (bottom:~84) occupied overlapping vertical bands — real collision risk if both showed at once, moved the pill up.
+- `upwork-p2-1`: applicantCount was already fetched for every brief, not just the owner's, but only shown to the owner — now browsers see "N interested" on other people's open-call/paid briefs too, no new query needed.
+
+Also pulled `sessionTier` and the brief/session search-matching predicates out of their screen files into plain non-JSX modules (`components/sessionTiers.ts`, `components/searchMatch.ts`) with real unit tests (21 new, 260→281) — this logic had zero coverage despite being cheap and easy to regress silently.
+
+Ran an actual `next dev` boot + request against `/muse` as a runtime smoke test beyond tsc/vitest — confirms the app still compiles and serves under Turbopack, not just passes the type checker. Full logged-in visual QA of the specific screens changed across rounds 3a-3c isn't possible in this environment (no Supabase/Stripe credentials in `.env.local` here) — flagging this honestly rather than claiming a visual pass that didn't happen. wyzmind or Torreé checking the actual rendered screens once this merges is still worth doing.
+
+**Full tracker triage**: went through all 116 findings individually (not just the ~17 with an obvious keyword match) and gave each an explicit status — `implemented`, `implemented-partial`, `confirmed` (already true / not applicable, reviewed and closed), or `skipped` (with a real reason: asset-dependent, needs a new backend query, needs a product/business decision, marketing-copy dependent, or duplicate of another finding already resolved). Every one of the ~50 "strength" findings that were already true got a `confirmed` status instead of sitting untagged and indistinguishable from "never reviewed." The tracker is now a complete, closed-out record rather than a partial one.
+
+`tsc --noEmit` clean, `vitest run` 281/281 passing.
+
+Branch: `claude-audit-fixes` (same branch, continuing from `c5b312a`). One commit to review: `65e8e39`. Delivering via the usual bundle workflow.
+
+---
+
 ## Claude — round-3: Torreé said "you make decisions on them, I like all the ideas as long as they're integrated in ways that make most sense" — implemented a judgment-based batch from the full ~110-finding tracker
 
 Previous round ended with me having implemented 3 concrete fixes and leaving ~40 other ideas unaddressed pending explicit sign-off. Torreé's response removed that gate — asked me to use my own judgment on the rest, adapted to Muse's actual product rather than copied verbatim from whichever competitor logged the idea. Read all 116 tracker findings in full (exported via the tracker's `db` capability) before deciding anything.
