@@ -63,6 +63,8 @@ export interface SettingsScreenProps {
   apiFetch?: (url: string, opts?: any) => Promise<any>;
   setShowQuests?: (v: boolean) => void;
   questClaimables?: number;
+  ageVerified?: boolean;
+  verificationExpiringSoon?: boolean;
 }
 
 // Shared bottom-sheet wrapper for every Settings sub-page (Notifications,
@@ -165,6 +167,8 @@ export const SettingsScreen = memo(function SettingsScreen({
   apiFetch,
   setShowQuests = () => {},
   questClaimables = 0,
+  ageVerified = false,
+  verificationExpiringSoon = false,
 }: SettingsScreenProps) {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [pwCurrent, setPwCurrent] = useState("");
@@ -226,6 +230,17 @@ export const SettingsScreen = memo(function SettingsScreen({
     },
     { icon: <FiMoreHorizontal size={18} />, label: "Blocked Users", desc: blockedUsers.length > 0 ? `${blockedUsers.length} blocked` : "Manage blocked profiles", action: () => setShowBlockedUsers(true) },
     { icon: <FiShield size={18} />, label: "Safety Center", desc: "Check-ins, emergency contacts, trusted friends", action: () => setShowSafetyCheckin(true) },
+    // Permanent home for verification status (audit feedback, 2026-09-08):
+    // the old top-of-app banner was the ONLY place this showed, so
+    // dismissing or missing it meant losing track of why paid features
+    // were locked. This row is always here regardless of the banner.
+    {
+      icon: <FiLock size={18} />,
+      label: "Identity Verification",
+      desc: !ageVerified ? "Expired — paid features locked. Tap to verify" : verificationExpiringSoon ? "Expires in ≤30 days — tap to re-verify" : "Verified ✓",
+      action: () => setShowAgeVerification(true),
+      dot: !ageVerified || verificationExpiringSoon,
+    },
   ];
 
   const paymentItems = [

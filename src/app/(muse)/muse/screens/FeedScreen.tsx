@@ -604,8 +604,17 @@ export const FeedScreen = memo(function FeedScreen({
                 );
               })()}
               <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10 }}>Replies</div>
+              {/* Audit fix (2026-09-08): demo/seed posts carry a display
+                  reply COUNT (dp.comments, used in the stats row above) but
+                  no actual reply objects — this modal used to always claim
+                  "No replies yet — be the first" underneath a stat reading
+                  e.g. "45 replies," a visible contradiction. Only claim zero
+                  when the count really is zero; otherwise say the real
+                  replies just aren't loaded here instead of denying they exist. */}
               {replies.length === 0 && (
-                <div style={{ textAlign: "center", padding: "16px 0", color: "var(--muted)", fontSize: 12, fontStyle: "italic" }}>No replies yet — be the first.</div>
+                <div style={{ textAlign: "center", padding: "16px 0", color: "var(--muted)", fontSize: 12, fontStyle: "italic" }}>
+                  {dp.comments > 0 ? "Replies aren't shown for demo posts yet." : "No replies yet — be the first."}
+                </div>
               )}
               {replies.map((reply: any, i: number) => (
                 <div key={i} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
