@@ -119,30 +119,41 @@ function ilikeContainsPattern(raw: string): string {
 
 export const searchAll = async ({ sb, rest, ip }: ActionContext) => {
   if (!await checkRate(ip, "search", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-  const { query, type = "all", limit: rawLimit = 20 } = rest;
+  const { query, type = "all", limit: rawLimit = 20, styles, creativeType, loc, verified, online, availability, destination, sort = "relevance" } = rest;
   if (!query || query.trim().length < 2) return NextResponse.json({ error: "Query must be at least 2 characters" }, { status: 400 });
   const q = query.trim();
   const pattern = ilikeContainsPattern(q);
-  // Client-supplied limit was passed straight into .limit() unchecked — a
-  // huge value could pull far more rows than the UI ever needs (cheap
-  // scraping/DoS vector), and a negative or non-numeric value could produce
-  // an unexpected Supabase error instead of a clean 400. Clamp to 1-50.
   const parsedLimit = Number(rawLimit);
   const limit = Number.isFinite(parsedLimit) ? Math.min(50, Math.max(1, Math.floor(parsedLimit))) : 20;
   const results: any = { users: [], briefs: [], communities: [] };
 
   if (type === "all" || type === "users") {
-    const { data: users } = await sb.from("muse_profiles")
-      .select("id, name, type, avatar, loc, bio, styles, looking, verified, tier")
-      .or(`name.ilike.${pattern},bio.ilike.${pattern},loc.ilike.${pattern}`)
-      .limit(limit);
+    let query = sb.from("muse_profiles")
+      .select("id, name, type, avatar, loc, bio, styles, looking, verified, tier, travel_dates, availability_status, budget_range, travel_destinations, last_seen_at")
+      .or(`name.ilike.${pattern},bio.ilike.${pattern},loc.ilike.${pattern},styles::text.ilike.${pattern}`);
+    if (Array.isArray(styles) && styles.length > 0) {
+      const styleFilters = styles.map((s: string) => `styles::text.ilike.%${s}%`);
+      query = query.or(styleFilters.join(","));
+    }
+    if (creativeType) query = query.ilike("type", `%${creativeType}%`);
+    if (loc) query = query.ilike("loc", `%${loc}%`);
+    if (verified === true || verified === "true") query = query.eq("verified", true);
+    if (online === true || online === "true") {
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      query = query.gte("last_seen_at", fiveMinAgo);
+    }
+    if (availability) query = query.eq("availability_status", availability);
+    if (destination) query = query.contains("travel_destinations", [destination]);
+    if (sort === "popular") query = query.order("views_count", { ascending: false });
+    else if (sort === "newest") query = query.order("created_at", { ascending: false });
+    const { data: users } = await query.limit(limit);
     results.users = users || [];
   }
 
   if (type === "all" || type === "briefs") {
     const { data: briefs } = await sb.from("muse_briefs")
       .select("id, title, description, type, budget, status, creator_id(name, avatar)")
-      .or(`title.ilike.${pattern},description.ilike.${pattern}`)
+      .or(`title.ilike.${pattern},description.ilike.${pattern},type.ilike.${pattern}`)
       .eq("status", "open")
       .limit(limit);
     results.briefs = briefs || [];
@@ -150,10 +161,19 @@ export const searchAll = async ({ sb, rest, ip }: ActionContext) => {
 
   if (type === "all" || type === "communities") {
     const { data: communities } = await sb.from("muse_communities")
-      .select("id, name, description, cat, members, nsfw, img")
-      .or(`name.ilike.${pattern},description.ilike.${pattern},cat.ilike.${pattern}`)
+      .select("id, name, description, category, member_count, is_nsfw, img, rules")
+      .or(`name.ilike.${pattern},description.ilike.${pattern},category.ilike.${pattern}`)
       .limit(limit);
     results.communities = communities || [];
+  }
+
+  if (type === "all" || type === "forum") {
+    const { data: posts } = await sb.from("muse_forum_posts")
+      .select("id, title, body, category, votes, author_id(name, avatar), created_at")
+      .or(`title.ilike.${pattern},body.ilike.${pattern},category.ilike.${pattern}`)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    results.forum = posts || [];
   }
 
   return NextResponse.json({ success: true, results });
