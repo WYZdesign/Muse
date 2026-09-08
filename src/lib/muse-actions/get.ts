@@ -11,6 +11,39 @@ import { safeServerError } from "@/lib/http";
 import { sanitizeText } from "@/lib/request-safety";
 import { bearerTokenFromReq, isConvoParticipant, UUID_RE, isAdminEmail, isAgeVerificationCurrent } from "./shared";
 
+// Server-side mirror of the client's calcMatch (components/types.ts) so
+// discovery can rank against live rows. Professional fit + vibe signals.
+const CREATIVE_SIDE: Record<string, "behind" | "front"> = {
+  Photographer: "behind", Director: "behind", Videographer: "behind", Editor: "behind", Writer: "behind", Producer: "behind", Designer: "behind", MUA: "behind", Stylist: "behind",
+  Model: "front", Actor: "front", "Content Creator": "front", Influencer: "front", Dancer: "front", Musician: "front",
+};
+const Z_COMPAT: Record<string, string[]> = { Aries: ["Leo", "Sagittarius", "Gemini", "Aquarius"], Taurus: ["Virgo", "Capricorn", "Cancer", "Pisces"], Gemini: ["Libra", "Aquarius", "Aries", "Leo"], Cancer: ["Scorpio", "Pisces", "Taurus", "Virgo"], Leo: ["Aries", "Sagittarius", "Gemini", "Libra"], Virgo: ["Taurus", "Capricorn", "Cancer", "Scorpio"], Libra: ["Gemini", "Aquarius", "Aries", "Sagittarius"], Scorpio: ["Cancer", "Pisces", "Taurus", "Capricorn"], Sagittarius: ["Aries", "Leo", "Gemini", "Libra"], Capricorn: ["Taurus", "Virgo", "Cancer", "Scorpio"], Aquarius: ["Gemini", "Libra", "Aries", "Sagittarius"], Pisces: ["Cancer", "Scorpio", "Taurus", "Virgo"] };
+const M_COMPAT: Record<string, string[]> = { INTJ: ["ENTP", "ENFP"], INTP: ["ENTJ", "ENFJ"], ENTJ: ["INTP", "INFP"], ENTP: ["INTJ", "INFJ"], INFJ: ["ENFP", "ENTP"], INFP: ["ENFJ", "ENTJ"], ENFJ: ["INFP", "INTP"], ENFP: ["INFJ", "INTJ"], ISTJ: ["ESFP", "ESTP"], ISFJ: ["ESFP", "ESTP"], ESTJ: ["ISFP", "ISTP"], ESFJ: ["ISFP", "ISTP"], ISTP: ["ESFJ", "ESTJ"], ISFP: ["ESFJ", "ESTJ"], ESTP: ["ISTJ", "ISFJ"], ESFP: ["ISTJ", "ISFJ"] };
+function calcMatchScore(a: any, b: any): number {
+  let s = 40;
+  const aStyles = Array.isArray(a.styles) ? a.styles : [];
+  const bStyles = Array.isArray(b.styles) ? b.styles : [];
+  const shared = aStyles.filter((x: string) => bStyles.includes(x));
+  s += Math.min(shared.length * 7, 21);
+  const aLooking = Array.isArray(a.looking) ? a.looking : [];
+  const bLooking = Array.isArray(b.looking) ? b.looking : [];
+  if (aLooking.some((l: string) => bLooking.some((bl: string) => bl.toLowerCase().includes(l.toLowerCase()) || l.toLowerCase().includes(bl.toLowerCase())))) s += 15;
+  if (aLooking.some((l: string) => (b.type || "").toLowerCase().includes(l.toLowerCase()))) s += 8;
+  const aSide = CREATIVE_SIDE[a.type]; const bSide = CREATIVE_SIDE[b.type];
+  if (aSide && bSide && aSide !== bSide) {
+    s += 6;
+    const aLooks = aLooking.some((l: string) => (b.type || "").toLowerCase().includes(l.toLowerCase()));
+    const bLooks = bLooking.some((l: string) => (a.type || "").toLowerCase().includes(l.toLowerCase()));
+    if (aLooks && bLooks) s += 4;
+  }
+  if (a.zodiac && b.zodiac) { if (a.zodiac === b.zodiac) s += 6; else if (Z_COMPAT[a.zodiac]?.includes(b.zodiac)) s += 4; }
+  if (a.chinese && b.chinese && a.chinese === b.chinese) s += 6;
+  if (a.mbti && b.mbti) { if (a.mbti === b.mbti) s += 5; else if (M_COMPAT[a.mbti]?.includes(b.mbti)) s += 4; }
+  if (a.life_path && b.life_path && a.life_path === b.life_path) s += 5;
+  if (b.verified) s += 3;
+  return Math.min(s, 99);
+}
+
 export async function GET(req: NextRequest) {
   try {
     const sb = getServiceClient();
@@ -62,6 +95,49 @@ export async function GET(req: NextRequest) {
         return p;
       });
       return NextResponse.json({ profiles: visible });
+    }
+
+    if (type === "discover-ranked" && profileId) {
+      // Server-side ranked discovery: fetch live profiles, score each against
+      // the requesting user (professional fit + vibe, mirroring the client's
+      // calcMatch), and surface actively-boosted profiles first. This makes
+      // "getting discovered" real against live rows rather than demo data.
+      const { data: viewer } = await sb.from("muse_profiles")
+        .select("id, type, styles, looking, zodiac, chinese, mbti, life_path, age_verified, age_verified_at")
+        .eq("id", profileId).maybeSingle();
+      if (!viewer) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      const viewerVerified = isAgeVerificationCurrent(viewer as any);
+      const { data } = await sb.from("muse_profiles")
+        .select("id, name, type, avatar, bio, loc, styles, looking, photos, suspended, nsfw, zodiac, chinese, mbti, life_path, verified, boost_expires_at")
+        .limit(400);
+      let blockedIds = new Set<string>();
+      {
+        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+      }
+      const side = CREATIVE_SIDE[viewer.type as string] || null;
+      const scored = (data || [])
+        .filter((p: any) => {
+          if (String(p.id) === String(profileId)) return false;
+          if (blockedIds.has(String(p.id))) return false;
+          if (p.suspended) return false;
+          if (p.nsfw && !viewerVerified) return false;
+          const hasAvatar = typeof p.avatar === "string" && p.avatar.trim().length > 0;
+          const hasPhotos = Array.isArray(p.photos) && p.photos.length > 0;
+          return hasAvatar || hasPhotos;
+        })
+        .map((p: any) => {
+          const base = calcMatchScore(viewer as any, p);
+          const boosted = !!p.boost_expires_at && new Date(p.boost_expires_at).getTime() > Date.now();
+          return { ...p, matchScore: base, boosted, sideMatches: !!side && !!CREATIVE_SIDE[p.type] && CREATIVE_SIDE[p.type] !== side };
+        });
+      // Boosted + complementary-side first, then by match score; capped for payload.
+      scored.sort((a: any, b: any) => {
+        const ap = (a.boosted ? 1 : 0) + (a.sideMatches ? 0.5 : 0) + a.matchScore / 100;
+        const bp = (b.boosted ? 1 : 0) + (b.sideMatches ? 0.5 : 0) + b.matchScore / 100;
+        return bp - ap;
+      });
+      return NextResponse.json({ profiles: scored.slice(0, 100) });
     }
 
     if (type === "matches" && profileId) {
@@ -321,6 +397,52 @@ export async function GET(req: NextRequest) {
         },
       }));
       return NextResponse.json({ reviews });
+    }
+
+    if (type === "creative-trust") {
+      // Buyer-side trust card for one creative: verification, review aggregate
+      // + structured criteria, completed bookings (as host), and quick response
+      // rate. This is the "can I trust this person to show up and deliver"
+      // surface for agencies/brands/studios (the industry buyer side).
+      const targetProfileId = req.nextUrl.searchParams.get("profile_id") || (profileId || "");
+      if (!targetProfileId) return NextResponse.json({ error: "profile_id required" }, { status: 400 });
+      if (!UUID_RE.test(targetProfileId)) return NextResponse.json({ trust: null });
+      const { data: p } = await sb.from("muse_profiles")
+        .select("id, name, avatar, type, verified, age_verified, age_verified_at, boost_inventory, boost_expires_at, last_seen_at, created_at, profile_completion_pct")
+        .eq("id", targetProfileId).maybeSingle();
+      if (!p) return NextResponse.json({ trust: null });
+      const { data: reviews } = await sb.from("muse_reviews")
+        .select("rating, criteria_communication, criteria_reliability, criteria_creative_quality, criteria_professionalism, criteria_safety")
+        .eq("reviewee_id", targetProfileId);
+      let reviewCount = 0, ratingSum = 0;
+      const crit: Record<string, number> = {};
+      for (const r of reviews || []) {
+        reviewCount += 1;
+        ratingSum += (r as any).rating || 0;
+        for (const k of ["communication", "reliability", "creative_quality", "professionalism", "safety"]) {
+          const v = (r as any)[`criteria_${k}`];
+          if (v) crit[k] = (crit[k] || 0) + v;
+        }
+      }
+      const avg = (k: string) => crit[k] ? Math.round((crit[k] / reviewCount) * 10) / 10 : null;
+      const { count: completedAsHost } = await sb.from("muse_bookings")
+        .select("*", { count: "exact", head: true })
+        .eq("host_id", targetProfileId)
+        .eq("status", "completed");
+      const boosted = !!p.boost_expires_at && new Date(p.boost_expires_at).getTime() > Date.now();
+      const ageVerified = !!p.age_verified && new Date(p.age_verified_at || 0).getTime() > Date.now() - 150 * 24 * 60 * 60 * 1000;
+      return NextResponse.json({
+        trust: {
+          verified: !!p.verified,
+          ageVerified,
+          rating: reviewCount ? Math.round((ratingSum / reviewCount) * 10) / 10 : null,
+          reviewCount,
+          criteria: { communication: avg("communication"), reliability: avg("reliability"), creative_quality: avg("creative_quality"), professionalism: avg("professionalism"), safety: avg("safety") },
+          completedAsHost: completedAsHost || 0,
+          profileCompletionPct: p.profile_completion_pct || 0,
+          isBoosted: boosted,
+        },
+      });
     }
 
     if (type === "moments") {

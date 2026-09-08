@@ -14,14 +14,14 @@ import { feedbackGetNotifications, feedbackMarkAllRead, feedbackReportBug, feedb
 import { adminResolveAppeal, adminBrain, adminReports, adminStrikes, adminSuspendUser, adminScanNsfw, adminContentScans, adminResolveIncident, adminResolveReport } from "@/lib/muse-actions/admin";
 import { disclosureCreate, disclosureConfirm, disclosureGet, strikesGet, strikeAppeal } from "@/lib/muse-actions/disclosures";
 import { communityJoin, communityLeave, communityCreate, eventCreate, eventRsvp, eventCancelRsvp, communityUpdateRules, communityKick, communityBan, communityUnban, communitySetRole, communityGetBans, communityMute, communityUnmute, communityGetMutes, communityGetJoinRequests, communityApproveJoinRequest, communityDenyJoinRequest } from "@/lib/muse-actions/communities";
-import { sessionBook, sessionCreate, bookingRespond, bookingCancel, bookingComplete, reviewSubmit, checkinRespond, checkinsGet, safetyDetailsShare, safetyProfileSave, safetyProfileGet, promptsGet, promptResponseSave, promptResponsesGet, bookingReminders } from "@/lib/muse-actions/sessions";
+import { sessionBook, sessionCreate, bookingRespond, bookingCancel, bookingComplete, reviewSubmit, checkinRespond, checkinsGet, safetyDetailsShare, safetyProfileSave, safetyProfileGet, promptsGet, promptResponseSave, promptResponsesGet, bookingReminders, hostAvailability, sessionAvailabilityToggle } from "@/lib/muse-actions/sessions";
 import { connectRequest } from "@/lib/muse-actions/connect";
 import { profileUpdate, profileDelete } from "@/lib/muse-actions/profile";
 import { matchCreate, matchDelete, profileViewTrack } from "@/lib/muse-actions/matching";
 import { messageSend, messageRequestAccept, messageRequestDecline, messageRequestBlock, messageRequestsGet, blockUser, unblockUser, blockedUsers } from "@/lib/muse-actions/messaging";
 import { feedPost, feedPostLike, feedCommentAdd, momentCreate, momentLike, briefCreate, briefApply } from "@/lib/muse-actions/feed";
 import { forumDispatch, reportCreate, userBlock, userUnblock, blocksGet, forumPostPin, forumPostLock } from "@/lib/muse-actions/forum";
-import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, boostAnalytics, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts } from "@/lib/muse-actions/misc";
+import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, boostAnalytics, boostStatus, saveBoostPurchase, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts } from "@/lib/muse-actions/misc";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ACTION HANDLER REGISTRY
@@ -116,6 +116,8 @@ ACTIONS["save-preferences"] = preferencesSave;
 ACTIONS["apply-promo"] = promoApply;
 ACTIONS["boost"] = boostActivate;
 ACTIONS["boost-analytics"] = boostAnalytics;
+ACTIONS["boost-status"] = boostStatus;
+ACTIONS["boost-purchase-complete"] = saveBoostPurchase;
 ACTIONS["mark-read"] = notificationsMarkRead;
 ACTIONS["sync"] = clientSync;
 ACTIONS["saved-search-save"] = savedSearchSave;
@@ -167,6 +169,8 @@ ACTIONS["get-prompts"] = promptsGet;
 ACTIONS["save-prompt-response"] = promptResponseSave;
 ACTIONS["get-prompt-responses"] = promptResponsesGet;
 ACTIONS["booking-reminders"] = bookingReminders;
+ACTIONS["host-availability"] = hostAvailability;
+ACTIONS["toggle-session-availability"] = sessionAvailabilityToggle;
 
 ACTIONS["admin-brain"] = adminBrain;
 

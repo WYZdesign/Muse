@@ -191,61 +191,145 @@ export const searchAll = async ({ sb, rest, ip }: ActionContext) => {
   return NextResponse.json({ success: true, results });
 };
 
-// ═══ BOOST — enforce a real weekly limit (the pricing page promises "1x/week" for Pro) ═══
-// Boost is currently client-only: anyone can spam localStorage muse_boost with no cap
-// and no server check. This action records each activation and enforces the cap
-// server-side so the Pro promise is real (1 boost/week, free users excluded).
+// ═══ BOOST — unified inventory model ═══
+// A boost is a timed visibility multiplier. Users own boosts in `boost_inventory`
+// (earned via quest rewards or bought as a one-off) and spend one to activate a
+// boost for a chosen duration, tracked by `boost_expires_at`. Pro users get one
+// free weekly boost (the pricing-page "1x/week" promise); free users either spend
+// an earned boost or buy one (create-boost-checkout — api/muse/connect).
 import { NextResponse as _NR } from "next/server";
-export async function boostActivate({ sb, profile }: ActionContext) {
-  const { data: prof } = await sb.from("muse_profiles").select("tier").eq("id", profile.id).maybeSingle();
-  const isPro = prof?.tier === "muse_pro" || prof?.tier === "pro";
-  if (!isPro) return _NR.json({ error: "Boost is a Pro perk — upgrade to boost your profile" }, { status: 403 });
 
-  // ISO week key (Mon-based) so the counter resets each week.
-  const now = new Date();
-  const day = (now.getDay() + 6) % 7;
-  const monday = new Date(now); monday.setDate(now.getDate() - day);
-  const weekKey = monday.toISOString().slice(0, 10);
-  const { count } = await sb.from("muse_activity_log")
-    .select("id", { head: true, count: "exact" })
-    .eq("user_id", profile.id).eq("action", "boost")
-    .gte("created_at", monday.toISOString());
+export const BOOST_DURATIONS = { "24h": 1, "72h": 3, "7d": 7 } as const;
 
-  if ((count ?? 0) >= 1) return _NR.json({ error: "Weekly boost already used — resets next week" }, { status: 429 });
+async function grantBoosts(sb: any, userId: string, count: number) {
+  if (count <= 0) return;
+  const { data: prof } = await sb.from("muse_profiles").select("boost_inventory").eq("id", userId).maybeSingle();
+  const cur = Number(prof?.boost_inventory || 0);
+  await sb.from("muse_profiles").update({ boost_inventory: cur + count }).eq("id", userId);
+}
 
-  await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "boost", details: { week: weekKey, at: now.toISOString() } });
-  return _NR.json({ success: true, week: weekKey });
+// Export for quest claim (boost rewards) — see api/muse/connect and quests.ts.
+export { grantBoosts as addBoostInventory };
+
+// Spends a boost (inventory first, then Pro weekly allowance) and sets the
+// active-boost expiry. Returns the new expiry, or null if none could be spent.
+export async function spendBoost(sb: any, profileId: string, durationKey: string): Promise<string | null> {
+  const hours = BOOST_DURATIONS[durationKey as keyof typeof BOOST_DURATIONS];
+  if (!hours) return null;
+  const { data: prof } = await sb.from("muse_profiles").select("tier, boost_inventory, boost_expires_at").eq("id", profileId).maybeSingle();
+  if (!prof) return null;
+  const isPro = prof.tier === "muse_pro" || prof.tier === "pro" || prof.tier === "muse_studio";
+
+  const running = prof.boost_expires_at && new Date(prof.boost_expires_at).getTime() > Date.now()
+    ? new Date(prof.boost_expires_at).getTime()
+    : Date.now();
+  const newExpiry = new Date(running + hours * 24 * 60 * 60 * 1000).toISOString();
+
+  const inventory = Number(prof.boost_inventory || 0);
+  if (inventory > 0) {
+    await sb.from("muse_profiles").update({ boost_expires_at: newExpiry, boost_inventory: inventory - 1 }).eq("id", profileId);
+    return newExpiry;
+  }
+  if (isPro) {
+    const now = new Date();
+    const day = (now.getDay() + 6) % 7;
+    const monday = new Date(now); monday.setDate(now.getDate() - day);
+    const { count } = await sb.from("muse_activity_log")
+      .select("id", { head: true, count: "exact" })
+      .eq("user_id", profileId).eq("action", "boost")
+      .gte("created_at", monday.toISOString());
+    if ((count ?? 0) >= 1) return null;
+    await sb.from("muse_activity_log").insert({ user_id: profileId, action: "boost", details: { week: monday.toISOString().slice(0, 10), at: now.toISOString(), duration: durationKey } });
+    await sb.from("muse_profiles").update({ boost_expires_at: newExpiry }).eq("id", profileId);
+    return newExpiry;
+  }
+  return null;
+}
+
+export async function boostActivate({ sb, profile, rest }: ActionContext) {
+  const durationKey = String(rest?.duration || "24h");
+  if (!BOOST_DURATIONS[durationKey as keyof typeof BOOST_DURATIONS]) {
+    return _NR.json({ error: "duration must be 24h, 72h, or 7d" }, { status: 400 });
+  }
+  const expiry = await spendBoost(sb, profile.id, durationKey);
+  if (!expiry) {
+    const status = await getBoostStatus(sb, profile.id);
+    if (!status.isPro && status.inventory === 0) {
+      return _NR.json({ error: "No boosts available — earn one via quests or buy a boost", code: "NO_BOOSTS" }, { status: 402 });
+    }
+    return _NR.json({ error: "Weekly boost already used — resets next week" }, { status: 429 });
+  }
+  return _NR.json({ success: true, duration: durationKey, expiresAt: expiry });
+}
+
+export async function boostStatus({ sb, profile }: ActionContext) {
+  return _NR.json(await getBoostStatus(sb, profile.id));
+}
+
+// Confirms a completed one-off boost purchase and grants the boost inventory.
+// The Stripe Checkout/connect route creates the payment with a known
+// muse_boost_purchase row; we re-check the row (idempotent) so a retry or a
+// duplicate client call can never double-grant.
+export async function saveBoostPurchase({ sb, profile, rest }: ActionContext) {
+  const { purchaseId, quantity } = rest;
+  const qty = Math.min(Math.max(Number(quantity || 1), 1), 20);
+  if (!purchaseId) return _NR.json({ error: "purchaseId required" }, { status: 400 });
+  const { data: purchase, error } = await sb.from("muse_boost_purchases")
+    .select("id, user_id, quantity, status")
+    .eq("id", purchaseId)
+    .eq("user_id", profile.id)
+    .maybeSingle();
+  if (error || !purchase) return _NR.json({ error: "Purchase not found" }, { status: 404 });
+  if ((purchase as any).status === "granted") {
+    return _NR.json({ success: true, alreadyGranted: true, quantity: (purchase as any).quantity });
+  }
+  await grantBoosts(sb, profile.id, Number((purchase as any).quantity || qty));
+  await sb.from("muse_boost_purchases").update({ status: "granted", granted_at: new Date().toISOString() }).eq("id", purchaseId);
+  return _NR.json({ success: true, quantity: Number((purchase as any).quantity || qty) });
+}
+
+// Shared boost state — used by boostActivate and surfaced to the client.
+export async function getBoostStatus(sb: any, profileId: string) {
+  const { data: prof } = await sb.from("muse_profiles")
+    .select("tier, boost_inventory, boost_expires_at")
+    .eq("id", profileId).maybeSingle();
+  const isPro = !!prof && (prof.tier === "muse_pro" || prof.tier === "pro" || prof.tier === "muse_studio");
+  const expiresAt = prof?.boost_expires_at || null;
+  const isBoosted = !!expiresAt && new Date(expiresAt).getTime() > Date.now();
+  return { isPro, inventory: Number(prof?.boost_inventory || 0), isBoosted, expiresAt: isBoosted ? expiresAt : null };
 }
 
 // ═══ BOOST ANALYTICS ═══
 export async function boostAnalytics({ sb, profile }: ActionContext) {
   const now = new Date();
-  const day = (now.getDay() + 6) % 7;
-  const monday = new Date(now); monday.setDate(now.getDate() - day);
-  const weekKey = monday.toISOString().slice(0, 10);
-  const weekStart = monday.toISOString();
-  const weekEnd = new Date(monday.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const status = await getBoostStatus(sb, profile.id);
+  const boostStartedAt = status.expiresAt ? null : null;
+  // Determine the boost-relevant window: from the most recent boost activation
+  // (activity log) within the boost period, else fall back to this week.
   const { data: boostLog } = await sb.from("muse_activity_log")
-    .select("created_at").eq("user_id", profile.id).eq("action", "boost")
-    .gte("created_at", weekStart).lt("created_at", weekEnd).maybeSingle();
-  const isBoosted = !!boostLog;
-  const boostStartedAt = boostLog?.created_at || null;
+    .select("created_at, details").eq("user_id", profile.id).eq("action", "boost")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const windowStart = boostLog?.created_at || null;
+  const gte = windowStart ? windowStart : new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { count: profileViews } = await sb.from("muse_activity_log")
     .select("*", { count: "exact", head: true })
     .eq("user_id", profile.id).eq("action", "profile_view")
-    .gte("created_at", isBoosted ? boostStartedAt : weekStart);
+    .gte("created_at", gte);
   const { count: matchesReceived } = await sb.from("muse_matches")
     .select("*", { count: "exact", head: true })
     .eq("target_id", profile.id)
-    .gte("created_at", isBoosted ? boostStartedAt : weekStart);
+    .gte("created_at", gte);
   const { count: likesReceived } = await sb.from("muse_matches")
     .select("*", { count: "exact", head: true })
     .eq("target_id", profile.id)
-    .gte("created_at", isBoosted ? boostStartedAt : weekStart);
+    .gte("created_at", gte);
   return _NR.json({
-    isBoosted,
-    boostStartedAt,
-    weekKey,
+    isBoosted: status.isBoosted,
+    boostStartedAt: windowStart,
+    expiresAt: status.expiresAt,
+    inventory: status.inventory,
     stats: { profileViews: profileViews || 0, matchesReceived: matchesReceived || 0, likesReceived: likesReceived || 0 },
   });
 }

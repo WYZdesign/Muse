@@ -154,6 +154,13 @@ export async function questClaimQuest({ sb, profile, rest }: ActionContext) {
     const base = Math.max(Date.now(), cur);
     grantedUntil = new Date(base + months * 30 * 24 * 60 * 60 * 1000).toISOString();
     await sb.from("muse_profiles").update({ pro_expires_at: grantedUntil }).eq("id", profile.id);
+  } else if (questDef.reward_type === "boost") {
+    // Earned boost credits go into the user's boost inventory (spendable via
+    // "boost" action; consumed by boost_expires_at on activation).
+    const count = Math.max(1, Number(questDef.reward_amount || 1));
+    const { data: prof } = await sb.from("muse_profiles").select("boost_inventory").eq("id", profile.id).maybeSingle();
+    const cur = Number(prof?.boost_inventory || 0);
+    await sb.from("muse_profiles").update({ boost_inventory: cur + count }).eq("id", profile.id);
   }
 
   return NextResponse.json({

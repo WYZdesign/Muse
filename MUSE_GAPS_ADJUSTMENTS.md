@@ -24,48 +24,49 @@ users sign up into a live Supabase backend, but the experience and the marketing
 ## 2. Getting discovered — the gaps that actually matter
 
 ### 2a. The match score is client-side on demo data
-- **[CODE]** `calcMatch()` lives in `components/types.ts` and runs on `PROFILES` demo data. It is NOT a
-  live server-side re-ranker for real profiles. There's no real "similar to this profile" /
-  "recommended for you" endpoint that queries the live DB. Fix: port the scoring to the server against
-  real `muse_profiles` rows, or add a dedicated recommendations query.
-
-### 2b. Discovery quality vs volume
-- **[PRODUCT]** Discover currently surfaces by match-score on a small pool. On a real marketplace the
-  winning UX is **filter-plus-search** (already built: faceted search, map, count) on top of the match
-  score. The score can feel gimmicky; the filters are where professionals actually find work.
+- **[CODE — SHIPPED]** `calcMatch` was client-side on demo `PROFILES`. Now there's a server-side mirror
+  (`calcMatchScore` + `CREATIVE_SIDE` in `get.ts`) and a live-ranked endpoint `discover-ranked` that:
+  fetches real `muse_profiles`, scores each against the requesting user (professional fit + vibe),
+  and surfaces **boosted + complementary-side** profiles first. "Getting discovered" now runs on live
+  rows. A dedicated "similar to this profile" can layer on top of the same scorer.
 
 ### 2c. "Vibe" matching can hurt a professional marketplace's credibility
-- **[PRODUCT]** The match score weighs **zodiac / Chinese zodiac / MBTI / life path**. This is a bold
-  differentiator, but for a "safe professional booking" brand it can read as dating-app energy and
-  undercut trust with the industry/buyer side. **Recommendation:** keep it as a secondary "vibe"
-  layer, but rank primarily on **professional fit** (styles, role, availability, verified, reviews).
-  See `MUSE_CLAUDE_CRITIQUE.md`.
+- **[PRODUCT — partially addressed]** The vibe layer (zodiac/MBTI/life-path) is still in the score, but
+  discovery now ranks primarily on **professional fit** + boosted/side-matching (not vibe). The scorer
+  weights style/reliability/verified alongside vibe, so the industry/buyer side gets a professional
+  ranking. Recommendation stands: keep vibe secondary, never lead with it in copy.
 
 ### 2d. No public trust surface for the *buyer* side
-- **[CODE/PRODUCT]** When a brand/agency wants to hire, they need to see a creative's **completion pace,
-  review history, response rate, verified identity** at a glance. Endpoints exist (reviews, criteria,
-  verified, hostCompletedSessions) but there's no single "hire this creative" trust card.
+- **[CODE — SHIPPED]** `creative-trust` GET aggregates all buyer-facing trust signals for one creative:
+  verified, age-verified, review rating + count + structured criteria (communication/reliability/
+  creative quality/professionalism/safety), completed bookings as host, profile completion %, and
+  boosted state. Sessions already surface `hostVerified` + `hostCompletedSessions`; professionals
+  surface `reviewRating`/`reviewCount`/`reviewCriteria`.
 
 ---
 
 ## 3. Making money — the gaps that actually matter
 
-### 3a. Muse Studio tier ($29.99/mo) isn't purchasable
-- **[CODE]** `TIERS_BY_SIDE.industry` lists Muse Studio at $29.99/mo, but the Stripe price map in
-  `api/checkout/route.ts` only registers `muse_pro`, `muse_pro_annual`, `muse`, `sovereign`. **There is
-  no Stripe price for Muse Studio** — so the high-value industry tier can't actually be bought.
-  Fix: add a `muse_studio` price + webhook handling. *(Highest-ROI money fix available.)*
+### 3a. Muse Studio tier ($29.99/mo) — CHECKOUT WIRED, WEBHOOK FIXED ✅
+- **[CODE — FIXED]** `api/checkout/route.ts` already maps `muse_studio` → `price_muse_studio_monthly` +
+  `DEV_FALLBACK_PRICING` (both the price map and the dev fallback). The real bug was in the **webhook**:
+  `KNOWN_TIERS` was `["free","muse_pro","muse","sovereign"]` — missing `muse_studio` — so a Studio
+  purchase landed the user on `muse_pro`. **Fixed:** added `muse_studio` to `KNOWN_TIERS`.
+  Remaining: create the actual `price_muse_studio_monthly` Stripe price (live-mode operator step).
 
-### 3b. No pay-per-boost for free users
-- **[CODE]** `boostActivate` requires **Pro** (403 for free tiers). So the single most obvious
-  monetization lever for free users — "boost my profile for $5" — is **unbuilt** (flagged in HANDOVER
-  as "À la carte boosts, Stripe one-off"). Fix: add a Stripe one-off boost purchase + boost
-  **duration** (24h/72h/7d).
+### 3b. Pay-per-boost for free users — SHIPPED ✅
+- **[CODE — SHIPPED]** `create-boost-checkout` action in `api/muse/connect/route.ts` creates a Stripe
+  one-off Checkout Session (boost credit = $4.99). `boost-purchase-complete` (in misc.ts) grants the
+  boost inventory idempotently (guarded by a `muse_boost_purchases` row, retry-safe). Requires the
+  `muse_boost_purchases` table (migration 013).
 
-### 3c. Boost has no duration/persistence model
-- **[CODE]** Boost is a single weekly "×1" for Pro (tied to `muse_activity_log`). `boostAnalytics` exists
-  (I shipped it), but there's no boost *expiry* or real visibility-multiplier on the live discover
-  order. Add for the paid-boost path (3b).
+### 3c. Boost inventory + duration/expiry — SHIPPED ✅
+- **[CODE — SHIPPED]** Boost is now a **unified inventory model** (migration 013):
+  `boost_inventory` (earned via quests or bought) + `boost_expires_at` (active boost expiry).
+  `boostActivate` accepts `duration` (24h/72h/7d), spends inventory first then the Pro weekly
+  allowance, and extends an active boost instead of stacking. Quest `boost` rewards now grant
+  inventory. `boost-status` returns the current state; `boost-analytics` reads the active window.
+  Server-side ranked discovery (`discover-ranked`) surfaces boosted profiles first.
 
 ### 3d. Booking monetization depends on hosts onboarding Stripe Connect
 - **[CODE]** `create-booking-checkout` requires the host's Stripe Connect account to be **fully
@@ -90,19 +91,21 @@ users sign up into a live Supabase backend, but the experience and the marketing
 ## 4. Booking — the gaps / friction points
 
 ### 4a. Payment is manual-capture only at completion; no time-release
-- **[CODE]** Funds hold until `bookingComplete` captures them. There is **no automatic time-release**
-  (e.g., release after the booked slot ends). If neither party clicks complete, funds sit. Add an
-  auto-capture cron (the `cron/capture-bookings` route exists — verify it's wired) so money doesn't
-  hang.
+- **[CODE — DONE]** `api/cron/capture-bookings` already auto-captures any `pending`/`held` payment
+  older than `CAPTURE_SAFETY_DAYS` (4 days, conservative vs the shortest ~4d18h card window),
+  re-verifying the PaymentIntent is still `requires_capture` before capturing. Runs every 6h
+  (vercel.json). This is the general-availability auto-capture that prevents money hanging. Stripes'
+  native `automatic_delayed` mode is a private-preview alternative — not needed.
 
-### 4b. No scheduling/calendar availability
-- **[CODE]** Sessions have a `date` field, but there's no real **availability calendar** for a host
-  (Studio availability is only in `studios.ts` static data, and `booking-reminders` I shipped only
-  surfaces upcoming). Fix: host availability slots + conflict detection before booking.
+### 4b. No scheduling/availability calendar
+- **[CODE — SHIPPED]** `host-availability` returns a host's pending/confirmed bookings (the occupied
+  slots to render a calendar + prevent double-booking); `toggle-session-availability` lets a host mark
+  a session open/closed (owner-gated). A full per-time-slot calendar UI is the remaining frontend step.
 
 ### 4c. Booking reminders are built but not surfaced
-- **[CODE]** I shipped `booking-reminders` (upcoming in next 7 days) but the UI may not call it. Wire it
-  to a "your shoot is coming up" card.
+- **[CODE — SHIPPED endpoint]** `booking-reminders` returns upcoming (next 7 days) bookings with session
+  + other-party info. Remaining: wire the frontend `Bookings` screen to call it and render a
+  "your shoot is coming up" card.
 
 ### 4d. No video/voice pre-meet
 - **[PRODUCT]** HANDOVER flags video/voice chat (Daily.co) as the remaining booking-enabler — a pre-shoot

@@ -59,6 +59,9 @@ export async function POST(req: NextRequest) {
     if (action === "create-booking-checkout" && !await checkRate(ip, "connect-create-booking-checkout", 10)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
+    if (action === "create-boost-checkout" && !await checkRate(ip, "connect-create-boost-checkout", 10)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
 
     // ═══ CREATE-ACCOUNT: Onboard user as Stripe Connect account ═══
     if (action === "create-account") {
@@ -306,6 +309,43 @@ export async function POST(req: NextRequest) {
       }, { onConflict: "booking_id" });
 
       return NextResponse.json({ url: session.url, amountCents: totalCharge, baseAmountCents: amount, buyerFeeCents: buyerFee, commissionCents: platformTake });
+    }
+
+    // ═══ CREATE-BOOST-CHECKOUT: one-off boost purchase (Stripe) ═══
+    if (action === "create-boost-checkout") {
+      const { quantity, duration } = body;
+      const qty = Math.min(Math.max(Number(quantity || 1), 1), 20);
+      // One boost credit = 24h of boosted visibility at a flat $4.99.
+      const BOOST_UNIT_CENTS = 499;
+      const amount = qty * BOOST_UNIT_CENTS;
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              unit_amount: amount,
+              product_data: { name: `Muse boost ×${qty}${duration ? ` (${duration})` : ""}` },
+            },
+            quantity: 1,
+          },
+        ],
+        payment_intent_data: {
+          metadata: { muse_boost_user_id: profile.id, muse_boost_quantity: String(qty) },
+        },
+        success_url: `${req.nextUrl.origin}/muse?boost=success`,
+        cancel_url: `${req.nextUrl.origin}/muse?boost=cancelled`,
+      });
+
+      // Idempotent purchase row — granted once via boost-purchase-complete.
+      const purchaseInsert = await sb.from("muse_boost_purchases").insert({
+        user_id: profile.id, quantity: qty, amount_cents: amount,
+        stripe_payment_intent: String(session.payment_intent || ""), status: "pending",
+      }).select("id").single();
+      const purchaseId = purchaseInsert.data?.id || null;
+
+      return NextResponse.json({ url: session.url, purchaseId, amountCents: amount });
     }
 
     // ═══ ACCOUNT-STATUS: Check Connect account status ═══

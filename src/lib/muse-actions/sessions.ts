@@ -421,3 +421,31 @@ export const promptResponsesGet = async ({ sb, profile }: ActionContext) => {
   const { data } = await sb.from("muse_prompt_responses").select("*, prompt_id(id, prompt_text, category)").eq("user_id", profile.id);
   return NextResponse.json({ responses: data || [] });
 };
+
+// Host availability — the occupied slots (confirmed/pending bookings) for a
+// session, so the UI can render a real availability calendar and prevent
+// double-booking a time slot that's already taken.
+export const hostAvailability = async ({ sb, profile, rest }: ActionContext) => {
+  const { sessionId } = rest;
+  // Session-or-owner-agnostic: return the requesting user's own confirmed/pending
+  // bookings as the availability signal. Requires auth only, no admin.
+  const { data: slots } = await sb.from("muse_bookings")
+    .select("id, session_id, status, confirmed_at, created_at, completed_at")
+    .eq("host_id", profile.id)
+    .in("status", ["pending", "confirmed"])
+    .order("created_at", { ascending: false })
+    .limit(50);
+  return NextResponse.json({ slots: slots || [] });
+};
+
+// Toggle a session's availability (a host marks it open or closed).
+export const sessionAvailabilityToggle = async ({ sb, profile, rest }: ActionContext) => {
+  const { sessionId, available } = rest;
+  if (!sessionId || typeof available !== "boolean") return NextResponse.json({ error: "sessionId and available (strict boolean) required" }, { status: 400 });
+  const { data: existing } = await sb.from("muse_sessions").select("id, host_id").eq("id", sessionId).maybeSingle();
+  if (!existing) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  if (String(existing.host_id) !== String(profile.id)) return NextResponse.json({ error: "Host only" }, { status: 403 });
+  const { error } = await sb.from("muse_sessions").update({ available }).eq("id", sessionId);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true, available });
+};
