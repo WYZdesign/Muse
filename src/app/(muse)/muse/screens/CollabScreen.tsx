@@ -2,7 +2,7 @@
 
 import React, { memo, useEffect, useState } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiPlus, FiSearch, FiGrid, FiRepeat, FiDollarSign, FiVolume2, FiZap, FiFlag } from "react-icons/fi";
+import { FiArrowLeft, FiPlus, FiSearch, FiGrid, FiRepeat, FiDollarSign, FiVolume2, FiZap, FiFlag, FiInfo, FiX } from "react-icons/fi";
 import { matchesBriefSearch } from "../components/searchMatch";
 import Nav from "../components/Nav";
 import { EmptyState } from "../components/EmptyState";
@@ -99,6 +99,12 @@ export const CollabScreen = memo(function CollabScreen({
   // table on the backend, and adding one is a bigger change than this pass
   // is scoped for. A toast with Undo keeps the dismiss from being a trap.
   const [hiddenBriefIds, setHiddenBriefIds] = useState<Set<any>>(new Set());
+  // Audit fix (2026-09-08, wyzmind's Torreé batch item 3): the "meet in public
+  // places" safety reminder used to sit inline in every tfp/paid/opencall card's
+  // body, permanently taking up space. Torreé asked for it to become a small
+  // top-left "ⓘ" icon that opens a popup with the full text instead. Tracks
+  // which single brief's popup is open (or null for none).
+  const [safetyInfoBriefId, setSafetyInfoBriefId] = useState<any>(null);
   const hideBrief = (id: any) => {
     setHiddenBriefIds(prev => new Set(prev).add(id));
     showToast({ msg: "Hidden from your feed", onTap: () => setHiddenBriefIds(prev => { const next = new Set(prev); next.delete(id); return next; }) });
@@ -168,7 +174,15 @@ export const CollabScreen = memo(function CollabScreen({
         <input className="inp" placeholder="Describe what you're looking for..." value={briefSearchQuery} onChange={e => setBriefSearchQuery(e.target.value)} style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
         {briefSearchQuery && <button onClick={() => setBriefSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
       </div>
-      <div className="conn-tabs" style={{ padding: "0 12px", justifyContent: "center" }}>
+      {/* Audit fix (2026-09-08, wyzmind's Torreé batch item 3): .conn-tabs is a
+          horizontally-scrolling row (overflow-x:auto). justifyContent:"center"
+          on a scroll container whose content is wider than the viewport centers
+          the flex content within its own (overflowing) box, so at the default
+          scrollLeft:0 the first tab starts partway off-screen to the left —
+          exactly the "leaks out the left edge" Torreé flagged. Left-aligning
+          (dropping the center) puts the first tab flush at the page edge like
+          every other scrollable tab/chip row in the app. */}
+      <div className="conn-tabs" style={{ padding: "0 12px" }}>
         {/* Small leading icon per tab (audit finding tu-2) — text-only tabs
             work fine at this row length, but a glance-able icon removes a
             beat of reading for a frequently-tapped row like this one. Kept
@@ -223,6 +237,14 @@ export const CollabScreen = memo(function CollabScreen({
           }
           return ordered.map((brief, bi) => (
             <div key={brief.id} className="brief-card" style={{ position: "relative" }}>
+              {brief.cat !== "concept" && (
+                <button
+                  aria-label="Safety info"
+                  title="Safety info"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSafetyInfoBriefId(brief.id); }}
+                  style={{ position: "absolute", top: 14, left: 14, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                ><FiInfo size={13} /></button>
+              )}
               {!isOwnBrief(brief) && (
                 <button
                   aria-label="Not interested"
@@ -290,17 +312,6 @@ export const CollabScreen = memo(function CollabScreen({
                   </div>
                 );
               })()}
-              {brief.cat !== "concept" && (
-                // Plain safety reminder (audit finding mm-p2-2 — Torreé chose
-                // non-legal microcopy over drafted legal disclaimer language,
-                // which needs real legal review, not guessed wording). Shown
-                // on tfp/paid/opencall briefs, which are the categories that
-                // typically lead to an in-person session; "concept" briefs
-                // are idea-exchange threads with no meetup implied yet.
-                <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>
-                  <span aria-hidden="true">🛈</span> Meet in public places and verify details before attending a session.
-                </div>
-              )}
               <div className="brief-tags">{brief.tags.map((t: string) => <span key={t} className="brief-tag">{t}</span>)}</div>
               <div className="brief-actions">
                 {isOwnBrief(brief) ? (
@@ -356,6 +367,19 @@ export const CollabScreen = memo(function CollabScreen({
           ));
         })()}
       </div>
+      {safetyInfoBriefId !== null && (
+        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setSafetyInfoBriefId(null)}>
+          <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 340, width: "90%", padding: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div className="modal-title" style={{ display: "flex", alignItems: "center", gap: 8 }}><FiInfo size={16} color="var(--muted)" /> Safety reminder</div>
+              <button aria-label="Close" onClick={() => setSafetyInfoBriefId(null)} style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", padding: 4 }}><FiX size={18} /></button>
+            </div>
+            <div style={{ fontSize: 13.5, color: "var(--text2)", lineHeight: 1.6 }}>
+              Meet in public places and verify details before attending a session. Trust your instincts — you can back out of any shoot at any time, no explanation needed.
+            </div>
+          </div>
+        </div>
+      )}
       {showPostBrief && (
         <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setShowPostBrief(false)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 20 }}>
