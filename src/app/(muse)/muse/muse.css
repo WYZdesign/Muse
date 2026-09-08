@@ -1097,8 +1097,16 @@ img{background-color:#1a0a2e}
    Without this, horizontally-scrolling chip/tab rows (Network filter chips, BTS
    category tabs, chat icebreakers, album/quest filters, moments rows) are cut off
    at the screen edge with no hint they scroll. The thin gold thumb shows only when
-   content overflows, so it's the unobtrusive "this scrolls" cue. */
-.chip-scroll,.conn-tabs,.quest-filters,.pro-skill-row,.quick-replies,.moments-story-row,.moments-tab-row,.album-tabs,.bts-cat-row,.icebreaker-row,.filter-scroll-row{scrollbar-width:thin;scrollbar-color:rgba(255,215,0,0.35) transparent;-ms-overflow-style:none;padding-bottom:10px}
+   content overflows, so it's the unobtrusive "this scrolls" cue.
+   Audit finding (Facebook/Turo/TaskRabbit comparison) noted the scrollbar thumb
+   alone can be easy to miss, especially on touch where scrollbars barely render —
+   a fade-out mask on the trailing edge is a second, more obvious "there's more"
+   cue, mirroring the pattern several competitors used. Right-edge only (not both
+   edges): these rows always start scrolled to position 0, so a left-edge fade
+   would misleadingly suggest hidden content behind the very first chip. The mask
+   only touches the last ~20px, so a row that doesn't overflow just loses a
+   couple of trailing pixels of opacity — not a visible content loss. */
+.chip-scroll,.conn-tabs,.quest-filters,.pro-skill-row,.quick-replies,.moments-story-row,.moments-tab-row,.album-tabs,.bts-cat-row,.icebreaker-row,.filter-scroll-row{scrollbar-width:thin;scrollbar-color:rgba(255,215,0,0.35) transparent;-ms-overflow-style:none;padding-bottom:10px;-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 20px),transparent 100%);mask-image:linear-gradient(to right,#000 calc(100% - 20px),transparent 100%)}
 .chip-scroll::-webkit-scrollbar,.conn-tabs::-webkit-scrollbar,.quest-filters::-webkit-scrollbar,.pro-skill-row::-webkit-scrollbar,.quick-replies::-webkit-scrollbar,.moments-story-row::-webkit-scrollbar,.moments-tab-row::-webkit-scrollbar,.album-tabs::-webkit-scrollbar,.bts-cat-row::-webkit-scrollbar,.icebreaker-row::-webkit-scrollbar{height:2px}
 .chip-scroll::-webkit-scrollbar-track,.conn-tabs::-webkit-scrollbar-track,.quest-filters::-webkit-scrollbar-track,.pro-skill-row::-webkit-scrollbar-track,.quick-replies::-webkit-scrollbar-track,.moments-story-row::-webkit-scrollbar-track,.moments-tab-row::-webkit-scrollbar-track,.album-tabs::-webkit-scrollbar-track,.bts-cat-row::-webkit-scrollbar-track,.icebreaker-row::-webkit-scrollbar-track{background:transparent}
 .chip-scroll::-webkit-scrollbar-thumb,.conn-tabs::-webkit-scrollbar-thumb,.quest-filters::-webkit-scrollbar-thumb,.pro-skill-row::-webkit-scrollbar-thumb,.quick-replies::-webkit-scrollbar-thumb,.moments-story-row::-webkit-scrollbar-thumb,.moments-tab-row::-webkit-scrollbar-thumb,.album-tabs::-webkit-scrollbar-thumb,.bts-cat-row::-webkit-scrollbar-thumb,.icebreaker-row::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.35);border-radius:99px}

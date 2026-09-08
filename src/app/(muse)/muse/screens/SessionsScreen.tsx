@@ -2,7 +2,7 @@
 
 import React, { memo, useState } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiBookmark } from "react-icons/fi";
+import { FiArrowLeft, FiBookmark, FiSearch } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
 import { EmptyState } from "../components/EmptyState";
@@ -183,6 +183,12 @@ export const SessionsScreen = memo(function SessionsScreen({
     } catch { showToast("Failed to start payment"); }
   };
 
+  // Same convergent finding as Collab's brief search (Thumbtack/TaskRabbit
+  // free-text project search) applied to session listings — client-side
+  // filter over the already-fetched liveSessions array, no backend change.
+  const [sessionSearchOpen, setSessionSearchOpen] = useState(false);
+  const [sessionSearchQuery, setSessionSearchQuery] = useState("");
+
   const submitReview = async () => {
     if (!reviewTarget) return;
     setReviewSending(true);
@@ -201,13 +207,24 @@ export const SessionsScreen = memo(function SessionsScreen({
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#F2CC8F,#E07A5F,#F4A261,#F2CC8F,#E07A5F,#F2CC8F)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Sessions</div>
-        <div style={{ width: 42 }} />
+        {sessTab === "sessions" ? (
+          <button className="hdr-btn" onClick={() => setSessionSearchOpen(v => !v)} aria-label="Search sessions"><FiSearch size={17} /></button>
+        ) : (
+          <div style={{ width: 42 }} />
+        )}
       </div>
       <div className="conn-tabs" style={{ padding: "0 16px", justifyContent: "center" }}>
         {(["sessions", "bookings", "requests"] as const).map(t => (
           <div key={t} className={"conn-tab" + (sessTab === t ? " active" : "")} role="tab" aria-selected={sessTab === t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSessTab(t); } }} onClick={() => setSessTab(t)}>{t === "sessions" ? "Browse" : t === "bookings" ? "My Bookings" : "Requests"}</div>
         ))}
       </div>
+      {sessTab === "sessions" && sessionSearchOpen && (
+        <div style={{ margin: "0 16px 12px", display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "6px 12px", animation: "fadeIn .2s ease" }}>
+          <FiSearch size={14} color="var(--muted)" />
+          <input className="inp" placeholder="Name, type, or skill..." value={sessionSearchQuery} onChange={e => setSessionSearchQuery(e.target.value)} autoFocus style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
+          {sessionSearchQuery && <button onClick={() => setSessionSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
+        </div>
+      )}
 <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
             {sessTab === "sessions" && (
               <>
@@ -216,7 +233,24 @@ export const SessionsScreen = memo(function SessionsScreen({
                   <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>Available Sessions</div>
             </div>
             <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 12 }}>Browse creatives offering sessions — pick one, book, and pay securely.</div>
-            {(liveSessions?.length ? liveSessions : SESSIONS as SessionListing[]).map(s => (
+            {(() => {
+              const base = (liveSessions?.length ? liveSessions : SESSIONS as SessionListing[]);
+              const q = sessionSearchQuery.trim().toLowerCase();
+              const list = q
+                ? base.filter(s =>
+                    (s.name || "").toLowerCase().includes(q) ||
+                    (s.type || "").toLowerCase().includes(q) ||
+                    (s.skills || []).some((sk: string) => sk.toLowerCase().includes(q))
+                  )
+                : base;
+              if (q && list.length === 0) {
+                return (
+                  <EmptyState icon={<FiSearch size={44} />} title="No matches" sub={`Nothing found for "${sessionSearchQuery.trim()}"`}>
+                    <button className="btn btn-outline" style={{ padding: "10px 20px", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => setSessionSearchQuery("")}>Clear Search</button>
+                  </EmptyState>
+                );
+              }
+              return list.map(s => (
               <div key={s.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch", position: "relative" }}>
                 <button aria-label="Report session" title="Report" onClick={() => { setReportTarget({ id: s.id, type: "session", name: s.name || "session" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(10,6,18,0.6)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
                 <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0 }}>
@@ -278,7 +312,8 @@ export const SessionsScreen = memo(function SessionsScreen({
                   </div>
                 </div>
               </div>
-            ))}
+              ));
+            })()}
             <div style={{ height: 1, margin: "20px 0 8px", background: "linear-gradient(90deg, transparent, rgba(233,30,99,0.4), transparent)" }} />
             <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", marginBottom: 8 }}>Looking to shoot in LA? Browse partner photo studios and book direct.</div>
             <button className="btn ls-gradient" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 800, borderRadius: 12 }} onClick={() => showScreen("studios")}>✦ Browse LA Studios</button>
@@ -288,7 +323,9 @@ export const SessionsScreen = memo(function SessionsScreen({
           <div style={{ padding: "0 0 20px" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>My Bookings</div>
             {myBookings.asBooker.length === 0 && (
-              <EmptyState icon="📅" title="No bookings yet" sub="Book a session from the Browse tab. Your bookings will show up here." style={{ padding: "24px 20px" }} />
+              <EmptyState icon="📅" title="No bookings yet" sub="Book a session from the Browse tab. Your bookings will show up here." style={{ padding: "24px 20px" }}>
+                <button className="btn ls-gradient" style={{ padding: "10px 20px", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => setSessTab("sessions")}>Browse Sessions</button>
+              </EmptyState>
             )}
             {myBookings.asBooker.map(b => {
               const host = b.host_id || {};

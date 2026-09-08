@@ -107,12 +107,16 @@ export async function GET(req: NextRequest) {
       // last_seen_at joined so the client can render an online indicator on
       // each post's author, same presence signal already used for matches
       // (see useDiscoveryData.ts's `online` computation).
-      const { data } = await sb.from("muse_feed_posts").select("*, author_id(id, name, avatar, last_seen_at)").order("created_at", { ascending: false }).limit(50);
+      const { data } = await sb.from("muse_feed_posts").select("*, author_id(id, name, avatar, last_seen_at, verified)").order("created_at", { ascending: false }).limit(50);
       return NextResponse.json({ posts: data || [] });
     }
 
     if (type === "briefs") {
-      const { data } = await sb.from("muse_briefs").select("*, author_id(id, name, avatar)").order("created_at", { ascending: false }).limit(50);
+      // Embeds an applicant count per brief (muse_brief_applications(count))
+      // so a brief's poster can see interest on their own post without a
+      // separate round-trip — CollabScreen.tsx surfaces this only to the
+      // brief's own author, not to other viewers.
+      const { data } = await sb.from("muse_briefs").select("*, author_id(id, name, avatar), muse_brief_applications(count)").order("created_at", { ascending: false }).limit(50);
       return NextResponse.json({ briefs: data || [] });
     }
 
