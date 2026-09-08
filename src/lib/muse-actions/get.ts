@@ -224,6 +224,18 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    if (type === "discover-count" && user) {
+      const { count: totalProfiles } = await sb.from("muse_profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("suspended", false);
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count: activeLastWeek } = await sb.from("muse_profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("suspended", false)
+        .gte("last_seen_at", sevenDaysAgo);
+      return NextResponse.json({ total: totalProfiles || 0, activeLastWeek: activeLastWeek || 0 });
+    }
+
     if (type === "professionals") {
       const { data } = await sb.from("muse_professionals").select("*").order("created_at", { ascending: false }).limit(50);
       // muse_professionals.user_id references auth.users, not muse_profiles — resolve
