@@ -103,6 +103,8 @@ export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionCo
     }
     const isStubPost = typeof postId === "number" || !UUID_RE.test(String(postId));
     if (isStubPost) return NextResponse.json({ success: true, demo: true });
+    const { data: postMeta } = await sb.from("muse_forum_posts").select("locked").eq("id", postId).maybeSingle();
+    if (postMeta?.locked) return NextResponse.json({ error: "This post is locked — no new replies allowed" }, { status: 403 });
     let depth = 0;
     if (parentReplyId && UUID_RE.test(String(parentReplyId))) {
       const { data: parent } = await sb.from("muse_forum_replies")
@@ -227,4 +229,31 @@ export const userUnblock = async ({ sb, profile, rest }: ActionContext) => {
 export const blocksGet = async ({ sb, profile }: ActionContext) => {
   const { data: blocks } = await sb.from("muse_blocks").select("target_id").eq("user_id", profile.id);
   return NextResponse.json({ blocked: blocks?.map((b: { target_id: string }) => b.target_id) || [] });
+};
+
+export const forumPostPin = async ({ sb, profile, rest }: ActionContext) => {
+  const { postId } = rest;
+  if (!postId || !UUID_RE.test(String(postId))) return NextResponse.json({ error: "Valid postId required" }, { status: 400 });
+  const { data: post } = await sb.from("muse_forum_posts").select("author_id").eq("id", postId).maybeSingle();
+  if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
+  const isAdmin = profile.email && ["torree@wyzmind.com", "admin@muse.app"].includes(String(profile.email).toLowerCase());
+  const isAuthor = String(post.author_id) === String(profile.id);
+  if (!isAdmin && !isAuthor) return NextResponse.json({ error: "Admin or author only" }, { status: 403 });
+  const { data: current } = await sb.from("muse_forum_posts").select("pinned").eq("id", postId).maybeSingle();
+  const newPinned = !(current as any)?.pinned;
+  await sb.from("muse_forum_posts").update({ pinned: newPinned }).eq("id", postId);
+  return NextResponse.json({ success: true, pinned: newPinned });
+};
+
+export const forumPostLock = async ({ sb, profile, rest }: ActionContext) => {
+  const { postId } = rest;
+  if (!postId || !UUID_RE.test(String(postId))) return NextResponse.json({ error: "Valid postId required" }, { status: 400 });
+  const { data: post } = await sb.from("muse_forum_posts").select("author_id").eq("id", postId).maybeSingle();
+  if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
+  const isAdmin = profile.email && ["torree@wyzmind.com", "admin@muse.app"].includes(String(profile.email).toLowerCase());
+  if (!isAdmin) return NextResponse.json({ error: "Admin only" }, { status: 403 });
+  const { data: current } = await sb.from("muse_forum_posts").select("locked").eq("id", postId).maybeSingle();
+  const newLocked = !(current as any)?.locked;
+  await sb.from("muse_forum_posts").update({ locked: newLocked }).eq("id", postId);
+  return NextResponse.json({ success: true, locked: newLocked });
 };
