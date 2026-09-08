@@ -36,6 +36,7 @@ export interface SessionsScreenProps {
   liveSessions?: SessionListing[];
   myBookings?: { asBooker: any[]; asHost: any[] };
   setMyBookings?: React.Dispatch<React.SetStateAction<{ asBooker: any[]; asHost: any[] }>>;
+  bookingReminders?: any[];
   setDisclosureTarget?: (t: any) => void;
   setDisclosureBookingId?: (id: string) => void;
   setShowDisclosureModal?: (v: boolean) => void;
@@ -90,6 +91,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   liveSessions = [],
   myBookings = { asBooker: [], asHost: [] },
   setMyBookings = () => {},
+  bookingReminders = [],
   setDisclosureTarget = () => {},
   setDisclosureBookingId = () => {},
   setShowDisclosureModal = () => {},
@@ -340,6 +342,22 @@ export const SessionsScreen = memo(function SessionsScreen({
                 Requests") both use a distinct, more descriptive heading
                 instead of echoing the tab name. */}
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>Your Booked Sessions</div>
+            {bookingReminders.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text2)", marginBottom: 8 }}>☀️ Upcoming shoots</div>
+                {bookingReminders.map(rem => (
+                  <div key={rem.bookingId} className="conn-card" style={{ marginBottom: 8, padding: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
+                    <div style={{ fontSize: 20 }}>📅</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{rem.sessionTitle || "Shoot"}</div>
+                      <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>
+                        {rem.sessionDate || "Date TBD"}{rem.sessionTime ? ` · ${rem.sessionTime}` : ""}{rem.sessionLocation ? ` · ${rem.sessionLocation}` : ""}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {myBookings.asBooker.length === 0 && (
               <EmptyState icon="📅" title="No bookings yet" sub="Book a session from the Browse tab. Your bookings will show up here." style={{ padding: "24px 20px" }}>
                 <button className="btn ls-gradient" style={{ padding: "10px 20px", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => setSessTab("sessions")}>Browse Sessions</button>

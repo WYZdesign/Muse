@@ -10,6 +10,7 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
 import { sanitizeText } from "@/lib/request-safety";
 import { bearerTokenFromReq, isConvoParticipant, UUID_RE, isAdminEmail, isAgeVerificationCurrent } from "./shared";
+import { getBoostStatus } from "./misc";
 
 // Server-side mirror of the client's calcMatch (components/types.ts) so
 // discovery can rank against live rows. Professional fit + vibe signals.
@@ -659,6 +660,11 @@ export async function GET(req: NextRequest) {
       if (!profile) return NextResponse.json({ prefs: {} });
       const prefs = (profile as any).preferences?.notifications || {};
       return NextResponse.json({ prefs });
+    }
+
+    if (type === "boost-status" && user) {
+      const status = await getBoostStatus(sb, profileId || "");
+      return NextResponse.json(status);
     }
 
     // Albums: visibility is enforced here in application code, not by Postgres

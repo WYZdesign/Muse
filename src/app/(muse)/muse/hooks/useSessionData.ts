@@ -13,6 +13,7 @@ export type UseSessionDataArgs = {
 export function useSessionData({ authFetch, profileId }: UseSessionDataArgs) {
   const [myBookings, setMyBookings] = useState<{ asBooker: any[]; asHost: any[] }>({ asBooker: [], asHost: [] });
   const [liveSessions, setLiveSessions] = useState<SessionListing[] | null>(null);
+  const [bookingReminders, setBookingReminders] = useState<any[]>([]);
 
   // ═══ BOOKINGS: fetch real bookings (booker + host) ═══
   useEffect(() => {
@@ -22,6 +23,17 @@ export function useSessionData({ authFetch, profileId }: UseSessionDataArgs) {
       .then(r => r.json())
       .then(d => { if (!cancelled && d.asBooker) setMyBookings({ asBooker: d.asBooker || [], asHost: d.asHost || [] }); })
       .catch((err) => { trackError("fetch_bookings", { err: String(err) }); });
+    return () => { cancelled = true; };
+  }, [profileId]);
+
+  // ═══ BOOKING REMINDERS: upcoming shoots in the next 7 days ═══
+  useEffect(() => {
+    if (!profileId) return;
+    let cancelled = false;
+    authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "booking-reminders" }) })
+      .then(r => r.json())
+      .then(d => { if (!cancelled && Array.isArray(d.reminders)) setBookingReminders(d.reminders); })
+      .catch(() => { /* non-fatal */ });
     return () => { cancelled = true; };
   }, [profileId]);
 
@@ -39,5 +51,6 @@ export function useSessionData({ authFetch, profileId }: UseSessionDataArgs) {
   return {
     myBookings, setMyBookings,
     liveSessions, setLiveSessions,
+    bookingReminders, setBookingReminders,
   };
 }

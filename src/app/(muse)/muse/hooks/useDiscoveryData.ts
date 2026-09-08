@@ -18,14 +18,28 @@ export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscover
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [matchStreak, setMatchStreak] = useState(0);
 
-  // ═══ DISCOVER: fetch real profiles from API ═══
+  // ═══ DISCOVER: live-ranked profiles from the server (match %, boosted,
+  // complementary-side) so discovery runs on real rows + the buyer-facing
+  // trust signal, not demo data. discover-ranked is a GET type in get.ts and
+  // returns { profiles: [{ ...profile, matchScore, boosted, sideMatches }] }.
   useEffect(() => {
     if (!profileId) return;
     let cancelled = false;
-    authFetch("/api/muse?type=profiles")
+    authFetch("/api/muse?type=discover-ranked")
       .then(r => r.json())
-      .then(d => { if (!cancelled && d.profiles) setLiveProfiles(d.profiles.map(normalizeProfile)); })
-      .catch((err) => { trackError("fetch_profiles", { err: String(err) }); });
+      .then(d => {
+        if (cancelled || !Array.isArray(d.profiles)) return;
+        const enriched = d.profiles.map((p: any) => ({
+          ...normalizeProfile(p),
+          matchScore: Number(p.matchScore || 0),
+          boosted: !!p.boosted,
+          sideMatches: !!p.sideMatches,
+          verified: !!p.verified,
+          boost_expires_at: p.boost_expires_at || null,
+        }));
+        setLiveProfiles(enriched);
+      })
+      .catch((err) => { trackError("fetch_discover_ranked", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [profileId]);
 

@@ -36,3 +36,21 @@ export async function startSubscriptionCheckout(plan: string, email?: string, sh
     return null;
   }
 }
+
+// One-off boost purchase via /api/muse/connect (create-boost-checkout).
+// Returns the Stripe redirect URL, or null with a toast on failure.
+export async function startBoostCheckout(quantity: number, duration: string, showToast?: (msg: string) => void): Promise<string | null> {
+  try {
+    const r = await authFetch("/api/muse/connect", {
+      method: "POST",
+      body: JSON.stringify({ action: "create-boost-checkout", quantity, duration }),
+    });
+    const d = await r.json();
+    if (d.url) return d.url;
+    showToast?.(d.error || "Boost purchase unavailable, try again later");
+    return null;
+  } catch {
+    showToast?.("Boost purchase unavailable, try again later");
+    return null;
+  }
+}
