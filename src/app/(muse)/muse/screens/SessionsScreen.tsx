@@ -2,7 +2,7 @@
 
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiBookmark, FiSearch, FiCompass, FiCalendar, FiInbox } from "react-icons/fi";
+import { FiArrowLeft, FiBookmark, FiSearch, FiCompass, FiCalendar, FiInbox, FiEye } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
 import { EmptyState } from "../components/EmptyState";
@@ -344,15 +344,14 @@ export const SessionsScreen = memo(function SessionsScreen({
                     >
                       {s.available ? "Book Session" : "Waitlist"}
                     </button>
-                    <button className="btn btn-outline" style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap" }} onClick={() => setViewProfile(s)}>View Profile</button>
+                    <button style={{ flex: "0 0 44px", width: 44, height: 44, background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12 }} aria-label="View Profile" title="View Profile" onClick={() => setViewProfile(s)}><FiEye size={18} /></button>
                     <button
-                      className="btn btn-outline"
-                      style={{ flex: "0 0 48px", width: 48, padding: "12px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: savedSessionIds.includes(s.id) ? "var(--gold)" : undefined }}
+                      style={{ flex: "0 0 44px", width: 44, height: 44, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: savedSessionIds.includes(s.id) ? "var(--gold)" : "var(--text2)" }}
                       onClick={() => toggleSaveSession(s.id)}
                       aria-label={savedSessionIds.includes(s.id) ? "Unsave session" : "Save session"}
                       title={savedSessionIds.includes(s.id) ? "Saved" : "Save"}
                     >
-                      <FiBookmark size={14} fill={savedSessionIds.includes(s.id) ? "currentColor" : "none"} />
+                      <FiBookmark size={18} fill={savedSessionIds.includes(s.id) ? "currentColor" : "none"} />
                     </button>
                   </div>
                 </div>
