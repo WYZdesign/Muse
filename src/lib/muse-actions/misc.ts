@@ -264,9 +264,7 @@ export async function boostActivate({ sb, profile, rest }: ActionContext) {
 
 export async function boostStatus({ sb, profile }: ActionContext) {
   return _NR.json(await getBoostStatus(sb, profile.id));
-}
-
-// Confirms a completed one-off boost purchase and grants the boost inventory.
+}// Confirms a completed one-off boost purchase and grants the boost inventory.
 // The Stripe Checkout/connect route creates the payment with a known
 // muse_boost_purchase row; we re-check the row (idempotent) so a retry or a
 // duplicate client call can never double-grant.
@@ -400,4 +398,23 @@ export const savedSearchAlerts = async ({ sb, profile }: ActionContext) => {
     }
   }
   return NextResponse.json({ alerts });
+};
+
+// ═══ PHOTO LIKES — like the image itself (not the profile), keyed by URL ═══
+export async function togglePhotoLike({ sb, profile, rest }: ActionContext) {
+  const photoUrl = typeof rest?.photoUrl === "string" ? rest.photoUrl.trim() : "";
+  if (!photoUrl) return _NR.json({ error: "photoUrl required" }, { status: 400 });
+  if (photoUrl.length > 1000) return _NR.json({ error: "photoUrl too long" }, { status: 400 });
+  const { data: existing } = await sb.from("muse_photo_likes")
+    .select("id").eq("user_id", profile.id).eq("photo_url", photoUrl).maybeSingle();
+  let liked: boolean;
+  if (existing) {
+    await sb.from("muse_photo_likes").delete().eq("id", existing.id);
+    liked = false;
+  } else {
+    await sb.from("muse_photo_likes").insert({ user_id: profile.id, photo_url: photoUrl });
+    liked = true;
+  }
+  const { count } = await sb.from("muse_photo_likes").select("*", { count: "exact", head: true }).eq("photo_url", photoUrl);
+  return _NR.json({ success: true, liked, count: count || 0 });
 };

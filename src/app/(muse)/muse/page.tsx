@@ -305,7 +305,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
   const [showStory, setShowStory] = useState<number|null>(null);
-  const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"villa"|"deepsea"|"sunrise"|"daylight">("lasunset");
+  const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"deepsea"|"sunrise"|"daylight"|"sky"|"rose">("lasunset");
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
   const [discoveryPrefs, setDiscoveryPrefs] = useState<{ageMin:number;ageMax:number;distance:number;gender:string}>({ageMin:18,ageMax:50,distance:50,gender:"all"});
   const [myGeo, setMyGeo] = useState<{lat:number;long:number;city:string;state:string;requiresIdVerification:boolean}|null>(null);
@@ -667,7 +667,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       }
       if (d.stories && d.stories.length) setStories(d.stories);
       else setStories(DEMO_MOMENTS);
-      if (d.theme) setTheme((["lasunset","deepspace","nebula","villa","deepsea","sunrise","daylight"].includes(d.theme) ? d.theme : "lasunset"));
+      if (d.theme) setTheme((["lasunset","deepspace","nebula","deepsea","sunrise","daylight","sky","rose"].includes(d.theme) ? d.theme : "lasunset"));
       if (d.activityFeed) setActivityFeed(d.activityFeed);
       if (d.discoveryPrefs) setDiscoveryPrefs(d.discoveryPrefs);
       if (d.chatImages) setChatImages(d.chatImages);

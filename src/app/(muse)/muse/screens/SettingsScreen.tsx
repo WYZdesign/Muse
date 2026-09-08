@@ -11,9 +11,9 @@ const SUPPORT_EMAIL = "info@wyzdesign.com";
 
 // See the theme-grid audit-fix comment below — unique 3-letter labels so no
 // two theme swatches read the same.
-const THEME_ABBR: Record<string, string> = { lasunset: "LAS", deepspace: "SPC", nebula: "NEB", villa: "VIL", deepsea: "SEA", sunrise: "SUN", daylight: "DAY" };
-const DARK_THEMES = ["lasunset", "deepspace", "nebula", "villa", "deepsea"] as const;
-const LIGHT_THEMES = ["sunrise", "daylight"] as const;
+const THEME_ABBR: Record<string, string> = { lasunset: "SUNSET", deepspace: "SPACE", nebula: "NEBULA", deepsea: "DEEPSEA", sunrise: "SUNRISE", daylight: "DAY", sky: "SKY", rose: "ROSE" };
+const DARK_THEMES = ["lasunset", "deepspace", "nebula", "deepsea"] as const;
+const LIGHT_THEMES = ["sunrise", "daylight", "sky", "rose"] as const;
 
 export interface SettingsScreenProps {
   screen: Screen;
@@ -336,7 +336,7 @@ export const SettingsScreen = memo(function SettingsScreen({
         <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px`, position: "relative", gap: 12 }}>
           <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }}><FiArrowLeft size={18} /></button>
           <div className="logo-link" style={{
-            fontSize: 22,
+            fontSize: 30,
             backgroundImage: "linear-gradient(90deg,#CE93D8,#B388FF,#A5D6A7,#CE93D8,#B388FF,#CE93D8)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",

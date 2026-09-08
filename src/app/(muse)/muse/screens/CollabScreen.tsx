@@ -144,7 +144,7 @@ export const CollabScreen = memo(function CollabScreen({
         <div
           className="logo-link"
           style={{
-            fontSize: 22,
+            fontSize: 30,
             backgroundImage: "linear-gradient(90deg,#FFB5C2,#FFD700,#D4A5FF,#FFB5C2,#FFD700,#FFB5C2)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",

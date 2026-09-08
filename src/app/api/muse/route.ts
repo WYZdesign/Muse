@@ -21,7 +21,7 @@ import { matchCreate, matchDelete, profileViewTrack } from "@/lib/muse-actions/m
 import { messageSend, messageRequestAccept, messageRequestDecline, messageRequestBlock, messageRequestsGet, blockUser, unblockUser, blockedUsers } from "@/lib/muse-actions/messaging";
 import { feedPost, feedPostLike, feedCommentAdd, momentCreate, momentLike, briefCreate, briefApply } from "@/lib/muse-actions/feed";
 import { forumDispatch, reportCreate, userBlock, userUnblock, blocksGet, forumPostPin, forumPostLock } from "@/lib/muse-actions/forum";
-import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, boostAnalytics, boostStatus, saveBoostPurchase, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts } from "@/lib/muse-actions/misc";
+import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, boostAnalytics, boostStatus, saveBoostPurchase, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts, togglePhotoLike } from "@/lib/muse-actions/misc";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ACTION HANDLER REGISTRY
@@ -118,6 +118,7 @@ ACTIONS["boost"] = boostActivate;
 ACTIONS["boost-analytics"] = boostAnalytics;
 ACTIONS["boost-status"] = boostStatus;
 ACTIONS["boost-purchase-complete"] = saveBoostPurchase;
+ACTIONS["toggle-photo-like"] = togglePhotoLike;
 ACTIONS["mark-read"] = notificationsMarkRead;
 ACTIONS["sync"] = clientSync;
 ACTIONS["saved-search-save"] = savedSearchSave;

@@ -461,6 +461,24 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    if (type === "photo-likes") {
+      // Global per-photo like counts, keyed by photo URL. Accepts one or many
+      // URLs so Discover/portfolio/profile can render real counts in one call.
+      const urls = (req.nextUrl.searchParams.get("urls") || "").split(",").map((u: string) => u.trim()).filter(Boolean).slice(0, 50);
+      if (!urls.length) return NextResponse.json({ counts: {} });
+      const { data: rows } = await sb.from("muse_photo_likes").select("photo_url").in("photo_url", urls);
+      const counts: Record<string, number> = {};
+      for (const u of urls) counts[u] = 0;
+      for (const r of rows || []) { const u = (r as any).photo_url; if (counts[u] != null) counts[u]++; }
+      // Whether the viewer liked each (if authed).
+      let likedByMe: Record<string, boolean> = {};
+      if (profileId) {
+        const { data: mine } = await sb.from("muse_photo_likes").select("photo_url").eq("user_id", profileId).in("photo_url", urls);
+        for (const r of mine || []) likedByMe[(r as any).photo_url] = true;
+      }
+      return NextResponse.json({ counts, likedByMe });
+    }
+
     if (type === "moments") {
       const { data } = await sb.from("muse_moments")
         .select("id, text, img, type, likes, comments, created_at, author_id(name, avatar)")

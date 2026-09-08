@@ -1336,8 +1336,12 @@ img{background-color:#1a0a2e}
 [data-theme="lasunset"]{--gold:#FFD700;--coral:#FF8A80;--pink:#FFB5C2;--lavender:#D4A5FF;--mint:#98FB98;--theme-gold:#FFD700;--theme-accent:#FF8A80;--theme-glow:rgba(255,140,128,0.15);--theme-bg-tint:rgba(255,107,75,0.04);--theme-border:rgba(255,140,128,0.15)}
 [data-theme="deepspace"]{--gold:#D4A5FF;--coral:#64B5F6;--pink:#90CAF9;--lavender:#B388FF;--mint:#80DEEA;--theme-gold:#D4A5FF;--theme-accent:#64B5F6;--theme-glow:rgba(100,181,246,0.15);--theme-bg-tint:rgba(48,70,170,0.06);--theme-border:rgba(100,181,246,0.15)}
 [data-theme="nebula"]{--gold:#B388FF;--coral:#98FB98;--pink:#CE93D8;--lavender:#B388FF;--mint:#98FB98;--theme-gold:#B388FF;--theme-accent:#98FB98;--theme-glow:rgba(152,251,152,0.15);--theme-bg-tint:rgba(120,100,220,0.05);--theme-border:rgba(179,136,255,0.15)}
-[data-theme="villa"]{--gold:#FFD1A4;--coral:#FF6B6B;--pink:#F8BBD0;--lavender:#FFCC80;--mint:#A5D6A7;--theme-gold:#FFD1A4;--theme-accent:#FF6B6B;--theme-glow:rgba(255,107,75,0.12);--theme-bg-tint:rgba(180,120,60,0.05);--theme-border:rgba(255,140,100,0.15)}
 [data-theme="deepsea"]{--gold:#00BCD4;--coral:#4FC3F7;--pink:#80DEEA;--lavender:#4DD0E1;--mint:#4DB6AC;--theme-gold:#00BCD4;--theme-accent:#4FC3F7;--theme-glow:rgba(0,188,212,0.15);--theme-bg-tint:rgba(0,100,140,0.05);--theme-border:rgba(0,188,212,0.15)}
+/* +30% tint so the warm light theme reads clearly warm/distinct from the pastel one */
+[data-theme="sunrise"]{--gold:#E8A838;--coral:#E07A5F;--pink:#F2CC8F;--lavender:#81B29A;--mint:#F4A261;--theme-gold:#E8A838;--theme-accent:#E07A5F;--theme-glow:rgba(224,122,95,0.18);--theme-bg-tint:rgba(232,168,56,0.08);--theme-border:rgba(224,122,95,0.22);--bg:#FFF8F0;--surface:rgba(0,0,0,0.04);--glass:rgba(0,0,0,0.06);--text:#2D2A26;--text2:rgba(45,42,38,0.6);--muted:rgba(45,42,38,0.35)}
+[data-theme="daylight"]{--gold:#F2B234;--coral:#FFA07A;--pink:#FFB5C2;--lavender:#D4A5FF;--mint:#F9E79F;--peach:#FFDAB9;--cream:#FFF6E7;--sun:#F9D98A;--theme-gold:#F2B234;--theme-accent:#D4A5FF;--theme-glow:rgba(244,178,52,0.14);--theme-bg-tint:rgba(255,218,185,0.06);--theme-border:rgba(212,165,255,0.22);--bg:#FFF6E7;--surface:rgba(0,0,0,0.03);--glass:rgba(0,0,0,0.05);--text:#4A3F35;--text2:rgba(74,63,53,0.62);--muted:rgba(74,63,53,0.4)}
+[data-theme="sky"]{--gold:#7FB8E8;--coral:#90CAF9;--pink:#B3E5FC;--lavender:#C5B5F5;--mint:#A5E8E0;--peach:#DCEFFF;--cream:#F3F9FF;--sun:#CFE8FF;--theme-gold:#5EA8DF;--theme-accent:#B388FF;--theme-glow:rgba(94,168,223,0.16);--theme-bg-tint:rgba(120,180,230,0.08);--theme-border:rgba(179,136,255,0.24);--bg:#F3F9FF;--surface:rgba(0,0,0,0.03);--glass:rgba(0,0,0,0.05);--text:#2F3A48;--text2:rgba(47,58,72,0.62);--muted:rgba(47,58,72,0.4)}
+[data-theme="rose"]{--gold:#E88A9B;--coral:#F4A0A0;--pink:#FFC1D4;--lavender:#E7B7E3;--mint:#FAD7E0;--peach:#FFE4E8;--cream:#FFF5F7;--sun:#FFD9E2;--theme-gold:#E2677E;--theme-accent:#E7B7E3;--theme-glow:rgba(226,103,126,0.16);--theme-bg-tint:rgba(255,193,212,0.08);--theme-border:rgba(231,183,227,0.26);--bg:#FFF5F7;--surface:rgba(0,0,0,0.03);--glass:rgba(0,0,0,0.05);--text:#4A2F36;--text2:rgba(74,47,54,0.62);--muted:rgba(74,47,54,0.4)}
 [data-theme="sunrise"]{--gold:#E8A838;--coral:#E07A5F;--pink:#F2CC8F;--lavender:#81B29A;--mint:#F4A261;--theme-gold:#E8A838;--theme-accent:#E07A5F;--theme-glow:rgba(224,122,95,0.12);--theme-bg-tint:rgba(232,168,56,0.04);--theme-border:rgba(224,122,95,0.15);--bg:#FFF8F0;--surface:rgba(0,0,0,0.04);--glass:rgba(0,0,0,0.06);--text:#2D2A26;--text2:rgba(45,42,38,0.6);--muted:rgba(45,42,38,0.35)}
 [data-theme="daylight"]{--gold:#F2B234;--coral:#FFA07A;--pink:#FFB5C2;--lavender:#D4A5FF;--mint:#F9E79F;--peach:#FFDAB9;--cream:#FFF6E7;--sun:#F9D98A;--theme-gold:#F2B234;--theme-accent:#D4A5FF;--theme-glow:rgba(244,178,52,0.14);--theme-bg-tint:rgba(255,218,185,0.06);--theme-border:rgba(212,165,255,0.22);--bg:#FFF6E7;--surface:rgba(0,0,0,0.03);--glass:rgba(0,0,0,0.05);--text:#4A3F35;--text2:rgba(74,63,53,0.62);--muted:rgba(74,63,53,0.4)}
 
@@ -1348,8 +1352,8 @@ img{background-color:#1a0a2e}
    full-width bar, reading like a different, broken element instead of the
    6th color option. A fixed 3-column grid gives 6 themes two even rows
    with no leftover to stretch. */
-.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
-.theme-swatch{height:48px;border-radius:12px;cursor:pointer;border:2px solid transparent;transition:all .25s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
+.theme-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+.theme-swatch{height:40px;border-radius:12px;cursor:pointer;border:2px solid transparent;transition:all .25s;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;letter-spacing:.3px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.5);padding:0 6px;text-align:center;line-height:1.1}
 .theme-swatch:hover{transform:scale(1.05)}
 .theme-swatch.active{border-color:#fff;box-shadow:0 0 12px currentColor}
 [data-theme="lasunset"] .theme-swatch[data-val="lasunset"]{background:linear-gradient(135deg,#FFD700,#FF8A80)}
@@ -1361,10 +1365,11 @@ img{background-color:#1a0a2e}
 .theme-swatch[data-val="lasunset"]{background:linear-gradient(135deg,#FFD700,#FF8A80)}
 .theme-swatch[data-val="deepspace"]{background:linear-gradient(135deg,#7B68EE,#4FC3F7)}
 .theme-swatch[data-val="nebula"]{background:linear-gradient(135deg,#B388FF,#98FB98)}
-.theme-swatch[data-val="villa"]{background:linear-gradient(135deg,#FFD1A4,#E57373)}
 .theme-swatch[data-val="deepsea"]{background:linear-gradient(135deg,#00BCD4,#1E88E5)}
 .theme-swatch[data-val="sunrise"]{background:linear-gradient(135deg,#E8A838,#E07A5F);color:#2D2A26;text-shadow:none}
 .theme-swatch[data-val="daylight"]{background:linear-gradient(135deg,#FFDAB9,#FFB5C2 45%,#D4A5FF);color:#4A3F35;text-shadow:none}
+.theme-swatch[data-val="sky"]{background:linear-gradient(135deg,#90CAF9,#C5B5F5 45%,#A5E8E0);color:#2F3A48;text-shadow:none}
+.theme-swatch[data-val="rose"]{background:linear-gradient(135deg,#FFC1D4,#E7B7E3 45%,#FAD7E0);color:#4A2F36;text-shadow:none}
 
 /* ═══ SUNRISE LIGHT-MODE OVERRIDES ═══ */
 /* Audit fix (2026-09-08): tapping the sunrise swatch made the whole app look
@@ -1379,6 +1384,27 @@ img{background-color:#1a0a2e}
    overrides make the frame and backdrop follow the sunrise palette too. */
 [data-theme="sunrise"] .scene{background:linear-gradient(180deg,#FFF8F0 0%,#FCEFDD 40%,#FCE8D4 70%,#FFF8F0 100%)}
 [data-theme="sunrise"] .phone{background:rgba(255,248,240,0.55)}
+/* Light-theme surfaces (sunrise/daylight/sky/rose): the dark-frame, dark-panel, and
+   dark-input defaults make every light theme look "broken/dark" on those surfaces.
+   This consolidates the light treatment for all four so sky/rose/daylight render light
+   too (mirrors the per-property sunrise overrides just below). */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .phone{background:rgba(255,255,255,0.55)}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .swipe-card{background:#FFFDF8}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .swipe-card img{background:#F7EFE3}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .swipe-card .card-details{background:#FFFDF8;box-shadow:0 -8px 32px rgba(90,70,50,0.12)}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-card-grid{background:#FFFDF8;border-color:rgba(90,70,50,0.12);box-shadow:0 4px 16px rgba(90,70,50,0.1)}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .intent-modal{background:#FFFDF8}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .modal-panel{background:#FFFDF8!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .nav{background:rgba(255,253,248,0.94);border-color:rgba(90,70,50,0.12)}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .inp{background:rgba(0,0,0,0.04);border-color:rgba(90,70,50,0.16);color:#2F2A24}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .inp::placeholder{color:rgba(47,42,36,0.45)}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .chip{background:rgba(0,0,0,0.04);border-color:rgba(90,70,50,0.14);color:#2F2A24}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .btn-outline{border-color:rgba(90,70,50,0.18);color:#2F2A24}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .conn-btn-ghost{background:rgba(0,0,0,0.04);border-color:rgba(90,70,50,0.14);color:#2F2A24}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .hamburger-panel{background:linear-gradient(180deg,rgba(255,253,248,0.99) 0%,rgba(252,238,224,0.99) 100%);border-left-color:rgba(90,70,50,0.1)}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .hamburger-item{background:rgba(0,0,0,0.02);border-color:rgba(90,70,50,0.08)}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .search-input{color:#2F2A24}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .chat-inp{background:rgba(0,0,0,0.04);border-color:rgba(90,70,50,0.16);color:#2F2A24}
 @media(max-width:767px){[data-theme="sunrise"] .phone{background:rgba(255,248,240,0.92)}}
 [data-theme="sunrise"] .swipe-card{background:#FFF8F0}
 [data-theme="sunrise"] .swipe-card img{background:#F5EDE3}

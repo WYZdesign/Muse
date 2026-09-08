@@ -361,7 +361,7 @@ export const NetworkScreen = memo(function NetworkScreen({
         <div
           className="logo-link"
           style={{
-            fontSize: 24,
+            fontSize: 30,
             backgroundImage: "linear-gradient(90deg,#64B5F6,#90CAF9,#D4A5FF,#64B5F6,#90CAF9,#64B5F6)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",

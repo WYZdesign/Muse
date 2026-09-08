@@ -50,7 +50,7 @@ export const StudiosScreen = memo(function StudiosScreen({
     <div className={"screen-el" + (screen === "studios" ? " active" : "")}>
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("sessions")} aria-label="Back"><FiArrowLeft size={20} /></button>
-        <div className="logo-link" style={{ fontSize: 24, backgroundImage: "linear-gradient(90deg,#E07A5F,#F4A261,#81B29A,#E07A5F,#F4A261,#E07A5F)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>LA Studios</div>
+        <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#E07A5F,#F4A261,#81B29A,#E07A5F,#F4A261,#E07A5F)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>LA Studios</div>
         <div style={{ width: 42 }} />
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 90px" }}>

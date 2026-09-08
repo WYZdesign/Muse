@@ -118,7 +118,7 @@ export const MusesScreen = memo(function MusesScreen({
         <div
           className="logo-link"
           style={{
-            fontSize: 24,
+            fontSize: 30,
             backgroundImage: "linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",

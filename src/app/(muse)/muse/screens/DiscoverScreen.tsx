@@ -266,6 +266,35 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   // doLikeWithNote directly if the caller doesn't wire a dedicated handler.
   const handleAnchorLike = onAnchorLike ?? ((anchor: LikeAnchor) => doLikeWithNote(anchor));
 
+  // ═══ PHOTO LIKES (like the image, not the match) ═══
+  const [photoLike, setPhotoLike] = useState<{ [url: string]: { liked: boolean; count: number } }>({});
+  // Current hero photo URL for the top card (kept in sync so the spark counter
+  // reflects exactly the photo being viewed).
+  const topCard = filteredProfiles[currentIdx];
+  const topHeroSrc = (() => {
+    const base: string[] = (topCard as any)?.photos?.length ? (topCard as any).photos : [topCard?.img];
+    return (base[currentPhotoIdx ?? 0]) || topCard?.img || "";
+  })();
+
+  useEffect(() => {
+    if (!topHeroSrc || screen !== "discover") return;
+    let cancelled = false;
+    apiFetch(`/api/muse?type=photo-likes&urls=${encodeURIComponent(topHeroSrc)}`).then(r => r.json()).then(d => {
+      if (!cancelled && d) setPhotoLike(prev => ({ ...prev, [topHeroSrc]: { liked: !!d.likedByMe?.[topHeroSrc], count: d.counts?.[topHeroSrc] || 0 } }));
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [topHeroSrc, screen, currentPhotoIdx]);
+
+  const togglePhotoLike = async (url: string) => {
+    if (!url) return;
+    setPhotoLike(prev => ({ ...prev, [url]: { liked: !prev[url]?.liked, count: (prev[url]?.count || 0) + (prev[url]?.liked ? -1 : 1) } }));
+    try {
+      const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "toggle-photo-like", photoUrl: url }) });
+      const d = await r.json();
+      if (d.success) setPhotoLike(prev => ({ ...prev, [url]: { liked: d.liked, count: d.count } }));
+    } catch { /* non-fatal */ }
+  };
+
   useEffect(() => {
     if (screen !== "discover") return;
     return createSpatialScene(
@@ -296,7 +325,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
     <div className={"screen-el" + (screen === "discover" ? " active" : "")}>
       <div className="discover-wrap">
         <div className="hdr">
-          <div className="logo-link" style={{ fontSize: 24, backgroundImage: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "static", left: "auto", top: "auto", transform: "none", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Discover</div>
+          <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "static", left: "auto", top: "auto", transform: "none", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Discover</div>
           <div style={{ flex: 1 }} />
           <div style={{ display: "flex", gap: 4 }}>
             {!discoverSearchOpen ? (
@@ -569,7 +598,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 <button className="match-radial-btn btn-rewind" style={{ left: -110, top: 7 }} onClick={doRewind} aria-label="Rewind">↺</button>
                                 <button className="match-radial-btn btn-nope" style={{ left: -106, top: -40 }} onClick={() => doSwipe("left")} aria-label="Pass">✕</button>
                                 <button className="match-radial-btn btn-super" style={{ left: -77, top: -77, width: 37, height: 37, fontSize: 16 }} onClick={() => doSwipe("super")} aria-label="Super Like">★</button>
-                                <button className="match-radial-btn btn-like" style={{ left: -40, top: -106 }} onClick={() => doSwipe("right")} aria-label="Like">✦</button>
+                                <button className="match-radial-btn btn-like" style={{ left: -40, top: -106, width: 44, height: 44, flexDirection: "column", fontSize: 16, lineHeight: 1 }} onClick={() => togglePhotoLike(topHeroSrc)} aria-label="Like this photo"><span aria-hidden="true" style={{ fontSize: 18 }}>✦</span><span style={{ fontSize: 9, fontWeight: 800, marginTop: 1 }}>{(photoLike[topHeroSrc]?.count || 0) + (photoLike[topHeroSrc]?.liked ? 0 : 0)}</span></button>
                                 <button className="match-radial-btn btn-note" style={{ left: 7, top: -110 }} onClick={() => doLikeWithNote()} aria-label="Like + Note">✎</button>
                               </div>
                             </div>
