@@ -14,7 +14,7 @@ import { feedbackGetNotifications, feedbackMarkAllRead, feedbackReportBug, feedb
 import { adminResolveAppeal, adminBrain, adminReports, adminStrikes, adminSuspendUser, adminScanNsfw, adminContentScans, adminResolveIncident, adminResolveReport } from "@/lib/muse-actions/admin";
 import { disclosureCreate, disclosureConfirm, disclosureGet, strikesGet, strikeAppeal } from "@/lib/muse-actions/disclosures";
 import { communityJoin, communityLeave, communityCreate, eventCreate, eventRsvp, eventCancelRsvp, communityUpdateRules, communityKick, communityBan, communityUnban, communitySetRole, communityGetBans, communityMute, communityUnmute, communityGetMutes } from "@/lib/muse-actions/communities";
-import { sessionBook, sessionCreate, bookingRespond, bookingCancel, bookingComplete, reviewSubmit, checkinRespond, checkinsGet, safetyDetailsShare, safetyProfileSave, safetyProfileGet, promptsGet, promptResponseSave, promptResponsesGet } from "@/lib/muse-actions/sessions";
+import { sessionBook, sessionCreate, bookingRespond, bookingCancel, bookingComplete, reviewSubmit, checkinRespond, checkinsGet, safetyDetailsShare, safetyProfileSave, safetyProfileGet, promptsGet, promptResponseSave, promptResponsesGet, bookingReminders } from "@/lib/muse-actions/sessions";
 import { connectRequest } from "@/lib/muse-actions/connect";
 import { profileUpdate, profileDelete } from "@/lib/muse-actions/profile";
 import { matchCreate, matchDelete, profileViewTrack } from "@/lib/muse-actions/matching";
@@ -163,6 +163,7 @@ ACTIONS["get-safety-profile"] = safetyProfileGet;
 ACTIONS["get-prompts"] = promptsGet;
 ACTIONS["save-prompt-response"] = promptResponseSave;
 ACTIONS["get-prompt-responses"] = promptResponsesGet;
+ACTIONS["booking-reminders"] = bookingReminders;
 
 ACTIONS["admin-brain"] = adminBrain;
 

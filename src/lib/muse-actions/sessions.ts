@@ -359,6 +359,37 @@ export const promptsGet = async ({ sb, rest }: ActionContext) => {
   return NextResponse.json({ prompts: data || [] });
 };
 
+export const bookingReminders = async ({ sb, profile }: ActionContext) => {
+  const now = new Date();
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const { data: upcomingAsBooker } = await sb.from("muse_bookings")
+    .select("id, status, session_id(id, title, date, time, location), host_id(id, name, avatar)")
+    .eq("user_id", profile.id)
+    .in("status", ["pending", "confirmed"]);
+  const { data: upcomingAsHost } = await sb.from("muse_bookings")
+    .select("id, status, session_id(id, title, date, time, location), user_id(id, name, avatar)")
+    .eq("host_id", profile.id)
+    .in("status", ["pending", "confirmed"]);
+  const allBookings = [...(upcomingAsBooker || []), ...(upcomingAsHost || [])];
+  const reminders = allBookings.filter((b: any) => {
+    const sessionDate = b.session_id?.date;
+    if (!sessionDate) return false;
+    const d = new Date(sessionDate);
+    return d >= now && d <= nextWeek;
+  }).map((b: any) => ({
+    bookingId: b.id,
+    status: b.status,
+    sessionTitle: b.session_id?.title || "Untitled",
+    sessionDate: b.session_id?.date,
+    sessionTime: b.session_id?.time,
+    sessionLocation: b.session_id?.location,
+    otherParty: b.host_id || b.user_id,
+    isHost: !!b.host_id,
+  }));
+  return NextResponse.json({ reminders });
+};
+
 export const promptResponseSave = async ({ sb, profile, rest, ip }: ActionContext) => {
   if (!await checkRate(ip, "save-prompt-response", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { promptId, responseText, responseChoices } = rest;
