@@ -1,6 +1,6 @@
 ## wyzmind backend session — 2026-09-07 (all merged + live)
 
-Shipped 12 backend endpoints/features this session. All merged to main, deployed live, 260/260 tests passing.
+Shipped 18 backend endpoints/features this session. All merged to main, deployed live, 260/260 tests passing.
 
 ### New endpoints:
 1. **notification-count** — Combined unread notifications + pending message requests count for badge
@@ -8,28 +8,39 @@ Shipped 12 backend endpoints/features this session. All merged to main, deployed
 3. **notifications-grouped** — Notifications categorized by type (matches, messages, bookings, safety, other) with unread counts
 4. **mark-all-read** — `markAll: true` marks all unread notifications as read (backward compatible)
 5. **profile-viewers** — Last 50 unique profile viewers with name, avatar, viewedAt
-6. **boost-analytics** — Returns isBoosted, boostStartedAt, weekKey, stats (views, matches, likes during boost)
-7. **block-user / unblock-user / blocked-users** — Full block management (removes matches, blocks message requests)
-8. **mute-community-member / unmute-community-member / get-community-mutes** — Community moderation with optional duration
-9. **profile-delete** — GDPR data deletion (anonymizes profile, deletes all user data)
-10. **push notifications for messaging** — New requests, messages, and accepts all send push notifications
-11. **pushToProfile respects notification prefs** — Checks preferences.notifications.push before sending
-12. **Similar profiles recommendation** — NOT shipped (calcMatch is client-side only, porting too risky)
+6. **profile-completion** — Weighted breakdown: avatar (15%), bio (15%), styles (10%), looking (10%), type (10%), prompts (15%), verification (10%), photos (10%), personality (5%)
+7. **boost-analytics** — Returns isBoosted, boostStartedAt, weekKey, stats (views, matches, likes during boost)
+8. **block-user / unblock-user / blocked-users** — Full block management (removes matches, blocks message requests)
+9. **mute-community-member / unmute-community-member / get-community-mutes** — Community moderation with optional duration
+10. **profile-delete** — GDPR data deletion (anonymizes profile, deletes all user data)
+11. **admin-audit-log** — Paginated admin audit log (limit/offset, admin-only)
+12. **push notifications for messaging** — New requests, messages, and accepts all send push notifications
+13. **pushToProfile respects notification prefs** — Checks preferences.notifications.push before sending
+14. **toggleNotificationPref** — Granular notification preference toggles (match, message, brief, like, push, email)
+15. **criterion reviews** — Structured criteria (communication, reliability, creative_quality, professionalism, safety) on reviews
+16. **review criteria aggregation** — Professionals endpoint returns average criteria scores per profile
 
-### Migrations ready for manual apply (005-009):
+### Migrations ready for manual apply (005-010):
 - 005: message_requests table
 - 006: nested forum threading (parent_reply_id + depth)
 - 007: travel/availability fields on profiles
 - 008: community governance (rules, bans, mutes)
 - 009: saved searches with alerts
+- 010: criterion reviews (5 criteria columns) + profile_completion_pct
+
+### Verified working (no code changes needed):
+- Album access-level enforcement (private/invite/public) — correctly enforced in albums GET, album-photos GET, albumView, albumLike
+- Booking escrow flow — Stripe capture/cancel in complete-booking and cancel-booking, payment_status attached to bookings GET
+- Notification preferences — preferencesSave + emailProfile prefKey gating + pushToProfile push toggle
 
 ### Remaining backend items (need external API keys or schema changes):
 - À la carte boosts (Stripe integration)
 - Video/voice chat (Daily.co API key)
-- Criterion reviews (new DB schema)
 - Two-factor authentication (Supabase Auth TOTP)
 - Login devices/sessions management (Supabase Auth sessions)
 - Per-album privacy UI (backend done, needs frontend)
+- Onboarding checklist UI (backend done, needs frontend)
+- Settings screen UI (backend done, needs frontend)
 
 ---
 
