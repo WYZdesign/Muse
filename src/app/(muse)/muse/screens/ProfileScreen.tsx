@@ -6,6 +6,7 @@ import Nav from "../components/Nav";
 import StreakWidget from "../components/StreakWidget";
 import type { Screen, Match } from "../components/types";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
+import Lightbox from "../components/Lightbox";
 
 export interface ProfileScreenProps {
   screen: Screen;
@@ -533,22 +534,15 @@ export const ProfileScreen = memo(function ProfileScreen({
             previously duplicated SettingsScreen's Log Out. doLogout prop kept (optional,
             default no-op) so callers don't need touching. */}
       </div>
-      {/* Portfolio photo lightbox — shares the same lifted state DiscoverScreen
-          already uses (page.tsx), so tapping a photo here actually opens it. */}
+      {/* Portfolio photo lightbox */}
       {lightboxPhotos.length > 0 && (
-        <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.95)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => { setLightboxPhotos([]); setLightboxIdx(0); }}>
-          <button onClick={(e) => { e.stopPropagation(); setLightboxPhotos([]); setLightboxIdx(0); }} aria-label="Close" style={{ position: "absolute", top: 16, right: 16, zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 18 }}>✕</button>
-          {lightboxPhotos.length > 1 && (
-            <>
-              <button onClick={(e) => { e.stopPropagation(); setLightboxIdx((i: number) => (i - 1 + lightboxPhotos.length) % lightboxPhotos.length); }} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 22 }}>‹</button>
-              <button onClick={(e) => { e.stopPropagation(); setLightboxIdx((i: number) => (i + 1) % lightboxPhotos.length); }} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 22 }}>›</button>
-            </>
-          )}
-          {/* The modal overlay above is already position:"fixed", a valid
-              positioning context for `fill` -- matches DiscoverScreen's lightbox. */}
-          <Image src={lightboxPhotos[lightboxIdx] || lightboxPhotos[0]} alt="Photo" fill sizes="100vw" style={{ objectFit: "contain" }} onClick={(e) => e.stopPropagation()} onError={handleImgError} />
-          <div style={{ position: "absolute", bottom: 20, color: "rgba(255,255,255,0.5)", fontSize: 13 }}>{lightboxIdx + 1} / {lightboxPhotos.length}</div>
-        </div>
+        <Lightbox
+          photos={lightboxPhotos}
+          idx={lightboxIdx}
+          onClose={() => { setLightboxPhotos([]); setLightboxIdx(0); }}
+          onNavigate={(i) => setLightboxIdx(i)}
+          onError={handleImgError}
+        />
       )}
       <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>

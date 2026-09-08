@@ -13,6 +13,7 @@ import { PORTRAIT_IMG } from "../components/photoOrientation";
 import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../hooks/useDeviceTilt";
 import { attachSpatialDepth } from "../hooks/useSpatialDepth";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
+import Lightbox from "../components/Lightbox";
 
 // ── Tag description maps (for expandable info popover) ──────────────────────
 const ZODIAC_FULL: Record<string, { icon: string; tag: string; desc: string }> = {
@@ -608,23 +609,13 @@ export const DiscoverScreen = memo(function DiscoverScreen({
       )}
       {/* Lightbox */}
       {lightboxPhotos.length > 0 && (
-        <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.95)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => { setLightboxPhotos([]); setLightboxIdx(0); }}>
-          <button onClick={(e) => { e.stopPropagation(); setLightboxPhotos([]); setLightboxIdx(0); }} aria-label="Close" style={{ position: "absolute", top: 16, right: 16, zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 18 }}>✕</button>
-          {lightboxPhotos.length > 1 && (
-            <>
-              <button onClick={(e) => { e.stopPropagation(); setLightboxIdx(i => (i - 1 + lightboxPhotos.length) % lightboxPhotos.length); }} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 22 }}>‹</button>
-              <button onClick={(e) => { e.stopPropagation(); setLightboxIdx(i => (i + 1) % lightboxPhotos.length); }} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 22 }}>›</button>
-            </>
-          )}
-           {/* The modal overlay above is already `position:"fixed"`, which is a
-               valid positioning context for `fill` -- the close/nav buttons are
-               already explicitly `position:absolute` with their own z-index, so
-               they stay on top and clickable. `fill` + objectFit:contain here
-               letterboxes identically to the old maxWidth/maxHeight:100vw/100vh
-               plain <img>, since both size to the viewport and preserve aspect. */}
-           <Image src={lightboxPhotos[lightboxIdx] || lightboxPhotos[0]} alt="Photo" fill sizes="100vw" style={{ objectFit: "contain" }} onClick={(e) => e.stopPropagation()} onError={handleImgError} />
-          <div style={{ position: "absolute", bottom: 20, color: "rgba(255,255,255,0.5)", fontSize: 13 }}>{lightboxIdx + 1} / {lightboxPhotos.length}</div>
-        </div>
+        <Lightbox
+          photos={lightboxPhotos}
+          idx={lightboxIdx}
+          onClose={() => { setLightboxPhotos([]); setLightboxIdx(0); }}
+          onNavigate={(i) => setLightboxIdx(i)}
+          onError={handleImgError}
+        />
       )}
       {/* Badge info popover */}
       {badgeInfo && (
