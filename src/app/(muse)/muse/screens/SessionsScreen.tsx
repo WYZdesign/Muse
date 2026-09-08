@@ -334,7 +334,12 @@ export const SessionsScreen = memo(function SessionsScreen({
         )}
         {sessTab === "bookings" && (
           <div style={{ padding: "0 0 20px" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>My Bookings</div>
+            {/* Audit fix (2026-09-08): this heading just repeated the "My
+                Bookings" tab label verbatim, right under it — the other two
+                tabs (Browse -> "Available Sessions", Requests -> "Incoming
+                Requests") both use a distinct, more descriptive heading
+                instead of echoing the tab name. */}
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>Your Booked Sessions</div>
             {myBookings.asBooker.length === 0 && (
               <EmptyState icon="📅" title="No bookings yet" sub="Book a session from the Browse tab. Your bookings will show up here." style={{ padding: "24px 20px" }}>
                 <button className="btn ls-gradient" style={{ padding: "10px 20px", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => setSessTab("sessions")}>Browse Sessions</button>

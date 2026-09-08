@@ -768,7 +768,14 @@ export const MenuModal = memo(function MenuModal({
                 <div className="stats-row" style={{ marginTop: 8 }}>
                   <div className="stat"><div className="stat-num">{matches.length || 0}</div><div className="stat-label">Muses</div></div>
                   <div className="stat"><div className="stat-num">{currentUser.stats?.likes || 0}</div><div className="stat-label">Likes</div></div>
-                  <div className="stat"><div className="stat-num">{currentUser.stats?.bookingsCompleted || 0}</div><div className="stat-label">Bookings</div></div>
+                  {/* Audit fix (2026-09-08): this quick-glance tile and the
+                      "Bookings" tile in the full stats grid below both show
+                      a booking count, but used to read from two different
+                      sources — currentUser.stats?.bookingsCompleted here vs.
+                      the live bookingsForHub sum there — which could silently
+                      disagree. Now both read the same live source so they
+                      can never show two different "Bookings" numbers at once. */}
+                  <div className="stat"><div className="stat-num">{(bookingsForHub?.asBooker || []).length + (bookingsForHub?.asHost || []).length}</div><div className="stat-label">Bookings</div></div>
                 </div>
                 {/* PROFILE STATS — full transparency, no cap on what's visible */}
                 {(() => {
@@ -874,6 +881,16 @@ export const MenuModal = memo(function MenuModal({
                     </div>
                   ))}
                 </div>
+                {/* Audit fix (2026-09-08): "Save Preferences" only ever
+                    persisted discoveryPrefs/notifPrefs/showOnline/
+                    showDistance (see its onClick body), but the button sat
+                    several unrelated sections below — after Account AND
+                    Payments & Subscription — reading as if it saved
+                    everything on the page, including account/payment rows
+                    that are separately saved as soon as they're tapped.
+                    Moved directly under the two preference blocks it
+                    actually applies to. */}
+                <button className="btn btn-gold" style={{ width: "100%", fontSize: 12, marginBottom: 16 }} onClick={async () => { try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { ...discoveryPrefs, notifications: notifPrefs, showOnline, showDistance } }) }); showToast("Preferences saved!"); } catch { showToast("Failed to save"); } }}>Save Preferences</button>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Account</div>
                 {[
                   { label: "Edit Profile", desc: "Name, bio, photos", go: () => { setShowHamburger(false); showScreen("profile"); } },
@@ -898,7 +915,6 @@ export const MenuModal = memo(function MenuModal({
                     <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
                   </div>
                 ))}
-                <button className="btn btn-gold" style={{ width: "100%", fontSize: 12 }} onClick={async () => { try { await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { ...discoveryPrefs, notifications: notifPrefs, showOnline, showDistance } }) }); showToast("Preferences saved!"); } catch { showToast("Failed to save"); } }}>Save Preferences</button>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "24px 0 10px" }}>Safety &amp; Privacy</div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Show Distance</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Display your approximate location</div></div>
