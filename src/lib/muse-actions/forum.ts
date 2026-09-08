@@ -17,25 +17,85 @@ export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionCo
   if (!await checkRate(ip, "forum", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const vErr = validateInput(rest);
   if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
-  const { title, body: forumBody, text, cat, postId } = rest;
+  const { title, body: forumBody, text, cat, postId, parentReplyId } = rest;
   const forumType = rawType;
   if (forumType === "get-replies") {
     const { data: replies, error: replErr } = await sb.from("muse_forum_replies")
-      .select("id, user_name, user_avatar, text, created_at")
+      .select("id, user_id, user_name, user_avatar, text, created_at, parent_reply_id, depth")
       .eq("post_id", postId)
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: true })
       .limit(100);
     if (replErr) return safeServerError(replErr, "db op");
     const mapped = (replies || []).map((r: any) => ({
+      id: r.id,
       author: r.user_name || "User",
       avatar: r.user_avatar || "",
       text: r.text || "",
       time: r.created_at ? new Date(r.created_at).toLocaleString() : "Just now",
+      parentReplyId: r.parent_reply_id || null,
+      depth: r.depth || 0,
+      isOwn: r.user_id === profile.id,
+    }));
+    return NextResponse.json({ success: true, replies: mapped });
+  }
+  if (forumType === "get-thread") {
+    const { replyId } = rest;
+    if (!replyId) return NextResponse.json({ error: "replyId required" }, { status: 400 });
+    const { data: thread, error: thrErr } = await sb.from("muse_forum_replies")
+      .select("id, post_id, user_id, user_name, user_avatar, text, created_at, parent_reply_id, depth")
+      .eq("id", replyId)
+      .maybeSingle();
+    if (thrErr) return safeServerError(thrErr, "db op");
+    if (!thread) return NextResponse.json({ error: "Reply not found" }, { status: 404 });
+    // Walk up to find the root reply
+    let root = thread;
+    let current = thread;
+    while (current.parent_reply_id) {
+      const { data: parent } = await sb.from("muse_forum_replies")
+        .select("id, post_id, user_id, user_name, user_avatar, text, created_at, parent_reply_id, depth")
+        .eq("id", current.parent_reply_id)
+        .maybeSingle();
+      if (!parent) break;
+      root = parent;
+      current = parent;
+    }
+    // Now fetch all descendants of the root
+    const { data: allReplies, error: allErr } = await sb.from("muse_forum_replies")
+      .select("id, post_id, user_id, user_name, user_avatar, text, created_at, parent_reply_id, depth")
+      .eq("post_id", thread.post_id || postId)
+      .gte("depth", 0)
+      .order("depth", { ascending: true })
+      .order("created_at", { ascending: true })
+      .limit(200);
+    if (allErr) return safeServerError(allErr, "db op");
+    // Filter to only replies in this thread (root or descendant of root)
+    const threadIds = new Set<string>();
+    const buildThreadSet = (parentId: string, replies: any[]) => {
+      threadIds.add(parentId);
+      for (const r of replies) {
+        if (r.parent_reply_id === parentId) {
+          threadIds.add(r.id);
+          buildThreadSet(r.id, replies);
+        }
+      }
+    };
+    buildThreadSet(root.id, allReplies || []);
+    const threadReplies = (allReplies || []).filter((r: any) => threadIds.has(r.id));
+    const mapped = threadReplies.map((r: any) => ({
+      id: r.id,
+      author: r.user_name || "User",
+      avatar: r.user_avatar || "",
+      text: r.text || "",
+      time: r.created_at ? new Date(r.created_at).toLocaleString() : "Just now",
+      parentReplyId: r.parent_reply_id || null,
+      depth: r.depth || 0,
+      isOwn: r.user_id === profile.id,
     }));
     return NextResponse.json({ success: true, replies: mapped });
   }
   if (forumType === "reply") {
-    const cleanText = sanitizeText(String(text || ""), 2000);
+    const { text: replyText, parentReplyId } = rest;
+    const cleanText = sanitizeText(String(replyText || ""), 2000);
     const replyScreen = screenText(cleanText);
     if (replyScreen.block) {
       await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "forum_reply_blocked", details: { categories: replyScreen.categories } });
@@ -43,7 +103,23 @@ export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionCo
     }
     const isStubPost = typeof postId === "number" || !UUID_RE.test(String(postId));
     if (isStubPost) return NextResponse.json({ success: true, demo: true });
-    const { error } = await sb.from("muse_forum_replies").insert({ post_id: postId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, text: cleanText });
+    let depth = 0;
+    if (parentReplyId && UUID_RE.test(String(parentReplyId))) {
+      const { data: parent } = await sb.from("muse_forum_replies")
+        .select("depth")
+        .eq("id", parentReplyId)
+        .maybeSingle();
+      if (parent) depth = Math.min((parent.depth || 0) + 1, 3);
+    }
+    const { error } = await sb.from("muse_forum_replies").insert({
+      post_id: postId,
+      user_id: profile.id,
+      user_name: profile.name,
+      user_avatar: profile.avatar,
+      text: cleanText,
+      parent_reply_id: parentReplyId || null,
+      depth,
+    });
     if (error) return safeServerError(error, "db op");
     return NextResponse.json({ success: true });
   }
