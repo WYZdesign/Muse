@@ -162,3 +162,20 @@ export async function questClaimQuest({ sb, profile, rest }: ActionContext) {
     reward: { reward_type: questDef.reward_type, reward_amount: questDef.reward_amount, reward_label: questDef.reward_label },
   });
 }
+
+export async function questNotifyClaimable({ sb, profile }: ActionContext) {
+  const { data: claimable } = await sb.from("muse_user_quests")
+    .select("quest_id, muse_quests(title, reward_label)")
+    .eq("user_id", profile.id)
+    .eq("completed", true)
+    .eq("claimed", false);
+  if (!claimable?.length) return NextResponse.json({ notified: 0 });
+  let notified = 0;
+  for (const uq of claimable) {
+    const questTitle = (uq as any).muse_quests?.title || "Quest";
+    const rewardLabel = (uq as any).muse_quests?.reward_label || "reward";
+    pushToProfile(profile.id, "Quest Complete!", `${questTitle} — claim your ${rewardLabel}`, "/muse/quests").catch(() => {});
+    notified++;
+  }
+  return NextResponse.json({ notified });
+}

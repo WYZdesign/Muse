@@ -8,7 +8,7 @@ import {
   getAuthedProfile, bearerTokenFromReq, isAdminEmail, isConvoParticipant,
   type ActionContext, type ActionHandler,
 } from "@/lib/muse-actions/shared";
-import { questGetQuests, questTrackQuest, questClaimQuest } from "@/lib/muse-actions/quests";
+import { questGetQuests, questTrackQuest, questClaimQuest, questNotifyClaimable } from "@/lib/muse-actions/quests";
 import { albumCreate, albumUpdate, albumDelete, albumAddPhoto, albumRemovePhoto, albumGrantAccess, albumRevokeAccess, albumListAccess, albumView, albumLike } from "@/lib/muse-actions/albums";
 import { feedbackGetNotifications, feedbackMarkAllRead, feedbackReportBug, feedbackSubmitIdea } from "@/lib/muse-actions/feedback";
 import { adminResolveAppeal, adminBrain, adminReports, adminStrikes, adminSuspendUser, adminScanNsfw, adminContentScans, adminResolveIncident, adminResolveReport } from "@/lib/muse-actions/admin";
@@ -186,6 +186,7 @@ ACTIONS["admin-scan-nsfw"] = adminScanNsfw;
 ACTIONS["get-quests"] = questGetQuests;
 ACTIONS["track-quest"] = questTrackQuest;
 ACTIONS["claim-quest"] = questClaimQuest;
+ACTIONS["notify-claimable-quests"] = questNotifyClaimable;
 
 ACTIONS["admin-content-scans"] = adminContentScans;
 
