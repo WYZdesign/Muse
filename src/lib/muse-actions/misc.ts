@@ -204,3 +204,59 @@ export async function boostActivate({ sb, profile }: ActionContext) {
   await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "boost", details: { week: weekKey, at: now.toISOString() } });
   return _NR.json({ success: true, week: weekKey });
 }
+
+// ═══ SAVED SEARCHES ═══
+export const savedSearchSave = async ({ sb, profile, rest }: ActionContext) => {
+  const { name, query, filters } = rest;
+  const cleanName = String(name || "").trim().slice(0, 100);
+  if (!cleanName) return NextResponse.json({ error: "name required" }, { status: 400 });
+  const { error } = await sb.from("muse_saved_searches").insert({
+    user_id: profile.id,
+    name: cleanName,
+    query: String(query || "").trim().slice(0, 200),
+    filters: filters && typeof filters === "object" ? filters : {},
+  });
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+export const savedSearchList = async ({ sb, profile }: ActionContext) => {
+  const { data } = await sb.from("muse_saved_searches")
+    .select("id, name, query, filters, created_at")
+    .eq("user_id", profile.id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  return NextResponse.json({ searches: data || [] });
+};
+
+export const savedSearchDelete = async ({ sb, profile, rest }: ActionContext) => {
+  const { searchId } = rest;
+  if (!searchId) return NextResponse.json({ error: "searchId required" }, { status: 400 });
+  await sb.from("muse_saved_searches").delete().eq("id", searchId).eq("user_id", profile.id);
+  return NextResponse.json({ success: true });
+};
+
+export const savedSearchAlerts = async ({ sb, profile }: ActionContext) => {
+  const { data: searches } = await sb.from("muse_saved_searches")
+    .select("id, name, query, filters, last_notified_at")
+    .eq("user_id", profile.id);
+  if (!searches?.length) return NextResponse.json({ alerts: [] });
+  const alerts: any[] = [];
+  for (const search of searches) {
+    const since = search.last_notified_at || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const pattern = search.query ? `%${search.query}%` : null;
+    let query = sb.from("muse_profiles").select("id, name, type, avatar").gte("created_at", since);
+    if (pattern) query = query.or(`name.ilike.${pattern},bio.ilike.${pattern},loc.ilike.${pattern}`);
+    const filters = search.filters && typeof search.filters === "object" ? search.filters : {};
+    if (filters.styles) query = query.contains("styles", Array.isArray(filters.styles) ? filters.styles : [filters.styles]);
+    if (filters.type) query = query.ilike("type", `%${filters.type}%`);
+    if (filters.loc) query = query.ilike("loc", `%${filters.loc}%`);
+    if (filters.verified) query = query.eq("verified", true);
+    const { data: newMatches } = await query.limit(5);
+    if (newMatches?.length) {
+      alerts.push({ searchId: search.id, name: search.name, newMatches });
+      await sb.from("muse_saved_searches").update({ last_notified_at: new Date().toISOString() }).eq("id", search.id);
+    }
+  }
+  return NextResponse.json({ alerts });
+};

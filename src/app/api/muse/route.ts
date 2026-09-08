@@ -21,7 +21,7 @@ import { matchCreate, matchDelete, profileViewTrack } from "@/lib/muse-actions/m
 import { messageSend, messageRequestAccept, messageRequestDecline, messageRequestBlock, messageRequestsGet } from "@/lib/muse-actions/messaging";
 import { feedPost, feedPostLike, feedCommentAdd, momentCreate, momentLike, briefCreate, briefApply } from "@/lib/muse-actions/feed";
 import { forumDispatch, reportCreate, userBlock, userUnblock, blocksGet } from "@/lib/muse-actions/forum";
-import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate } from "@/lib/muse-actions/misc";
+import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts } from "@/lib/muse-actions/misc";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ACTION HANDLER REGISTRY
@@ -105,6 +105,10 @@ ACTIONS["apply-promo"] = promoApply;
 ACTIONS["boost"] = boostActivate;
 ACTIONS["mark-read"] = notificationsMarkRead;
 ACTIONS["sync"] = clientSync;
+ACTIONS["saved-search-save"] = savedSearchSave;
+ACTIONS["saved-search-list"] = savedSearchList;
+ACTIONS["saved-search-delete"] = savedSearchDelete;
+ACTIONS["saved-search-alerts"] = savedSearchAlerts;
 
 // ═══ ALBUMS ═══
 // Handlers extracted to lib/muse-actions/albums.ts (monolith decoupling, no dispatch change).
