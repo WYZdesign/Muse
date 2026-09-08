@@ -667,6 +667,49 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(status);
     }
 
+    if (type === "payout-readiness" && user && profileId) {
+      // Host onboarding nudge: is the host Connected to Stripe, and do they
+      // have earnings sitting unpaid? If a host has completed bookings but is
+      // not Connected, that's the exact friction the UI should nudge on
+      // ("connect Stripe to get paid"). Stripe Connect account state lives in
+      // muse_stripe_connect; earnings aggregate from completed-as-host
+      // succeeded payments.
+      const { data: connectRow } = await sb.from("muse_stripe_connect")
+        .select("stripe_account_id, charges_enabled, payouts_enabled, details_submitted")
+        .eq("user_id", profileId)
+        .maybeSingle();
+      const connected = !!connectRow?.stripe_account_id;
+      const chargesEnabled = !!connectRow?.charges_enabled;
+      const { data: completedAsHost } = await sb.from("muse_bookings")
+        .select("id").eq("host_id", profileId).eq("status", "completed");
+      const ids = (completedAsHost || []).map((b: any) => b.id);
+      let unpaidEarningsCents = 0;
+      if (ids.length) {
+        const { data: pays } = await sb.from("muse_booking_payments")
+          .select("net_amount_cents, status").in("booking_id", ids)
+          .in("status", ["succeeded", "held"]);
+        unpaidEarningsCents = (pays || []).reduce((s, p) => s + Number(p.net_amount_cents || 0), 0);
+      }
+      return NextResponse.json({
+        connected,
+        chargesEnabled,
+        payoutsEnabled: !!connectRow?.payouts_enabled,
+        detailsSubmitted: !!connectRow?.details_submitted,
+        completedBookingsCount: ids.length,
+        unpaidEarningsCents,
+        needsConnect: ids.length > 0 && !connected,
+      });
+    }
+
+    if (type === "my-refunds" && user && profileId) {
+      const { data: requests } = await sb.from("muse_refund_requests")
+        .select("id, booking_id, reason, amount_cents, status, resolution_note, created_at, resolved_at")
+        .eq("user_id", profileId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return NextResponse.json({ requests: requests || [] });
+    }
+
     // Albums: visibility is enforced here in application code, not by Postgres
     // RLS, because this route reads with the service-role client (bypasses
     // RLS by design). The RLS policies on muse_albums/muse_album_photos still

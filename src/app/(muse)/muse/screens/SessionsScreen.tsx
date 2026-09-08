@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiBookmark, FiSearch } from "react-icons/fi";
 import Nav from "../components/Nav";
@@ -97,6 +97,36 @@ export const SessionsScreen = memo(function SessionsScreen({
   const [showCreate, setShowCreate] = useState(false);
   const [newSession, setNewSession] = useState({ title: "", description: "", type: "Photoshoot", rate: "", duration: "60 min", date: "", location: "" });
   const [creating, setCreating] = useState(false);
+
+  // Host payout nudge — if the host has completed bookings but isn't connected
+  // to Stripe yet, surface a "connect to get paid" CTA (3d, MUSE_GAPS).
+  const [payout, setPayout] = useState<{ needsConnect: boolean; unpaidEarningsCents: number; chargesEnabled: boolean } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    authFetch("/api/muse?type=payout-readiness")
+      .then(r => r.json())
+      .then(d => { if (!cancelled && d && typeof d.needsConnect === "boolean") setPayout(d); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const connectStripe = async () => {
+    try {
+      const r = await authFetch("/api/muse/connect", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-account" }) });
+      const j = await r.json();
+      if (j.url) { window.location.href = j.url; }
+      else { showToast(j.error || "Couldn't start Stripe onboarding"); }
+    } catch { showToast("Couldn't start Stripe onboarding"); }
+  };
+
+  const requestRefund = async (bookingId: string) => {
+    try {
+      const r = await authFetch("/api/muse/connect", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "request-refund", bookingId, reason: "Requested by client" }) });
+      const j = await r.json();
+      if (r.ok) { showToast("Refund request filed — we'll review it"); }
+      else { showToast(j.error || "Couldn't file request"); }
+    } catch { showToast("Couldn't file request"); }
+  };
   const submitSession = async () => {
     if (!newSession.title.trim()) { showToast("Title is required"); return; }
     setCreating(true);
@@ -389,6 +419,9 @@ export const SessionsScreen = memo(function SessionsScreen({
                       {b.status === "completed" && (
                         <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setReviewTarget(b)}>Leave Review</button>
                       )}
+                      {b.status === "completed" && b.payment_status === "succeeded" && (
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, borderColor: "rgba(255,100,100,0.2)", color: "#ff8a80" }} onClick={() => requestRefund(b.id)}>Request refund</button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -399,6 +432,13 @@ export const SessionsScreen = memo(function SessionsScreen({
         {sessTab === "requests" && (
           <div style={{ padding: "0 0 20px" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>Incoming Requests</div>
+            {payout?.needsConnect && (
+              <div style={{ padding: "12px 14px", marginBottom: 12, borderRadius: 12, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.35)" }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--gold)" }}>💸 You have earnings pending</div>
+                <div style={{ fontSize: 11.5, color: "var(--text2)", marginTop: 4 }}>Connect Stripe to receive payouts for your completed bookings ({(payout.unpaidEarningsCents / 100).toFixed(2)} pending).</div>
+                <button className="btn btn-gold" style={{ width: "100%", marginTop: 10, padding: "10px 14px", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={connectStripe}>Connect to get paid</button>
+              </div>
+            )}
             {myBookings.asHost.length === 0 && (
               <EmptyState icon="🗓️" title="No requests yet" sub="When someone books one of your sessions, you'll see their request here to accept or decline." style={{ padding: "24px 20px" }} />
             )}

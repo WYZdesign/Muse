@@ -388,6 +388,50 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Transfer handled by destination charge automatically", paymentId });
     }
 
+    // ═══ REQUEST-REFUND: buyer files a refund/dispute on a completed booking ═══
+    if (action === "request-refund") {
+      const { bookingId, reason } = body;
+      if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
+      const { data: booking } = await sb.from("muse_bookings").select("id, user_id, status").eq("id", bookingId).maybeSingle();
+      if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+      if (String(booking.user_id) !== String(profile.id)) {
+        return NextResponse.json({ error: "Only the booker can request a refund" }, { status: 403 });
+      }
+      const { data: payment } = await sb.from("muse_booking_payments")
+        .select("amount_cents, status")
+        .eq("booking_id", bookingId)
+        .eq("payer_id", profile.id)
+        .in("status", ["succeeded", "held"])
+        .maybeSingle();
+      if (!payment) return NextResponse.json({ error: "No settled payment to refund" }, { status: 400 });
+      // One open request per booking.
+      const { data: existing } = await sb.from("muse_refund_requests")
+        .select("id").eq("booking_id", bookingId).eq("user_id", profile.id).eq("status", "open").maybeSingle();
+      if (existing) return NextResponse.json({ error: "Refund request already open", code: "DUPLICATE" }, { status: 409 });
+      const { data, error } = await sb.from("muse_refund_requests").insert({
+        booking_id: bookingId, user_id: profile.id,
+        reason: String(reason || "").slice(0, 1000),
+        amount_cents: Number(payment.amount_cents || 0),
+        status: "open",
+      }).select().single();
+      if (error) return NextResponse.json({ error: "Could not file request" }, { status: 500 });
+      return NextResponse.json({ success: true, request: data });
+    }
+
+    // ═══ CANCEL-REFUND-REQUEST: buyer withdraws their open request ═══
+    if (action === "cancel-refund-request") {
+      const { requestId } = body;
+      if (!requestId) return NextResponse.json({ error: "requestId required" }, { status: 400 });
+      const { data: req } = await sb.from("muse_refund_requests")
+        .select("id, user_id, status").eq("id", requestId).maybeSingle();
+      if (!req) return NextResponse.json({ error: "Request not found" }, { status: 404 });
+      if (String(req.user_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      if ((req as any).status !== "open") return NextResponse.json({ error: "Already resolved" }, { status: 400 });
+      const { error } = await sb.from("muse_refund_requests").delete().eq("id", requestId);
+      if (error) return NextResponse.json({ error: "Could not withdraw" }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
+
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (e: unknown) {
     console.error("[connect] failed:", e);
