@@ -288,6 +288,18 @@ export async function saveBoostPurchase({ sb, profile, rest }: ActionContext) {
   return _NR.json({ success: true, quantity: Number((purchase as any).quantity || qty) });
 }
 
+// Audit fix (2026-09-08): the "is this boost timestamp still active" check was
+// independently reimplemented in get.ts (discover-ranked and creative-trust)
+// instead of going through this shared logic — all three happened to agree
+// today, but any future change here (a grace period, etc.) would silently
+// desync the Discover badge and the creative-trust card from the real status.
+// Pulled the pure comparison out so callers that already have the row's
+// boost_expires_at in hand (no need for another DB round trip) can still
+// share the one formula.
+export function isBoostActive(expiresAt: string | null | undefined): boolean {
+  return !!expiresAt && new Date(expiresAt).getTime() > Date.now();
+}
+
 // Shared boost state — used by boostActivate and surfaced to the client.
 export async function getBoostStatus(sb: any, profileId: string) {
   const { data: prof } = await sb.from("muse_profiles")
@@ -295,7 +307,7 @@ export async function getBoostStatus(sb: any, profileId: string) {
     .eq("id", profileId).maybeSingle();
   const isPro = !!prof && (prof.tier === "muse_pro" || prof.tier === "pro" || prof.tier === "muse_studio");
   const expiresAt = prof?.boost_expires_at || null;
-  const isBoosted = !!expiresAt && new Date(expiresAt).getTime() > Date.now();
+  const isBoosted = isBoostActive(expiresAt);
   return { isPro, inventory: Number(prof?.boost_inventory || 0), isBoosted, expiresAt: isBoosted ? expiresAt : null };
 }
 

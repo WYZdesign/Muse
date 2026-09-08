@@ -10,7 +10,7 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
 import { sanitizeText } from "@/lib/request-safety";
 import { bearerTokenFromReq, isConvoParticipant, UUID_RE, isAdminEmail, isAgeVerificationCurrent } from "./shared";
-import { getBoostStatus } from "./misc";
+import { getBoostStatus, isBoostActive } from "./misc";
 
 // Server-side mirror of the client's calcMatch (components/types.ts) so
 // discovery can rank against live rows. Professional fit + vibe signals.
@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
         })
         .map((p: any) => {
           const base = calcMatchScore(viewer as any, p);
-          const boosted = !!p.boost_expires_at && new Date(p.boost_expires_at).getTime() > Date.now();
+          const boosted = isBoostActive(p.boost_expires_at);
           return { ...p, matchScore: base, boosted, sideMatches: !!side && !!CREATIVE_SIDE[p.type] && CREATIVE_SIDE[p.type] !== side };
         });
       // Boosted + complementary-side first, then by match score; capped for payload.
@@ -430,7 +430,7 @@ export async function GET(req: NextRequest) {
         .select("*", { count: "exact", head: true })
         .eq("host_id", targetProfileId)
         .eq("status", "completed");
-      const boosted = !!p.boost_expires_at && new Date(p.boost_expires_at).getTime() > Date.now();
+      const boosted = isBoostActive(p.boost_expires_at);
       const ageVerified = !!p.age_verified && new Date(p.age_verified_at || 0).getTime() > Date.now() - 150 * 24 * 60 * 60 * 1000;
       return NextResponse.json({
         trust: {

@@ -5,6 +5,7 @@ import { getReferralUrl } from "@/lib/urls";
 import Nav from "../components/Nav";
 import StreakWidget from "../components/StreakWidget";
 import type { Screen, Match } from "../components/types";
+import { isPaidTier } from "../components/subscriptionTiers";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 import Lightbox from "../components/Lightbox";
 
@@ -309,15 +310,21 @@ export const ProfileScreen = memo(function ProfileScreen({
               <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 99, background: currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.12)" : "rgba(212,165,255,0.12)", border: `1px solid ${currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.35)" : "rgba(212,165,255,0.35)"}`, color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)" }}>
                 {currentUser.foundingTier === "founding" ? "🏆 FOUNDING MEMBER" : "⭐ EARLY MEMBER"}
               </span>
-              {currentUser.proExpiresAt && currentUser.tier === "muse_pro" && (
-                <span style={{ fontSize: 11, color: "var(--muted)" }}>Pro until {new Date(currentUser.proExpiresAt).toLocaleDateString()}</span>
+              {/* Audit fix (2026-09-08): this whole Subscription block used a
+                  strict `tier === "muse_pro"` check, so a muse_studio
+                  subscriber (a higher paid tier added in the boost/discovery
+                  backend round) read as "Free" here — wrong plan label,
+                  wrong expiry copy, and an "Upgrade" CTA instead of
+                  Manage/View Plan despite already paying more than Pro. */}
+              {currentUser.proExpiresAt && isPaidTier(currentUser.tier) && (
+                <span style={{ fontSize: 11, color: "var(--muted)" }}>Active until {new Date(currentUser.proExpiresAt).toLocaleDateString()}</span>
               )}
             </div>
           )}
-          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 10 }}>Plan: <span style={{ color: "var(--gold)", fontWeight: 600 }}>{userTier === "muse_pro" || currentUser.tier === "muse_pro" ? "Muse Pro" : "Free"}</span></div>
-          {currentUser.tier === "muse_pro" && !currentUser.foundingTier ? (
+          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 10 }}>Plan: <span style={{ color: "var(--gold)", fontWeight: 600 }}>{currentUser.tier === "muse_studio" ? "Muse Studio" : isPaidTier(userTier) || isPaidTier(currentUser.tier) ? "Muse Pro" : "Free"}</span></div>
+          {isPaidTier(currentUser.tier) && !currentUser.foundingTier ? (
             <button className="btn btn-outline" style={{ fontSize: 14, padding: "14px 0" }} onClick={() => setScreen("subscription")}>Manage Plan</button>
-          ) : currentUser.tier === "muse_pro" && currentUser.foundingTier ? (
+          ) : isPaidTier(currentUser.tier) && currentUser.foundingTier ? (
             <button className="btn btn-outline" style={{ fontSize: 14, padding: "14px 0" }} onClick={() => setScreen("subscription")}>View Plan</button>
           ) : (
             <button className="btn btn-gold" style={{ fontSize: 14, padding: "14px 0" }} onClick={() => setScreen("subscription")}>Upgrade</button>

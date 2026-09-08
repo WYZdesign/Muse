@@ -1328,9 +1328,16 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       const j = Math.floor(mulberry(seed + i) * (i + 1));
       [base[i], base[j]] = [base[j], base[i]];
     }
-    // Append live (deduped) profiles at the end — order of the already-shuffled
-    // deck is untouched, so the visible card never jumps.
-    const merged = liveProfiles?.length ? [...base, ...liveProfiles.filter((lp: any) => !base.some((dp: any) => String(dp.id) === String(lp.id)))] : base;
+    // Audit fix (2026-09-08): liveProfiles come back from /api/muse?type=discover-ranked
+    // pre-sorted server-side — boosted + complementary-side first, then by match
+    // score (see get.ts) — specifically so a paid boost gets someone seen sooner.
+    // This used to APPEND liveProfiles after the entire shuffled demo deck, which
+    // silently discarded that ranking: a boosted real user could never appear
+    // before dozens of unranked demo cards. Now real, ranked profiles lead (in
+    // the order the server already computed — never re-sorted here), with the
+    // shuffled demo deck filling in after. Demo-deck order among itself is still
+    // untouched, so it doesn't jump mid-session.
+    const merged = liveProfiles?.length ? [...liveProfiles, ...base.filter((dp: any) => !liveProfiles.some((lp: any) => String(lp.id) === String(dp.id)))] : base;
     let list = showNsfw ? merged : merged.filter(p => !p.nsfw);
     if (filterStyles.length > 0) list = list.filter(p => p.styles.some((s: string) => filterStyles.includes(s)));
     if (filterScore > 50) list = list.filter(p => p.score >= filterScore);

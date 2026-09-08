@@ -342,10 +342,17 @@ export const SessionsScreen = memo(function SessionsScreen({
                 Requests") both use a distinct, more descriptive heading
                 instead of echoing the tab name. */}
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>Your Booked Sessions</div>
-            {bookingReminders.length > 0 && (
+            {/* Audit fix (2026-09-08): bookingReminders mixes both asBooker and
+                asHost upcoming bookings (that's correct for a general reminder
+                feed), but this widget sits directly above a list that's
+                explicitly asBooker-only ("Your Booked Sessions") — showing
+                the user's own hosting jobs here too made the two adjacent
+                widgets disagree about what "upcoming" means on this tab.
+                Scoped to booker-side only so they stay consistent. */}
+            {bookingReminders.filter(rem => !rem.isHost).length > 0 && (
               <div style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text2)", marginBottom: 8 }}>☀️ Upcoming shoots</div>
-                {bookingReminders.map(rem => (
+                {bookingReminders.filter(rem => !rem.isHost).map(rem => (
                   <div key={rem.bookingId} className="conn-card" style={{ marginBottom: 8, padding: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
                     <div style={{ fontSize: 20 }}>📅</div>
                     <div style={{ flex: 1 }}>
