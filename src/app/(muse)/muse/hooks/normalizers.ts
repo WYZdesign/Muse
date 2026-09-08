@@ -73,12 +73,21 @@ export function normalizeForumPost(p: any) {
 }
 
 export function normalizeBrief(b: any) {
+  // muse_brief_applications(count) comes back as [{ count: N }] (PostgREST
+  // embedded-count shape) or already-normalized as a plain number if this
+  // row has been through normalizeBrief before (idempotent, like the other
+  // normalizers here).
+  const rawCount = b.muse_brief_applications;
+  const applicantCount = typeof b.applicantCount === "number"
+    ? b.applicantCount
+    : (Array.isArray(rawCount) ? (rawCount[0]?.count ?? 0) : 0);
   return {
     ...b,
     desc: b.desc ?? b.description ?? "",
     cat: b.cat ?? b.category ?? "concept",
     author: b.author ?? b.author_id?.name ?? "Creative",
     authorImg: b.authorImg ?? b.author_id?.avatar ?? "",
+    applicantCount,
   };
 }
 

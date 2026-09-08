@@ -112,7 +112,11 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "briefs") {
-      const { data } = await sb.from("muse_briefs").select("*, author_id(id, name, avatar)").order("created_at", { ascending: false }).limit(50);
+      // Embeds an applicant count per brief (muse_brief_applications(count))
+      // so a brief's poster can see interest on their own post without a
+      // separate round-trip — CollabScreen.tsx surfaces this only to the
+      // brief's own author, not to other viewers.
+      const { data } = await sb.from("muse_briefs").select("*, author_id(id, name, avatar), muse_brief_applications(count)").order("created_at", { ascending: false }).limit(50);
       return NextResponse.json({ briefs: data || [] });
     }
 

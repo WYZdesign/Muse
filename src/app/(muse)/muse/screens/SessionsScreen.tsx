@@ -288,7 +288,9 @@ export const SessionsScreen = memo(function SessionsScreen({
           <div style={{ padding: "0 0 20px" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>My Bookings</div>
             {myBookings.asBooker.length === 0 && (
-              <EmptyState icon="📅" title="No bookings yet" sub="Book a session from the Browse tab. Your bookings will show up here." style={{ padding: "24px 20px" }} />
+              <EmptyState icon="📅" title="No bookings yet" sub="Book a session from the Browse tab. Your bookings will show up here." style={{ padding: "24px 20px" }}>
+                <button className="btn ls-gradient" style={{ padding: "10px 20px", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => setSessTab("sessions")}>Browse Sessions</button>
+              </EmptyState>
             )}
             {myBookings.asBooker.map(b => {
               const host = b.host_id || {};

@@ -152,13 +152,20 @@ export const CollabScreen = memo(function CollabScreen({
           // applicants stay front-of-mind; creatives browse others' work with
           // their own posts pushed to the end.
           const side = viewerSide(currentUser?.type);
-          const ownIds = new Set(userBriefs.map(b => b.id));
+          // userBriefs only covers briefs posted THIS session (local state);
+          // a brief the current user posted in an earlier session arrives
+          // through liveBriefs instead, identified by its author_id join —
+          // both are checked so "is this my own brief?" is correct either way.
+          const localOwnIds = new Set(userBriefs.map(b => b.id));
+          const isOwnBrief = (b: any) => localOwnIds.has(b.id) || b.author_id?.id === currentUser?.id;
           const ordered = side === "industry"
-            ? [...filtered.filter(b => ownIds.has(b.id)), ...filtered.filter(b => !ownIds.has(b.id))]
-            : [...filtered.filter(b => !ownIds.has(b.id)), ...filtered.filter(b => ownIds.has(b.id))];
+            ? [...filtered.filter(isOwnBrief), ...filtered.filter(b => !isOwnBrief(b))]
+            : [...filtered.filter(b => !isOwnBrief(b)), ...filtered.filter(isOwnBrief)];
           if (filtered.length === 0) {
             return (
-              <EmptyState icon={<FiPlus size={48} />} title="No posts yet" sub={museCat === "all" ? "Post a project, collab, or idea" : "No " + museCat + " posts yet, be the first!"} />
+              <EmptyState icon={<FiPlus size={48} />} title="No posts yet" sub={museCat === "all" ? "Post a project, collab, or idea" : "No " + museCat + " posts yet, be the first!"}>
+                <button className="btn btn-gold" style={{ padding: "10px 20px", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => setShowPostBrief(true)}>Post a Brief</button>
+              </EmptyState>
             );
           }
           return ordered.map((brief, bi) => (
@@ -170,6 +177,11 @@ export const CollabScreen = memo(function CollabScreen({
                   <div className="brief-meta" style={{ flexDirection: "column", alignItems: "center", gap: 2 }}>
                     <span className="brief-meta-item"><strong>{brief.budget}</strong></span>
                     <span className="brief-meta-item">⏱ Timeline: {brief.deadline}</span>
+                    {isOwnBrief(brief) && brief.cat !== "concept" && (
+                      <span className="brief-meta-item" style={{ color: "var(--gold)" }}>
+                        👥 {brief.applicantCount || 0} applied
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4, width: "100%", justifyContent: "center" }}>
@@ -185,7 +197,11 @@ export const CollabScreen = memo(function CollabScreen({
               <div className="brief-desc">{brief.desc}</div>
               <div className="brief-tags">{brief.tags.map((t: string) => <span key={t} className="brief-tag">{t}</span>)}</div>
               <div className="brief-actions">
-                {brief.cat === "concept" ? (
+                {isOwnBrief(brief) ? (
+                  // Own post: no Apply/Book/Respond to yourself — the
+                  // applicant count above is the useful signal here instead.
+                  <span className="brief-meta-item" style={{ fontStyle: "italic", opacity: 0.7 }}>Your post</span>
+                ) : brief.cat === "concept" ? (
                   <button className="brief-btn-apply" style={{ padding: "8px 14px", fontSize: 12 }} onClick={() => { setChatTarget({ id: brief.id, name: brief.author, type: "Creative", img: brief.authorImg, messages: [] }); showScreen("chat"); }}>Respond</button>
                 ) : (
                   <button
@@ -209,7 +225,7 @@ export const CollabScreen = memo(function CollabScreen({
                     {appliedBriefs.includes(brief.id) ? "Applied" : "Apply"}
                   </button>
                 )}
-                {brief.cat === "paid" && (
+                {brief.cat === "paid" && !isOwnBrief(brief) && (
                   <button className="brief-btn-apply" style={{ background: "rgba(212,165,255,0.1)", borderColor: "rgba(212,165,255,0.2)", color: "var(--lavender)", padding: "8px 14px", fontSize: 12 }} onClick={() => { setChatTarget({ id: brief.id, name: brief.author, type: "Creative", img: brief.authorImg, messages: [] }); showScreen("chat"); showToast("Message " + brief.author + " to book this paid brief"); }}>Book</button>
                 )}
                 <button

@@ -68,6 +68,21 @@ describe("GET dispatcher (read-only)", () => {
   });
 });
 
+describe("GET briefs — applicant count embed", () => {
+  it("passes through the embedded muse_brief_applications(count) row untouched (CollabScreen's normalizeBrief unpacks it client-side)", async () => {
+    const rows = [
+      { id: "b1", title: "Editorial shoot", author_id: { id: "u1", name: "Ada", avatar: "" }, muse_brief_applications: [{ count: 3 }] },
+      { id: "b2", title: "No applicants yet", author_id: { id: "u2", name: "Bo", avatar: "" }, muse_brief_applications: [{ count: 0 }] },
+    ];
+    (globalThis as any).__sbMock = { from: () => ({ select: () => ({ order: () => ({ limit: async () => ({ data: rows }) }) }) }) };
+    const r = await GET(req("briefs"));
+    expect(r.status).toBe(200);
+    const body = await r.json();
+    expect(body.briefs).toEqual(rows);
+    (globalThis as any).__sbMock = { from: () => makeQuery() };
+  });
+});
+
 // "matches" previously had NO nsfw gating at all — a matched partner's
 // avatar came through unconditionally regardless of the viewer's
 // verification, unlike "profiles" (Discover) right above it in get.ts.
