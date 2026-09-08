@@ -805,8 +805,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                 const isCurrent = !Number.isNaN(verifiedAt) && (Date.now() - verifiedAt < AGE_VERIFICATION_VALID_DAYS * 24 * 60 * 60 * 1000);
                 const daysSince = Number.isNaN(verifiedAt) ? 0 : (Date.now() - verifiedAt) / (24 * 60 * 60 * 1000);
                 setAgeVerified(isCurrent);
-                // Expiring in ≤30 days but still valid: warn with banner
-                setVerificationExpiringSoon(isCurrent === false || daysSince >= (AGE_VERIFICATION_VALID_DAYS - 30) && daysSince < AGE_VERIFICATION_VALID_DAYS);
+                // Expiring in ≤30 days but still valid: warn with banner.
+                // isCurrent must hold here — an already-expired verification
+                // (isCurrent === false) is a separate, more severe state and
+                // must fall through to the red "expired" banner below, not
+                // get relabeled as the softer orange "expiring soon" one.
+                setVerificationExpiringSoon(isCurrent && daysSince >= (AGE_VERIFICATION_VALID_DAYS - 30) && daysSince < AGE_VERIFICATION_VALID_DAYS);
               }
               // Restore notifPrefs from server (source of truth across devices)
               if (d.profile.preferences?.notifications && typeof d.profile.preferences.notifications === "object") {
