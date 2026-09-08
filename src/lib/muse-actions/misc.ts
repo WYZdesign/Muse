@@ -49,7 +49,11 @@ export const promoApply = async ({ sb, profile, rest }: ActionContext) => {
 };
 
 export const notificationsMarkRead = async ({ sb, profile, rest }: ActionContext) => {
-  const { notificationIds } = rest;
+  const { notificationIds, markAll } = rest;
+  if (markAll === true) {
+    await sb.from("muse_notifications").update({ read: true }).eq("user_id", profile.id).eq("read", false);
+    return NextResponse.json({ success: true, marked: "all" });
+  }
   if (Array.isArray(notificationIds) && notificationIds.length > 0) {
     const ids = notificationIds.slice(0, 100).filter((x: unknown) => typeof x === "string" && UUID_RE.test(String(x)));
     if (ids.length > 0) {
