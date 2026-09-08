@@ -196,7 +196,7 @@ export const bookingComplete = async ({ sb, profile, rest, ip }: ActionContext) 
 
 export const reviewSubmit = async ({ sb, profile, rest, ip }: ActionContext) => {
   if (!await checkRate(ip, "submit-review", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-  const { bookingId, rating, body } = rest;
+  const { bookingId, rating, body, criteria } = rest;
   if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
   const r = Number(rating);
   if (!Number.isInteger(r) || r < 1 || r > 5) return NextResponse.json({ error: "rating must be an integer 1-5" }, { status: 400 });
@@ -207,9 +207,20 @@ export const reviewSubmit = async ({ sb, profile, rest, ip }: ActionContext) => 
   if (!isParty) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const revieweeId = String(booking.user_id) === String(profile.id) ? booking.host_id : booking.user_id;
   if (!revieweeId) return NextResponse.json({ error: "No other party to review" }, { status: 400 });
+  const validCriteria = ["communication", "reliability", "creative_quality", "professionalism", "safety"];
+  const criteriaUpdate: Record<string, number> = {};
+  if (criteria && typeof criteria === "object") {
+    for (const key of validCriteria) {
+      const val = Number(criteria[key]);
+      if (Number.isInteger(val) && val >= 1 && val <= 5) {
+        criteriaUpdate[`criteria_${key}`] = val;
+      }
+    }
+  }
   const { data, error } = await sb.from("muse_reviews").upsert({
     booking_id: bookingId, reviewer_id: profile.id, reviewee_id: revieweeId,
     rating: r, body: String(body || "").slice(0, 1000),
+    ...criteriaUpdate,
   }, { onConflict: "booking_id,reviewer_id" }).select().single();
   if (error) return safeServerError(error, "db op");
   return NextResponse.json({ success: true, review: data });

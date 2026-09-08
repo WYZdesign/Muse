@@ -241,18 +241,37 @@ export async function GET(req: NextRequest) {
       // Trust line ("N★ (M reviews)") sourced from real muse_reviews rows keyed
       // by the professional's resolved profile id — never a made-up number.
       const profileIds = [...profileIdByAuthId.values()];
-      const reviewStatsByProfileId = new Map<string, { rating: number; count: number }>();
+      const reviewStatsByProfileId = new Map<string, { rating: number; count: number; criteria: Record<string, number> }>();
       if (profileIds.length) {
-        const { data: reviews } = await sb.from("muse_reviews").select("reviewee_id, rating").in("reviewee_id", profileIds);
-        const sums = new Map<string, { sum: number; count: number }>();
+        const { data: reviews } = await sb.from("muse_reviews").select("reviewee_id, rating, criteria_communication, criteria_reliability, criteria_creative_quality, criteria_professionalism, criteria_safety").in("reviewee_id", profileIds);
+        const sums = new Map<string, { sum: number; count: number; criteria: Record<string, { sum: number; count: number }> }>();
         for (const r of reviews || []) {
           const rid = String((r as any).reviewee_id);
-          const cur = sums.get(rid) || { sum: 0, count: 0 };
+          const cur = sums.get(rid) || { sum: 0, count: 0, criteria: {} };
           cur.sum += (r as any).rating || 0;
           cur.count += 1;
+          for (const key of ["communication", "reliability", "creative_quality", "professionalism", "safety"]) {
+            const val = (r as any)[`criteria_${key}`];
+            if (val) {
+              const c = cur.criteria[key] || { sum: 0, count: 0 };
+              c.sum += val;
+              c.count += 1;
+              cur.criteria[key] = c;
+            }
+          }
           sums.set(rid, cur);
         }
-        for (const [rid, s] of sums) reviewStatsByProfileId.set(rid, { rating: s.count ? Math.round((s.sum / s.count) * 10) / 10 : 0, count: s.count });
+        for (const [rid, s] of sums) {
+          const criteriaAvg: Record<string, number> = {};
+          for (const [key, c] of Object.entries(s.criteria)) {
+            criteriaAvg[key] = c.count ? Math.round((c.sum / c.count) * 10) / 10 : 0;
+          }
+          reviewStatsByProfileId.set(rid, {
+            rating: s.count ? Math.round((s.sum / s.count) * 10) / 10 : 0,
+            count: s.count,
+            criteria: criteriaAvg,
+          });
+        }
       }
       return NextResponse.json({
         professionals: rows.map((p: any) => {
@@ -264,6 +283,7 @@ export async function GET(req: NextRequest) {
             verified: profileId ? !!verifiedByProfileId.get(profileId) : false,
             reviewRating: stats?.rating ?? null,
             reviewCount: stats?.count ?? 0,
+            reviewCriteria: stats?.criteria ?? null,
           };
         }),
       });
@@ -274,11 +294,21 @@ export async function GET(req: NextRequest) {
       if (!targetProfileId) return NextResponse.json({ error: "profile_id required" }, { status: 400 });
       if (!UUID_RE.test(targetProfileId)) return NextResponse.json({ reviews: [] });
       const { data } = await sb.from("muse_reviews")
-        .select("id, rating, body, created_at, reviewer_id(name, avatar, type)")
+        .select("id, rating, body, created_at, reviewer_id(name, avatar, type), criteria_communication, criteria_reliability, criteria_creative_quality, criteria_professionalism, criteria_safety")
         .eq("reviewee_id", targetProfileId)
         .order("created_at", { ascending: false })
         .limit(50);
-      return NextResponse.json({ reviews: data || [] });
+      const reviews = (data || []).map((r: any) => ({
+        id: r.id, rating: r.rating, body: r.body, created_at: r.created_at, reviewer_id: r.reviewer_id,
+        criteria: {
+          communication: r.criteria_communication || null,
+          reliability: r.criteria_reliability || null,
+          creative_quality: r.criteria_creative_quality || null,
+          professionalism: r.criteria_professionalism || null,
+          safety: r.criteria_safety || null,
+        },
+      }));
+      return NextResponse.json({ reviews });
     }
 
     if (type === "moments") {
