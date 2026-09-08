@@ -49,6 +49,30 @@ export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
   }
 
   const cleanText = sanitizeText(String(text || "").trim());
+  // Safety-relevant fix: the message-request path below (a first-contact
+  // note to a non-matched user) used to skip the screenText moderation
+  // check entirely — it stored + notified + emailed the raw text preview
+  // and only ran screenText() further down, on a code path this branch
+  // returns before ever reaching. That let unmoderated text (anything
+  // screenText would normally block) reach another user's notification
+  // and inbox preview. Now the same screen (and the same payment+NSFW
+  // disclosure gate used for matched messages) runs before a request is
+  // stored, so first-contact requests get the same safety bar as regular
+  // messages. Flagging this explicitly for wyzmind to confirm — this is
+  // moderation/content-safety logic, so it deserves an independent look
+  // rather than taking my read of it as final.
+  const requestScreen = cleanText ? screenText(cleanText) : { block: false, categories: [] as string[] };
+  if (requestScreen.block) {
+    await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message_blocked", details: { categories: requestScreen.categories, context: "message_request" } });
+    return NextResponse.json({ error: "Message blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
+  }
+  const requestLower = cleanText.toLowerCase();
+  const requestHasPayment = /\$[\d]+|\bpay\b|\bcompensation\b|\brate\b|\bbudget\b|\bfee\b|\bcharged?\b/i.test(requestLower);
+  const requestHasNsfw = /\bnude\b|\bnudity\b|\bnsfw\b|\bnsf[ww]\b|\bexplicit\b|\bboudoir\b|\bpenetrat\b|\bsexual\b|\berotic\b|\btopless\b|\bundressed\b|\bintimate\b|\bsensual\b|\badult\b/i.test(requestLower);
+  if (requestHasPayment && requestHasNsfw) {
+    await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "disclosure_required", details: { to: toId, context: "message_request" } });
+    return NextResponse.json({ error: "Disclosure required before discussing paid NSFW shoots", code: "DISCLOSURE_REQUIRED" }, { status: 409 });
+  }
   if (!hasMatch && !sameCommunity) {
     const { data: existing } = await sb.from("muse_message_requests").select("id,status").eq("request_from", profile.id).eq("request_to", String(toId)).maybeSingle();
     if (existing && existing.status === "blocked") return NextResponse.json({ error: "Unable to message this user" }, { status: 403 });
@@ -62,18 +86,6 @@ export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
   }
 
   if (!cleanText && !imageUrl) return NextResponse.json({ error: "text or image required" }, { status: 400 });
-  const screen = cleanText ? screenText(cleanText) : { block: false, categories: [] as string[] };
-  if (screen.block) {
-    await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "message_blocked", details: { categories: screen.categories } });
-    return NextResponse.json({ error: "Message blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
-  }
-  const lower = cleanText.toLowerCase();
-  const hasPayment = /\$[\d]+|\bpay\b|\bcompensation\b|\brate\b|\bbudget\b|\bfee\b|\bcharged?\b/i.test(lower);
-  const hasNsfw = /\bnude\b|\bnudity\b|\bnsfw\b|\bnsf[ww]\b|\bexplicit\b|\bboudoir\b|\bpenetrat\b|\bsexual\b|\berotic\b|\btopless\b|\bundressed\b|\bintimate\b|\bsensual\b|\badult\b/i.test(lower);
-  if (hasPayment && hasNsfw) {
-    await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "disclosure_required", details: { to: toId } });
-    return NextResponse.json({ error: "Disclosure required before discussing paid NSFW shoots", code: "DISCLOSURE_REQUIRED" }, { status: 409 });
-  }
   const matchId = [profile.id, String(toId)].sort().join("__");
   const { error } = await sb.from("muse_messages").insert({
     match_id: matchId,

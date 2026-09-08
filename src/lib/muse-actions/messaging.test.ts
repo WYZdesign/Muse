@@ -48,4 +48,41 @@ describe("messageSend", () => {
     // just not a silent success
     expect((r as Response).status).not.toBe(200);
   });
+
+  it("sends a first-contact request to a non-matched, non-demo-stub user (uuid toId, no existing match/request row)", async () => {
+    const r = await messageSend(ctx({ toId: "22222222-2222-4222-8222-222222222222", text: "hi there" }, null));
+    const body = await (r as Response).json();
+    expect((r as Response).status).toBe(200);
+    expect(body.pending).toBe(true);
+  });
+});
+
+// wyzmind's message-request inbox (db281d4) let a first-contact request's
+// text preview skip screenText() moderation entirely — it stored/notified/
+// emailed the raw text and only ran screenText() later, on a branch this
+// early-return never reached. Fixed to screen (and apply the same
+// payment+NSFW disclosure gate matched messages get) before a request is
+// ever created. These lock that in; flagged for wyzmind to independently
+// confirm since this is content-moderation/safety logic.
+describe("messageSend — message-request path is moderated like a real message", () => {
+  it("blocks a first-contact request whose text screenText flags, and never creates the muse_message_requests row", async () => {
+    vi.doMock("@/lib/aiModeration", () => ({ screenText: () => ({ block: true, categories: ["test-flag"] }) }));
+    vi.resetModules();
+    const { messageSend: messageSendFresh } = await import("@/lib/muse-actions/messaging");
+    const r = await messageSendFresh(ctx({ toId: "33333333-3333-4333-8333-333333333333", text: "flagged content" }, null));
+    expect((r as Response).status).toBe(403);
+    const body = await (r as Response).json();
+    expect(body.code).toBe("SAFETY_BLOCK");
+    expect(state.inserts.some((i: any) => "message_preview" in (i || {}))).toBe(false);
+    vi.doUnmock("@/lib/aiModeration");
+    vi.resetModules();
+  });
+
+  it("requires disclosure before a first-contact request discussing paid NSFW work reaches the recipient", async () => {
+    const r = await messageSend(ctx({ toId: "44444444-4444-4444-8444-444444444444", text: "I'll pay $200 for a nude boudoir shoot" }, null));
+    expect((r as Response).status).toBe(409);
+    const body = await (r as Response).json();
+    expect(body.code).toBe("DISCLOSURE_REQUIRED");
+    expect(state.inserts.some((i: any) => "message_preview" in (i || {}))).toBe(false);
+  });
 });
