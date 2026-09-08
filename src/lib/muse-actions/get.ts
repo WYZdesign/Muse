@@ -409,6 +409,32 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ count: (count || 0) + (requestCount || 0) });
     }
 
+    if (type === "notifications-grouped" && user) {
+      const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
+      if (!profile) return NextResponse.json({ groups: {} });
+      const { data } = await sb.from("muse_notifications").select("*").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(100);
+      const groups: Record<string, { items: any[]; unread: number }> = {};
+      const categorize = (t: string) => {
+        if (t === "match" || t === "like") return "matches";
+        if (t === "message" || t === "message_request" || t === "message_request_accepted") return "messages";
+        if (t === "booking" || t === "booking_update") return "bookings";
+        if (t === "suspension" || t === "strike") return "safety";
+        return "other";
+      };
+      for (const n of (data || [])) {
+        const cat = categorize(n.type);
+        if (!groups[cat]) groups[cat] = { items: [], unread: 0 };
+        groups[cat].items.push(n);
+        if (!n.read) groups[cat].unread++;
+      }
+      const { count: pendingRequests } = await sb.from("muse_message_requests").select("*", { count: "exact", head: true }).eq("request_to", profile.id).eq("status", "pending");
+      if (pendingRequests && pendingRequests > 0) {
+        if (!groups.messages) groups.messages = { items: [], unread: 0 };
+        groups.messages.unread += pendingRequests;
+      }
+      return NextResponse.json({ groups });
+    }
+
     if (type === "notification-prefs" && user) {
       const { data: profile } = await sb.from("muse_profiles").select("id, preferences").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ prefs: {} });
