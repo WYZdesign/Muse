@@ -25,3 +25,5 @@ scripts/inspect_styles.mjs
 scripts/test_prod.mjs
 scripts/__pycache__/
 **/__pycache__/
+
+.shots/
