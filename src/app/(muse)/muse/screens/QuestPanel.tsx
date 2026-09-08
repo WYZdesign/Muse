@@ -179,9 +179,21 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                     {q.icon}
                   </div>
                   <div className="quest-card-main">
+                    {/* Audit fix (2026-09-08): title + description + reward were
+                        one nowrap/ellipsis text block. Ellipsis truncates a whole
+                        block at ITS edge, not per-child, so on a long title (e.g.
+                        "Quick Browse - Swipe 5 profiles") the reward span — the
+                        one piece of text that actually matters, what you get for
+                        completing the quest — got shoved past the edge and hard
+                        clipped mid-letter with no "…" to even signal it was cut.
+                        Now title+description truncate together in their own
+                        flex-shrinking span while the reward sits in a
+                        flex-shrink:0 span that's always shown in full. */}
                     <div className="quest-card-line" title={`${q.title}${q.description ? " - " + q.description : ""}: ${q.reward_amount > 1 ? `${q.reward_amount}× ` : ""}${q.reward_label}`}>
-                      <span className="quest-card-title">{q.title}</span>
-                      {q.description && <span className="quest-card-desc"> - {q.description}:</span>}
+                      <span className="quest-card-titledesc">
+                        <span className="quest-card-title">{q.title}</span>
+                        {q.description && <span className="quest-card-desc"> - {q.description}:</span>}
+                      </span>
                       <span className="quest-card-reward" style={{ color: tier.color }}>{" "}{q.reward_amount > 1 ? `${q.reward_amount}× ` : ""}{q.reward_label}</span>
                     </div>
                   </div>
