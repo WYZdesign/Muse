@@ -301,6 +301,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [_obStep10Known, _setObStep10Known] = useState<"yes"|"no"|"test"|null>(null);
   const portfolioInputRef = useRef<HTMLInputElement>(null);
   const [matchesView, setMatchesView] = useState<"list"|"grid">("list");
+  const [messageRequests, setMessageRequests] = useState<any[]>([]);
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
   const [showStory, setShowStory] = useState<number|null>(null);
@@ -715,6 +716,15 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     }, 2000);
     return () => { if (notifPrefsTimerRef.current) clearTimeout(notifPrefsTimerRef.current); };
   }, [notifPrefs, authUser]);
+
+  // ─── MESSAGE REQUESTS: Fetch pending requests when on matches screen ───
+  useEffect(() => {
+    if (screen !== "matches" || !authUser) return;
+    apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "message-requests" }) })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.requests) setMessageRequests(data.requests); })
+      .catch(() => {});
+  }, [screen, authUser]);
 
   // ─── CROSS-DEVICE: Persist filterStyles/filterScore to server (debounced) ───
   const filterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2501,7 +2511,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             <FeedScreen screen={screen} showScreen={showScreen} feedFilter={feedFilter} setFeedFilter={setFeedFilter} feedText={feedText} setFeedText={setFeedText} feedMedia={feedMedia} setFeedMedia={setFeedMedia} feedPosts={feedPosts} setFeedPosts={setFeedPosts} liveFeed={liveFeed} setLiveFeed={setLiveFeed} showEmojiPicker={showEmojiPicker} setShowEmojiPicker={setShowEmojiPicker} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} currentUser={currentUser} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} stories={stories} setStories={setStories} uploadImage={uploadImage} uid={uid} bootstrapped={bootstrapped} feedPostsStatic={feedPostsStatic} setFeedPostsStatic={setFeedPostsStatic} demo replyingTo={replyingTo} setReplyingTo={setReplyingTo} commentText={commentText} setCommentText={setCommentText} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} setShareTarget={setShareTarget} setViewProfile={setViewProfile} onStatusSaved={(status) => setCurrentUser(prev => ({ ...prev, status }))} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Muses">
-            <MusesScreen screen={screen} showScreen={showScreen} matches={matches} setMatches={setMatches} searchOpen={searchOpen} setSearchOpen={setSearchOpen} matchesView={matchesView} setMatchesView={setMatchesView} showLikesYou={showLikesYou} setShowLikesYou={setShowLikesYou} likedBy={likedBy} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} searchQuery={searchQuery} setSearchQuery={setSearchQuery} expandedMatchId={expandedMatchId} matchActions={matchActions} />
+            <MusesScreen screen={screen} showScreen={showScreen} matches={matches} setMatches={setMatches} searchOpen={searchOpen} setSearchOpen={setSearchOpen} matchesView={matchesView} setMatchesView={setMatchesView} showLikesYou={showLikesYou} setShowLikesYou={setShowLikesYou} likedBy={likedBy} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} searchQuery={searchQuery} setSearchQuery={setSearchQuery} expandedMatchId={expandedMatchId} matchActions={matchActions} messageRequests={messageRequests} setMessageRequests={setMessageRequests} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Bts">
             <BtsScreen screen={screen} stories={stories} setStories={setStories} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} setShowStory={setShowStory} handleImgError={handleImgError} apiFetch={apiFetch} setShowReport={setShowReport} setReportTarget={setReportTarget} />

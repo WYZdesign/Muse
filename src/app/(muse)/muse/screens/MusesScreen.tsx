@@ -36,6 +36,8 @@ export interface MusesScreenProps {
   setSearchQuery?: (v: string) => void;
   expandedMatchId?: string | null;
   matchActions?: any;
+  messageRequests?: any[];
+  setMessageRequests?: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
 export const MusesScreen = memo(function MusesScreen({
@@ -64,11 +66,14 @@ export const MusesScreen = memo(function MusesScreen({
   setSearchQuery = () => {},
   expandedMatchId = null,
   matchActions,
+  messageRequests = [],
+  setMessageRequests = () => {},
 }: MusesScreenProps) {
   // "Likes You" is already blurred/badged for free-tier viewers (the
   // in-context paywall) — this only covers what used to happen on tap: a
   // plain toast instead of a real upsell moment.
   const [showLikesUpsell, setShowLikesUpsell] = useState(false);
+  const [showRequests, setShowRequests] = useState(false);
 
   useEffect(() => {
     if (!showLikesYou) return;
@@ -142,21 +147,30 @@ export const MusesScreen = memo(function MusesScreen({
         </div>
       </div>
 
-      {/* Sub-nav tabs: Matches vs Likes You */}
+      {/* Sub-nav tabs: Matches vs Likes You vs Requests */}
       <div style={{ display: "flex", gap: 6, margin: "0 16px 12px" }}>
         <button
-          style={{ flex: 1, padding: "16px 0", borderRadius: 13, border: "none", background: !showLikesYou ? "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))" : "transparent", color: !showLikesYou ? "var(--gold)" : "var(--text2)", fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all .25s", boxShadow: !showLikesYou ? "0 2px 8px rgba(255,69,0,0.15)" : "none" }}
-          onClick={() => setShowLikesYou(false)}
+          style={{ flex: 1, padding: "16px 0", borderRadius: 13, border: "none", background: !showLikesYou && !showRequests ? "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))" : "transparent", color: !showLikesYou && !showRequests ? "var(--gold)" : "var(--text2)", fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all .25s", boxShadow: !showLikesYou && !showRequests ? "0 2px 8px rgba(255,69,0,0.15)" : "none" }}
+          onClick={() => { setShowLikesYou(false); setShowRequests(false); }}
         >
           Matches {matches.length > 0 ? `(${matches.length})` : ""}
         </button>
         <button
           style={{ flex: 1, padding: "16px 0", borderRadius: 13, border: "none", background: showLikesYou ? "linear-gradient(135deg,rgba(255,20,147,0.25),rgba(255,105,180,0.15))" : "transparent", color: showLikesYou ? "#FF69B4" : "var(--text2)", fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all .25s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: showLikesYou ? "0 2px 8px rgba(255,20,147,0.15)" : "none" }}
-          onClick={() => setShowLikesYou(true)}
+          onClick={() => { setShowLikesYou(true); setShowRequests(false); }}
         >
           <span>✦ Interested In You</span>
           {likedBy.length > 0 && (
             <span style={{ padding: "2px 7px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 11, fontWeight: 800, color: "#fff" }}>{likedBy.length}</span>
+          )}
+        </button>
+        <button
+          style={{ flex: 1, padding: "16px 0", borderRadius: 13, border: "none", background: showRequests ? "linear-gradient(135deg,rgba(0,200,83,0.25),rgba(0,230,118,0.15))" : "transparent", color: showRequests ? "#00E676" : "var(--text2)", fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all .25s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: showRequests ? "0 2px 8px rgba(0,200,83,0.15)" : "none" }}
+          onClick={() => { setShowLikesYou(false); setShowRequests(true); }}
+        >
+          <span>Inbox</span>
+          {messageRequests.length > 0 && (
+            <span style={{ padding: "2px 7px", borderRadius: 99, background: "linear-gradient(135deg,#00C853,#00E676)", fontSize: 11, fontWeight: 800, color: "#fff" }}>{messageRequests.length}</span>
           )}
         </button>
       </div>
@@ -170,7 +184,49 @@ export const MusesScreen = memo(function MusesScreen({
         </div>
       )}
 
-      {showLikesYou ? (
+      {showRequests ? (
+        <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
+          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14 }}>Message requests from people who want to connect</div>
+          {messageRequests.length === 0 ? (
+            <EmptyState icon="📬" title="No pending requests" sub="When someone messages you for the first time, their request will appear here." style={{ padding: "40px 20px" }} />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {messageRequests.map((req: any) => (
+                <div key={req.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 16, display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
+                    {req.from_avatar ? (
+                      <img src={req.from_avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: "var(--muted)" }}>
+                        {(req.from_name || "?")[0]}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 2 }}>{req.from_name || "Someone"}</div>
+                    <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 8, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{req.message_preview || "No message preview"}</div>
+                    <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 10 }}>{req.time || "Recently"}</div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={async () => {
+                        const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "message-request-accept", requestId: req.id }) });
+                        if (r.ok) { setMessageRequests(prev => prev.filter((x: any) => x.id !== req.id)); showToast?.("Request accepted"); }
+                      }} style={{ padding: "6px 14px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#00C853,#00E676)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Accept</button>
+                      <button onClick={async () => {
+                        const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "message-request-decline", requestId: req.id }) });
+                        if (r.ok) { setMessageRequests(prev => prev.filter((x: any) => x.id !== req.id)); showToast?.("Request declined"); }
+                      }} style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "var(--text2)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Decline</button>
+                      <button onClick={async () => {
+                        const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "message-request-block", requestId: req.id }) });
+                        if (r.ok) { setMessageRequests(prev => prev.filter((x: any) => x.id !== req.id)); showToast?.("User blocked"); }
+                      }} style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(255,60,60,0.3)", background: "transparent", color: "#ff6b6b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Block</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : showLikesYou ? (
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
           <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14 }}>People who are interested in connecting with you</div>
           {likedBy.length === 0 ? (
