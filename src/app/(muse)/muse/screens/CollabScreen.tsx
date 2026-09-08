@@ -92,6 +92,7 @@ export const CollabScreen = memo(function CollabScreen({
   // this is a client-side filter over the already-fetched brief list, same
   // shape as MusesScreen's existing search-toggle pattern, no backend change.
   const [briefSearchQuery, setBriefSearchQuery] = useState("");
+  const [safetyInfoOpen, setSafetyInfoOpen] = useState(false);
 
   // "Not interested" / dismiss (audit finding up-3, LinkedIn/Facebook-style
   // feed hide). Session-local only, same as savedBriefs/appliedBriefs
@@ -168,7 +169,7 @@ export const CollabScreen = memo(function CollabScreen({
         <input className="inp" placeholder="Describe what you're looking for..." value={briefSearchQuery} onChange={e => setBriefSearchQuery(e.target.value)} style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
         {briefSearchQuery && <button onClick={() => setBriefSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
       </div>
-      <div className="conn-tabs" style={{ padding: "0 12px", justifyContent: "center" }}>
+      <div className="conn-tabs" style={{ padding: "0 12px", justifyContent: "flex-start" }}>
         {/* Small leading icon per tab (audit finding tu-2) — text-only tabs
             work fine at this row length, but a glance-able icon removes a
             beat of reading for a frequently-tapped row like this one. Kept
@@ -291,15 +292,16 @@ export const CollabScreen = memo(function CollabScreen({
                 );
               })()}
               {brief.cat !== "concept" && (
-                // Plain safety reminder (audit finding mm-p2-2 — Torreé chose
-                // non-legal microcopy over drafted legal disclaimer language,
-                // which needs real legal review, not guessed wording). Shown
-                // on tfp/paid/opencall briefs, which are the categories that
-                // typically lead to an in-person session; "concept" briefs
-                // are idea-exchange threads with no meetup implied yet.
-                <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>
-                  <span aria-hidden="true">🛈</span> Meet in public places and verify details before attending a session.
-                </div>
+                // Safety info popup (Torreé): the one-line "Meet in public places"
+                // microcopy is now a tiny "ⓘ" in the top-left of the card that opens
+                // a full, dismissible popup with the complete guidance. Kept terse on
+                // the card so it doesn't read as legal boilerplate.
+                <button
+                  aria-label="Safety info"
+                  title="Safety info"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSafetyInfoOpen(true); }}
+                  style={{ position: "absolute", top: 44, left: 10, width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3 }}
+                >ⓘ</button>
               )}
               <div className="brief-tags">{brief.tags.map((t: string) => <span key={t} className="brief-tag">{t}</span>)}</div>
               <div className="brief-actions">
@@ -373,6 +375,27 @@ export const CollabScreen = memo(function CollabScreen({
               </select>
             </div>
             <button className="btn btn-gold" style={{ width: "100%", fontWeight: 700 }} onClick={submitBrief}>{viewerSide(currentUser?.type) === "industry" ? "Post Brief" : "Share It"}</button>
+          </div>
+        </div>
+      )}
+      {safetyInfoOpen && (
+        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setSafetyInfoOpen(false)}>
+          <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 22, textAlign: "left" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text)" }}>Safety at your shoot</div>
+              <button onClick={() => setSafetyInfoOpen(false)} aria-label="Close" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 20, lineHeight: 1 }}>✕</button>
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6 }}>
+              <p style={{ marginBottom: 10 }}>Your safety comes first on Muse. Before any session:</p>
+              <ul style={{ paddingLeft: 18, marginBottom: 12 }}>
+                <li>Meet in a public place for a first session.</li>
+                <li>Verify the other person's identity and details before attending.</li>
+                <li>Share your location and the shoot details with a trusted contact.</li>
+                <li>Only agree to content and boundaries you're comfortable with.</li>
+                <li>Report any concern — we review every report.</li>
+              </ul>
+              <p style={{ fontSize: 12, color: "var(--muted)" }}>Tap outside or ✕ to close.</p>
+            </div>
           </div>
         </div>
       )}
