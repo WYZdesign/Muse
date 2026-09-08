@@ -678,6 +678,18 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    if (type === "admin-audit-log" && user) {
+      const { data: adminProfile } = await sb.from("muse_profiles").select("email").eq("id", profileId).maybeSingle();
+      if (!isAdminEmail(adminProfile?.email)) return NextResponse.json({ error: "Admin only" }, { status: 403 });
+      const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") || "50", 10), 200);
+      const offset = parseInt(req.nextUrl.searchParams.get("offset") || "0", 10);
+      const { data: entries } = await sb.from("muse_admin_audit_log")
+        .select("id, admin_user_id, query_text, created_at")
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+      return NextResponse.json({ entries: entries || [], offset, limit });
+    }
+
     return NextResponse.json({ error: "Unknown type" }, { status: 400 });
   } catch (e: unknown) {
     console.error("[GET /api/muse] Unhandled error:", e instanceof Error ? e.message : e);
