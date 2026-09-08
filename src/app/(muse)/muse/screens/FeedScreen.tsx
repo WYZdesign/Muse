@@ -492,8 +492,15 @@ export const FeedScreen = memo(function FeedScreen({
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                       {fmt(views)}
                     </span>
+                    {/* Audit fix (2026-09-08): this stat and the Like button directly
+                        below it both rendered as "✦ {number}" with no visible label —
+                        only a hover title distinguished "weighted engagement score" from
+                        "raw like count", which meant nothing on a touch device. Two
+                        different numbers under the identical icon read as the same stat
+                        disagreeing with itself. Switched engagement to a distinct ⚡ icon
+                        so the two stats are visually distinguishable at a glance. */}
                     <span style={{ fontSize: 12, color: engagement > 0 ? "var(--gold)" : "var(--muted)", fontWeight: engagement > 0 ? 700 : 400 }} title={`Engagement: likes(${post.likes || 0}) · comments×2(${post.comments || 0}) · shares×3(${post.shares || 0})`}>
-                      ✦ {fmt(engagement)}
+                      ⚡ {fmt(engagement)}
                     </span>
                   </div>
                 </div>
@@ -599,7 +606,7 @@ export const FeedScreen = memo(function FeedScreen({
                     <span title="Views" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>👁 {dFmt(dViews)} views</span>
                     <span>✦ {dp.likes + (dp.liked ? 1 : 0)} likes</span>
                     <span>💬 {dp.comments} replies</span>
-                    <span style={{ color: dEng > 0 ? "var(--gold)" : "var(--muted)", fontWeight: dEng > 0 ? 700 : 400 }} title="Engagement: likes + comments×2 + shares×3">✦ {dFmt(dEng)} engagement</span>
+                    <span style={{ color: dEng > 0 ? "var(--gold)" : "var(--muted)", fontWeight: dEng > 0 ? 700 : 400 }} title="Engagement: likes + comments×2 + shares×3">⚡ {dFmt(dEng)} engagement</span>
                   </div>
                 );
               })()}

@@ -103,7 +103,12 @@ export const StudiosScreen = memo(function StudiosScreen({
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 700 }}>{s.name}</div>
                 <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 1, lineHeight: 1.35 }}>{s.feature}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", marginTop: 3 }}>{s.price}/hr</div>
+                {/* Audit fix (2026-09-08): OTHER_STUDIOS (Apex, Hubble) use price:"hourly"
+                    as a placeholder for pending-partnership listings, since their real
+                    rates aren't in yet (see studios.ts comments). This unconditionally
+                    appended "/hr", rendering as literal "hourly/hr". Only append "/hr"
+                    when price is an actual dollar figure; otherwise show it as-is. */}
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", marginTop: 3 }}>{s.price.startsWith("$") ? `${s.price}/hr` : s.price}</div>
               </div>
               <a href={`${studio.siteUrl.replace(/\/$/, "")}`} target="_blank" rel="noopener noreferrer" onClick={() => apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-event", name: "studio_book_click", props: { studio: studio.id, space: s.id } }) }).catch(() => {})} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, padding: "8px 12px", borderRadius: 10, color: "#fff", background: `linear-gradient(135deg, ${studio.color[0]}, ${studio.color[1]})`, textDecoration: "none", whiteSpace: "nowrap" }}>Book ↗</a>
             </div>
