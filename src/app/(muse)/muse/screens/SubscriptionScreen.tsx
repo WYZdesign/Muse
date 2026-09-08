@@ -1,12 +1,12 @@
 "use client";
 
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 import { TIERS, TIERS_BY_SIDE } from "../components/types";
 import { viewerSideOf } from "@/lib/role";
-import { startSubscriptionCheckout } from "../lib/api";
+import { startSubscriptionCheckout, startBoostCheckout } from "../lib/api";
 
 export interface SubscriptionScreenProps {
   screen: Screen;
@@ -38,6 +38,21 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
   const [promo, setPromo] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
   const [applyingPromo, setApplyingPromo] = useState(false);
+
+  const [boost, setBoost] = useState<{ inventory: number; isBoosted: boolean; expiresAt: string | null } | null>(null);
+  const [boostDuration, setBoostDuration] = useState<"24h" | "72h" | "7d">("24h");
+  const [boosting, setBoosting] = useState(false);
+  const [buyingBoost, setBuyingBoost] = useState(false);
+
+  const loadBoost = async () => {
+    if (!apiFetch) return;
+    try {
+      const r = await apiFetch("/api/muse?type=boost-status");
+      const j = await r.json();
+      if (j.inventory !== undefined) setBoost({ inventory: j.inventory, isBoosted: j.isBoosted, expiresAt: j.expiresAt });
+    } catch { /* non-fatal */ }
+  };
+  useEffect(() => { loadBoost(); }, []);
 
   return (
     <div className="phone-wrap">
@@ -131,6 +146,51 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
               </div>
             );
           })}
+
+          <div style={{ margin: "24px 0 12px" }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "var(--text)" }}>Profile Boost</div>
+            <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 4 }}>Push your profile to the top of Discover for a set time. Pro members get 1×/week free; earn more via quests or buy credits.</div>
+          </div>
+
+          {boost?.isBoosted ? (
+            <div style={{ padding: "14px 16px", borderRadius: 16, marginBottom: 12, background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.35)" }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "var(--gold)" }}>✦ Your profile is boosted</div>
+              {boost.expiresAt && <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>Active until {new Date(boost.expiresAt).toLocaleString()}</div>}
+              <button className="btn btn-outline" style={{ width: "100%", marginTop: 12, padding: "10px 16px", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={() => { setBoostDuration(s => s); loadBoost(); }}>Refresh status</button>
+            </div>
+          ) : (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                {(["24h", "72h", "7d"] as const).map(d => (
+                  <button key={d} className={"btn " + (boostDuration === d ? "btn-gold" : "btn-outline")} style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={() => setBoostDuration(d)}>{d}</button>
+                ))}
+              </div>
+              <button className="btn btn-gold" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 800, borderRadius: 12 }} disabled={boosting} onClick={async () => {
+                if (!apiFetch) { showToast("Can't boost right now"); return; }
+                setBoosting(true);
+                try {
+                  const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "boost", duration: boostDuration }) });
+                  const j = await r.json();
+                  if (r.ok) { showToast("Boost active!"); loadBoost(); }
+                  else if (j.code === "NO_BOOSTS") showToast("No boosts left — buy credits or earn via quests");
+                  else showToast(j.error || "Couldn't boost");
+                } catch { showToast("Couldn't boost"); }
+                setBoosting(false);
+              }}>{boosting ? "Boosting..." : `Boost Now (${boostDuration})`}</button>
+            </div>
+          )}
+
+          {typeof boost?.inventory === "number" && boost.inventory > 0 && (
+            <div style={{ fontSize: 12.5, color: "var(--text2)", marginBottom: 10 }}>You have <strong style={{ color: "var(--gold)" }}>{boost.inventory}</strong> boost credit{boost.inventory === 1 ? "" : "s"} available.</div>
+          )}
+
+          <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 12, fontWeight: 700, borderRadius: 12, borderColor: "rgba(255,215,0,0.3)", color: "var(--gold)" }} disabled={buyingBoost} onClick={async () => {
+            if (buyingBoost) return;
+            setBuyingBoost(true);
+            const url = await startBoostCheckout(1, boostDuration, showToast);
+            if (url) { window.location.href = url; }
+            setBuyingBoost(false);
+          }}>{buyingBoost ? "Opening checkout..." : "Buy Boost Credits — $4.99"}</button>
         </div>
         <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
       </div>
