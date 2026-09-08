@@ -29,6 +29,14 @@ export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
   for (const [k, v] of Object.entries(source as Record<string, unknown>)) {
     if (ALLOWED_PREFS.has(k)) prefs[k] = v;
   }
+  // Handle nested notification preference toggles (e.g. notifications.match = false)
+  if (rest.toggleNotificationPref && typeof rest.toggleNotificationPref === "object") {
+    const { key, value } = rest.toggleNotificationPref as { key: string; value: boolean };
+    if (["match", "message", "brief", "like", "push", "email"].includes(key)) {
+      const existing = (source as any).notifications || {};
+      prefs.notifications = { ...existing, [key]: value };
+    }
+  }
   if (Object.keys(prefs).length === 0) return NextResponse.json({ error: "No valid preferences provided" }, { status: 400 });
   const { data: existing } = await sb.from("muse_profiles").select("preferences").eq("id", profile.id).maybeSingle();
   const merged = { ...(existing?.preferences || {}), ...prefs };
