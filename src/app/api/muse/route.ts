@@ -16,7 +16,7 @@ import { disclosureCreate, disclosureConfirm, disclosureGet, strikesGet, strikeA
 import { communityJoin, communityLeave, communityCreate, eventCreate, eventRsvp, eventCancelRsvp, communityUpdateRules, communityKick, communityBan, communityUnban, communitySetRole, communityGetBans } from "@/lib/muse-actions/communities";
 import { sessionBook, sessionCreate, bookingRespond, bookingCancel, bookingComplete, reviewSubmit, checkinRespond, checkinsGet, safetyDetailsShare, safetyProfileSave, safetyProfileGet, promptsGet, promptResponseSave, promptResponsesGet } from "@/lib/muse-actions/sessions";
 import { connectRequest } from "@/lib/muse-actions/connect";
-import { profileUpdate } from "@/lib/muse-actions/profile";
+import { profileUpdate, profileDelete } from "@/lib/muse-actions/profile";
 import { matchCreate, matchDelete, profileViewTrack } from "@/lib/muse-actions/matching";
 import { messageSend, messageRequestAccept, messageRequestDecline, messageRequestBlock, messageRequestsGet } from "@/lib/muse-actions/messaging";
 import { feedPost, feedPostLike, feedCommentAdd, momentCreate, momentLike, briefCreate, briefApply } from "@/lib/muse-actions/feed";
@@ -33,6 +33,7 @@ const ACTIONS: Record<string, ActionHandler> = {};
 // Handler extracted to lib/muse-actions/profile.ts (monolith split, interleaved-domain pass).
 
 ACTIONS["profile"] = profileUpdate;
+ACTIONS["profile-delete"] = profileDelete;
 
 // ═══ MATCHING & DISCOVERY ═══
 // Handlers extracted to lib/muse-actions/matching.ts (monolith split, interleaved-domain pass).
