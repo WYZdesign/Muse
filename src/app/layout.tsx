@@ -58,7 +58,8 @@ const BLANK_SCREEN_WATCHDOG = `(function () {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: "#0a0612",
   viewportFit: "cover",
   interactiveWidget: "overlays-content",

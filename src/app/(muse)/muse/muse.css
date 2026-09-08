@@ -410,7 +410,7 @@ a{color:inherit;text-decoration:none}
 .step-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.1);transition:all .3s}
 .step-dot.active{background:var(--gold);box-shadow:0 0 10px rgba(255,215,0,0.4)}
 .step-dot.done{background:var(--gold);opacity:0.4}
-.inp{width:100%;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.12);border-radius:16px;padding:15px 18px;font-size:15px;color:var(--text);margin-bottom:14px;transition:all .3s cubic-bezier(.4,0,.2,1);font-family:inherit}
+.inp{width:100%;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.12);border-radius:16px;padding:15px 18px;font-size:16px;color:var(--text);margin-bottom:14px;transition:all .3s cubic-bezier(.4,0,.2,1);font-family:inherit}
 .inp:focus{border-color:var(--gold);box-shadow:0 0 24px rgba(255,215,0,0.12),inset 0 0 20px rgba(255,215,0,0.03)}
 .inp{font-size:16px}.inp::placeholder{color:rgba(255,255,255,0.45)}
 .inp.error{border-color:var(--coral)!important;box-shadow:0 0 16px rgba(255,138,128,0.15)!important;animation:inputShake .4s ease}
@@ -1143,7 +1143,7 @@ img{background-color:#1a0a2e}
 /* ═══ DISCOVER CARD HERO CHIPS ═══ */
 .card-hero-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;pointer-events:none}
 .card-hero-chip{padding:3px 9px;border-radius:99px;background:rgba(10,6,18,0.55);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.85);font-size:10px;font-weight:600;white-space:nowrap}
-.card-hero-loc{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;font-size:14px;font-weight:700;color:#D4A5FF;text-shadow:0 1px 6px rgba(212,165,255,0.3),0 2px 12px rgba(0,0,0,0.5)}
+.card-hero-loc{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;font-size:21px;font-weight:800;color:#D4A5FF;text-shadow:0 1px 6px rgba(212,165,255,0.3),0 2px 12px rgba(0,0,0,0.5)}
 .card-hero-loc span{white-space:nowrap}
 .card-hero-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .card-hero-badge{padding:3px 9px;border-radius:99px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.5)}

@@ -343,8 +343,10 @@ export const SettingsScreen = memo(function SettingsScreen({
             backgroundClip: "text",
             WebkitTextFillColor: "transparent",
             color: "transparent",
-            position: "relative",
-            margin: "0 auto",
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            margin: 0,
             padding: 0,
             whiteSpace: "nowrap",
           }}>Settings</div>
