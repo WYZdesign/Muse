@@ -13,7 +13,7 @@ import { albumCreate, albumUpdate, albumDelete, albumAddPhoto, albumRemovePhoto,
 import { feedbackGetNotifications, feedbackMarkAllRead, feedbackReportBug, feedbackSubmitIdea } from "@/lib/muse-actions/feedback";
 import { adminResolveAppeal, adminBrain, adminReports, adminStrikes, adminSuspendUser, adminScanNsfw, adminContentScans, adminResolveIncident, adminResolveReport } from "@/lib/muse-actions/admin";
 import { disclosureCreate, disclosureConfirm, disclosureGet, strikesGet, strikeAppeal } from "@/lib/muse-actions/disclosures";
-import { communityJoin, communityLeave, communityCreate, eventCreate, eventRsvp, eventCancelRsvp, communityUpdateRules, communityKick, communityBan, communityUnban, communitySetRole, communityGetBans, communityMute, communityUnmute, communityGetMutes } from "@/lib/muse-actions/communities";
+import { communityJoin, communityLeave, communityCreate, eventCreate, eventRsvp, eventCancelRsvp, communityUpdateRules, communityKick, communityBan, communityUnban, communitySetRole, communityGetBans, communityMute, communityUnmute, communityGetMutes, communityGetJoinRequests, communityApproveJoinRequest, communityDenyJoinRequest } from "@/lib/muse-actions/communities";
 import { sessionBook, sessionCreate, bookingRespond, bookingCancel, bookingComplete, reviewSubmit, checkinRespond, checkinsGet, safetyDetailsShare, safetyProfileSave, safetyProfileGet, promptsGet, promptResponseSave, promptResponsesGet, bookingReminders } from "@/lib/muse-actions/sessions";
 import { connectRequest } from "@/lib/muse-actions/connect";
 import { profileUpdate, profileDelete } from "@/lib/muse-actions/profile";
@@ -94,6 +94,9 @@ ACTIONS["get-community-bans"] = communityGetBans;
 ACTIONS["mute-community-member"] = communityMute;
 ACTIONS["unmute-community-member"] = communityUnmute;
 ACTIONS["get-community-mutes"] = communityGetMutes;
+ACTIONS["get-community-join-requests"] = communityGetJoinRequests;
+ACTIONS["approve-community-join-request"] = communityApproveJoinRequest;
+ACTIONS["deny-community-join-request"] = communityDenyJoinRequest;
 
 // ═══ SESSIONS & BOOKINGS ═══
 // Handlers extracted to lib/muse-actions/sessions.ts (monolith split, interleaved-domain pass).

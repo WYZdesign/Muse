@@ -14,10 +14,30 @@ export const communityJoin = async ({ sb, profile, rest }: ActionContext) => {
   if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
   const isStub = !UUID_RE.test(String(communityId));
   if (isStub) return NextResponse.json({ success: true, demo: true });
-  const { data: community } = await sb.from("muse_communities").select("id").eq("id", communityId).maybeSingle();
+  const { data: community } = await sb.from("muse_communities").select("id, is_private").eq("id", communityId).maybeSingle();
   if (!community) return NextResponse.json({ error: "Community not found" }, { status: 400 });
   const { data: ban } = await sb.from("muse_community_bans").select("id").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
   if (ban) return NextResponse.json({ error: "You are banned from this community" }, { status: 403 });
+  if ((community as any).is_private) {
+    const { data: existing } = await sb.from("muse_community_join_requests")
+      .select("id, status").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+    if (existing && existing.status === "pending") return NextResponse.json({ success: true, pending: true });
+    if (existing && existing.status === "approved") {
+      await sb.from("muse_community_members").upsert(
+        { community_id: communityId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar },
+        { onConflict: "community_id,user_id", ignoreDuplicates: true }
+      );
+      const { count } = await sb.from("muse_community_members").select("*", { count: "exact", head: true }).eq("community_id", communityId);
+      await sb.from("muse_communities").update({ member_count: (count ?? 0) }).eq("id", communityId);
+      return NextResponse.json({ success: true });
+    }
+    if (existing && existing.status === "denied") return NextResponse.json({ error: "Your request was denied" }, { status: 403 });
+    const { error } = await sb.from("muse_community_join_requests").insert({
+      community_id: communityId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar,
+    });
+    if (error) return safeServerError(error, "db op");
+    return NextResponse.json({ success: true, pending: true });
+  }
   await sb.from("muse_community_members").upsert(
     { community_id: communityId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar },
     { onConflict: "community_id,user_id", ignoreDuplicates: true }
@@ -233,4 +253,57 @@ export const communityGetMutes = async ({ sb, profile, rest }: ActionContext) =>
   const { data: mutes } = await sb.from("muse_community_mutes")
     .select("user_id, expires_at, created_at").eq("community_id", communityId);
   return NextResponse.json({ mutes: mutes || [] });
+};
+
+export const communityGetJoinRequests = async ({ sb, profile, rest }: ActionContext) => {
+  const { communityId } = rest;
+  if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
+  const { data: requester } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+  if (!requester || (requester.role !== "admin" && requester.role !== "moderator")) {
+    return NextResponse.json({ requests: [] });
+  }
+  const { data: requests } = await sb.from("muse_community_join_requests")
+    .select("id, user_id, user_name, user_avatar, status, created_at")
+    .eq("community_id", communityId)
+    .order("created_at", { ascending: false });
+  return NextResponse.json({ requests: requests || [] });
+};
+
+export const communityApproveJoinRequest = async ({ sb, profile, rest }: ActionContext) => {
+  const { communityId, requestId } = rest;
+  if (!communityId || !requestId) return NextResponse.json({ error: "communityId and requestId required" }, { status: 400 });
+  const { data: requester } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+  if (!requester || (requester.role !== "admin" && requester.role !== "moderator")) {
+    return NextResponse.json({ error: "Admin or moderator only" }, { status: 403 });
+  }
+  const { data: req } = await sb.from("muse_community_join_requests")
+    .select("id, user_id, user_name, user_avatar, status").eq("id", requestId).maybeSingle();
+  if (!req) return NextResponse.json({ error: "Request not found" }, { status: 404 });
+  if ((req as any).status !== "pending") return NextResponse.json({ error: "Request already processed" }, { status: 400 });
+  await sb.from("muse_community_join_requests").update({
+    status: "approved", reviewed_by: profile.id, reviewed_at: new Date().toISOString(),
+  }).eq("id", requestId);
+  await sb.from("muse_community_members").upsert(
+    { community_id: communityId, user_id: (req as any).user_id, user_name: (req as any).user_name, user_avatar: (req as any).user_avatar },
+    { onConflict: "community_id,user_id", ignoreDuplicates: true }
+  );
+  const { count } = await sb.from("muse_community_members").select("*", { count: "exact", head: true }).eq("community_id", communityId);
+  await sb.from("muse_communities").update({ member_count: (count ?? 0) }).eq("id", communityId);
+  return NextResponse.json({ success: true });
+};
+
+export const communityDenyJoinRequest = async ({ sb, profile, rest }: ActionContext) => {
+  const { communityId, requestId } = rest;
+  if (!communityId || !requestId) return NextResponse.json({ error: "communityId and requestId required" }, { status: 400 });
+  const { data: requester } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+  if (!requester || (requester.role !== "admin" && requester.role !== "moderator")) {
+    return NextResponse.json({ error: "Admin or moderator only" }, { status: 403 });
+  }
+  await sb.from("muse_community_join_requests").update({
+    status: "denied", reviewed_by: profile.id, reviewed_at: new Date().toISOString(),
+  }).eq("id", requestId);
+  return NextResponse.json({ success: true });
 };
