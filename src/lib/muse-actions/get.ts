@@ -329,6 +329,30 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ views: (me as any)?.views_count || 0, likesReceived: likesReceived || 0 });
     }
 
+    if (type === "profile-viewers" && user) {
+      const { data: viewers } = await sb.from("muse_activity_log")
+        .select("actor_id, created_at")
+        .eq("user_id", profileId)
+        .eq("action", "profile_view")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      const viewerIds = [...new Set((viewers || []).map((v: any) => v.actor_id).filter(Boolean))];
+      if (viewerIds.length === 0) return NextResponse.json({ viewers: [] });
+      const { data: profiles } = await sb.from("muse_profiles")
+        .select("id, name, avatar, verified, type")
+        .in("id", viewerIds);
+      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+      const result = (viewers || [])
+        .filter((v: any) => profileMap.has(v.actor_id))
+        .reduce((acc: any[], v: any) => {
+          if (!acc.find((x: any) => x.id === v.actor_id)) {
+            acc.push({ ...profileMap.get(v.actor_id), viewedAt: v.created_at });
+          }
+          return acc;
+        }, []);
+      return NextResponse.json({ viewers: result });
+    }
+
     if (type === "my-analytics" && user) {
       // Profile views over time (last 30 days from activity log)
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
