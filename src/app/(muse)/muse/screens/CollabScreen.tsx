@@ -273,6 +273,17 @@ export const CollabScreen = memo(function CollabScreen({
                   </div>
                 );
               })()}
+              {brief.cat !== "concept" && (
+                // Plain safety reminder (audit finding mm-p2-2 — Torreé chose
+                // non-legal microcopy over drafted legal disclaimer language,
+                // which needs real legal review, not guessed wording). Shown
+                // on tfp/paid/opencall briefs, which are the categories that
+                // typically lead to an in-person session; "concept" briefs
+                // are idea-exchange threads with no meetup implied yet.
+                <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>
+                  <span aria-hidden="true">🛈</span> Meet in public places and verify details before attending a session.
+                </div>
+              )}
               <div className="brief-tags">{brief.tags.map((t: string) => <span key={t} className="brief-tag">{t}</span>)}</div>
               <div className="brief-actions">
                 {isOwnBrief(brief) ? (

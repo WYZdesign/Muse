@@ -62,6 +62,24 @@ function paymentStatusPill(payment_status: string | null | undefined): { label: 
   }
 }
 
+// Tier badges (audit finding taskrabbit-p2-2 — Torreé asked for a small
+// ladder of tiers rather than one flat badge). Auto-computed entirely from
+// data Muse already tracks (completed sessions + average rating) — no admin
+// curation, nothing that can go stale, no new schema. Deliberately no badge
+// below "Rising Muse": a visible low tier reads as a demerit for creatives
+// still building a track record, which would work against onboarding new
+// hosts. Only the single highest tier a listing qualifies for is shown.
+const SESSION_TIERS = [
+  { key: "elite", label: "Muse Elite", icon: "✦", minSessions: 25, minRating: 4.8, bg: "rgba(255,215,0,0.16)", border: "rgba(255,215,0,0.4)", color: "var(--gold)" },
+  { key: "top", label: "Top Rated", icon: "★", minSessions: 10, minRating: 4.5, bg: "rgba(255,215,0,0.14)", border: "rgba(255,215,0,0.35)", color: "var(--gold)" },
+  { key: "rising", label: "Rising Muse", icon: "◆", minSessions: 3, minRating: 4.0, bg: "rgba(212,165,255,0.14)", border: "rgba(212,165,255,0.3)", color: "var(--lavender)" },
+] as const;
+function sessionTier(s: { hostCompletedSessions?: number; rating?: number }): typeof SESSION_TIERS[number] | null {
+  const sessions = s.hostCompletedSessions ?? 0;
+  const rating = s.rating ?? 0;
+  return SESSION_TIERS.find(t => sessions >= t.minSessions && rating >= t.minRating) ?? null;
+}
+
 export const SessionsScreen = memo(function SessionsScreen({
   screen,
   sessTab,
@@ -259,9 +277,19 @@ export const SessionsScreen = memo(function SessionsScreen({
                   )}
                 </div>
                 <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <div className="conn-name" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6 }}>
+                  <div className="conn-name" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     {s.name}
                     {s.hostVerified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
+                    {(() => {
+                      const tier = sessionTier(s);
+                      if (!tier) return null;
+                      return (
+                        <span
+                          title={`${tier.minSessions}+ completed sessions and a ${tier.minRating}+ average rating`}
+                          style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.3, padding: "2px 7px", borderRadius: 20, background: tier.bg, border: `1px solid ${tier.border}`, color: tier.color, textTransform: "uppercase" }}
+                        >{tier.icon} {tier.label}</span>
+                      );
+                    })()}
                   </div>
                   <div className="conn-meta" style={{ fontSize: 12 }}>{s.type} · {s.rate} · ★ {s.rating}</div>
                   {!!s.hostCompletedSessions && (
