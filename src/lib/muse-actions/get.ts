@@ -432,6 +432,18 @@ export async function GET(req: NextRequest) {
         .eq("status", "completed");
       const boosted = isBoostActive(p.boost_expires_at);
       const ageVerified = !!p.age_verified && new Date(p.age_verified_at || 0).getTime() > Date.now() - 150 * 24 * 60 * 60 * 1000;
+      // Quick-response signal: of the incoming message requests this creative
+      // received, how many did they respond to (accept/decline)? A high rate is a
+      // strong "they actually reply" signal for a buyer — surfaced here with the
+      // other trust data instead of silently omitted.
+      const { data: reqs } = await sb.from("muse_message_requests")
+        .select("status")
+        .eq("request_to", targetProfileId);
+      const totalReqs = (reqs || []).length;
+      const respondedReqs = (reqs || []).filter((r: any) => r.status === "accepted" || r.status === "declined").length;
+      const responseRate = totalReqs >= 3 ? Math.round((respondedReqs / totalReqs) * 100) : null;
+      const lastSeen = p.last_seen_at || null;
+      const lastSeenDaysAgo = lastSeen ? Math.floor((Date.now() - new Date(lastSeen).getTime()) / (24 * 60 * 60 * 1000)) : null;
       return NextResponse.json({
         trust: {
           verified: !!p.verified,
@@ -442,6 +454,9 @@ export async function GET(req: NextRequest) {
           completedAsHost: completedAsHost || 0,
           profileCompletionPct: p.profile_completion_pct || 0,
           isBoosted: boosted,
+          responseRate,
+          lastSeen,
+          lastSeenDaysAgo,
         },
       });
     }

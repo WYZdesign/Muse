@@ -321,6 +321,7 @@ export async function POST(req: NextRequest) {
 
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
+        client_reference_id: profile.id,
         line_items: [
           {
             price_data: {
@@ -332,8 +333,9 @@ export async function POST(req: NextRequest) {
           },
         ],
         payment_intent_data: {
-          metadata: { muse_boost_user_id: profile.id, muse_boost_quantity: String(qty) },
+          metadata: { muse_boost_user_id: profile.id, muse_boost_quantity: String(qty), muse_boost_duration: String(duration || "24h") },
         },
+        metadata: { muse_boost_user_id: profile.id, muse_boost_quantity: String(qty), muse_boost_duration: String(duration || "24h") },
         success_url: `${req.nextUrl.origin}/muse?boost=success`,
         cancel_url: `${req.nextUrl.origin}/muse?boost=cancelled`,
       });

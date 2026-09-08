@@ -75,6 +75,17 @@ export async function POST(req: NextRequest) {
             .eq("status", "pending");
           break;
         }
+        // Boost one-off purchase: mark the purchase row paid so boost-purchase-complete
+        // can grant idempotently (and store the PayerIntent for reconciliation).
+        const museBoostUserId = session.metadata?.muse_boost_user_id;
+        if (museBoostUserId) {
+          const qty = Math.min(Math.max(Number(session.metadata?.muse_boost_quantity || 1), 1), 20);
+          await sb.from("muse_boost_purchases")
+            .update({ stripe_payment_intent: session.payment_intent ? String(session.payment_intent) : "", status: "paid" })
+            .eq("user_id", museBoostUserId)
+            .eq("status", "pending");
+          break;
+        }
         // Subscription — only ever assign a tier we actually know
         const userId = session.client_reference_id || session.metadata?.userId;
         // Only ever assign a tier we actually know — never trust arbitrary
