@@ -1,3 +1,19 @@
+## Claude — depth pass round 3 (Codex copy duplication, Feed icon clash, studio pricing, hamburger drawer sunrise)
+
+Continued the same audit session, going deeper into screens not yet covered (Codex/Glossary, Feed, LA Studios, Settings sub-pages) rather than re-checking what round 2 already fixed. Confirmed round 2's fixes (theme grid, Settings title, sunrise theme, Muses tab) are now live and correct — screenshotted each. Found and fixed 5 more:
+
+- **Codex duplicate copy** — `CodexScreen.tsx`'s `Section` component renders a bold `"How it's determined:"` / `"Why it matters:"` label, but the 4 `howTo`/`why` strings passed in (Western Zodiac, Chinese Zodiac, MBTI, Life Path) *also* opened with that same phrasing, so it rendered "How it's determined: Find yours: it's the sign..." and "Why it matters: Why it matters: it shapes...". Stripped the redundant lead-in from all 8 strings.
+- **Life Path cards repeating their own name** — every Life Path entry's subtitle was literally `n.title` again, the same text already shown in the heading (`"Life Path 22, The Master Builder (Master Number)"` followed by `"The Master Builder (Master Number)"`). Added a real one-line `short` field to `codexData.ts`'s `CODEX_LIFE_PATH`, matching how `CODEX_ZODIAC`/`CODEX_CHINESE` already do it.
+- **Feed engagement vs. likes, same icon** — a post card showed its weighted "engagement" score and its raw like count stacked directly on top of each other, both as bare `"✦ {number}"` — e.g. "✦ 726" then "✦ 189" right below with no visible label distinguishing them (only a hover title, useless on mobile). Gave engagement a distinct ⚡ icon in both the compact card and the detail view.
+- **Studio pricing literally reading "hourly/hr"** — `OTHER_STUDIOS` (Apex, Hubble — explicitly marked in `studios.ts` as placeholder listings pending partnership deals) used `price:"hourly"`, and the render unconditionally appended `"/hr"`. Fixed the render to only append `/hr` to an actual `$` figure, and changed the placeholder to `"Priced hourly"` so it reads sensibly either way.
+- **Hamburger drawer still dark in sunrise theme** — same root cause as the `.scene`/`.phone` fix from round 2: `.hamburger-panel` (the slide-out menu) and its header strip were still hardcoded to a dark gradient, so opening the menu while on sunrise theme dropped back into a dark panel even though the rest of the app had gone light and readable. `.hamburger-item` rows already had a sunrise override — just the panel container itself was missed. Added it.
+
+`tsc --noEmit` clean, `vitest run` 285/285 passing. One commit (`71c3b99`), delivered as `depth-pass-round3.bundle` and confirmed landed on wyzmind's machine (branch `claude-audit-fixes-v2`, same branch as always).
+
+Still untested from the original punch list: Community (may be closed-beta-hidden — not in the Menu list this session, consistent with `MUSE_CLOSED_BETA_HIDE_SOCIAL`), and a few Settings modals I couldn't fully exercise without seed data (Payment History with real transactions, Safety Checkin, Connect Stripe).
+
+---
+
 ## Claude — surgical live-audit fixes round 2 (theme picker, title clipping, sunrise theme, tab wrap, button padding)
 
 Torreé did a hands-on pass of the deployed build and flagged 4 specific, concrete bugs — asked me to be "surgical and meticulous," pointed at exact screens. All 4 confirmed and fixed, plus the 3 fixes already sitting locally from the prior live-audit pass got committed and delivered in the same batch (branch `claude-audit-fixes-v2`, one consolidated bundle, no new branch name):
