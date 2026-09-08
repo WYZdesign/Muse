@@ -135,17 +135,24 @@ export const CodexScreen = memo(function CodexScreen({
         {tab === "codex" && (
           <>
             <p style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5 }}>The codex is the deeper system — personality, compatibility, and how matching actually works.</p>
-            <Section title="Western Zodiac" subtitle="Your sun sign, based on your birth date. It's the heart of your creative identity and drive." howTo="Find yours: it's the sign the Sun was in on your birthday (for example, Mar 21 to Apr 19 is Aries)." why="Why it matters: it shapes how you approach work, collaborate, and express yourself, and it powers zodiac match compatibility.">
+            {/* Audit fix (2026-09-08): the Section component already renders a bold
+                "How it's determined:" / "Why it matters:" label in front of these
+                strings (see Section below), but the strings themselves also opened
+                with "Find yours:" / "Why it matters:" — rendering as "How it's
+                determined: Find yours: it's the sign..." and "Why it matters: Why
+                it matters: it shapes...". Stripped the redundant lead-in from all
+                4 entries so each label appears once. */}
+            <Section title="Western Zodiac" subtitle="Your sun sign, based on your birth date. It's the heart of your creative identity and drive." howTo="It's the sign the Sun was in on your birthday (for example, Mar 21 to Apr 19 is Aries)." why="It shapes how you approach work, collaborate, and express yourself, and it powers zodiac match compatibility.">
               {CODEX_ZODIAC.map(z => <Expandable key={z.name} icon={z.icon} name={`${z.name}, ${z.tag}`} short={z.short} long={z.long} color="#FFD700" />)}
             </Section>
-            <Section title="Chinese Zodiac" subtitle="Your year animal, based on the lunar calendar year you were born. It reflects temperament and instinct." howTo="Find yours: your animal is set by your birth year in a 12-year cycle (for example, 2000 is Dragon, 2001 is Snake)." why="Why it matters: it reveals your instinct, temperament, and natural working style, and it feeds match compatibility.">
+            <Section title="Chinese Zodiac" subtitle="Your year animal, based on the lunar calendar year you were born. It reflects temperament and instinct." howTo="Your animal is set by your birth year in a 12-year cycle (for example, 2000 is Dragon, 2001 is Snake)." why="It reveals your instinct, temperament, and natural working style, and it feeds match compatibility.">
               {CODEX_CHINESE.map(c => <Expandable key={c.name} icon={c.icon} name={c.name} short={c.short} long={c.long} color="#FF8A80" />)}
             </Section>
-            <Section title="MBTI (16 Personality Types)" subtitle="A framework of 16 types built on 4 dimensions: Introversion/Extraversion, Sensing/Intuition, Thinking/Feeling, and Judging/Perceiving." howTo="Find yours: take a free personality assessment. It's a self-report questionnaire, not a scientific test." why="Why it matters: it shows how you think, communicate, create, and collaborate, and which types you naturally work best with.">
+            <Section title="MBTI (16 Personality Types)" subtitle="A framework of 16 types built on 4 dimensions: Introversion/Extraversion, Sensing/Intuition, Thinking/Feeling, and Judging/Perceiving." howTo="Take a free personality assessment. It's a self-report questionnaire, not a scientific test." why="It shows how you think, communicate, create, and collaborate, and which types you naturally work best with.">
               {CODEX_MBTI.map(m => <Expandable key={m.code} icon={m.code} name={`${m.code}, ${m.tag}`} short={m.short} long={`${m.long} You'll click best with ${m.best}.`} color="#D4A5FF" />)}
             </Section>
-            <Section title="🔢 Life Path Numbers" subtitle="Derived from your full birth date by reducing each part to a single digit and adding them up. A core numerology concept." howTo="Find yours: add every digit of your birth date (month + day + year) and reduce to one digit, except the Master Numbers 11, 22, and 33." why="Why it matters: it's your life's blueprint, your strengths, challenges, and purpose, and it feeds match compatibility.">
-              {CODEX_LIFE_PATH.map(n => <Expandable key={n.n} icon={LP_ICONS[n.n] || `L${n.n}`} name={`Life Path ${n.n}, ${n.title}`} short={n.title} long={n.long} color="#98FB98" />)}
+            <Section title="🔢 Life Path Numbers" subtitle="Derived from your full birth date by reducing each part to a single digit and adding them up. A core numerology concept." howTo="Add every digit of your birth date (month + day + year) and reduce to one digit, except the Master Numbers 11, 22, and 33." why="It's your life's blueprint, your strengths, challenges, and purpose, and it feeds match compatibility.">
+              {CODEX_LIFE_PATH.map(n => <Expandable key={n.n} icon={LP_ICONS[n.n] || `L${n.n}`} name={`Life Path ${n.n}, ${n.title}`} short={n.short} long={n.long} color="#98FB98" />)}
             </Section>
             <Section title="How Match % Works" subtitle="The compatibility score on every profile.">
               <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 16, fontSize: 13, color: "var(--text2)", lineHeight: 1.7 }}>

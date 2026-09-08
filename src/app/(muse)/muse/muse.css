@@ -1382,6 +1382,15 @@ img{background-color:#1a0a2e}
 [data-theme="sunrise"] .online-dot{border-color:#FFF8F0}
 [data-theme="sunrise"] .story-ring img{border-color:#FFF8F0}
 [data-theme="sunrise"] .moments-story-ring img{border-color:#FFF8F0}
+/* Audit fix (2026-09-08): .hamburger-item rows already had a sunrise override
+   (below), but the drawer's own container — .hamburger-panel — was still
+   hardcoded to a dark gradient, and its ::before header strip too. Same root
+   cause as the .scene/.phone fix above: this panel was never made
+   theme-aware, so opening the menu in sunrise dropped back into a dark
+   panel while the rest of the app had gone light. */
+[data-theme="sunrise"] .hamburger-panel{background:linear-gradient(180deg,rgba(255,248,240,0.98) 0%,rgba(252,239,221,0.99) 100%);border-left-color:rgba(0,0,0,0.06)}
+[data-theme="sunrise"] .hamburger-panel::before{background:linear-gradient(135deg,rgba(224,122,95,0.1) 0%,rgba(232,168,56,0.08) 50%,rgba(255,248,240,0.02) 100%);border-bottom-color:rgba(0,0,0,0.06)}
+[data-theme="sunrise"] .hamburger-bell{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.1);color:rgba(45,42,38,0.6)}
 [data-theme="sunrise"] .hamburger-item{background:rgba(0,0,0,0.02);border-color:rgba(0,0,0,0.05)}
 [data-theme="sunrise"] .auth-tab{background:rgba(0,0,0,0.03);color:rgba(45,42,38,0.5)}
 [data-theme="sunrise"] .auth-social-btn{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08);color:#2D2A26}
