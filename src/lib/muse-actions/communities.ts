@@ -194,3 +194,43 @@ export const eventCancelRsvp = async ({ sb, profile, rest, ip }: ActionContext) 
   await sb.from("muse_rsvps").delete().eq("event_id", eventId).eq("user_id", profile.id);
   return NextResponse.json({ success: true });
 };
+
+export const communityMute = async ({ sb, profile, rest }: ActionContext) => {
+  const { communityId, targetUserId, duration } = rest;
+  if (!communityId || !targetUserId) return NextResponse.json({ error: "communityId and targetUserId required" }, { status: 400 });
+  const { data: requester } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+  if (!requester || (requester.role !== "admin" && requester.role !== "moderator")) {
+    return NextResponse.json({ error: "Admin or moderator only" }, { status: 403 });
+  }
+  const expiresAt = duration ? new Date(Date.now() + duration * 60 * 1000).toISOString() : null;
+  const { error } = await sb.from("muse_community_mutes").upsert(
+    { community_id: communityId, user_id: targetUserId, muted_by: profile.id, expires_at: expiresAt },
+    { onConflict: "community_id,user_id", ignoreDuplicates: true }
+  );
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+export const communityUnmute = async ({ sb, profile, rest }: ActionContext) => {
+  const { communityId, targetUserId } = rest;
+  if (!communityId || !targetUserId) return NextResponse.json({ error: "communityId and targetUserId required" }, { status: 400 });
+  const { data: requester } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+  if (!requester || requester.role !== "admin") return NextResponse.json({ error: "Admin only" }, { status: 403 });
+  await sb.from("muse_community_mutes").delete().eq("community_id", communityId).eq("user_id", targetUserId);
+  return NextResponse.json({ success: true });
+};
+
+export const communityGetMutes = async ({ sb, profile, rest }: ActionContext) => {
+  const { communityId } = rest;
+  if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
+  const { data: requester } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+  if (!requester || (requester.role !== "admin" && requester.role !== "moderator")) {
+    return NextResponse.json({ mutes: [] });
+  }
+  const { data: mutes } = await sb.from("muse_community_mutes")
+    .select("user_id, expires_at, created_at").eq("community_id", communityId);
+  return NextResponse.json({ mutes: mutes || [] });
+};
