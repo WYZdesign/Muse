@@ -650,8 +650,18 @@ export async function GET(req: NextRequest) {
     if (type === "notifications" && user) {
       const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ notifications: [] });
-      const { data } = await sb.from("muse_notifications").select("*").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(30);
-      return NextResponse.json({ notifications: data || [] });
+      const { data } = await sb.from("muse_notifications").select("*, from_id(name, avatar)").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(30);
+      const SYSTEM_META: Record<string, { label: string; letter: string }> = {
+        quest: { label: "Muse Quest", letter: "Q" }, quest_complete: { label: "Muse Quest", letter: "Q" },
+        reward: { label: "Muse Rewards", letter: "R" }, streak: { label: "Muse Streak", letter: "🔥" },
+        suspension: { label: "Muse Safety", letter: "S" }, strike: { label: "Muse Safety", letter: "S" },
+        account: { label: "Muse", letter: "M" }, boost: { label: "Muse Boost", letter: "⚡" }, pro: { label: "Muse Pro", letter: "P" },
+      };
+      const notifications = (data || []).map((n: any) => {
+        const meta = SYSTEM_META[n.type as string] || { label: "Muse", letter: "M" };
+        return { ...n, from: n.from_id?.name || meta.label, avatar: n.from_id?.avatar || "", _systemAvatar: n.from_id ? undefined : meta.letter };
+      });
+      return NextResponse.json({ notifications });
     }
 
     if (type === "notification-count" && user) {

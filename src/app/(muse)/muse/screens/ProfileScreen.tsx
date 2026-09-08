@@ -539,7 +539,7 @@ export const ProfileScreen = memo(function ProfileScreen({
                   {avatar ? (
                     <Image loading="lazy" src={avatar} alt="" width={36} height={36} style={{ borderRadius: "50%", objectFit: "cover", background: "#1a0a2e", flexShrink: 0 }} onError={handleImgError} />
                   ) : (
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--pink),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{from.charAt(0).toUpperCase()}</div>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--pink),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{(a as any)._systemAvatar || from.charAt(0).toUpperCase()}</div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><strong>{from}</strong> {text}</div>

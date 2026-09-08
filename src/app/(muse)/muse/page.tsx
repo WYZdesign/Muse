@@ -1302,8 +1302,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             .map((n: any) => ({
               id: n.id ?? uid(),
               type: n.type || "info",
-              from: "",
-              avatar: "",
+              from: n.from || "Muse",
+              avatar: n.avatar || "",
+              _systemAvatar: n._systemAvatar,
               text: String(n.body),
               time: n.created_at ? new Date(n.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "",
               read: !!n.read,

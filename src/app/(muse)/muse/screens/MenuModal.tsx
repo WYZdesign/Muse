@@ -26,11 +26,11 @@ interface ActivityPanelProps {
   briefTitleById?: Record<string, string>;
 }
 
-function NotificationAvatar({ name, src }: { name?: string; src?: string }) {
+function NotificationAvatar({ name, src, letter }: { name?: string; src?: string; letter?: string }) {
   const [failed, setFailed] = useState(false);
-  const letter = (name || "A").charAt(0).toUpperCase();
+  const initial = letter || (name || "A").charAt(0).toUpperCase();
   if (!src || failed) {
-    return <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--pink),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{letter}</div>;
+    return <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--pink),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{initial}</div>;
   }
   return <Image loading="lazy" src={src} alt="Avatar" width={40} height={40} onError={() => setFailed(true)} style={{ borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />;
 }
@@ -171,7 +171,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
             ? <EmptyState icon="🔔" title="No notifications yet" sub="Likes, matches, bookings and activity will appear here." />
             : notifications.map(a => (
                 <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1, background: a.read ? "transparent" : "rgba(255,215,0,0.03)", borderRadius: 8, marginBottom: 4 }}>
-                  <NotificationAvatar name={a.from} src={a.avatar} />
+                  <NotificationAvatar name={a.from} src={a.avatar} letter={a._systemAvatar} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, color: "var(--text)" }}><strong>{a.from}</strong> {a.text}</div>
                     <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{new Date(a.created_at).toLocaleString()}</div>

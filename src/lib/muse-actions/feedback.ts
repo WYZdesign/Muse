@@ -24,11 +24,31 @@ export async function feedbackGetNotifications({ sb, profile, rest }: ActionCont
   if (type) query = query.eq("type", type);
   const { data, error } = await query;
   if (error) return safeServerError(error, "notifications fetch");
-  const notifications = (data || []).map((n: any) => ({
-    ...n,
-    from: n.from_id?.name || "Muse",
-    avatar: n.from_id?.avatar || "",
-  }));
+  // System notifications have no from_id (quest rewards, welcome, admin, etc).
+  // Previously every one of those fell back to `name: "Muse", avatar: ""`, so the
+  // Activity tabs (every sub-tab but Unread) rendered a generic "M" avatar for
+  // everything. Map the notification `type` to a meaningful sender label + a
+  // themed avatar letter so these read as real, distinct items.
+  const SYSTEM_META: Record<string, { label: string; letter: string }> = {
+    quest: { label: "Muse Quest", letter: "Q" },
+    quest_complete: { label: "Muse Quest", letter: "Q" },
+    reward: { label: "Muse Rewards", letter: "R" },
+    streak: { label: "Muse Streak", letter: "🔥" },
+    suspension: { label: "Muse Safety", letter: "S" },
+    strike: { label: "Muse Safety", letter: "S" },
+    account: { label: "Muse", letter: "M" },
+    boost: { label: "Muse Boost", letter: "⚡" },
+    pro: { label: "Muse Pro", letter: "P" },
+  };
+  const notifications = (data || []).map((n: any) => {
+    const meta = SYSTEM_META[n.type as string] || { label: "Muse", letter: "M" };
+    return {
+      ...n,
+      from: n.from_id?.name || meta.label,
+      avatar: n.from_id?.avatar || "",
+      _systemAvatar: n.from_id ? undefined : meta.letter,
+    };
+  });
   return NextResponse.json({ success: true, notifications });
 }
 
