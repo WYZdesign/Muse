@@ -21,7 +21,7 @@ import { matchCreate, matchDelete, profileViewTrack } from "@/lib/muse-actions/m
 import { messageSend, messageRequestAccept, messageRequestDecline, messageRequestBlock, messageRequestsGet } from "@/lib/muse-actions/messaging";
 import { feedPost, feedPostLike, feedCommentAdd, momentCreate, momentLike, briefCreate, briefApply } from "@/lib/muse-actions/feed";
 import { forumDispatch, reportCreate, userBlock, userUnblock, blocksGet } from "@/lib/muse-actions/forum";
-import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts } from "@/lib/muse-actions/misc";
+import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, boostAnalytics, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts } from "@/lib/muse-actions/misc";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ACTION HANDLER REGISTRY
@@ -103,6 +103,7 @@ ACTIONS["connect"] = connectRequest;
 ACTIONS["save-preferences"] = preferencesSave;
 ACTIONS["apply-promo"] = promoApply;
 ACTIONS["boost"] = boostActivate;
+ACTIONS["boost-analytics"] = boostAnalytics;
 ACTIONS["mark-read"] = notificationsMarkRead;
 ACTIONS["sync"] = clientSync;
 ACTIONS["saved-search-save"] = savedSearchSave;

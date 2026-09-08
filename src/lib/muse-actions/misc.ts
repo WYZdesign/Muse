@@ -205,6 +205,39 @@ export async function boostActivate({ sb, profile }: ActionContext) {
   return _NR.json({ success: true, week: weekKey });
 }
 
+// ═══ BOOST ANALYTICS ═══
+export async function boostAnalytics({ sb, profile }: ActionContext) {
+  const now = new Date();
+  const day = (now.getDay() + 6) % 7;
+  const monday = new Date(now); monday.setDate(now.getDate() - day);
+  const weekKey = monday.toISOString().slice(0, 10);
+  const weekStart = monday.toISOString();
+  const weekEnd = new Date(monday.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: boostLog } = await sb.from("muse_activity_log")
+    .select("created_at").eq("user_id", profile.id).eq("action", "boost")
+    .gte("created_at", weekStart).lt("created_at", weekEnd).maybeSingle();
+  const isBoosted = !!boostLog;
+  const boostStartedAt = boostLog?.created_at || null;
+  const { count: profileViews } = await sb.from("muse_activity_log")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", profile.id).eq("action", "profile_view")
+    .gte("created_at", isBoosted ? boostStartedAt : weekStart);
+  const { count: matchesReceived } = await sb.from("muse_matches")
+    .select("*", { count: "exact", head: true })
+    .eq("target_id", profile.id)
+    .gte("created_at", isBoosted ? boostStartedAt : weekStart);
+  const { count: likesReceived } = await sb.from("muse_matches")
+    .select("*", { count: "exact", head: true })
+    .eq("target_id", profile.id)
+    .gte("created_at", isBoosted ? boostStartedAt : weekStart);
+  return _NR.json({
+    isBoosted,
+    boostStartedAt,
+    weekKey,
+    stats: { profileViews: profileViews || 0, matchesReceived: matchesReceived || 0, likesReceived: likesReceived || 0 },
+  });
+}
+
 // ═══ SAVED SEARCHES ═══
 export const savedSearchSave = async ({ sb, profile, rest }: ActionContext) => {
   const { name, query, filters } = rest;
