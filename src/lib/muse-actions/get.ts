@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
       // last_seen_at joined so the client can render an online indicator on
       // each post's author, same presence signal already used for matches
       // (see useDiscoveryData.ts's `online` computation).
-      const { data } = await sb.from("muse_feed_posts").select("*, author_id(id, name, avatar, last_seen_at)").order("created_at", { ascending: false }).limit(50);
+      const { data } = await sb.from("muse_feed_posts").select("*, author_id(id, name, avatar, last_seen_at, verified)").order("created_at", { ascending: false }).limit(50);
       return NextResponse.json({ posts: data || [] });
     }
 

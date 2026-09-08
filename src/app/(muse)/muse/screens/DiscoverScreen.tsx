@@ -302,7 +302,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
               <button className="hdr-btn" style={{ width: 34, height: 34 }} onClick={() => setDiscoverSearchOpen(true)} aria-label="Search"><FiSearch size={16} /></button>
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 6, animation: "fadeIn .2s ease" }}>
-                <input className="inp" placeholder="Search..." value={discoverSearch} onChange={e => setDiscoverSearch(e.target.value)} autoFocus style={{ margin: 0, padding: "10px 14px", fontSize: 14, flex: 1, borderRadius: 14, minWidth: 0 }} />
+                <input className="inp" placeholder="Name, style, type, or city..." value={discoverSearch} onChange={e => setDiscoverSearch(e.target.value)} autoFocus style={{ margin: 0, padding: "10px 14px", fontSize: 14, flex: 1, borderRadius: 14, minWidth: 0 }} />
                 {discoverSearch.trim() && (
                   <span style={{ fontSize: 11, fontWeight: 700, color: filteredProfiles.length ? "var(--gold)" : "#ff8a80", padding: "3px 9px", borderRadius: 99, background: "rgba(255,255,255,0.06)", whiteSpace: "nowrap" }}>{filteredProfiles.length} {filteredProfiles.length === 1 ? "match" : "matches"}</span>
                 )}

@@ -125,6 +125,7 @@ export function normalizeFeedPost(p: any, profileId?: string | null) {
     id: p.id,
     author: p.author ?? author.name ?? "Muse",
     avatar: p.avatar ?? author.avatar ?? "",
+    authorVerified: p.authorVerified ?? !!author.verified,
     rid: p.rid ?? author.id,
     type: p.type ?? (p.img ? "photo" : "text"),
     text: p.text ?? "",
