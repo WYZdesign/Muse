@@ -409,6 +409,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ count: (count || 0) + (requestCount || 0) });
     }
 
+    if (type === "notification-prefs" && user) {
+      const { data: profile } = await sb.from("muse_profiles").select("id, preferences").eq("auth_id", user.id).maybeSingle();
+      if (!profile) return NextResponse.json({ prefs: {} });
+      const prefs = (profile as any).preferences?.notifications || {};
+      return NextResponse.json({ prefs });
+    }
+
     // Albums: visibility is enforced here in application code, not by Postgres
     // RLS, because this route reads with the service-role client (bypasses
     // RLS by design). The RLS policies on muse_albums/muse_album_photos still
