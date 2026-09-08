@@ -1,10 +1,13 @@
 "use client";
 
 import React, { memo, useState } from "react";
-import { FiArrowLeft, FiUser, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiTwitter, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX, FiLock, FiBell } from "react-icons/fi";
+import { FiArrowLeft, FiUser, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiTwitter, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX, FiLock, FiBell, FiHelpCircle, FiDownload, FiAlertTriangle, FiCompass } from "react-icons/fi";
 // Push subscribe/unsubscribe arrive as PROPS (page.tsx owns the real impls) —
 // importing the module fns here too shadowed them and invited drift.
 import type { Screen } from "../components/types";
+import { STRINGS } from "@/lib/strings";
+
+const SUPPORT_EMAIL = "info@wyzdesign.com";
 
 export interface SettingsScreenProps {
   screen: Screen;
@@ -63,6 +66,17 @@ export interface SettingsScreenProps {
   apiFetch?: (url: string, opts?: any) => Promise<any>;
   setShowQuests?: (v: boolean) => void;
   questClaimables?: number;
+  ageVerified?: boolean;
+  verificationExpiringSoon?: boolean;
+  discoveryPrefs: { ageMin: number; ageMax: number; distance: number; gender: string };
+  setDiscoveryPrefs: React.Dispatch<React.SetStateAction<{ ageMin: number; ageMax: number; distance: number; gender: string }>>;
+  showOnline?: boolean;
+  setShowOnline?: (v: boolean) => void;
+  showDistance?: boolean;
+  setShowDistance?: (v: boolean) => void;
+  authFetch?: (url: string, opts?: any) => Promise<any>;
+  setShowFeatureTour?: (v: boolean) => void;
+  setSupportOpen?: (v: boolean) => void;
 }
 
 // Shared bottom-sheet wrapper for every Settings sub-page (Notifications,
@@ -165,12 +179,41 @@ export const SettingsScreen = memo(function SettingsScreen({
   apiFetch,
   setShowQuests = () => {},
   questClaimables = 0,
+  ageVerified = false,
+  verificationExpiringSoon = false,
+  discoveryPrefs,
+  setDiscoveryPrefs,
+  showOnline,
+  setShowOnline,
+  showDistance,
+  setShowDistance,
+  authFetch,
+  setShowFeatureTour,
+  setSupportOpen,
 }: SettingsScreenProps) {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
   const [pwBusy, setPwBusy] = useState(false);
+
+  // Audit fix (2026-09-08): Report a Bug, Have an Idea, Export My Data, App
+  // Walkthrough, Help Guide, Email Support and the FAQ list used to exist
+  // ONLY in the old inline hamburger Settings tab (MenuModal.tsx) — porting
+  // them here too so switching the Menu's "Settings" card to open this full
+  // page (see MenuModal.tsx) doesn't silently drop them.
+  const [showBugForm, setShowBugForm] = useState(false);
+  const [bugCategory, setBugCategory] = useState("ui");
+  const [bugDescription, setBugDescription] = useState("");
+  const [bugSteps, setBugSteps] = useState("");
+  const [bugExpected, setBugExpected] = useState("");
+  const [bugActual, setBugActual] = useState("");
+  const [bugSubmitting, setBugSubmitting] = useState(false);
+  const [showIdeaForm, setShowIdeaForm] = useState(false);
+  const [ideaCategory, setIdeaCategory] = useState("feature");
+  const [ideaTitle, setIdeaTitle] = useState("");
+  const [ideaDescription, setIdeaDescription] = useState("");
+  const [ideaSubmitting, setIdeaSubmitting] = useState(false);
 
   const changePassword = async () => {
     if (pwNew.length < 6) { showToast("Password must be at least 6 characters"); return; }
@@ -226,6 +269,17 @@ export const SettingsScreen = memo(function SettingsScreen({
     },
     { icon: <FiMoreHorizontal size={18} />, label: "Blocked Users", desc: blockedUsers.length > 0 ? `${blockedUsers.length} blocked` : "Manage blocked profiles", action: () => setShowBlockedUsers(true) },
     { icon: <FiShield size={18} />, label: "Safety Center", desc: "Check-ins, emergency contacts, trusted friends", action: () => setShowSafetyCheckin(true) },
+    // Permanent home for verification status (audit feedback, 2026-09-08):
+    // the old top-of-app banner was the ONLY place this showed, so
+    // dismissing or missing it meant losing track of why paid features
+    // were locked. This row is always here regardless of the banner.
+    {
+      icon: <FiLock size={18} />,
+      label: "Identity Verification",
+      desc: !ageVerified ? "Expired — paid features locked. Tap to verify" : verificationExpiringSoon ? "Expires in ≤30 days — tap to re-verify" : "Verified ✓",
+      action: () => setShowAgeVerification(true),
+      dot: !ageVerified || verificationExpiringSoon,
+    },
   ];
 
   const paymentItems = [
@@ -244,7 +298,17 @@ export const SettingsScreen = memo(function SettingsScreen({
     { icon: <FiFile size={18} />, label: "Terms of Service", desc: "Legal terms", action: () => setShowTerms(true) },
     { icon: <FiFile size={18} />, label: "Privacy Policy", desc: "How we handle your data", action: () => setShowPrivacy(true) },
     { icon: <FiFile size={18} />, label: "Community Guidelines", desc: "Standards & expectations", action: () => setShowGuidelines(true) },
+    { icon: <FiFile size={18} />, label: "DMCA / Copyright", desc: "Copyright infringement claims", action: () => window.open("/dmca", "_self") },
+    { icon: <FiCompass size={18} />, label: "Glossary + Codex", desc: "Terms & concepts explained", action: () => showScreen("codex") },
     { icon: <FiX size={18} />, label: "Delete Account", desc: "Permanently remove your data", action: () => setShowDeleteConfirm(true) },
+  ];
+
+  const faqItems = [
+    { q: "How does matching work?", a: "Swipe right on creators you'd like to connect with. If they swipe right back, it's a connection! You can then message each other." },
+    { q: "What are Quests?", a: "Quests are creative opportunities posted by brands and clients. Find them under Collab — apply to paid ones, or respond to vision quests. Track everything you've applied to or saved in Menu → Your Activity." },
+    { q: "How do I upgrade to Premium?", a: "Go to Settings → Payments & Subscription → Subscription to see plan options." },
+    { q: "How do I report someone?", a: "Tap the ⚑ Report button on any feed or forum post, the ••• menu on a match, or Report inside a chat conversation. Choose a reason and we'll review it — track your reports in Menu → Your Activity → Reports." },
+    { q: "How do I delete my account?", a: "Go to Settings → Legal → Delete Account. This permanently removes all your data." },
   ];
 
   const renderRow = (item: { icon: React.ReactNode; label: string; desc: string; action: () => void; dot?: boolean }) => (
@@ -280,6 +344,40 @@ export const SettingsScreen = memo(function SettingsScreen({
           <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
         </div>
         <div className="settings-scroll">
+          {/* Audit fix (2026-09-08): the Menu's "Settings" card used to open
+              a separate, older inline settings tab instead of this
+              full-page screen — this section (age range, distance, gender)
+              and the Show Distance/Online Status toggles below existed
+              ONLY over there, so switching the Menu card to open this page
+              (see MenuModal.tsx) would have silently dropped them. Ported
+              here so nothing is lost. */}
+          <div className="settings-group">
+            <div className="settings-group-title">Discovery Preferences</div>
+            <div style={{ padding: "10px 0" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Age Range</div>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{discoveryPrefs.ageMin}</span>
+                <input type="range" min={18} max={65} value={discoveryPrefs.ageMin} onChange={e => setDiscoveryPrefs(p => ({ ...p, ageMin: Number(e.target.value) }))} style={{ flex: 1, minWidth: 0, accentColor: "var(--gold)" }} />
+                <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>to</span>
+                <input type="range" min={18} max={65} value={discoveryPrefs.ageMax} onChange={e => setDiscoveryPrefs(p => ({ ...p, ageMax: Number(e.target.value) }))} style={{ flex: 1, minWidth: 0, accentColor: "var(--gold)" }} />
+                <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{discoveryPrefs.ageMax}</span>
+              </div>
+            </div>
+            <div style={{ padding: "0 0 10px" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Max Distance: {discoveryPrefs.distance} mi</div>
+              <input type="range" min={1} max={100} value={discoveryPrefs.distance} onChange={e => setDiscoveryPrefs(p => ({ ...p, distance: Number(e.target.value) }))} style={{ width: "100%", accentColor: "var(--gold)" }} />
+            </div>
+            <div style={{ padding: "0 0 10px" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Show Me</div>
+              <div className="filter-scroll-row" style={{ gap: 8, flexWrap: "nowrap" }}>
+                {["all", "women", "men", "non-binary"].map(g => (
+                  <div key={g} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDiscoveryPrefs(p => ({ ...p, gender: g })); } }} onClick={() => setDiscoveryPrefs(p => ({ ...p, gender: g }))} style={{ padding: "8px 16px", borderRadius: 99, cursor: "pointer", fontSize: 12, fontWeight: 600, transition: "all .25s", background: discoveryPrefs.gender === g ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: "1px solid " + (discoveryPrefs.gender === g ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"), color: discoveryPrefs.gender === g ? "var(--gold)" : "var(--muted)" }}>{g.charAt(0).toUpperCase() + g.slice(1)}</div>
+                ))}
+              </div>
+            </div>
+            <button className="btn btn-gold" style={{ width: "100%", fontSize: 12 }} onClick={async () => { try { await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { ...discoveryPrefs } }) }); showToast("Preferences saved!"); } catch { showToast("Failed to save"); } }}>Save Discovery Preferences</button>
+          </div>
+
           <div className="settings-group">
             <div className="settings-group-title">Account</div>
             {accountItems.map(renderRow)}
@@ -293,6 +391,24 @@ export const SettingsScreen = memo(function SettingsScreen({
           <div className="settings-group">
             <div className="settings-group-title">Privacy & Safety</div>
             {privacyItems.map(renderRow)}
+            <ToggleRow
+              label="Show Distance"
+              checked={!!showDistance}
+              onToggle={() => {
+                const next = !showDistance;
+                setShowDistance?.(next);
+                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showDistance: next } }) }).catch(() => showToast("Couldn't save — try again"));
+              }}
+            />
+            <ToggleRow
+              label="Online Status"
+              checked={!!showOnline}
+              onToggle={() => {
+                const next = !showOnline;
+                setShowOnline?.(next);
+                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showOnline: next } }) }).catch(() => showToast("Couldn't save — try again"));
+              }}
+            />
           </div>
 
           <div className="settings-group">
@@ -330,6 +446,68 @@ export const SettingsScreen = memo(function SettingsScreen({
               {renderRow({ icon: <FiShield size={18} />, label: "Admin Dashboard", desc: "Analytics & moderation", action: () => { window.open("/muse/admin", "_self"); } })}
             </div>
           )}
+
+          <div className="settings-group">
+            <div className="settings-group-title">Help &amp; Support</div>
+            {faqItems.map((faq, i) => (
+              <div key={i} style={{ marginBottom: 10, padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{faq.q}</div>
+                <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>{faq.a}</div>
+              </div>
+            ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
+              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => setShowFeatureTour?.(true)}>App Walkthrough</button>
+              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => setSupportOpen?.(true)}>Help Guide</button>
+              {!showIdeaForm ? (
+                <button className="btn" style={{ width: "100%", fontSize: 13, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)" }} onClick={() => setShowIdeaForm(true)}>Have an Idea?</button>
+              ) : (
+                <div style={{ padding: 14, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginBottom: 10 }}>Share Your Idea</div>
+                  <select value={ideaCategory} onChange={e => setIdeaCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
+                    <option value="feature">New Feature</option>
+                    <option value="improvement">Improvement</option>
+                    <option value="new-category">New Category</option>
+                    <option value="partnership">Partnership Idea</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <input value={ideaTitle} onChange={e => setIdeaTitle(e.target.value)} placeholder="Give it a name*" style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
+                  <textarea value={ideaDescription} onChange={e => setIdeaDescription(e.target.value)} placeholder="Describe your idea — what should it do? Why would you love it?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)" }} disabled={ideaSubmitting || !ideaTitle.trim() || !ideaDescription.trim() || !authFetch} onClick={async () => { if (!authFetch) return; setIdeaSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit-idea", title: ideaTitle, description: ideaDescription, category: ideaCategory }) }); if (!r.ok) throw new Error("failed"); showToast("Idea submitted — we love it!"); setShowIdeaForm(false); setIdeaTitle(""); setIdeaDescription(""); } catch { showToast("Failed to submit idea"); } setIdeaSubmitting(false); }}>{ideaSubmitting ? "Sending…" : "Submit Idea"}</button>
+                    <button className="btn btn-outline" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => setShowIdeaForm(false)}>{STRINGS.cancel}</button>
+                  </div>
+                </div>
+              )}
+              {!showBugForm ? (
+                <button className="btn" style={{ width: "100%", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", color: "#ff8a80", fontSize: 13 }} onClick={() => setShowBugForm(true)}><FiAlertTriangle size={14} style={{ marginRight: 6 }} />Report a Bug</button>
+              ) : (
+                <div style={{ padding: 14, background: "rgba(255,107,107,0.06)", border: "1px solid rgba(255,107,107,0.15)", borderRadius: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#ff8a80", marginBottom: 10 }}>Report a Bug</div>
+                  <select value={bugCategory} onChange={e => setBugCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
+                    <option value="ui">UI / Visual Issue</option>
+                    <option value="crash">App Crash</option>
+                    <option value="payment">Payment Problem</option>
+                    <option value="matching">Matching Not Working</option>
+                    <option value="notification">Notification Issue</option>
+                    <option value="upload">Upload / Media Issue</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <textarea value={bugDescription} onChange={e => setBugDescription(e.target.value)} placeholder="What happened?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
+                  <textarea value={bugSteps} onChange={e => setBugSteps(e.target.value)} placeholder="Steps to reproduce (optional)" rows={2} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
+                  <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                    <input value={bugExpected} onChange={e => setBugExpected(e.target.value)} placeholder="Expected behavior" style={{ flex: 1, padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
+                    <input value={bugActual} onChange={e => setBugActual(e.target.value)} placeholder="Actual behavior" style={{ flex: 1, padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,107,107,0.15)", border: "1px solid rgba(255,107,107,0.3)", color: "#ff8a80" }} disabled={bugSubmitting || !bugDescription.trim() || !authFetch} onClick={async () => { if (!authFetch) return; setBugSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "report-bug", category: bugCategory, description: bugDescription, steps: bugSteps, expected: bugExpected, actual: bugActual }) }); if (!r.ok) throw new Error("failed"); showToast("Bug report sent — thank you!"); setShowBugForm(false); setBugDescription(""); setBugSteps(""); setBugExpected(""); setBugActual(""); } catch { showToast("Failed to send bug report"); } setBugSubmitting(false); }}>{bugSubmitting ? "Sending…" : "Submit Bug"}</button>
+                    <button className="btn btn-outline" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => setShowBugForm(false)}>{STRINGS.cancel}</button>
+                  </div>
+                </div>
+              )}
+              <button className="btn" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 13 }} onClick={async () => { if (!authFetch) { showToast("Can't export right now"); return; } try { const res = await authFetch("/api/muse?type=export"); if (!res.ok) { showToast("Export failed"); return; } const j = await res.json(); const blob = new Blob([JSON.stringify(j, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "muse-my-data.json"; a.click(); URL.revokeObjectURL(url); showToast("Data exported"); } catch { showToast("Export failed"); } }}><FiDownload size={14} style={{ marginRight: 6 }} />Export My Data</button>
+              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => window.open("mailto:" + SUPPORT_EMAIL + "?subject=Muse%20Support%20Request")}><FiHelpCircle size={14} style={{ marginRight: 6 }} />Email Support</button>
+            </div>
+          </div>
 
           <button className="btn btn-outline" style={{ width: "100%", marginBottom: 20 }} onClick={doLogout}>Log Out</button>
         </div>
