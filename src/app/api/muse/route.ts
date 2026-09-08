@@ -13,7 +13,7 @@ import { albumCreate, albumUpdate, albumDelete, albumAddPhoto, albumRemovePhoto,
 import { feedbackGetNotifications, feedbackMarkAllRead, feedbackReportBug, feedbackSubmitIdea } from "@/lib/muse-actions/feedback";
 import { adminResolveAppeal, adminBrain, adminReports, adminStrikes, adminSuspendUser, adminScanNsfw, adminContentScans, adminResolveIncident, adminResolveReport } from "@/lib/muse-actions/admin";
 import { disclosureCreate, disclosureConfirm, disclosureGet, strikesGet, strikeAppeal } from "@/lib/muse-actions/disclosures";
-import { communityJoin, communityLeave, communityCreate, eventCreate, eventRsvp, eventCancelRsvp } from "@/lib/muse-actions/communities";
+import { communityJoin, communityLeave, communityCreate, eventCreate, eventRsvp, eventCancelRsvp, communityUpdateRules, communityKick, communityBan, communityUnban, communitySetRole, communityGetBans } from "@/lib/muse-actions/communities";
 import { sessionBook, sessionCreate, bookingRespond, bookingCancel, bookingComplete, reviewSubmit, checkinRespond, checkinsGet, safetyDetailsShare, safetyProfileSave, safetyProfileGet, promptsGet, promptResponseSave, promptResponsesGet } from "@/lib/muse-actions/sessions";
 import { connectRequest } from "@/lib/muse-actions/connect";
 import { profileUpdate } from "@/lib/muse-actions/profile";
@@ -79,6 +79,12 @@ ACTIONS["create-community"] = communityCreate;
 ACTIONS["create-event"] = eventCreate;
 ACTIONS["rsvp"] = eventRsvp;
 ACTIONS["cancel-rsvp"] = eventCancelRsvp;
+ACTIONS["update-community-rules"] = communityUpdateRules;
+ACTIONS["kick-community-member"] = communityKick;
+ACTIONS["ban-community-member"] = communityBan;
+ACTIONS["unban-community-member"] = communityUnban;
+ACTIONS["set-community-role"] = communitySetRole;
+ACTIONS["get-community-bans"] = communityGetBans;
 
 // ═══ SESSIONS & BOOKINGS ═══
 // Handlers extracted to lib/muse-actions/sessions.ts (monolith split, interleaved-domain pass).

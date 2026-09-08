@@ -16,6 +16,8 @@ export const communityJoin = async ({ sb, profile, rest }: ActionContext) => {
   if (isStub) return NextResponse.json({ success: true, demo: true });
   const { data: community } = await sb.from("muse_communities").select("id").eq("id", communityId).maybeSingle();
   if (!community) return NextResponse.json({ error: "Community not found" }, { status: 400 });
+  const { data: ban } = await sb.from("muse_community_bans").select("id").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+  if (ban) return NextResponse.json({ error: "You are banned from this community" }, { status: 403 });
   await sb.from("muse_community_members").upsert(
     { community_id: communityId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar },
     { onConflict: "community_id,user_id", ignoreDuplicates: true }
@@ -91,6 +93,96 @@ export const eventRsvp = async ({ sb, profile, rest, ip }: ActionContext) => {
   const { error } = await sb.from("muse_rsvps").insert({ event_id: eventId, user_id: profile.id });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
+};
+
+export const communityUpdateRules = async ({ sb, profile, rest }: ActionContext) => {
+  const { communityId, rules } = rest;
+  if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
+  if (!Array.isArray(rules)) return NextResponse.json({ error: "rules must be an array" }, { status: 400 });
+  // Verify requester is admin of this community
+  const { data: membership } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+  if (!membership || membership.role !== "admin") return NextResponse.json({ error: "Admin only" }, { status: 403 });
+  const cleaned = rules.map((r: any) => ({
+    title: sanitizeText(String(r.title || ""), 100),
+    body: sanitizeText(String(r.body || ""), 500),
+  })).filter((r: any) => r.title);
+  const { error } = await sb.from("muse_communities").update({ rules: cleaned }).eq("id", communityId);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+export const communityKick = async ({ sb, profile, rest }: ActionContext) => {
+  const { communityId, targetUserId } = rest;
+  if (!communityId || !targetUserId) return NextResponse.json({ error: "communityId and targetUserId required" }, { status: 400 });
+  const { data: requester } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+  if (!requester || (requester.role !== "admin" && requester.role !== "moderator")) {
+    return NextResponse.json({ error: "Admin or moderator only" }, { status: 403 });
+  }
+  const { data: target } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", targetUserId).maybeSingle();
+  if (target?.role === "admin") return NextResponse.json({ error: "Cannot kick admin" }, { status: 403 });
+  await sb.from("muse_community_members").delete().eq("community_id", communityId).eq("user_id", targetUserId);
+  const { count } = await sb.from("muse_community_members").select("*", { count: "exact", head: true }).eq("community_id", communityId);
+  await sb.from("muse_communities").update({ member_count: count ?? 0 }).eq("id", communityId);
+  return NextResponse.json({ success: true });
+};
+
+export const communityBan = async ({ sb, profile, rest }: ActionContext) => {
+  const { communityId, targetUserId, reason } = rest;
+  if (!communityId || !targetUserId) return NextResponse.json({ error: "communityId and targetUserId required" }, { status: 400 });
+  const { data: requester } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+  if (!requester || (requester.role !== "admin" && requester.role !== "moderator")) {
+    return NextResponse.json({ error: "Admin or moderator only" }, { status: 403 });
+  }
+  const { data: target } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", targetUserId).maybeSingle();
+  if (target?.role === "admin") return NextResponse.json({ error: "Cannot ban admin" }, { status: 403 });
+  await sb.from("muse_community_bans").upsert(
+    { community_id: communityId, user_id: targetUserId, banned_by: profile.id, reason: sanitizeText(String(reason || ""), 200) },
+    { onConflict: "community_id,user_id", ignoreDuplicates: true }
+  );
+  await sb.from("muse_community_members").delete().eq("community_id", communityId).eq("user_id", targetUserId);
+  const { count } = await sb.from("muse_community_members").select("*", { count: "exact", head: true }).eq("community_id", communityId);
+  await sb.from("muse_communities").update({ member_count: count ?? 0 }).eq("id", communityId);
+  return NextResponse.json({ success: true });
+};
+
+export const communityUnban = async ({ sb, profile, rest }: ActionContext) => {
+  const { communityId, targetUserId } = rest;
+  if (!communityId || !targetUserId) return NextResponse.json({ error: "communityId and targetUserId required" }, { status: 400 });
+  const { data: requester } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+  if (!requester || requester.role !== "admin") return NextResponse.json({ error: "Admin only" }, { status: 403 });
+  await sb.from("muse_community_bans").delete().eq("community_id", communityId).eq("user_id", targetUserId);
+  return NextResponse.json({ success: true });
+};
+
+export const communitySetRole = async ({ sb, profile, rest }: ActionContext) => {
+  const { communityId, targetUserId, role } = rest;
+  if (!communityId || !targetUserId || !role) return NextResponse.json({ error: "communityId, targetUserId, and role required" }, { status: 400 });
+  if (!["admin", "moderator", "member"].includes(role)) return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+  const { data: requester } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+  if (!requester || requester.role !== "admin") return NextResponse.json({ error: "Admin only" }, { status: 403 });
+  const { error } = await sb.from("muse_community_members").update({ role }).eq("community_id", communityId).eq("user_id", targetUserId);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+export const communityGetBans = async ({ sb, profile, rest }: ActionContext) => {
+  const { communityId } = rest;
+  if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
+  const { data: requester } = await sb.from("muse_community_members")
+    .select("role").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+  if (!requester || (requester.role !== "admin" && requester.role !== "moderator")) {
+    return NextResponse.json({ bans: [] });
+  }
+  const { data: bans } = await sb.from("muse_community_bans")
+    .select("user_id, reason, created_at").eq("community_id", communityId);
+  return NextResponse.json({ bans: bans || [] });
 };
 
 export const eventCancelRsvp = async ({ sb, profile, rest, ip }: ActionContext) => {
