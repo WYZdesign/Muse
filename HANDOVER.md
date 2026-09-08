@@ -1,3 +1,18 @@
+## Claude — resolved the Profile/Settings navigation split flagged last round, merged with wyzmind's concurrent `main` work
+
+Torreé said "fix all and continue" in response to the navigation-split finding flagged (not fixed) in the previous round. Before touching anything, checked wyzmind's machine directly (`device_bash`) since Torreé mentioned wyzmind was actively shipping — found `main` had moved 33 commits ahead (boost system, discovery ranking, webhook fix, and a full prior backend session) while this branch (`claude-audit-fixes`) was still 8 commits ahead of a much older common ancestor. Merged both into a new `claude-audit-fixes-v2` branch off current `main` — only conflict was `HANDOVER.md` itself (both sides had appended entries), resolved by keeping both, newest first. `tsc --noEmit` clean, `vitest run` 281/281 passing after the merge, before any new changes.
+
+**The actual fix**: `MenuModal.tsx`'s Menu grid "Profile" and "Settings" cards now route through `showScreen()` to the full-page `ProfileScreen.tsx`/`SettingsScreen.tsx`, same as Sessions/Network/Community, instead of opening separate older inline tabs via `setHamburgerScreen()`. Checked feature parity first since this was exactly the risk flagged last round:
+- `ProfileScreen.tsx` was already a strict superset of the inline Profile tab (completeness bar, Media Kit, badges, full portfolio grid, recent-Muses strip, real referral data/stats, self-discovery test launchers) — the inline tab's own "Edit Profile" button already routed here, so it wasn't even fully orphaned. No porting needed, just the routing switch.
+- `SettingsScreen.tsx` genuinely lacked several things the inline tab had: Report a Bug (full form), Have an Idea (feature-request form), Export My Data, App Walkthrough, Help Guide, Email Support, the FAQ list, and DMCA/Codex-Glossary links. Ported all of it into a new "Help & Support" settings-group (DMCA + Glossary went into the existing Legal group) before flipping the nav, so this switch is a strict upgrade with nothing dropped.
+- Removed the now-unreachable inline Profile/Settings blocks from `MenuModal.tsx` (~290 lines) and their now-dead local state, rather than leaving unreachable code behind.
+
+**Noticed but not touched**: `MenuModal.tsx` still has inline `hamburgerScreen === "community"/"sessions"/"network"` blocks (lines ~578-725) that look like the same already-dead pattern — `activate()` already routed all three through `showScreen()` before this session touched anything, so those blocks were unreachable before my change too, not something I introduced. Worth a follow-up pass to confirm and remove if so, but out of scope for tonight's fix.
+
+`tsc --noEmit` clean, `vitest run` 281/281 passing. One commit (`be1b0e2` on `claude-audit-fixes-v2`, based on current `main` + this branch's prior 4 commits). Delivering via the usual bundle workflow; since this branch now includes wyzmind's latest `main`, it should fast-forward cleanly.
+
+---
+
 ## wyzmind backend session — 2026-09-07 (all merged + live)
 
 Shipped 18 backend endpoints/features this session. All merged to main, deployed live, 260/260 tests passing.
