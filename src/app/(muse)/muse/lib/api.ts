@@ -54,3 +54,24 @@ export async function startBoostCheckout(quantity: number, duration: string, sho
     return null;
   }
 }
+
+// ═══ MFA / 2FA helpers (Supabase Auth TOTP) ═══
+export async function mfaStatus(): Promise<{ enabled: boolean; factors: { id: string; status: string; friendlyName?: string }[] }> {
+  const r = await authFetch("/api/muse/mfa?type=mfa-status");
+  return await r.json();
+}
+
+export async function mfaEnroll(friendlyName = "Muse authenticator") {
+  const r = await authFetch("/api/muse/mfa", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "enroll", friendlyName }) });
+  return await r.json();
+}
+
+export async function mfaVerify(factorId: string, code: string) {
+  const r = await authFetch("/api/muse/mfa", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "verify-code", factorId, code }) });
+  return await r.json();
+}
+
+export async function mfaUnenroll(factorId: string) {
+  const r = await authFetch("/api/muse/mfa", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unenroll", factorId }) });
+  return await r.json();
+}
