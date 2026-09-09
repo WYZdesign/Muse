@@ -103,7 +103,7 @@ function SettingsSubPage({ title, onClose, children }: { title: string; onClose:
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 480, maxHeight: "85vh", background: "rgba(15,10,30,0.98)", backdropFilter: "blur(30px)", borderRadius: "24px 24px 0 0", border: "1px solid rgba(255,255,255,0.08)", borderBottom: "none", display: "flex", flexDirection: "column", overflow: "hidden" }}
+        style={{ width: "100%", maxWidth: 480, maxHeight: "85vh", background: "var(--panel-bg-solid)", backdropFilter: "blur(30px)", borderRadius: "24px 24px 0 0", border: "1px solid var(--border-subtle)", borderBottom: "none", display: "flex", flexDirection: "column", overflow: "hidden" }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
           <div style={{ fontSize: 17, fontWeight: 800, color: "var(--text)" }}>{title}</div>

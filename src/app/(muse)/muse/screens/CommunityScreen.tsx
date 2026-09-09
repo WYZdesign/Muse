@@ -209,7 +209,7 @@ export const CommunityScreen = memo(function CommunityScreen({
       {detailItem && detailType && (
         <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
           <div role="presentation" aria-hidden="true" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} onClick={() => setDetailItem(null)} />
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxHeight: "85vh", background: "linear-gradient(135deg,#1a0a2e,#2d1b4e)", borderRadius: "24px 24px 0 0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxHeight: "85vh", background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: "24px 24px 0 0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 20px 0" }}>
               <div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{detailType === "group" ? detailItem.name : detailItem.title}</div>

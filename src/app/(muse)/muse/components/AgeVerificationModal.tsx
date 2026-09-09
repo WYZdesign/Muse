@@ -81,8 +81,8 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
   }, []);
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(10,6,18,0.95)" }}>
-      <div style={{ background: "#1a0a2e", border: "1px solid rgba(255,215,0,0.25)", borderRadius: 24, padding: 32, maxWidth: 440, width: "90%", textAlign: "center" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)" }}>
+      <div style={{ background: "var(--card-bg)", border: "1px solid var(--gold)", borderRadius: 24, padding: 32, maxWidth: 440, width: "90%", textAlign: "center" }}>
         <div style={{ fontSize: 44, marginBottom: 12 }}>🪪</div>
         <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f5f0ff", marginBottom: 10 }}>
           {state === "verified" ? "Verified!" : "Age Verification Required"}

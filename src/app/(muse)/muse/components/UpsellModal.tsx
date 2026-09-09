@@ -39,7 +39,7 @@ export default function UpsellModal({ open, onClose, feature, reason, icon = "âœ
         aria-modal="true"
         aria-label={feature}
         onClick={e => e.stopPropagation()}
-        style={{ maxWidth: 400, width: "90%", maxHeight: "85vh", overflowY: "auto", borderRadius: 24, padding: "26px 22px", background: "linear-gradient(180deg,#0f081e,#0a0612)", textAlign: "center" }}
+        style={{ maxWidth: 400, width: "90%", maxHeight: "85vh", overflowY: "auto", borderRadius: 24, padding: "26px 22px", background: "var(--panel-bg-solid)", textAlign: "center", border: "1px solid var(--border-subtle)" }}
       >
         <div style={{ fontSize: 40, marginBottom: 6 }}>{icon}</div>
         <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", color: "var(--gold)", marginBottom: 6 }}>{feature}</div>

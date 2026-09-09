@@ -2103,7 +2103,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     never lost: Settings > Privacy & Safety > Identity Verification always shows
     the same live state, dismissed or not. */}
 {((!ageVerified) || verificationExpiringSoon) && !verificationBannerDismissed && (
-  <div style={{ position: "absolute", top: "calc(12px + env(safe-area-inset-top,0px))", left: "50%", transform: "translateX(-50%)", zIndex: 60, maxWidth: "min(94%, 380px)", background: verificationExpiringSoon ? "linear-gradient(135deg, #ff8c00, #ffd700)" : "linear-gradient(135deg, #ff4444, #ff6b6b)", padding: "10px 38px 10px 16px", borderRadius: 24, boxShadow: "0 8px 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12)", textAlign: "center", fontSize: 12.5, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+  <div style={{ position: "absolute", top: "calc(12px + env(safe-area-inset-top,0px))", left: "50%", transform: "translateX(-50%)", zIndex: 60, maxWidth: "min(94%, 380px)", background: verificationExpiringSoon ? "linear-gradient(135deg, #ff8c00, #ffd700)" : "linear-gradient(135deg, #ff4444, #ff6b6b)", padding: "10px 38px 10px 16px", borderRadius: 24, boxShadow: "0 8px 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12)", textAlign: "center", fontSize: 12.5, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, whiteSpace: "nowrap", opacity: 0.85 }}>
     <span>Update Verification to Unlock Features</span>
     <button onClick={() => setShowAgeVerification(true)} style={{ background: "none", border: "none", color: "#0a0612", textDecoration: "underline", cursor: "pointer", fontWeight: 800, padding: 0 }}>Verify</button>
     <button
