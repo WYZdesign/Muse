@@ -281,6 +281,12 @@ export async function saveBoostPurchase({ sb, profile, rest }: ActionContext) {
   if ((purchase as any).status === "granted") {
     return _NR.json({ success: true, alreadyGranted: true, quantity: (purchase as any).quantity });
   }
+  // Security hardening: only grant after the Stripe webhook marks the row
+  // `paid`. A `pending` row means the checkout hasn't completed/confirmed yet,
+  // so granting would hand out boosts the user never actually paid for.
+  if ((purchase as any).status !== "paid") {
+    return _NR.json({ error: "Payment not confirmed yet", code: "NOT_PAID" }, { status: 402 });
+  }
   await grantBoosts(sb, profile.id, Number((purchase as any).quantity || qty));
   await sb.from("muse_boost_purchases").update({ status: "granted", granted_at: new Date().toISOString() }).eq("id", purchaseId);
   return _NR.json({ success: true, quantity: Number((purchase as any).quantity || qty) });
