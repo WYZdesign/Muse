@@ -650,8 +650,23 @@ export async function GET(req: NextRequest) {
     if (type === "notifications" && user) {
       const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ notifications: [] });
-      const { data } = await sb.from("muse_notifications").select("*").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(30);
-      return NextResponse.json({ notifications: data || [] });
+      // Root-cause fix (Torreé batch Part B item 8 — "Activity ghost 'S'
+      // avatars"): this used to `select("*")` on the raw table, which
+      // returns only from_id (a UUID FK, see muse_notifications' schema in
+      // muse_fix_chat.sql) — no sender name or avatar. The client then had
+      // nothing real to show, so ProfileScreen's Activity tab and
+      // MenuModal's side-panel Notification sub-tab both fell back to
+      // "Someone" -> its first-letter avatar "S" for every single
+      // server-sourced notification, regardless of who actually triggered
+      // it. This mirrors the same from_id -> muse_profiles(name, avatar)
+      // embed feedbackGetNotifications (misc.ts's "get-notifications"
+      // action, used by MenuModal's own panel) already does — that fix
+      // just never made it to this GET endpoint, which is what
+      // ProfileScreen's Activity tab / page.tsx's activityFeed merge
+      // actually calls.
+      const { data } = await sb.from("muse_notifications").select("*, from_id(name, avatar)").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(30);
+      const notifications = (data || []).map((n: any) => ({ ...n, from: n.from_id?.name || "", avatar: n.from_id?.avatar || "" }));
+      return NextResponse.json({ notifications });
     }
 
     if (type === "notification-count" && user) {

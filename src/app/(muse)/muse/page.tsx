@@ -1302,8 +1302,20 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             .map((n: any) => ({
               id: n.id ?? uid(),
               type: n.type || "info",
-              from: "",
-              avatar: "",
+              // Audit fix (Torreé batch Part B item 8): this used to
+              // hardcode from/avatar to "" for every server-sourced
+              // notification, which is what made ProfileScreen's Activity
+              // tab show a generic "Someone" / ghost "S" avatar even when
+              // the real sender's name and photo were available. The GET
+              // ?type=notifications handler now embeds + normalizes the
+              // sender profile (from_id -> muse_profiles) onto n.from/
+              // n.avatar directly, same as feedbackGetNotifications
+              // already did for MenuModal's own panel — a genuinely
+              // senderless system notification (no from_id, e.g. a
+              // booking reminder) still falls back to "Someone"/"S"
+              // downstream, which is correct for those, not a bug.
+              from: n.from || "",
+              avatar: n.avatar || "",
               text: String(n.body),
               time: n.created_at ? new Date(n.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "",
               read: !!n.read,

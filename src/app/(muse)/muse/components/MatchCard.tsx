@@ -3,6 +3,7 @@
 import React, { memo, useState } from "react";
 import Image from "next/image";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon } from "./traitIcons";
+import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, BadgeInfoModal, type BadgeInfo } from "./badgeInfo";
 
 export interface MatchCardProps {
   m: any;
@@ -48,6 +49,11 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
     handleImgError,
   } = actions;
 
+  // Audit fix (Torreé batch Part B item 1): the zodiac/MBTI/life-path badges
+  // on Muses cards (both list and grid view) were plain, dead <span>s — the
+  // same trait badges are already tap-to-detail on Discover's swipe cards.
+  // Reusing that exact shared pattern here.
+  const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
   const mid = String(m.id);
   const isList = view === "list";
   const ringSpeed = RING_SPEEDS[parseInt(mid, 10) % RING_SPEEDS.length] || 4;
@@ -167,9 +173,9 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
           // of traits don't sprawl to multiple wrapped rows or overhang.
           (() => {
             const items: React.ReactNode[] = [];
-            if (m.zodiac) items.push(<span key="z" className="match-badge">{ZODIAC_GLYPH[m.zodiac] || "✦"} {m.zodiac}</span>);
-            if (m.mbti) items.push(<span key="m" className="match-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MbtiIcon code={m.mbti} size={11} /> {m.mbti}</span>);
-            if (m.lifePath) items.push(<span key="lp" className="match-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><LifePathIcon n={Number(m.lifePath)} size={11} /> LP {m.lifePath}</span>);
+            if (m.zodiac) items.push(<button key="z" className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.zodiac} — ${ZODIAC_FULL[m.zodiac]?.tag || ""}`, desc: ZODIAC_FULL[m.zodiac]?.desc || "", icon: ZODIAC_GLYPH[m.zodiac] || "✦", color: "#D4A5FF" }); }} style={{ cursor: "pointer" }}>{ZODIAC_GLYPH[m.zodiac] || "✦"} {m.zodiac}</button>);
+            if (m.mbti) items.push(<button key="m" className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.mbti} — ${MBTI_FULL[m.mbti]?.tag || ""}`, desc: MBTI_FULL[m.mbti]?.desc || "", icon: <MbtiIcon code={m.mbti} size={20} />, color: "#FFD700" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><MbtiIcon code={m.mbti} size={11} /> {m.mbti}</button>);
+            if (m.lifePath) items.push(<button key="lp" className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `Life Path ${m.lifePath}`, desc: LIFE_PATH_FULL[String(m.lifePath)] || "", icon: <LifePathIcon n={Number(m.lifePath)} size={20} />, color: "#98FB98" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><LifePathIcon n={Number(m.lifePath)} size={11} /> LP {m.lifePath}</button>);
             (m.skills || []).forEach((s: string) => items.push(<span key={"s-" + s} className="match-badge">{s}</span>));
             (m.looking || []).forEach((l: string) => items.push(<span key={"l-" + l} className="match-badge" style={{ background: "rgba(255,105,180,0.12)", color: "#FF69B4", border: "1px solid rgba(255,105,180,0.2)" }}>looking for {l}</span>));
             const shown = items.slice(0, 4);
@@ -178,14 +184,15 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
         )}
         {!isList && (
           <div className="match-badges">
-            {m.zodiac && <span className="match-badge">{ZODIAC_GLYPH[m.zodiac] || "✦"} {m.zodiac}</span>}
-            {m.mbti && <span className="match-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MbtiIcon code={m.mbti} size={11} /> {m.mbti}</span>}
-            {m.lifePath && <span className="match-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><LifePathIcon n={Number(m.lifePath)} size={11} /> LP {m.lifePath}</span>}
+            {m.zodiac && <button className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.zodiac} — ${ZODIAC_FULL[m.zodiac]?.tag || ""}`, desc: ZODIAC_FULL[m.zodiac]?.desc || "", icon: ZODIAC_GLYPH[m.zodiac] || "✦", color: "#D4A5FF" }); }} style={{ cursor: "pointer" }}>{ZODIAC_GLYPH[m.zodiac] || "✦"} {m.zodiac}</button>}
+            {m.mbti && <button className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.mbti} — ${MBTI_FULL[m.mbti]?.tag || ""}`, desc: MBTI_FULL[m.mbti]?.desc || "", icon: <MbtiIcon code={m.mbti} size={20} />, color: "#FFD700" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><MbtiIcon code={m.mbti} size={11} /> {m.mbti}</button>}
+            {m.lifePath && <button className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `Life Path ${m.lifePath}`, desc: LIFE_PATH_FULL[String(m.lifePath)] || "", icon: <LifePathIcon n={Number(m.lifePath)} size={20} />, color: "#98FB98" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><LifePathIcon n={Number(m.lifePath)} size={11} /> LP {m.lifePath}</button>}
             {(m.skills || []).slice(0, 2).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
           </div>
         )}
       </div>
       <div className="match-time">{m.messages?.[m.messages.length - 1]?.time || "New"}</div>
+      <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
     </div>
   );
 });
