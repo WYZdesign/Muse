@@ -1638,6 +1638,12 @@ img{background-color:#1a0a2e}
 
 /* ═══ Match FAB — single expand button (bottom-left) + radial menu ═══ */
 .match-fab{position:absolute;bottom:28px;right:28px;z-index:30;transition:opacity .3s ease,transform .3s ease}
+/* Bottom-right corner blur (Torreé): when the expandable muse menu opens, the
+   corner it sits in blurs the card content behind it so the controls pop. A
+   semi-transparent radial mask + backdrop-filter blurs only that corner; the
+   rest of the card stays sharp. Fades in with the menu, out fast on close. */
+.match-fab-blur{position:absolute;bottom:0;right:0;width:62%;height:52%;z-index:22;pointer-events:none;opacity:0;-webkit-mask-image:radial-gradient(circle at 88% 90%,rgba(0,0,0,1) 0%,rgba(0,0,0,0.75) 40%,transparent 70%);mask-image:radial-gradient(circle at 88% 90%,rgba(0,0,0,1) 0%,rgba(0,0,0,0.75) 40%,transparent 70%);transition:opacity .26s ease}
+.match-fab-blur.open{opacity:1;backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
 .match-fab.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
 .match-fab-btn{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;cursor:pointer;border:2px solid rgba(255,255,255,0.25);color:#0a0612;background-color:#FFD700;background:linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700);background-size:400% 400%;animation:lavaFlow 4s ease-in-out infinite;box-shadow:0 4px 16px rgba(0,0,0,0.5);transition:transform .25s cubic-bezier(.4,0,.2,1)}
 .match-fab-btn.open{transform:scale(1.15)}

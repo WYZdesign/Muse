@@ -591,6 +591,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               <div className="card-section" style={{ fontSize: 12, color: "var(--muted)" }}>📍 {profile.loc}</div>
                             </div>
                           </div>
+                          {isTop && <div className={"match-fab-blur" + (showMatchMenu ? " open" : "")} aria-hidden="true" />}
                           {isTop && (
                             <div className={"match-fab" + (cardScrolled ? " hidden" : "")}>
                               <button className={"match-fab-btn" + (showMatchMenu ? " open" : "")} onClick={() => setShowMatchMenu(v => !v)} aria-label="Match actions" style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>{showMatchMenu ? <FiCamera size={28} /> : "M"}</button>

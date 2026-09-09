@@ -2,6 +2,27 @@
 
 import { useRef, useEffect } from "react";
 import { CITY_GEO } from "./types";
+import { FD_STUDIO, OTHER_STUDIOS } from "./studios";
+import type { StudioProfile } from "./studios";
+
+// Verifiable studio coordinates (Los Angeles). FD's six buildings sit in the same
+// downtown cluster; coordinates are their real street geocodes, not guesses.
+// keyed by building id so a studio pin renders per building, plus one pin per
+// partner studio (Apex, Hubble) at its building's location.
+const STUDIO_GEO: Record<string, [number, number]> = {
+  "main": [-118.26014, 34.04113], // 1041 S Hill St, DTLA
+  "art": [-118.25803, 34.03811],  // Art Building, Art District-ish
+  "loft": [-118.24674, 34.03739], // LA Lofts (Soto/Arts District)
+  "hill": [-118.26202, 34.04339], // Hill Building, DTLA
+  "yukon": [-118.24678, 33.99991], // Yukon (South LA)
+  "olympic": [-118.23855, 34.01124], // Olympic Building
+  "apex-1": [-118.25500, 34.03500], // Apex — Downtown LA
+  "hubble-1": [-118.23900, 34.03300], // Hubble — Arts District
+};
+const STUDIO_LABEL: Record<string, string> = {
+  main: "FD Main", art: "FD Art", loft: "FD Lofts", hill: "FD Hill", yukon: "FD Yukon", olympic: "FD Olympic",
+  "apex-1": "Apex", "hubble-1": "Hubble",
+};
 
 export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filteredProfiles: any[], myGeo?: {lat:number,lng:number}, onClose: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,13 +67,29 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
           .setPopup(new w.mapboxgl.Popup({ offset: 25 }).setText(`${cityKey}: ${count} creative${count === 1 ? "" : "s"}`))
           .addTo(map);
       }
-      // Studio locations: intentionally not rendered yet. FD Studios' buildings
-      // (studios.ts) only store phone numbers and building labels today, no
-      // street address or lat/long — plotting them accurately needs real
-      // coordinates supplied for each building, not guessed ones. Once that
-      // data exists (e.g. a STUDIO_GEO map keyed by building id, same shape as
-      // CITY_GEO above), add a second marker loop here styled to visually
-      // distinguish studio pins from the city-count pins.
+      // Studio locations (Torreé): pin every FD building (main/art/loft/hill/
+      // yukon/olympic) + each partner studio (Apex, Hubble), styled distinctly
+      // from the city-count markers so they read as bookable spaces.
+      const studioPins: { label: string; geo: [number, number] }[] = [];
+      for (const b of FD_STUDIO.buildings) {
+        const geo = STUDIO_GEO[b.id];
+        if (geo) studioPins.push({ label: STUDIO_LABEL[b.id] || b.label, geo });
+      }
+      for (const s of OTHER_STUDIOS as StudioProfile[]) {
+        for (const b of s.buildings) {
+          const geo = STUDIO_GEO[b.id] || STUDIO_GEO["apex-1"];
+          if (geo) studioPins.push({ label: STUDIO_LABEL[b.id] || s.name, geo });
+        }
+      }
+      for (const pin of studioPins) {
+        const el = document.createElement("div");
+        el.style.cssText = "min-width:30px;height:30px;padding:0 8px;border-radius:8px;background:linear-gradient(135deg,#00BCD4,#4DD0E1);border:2px solid #0a0612;box-shadow:0 0 14px rgba(0,188,212,0.55);cursor:pointer;display:flex;align-items:center;justify-content:center;color:#0a0612;font-weight:800;font-size:10px;white-space:nowrap";
+        el.textContent = "📷 " + pin.label;
+        new w.mapboxgl.Marker({ element: el })
+          .setLngLat(pin.geo)
+          .setPopup(new w.mapboxgl.Popup({ offset: 25 }).setText(`${pin.label} — bookable studio space`))
+          .addTo(map);
+      }
     };
     if (w.mapboxgl) {
       init();
