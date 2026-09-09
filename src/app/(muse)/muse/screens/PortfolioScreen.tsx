@@ -32,7 +32,7 @@ export const PortfolioScreen = memo(function PortfolioScreen({
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{
-          fontSize: 30,
+          fontSize: 37.5,
           backgroundImage: "linear-gradient(90deg,#64B5F6,#98FB98,#D4A5FF,#64B5F6,#98FB98,#64B5F6)",
           backgroundSize: "300% 100%",
           WebkitBackgroundClip: "text",

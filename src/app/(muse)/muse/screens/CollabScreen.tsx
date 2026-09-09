@@ -140,25 +140,28 @@ export const CollabScreen = memo(function CollabScreen({
 
   return (
     <div className={"screen-el" + (screen === "briefs" ? " active" : "")}>
-      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px`, position: "relative", gap: 12 }}>
-        <button className="chat-back" onClick={() => showScreen("discover")} aria-label="Back" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }}><FiArrowLeft size={20} /></button>
+      <div className="hdr" style={{ display: "grid", gridTemplateColumns: "42px 1fr 42px", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
+        <button className="hdr-btn" onClick={() => showScreen("discover")} aria-label="Back"><FiArrowLeft size={18} /></button>
         <div
           className="logo-link"
           style={{
-            fontSize: 30,
+            fontSize: 37.5,
             backgroundImage: "linear-gradient(90deg,#FFB5C2,#FFD700,#D4A5FF,#FFB5C2,#FFD700,#FFB5C2)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",
             backgroundClip: "text",
             WebkitTextFillColor: "transparent",
             color: "transparent",
-            position: "relative",
-            margin: "0 auto",
+            margin: 0,
             padding: 0,
             whiteSpace: "nowrap",
+            width: "100%",
+            justifySelf: "center",
+            display: "block",
+            textAlign: "center",
           }}
         >Collab</div>
-        <div style={{ flex: "0 0 40px", display: "flex", justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button className="hdr-btn" onClick={() => setShowPostBrief(true)} aria-label="Create Brief"><FiPlus size={18} /></button>
         </div>
       </div>

@@ -51,7 +51,7 @@ export const StudiosScreen = memo(function StudiosScreen({
     <div className={"screen-el" + (screen === "studios" ? " active" : "")}>
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("sessions")} aria-label="Back"><FiArrowLeft size={20} /></button>
-        <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#E07A5F,#F4A261,#81B29A,#E07A5F,#F4A261,#E07A5F)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>LA Studios</div>
+        <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#E07A5F,#F4A261,#81B29A,#E07A5F,#F4A261,#E07A5F)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>LA Studios</div>
         <div style={{ width: 42 }} />
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 90px" }}>
@@ -79,7 +79,7 @@ export const StudiosScreen = memo(function StudiosScreen({
 
         {/* Sub-tabs: buildings */}
         {studio.buildings.length > 1 && (
-          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, scrollbarWidth: "thin" }}>
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, paddingTop: 8, scrollbarWidth: "thin" }}>
             {studio.buildings.map((b) => (
               <button key={b.id} onClick={() => setActiveBuilding(b.id)} style={{ flexShrink: 0, padding: "7px 12px", borderRadius: 99, border: "1px solid", borderColor: activeBuilding === b.id ? studio.color[0] : "rgba(255,255,255,0.1)", background: activeBuilding === b.id ? `${studio.color[0]}1e` : "transparent", color: activeBuilding === b.id ? studio.color[0] : "var(--text2)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{b.emoji} {b.label}</button>
             ))}

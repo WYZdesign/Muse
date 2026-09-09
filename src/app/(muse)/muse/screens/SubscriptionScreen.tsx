@@ -64,7 +64,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
           <div
             className="logo-link"
             style={{
-              fontSize: 30,
+              fontSize: 37.5,
               textAlign: "center",
               backgroundImage: "linear-gradient(90deg,#E8A838,#F2CC8F,#F4A261,#E8A838,#F2CC8F,#E8A838)",
               backgroundSize: "300% 100%",
@@ -76,6 +76,9 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
               margin: 0,
               padding: 0,
               whiteSpace: "nowrap",
+              width: "100%",
+              justifySelf: "center",
+              display: "block",
             }}
           >Muse Pro</div>
           <div style={{ width: 42 }} />

@@ -148,7 +148,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
           single top bar (centered next to its one back arrow) instead of duplicating
           a second header+back-button combo here, further down the scrolling body. */}
       <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} onTap={onStreakTap} />
-      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
+      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, paddingTop: 10, marginBottom: 10, scrollbarWidth: "none" }}>
         {tabBtn("notif", "Notifications")}
         {tabBtn("applied", `Applied (${appliedBriefs.length})`)}
         {tabBtn("saved", `Saved (${savedBriefs.length})`)}
@@ -158,7 +158,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
 
       {hubTab === "notif" && (
         <>
-          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10, scrollbarWidth: "none" }}>
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, paddingTop: 10, marginBottom: 10, scrollbarWidth: "none" }}>
             {(["all", "unread", "match", "message", "booking", "quest", "brief", "community"] as const).map(f => (
               <div key={f} className={"conn-tab-sub" + (notifFilter === f ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNotifFilter(f); } }} onClick={() => setNotifFilter(f)} style={{ cursor: "pointer", fontSize: 10, padding: "4px 10px", flexShrink: 0, textTransform: "capitalize" }}>{f}</div>
             ))}

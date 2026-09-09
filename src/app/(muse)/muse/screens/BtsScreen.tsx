@@ -226,7 +226,7 @@ export const BtsScreen = memo(function BtsScreen({
 
           <div
           style={{
-            fontSize: 28,
+            fontSize: 35,
             fontWeight: 900,
             letterSpacing: 2,
             color: "#fff",
@@ -322,7 +322,7 @@ export const BtsScreen = memo(function BtsScreen({
             style={{
               display: "flex",
               gap: 12,
-              padding: "16px 14px 8px",
+              padding: "18px 14px 8px",
               overflowX: "auto",
               scrollbarWidth: "none",
             }}

@@ -235,7 +235,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
     <div className={"screen-el" + (screen === "discover" ? " active" : "")}>
       <div className="discover-wrap">
         <div className="hdr">
-          <div className="logo-link" style={{ fontSize: 30, backgroundImage: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "static", left: "auto", top: "auto", transform: "none", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Discover</div>
+          <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "static", left: "auto", top: "auto", transform: "none", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Discover</div>
           <div style={{ flex: 1 }} />
           <div style={{ display: "flex", gap: 4 }}>
             {!discoverSearchOpen ? (
@@ -454,7 +454,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                   return (
                                     <div>
                                       {cardAlbums.length > 0 && (
-                                        <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 6, marginBottom: 8, scrollbarWidth: "none" }}>
+                                        <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 6, paddingTop: 2, marginBottom: 8, scrollbarWidth: "none" }}>
                                           <button onClick={(e) => { e.stopPropagation(); setCardAlbumIdx(0); setPortfolioPhotoIdx(0); }} style={{ flexShrink: 0, padding: "5px 12px", borderRadius: 99, border: "1px solid", borderColor: cardAlbumIdx === 0 ? "var(--gold)" : "rgba(255,255,255,0.08)", background: cardAlbumIdx === 0 ? "rgba(255,215,0,0.12)" : "transparent", color: cardAlbumIdx === 0 ? "var(--gold)" : "var(--text2)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>All</button>
                                           {cardAlbums.map((a, i) => <button key={a.id} onClick={(e) => { e.stopPropagation(); setCardAlbumIdx(i + 1); setPortfolioPhotoIdx(0); }} style={{ flexShrink: 0, padding: "5px 12px", borderRadius: 99, border: "1px solid", borderColor: cardAlbumIdx === i + 1 ? "var(--gold)" : "rgba(255,255,255,0.08)", background: cardAlbumIdx === i + 1 ? "rgba(255,215,0,0.12)" : "transparent", color: cardAlbumIdx === i + 1 ? "var(--gold)" : "var(--text2)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>{a.title}</button>)}
                                         </div>

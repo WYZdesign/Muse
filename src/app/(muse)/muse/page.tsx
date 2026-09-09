@@ -51,6 +51,7 @@ const BtsScreen = React.lazy(() => import("./screens/BtsScreen").then(m => ({ de
 const CodexScreen = React.lazy(() => import("./screens/CodexScreen").then(m => ({ default: m.CodexScreen })));
 const SubscriptionScreen = React.lazy(() => import("./screens/SubscriptionScreen").then(m => ({ default: m.SubscriptionScreen })));
 const AnalyticsScreen = React.lazy(() => import("./screens/AnalyticsScreen").then(m => ({ default: m.AnalyticsScreen })));
+const PublicProfileScreen = React.lazy(() => import("./screens/PublicProfileScreen").then(m => ({ default: m.PublicProfileScreen })));
 import { CardPreloader } from "@/components/CardPreloader";
 import SafetyCheckinModal from "./components/SafetyCheckinModal";
 import PromptBankModal from "./components/PromptBankModal";
@@ -365,6 +366,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   }, [authUser]);
   const [viewProfileReviews, setViewProfileReviews] = useState<any[]>([]);
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
+  const [publicProfileUser, setPublicProfileUser] = useState<any>(null);
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
    const [blockTarget, setBlockTarget] = useState<{id:string;name:string}|null>(null);
    const [hydrated, setHydrated] = useState(false);
@@ -2127,7 +2129,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     never lost: Settings > Privacy & Safety > Identity Verification always shows
     the same live state, dismissed or not. */}
 {((!ageVerified) || verificationExpiringSoon) && !verificationBannerDismissed && (
-  <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9999, background: verificationExpiringSoon ? "linear-gradient(135deg, #ff8c00, #ffd700)" : "linear-gradient(135deg, #ff4444, #ff6b6b)", padding: "14px 40px 14px 16px", boxShadow: "0 -4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12)", textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, whiteSpace: "nowrap" }}>
+  <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9999, background: verificationExpiringSoon ? "linear-gradient(135deg, #ff8c00, #ffd700)" : "linear-gradient(135deg, #ff4444, #ff6b6b)", padding: "14px 40px 14px 16px", boxShadow: "0 -4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12)", textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, whiteSpace: "nowrap", opacity: 0.85 }}>
     <span>Verify your identity to continue</span>
     <button onClick={() => setShowAgeVerification(true)} style={{ background: "none", border: "none", color: "#0a0612", textDecoration: "underline", cursor: "pointer", fontWeight: 800, padding: 0 }}>Verify Now</button>
     <button
@@ -2946,12 +2948,33 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                 </div>
               )}
               <button className="btn btn-gold" style={{width:"100%"}} onClick={()=>{
+                const u = viewProfile;
                 setViewProfile(null);
-                setScreen("profile");
+                setPublicProfileUser(u);
               }}>View Profile</button>
             </div>
           </div>
         </div>
+      )}
+      {/* ══════ PUBLIC PROFILE ══════ */}
+      {publicProfileUser && (
+        <React.Suspense fallback={null}>
+          <PublicProfileScreen
+            user={publicProfileUser}
+            onBack={() => setPublicProfileUser(null)}
+            onMessage={(u) => { setPublicProfileUser(null); setChatTarget(u as any); showScreen("chat"); }}
+            onReport={(u) => { setReportTarget(u as any); setShowReport(true); setPublicProfileUser(null); }}
+            onBlock={(u) => { setBlockTarget({ id: u.id, name: u.name || "Unknown" }); setPublicProfileUser(null); }}
+            handleImgError={handleImgError}
+            currentUser={currentUser}
+            apiFetch={apiFetch}
+            showToast={showToast}
+            lightboxPhotos={lightboxPhotos}
+            lightboxIdx={lightboxIdx}
+            setLightboxPhotos={setLightboxPhotos}
+            setLightboxIdx={setLightboxIdx}
+          />
+        </React.Suspense>
       )}
       {/* ══════ SHARE MODAL ══════ */}
       {shareTarget && (

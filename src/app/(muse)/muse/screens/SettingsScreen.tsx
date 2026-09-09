@@ -377,10 +377,10 @@ export const SettingsScreen = memo(function SettingsScreen({
   return (
     <div className="phone-wrap">
       <div className="phone" id="muse-app">
-        <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px`, position: "relative", gap: 12 }}>
-          <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }}><FiArrowLeft size={18} /></button>
+        <div className="hdr" style={{ display: "grid", gridTemplateColumns: "42px 1fr 42px", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
+          <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
           <div className="logo-link" style={{
-            fontSize: 28,
+            fontSize: 37.5,
             fontFamily: "'Playfair Display',serif",
             fontStyle: "italic",
             fontWeight: 800,
@@ -390,16 +390,16 @@ export const SettingsScreen = memo(function SettingsScreen({
             backgroundClip: "text",
             WebkitTextFillColor: "transparent",
             color: "transparent",
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)",
+            textAlign: "center",
             margin: 0,
             padding: 0,
             whiteSpace: "nowrap",
             animation: "gradientShift 6s ease-in-out infinite",
-            lineHeight: "36px",
+            lineHeight: "38px",
+            display: "block",
+            justifySelf: "center",
           }}>Settings</div>
-          <span style={{ flex: "0 0 40px" }} aria-hidden="true" />
+          <div style={{ width: 42 }} />
         </div>
         <div className="settings-scroll">
           {/* Audit fix (2026-09-08): the Menu's "Settings" card used to open
@@ -427,7 +427,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             </div>
             <div style={{ padding: "0 0 10px" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Show Me</div>
-              <div className="filter-scroll-row" style={{ gap: 8, flexWrap: "nowrap" }}>
+              <div className="filter-scroll-row" style={{ gap: 8, flexWrap: "nowrap", paddingTop: 8 }}>
                 {["all", "women", "men", "non-binary"].map(g => (
                   <div key={g} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDiscoveryPrefs(p => ({ ...p, gender: g })); } }} onClick={() => setDiscoveryPrefs(p => ({ ...p, gender: g }))} style={{ padding: "8px 16px", borderRadius: 99, cursor: "pointer", fontSize: 12, fontWeight: 600, transition: "all .25s", background: discoveryPrefs.gender === g ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: "1px solid " + (discoveryPrefs.gender === g ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"), color: discoveryPrefs.gender === g ? "var(--gold)" : "var(--muted)" }}>{g.charAt(0).toUpperCase() + g.slice(1)}</div>
                 ))}

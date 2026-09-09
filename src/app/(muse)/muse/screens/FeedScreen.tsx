@@ -294,7 +294,7 @@ export const FeedScreen = memo(function FeedScreen({
         <div
           className="logo-link"
           style={{
-            fontSize: 30,
+            fontSize: 37.5,
             backgroundImage: "linear-gradient(90deg,#90CAF9,#80DEEA,#B388FF,#90CAF9,#80DEEA,#90CAF9)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",
@@ -331,10 +331,10 @@ export const FeedScreen = memo(function FeedScreen({
             );
           })}
         </div>
-<div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", gap: 10, alignItems: "flex-start" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+<div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", gap: 16, alignItems: "flex-start" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, paddingRight: 3 }}>
             <div style={{ position: "relative", width: 39, height: 39 }}>
-              <Image loading="lazy" src={currentUser.avatar} alt="Avatar" width={52} height={52} className="feed-avatar" style={{ flexShrink: 0 }} onError={handleImgError} />
+              <Image loading="lazy" src={currentUser.avatar} alt="Avatar" width={39} height={39} className="feed-avatar" style={{ flexShrink: 0 }} onError={handleImgError} />
               {/* Feed composer profile image: no hoolah-hoop, just a halo ~20% larger
                   than the 39px avatar, matching the halo's color gradient. */}
               <div className="profile-ring" style={{ width: 47, height: 47 }} />

@@ -361,7 +361,7 @@ export const NetworkScreen = memo(function NetworkScreen({
         <div
           className="logo-link"
           style={{
-            fontSize: 30,
+            fontSize: 37.5,
             backgroundImage: "linear-gradient(90deg,#64B5F6,#90CAF9,#D4A5FF,#64B5F6,#90CAF9,#64B5F6)",
             backgroundSize: "300% 100%",
             WebkitBackgroundClip: "text",
@@ -433,7 +433,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 lighter/darker shades) for its sub-options below — Skills (pink)
                 and Looking (teal) already used one consistent hue for their
                 sub-options, so their pill gradient now matches that hue too. */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 10, alignItems: "center", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: 2 }}>
+            <div style={{ display: "flex", gap: 6, marginBottom: 10, alignItems: "center", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: 2, paddingTop: 10 }}>
               {([
                 { key: "experience", label: "Experience", active: proExp !== "all", grad: "linear-gradient(135deg,#90CAF9,#42A5F5)" },
                 { key: "sort", label: "Sort", active: proSort !== "match", grad: "linear-gradient(135deg,var(--gold),var(--amber))" },
@@ -861,7 +861,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               </div>
             )}
 
-            <div className="conn-tab-sub-scroll" style={{ display: "flex", gap: 6, alignItems: "center", margin: "0 20px 10px", flexWrap: "nowrap", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
+            <div className="conn-tab-sub-scroll" style={{ display: "flex", gap: 6, alignItems: "center", margin: "0 20px 10px", flexWrap: "nowrap", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch", paddingTop: 10 }}>
               {!forumSearchOpen && (
                 <>
                   {(["hot", "new", "top"] as const).map((s) => (

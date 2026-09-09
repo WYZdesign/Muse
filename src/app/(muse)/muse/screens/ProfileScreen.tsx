@@ -208,9 +208,9 @@ export const ProfileScreen = memo(function ProfileScreen({
 
   return (
     <div className={"screen-el" + (screen === "profile" ? " active" : "")}>
-      <div className="hdr" style={{ justifyContent: "space-between", borderBottom: "1px solid rgba(255,215,0,0.15)" }}>
-        <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
-        <div className="logo-link" style={{ position: "relative", margin: 0, padding: 0, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 28, fontWeight: 800, backgroundImage: "linear-gradient(135deg,var(--gold),var(--lavender),var(--pink),var(--gold))", backgroundSize: "400% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", animation: "gradientShift 6s ease-in-out infinite", lineHeight: "36px", whiteSpace: "nowrap", width: "max-content", textAlign: "center" }}>Your Profile</div>
+      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px`, borderBottom: "1px solid rgba(255,215,0,0.15)" }}>
+        <button className="hdr-btn" onClick={() => showScreen("discover")} aria-label="Back"><FiArrowLeft size={18} /></button>
+        <div className="logo-link" style={{ position: "relative", margin: 0, padding: 0, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 37.5, fontWeight: 800, backgroundImage: "linear-gradient(135deg,var(--gold),var(--lavender),var(--pink),var(--gold))", backgroundSize: "400% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", animation: "gradientShift 6s ease-in-out infinite", lineHeight: "38px", whiteSpace: "nowrap", width: "max-content", textAlign: "center" }}>Your Profile</div>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="hdr-btn" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setEditNsfw(!!currentUser.nsfw); setEditMediaKit(obData.mediaKitUrl || ""); setShowEditProfile(true); }} aria-label="Edit Profile"><FiEdit2 size={18} /></button>
         </div>
@@ -481,7 +481,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div className="section">
           <div className="section-title">Portfolio</div>
           <div className="section-text" style={{ marginBottom: 10 }}>Your albums &amp; showcased work</div>
-          <div style={{ display: "flex", gap: 8, marginBottom: 12, overflowX: "auto", scrollbarWidth: "none" }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, overflowX: "auto", scrollbarWidth: "none", paddingTop: 8 }}>
             {(["all", "portrait", "landscape", "sets"] as const).map(tab => (
               <span key={tab} className={"conn-tab" + (portfolioTab === tab ? " active" : "")} role="tab" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPortfolioTab(tab); } }} onClick={() => setPortfolioTab(tab)} style={{ flexShrink: 0, fontSize: 12, padding: "6px 14px" }}>{tab === "all" ? "All" : tab === "portrait" ? "Portrait" : tab === "landscape" ? "Landscape" : "Sets"}</span>
             ))}
@@ -517,7 +517,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div className="section">
           <div className="section-title">Recent Muses</div>
           <div className="section-text" style={{ marginBottom: 10 }}>Your latest connections</div>
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, scrollbarWidth: "none" }}>
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, scrollbarWidth: "none", paddingTop: 8 }}>
             {matches.length > 0 ? matches.slice(0, 5).map(m => (
               <div key={m.id} style={{ flexShrink: 0, position: "relative", width: 60, height: 60, borderRadius: "50%", overflow: "hidden", background: "#1a0a2e", border: "2px solid rgba(255,215,0,0.2)" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setChatTarget(m); showScreen("chat"); } }} onClick={() => { setChatTarget(m); showScreen("chat"); }}>
                 <Image loading="lazy" src={m.img} alt={m.name} fill sizes="60px" style={{ objectFit: "cover" }} onError={handleImgError} />

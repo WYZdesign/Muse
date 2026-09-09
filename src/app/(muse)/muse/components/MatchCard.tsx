@@ -19,6 +19,7 @@ export interface MatchCardProps {
     handleImgError: (e: any) => void;
     getIcebreaker: (type: string, seed?: string) => string;
     setViewProfile?: (p: any) => void;
+    setPublicProfileUser?: (p: any) => void;
   };
 }
 
@@ -145,8 +146,13 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
         <div className="match-type" style={isList ? { fontSize: 11 } : undefined}>{m.type}</div>
         {isList && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap" }}>
-            {m.location && <span style={{ fontSize: 11, color: "var(--muted)" }}>📍 {m.location}</span>}
+            {m.location && <span style={{ fontSize: 11, color: "var(--muted)" }}>{m.location}</span>}
             {typeof m.distanceMi === "number" && <span style={{ fontSize: 11, color: "var(--muted)" }}>{m.distanceMi} mi</span>}
+          </div>
+        )}
+        {isList && (m.styles || []).length > 0 && (
+          <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
+            {(m.styles || []).slice(0, 3).map((s: string) => <span key={"style-" + s} className="match-badge" style={{ fontSize: 10, padding: "2px 7px" }}>{s}</span>)}
           </div>
         )}
         {isList && (
