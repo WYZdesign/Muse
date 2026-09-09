@@ -43,14 +43,14 @@ import QuestPanel from "./screens/QuestPanel";
 import { SessionsScreen } from "./screens/SessionsScreen";
 import { StudiosScreen } from "./screens/StudiosScreen";
 import { NetworkScreen } from "./screens/NetworkScreen";
-import { PortfolioScreen } from "./screens/PortfolioScreen";
-import { BtsScreen } from "./screens/BtsScreen";
-import { CodexScreen } from "./screens/CodexScreen";
 import { ProfileScreen } from "./screens/ProfileScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
-import { SubscriptionScreen } from "./screens/SubscriptionScreen";
-import { AnalyticsScreen } from "./screens/AnalyticsScreen";
 import { MenuModal } from "./screens/MenuModal";
+const PortfolioScreen = React.lazy(() => import("./screens/PortfolioScreen").then(m => ({ default: m.PortfolioScreen })));
+const BtsScreen = React.lazy(() => import("./screens/BtsScreen").then(m => ({ default: m.BtsScreen })));
+const CodexScreen = React.lazy(() => import("./screens/CodexScreen").then(m => ({ default: m.CodexScreen })));
+const SubscriptionScreen = React.lazy(() => import("./screens/SubscriptionScreen").then(m => ({ default: m.SubscriptionScreen })));
+const AnalyticsScreen = React.lazy(() => import("./screens/AnalyticsScreen").then(m => ({ default: m.AnalyticsScreen })));
 import { CardPreloader } from "@/components/CardPreloader";
 import SafetyCheckinModal from "./components/SafetyCheckinModal";
 import PromptBankModal from "./components/PromptBankModal";
@@ -703,29 +703,20 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{safeRemoveItem("muse_boost");}catch{}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd]);
 
-  // ─── CROSS-DEVICE: Persist obStep to server (debounced) ───
-  const obStepRef = useRef(obStep);
-  const obStepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    obStepRef.current = obStep;
-    if (!authUser) return;
-    if (obStepTimerRef.current) clearTimeout(obStepTimerRef.current);
-    obStepTimerRef.current = setTimeout(() => {
-      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { onboardingStep: obStepRef.current } }) }).catch(() => {});
-    }, 2000);
-    return () => { if (obStepTimerRef.current) clearTimeout(obStepTimerRef.current); };
-  }, [obStep, authUser]);
+  // ─── CROSS-DEVICE: Persist all preferences to server (single debounced) ───
+  const prefsSnapshotRef = useRef({ obStep, notifPrefs, filterStyles, filterScore, appliedBriefs, showNsfw });
+  const prefsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { prefsSnapshotRef.current = { obStep, notifPrefs, filterStyles, filterScore, appliedBriefs, showNsfw }; });
 
-  // ─── CROSS-DEVICE: Persist notifPrefs to server (debounced) ───
-  const notifPrefsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!authUser) return;
-    if (notifPrefsTimerRef.current) clearTimeout(notifPrefsTimerRef.current);
-    notifPrefsTimerRef.current = setTimeout(() => {
-      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { notifications: notifPrefs } }) }).catch(() => {});
+    if (prefsTimerRef.current) clearTimeout(prefsTimerRef.current);
+    prefsTimerRef.current = setTimeout(() => {
+      const p = prefsSnapshotRef.current;
+      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { onboardingStep: p.obStep, notifications: p.notifPrefs, filterStyles: p.filterStyles, filterScore: p.filterScore, appliedBriefs: p.appliedBriefs, nsfw: p.showNsfw } }) }).catch(() => {});
     }, 2000);
-    return () => { if (notifPrefsTimerRef.current) clearTimeout(notifPrefsTimerRef.current); };
-  }, [notifPrefs, authUser]);
+    return () => { if (prefsTimerRef.current) clearTimeout(prefsTimerRef.current); };
+  }, [obStep, notifPrefs, filterStyles, filterScore, appliedBriefs, showNsfw, authUser]);
 
   // ─── MESSAGE REQUESTS: Fetch pending requests when on matches screen ───
   useEffect(() => {
@@ -735,41 +726,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       .then(data => { if (data?.requests) setMessageRequests(data.requests); })
       .catch(() => {});
   }, [screen, authUser]);
-
-  // ─── CROSS-DEVICE: Persist filterStyles/filterScore to server (debounced) ───
-  const filterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (!authUser) return;
-    if (filterTimerRef.current) clearTimeout(filterTimerRef.current);
-    filterTimerRef.current = setTimeout(() => {
-      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { filterStyles, filterScore } }) }).catch(() => {});
-    }, 2000);
-    return () => { if (filterTimerRef.current) clearTimeout(filterTimerRef.current); };
-  }, [filterStyles, filterScore, authUser]);
-
-  // ─── CROSS-DEVICE: Persist appliedBriefs (debounced) — was local-only, so a
-  // cache clear resurrected "Apply" buttons on already-applied briefs and the
-  // re-apply then died on the unique constraint with no user-facing reason.
-  const appliedBriefsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (!authUser) return;
-    if (appliedBriefsTimerRef.current) clearTimeout(appliedBriefsTimerRef.current);
-    appliedBriefsTimerRef.current = setTimeout(() => {
-      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { appliedBriefs } }) }).catch(() => {});
-    }, 2000);
-    return () => { if (appliedBriefsTimerRef.current) clearTimeout(appliedBriefsTimerRef.current); };
-  }, [appliedBriefs, authUser]);
-
-  // ─── CROSS-DEVICE: Persist showNsfw to server (debounced) ───
-  const showNsfwTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (!authUser) return;
-    if (showNsfwTimerRef.current) clearTimeout(showNsfwTimerRef.current);
-    showNsfwTimerRef.current = setTimeout(() => {
-      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { nsfw: showNsfw } }) }).catch(() => {});
-    }, 2000);
-    return () => { if (showNsfwTimerRef.current) clearTimeout(showNsfwTimerRef.current); };
-  }, [showNsfw, authUser]);
 
   const applySession = useCallback((accessToken: string, refreshToken?: string, attempt = 0) => {
     if (accessToken) {
@@ -2556,10 +2512,10 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             <MusesScreen screen={screen} showScreen={showScreen} matches={matches} setMatches={setMatches} searchOpen={searchOpen} setSearchOpen={setSearchOpen} matchesView={matchesView} setMatchesView={setMatchesView} showLikesYou={showLikesYou} setShowLikesYou={setShowLikesYou} likedBy={likedBy} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} searchQuery={searchQuery} setSearchQuery={setSearchQuery} expandedMatchId={expandedMatchId} matchActions={matchActions} messageRequests={messageRequests} setMessageRequests={setMessageRequests} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Bts">
-            <BtsScreen screen={screen} stories={stories} setStories={setStories} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} setShowStory={setShowStory} handleImgError={handleImgError} apiFetch={apiFetch} setShowReport={setShowReport} setReportTarget={setReportTarget} />
+            <React.Suspense fallback={null}><BtsScreen screen={screen} stories={stories} setStories={setStories} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} setShowStory={setShowStory} handleImgError={handleImgError} apiFetch={apiFetch} setShowReport={setShowReport} setReportTarget={setReportTarget} /></React.Suspense>
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Codex">
-            <CodexScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
+            <React.Suspense fallback={null}><CodexScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} /></React.Suspense>
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Chat">
             <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} messages={chatTarget?.messages || []} setMessages={((msgs: any) => setChatTarget((prev: any) => prev ? {...prev, messages: typeof msgs === "function" ? msgs(prev?.messages || []) : msgs} : prev)) as any} chatText={chatInput} setChatText={setChatInput} messagesEndRef={messagesEndRef} sendChat={sendMsg} sendChatImg={sendChatImg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} uploadImage={uploadImage} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
@@ -2585,7 +2541,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             <NetworkScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} setLiveForum={setLiveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} setShowReport={setShowReport} setReportTarget={setReportTarget} liveProfessionals={liveProfessionals} openTab={_networkOpenTab} savedProfileIds={savedProfileIds} setSavedProfileIds={setSavedProfileIds} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Portfolio">
-            <PortfolioScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} />
+            <React.Suspense fallback={null}><PortfolioScreen screen={screen} showScreen={showScreen} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} /></React.Suspense>
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Profile">
             <ProfileScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditType={setEditType} setEditLooking={setEditLooking} setEditNsfw={setEditNsfw} setEditMediaKit={setEditMediaKit} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={_setSelectedPortfolio} lightboxPhotos={lightboxPhotos} lightboxIdx={lightboxIdx} setLightboxPhotos={setLightboxPhotos} setLightboxIdx={setLightboxIdx} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} setShowQuests={setShowQuests} loginStreak={loginStreak} weeklyLogins={weeklyLogins} questClaimables={claimableQuests} />
@@ -2597,9 +2553,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       
 
       {/* SUBSCRIPTION SCREEN */}
-      {screen === "subscription" && <ScreenErrorBoundary name="Subscription"><SubscriptionScreen screen={screen} showScreen={showScreen} currentUser={currentUser} authUser={authUser} userTier={userTier} setUserTier={setUserTier} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} apiFetch={apiFetch} /></ScreenErrorBoundary>}
+      {screen === "subscription" && <React.Suspense fallback={null}><ScreenErrorBoundary name="Subscription"><SubscriptionScreen screen={screen} showScreen={showScreen} currentUser={currentUser} authUser={authUser} userTier={userTier} setUserTier={setUserTier} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} apiFetch={apiFetch} /></ScreenErrorBoundary></React.Suspense>}
       {/* ANALYTICS SCREEN */}
-      {screen === "analytics" && <AnalyticsScreen screen={screen} showScreen={showScreen} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />}
+      {screen === "analytics" && <React.Suspense fallback={null}><AnalyticsScreen screen={screen} showScreen={showScreen} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} /></React.Suspense>}
       {/* SETTINGS SCREEN */}
       {screen === "settings" && <ScreenErrorBoundary name="Settings"><SettingsScreen screen={screen} showScreen={showScreen} currentUser={currentUser} obData={obData} showNsfw={showNsfw} setShowNsfw={setShowNsfw} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} blockedUsers={blockedUsers} setBlockedUsers={setBlockedUsers} obConnectedSocials={obConnectedSocials} toggleSocial={toggleSocial} theme={theme} setTheme={setTheme} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} doLogout={doLogout} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditNsfw={setEditNsfw} setShowNotificationsSettings={setShowNotificationsSettings} showNotificationsSettings={showNotificationsSettings} setShowConnectedAccounts={setShowConnectedAccounts} showConnectedAccounts={showConnectedAccounts} pushEnabled={pushEnabled} setPushEnabled={setPushEnabled} subscribeToMusePush={subscribeToMusePush} unsubscribeFromMusePush={unsubscribeFromMusePush} setShowTerms={setShowTerms} setShowPrivacy={setShowPrivacy} setShowGuidelines={setShowGuidelines} setShowDeleteConfirm={setShowDeleteConfirm} isUnlimited={isUnlimited} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} promptResponses={promptResponses} promptBankData={promptBankData} myGeo={myGeo} setShowAgeGate={setShowAgeGate} setPendingNsfw={setPendingNsfw} setShowAgeVerification={setShowAgeVerification} setScreen={setScreen} setObStep={setObStep} apiFetch={apiFetch} setShowQuests={setShowQuests} questClaimables={claimableQuests} showBlockedUsers={showBlockedUsersPanel} setShowBlockedUsers={setShowBlockedUsersPanel} ageVerified={ageVerified} verificationExpiringSoon={verificationExpiringSoon} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} authFetch={authFetch} setShowFeatureTour={setShowFeatureTour} setSupportOpen={setSupportOpen} /></ScreenErrorBoundary>}
 

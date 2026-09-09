@@ -2,7 +2,7 @@
 
 import React, { memo, useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiActivity, FiDollarSign, FiUsers as FiUsersIcon, FiGift, FiX, FiBell } from "react-icons/fi";
+import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiX, FiBell } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import StreakWidget from "../components/StreakWidget";
 import { useFocusTrap } from "../hooks/useFocusTrap";

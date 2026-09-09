@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo, useState } from "react";
+import Image from "next/image";
 import { FiArrowLeft } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { ALL_STUDIOS, type StudioProfile } from "../components/studios";
@@ -67,9 +68,8 @@ export const StudiosScreen = memo(function StudiosScreen({
         {/* Studio hero */}
         <div style={{ padding: 16, borderRadius: 16, background: `linear-gradient(135deg, ${studio.color[0]}18, ${studio.color[1]}18)`, border: `1px solid ${studio.color[0]}30`, marginBottom: 14 }}>
           {(studio as any).img && (
-            <div style={{ width: "100%", height: 150, borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={(studio as any).img} alt={studio.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <div style={{ width: "100%", height: 150, borderRadius: 12, overflow: "hidden", marginBottom: 12, position: "relative" }}>
+              <Image src={(studio as any).img} alt={studio.name} fill sizes="(max-width: 600px) 100vw, 400px" unoptimized style={{ objectFit: "cover" }} />
             </div>
           )}
           <div style={{ fontSize: 18, fontWeight: 800 }}>{studio.name}</div>
@@ -95,9 +95,8 @@ export const StudiosScreen = memo(function StudiosScreen({
           {(building?.studios || []).map((s) => (
             <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 6px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               {s.img && (
-                <div style={{ width: 56, height: 56, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={s.img} alt={s.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <div style={{ width: 56, height: 56, borderRadius: 10, overflow: "hidden", flexShrink: 0, position: "relative" }}>
+                  <Image src={s.img} alt={s.name} fill sizes="56px" unoptimized style={{ objectFit: "cover" }} />
                 </div>
               )}
               <div style={{ flex: 1, minWidth: 0 }}>

@@ -207,15 +207,14 @@ export function lookingForOptions(type: string): string[] {
   if (side === "front") return [...BEHIND_CAMERA, ...IN_FRONT_CAMERA];
   return CREATIVE_TYPES;
 }
-export const LOOKING_FOR = CREATIVE_TYPES;
-export const CONN_TYPES = ["friend","collab","mentor","partner"];
+
 export const ZODIAC = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
 export const ZE:Record<string,string> = {"Aries":"🔥 Bold pioneer","Taurus":"🌍 Grounded sensualist","Gemini":"💨 Curious connector","Cancer":"💧 Empathetic soul","Leo":"🔥 Creative star","Virgo":"🌍 Meticulous artisan","Libra":"💨 Balanced visionary","Scorpio":"💧 Intense transformer","Sagittarius":"🔥 Adventurous spirit","Capricorn":"🌍 Ambitious builder","Aquarius":"💨 Future thinker","Pisces":"💧 Dreamy mystic"};
 export const CHINESE = ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"];
 export const CE:Record<string,string> = {"Rat":"🐀 Quick-witted","Ox":"🐂 Steadfast","Tiger":"🐅 Courageous","Rabbit":"🐇 Graceful","Dragon":"🐉 Charismatic","Snake":"🐍 Wise","Horse":"🐴 Energetic","Goat":"🐐 Creative","Monkey":"🐒 Clever","Rooster":"🐓 Confident","Dog":"🐕 Loyal","Pig":"🐖 Generous"};
 export const MBTI = ["INTJ","INTP","ENTJ","ENTP","INFJ","INFP","ENFJ","ENFP","ISTJ","ISFJ","ESTJ","ESFJ","ISTP","ISFP","ESTP","ESFP"];
 export const LIFE_PATHS = [1,2,3,4,5,6,7,8,9,11,22,33];
-export const PC = ["#FFD700","#FF6B6B","#D4A5FF","#98FB98","#FFDAB9","#87CEEB","#FF8A80","#FFD1A4","#FFB5C2","#FFE4B5","#FF9A56","#E6E6FA"];
+
 export const PROFESSIONALS = [
   {id:1,name:"Elena Voss",type:"Casting Director",img:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200",loc:"Los Angeles, CA",exp:"8 years",openings:3,rate:"$95/hr",skills:["Fashion","Commercial","Editorial"],looking:["Photographers","Stylists"],nsfw:false},
   {id:2,name:"Marcus Webb",type:"Producer",img:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",loc:"New York, NY",exp:"12 years",openings:5,rate:"$140/hr",skills:["Music Video","Commercial","Film"],looking:["Editors","DPs"],nsfw:false},
