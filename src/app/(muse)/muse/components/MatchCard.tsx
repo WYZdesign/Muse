@@ -165,6 +165,13 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
             {(m.skills || []).slice(0, 2).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
           </div>
         )}
+        {isList && (() => {
+          const last = m.messages?.[m.messages.length - 1];
+          if (!last?.text) return null;
+          return (
+            <div style={{ marginTop: 6, fontSize: 12, color: "var(--muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 220 }}>💬 {last.text}</div>
+          );
+        })()}
       </div>
       <div className="match-time">{m.messages?.[m.messages.length - 1]?.time || "New"}</div>
     </div>
