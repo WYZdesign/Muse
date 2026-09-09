@@ -128,12 +128,19 @@ export const OTHER_STUDIOS: StudioProfile[] = [
     siteUrl: "https://maps.google.com/?q=Apex+Photo+Studios+Los+Angeles",
     oracle: [
       { q: "What's Apex known for?", a: "Affordable hourly multi-set studio rentals in Downtown LA with integrated lighting and grip packages and versatile cyc walls — very close to FD's self-service hourly model." },
-      { q: "How do I book?", a: "Apex is ready to showcase — final site/gallery data and booking link are pending the partnership. Contact them via the listing to arrange a shoot." },
+      { q: "How do I book?", a: "Book directly via the studio's site (Apex Photo Studios, Downtown LA). Reserve your desired set, pick a time, and pay for the block — self-service hourly, no hidden fees. Last-minute slots are usually open." },
+      { q: "What's included?", a: "Integrated lighting and grip on every set, cyc walls, and a versatile multi-set floor. Bring your own modifiers or rent from the house kit on site." },
+      { q: "What are the rates?", a: "From $39.99/hr for a cyc set to $44.99/hr for the full multi-set floor. Hourly blocks, fully self-serve." },
+    ],
+    rules: [
+      { icon: "🎟️", title: "Booking & check-in", items: ["Book online, select your set and time block, pay for the block. Self check-in via your booking confirmation — no key pickup.", "Your time includes setup, the shoot, and breakdown. Each set is private."] },
+      { icon: "💡", title: "What's included", items: ["Integrated lighting + grip on all sets, cyc walls, make-up station, and a shared gear kit.", "Wi-Fi, changing area, and music system on request."] },
+      { icon: "⚠️", title: "House rules", items: ["Leave the set as you found it. No alcohol, smoking, or pyrotechnics.", "Hard-to-clean materials need advance approval + a cleaning deposit."] },
     ],
     buildings: [
       { id: "apex-1", label: "Downtown LA", phone: "213-255-5000", hours: "Self-service hourly", emoji: "🏙️", address: "1024 S Santee St, Los Angeles, CA 90015", geo: { lat: 34.038586, long: -118.255273 }, studios: [
-        { id: "apex-set-1", name: "Apex Multi-Set", feature: "Multiple sets · cyc walls · integrated lighting & grip", slug: "multi-set", price: "Priced hourly" },
-        { id: "apex-cyc", name: "Cyc Wall Studio", feature: "Versatile white/black cyc — close to FD's setup", slug: "cyc", price: "Priced hourly" },
+        { id: "apex-set-1", name: "Apex Multi-Set", feature: "Multiple sets · cyc walls · integrated lighting & grip", slug: "multi-set", price: "$44.99" },
+        { id: "apex-cyc", name: "Cyc Wall Studio", feature: "Versatile white/black cyc — close to FD's setup", slug: "cyc", price: "$39.99" },
       ] },
     ],
   },
@@ -145,12 +152,19 @@ export const OTHER_STUDIOS: StudioProfile[] = [
     siteUrl: "https://www.hubblestudio.com",
     oracle: [
       { q: "What's Hubble known for?", a: "Flexible, modular boutique-style studio spaces in the Arts District designed for fashion, portrait, and commercial creators who want self-service hourly configurations — similar to FD." },
-      { q: "How do I book?", a: "Book via Hubble's site (hubblestudio.com). Full space gallery + booking embed pending the partnership." },
+      { q: "How do I book?", a: "Book via Hubble's site (hubblestudio.com). Choose a modular or boutique space, pick your time, and pay for the block — self-service and flexible." },
+      { q: "What's included?", a: "Fully customizable self-service spaces with flexible seating and styling. Ideal for fashion, portrait, and commercial shoots that need a clean, adjustable set." },
+      { q: "What are the rates?", a: "From $44.99/hr for the boutique stage to $49.99/hr for the full modular space. Hourly blocks, bookable by the hour." },
+    ],
+    rules: [
+      { icon: "🎟️", title: "Booking & check-in", items: ["Book online, pick your space and block, pay for it. Self check-in — your booking confirmation is your access.", "Space is private for your entire block; includes setup and breakdown."] },
+      { icon: "💡", title: "What's included", items: ["Modular, self-service set with flexible furniture and lighting positions.", "Wi-Fi, wardrobe rack, and a basic grip kit."] },
+      { icon: "⚠️", title: "House rules", items: ["Return the space to its default configuration. No alcohol or smoking on site.", "Oversized/dirty props need a cleaning deposit."] },
     ],
     buildings: [
       { id: "hubble-1", label: "Arts District", phone: "213-555-0168", hours: "Self-service hourly", emoji: "🎨", address: "545 S Clarence St, Los Angeles, CA 90033", geo: { lat: 34.039807, long: -118.223324 }, studios: [
-        { id: "hubble-mod", name: "Modular Space", feature: "Fashion / portrait / commercial · flexible setup", slug: "modular", price: "Priced hourly" },
-        { id: "hubble-boutique", name: "Boutique Stage", feature: "Self-service hourly · customizable", slug: "boutique", price: "Priced hourly" },
+        { id: "hubble-mod", name: "Modular Space", feature: "Fashion / portrait / commercial · flexible setup", slug: "modular", price: "$49.99" },
+        { id: "hubble-boutique", name: "Boutique Stage", feature: "Self-service hourly · customizable", slug: "boutique", price: "$44.99" },
       ] },
     ],
   },
