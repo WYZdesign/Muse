@@ -301,3 +301,29 @@ export const adminResolveIncident = async ({ sb, profile, rest }: ActionContext)
   await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `resolve_incident:${incidentId}` });
   return NextResponse.json({ success: true });
 };
+
+export const adminRefunds = async ({ sb, profile }: ActionContext) => {
+  if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { data } = await sb.from("muse_refund_requests")
+    .select("id, user_id(name, avatar), booking_id, reason, amount_cents, status, created_at")
+    .eq("status", "open")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  return NextResponse.json({ success: true, refunds: data || [] });
+};
+
+export const adminResolveRefund = async ({ sb, profile, rest }: ActionContext) => {
+  if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { requestId, resolve, note } = rest;
+  if (!requestId || !UUID_RE.test(String(requestId))) return NextResponse.json({ error: "requestId required" }, { status: 400 });
+  if (!["refund", "decline"].includes(resolve as string)) return NextResponse.json({ error: "resolve must be refund or decline" }, { status: 400 });
+  const status = resolve === "refund" ? "resolved_refund" : "resolved_declined";
+  const { error } = await sb.from("muse_refund_requests").update({
+    status, resolution_note: String(note || "").slice(0, 500), resolved_at: new Date().toISOString(), resolved_by: profile.id,
+  }).eq("id", requestId);
+  if (error) return safeServerError(error, "db op");
+  // Note: issuing the actual Stripe refund is a separate, deliberate admin/ops step
+  // (Stripe Refund object on the PaymentIntent). This marks the request's decision.
+  await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `resolve_refund:${requestId}:${status}` });
+  return NextResponse.json({ success: true });
+};
