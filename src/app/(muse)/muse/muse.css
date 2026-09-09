@@ -1938,3 +1938,11 @@ img{background-color:#1a0a2e}
 @media (hover:hover) and (pointer:fine){
   .bts-story-circle:hover .bts-story-report-btn{display:flex;opacity:1}
 }
+
+/* Mapbox GL controls — ensure they work on mobile touch */
+.mapboxgl-ctrl-group{background:rgba(10,6,18,0.85)!important;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.15)!important;border-radius:12px!important;box-shadow:0 4px 16px rgba(0,0,0,0.4)!important}
+.mapboxgl-ctrl-group button{width:36px!important;height:36px!important}
+.mapboxgl-ctrl-group button+button{border-top:1px solid rgba(255,255,255,0.1)!important}
+.mapboxgl-ctrl-icon{filter:invert(1)!important}
+.mapboxgl-ctrl-attrib{background:rgba(10,6,18,0.6)!important;color:rgba(255,255,255,0.4)!important;font-size:10px!important}
+.mapboxgl-ctrl-attrib a{color:rgba(255,215,0,0.5)!important}

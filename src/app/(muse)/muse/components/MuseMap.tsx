@@ -15,7 +15,9 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
       w.mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
       const center: [number, number] = myGeo ? [myGeo.lng, myGeo.lat] : [-98.5, 39.8];
       const zoom = myGeo ? 9 : 3.5;
-      const map = new w.mapboxgl.Map({ container: containerRef.current!, style: "mapbox://styles/mapbox/dark-v11", center, zoom });
+      const map = new w.mapboxgl.Map({ container: containerRef.current!, style: "mapbox://styles/mapbox/dark-v11", center, zoom, attributionControl: false });
+      map.addControl(new w.mapboxgl.NavigationControl({ showCompass: false, visualizePitch: false }), "bottom-right");
+      map.addControl(new w.mapboxgl.AttributionControl({ compact: true }), "bottom-left");
       mapRef.current = map;
       // Privacy: this used to drop one marker per profile with a popup naming
       // that person ("{name} · {type}") right on the map — effectively an
@@ -98,7 +100,7 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
         <button onClick={onClose} style={{ background: "rgba(10,6,18,0.85)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "10px 16px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", backdropFilter: "blur(8px)" }}>← Back to cards</button>
         <div style={{ color: "#fff", fontSize: 14, fontWeight: 700, textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>Creatives near you</div>
       </div>
-      <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+      <div ref={containerRef} style={{ position: "absolute", inset: 0, touchAction: "none" }} />
       <div style={{ position: "absolute", bottom: 24, left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.55)", fontSize: 12, zIndex: 2, pointerEvents: "none" }}>Tap a marker to see how many creatives are active nearby</div>
     </div>
   );
