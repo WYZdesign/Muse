@@ -315,8 +315,11 @@ export async function POST(req: NextRequest) {
     if (action === "create-boost-checkout") {
       const { quantity, duration } = body;
       const qty = Math.min(Math.max(Number(quantity || 1), 1), 20);
-      // One boost credit = 24h of boosted visibility at a flat $4.99.
-      const BOOST_UNIT_CENTS = 499;
+      // Reasonable per-duration boost pricing (fair package rates, mirrors the
+      // Pro-at-$9.99/mo anchor so a single boost never undercuts the plan):
+      //   24h = $3.99, 72h = $9.99, 7d = $19.99 (~$2.86/day for the weekly).
+      const BOOST_PRICE_BY_DURATION: Record<string, number> = { "24h": 399, "72h": 999, "7d": 1999 };
+      const BOOST_UNIT_CENTS = BOOST_PRICE_BY_DURATION[String(duration || "24h")] ?? 399;
       const amount = qty * BOOST_UNIT_CENTS;
 
       const session = await stripe.checkout.sessions.create({

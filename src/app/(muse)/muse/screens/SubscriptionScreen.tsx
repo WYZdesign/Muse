@@ -21,6 +21,8 @@ export interface SubscriptionScreenProps {
   apiFetch?: (url: string, opts?: any) => Promise<Response>;
 }
 
+const BOOST_PRICE_MAP: Record<string, string> = { "24h": "3.99", "72h": "9.99", "7d": "19.99" };
+
 export const SubscriptionScreen = memo(function SubscriptionScreen({
   screen,
   currentUser,
@@ -190,7 +192,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
             const url = await startBoostCheckout(1, boostDuration, showToast);
             if (url) { window.location.href = url; }
             setBuyingBoost(false);
-          }}>{buyingBoost ? "Opening checkout..." : "Buy Boost Credits — $4.99"}</button>
+          }}>{buyingBoost ? "Opening checkout..." : `Buy Boost — $${BOOST_PRICE_MAP[boostDuration]}`}</button>
         </div>
         <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
       </div>
