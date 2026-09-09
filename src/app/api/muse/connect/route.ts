@@ -233,6 +233,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Only the booker can pay for this booking" }, { status: 403 });
       }
 
+      // Age-gate: require current Stripe Identity verification before any paid checkout.
+      // Matches sessionBook and create-payment enforcement (shared.ts isAgeVerificationCurrent).
+      const { data: bookerProfile } = await sb.from("muse_profiles")
+        .select("age_verified, age_verified_at").eq("id", profile.id).maybeSingle();
+      if (!isAgeVerificationCurrent(bookerProfile)) {
+        return NextResponse.json({ error: "Identity verification required before payment" }, { status: 403 });
+      }
+
       const { data: sessionRec } = await sb.from("muse_sessions")
         .select("id, host_id, rate, title")
         .eq("id", booking.session_id).maybeSingle();
