@@ -627,7 +627,16 @@ img{background-color:#1a0a2e}
    calc(100% - 2.3px)). This is an absolute-px band width, so it applies identically to
    every .profile-ring usage (ProfileScreen, MenuModal, MatchCard) regardless of that
    instance's diameter — no per-usage changes needed. */
-.profile-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 1.75px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 1.75px));width:115px;height:115px;box-shadow:0 0 12px rgba(255,215,0,0.28);animation:ringSpin 5s linear infinite}
+/* Audit fix (Torreé batch Part B item 7): Torreé asked for the Profile page
+   halo's thickness/tightness to match the Collab page's circular avatars
+   (.brief-avatar, a 4.9px solid border ring) while keeping the .profile-ring
+   conic-gradient/spin look. The mask band above was ~1.75-3px (a deliberately
+   thin "delicate halo" from an earlier ask) — nowhere near .brief-avatar's
+   visual weight. Widened the mask band to a ~4.7px solid band with a tight
+   ~0.8px feather so it reads as the same thickness as the Collab circles'
+   border ring. This is the shared .profile-ring band width, so it applies to
+   every usage (ProfileScreen, MenuModal, MatchCard, Discover). */
+.profile-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5.5px),#000 calc(100% - 4.7px));mask:radial-gradient(farthest-side,transparent calc(100% - 5.5px),#000 calc(100% - 4.7px));width:115px;height:115px;box-shadow:0 0 12px rgba(255,215,0,0.28);animation:ringSpin 5s linear infinite}
 @keyframes ringSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
 /* Halo enlarged 20% for spots without a hoolah-hoop (profile side-panel, feed composer avatar). */
 .profile-ring-large{width:138px;height:138px}

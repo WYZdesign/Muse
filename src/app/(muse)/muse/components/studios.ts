@@ -23,6 +23,13 @@ export interface StudioBuilding {
   hours: string;
   emoji: string;
   studios: StudioSpace[];
+  // Real street address + geocoded lat/long (US Census Bureau geocoder,
+  // 2026-09-09) so Discover's map view can plot an actual pin for this
+  // building instead of skipping studio locations entirely — see the
+  // "Studio locations: intentionally not rendered yet" comment this
+  // replaces in MuseMap.tsx.
+  address?: string;
+  geo?: { lat: number; long: number };
 }
 
 export interface StudioProfile {
@@ -68,7 +75,7 @@ export const FD_STUDIO: StudioProfile = {
     { icon: "⚠️", title: "House rules", items: ["Leave it as you found it. No alcohol/smoking/pyrotechnics/firearms. $500 fine for drugs or alcohol.", "Hard-to-clean materials (confetti, flour, body oil, fake blood) need approval + deposit. Studios are not soundproof."] },
   ],
   buildings: [
-    { id: "main", label: "Main Building", phone: "+1 (323) 454-2323", hours: "24 hrs / 7 days", emoji: "🌆", studios: [
+    { id: "main", label: "Main Building", phone: "+1 (323) 454-2323", hours: "24 hrs / 7 days", emoji: "🌆", address: "530 E 8th St, 5th Floor, Los Angeles, CA 90014", geo: { lat: 34.039862, long: -118.250198 }, studios: [
       { id: "studio-a", name: "Studio A", feature: "Classic · 1000 sq ft + lots of natural light", slug: "studio-a", price: "$34.99" },
       { id: "studio-b", name: "Studio B", feature: "Blackout · black walls & ceiling", slug: "studio-b", price: "$34.99" },
       { id: "studio-c", name: "Studio C", feature: "Large stage · 19 ft Cyc Wall", slug: "studio-c", price: "$49.99" },
@@ -76,13 +83,13 @@ export const FD_STUDIO: StudioProfile = {
       { id: "studio-e", name: "Studio E", feature: "Daylight · soft light + 3 big windows", slug: "studio-e", price: "$34.99" },
       { id: "studio-f", name: "Studio F", feature: "Downtown skyline views · 2-zone laminate floor", slug: "studio-f", price: "$34.99" },
     ] },
-    { id: "art", label: "Art Building", phone: "+1 (213) 536-5631", hours: "24 hrs / 7 days", emoji: "🎨", studios: [
+    { id: "art", label: "Art Building", phone: "+1 (213) 536-5631", hours: "24 hrs / 7 days", emoji: "🎨", address: "1048 Santee St, 5th Floor, Los Angeles, CA 90015", geo: { lat: 34.038374, long: -118.255560 }, studios: [
       { id: "art-1", name: "Art 1", feature: "White Steps · NW windows, stairs to window, DT views", slug: "art-1", price: "$54.99" },
       { id: "art-2", name: "Art 2", feature: "Wood Floor · real wood, brick wall, podium", slug: "art-2", price: "$44.99" },
       { id: "art-3", name: "Art 3", feature: "Flower Wall · gold furniture, drapes, bath tub", slug: "art-3", price: "$44.99" },
       { id: "art-4", name: "Art 4", feature: "Wood Corner · dark wood corner, marquee star", slug: "art-4", price: "$44.99" },
     ] },
-    { id: "hill", label: "Hill Building", phone: "+1 (213) 536-8030", hours: "24 hrs / 7 days", emoji: "🏔️", studios: [
+    { id: "hill", label: "Hill Building", phone: "+1 (213) 536-8030", hours: "24 hrs / 7 days", emoji: "🏔️", address: "1808 S Hill St, 2nd Floor, Los Angeles, CA 90015", geo: { lat: 34.033108, long: -118.265758 }, studios: [
       { id: "hill-1", name: "Hill 1", feature: "White Floor · queen wooden bed + baldachin", slug: "hill-1", price: "$39.99" },
       { id: "hill-2", name: "Hill 2", feature: "Light Wall · true blackout, dimmable light wall", slug: "hill-2", price: "$39.99" },
       { id: "hill-3", name: "Hill 3", feature: "Mirror Wall · full mirror wall, white brick", slug: "hill-3", price: "$44.99" },
@@ -92,7 +99,7 @@ export const FD_STUDIO: StudioProfile = {
       { id: "hill-7", name: "Hill 7", feature: "Rain Room · aqua stage, rain feature + platform", slug: "hill-7", price: "$44.99" },
       { id: "hill-8", name: "Hill 8", feature: "Concrete Wall · phone booth, rusted wall, barn doors", slug: "hill-8", price: "$34.99" },
     ] },
-    { id: "loft", label: "LA Lofts", phone: "+1 (323) 997-8644", hours: "8 AM – 11 PM", emoji: "🏠", studios: [
+    { id: "loft", label: "LA Lofts", phone: "+1 (323) 997-8644", hours: "8 AM – 11 PM", emoji: "🏠", address: "656 S Los Angeles St, 9th/14th Floor, Los Angeles, CA 90014", geo: { lat: 34.043799, long: -118.249748 }, studios: [
       { id: "la-loft-1", name: "LA Loft 1", feature: "French Loft · bedroom + living room sets", slug: "la-loft-1", price: "$54.99" },
       { id: "la-loft-2", name: "LA Loft 2", feature: "Scandinavian · gorgeous loft styling", slug: "la-loft-2", price: "$39.99" },
       { id: "la-loft-3", name: "LA Loft 3", feature: "French Manor · kitchen, dining, seamstress area", slug: "la-loft-3", price: "$44.99" },
@@ -100,7 +107,7 @@ export const FD_STUDIO: StudioProfile = {
       { id: "la-loft-5", name: "LA Loft 5", feature: "Sunny Loft · daylight + downtown view", slug: "la-loft-5", price: "$49.99" },
       { id: "la-loft-6", name: "LA Loft 6", feature: "Sunset Cycwall · daylight + afternoon light", slug: "la-loft-6", price: "$49.99" },
     ] },
-    { id: "olympic", label: "Olympic Building", phone: "+1 (323) 968-1089", hours: "24 hrs / 7 days", emoji: "🏅", studios: [
+    { id: "olympic", label: "Olympic Building", phone: "+1 (323) 968-1089", hours: "24 hrs / 7 days", emoji: "🏅", address: "3316 E Olympic Blvd, Los Angeles, CA 90023", geo: { lat: 34.018725, long: -118.207433 }, studios: [
       { id: "olympic-1", name: "Olympic 1", feature: "Underwater · pool + shower, RGB tunnel, roll-up door", slug: "olympic-1", price: "$125" },
       { id: "olympic-2", name: "Olympic 2", feature: "Black Cyc-wall · car studio, cyc wall + rain", slug: "olympic-2", price: "$54.99" },
       { id: "olympic-3", name: "Olympic 3", feature: "Car Turntable · white cycwall, car access", slug: "olympic-3", price: "$44.99" },
@@ -124,7 +131,7 @@ export const OTHER_STUDIOS: StudioProfile[] = [
       { q: "How do I book?", a: "Apex is ready to showcase — final site/gallery data and booking link are pending the partnership. Contact them via the listing to arrange a shoot." },
     ],
     buildings: [
-      { id: "apex-1", label: "Downtown LA", phone: "213-255-5000", hours: "Self-service hourly", emoji: "🏙️", studios: [
+      { id: "apex-1", label: "Downtown LA", phone: "213-255-5000", hours: "Self-service hourly", emoji: "🏙️", address: "1024 S Santee St, Los Angeles, CA 90015", geo: { lat: 34.038586, long: -118.255273 }, studios: [
         { id: "apex-set-1", name: "Apex Multi-Set", feature: "Multiple sets · cyc walls · integrated lighting & grip", slug: "multi-set", price: "Priced hourly" },
         { id: "apex-cyc", name: "Cyc Wall Studio", feature: "Versatile white/black cyc — close to FD's setup", slug: "cyc", price: "Priced hourly" },
       ] },
@@ -141,7 +148,7 @@ export const OTHER_STUDIOS: StudioProfile[] = [
       { q: "How do I book?", a: "Book via Hubble's site (hubblestudio.com). Full space gallery + booking embed pending the partnership." },
     ],
     buildings: [
-      { id: "hubble-1", label: "Arts District", phone: "213-555-0168", hours: "Self-service hourly", emoji: "🎨", studios: [
+      { id: "hubble-1", label: "Arts District", phone: "213-555-0168", hours: "Self-service hourly", emoji: "🎨", address: "545 S Clarence St, Los Angeles, CA 90033", geo: { lat: 34.039807, long: -118.223324 }, studios: [
         { id: "hubble-mod", name: "Modular Space", feature: "Fashion / portrait / commercial · flexible setup", slug: "modular", price: "Priced hourly" },
         { id: "hubble-boutique", name: "Boutique Stage", feature: "Self-service hourly · customizable", slug: "boutique", price: "Priced hourly" },
       ] },

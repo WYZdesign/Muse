@@ -84,7 +84,12 @@ export const ChatScreen = memo(function ChatScreen({
           <div className="chat-header">
             <button className="chat-back" onClick={() => showScreen("matches")}><FiArrowLeft size={20} /></button>
             <Image loading="lazy" src={chatTarget.img} alt={chatTarget.name} width={40} height={40} className="chat-avatar" onError={handleImgError} onClick={() => setViewProfile(chatTarget)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewProfile(chatTarget); } }} style={{ cursor: "pointer" }} />
-            <div className="chat-info">
+            {/* Audit fix (2026-09-08, wyzmind's Torreé batch item 4): only the
+                40px avatar circle opened the full profile — the name/type text
+                right beside it (the larger, more natural tap target most people
+                would actually go for) did nothing. Wired the whole info block to
+                the same setViewProfile call. */}
+            <div className="chat-info" role="button" tabIndex={0} onClick={() => setViewProfile(chatTarget)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewProfile(chatTarget); } }} style={{ cursor: "pointer" }}>
               <div className="chat-name">{chatTarget.name}</div>
               <div className="chat-type">{typingTarget === chatTarget.id ? <span style={{ color: "var(--gold)", fontStyle: "italic" }}>typing…</span> : chatTarget.type}</div>
             </div>

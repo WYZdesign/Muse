@@ -8,6 +8,7 @@ import type { Screen, Match } from "../components/types";
 import { isPaidTier } from "../components/subscriptionTiers";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 import Lightbox from "../components/Lightbox";
+import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 
 export interface ProfileScreenProps {
   screen: Screen;
@@ -129,6 +130,12 @@ export const ProfileScreen = memo(function ProfileScreen({
   const [referralData, setReferralData] = useState<any>(null);
   const [referralStats, setReferralStats] = useState<{totalEarned: number; paid: number; pending: number; purchases: number; signups: number} | null>(null);
   const [loadingReferral, setLoadingReferral] = useState(true);
+  // Audit fix (Torreé batch Part B item 1): the Creative Type / Looking For /
+  // Aesthetic / Personality pills on your own profile were plain, dead
+  // <span>s — every other screen that shows these same trait badges
+  // (Discover's swipe cards) already made them tappable for a detail
+  // popover. Reusing that exact pattern here.
+  const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
 
   useEffect(() => {
     const fetchReferralData = async () => {
@@ -275,15 +282,15 @@ export const ProfileScreen = memo(function ProfileScreen({
         </div>
         <div className="section">
           <div className="section-title">Aesthetic</div>
-          <div className="tag-row">{(obData.styles || ["Minimalist", "Dark"]).map((s: string) => <span key={s} className="tag-pill">{s}</span>)}</div>
+          <div className="tag-row">{(obData.styles || ["Minimalist", "Dark"]).map((s: string) => <button key={s} className="tag-pill" onClick={() => setBadgeInfo({ name: s, desc: STYLE_FULL[s] || "A creative style this member works in.", icon: "🎨", color: "#FFD700" })} style={{ cursor: "pointer" }}>{s}</button>)}</div>
         </div>
         <div className="section">
           <div className="section-title">Personality</div>
           <div className="tag-row">
-            {obData.zodiac && <span className="tag-pill">{ZODIAC_GLYPH[obData.zodiac] || "✦"} {obData.zodiac}</span>}
-            {obData.chinese && <span className="tag-pill" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><ChineseZodiacIcon animal={obData.chinese} size={12} /> {obData.chinese}</span>}
-            {obData.mbti && <span className="tag-pill" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><MbtiIcon code={obData.mbti} size={12} /> {obData.mbti}</span>}
-            {obData.lifePath && <span className="tag-pill" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><LifePathIcon n={Number(obData.lifePath)} size={12} /> Path {obData.lifePath}</span>}
+            {obData.zodiac && <button className="tag-pill" onClick={() => setBadgeInfo({ name: `${obData.zodiac} — ${ZODIAC_FULL[obData.zodiac]?.tag || ""}`, desc: ZODIAC_FULL[obData.zodiac]?.desc || "", icon: ZODIAC_GLYPH[obData.zodiac] || "✦", color: "#FF69B4" })} style={{ cursor: "pointer" }}>{ZODIAC_GLYPH[obData.zodiac] || "✦"} {obData.zodiac}</button>}
+            {obData.chinese && <button className="tag-pill" onClick={() => setBadgeInfo({ name: obData.chinese, desc: CHINESE_FULL[obData.chinese] || "", icon: <ChineseZodiacIcon animal={obData.chinese} size={20} />, color: "#FFA500" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}><ChineseZodiacIcon animal={obData.chinese} size={12} /> {obData.chinese}</button>}
+            {obData.mbti && <button className="tag-pill" onClick={() => setBadgeInfo({ name: `${obData.mbti} — ${MBTI_FULL[obData.mbti]?.tag || ""}`, desc: MBTI_FULL[obData.mbti]?.desc || "", icon: <MbtiIcon code={obData.mbti} size={20} />, color: "#7B68EE" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}><MbtiIcon code={obData.mbti} size={12} /> {obData.mbti}</button>}
+            {obData.lifePath && <button className="tag-pill" onClick={() => setBadgeInfo({ name: `Life Path ${obData.lifePath}`, desc: LIFE_PATH_FULL[String(obData.lifePath)] || "", icon: <LifePathIcon n={Number(obData.lifePath)} size={20} />, color: "#20B2AA" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}><LifePathIcon n={Number(obData.lifePath)} size={12} /> Path {obData.lifePath}</button>}
             {!obData.zodiac && !obData.chinese && !obData.mbti && !obData.lifePath && <span className="tag-pill" style={{ opacity: 0.5 }}>Add personality traits</span>}
           </div>
         </div>
@@ -570,6 +577,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           onError={handleImgError}
         />
       )}
+      <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
       <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );

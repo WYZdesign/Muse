@@ -405,10 +405,13 @@ export const NetworkScreen = memo(function NetworkScreen({
       <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "0 16px 80px" }}>
         {netTab === "pros" && (
           <>
-            <div style={{ margin: "0 0 10px", fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
+            {/* Audit fix (2026-09-08, wyzmind's Torreé batch item 6): centered under
+                the "Network" title (was left-aligned) and shortened both variants —
+                Torreé asked for it "more concise". */}
+            <div style={{ margin: "0 0 10px", fontSize: 12, color: "var(--muted)", lineHeight: 1.5, textAlign: "center" }}>
               {iAmIndustry
-                ? "Your industry peers — network, co-hire, and trade talent across markets."
-                : "Industry professionals who can book, pay, and launch your career."}
+                ? "Your peers — network, co-hire, and trade talent."
+                : "Pros who can book, pay, and launch your career."}
             </div>
             <input
               className="inp"
@@ -418,20 +421,31 @@ export const NetworkScreen = memo(function NetworkScreen({
               onKeyDown={(e) => { if (e.key === "Enter") handleProSearch(e.currentTarget.value); }}
               style={{ margin: "0 0 10px", fontSize: 13 }}
             />
-            {/* Filter bubbles row - horizontally scrollable */}
+            {/* Filter bubbles row - horizontally scrollable.
+                Audit fix (2026-09-08, wyzmind's Torreé batch item 6): every category
+                pill used the same gold gradient when active, while each category's
+                expanded sub-options below used an unrelated grab-bag of colors
+                (e.g. Experience's "Rising"/"Established"/"Veteran" were blue/gold/
+                lavender — three different hues under one category). Torreé asked
+                for sub-filter buttons to read as shades of their own category's
+                color so the group reads as one family at a glance. Gave each
+                category a base gradient here and reused that same hue (just
+                lighter/darker shades) for its sub-options below — Skills (pink)
+                and Looking (teal) already used one consistent hue for their
+                sub-options, so their pill gradient now matches that hue too. */}
             <div style={{ display: "flex", gap: 6, marginBottom: 10, alignItems: "center", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: 2 }}>
               {([
-                { key: "experience", label: "Experience", active: proExp !== "all" },
-                { key: "sort", label: "Sort", active: proSort !== "match" },
-                { key: "rate", label: "Rate", active: proRateBand !== "all" },
-                { key: "skills", label: "Skills", active: proSkill.length > 0 },
-                { key: "looking", label: "Looking", active: proLooking !== "all" },
+                { key: "experience", label: "Experience", active: proExp !== "all", grad: "linear-gradient(135deg,#90CAF9,#42A5F5)" },
+                { key: "sort", label: "Sort", active: proSort !== "match", grad: "linear-gradient(135deg,var(--gold),var(--amber))" },
+                { key: "rate", label: "Rate", active: proRateBand !== "all", grad: "linear-gradient(135deg,#81C784,#43A047)" },
+                { key: "skills", label: "Skills", active: proSkill.length > 0, grad: "linear-gradient(135deg,#FF9EC7,#FF69B4)" },
+                { key: "looking", label: "Looking", active: proLooking !== "all", grad: "linear-gradient(135deg,#4DD0C4,#20B2AA)" },
               ]).map(f => (
                 <button
                   key={f.key}
                   type="button"
                   onClick={() => setFilterSections(s => ({ ...s, [f.key]: !s[f.key] }))}
-                  style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: f.active ? "#0a0612" : "var(--text)", background: f.active ? "linear-gradient(135deg,var(--gold),var(--amber))" : "rgba(255,255,255,0.06)", border: f.active ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "6px 14px", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
+                  style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: f.active ? "#0a0612" : "var(--text)", background: f.active ? f.grad : "rgba(255,255,255,0.06)", border: f.active ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "6px 14px", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
                 >
                   {f.label}{f.active ? " ✓" : ""}
                 </button>
@@ -452,9 +466,9 @@ export const NetworkScreen = memo(function NetworkScreen({
               <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
                 {([
                   { k: "all", label: "All levels", color: "var(--muted)", accent: "rgba(255,255,255,0.1)" },
-                  { k: "rising", label: "Rising", color: "#90caf9", accent: "rgba(144,202,249,0.3)" },
-                  { k: "established", label: "Established", color: "#FFD700", accent: "rgba(255,215,0,0.3)" },
-                  { k: "veteran", label: "Veteran", color: "#e6d3ff", accent: "rgba(230,211,255,0.3)" },
+                  { k: "rising", label: "Rising", color: "#BBDEFB", accent: "rgba(187,222,251,0.3)" },
+                  { k: "established", label: "Established", color: "#64B5F6", accent: "rgba(100,181,246,0.3)" },
+                  { k: "veteran", label: "Veteran", color: "#1E88E5", accent: "rgba(30,136,229,0.3)" },
                 ] as const).map((b) => (
                   <button type="button" key={b.k} role="tab" aria-selected={proExp === b.k} tabIndex={0}
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProExp(b.k); } }}
@@ -468,11 +482,11 @@ export const NetworkScreen = memo(function NetworkScreen({
               <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
                 {([
                   { k: "match", label: "Featured", color: "#FFD700", accent: "rgba(255,215,0,0.25)" },
-                  { k: "expDesc", label: "Most exp", color: "#90caf9", accent: "rgba(144,202,249,0.25)" },
-                  { k: "expAsc", label: "Least exp", color: "#81D4FA", accent: "rgba(129,212,250,0.25)" },
-                  { k: "rateDesc", label: "Rate ↓", color: "#e6d3ff", accent: "rgba(230,211,255,0.25)" },
-                  { k: "rateAsc", label: "Rate ↑", color: "#CE93D8", accent: "rgba(206,147,216,0.25)" },
-                  { k: "openings", label: "Most openings", color: "#4cdd88", accent: "rgba(76,221,136,0.25)" },
+                  { k: "expDesc", label: "Most exp", color: "#FFCA28", accent: "rgba(255,202,40,0.25)" },
+                  { k: "expAsc", label: "Least exp", color: "#FFE082", accent: "rgba(255,224,130,0.25)" },
+                  { k: "rateDesc", label: "Rate ↓", color: "#FFB300", accent: "rgba(255,179,0,0.25)" },
+                  { k: "rateAsc", label: "Rate ↑", color: "#FFA000", accent: "rgba(255,160,0,0.25)" },
+                  { k: "openings", label: "Most openings", color: "#FF8F00", accent: "rgba(255,143,0,0.25)" },
                 ] as const).map((b) => (
                   <button type="button" key={b.k}
                     onClick={() => setProSort(b.k)}
@@ -485,10 +499,10 @@ export const NetworkScreen = memo(function NetworkScreen({
               <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
                 {([
                   { k: "all", label: "Any rate", color: "var(--muted)", accent: "rgba(255,255,255,0.1)" },
-                  { k: "tfp", label: "TFP", color: "#90caf9", accent: "rgba(144,202,249,0.3)" },
-                  { k: "50to100", label: "$50-100", color: "#4cdd88", accent: "rgba(76,221,136,0.3)" },
-                  { k: "100to150", label: "$100-150", color: "#FFD700", accent: "rgba(255,215,0,0.3)" },
-                  { k: "gt150", label: "$150+", color: "#e6d3ff", accent: "rgba(230,211,255,0.3)" },
+                  { k: "tfp", label: "TFP", color: "#A5D6A7", accent: "rgba(165,214,167,0.3)" },
+                  { k: "50to100", label: "$50-100", color: "#81C784", accent: "rgba(129,199,132,0.3)" },
+                  { k: "100to150", label: "$100-150", color: "#4CDD88", accent: "rgba(76,221,136,0.3)" },
+                  { k: "gt150", label: "$150+", color: "#2E7D32", accent: "rgba(46,125,50,0.3)" },
                 ] as const).map((b) => (
                   <button type="button" key={b.k}
                     onClick={() => setProRateBand(b.k)}
