@@ -198,13 +198,13 @@ export const BtsScreen = memo(function BtsScreen({
   }, [showScreen, showToast]);
 
   const headerGradient = "linear-gradient(135deg, #FF1493 0%, #FF69B4 50%, #FFD700 100%)";
-  const pinkGradient = "linear-gradient(135deg, #FF1493 0%, #FF69B4 60%, #FFB6C1 100%)";
+  const pinkGradient = "linear-gradient(135deg, #FF1493 0%, #FF69B4 35%, #FFFFFF 60%, #FFB6C1 80%, #FFD700 100%)";
   const activePill = "linear-gradient(135deg, #FF1493, #FF69B4)";
 
   const gridCardStyle: React.CSSProperties = { width: "100%", maxWidth: "100%", minWidth: 0, overflow: "hidden" };
 
   return (
-    <div className={"screen-el" + (screen === "bts" ? " active" : "")}>
+    <div className={"screen-el" + (screen === "bts" ? " active" : "")} data-screen="bts">
       {/* Header */}
       <div
         style={{
@@ -216,10 +216,12 @@ export const BtsScreen = memo(function BtsScreen({
           position: "relative",
         }}
       >
+        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", pointerEvents: "none" }} />
         <button
           className="chat-back"
           onClick={() => showScreen("discover")}
           aria-label="Back"
+          style={{ position: "relative", zIndex: 1 }}
         >
           <FiArrowLeft size={20} />
         </button>
@@ -231,12 +233,14 @@ export const BtsScreen = memo(function BtsScreen({
             letterSpacing: 2,
             color: "#fff",
             textShadow: "0 2px 10px rgba(0,0,0,0.35)",
+            position: "relative",
+            zIndex: 1,
           }}
         >
           BTS
         </div>
 
-        <div style={{ width: 34, height: 34 }} />
+        <div style={{ width: 34, height: 34, position: "relative", zIndex: 1 }} />
       </div>
 
       {/* Scrollable content */}
@@ -246,35 +250,18 @@ export const BtsScreen = memo(function BtsScreen({
           style={{
             margin: "14px 14px 0",
             background: pinkGradient,
+            backgroundSize: "400% 400%",
+            animation: "lavaFlow 8s ease-in-out infinite",
             borderRadius: 16,
             padding: "18px 16px",
             position: "relative",
             overflow: "hidden",
           }}
         >
-          <div style={{ position: "absolute", top: -20, right: -20, opacity: 0.12 }}>
-            <FiCamera size={100} />
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            <div
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: "50%",
-                background: "rgba(255,255,255,0.25)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <FiCamera size={18} color="#fff" />
-            </div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>Time to Post</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)" }}>
-                Dual camera: main + selfie - expires in {remaining.hours}h {remaining.minutes}m
-              </div>
+          <div style={{ textAlign: "center", marginBottom: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", letterSpacing: 0.02 }}>Behind the Scenes</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", marginTop: 4, lineHeight: 1.5 }}>
+              Post a quick real-time shot of your creative process. Friends and followers get an honest, unpolished look at how you work — and you build connection by sharing the journey, not just the finished piece.
             </div>
           </div>
 
@@ -282,6 +269,7 @@ export const BtsScreen = memo(function BtsScreen({
             style={{
               display: "flex",
               alignItems: "center",
+              justifyContent: "center",
               gap: 8,
               marginBottom: 12,
               background: "rgba(0,0,0,0.15)",
@@ -718,6 +706,8 @@ export const BtsScreen = memo(function BtsScreen({
                   borderRadius: 12,
                   border: "none",
                   background: pinkGradient,
+                  backgroundSize: "400% 400%",
+                  animation: "lavaFlow 8s ease-in-out infinite",
                   color: "#fff",
                   fontSize: 13,
                   fontWeight: 700,

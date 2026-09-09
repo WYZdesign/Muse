@@ -3,7 +3,7 @@
 import React, { memo, useState } from "react";
 import Image from "next/image";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon } from "./traitIcons";
-import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, BadgeInfoModal, type BadgeInfo } from "./badgeInfo";
+import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "./badgeInfo";
 
 export interface MatchCardProps {
   m: any;
@@ -141,7 +141,7 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
       <div className="match-info" style={isList ? { marginLeft: 14, textAlign: "left" } : undefined}>
         <div className="match-name" style={{ display: "flex", alignItems: "center", gap: 5, ...(isList ? { fontSize: 15, lineHeight: 1.2 } : {}) }}>
           {m.name}
-          {m.verified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
+          {m.verified && <span className="card-verified-mark" style={{ fontSize: 13, cursor: "pointer" }} title="Identity verified" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#FFD700" }); }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#FFD700" }); } }}>✓</span>}
         </div>
         <div className="match-type" style={isList ? { fontSize: 11 } : undefined}>{m.type}</div>
         {isList && (
@@ -152,7 +152,7 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
         )}
         {isList && (m.styles || []).length > 0 && (
           <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
-            {(m.styles || []).slice(0, 3).map((s: string) => <span key={"style-" + s} className="match-badge" style={{ fontSize: 10, padding: "2px 7px" }}>{s}</span>)}
+            {(m.styles || []).slice(0, 3).map((s: string) => <button key={"style-" + s} className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: s, desc: STYLE_FULL[s] || "A creative style this member works in.", icon: "🎨", color: "#FFD700" }); }} style={{ fontSize: 10, padding: "2px 7px", cursor: "pointer" }}>{s}</button>)}
           </div>
         )}
         {isList && (
@@ -173,8 +173,8 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
             if (m.zodiac) items.push(<button key="z" className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.zodiac} — ${ZODIAC_FULL[m.zodiac]?.tag || ""}`, desc: ZODIAC_FULL[m.zodiac]?.desc || "", icon: ZODIAC_GLYPH[m.zodiac] || "✦", color: "#D4A5FF" }); }} style={{ cursor: "pointer" }}>{ZODIAC_GLYPH[m.zodiac] || "✦"} {m.zodiac}</button>);
             if (m.mbti) items.push(<button key="m" className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.mbti} — ${MBTI_FULL[m.mbti]?.tag || ""}`, desc: MBTI_FULL[m.mbti]?.desc || "", icon: <MbtiIcon code={m.mbti} size={20} />, color: "#FFD700" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><MbtiIcon code={m.mbti} size={11} /> {m.mbti}</button>);
             if (m.lifePath) items.push(<button key="lp" className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `Life Path ${m.lifePath}`, desc: LIFE_PATH_FULL[String(m.lifePath)] || "", icon: <LifePathIcon n={Number(m.lifePath)} size={20} />, color: "#98FB98" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><LifePathIcon n={Number(m.lifePath)} size={11} /> LP {m.lifePath}</button>);
-            (m.skills || []).forEach((s: string) => items.push(<span key={"s-" + s} className="match-badge">{s}</span>));
-            (m.looking || []).forEach((l: string) => items.push(<span key={"l-" + l} className="match-badge" style={{ background: "rgba(255,105,180,0.12)", color: "#FF69B4", border: "1px solid rgba(255,105,180,0.2)" }}>looking for {l}</span>));
+            (m.skills || []).forEach((s: string) => items.push(<button key={"s-" + s} className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: s, desc: STYLE_FULL[s] || `A skill this member brings to a collaboration.`, icon: "🛠", color: "#90CAF9" }); }} style={{ cursor: "pointer" }}>{s}</button>));
+            (m.looking || []).forEach((l: string) => items.push(<button key={"l-" + l} className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: l, desc: `This member is looking for ${l.toLowerCase()}s to collaborate with.`, icon: "🤝", color: "#FF69B4" }); }} style={{ background: "rgba(255,105,180,0.12)", color: "#FF69B4", border: "1px solid rgba(255,105,180,0.2)", cursor: "pointer" }}>looking for {l}</button>));
             const shown = items.slice(0, 4);
             return shown.length > 0 ? <div className="match-badges" style={{ marginTop: 4 }}>{shown}</div> : null;
           })()
@@ -184,7 +184,7 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
             {m.zodiac && <button className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.zodiac} — ${ZODIAC_FULL[m.zodiac]?.tag || ""}`, desc: ZODIAC_FULL[m.zodiac]?.desc || "", icon: ZODIAC_GLYPH[m.zodiac] || "✦", color: "#D4A5FF" }); }} style={{ cursor: "pointer" }}>{ZODIAC_GLYPH[m.zodiac] || "✦"} {m.zodiac}</button>}
             {m.mbti && <button className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.mbti} — ${MBTI_FULL[m.mbti]?.tag || ""}`, desc: MBTI_FULL[m.mbti]?.desc || "", icon: <MbtiIcon code={m.mbti} size={20} />, color: "#FFD700" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><MbtiIcon code={m.mbti} size={11} /> {m.mbti}</button>}
             {m.lifePath && <button className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `Life Path ${m.lifePath}`, desc: LIFE_PATH_FULL[String(m.lifePath)] || "", icon: <LifePathIcon n={Number(m.lifePath)} size={20} />, color: "#98FB98" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><LifePathIcon n={Number(m.lifePath)} size={11} /> LP {m.lifePath}</button>}
-            {(m.skills || []).slice(0, 2).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
+            {(m.skills || []).slice(0, 2).map((s: string) => <button key={s} className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: s, desc: STYLE_FULL[s] || `A skill this member brings to a collaboration.`, icon: "🛠", color: "#90CAF9" }); }} style={{ cursor: "pointer" }}>{s}</button>)}
           </div>
         )}
         {isList && (() => {

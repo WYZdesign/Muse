@@ -10,6 +10,7 @@ import type { Screen, Brief } from "../components/types";
 import { BRIEFS } from "../components/types";
 import { viewerSide } from "@/lib/role";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
+import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 
 export interface CollabScreenProps {
   screen: Screen;
@@ -93,6 +94,7 @@ export const CollabScreen = memo(function CollabScreen({
   // shape as MusesScreen's existing search-toggle pattern, no backend change.
   const [briefSearchQuery, setBriefSearchQuery] = useState("");
   const [safetyInfoOpen, setSafetyInfoOpen] = useState(false);
+  const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
 
   // "Not interested" / dismiss (audit finding up-3, LinkedIn/Facebook-style
   // feed hide). Session-local only, same as savedBriefs/appliedBriefs
@@ -139,7 +141,7 @@ export const CollabScreen = memo(function CollabScreen({
   }, [screen]);
 
   return (
-    <div className={"screen-el" + (screen === "briefs" ? " active" : "")}>
+    <div className={"screen-el" + (screen === "briefs" ? " active" : "")} data-screen="briefs">
       <div className="hdr" style={{ display: "grid", gridTemplateColumns: "42px 1fr 42px", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="hdr-btn" onClick={() => showScreen("discover")} aria-label="Back"><FiArrowLeft size={18} /></button>
         <div
@@ -235,9 +237,9 @@ export const CollabScreen = memo(function CollabScreen({
                   style={{ position: "absolute", top: 14, left: 14, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >✕</button>
               )}
-              {/* Report flag (Torreé audit): inverted-color flag icon so it reads
-                  as an action, sitting beside the Not-interested X. */}
-              {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ position: "absolute", top: 14, left: 42, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={13} /></button>)}
+              {/* Report flag (Torreé audit): plain flag icon sitting just left
+                  of the safety-info button on the right side of the card. */}
+              {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ position: "absolute", top: 14, right: 44, zIndex: 2, color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={13} /></button>)}
               <div className="brief-header" style={{ flexWrap: "wrap", gap: 6 }}>
                 <Image loading="lazy" src={brief.authorImg} alt={brief.author} width={86} height={86} className={"brief-avatar brief-variant-" + (bi % 5)} />
                 <div className="brief-info" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -264,12 +266,12 @@ export const CollabScreen = memo(function CollabScreen({
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4, width: "100%", justifyContent: "center" }}>
-                  {brief.cat === "tfp" && <span className="brief-tag" style={{ background: "rgba(152,251,152,0.15)", borderColor: "rgba(152,251,152,0.3)", color: "var(--mint)" }}>TFP</span>}
-                  {brief.cat === "paid" && <span className="brief-tag" style={{ background: "rgba(255,215,0,0.12)", borderColor: "rgba(255,215,0,0.2)", color: "var(--gold)" }}>Paid</span>}
-                  {brief.cat === "opencall" && <span className="brief-tag" style={{ background: "rgba(135,206,235,0.12)", borderColor: "rgba(135,206,235,0.25)", color: "#87CEEB" }}>Open Call</span>}
-                  {brief.cat === "concept" && <span className="brief-tag" style={{ background: "rgba(212,165,255,0.12)", borderColor: "rgba(212,165,255,0.25)", color: "var(--lavender)" }}>Ideas</span>}
-                  {brief.urgent && <span className="brief-tag" style={{ background: "rgba(255,107,107,0.15)", borderColor: "rgba(255,107,107,0.3)", color: "var(--coral)" }}>Urgent</span>}
-                  {brief.nsfw && <span className="brief-tag" style={{ background: "rgba(255,107,107,0.15)", borderColor: "rgba(255,107,107,0.3)", color: "var(--sunset)" }}>18+</span>}
+                  {brief.cat === "tfp" && <span role="button" tabIndex={0} className="brief-tag" onClick={() => setBadgeInfo({ name: "TFP", desc: "Trade for print — this brief offers portfolio/collaboration credit instead of cash payment.", icon: "🔄", color: "var(--mint)" })} style={{ background: "rgba(152,251,152,0.15)", borderColor: "rgba(152,251,152,0.3)", color: "var(--mint)", cursor: "pointer" }}>TFP</span>}
+                  {brief.cat === "paid" && <span role="button" tabIndex={0} className="brief-tag" onClick={() => setBadgeInfo({ name: "Paid", desc: "This brief pays — there's a cash budget attached.", icon: "💵", color: "var(--gold)" })} style={{ background: "rgba(255,215,0,0.12)", borderColor: "rgba(255,215,0,0.2)", color: "var(--gold)", cursor: "pointer" }}>Paid</span>}
+                  {brief.cat === "opencall" && <span role="button" tabIndex={0} className="brief-tag" onClick={() => setBadgeInfo({ name: "Open Call", desc: "An open call — anyone can submit or audition for this opportunity.", icon: "📣", color: "#87CEEB" })} style={{ background: "rgba(135,206,235,0.12)", borderColor: "rgba(135,206,235,0.25)", color: "#87CEEB", cursor: "pointer" }}>Open Call</span>}
+                  {brief.cat === "concept" && <span role="button" tabIndex={0} className="brief-tag" onClick={() => setBadgeInfo({ name: "Ideas", desc: "A concept or idea looking for collaborators to bring it to life — no payment, just creative interest.", icon: "💡", color: "var(--lavender)" })} style={{ background: "rgba(212,165,255,0.12)", borderColor: "rgba(212,165,255,0.25)", color: "var(--lavender)", cursor: "pointer" }}>Ideas</span>}
+                  {brief.urgent && <span role="button" tabIndex={0} className="brief-tag" onClick={() => setBadgeInfo({ name: "Urgent", desc: "Time-sensitive — the poster needs someone fast.", icon: "⚡", color: "var(--coral)" })} style={{ background: "rgba(255,107,107,0.15)", borderColor: "rgba(255,107,107,0.3)", color: "var(--coral)", cursor: "pointer" }}>Urgent</span>}
+                  {brief.nsfw && <span role="button" tabIndex={0} className="brief-tag" onClick={() => setBadgeInfo({ name: "18+", desc: "Adult / NSFW content — only shown to verified adults.", icon: "🔞", color: "var(--sunset)" })} style={{ background: "rgba(255,107,107,0.15)", borderColor: "rgba(255,107,107,0.3)", color: "var(--sunset)", cursor: "pointer" }}>18+</span>}
                 </div>
               </div>
               <div className="brief-title">{brief.title}</div>
@@ -306,7 +308,7 @@ export const CollabScreen = memo(function CollabScreen({
                   style={{ position: "absolute", top: 14, right: 14, width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3 }}
                 >ⓘ</button>
               )}
-              <div className="brief-tags">{brief.tags.map((t: string) => <span key={t} className="brief-tag">{t}</span>)}</div>
+              <div className="brief-tags">{brief.tags.map((t: string) => <span key={t} role="button" tabIndex={0} className="brief-tag" onClick={() => setBadgeInfo({ name: t, desc: "A project tag that helps creatives find this brief.", icon: "🏷", color: "#90caf9" })} style={{ cursor: "pointer" }}>{t}</span>)}</div>
               <div className="brief-actions">
                 {isOwnBrief(brief) ? (
                   // Own post: no Apply/Book/Respond to yourself — the
@@ -402,6 +404,7 @@ export const CollabScreen = memo(function CollabScreen({
           </div>
         </div>
       )}
+      <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
       <Nav active="briefs" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );

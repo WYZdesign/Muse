@@ -212,7 +212,7 @@ export const FdStudioWidget = memo(function FdStudioWidget({ apiFetch }: FdStudi
                       borderRadius: 10,
                       textDecoration: "none",
                       color: "#fff",
-                      background: "linear-gradient(135deg,#E91E63,#9C27B0)",
+                      background: "linear-gradient(135deg,#7FD624,#3EB4E0)",
                       whiteSpace: "nowrap",
                     }}
                   >

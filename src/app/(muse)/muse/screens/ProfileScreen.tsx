@@ -207,8 +207,8 @@ export const ProfileScreen = memo(function ProfileScreen({
   };
 
   return (
-    <div className={"screen-el" + (screen === "profile" ? " active" : "")}>
-      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px`, borderBottom: "1px solid rgba(255,215,0,0.15)" }}>
+    <div className={"screen-el" + (screen === "profile" ? " active" : "")} data-screen="profile">
+      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="hdr-btn" onClick={() => showScreen("discover")} aria-label="Back"><FiArrowLeft size={18} /></button>
         <div className="logo-link" style={{ position: "relative", margin: 0, padding: 0, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 37.5, fontWeight: 800, backgroundImage: "linear-gradient(135deg,var(--gold),var(--lavender),var(--pink),var(--gold))", backgroundSize: "400% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", animation: "gradientShift 6s ease-in-out infinite", lineHeight: "38px", whiteSpace: "nowrap", width: "max-content", textAlign: "center" }}>Your Profile</div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -273,11 +273,11 @@ export const ProfileScreen = memo(function ProfileScreen({
         </div>
         <div className="section">
           <div className="section-title">Creative Type</div>
-          <div className="tag-row">{obData.type ? <span className="tag-pill">{obData.type}</span> : <span className="tag-pill">Set your type</span>}</div>
+          <div className="tag-row">{obData.type ? <button className="tag-pill" onClick={() => setBadgeInfo({ name: obData.type, desc: "Your creative role/type on Muse — what you do and how others find you.", icon: "🎯", color: "#FFD700" })} style={{ cursor: "pointer" }}>{obData.type}</button> : <button className="tag-pill" onClick={() => setBadgeInfo({ name: "Set your type", desc: "Add your creative type to help people understand what you do and find you.", icon: "✏️", color: "#FFD700" })} style={{ cursor: "pointer" }}>Set your type</button>}</div>
         </div>
         <div className="section">
           <div className="section-title">Looking For</div>
-          <div className="tag-row">{(obData.looking || ["Collaborators", "Friends"]).map((s: string) => <span key={s} className="tag-pill">{s}</span>)}</div>
+          <div className="tag-row">{(obData.looking || ["Collaborators", "Friends"]).map((s: string) => <button key={s} className="tag-pill" onClick={() => setBadgeInfo({ name: s, desc: `Who you're looking to collaborate with — ${s.toLowerCase() === "friends" ? "genuine creative friendship and community" : s + "s"} to work with.`, icon: "🤝", color: "#FF69B4" })} style={{ cursor: "pointer" }}>{s}</button>)}</div>
         </div>
         <div className="section">
           <div className="section-title">Aesthetic</div>
@@ -313,7 +313,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div className="section-title">Subscription</div>
           {currentUser.foundingTier && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 99, background: currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.12)" : "rgba(212,165,255,0.12)", border: `1px solid ${currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.35)" : "rgba(212,165,255,0.35)"}`, color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)" }}>
+              <span role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: currentUser.foundingTier === "founding" ? "Founding Member" : "Early Member", desc: currentUser.foundingTier === "founding" ? "You backed Muse from the very start, unlocking the earliest perks and recognition." : "You joined Muse during its early growth, with a special early-adopter badge.", icon: currentUser.foundingTier === "founding" ? "🏆" : "⭐", color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 99, background: currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.12)" : "rgba(212,165,255,0.12)", border: `1px solid ${currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.35)" : "rgba(212,165,255,0.35)"}`, color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)", cursor: "pointer" }}>
                 {currentUser.foundingTier === "founding" ? "🏆 FOUNDING MEMBER" : "⭐ EARLY MEMBER"}
               </span>
               {/* Audit fix (2026-09-08): this whole Subscription block used a
@@ -340,7 +340,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div className="section-title">Badges</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {[...checkProfileBadges(currentUser.stats, currentUser.createdAt)].length === 0 && <span style={{ fontSize: 13, color: "var(--muted)" }}>Complete bookings and matches to earn badges</span>}
-            {checkProfileBadges(currentUser.stats, currentUser.createdAt).map(b => <span key={b.name} title={b.desc} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: `${b.color}20`, border: `1px solid ${b.color}40`, color: b.color }}>{b.icon} {b.name}</span>)}
+            {checkProfileBadges(currentUser.stats, currentUser.createdAt).map(b => <span key={b.name} role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: b.name, desc: b.desc || "A badge earned for activity on Muse.", icon: b.icon, color: b.color })} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: `${b.color}20`, border: `1px solid ${b.color}40`, color: b.color, cursor: "pointer" }}>{b.icon} {b.name}</span>)}
           </div>
         </div>
         <div className="section">

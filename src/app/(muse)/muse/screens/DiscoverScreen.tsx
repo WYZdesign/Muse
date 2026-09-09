@@ -15,6 +15,7 @@ import { attachSpatialDepth } from "../hooks/useSpatialDepth";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, CONN_FULL } from "../components/badgeInfo";
 import Lightbox from "../components/Lightbox";
+import MuseSpark from "../components/MuseSpark";
 
 export interface DiscoverScreenProps {
   screen: Screen;
@@ -232,21 +233,34 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   }, [screen, currentIdx]);
 
   return (
-    <div className={"screen-el" + (screen === "discover" ? " active" : "")}>
+    <div className={"screen-el" + (screen === "discover" ? " active" : "")} data-screen="discover">
       <div className="discover-wrap">
         <div className="hdr">
           <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "static", left: "auto", top: "auto", transform: "none", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Discover</div>
           <div style={{ flex: 1 }} />
           <div style={{ display: "flex", gap: 4 }}>
-            {!discoverSearchOpen ? (
-              <button className="hdr-btn" style={{ width: 34, height: 34 }} onClick={() => setDiscoverSearchOpen(true)} aria-label="Search"><FiSearch size={16} /></button>
-            ) : (
+            <button
+              className="hdr-btn"
+              style={{ width: 34, height: 34 }}
+              onClick={() => { if (discoverSearchOpen) { setDiscoverSearchOpen(false); setDiscoverSearch(""); } else { setDiscoverSearchOpen(true); } }}
+              aria-label="Search"
+            ><FiSearch size={16} /></button>
+            {discoverSearchOpen && (
               <div style={{ display: "flex", alignItems: "center", gap: 6, animation: "fadeIn .2s ease" }}>
-                <input className="inp" placeholder="Name, style, type, or city..." value={discoverSearch} onChange={e => setDiscoverSearch(e.target.value)} autoFocus style={{ margin: 0, padding: "10px 14px", fontSize: 14, flex: 1, borderRadius: 14, minWidth: 0 }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 2, background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: "3px 5px 3px 14px", flex: 1, minWidth: 0 }}>
+                  <input className="inp" placeholder="Name, style, type, or city..." value={discoverSearch} onChange={e => setDiscoverSearch(e.target.value)} autoFocus style={{ margin: 0, padding: "8px 0", fontSize: 14, flex: 1, minWidth: 0, border: "none", background: "transparent", boxShadow: "none" }} />
+                  <button className="hdr-btn" aria-label="Search" title="Search" style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0 }} onClick={() => { (document.activeElement as HTMLElement)?.blur?.(); }}>
+                    <FiSearch size={15} />
+                  </button>
+                  {discoverSearch.trim() && (
+                    <button className="hdr-btn" aria-label="Clear search" title="Clear" style={{ width: 26, height: 26, borderRadius: "50%", flexShrink: 0, fontSize: 10 }} onClick={() => setDiscoverSearch("")}>
+                      <FiX size={13} />
+                    </button>
+                  )}
+                </div>
                 {discoverSearch.trim() && (
-                  <span style={{ fontSize: 11, fontWeight: 700, color: filteredProfiles.length ? "var(--gold)" : "#ff8a80", padding: "3px 9px", borderRadius: 99, background: "rgba(255,255,255,0.06)", whiteSpace: "nowrap" }}>{filteredProfiles.length} {filteredProfiles.length === 1 ? "match" : "matches"}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: filteredProfiles.length ? "var(--gold)" : "#ff8a80", padding: "3px 9px", borderRadius: 99, background: "rgba(255,255,255,0.06)", whiteSpace: "nowrap", flexShrink: 0 }}>{filteredProfiles.length} {filteredProfiles.length === 1 ? "match" : "matches"}</span>
                 )}
-                <button className="hdr-btn" aria-label="Close search" style={{ width: 30, height: 30, borderRadius: "50%", fontSize: 12 }} onClick={() => { setDiscoverSearchOpen(false); setDiscoverSearch(""); }}>✕</button>
               </div>
             )}
             {!discoverSearchOpen && (
@@ -382,7 +396,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               onPointerDown={(e) => e.stopPropagation()}
                               onClick={(e) => { e.stopPropagation(); togglePhotoLike(heroSrc); }}
                               aria-label={`Like photo ${(currentPhotoIdx ?? 0) + 1}`}
-                            ><span aria-hidden="true">✨</span>{(photoLike[heroSrc]?.count || 0) > 0 && <span style={{ fontSize: 11, fontWeight: 700 }}>{photoLike[heroSrc]?.count}</span>}</button>
+                            ><MuseSpark size={16} /><span style={{ fontSize: 11, fontWeight: 700 }}>{photoLike[heroSrc]?.count || 0}</span></button>
                           )}
                           {showNoteTooltip && (
                             <div style={{ textAlign: "center", padding: "4px 16px 0", animation: "tooltipIn .4s ease" }}>

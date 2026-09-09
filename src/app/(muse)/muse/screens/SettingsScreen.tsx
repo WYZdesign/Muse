@@ -135,6 +135,53 @@ function ToggleRow({ label, checked, onToggle }: { label: string; checked: boole
   );
 }
 
+// Reusable 5-stop opacity slider (Background section). Note: stop labels are
+// 20% → 100% (the lowest stop is 20%, fully transparent is excluded so the
+// backdrop/sprites never vanish entirely). Value maps stop N → opacity where
+// 100% = opacity 1. Persisted to localStorage per-slider; the CSS variable is
+// applied straight to the root so BackgroundScene picks it up live.
+function OpacitySlider({ label, storageKey, cssVar }: { label: string; storageKey: string; cssVar: string }) {
+  const STEPS = [0.2, 0.4, 0.6, 0.8, 1.0];
+  const LABELS = ["20%", "40%", "60%", "80%", "100%"];
+  const [idx, setIdx] = useState<number>(() => {
+    try {
+      const v = parseFloat(localStorage.getItem(storageKey) || "1");
+      return Math.max(0, Math.min(4, Math.round((isNaN(v) ? 1 : v) * 4)));
+    } catch { return 4; }
+  });
+  useEffect(() => {
+    try { document.documentElement.style.setProperty(cssVar, String(STEPS[idx])); } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const handleSlide = (i: number) => {
+    setIdx(i);
+    try { localStorage.setItem(storageKey, String(STEPS[i])); } catch {}
+    try { document.documentElement.style.setProperty(cssVar, String(STEPS[i])); } catch {}
+  };
+  return (
+    <div style={{ padding: "10px 0" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{label}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--gold)" }}>{LABELS[idx]}</span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={4}
+        step={1}
+        value={idx}
+        onChange={e => handleSlide(Number(e.target.value))}
+        style={{ width: "100%", accentColor: "var(--gold)" }}
+      />
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+        {LABELS.map((l, i) => (
+          <span key={i} style={{ fontSize: 10, color: "var(--muted)" }}>{l}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export const SettingsScreen = memo(function SettingsScreen({
   screen,
   showScreen,
@@ -377,7 +424,7 @@ export const SettingsScreen = memo(function SettingsScreen({
   return (
     <div className="phone-wrap">
       <div className="phone" id="muse-app">
-        <div className="hdr" style={{ display: "grid", gridTemplateColumns: "42px 1fr 42px", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
+        <div className="hdr" style={{ display: "grid", gridTemplateColumns: "42px 1fr 42px", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 16px` }}>
           <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
           <div className="logo-link" style={{
             fontSize: 37.5,
@@ -395,7 +442,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             padding: 0,
             whiteSpace: "nowrap",
             animation: "gradientShift 6s ease-in-out infinite",
-            lineHeight: "38px",
+            lineHeight: "48px",
             display: "block",
             justifySelf: "center",
           }}>Settings</div>
@@ -488,6 +535,43 @@ export const SettingsScreen = memo(function SettingsScreen({
           </div>
 
           <div className="settings-group">
+            <div className="settings-group-title">Appearance</div>
+            <div className="theme-grid" style={{ margin: "12px 0 4px" }}>
+              {/* Audit fix (2026-09-08): t.slice(0,3) gave "deepspace" and
+                  "deepsea" the same "Dee" label — two swatches reading
+                  identically, distinguishable only by color/hover title. A
+                  fixed abbreviation map keeps every label unique.
+                  Second audit fix (2026-09-08): the selected swatch used to
+                  replace its label outright with a bare "✓", so the one
+                  swatch you'd actually want to identify — the active theme —
+                  was the one swatch with no name on it. Now the checkmark is
+                  appended after the label instead of replacing it.
+                  Torreé: light mode is now its own section under the dark
+                  themes instead of being mixed into the same grid. */}
+              {DARK_THEMES.map(t => (
+                <div key={t} role="radio" aria-checked={theme === t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme(t); } }} onClick={() => setTheme(t)} style={{ textTransform: "uppercase" }}>{theme === t ? `${THEME_ABBR[t]} ✓` : THEME_ABBR[t]}</div>
+              ))}
+            </div>
+            <div className="settings-group-title" style={{ marginTop: 16 }}>Light Mode</div>
+            <div className="theme-grid" style={{ margin: "10px 0 4px" }}>
+              {LIGHT_THEMES.map(t => (
+                <div key={t} role="radio" aria-checked={theme === t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme(t); } }} onClick={() => setTheme(t)} style={{ textTransform: "uppercase" }}>{theme === t ? `${THEME_ABBR[t]} ✓` : THEME_ABBR[t]}</div>
+              ))}
+            </div>
+          </div>
+
+          <div className="settings-group">
+            <div className="settings-group-title">Quests &amp; Rewards</div>
+            {rewardsItems.map(renderRow)}
+          </div>
+
+          <div className="settings-group">
+            <div className="settings-group-title">Background</div>
+            <OpacitySlider label="Scene Opacity" storageKey="muse_bg_opacity" cssVar="--scene-opacity" />
+            <OpacitySlider label="Sprite Opacity" storageKey="muse_sprite_opacity" cssVar="--sprite-opacity" />
+          </div>
+
+          <div className="settings-group">
             <div className="settings-group-title">Privacy & Safety</div>
             {privacyItems.map(renderRow)}
             <ToggleRow
@@ -518,66 +602,6 @@ export const SettingsScreen = memo(function SettingsScreen({
           <div className="settings-group">
             <div className="settings-group-title">Payments & Subscription</div>
             {paymentItems.map(renderRow)}
-          </div>
-
-          <div className="settings-group">
-            <div className="settings-group-title">Quests & Rewards</div>
-            {rewardsItems.map(renderRow)}
-          </div>
-
-          <div className="settings-group">
-            <div className="settings-group-title">Appearance</div>
-            <div className="theme-grid" style={{ margin: "12px 0 4px" }}>
-              {/* Audit fix (2026-09-08): t.slice(0,3) gave "deepspace" and
-                  "deepsea" the same "Dee" label — two swatches reading
-                  identically, distinguishable only by color/hover title. A
-                  fixed abbreviation map keeps every label unique.
-                  Second audit fix (2026-09-08): the selected swatch used to
-                  replace its label outright with a bare "✓", so the one
-                  swatch you'd actually want to identify — the active theme —
-                  was the one swatch with no name on it. Now the checkmark is
-                  appended after the label instead of replacing it.
-                  Torreé: light mode is now its own section under the dark
-                  themes instead of being mixed into the same grid. */}
-              {DARK_THEMES.map(t => (
-                <div key={t} role="radio" aria-checked={theme === t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme(t); } }} onClick={() => setTheme(t)} style={{ textTransform: "uppercase" }}>{theme === t ? `${THEME_ABBR[t]} ✓` : THEME_ABBR[t]}</div>
-              ))}
-            </div>
-            <div className="settings-group-title" style={{ marginTop: 16 }}>Light Mode</div>
-            <div className="theme-grid" style={{ margin: "10px 0 4px" }}>
-              {LIGHT_THEMES.map(t => (
-                <div key={t} role="radio" aria-checked={theme === t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme(t); } }} onClick={() => setTheme(t)} style={{ textTransform: "uppercase" }}>{theme === t ? `${THEME_ABBR[t]} ✓` : THEME_ABBR[t]}</div>
-              ))}
-            </div>
-          </div>
-
-          <div className="settings-group">
-            <div className="settings-group-title">Background</div>
-            <div style={{ padding: "10px 0" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Scene Transparency</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--gold)" }}>{["20%", "40%", "60%", "80%", "100%"][Math.round((() => { try { return parseFloat(localStorage.getItem("muse_bg_opacity") || "1"); } catch { return 1; } })() * 4)] || "100%"}</span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={4}
-                step={1}
-                defaultValue={(() => { try { return String(Math.round(parseFloat(localStorage.getItem("muse_bg_opacity") || "1") * 4)); } catch { return "4"; } })()}
-                onChange={e => {
-                  const steps = [0.2, 0.4, 0.6, 0.8, 1.0];
-                  const val = steps[Number(e.target.value)];
-                  try { localStorage.setItem("muse_bg_opacity", String(val)); } catch {}
-                  document.documentElement.style.setProperty("--scene-opacity", String(val));
-                }}
-                style={{ width: "100%", accentColor: "var(--gold)" }}
-              />
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                {["20%", "40%", "60%", "80%", "100%"].map((l, i) => (
-                  <span key={i} style={{ fontSize: 10, color: "var(--muted)" }}>{l}</span>
-                ))}
-              </div>
-            </div>
           </div>
 
           <div className="settings-group">

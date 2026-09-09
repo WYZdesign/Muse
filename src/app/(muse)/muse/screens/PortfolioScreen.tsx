@@ -28,7 +28,7 @@ export const PortfolioScreen = memo(function PortfolioScreen({
   showToast,
 }: PortfolioScreenProps) {
   return (
-    <div className={"screen-el" + (screen === "portfolio" ? " active" : "")}>
+    <div className={"screen-el" + (screen === "portfolio" ? " active" : "")} data-screen="portfolio">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{

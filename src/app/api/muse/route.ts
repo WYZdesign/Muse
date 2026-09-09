@@ -10,7 +10,7 @@ import {
 } from "@/lib/muse-actions/shared";
 import { questGetQuests, questTrackQuest, questClaimQuest, questNotifyClaimable } from "@/lib/muse-actions/quests";
 import { albumCreate, albumUpdate, albumDelete, albumAddPhoto, albumRemovePhoto, albumGrantAccess, albumRevokeAccess, albumListAccess, albumView, albumLike } from "@/lib/muse-actions/albums";
-import { feedbackGetNotifications, feedbackMarkAllRead, feedbackReportBug, feedbackSubmitIdea } from "@/lib/muse-actions/feedback";
+import { feedbackGetNotifications, feedbackMarkAllRead, feedbackDeleteNotification, feedbackReportBug, feedbackSubmitIdea } from "@/lib/muse-actions/feedback";
 import { adminResolveAppeal, adminBrain, adminReports, adminStrikes, adminSuspendUser, adminScanNsfw, adminContentScans, adminResolveIncident, adminResolveReport, adminRefunds, adminResolveRefund } from "@/lib/muse-actions/admin";
 import { disclosureCreate, disclosureConfirm, disclosureGet, strikesGet, strikeAppeal } from "@/lib/muse-actions/disclosures";
 import { communityJoin, communityLeave, communityCreate, eventCreate, eventRsvp, eventCancelRsvp, communityUpdateRules, communityKick, communityBan, communityUnban, communitySetRole, communityGetBans, communityMute, communityUnmute, communityGetMutes, communityGetJoinRequests, communityApproveJoinRequest, communityDenyJoinRequest } from "@/lib/muse-actions/communities";
@@ -204,7 +204,8 @@ ACTIONS["admin-refunds"] = adminRefunds;
 ACTIONS["admin-resolve-refund"] = adminResolveRefund;
 
 ACTIONS["get-notifications"] = feedbackGetNotifications;
-ACTIONS["mark-all-notifications-read"] = feedbackMarkAllRead;
+  ACTIONS["mark-all-notifications-read"] = feedbackMarkAllRead;
+  ACTIONS["delete-notification"] = feedbackDeleteNotification;
 ACTIONS["report-bug"] = feedbackReportBug;
 ACTIONS["submit-idea"] = feedbackSubmitIdea;
 

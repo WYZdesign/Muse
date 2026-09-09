@@ -58,6 +58,16 @@ export async function feedbackMarkAllRead({ sb, profile }: ActionContext) {
   return NextResponse.json({ success: true });
 }
 
+export async function feedbackDeleteNotification({ sb, profile, rest }: ActionContext) {
+  const id = rest.id;
+  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  // Only the owner can delete their own notification — scope by user_id so a
+  // guessed foreign id can't remove someone else's row.
+  const { error } = await sb.from("muse_notifications").delete().eq("user_id", profile.id).eq("id", id);
+  if (error) return safeServerError(error, "delete notification");
+  return NextResponse.json({ success: true });
+}
+
 export async function feedbackReportBug({ sb, profile, rest }: ActionContext) {
   if (!await checkRateUser(profile.id, "report-bug", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { category, description, steps, expected, actual } = rest;

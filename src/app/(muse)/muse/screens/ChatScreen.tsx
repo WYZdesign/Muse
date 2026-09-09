@@ -78,7 +78,7 @@ export const ChatScreen = memo(function ChatScreen({
   // not a style choice. This menu is that entry point.
   const [showChatMenu, setShowChatMenu] = useState(false);
   return (
-    <div className={"screen-el" + (screen === "chat" && chatTarget ? " active" : "")}>
+    <div className={"screen-el" + (screen === "chat" && chatTarget ? " active" : "")} data-screen="chat">
       {chatTarget && (
         <div className="chat-wrap">
           <div className="chat-header">
@@ -160,8 +160,8 @@ export const ChatScreen = memo(function ChatScreen({
             ))}
           </div>
           <div className="chat-input-wrap">
-            <label style={{ cursor: "pointer", color: "var(--muted)", fontSize: 18, display: "flex", alignItems: "center" }}>
-              <FiImage size={18} />
+            <label style={{ cursor: "pointer", color: "var(--muted)", fontSize: 18, display: "flex", alignItems: "center", alignSelf: "center" }}>
+              <FiImage size={22} />
               <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
                 const f = e.target.files?.[0];
                 if (!f) return;

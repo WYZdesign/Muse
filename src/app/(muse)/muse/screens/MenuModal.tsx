@@ -2,7 +2,7 @@
 
 import React, { memo, useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiX, FiBell, FiHeart, FiMessageCircle, FiZap, FiPackage, FiBriefcase } from "react-icons/fi";
+import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiX, FiBell, FiHeart, FiMessageCircle, FiZap, FiPackage, FiBriefcase, FiTrash2 } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import StreakWidget from "../components/StreakWidget";
 import { useFocusTrap } from "../hooks/useFocusTrap";
@@ -35,6 +35,144 @@ function NotificationAvatar({ name, src, letter }: { name?: string; src?: string
   return <Image loading="lazy" src={src} alt="Avatar" width={40} height={40} onError={() => setFailed(true)} style={{ borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />;
 }
 
+// Swipe-to-dismiss notification row. Horizontal swipe (touch OR mouse) translates
+// the row with the finger, reveals a red delete tint behind it, and on release
+// past the 90px threshold slides the row fully off-screen, collapses its height,
+// then removes it (and fires the backend delete). Only one row is draggable at a
+// time (governed by activeDragId from the parent); while one is active, all other
+// rows' handlers short-circuit and stay inert.
+function SwipeableNotification({ a, notifIcon, activeDragId, setActiveDragId, onRemove }: {
+  a: any;
+  notifIcon: React.ReactNode;
+  activeDragId: any;
+  setActiveDragId: (id: any) => void;
+  onRemove: (id: any) => void;
+}) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const startRef = useRef<{ x: number; y: number } | null>(null);
+  const horizDragRef = useRef(false);
+  const dxRef = useRef(0);
+  const doneRef = useRef(false);
+  const [dx, setDx] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [collapsing, setCollapsing] = useState(false);
+  const [gone, setGone] = useState(false);
+  const idStr = String(a.id);
+
+  // Native touchmove handler (React attaches touch listeners as passive, so
+  // e.preventDefault() there won't work) — blocks the conn-scroll parent from
+  // scrolling while a horizontal swipe is in progress.
+  useEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    const onTouchMove = (e: TouchEvent) => {
+      if (horizDragRef.current && e.cancelable) e.preventDefault();
+    };
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onTouchMove);
+  }, []);
+
+  const begin = (clientX: number, clientY: number) => {
+    if (doneRef.current || gone) return;
+    if (startRef.current) return; // already actively tracking this gesture
+    if (activeDragId != null && activeDragId !== idStr) return; // another row is dragging — stay inert
+    startRef.current = { x: clientX, y: clientY };
+    horizDragRef.current = false;
+    dxRef.current = 0;
+    setDx(0);
+    setDragging(true);
+    setActiveDragId(idStr);
+  };
+
+  const moveTo = (clientX: number, clientY: number) => {
+    if (!startRef.current) return;
+    const x = clientX - startRef.current.x;
+    const y = clientY - startRef.current.y;
+    if (!horizDragRef.current) {
+      if (Math.abs(x) > 12 && Math.abs(x) > Math.abs(y)) {
+        horizDragRef.current = true;
+      } else if (Math.abs(y) > Math.abs(x)) {
+        // Vertical intent — hand back to the scroll container and abort.
+        startRef.current = null;
+        horizDragRef.current = false;
+        dxRef.current = 0;
+        setDx(0);
+        setDragging(false);
+        setActiveDragId(null as any);
+        return;
+      }
+    }
+    if (horizDragRef.current) {
+      dxRef.current = Math.max(-280, Math.min(280, x));
+      setDx(dxRef.current);
+    }
+  };
+
+  const end = () => {
+    if (!startRef.current) { setDragging(false); return; }
+    startRef.current = null;
+    setDragging(false);
+    setActiveDragId(null as any);
+    horizDragRef.current = false;
+    if (Math.abs(dxRef.current) > 90) {
+      setRemoving(true);
+      setTimeout(() => {
+        if (doneRef.current) return;
+        doneRef.current = true;
+        setCollapsing(true);
+        setTimeout(() => { onRemove(idStr); setGone(true); }, 250);
+      }, 250);
+    } else {
+      dxRef.current = 0;
+      setDx(0);
+    }
+  };
+
+  const cancel = () => {
+    startRef.current = null;
+    horizDragRef.current = false;
+    dxRef.current = 0;
+    setDx(0);
+    setDragging(false);
+    setActiveDragId(null as any);
+  };
+
+  if (gone) return null;
+
+  const offPct = dx > 0 ? "120%" : "-120%";
+
+  return (
+    <div data-swipe-row={idStr} style={{ position: "relative", overflow: "hidden", borderRadius: 8, marginBottom: 4, maxHeight: collapsing ? 0 : 400, opacity: collapsing ? 0 : 1, transition: dragging || removing ? "none" : "max-height 220ms ease, opacity 220ms ease" }}>
+      {/* Red delete reveal behind the sliding row */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", background: "linear-gradient(90deg, rgba(255,55,55,0.45) 0%, rgba(255,55,55,0.05) 30%, rgba(120,20,20,0.10) 70%, rgba(255,55,55,0.45) 100%)", opacity: dragging || removing ? (removing ? 1 : 0.2 + Math.min(1, Math.abs(dx) / 90) * 0.8) : 0, transition: "opacity 160ms ease", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ color: "#ff8a80", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 5, opacity: dragging || removing ? 1 : 0, background: "rgba(0,0,0,0.35)", padding: "3px 8px", borderRadius: 99, transition: "opacity 160ms ease" }}><FiTrash2 size={14} /> Swipe to remove</span>
+      </div>
+      <div
+        ref={rowRef}
+        onPointerDown={(e) => { if (e.pointerType === "mouse" && e.button !== 0) return; begin(e.clientX, e.clientY); if (startRef.current) { try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {} } }}
+        onPointerMove={(e) => moveTo(e.clientX, e.clientY)}
+        onPointerUp={end}
+        onPointerCancel={cancel}
+        onTouchStart={(e) => begin(e.touches[0]?.clientX ?? 0, e.touches[0]?.clientY ?? 0)}
+        onTouchMove={(e) => moveTo(e.touches[0]?.clientX ?? 0, e.touches[0]?.clientY ?? 0)}
+        onTouchEnd={end}
+        onTouchCancel={cancel}
+        style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1, background: a.read ? "transparent" : "rgba(255,215,0,0.03)", position: "relative", zIndex: 1, touchAction: "pan-y", userSelect: dragging ? "none" : undefined, transform: removing ? `translateX(${offPct})` : `translateX(${dx}px)`, transition: dragging ? "none" : "transform 220ms ease", willChange: "transform" }}
+      >
+        <NotificationAvatar name={a.from} src={a.avatar} letter={a._systemAvatar} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, color: "var(--text)", display: "flex", alignItems: "flex-start", gap: 6 }}>
+            <span style={{ flexShrink: 0, marginTop: 2 }}>{notifIcon}</span>
+            <span><strong>{a.from}</strong> {a.text}</span>
+          </div>
+          <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{new Date(a.created_at).toLocaleString()}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen, onStreakTap, onMarkAllRead, briefTitleById }: ActivityPanelProps) {
   const [hubTab, setHubTab] = useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
   const [myReports, setMyReports] = useState<any[] | null>(null);
@@ -42,6 +180,20 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
   // Bumped on every loadNotifications call, and stamped onto that call's own
   // closure as reqId — see the comment below for why.
   const notifReqIdRef = useRef(0);
+  // Swipe-to-dismiss: only one row is draggable at a time. activeDragId carries
+  // the id of the row currently being dragged so every other SwipeableNotification
+  // short-circuits its handlers. pendingDeletionRef guards the backend call so a
+  // notification is deleted exactly once (it also stays deleted on reload).
+  const [activeDragId, setActiveDragId] = useState<any>(null);
+  const pendingDeletionRef = useRef<Set<any>>(new Set());
+  const removeNotification = useCallback((id: any) => {
+    if (pendingDeletionRef.current.has(id)) return;
+    pendingDeletionRef.current.add(id);
+    setNotifications(prev => prev.filter(n => String(n.id) !== String(id)));
+    if (authFetch) {
+      authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete-notification", id }) }).catch(() => {});
+    }
+  }, [authFetch]);
   const [notifFilter, setNotifFilter] = useState<"all" | "unread" | "match" | "message" | "booking" | "quest" | "brief" | "community">("all");
   const [notifOffset, setNotifOffset] = useState(0);
   const [notifHasMore, setNotifHasMore] = useState(true);
@@ -181,16 +333,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
                 };
                 const notifIcon = typeIcons[a.type] || <FiBell size={16} color="var(--gold)" />;
                 return (
-                <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1, background: a.read ? "transparent" : "rgba(255,215,0,0.03)", borderRadius: 8, marginBottom: 4 }}>
-                  <NotificationAvatar name={a.from} src={a.avatar} letter={a._systemAvatar} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, color: "var(--text)", display: "flex", alignItems: "flex-start", gap: 6 }}>
-                      <span style={{ flexShrink: 0, marginTop: 2 }}>{notifIcon}</span>
-                      <span><strong>{a.from}</strong> {a.text}</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{new Date(a.created_at).toLocaleString()}</div>
-                  </div>
-                </div>
+                  <SwipeableNotification key={a.id} a={a} notifIcon={notifIcon} activeDragId={activeDragId} setActiveDragId={setActiveDragId} onRemove={removeNotification} />
                 );
               })}
           {/* Audit fix (2026-09-08): notifHasMore starts true and is only
@@ -450,7 +593,7 @@ export const MenuModal = memo(function MenuModal({
   const [proShineOn, setProShineOn] = useState(false);
   useEffect(() => {
     if (proShineOn) return;
-    const delay = 2800 + Math.random() * 2400;
+    const delay = 3600 + Math.random() * 5200;
     const t = setTimeout(() => setProShineOn(true), delay);
     return () => clearTimeout(t);
   }, [proShineOn]);
@@ -517,7 +660,7 @@ export const MenuModal = memo(function MenuModal({
             same top bar every other hamburger sub-screen uses, centered next to the
             existing back arrow, just like Settings/Your Profile above. */}
         {hamburgerScreen === "activity" && (
-          <div className="hamburger-menu-title" style={{ backgroundImage: "linear-gradient(90deg,#CE93D8,#B388FF,#90CAF9,#CE93D8,#B388FF,#CE93D8)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", animation: "lavaFlow 7s ease-in-out infinite" }}>Your Activity</div>
+          <div className="hamburger-menu-title" style={{ color: "var(--text)", WebkitTextFillColor: "currentColor", background: "none", animation: "none", fontSize: 17, fontWeight: 700 }}>Activity</div>
         )}
         {!hamburgerScreen ? (
           <>

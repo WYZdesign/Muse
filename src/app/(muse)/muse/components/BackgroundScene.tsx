@@ -187,28 +187,34 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
         <div className="scene-orb orb-amber" /><div className="scene-orb orb-peach" />
         <div className="scene-orb orb-sunset" /><div className="scene-orb orb-honey" />
       </div>
-      <div className="star-field">
-        {starPos.map((s,i) => (
-          <div key={i} className={"star"+(i%5===0?" bright":"")+(i%8===0?" warm":"")+(i%13===0?" blue":"")+(i%17===0?" gold":"")} style={{left:s.l,top:s.t,animationDuration:s.d,animationDelay:s.dl}} />
-        ))}
+      {/* Sprite layer (comets, fog, aurora, sparkles, embers, particles) is a
+          separate opacity channel from the .scene gradient above so the
+          Settings Background section can dim them independently via
+          --sprite-opacity (SettingsScreen's "Sprite Opacity" slider). */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", opacity: "var(--sprite-opacity, 1)" } as React.CSSProperties}>
+        <div className="star-field">
+          {starPos.map((s,i) => (
+            <div key={i} className={"star"+(i%5===0?" bright":"")+(i%8===0?" warm":"")+(i%13===0?" blue":"")+(i%17===0?" gold":"")} style={{left:s.l,top:s.t,animationDuration:s.d,animationDelay:s.dl}} />
+          ))}
+        </div>
+        <canvas className="comet-field" ref={cometRef} />
+        <div className="nebula-fog nf-1" /><div className="nebula-fog nf-2" /><div className="nebula-fog nf-3" />
+        <div className="nebula-fog nf-4" /><div className="nebula-fog nf-5" /><div className="nebula-fog nf-6" />
+        <div className="nebula-fog nf-7" /><div className="nebula-fog nf-8" />
+        <div className="aurora-strip aurora-s1" /><div className="aurora-strip aurora-s2" />
+        <div className="aurora-strip aurora-s3" />
+        <div className="sparkle-field">
+          {spPos.map((s,i) => (
+            <div key={i} className="sparkle-particle" style={{left:s.l,top:s.t,animationDuration:s.d,animationDelay:s.dl,color:s.c,background:s.c}} />
+          ))}
+        </div>
+        <div className="ember-field">
+          {emPos.map((s,i) => (
+            <div key={i} className="ember" style={{left:s.l,animationDuration:s.d,animationDelay:s.dl,width:s.w,height:s.h}} />
+          ))}
+        </div>
+        <div className="particles" ref={particlesRef} />
       </div>
-      <canvas className="comet-field" ref={cometRef} />
-      <div className="nebula-fog nf-1" /><div className="nebula-fog nf-2" /><div className="nebula-fog nf-3" />
-      <div className="nebula-fog nf-4" /><div className="nebula-fog nf-5" /><div className="nebula-fog nf-6" />
-      <div className="nebula-fog nf-7" /><div className="nebula-fog nf-8" />
-      <div className="aurora-strip aurora-s1" /><div className="aurora-strip aurora-s2" />
-      <div className="aurora-strip aurora-s3" />
-      <div className="sparkle-field">
-        {spPos.map((s,i) => (
-          <div key={i} className="sparkle-particle" style={{left:s.l,top:s.t,animationDuration:s.d,animationDelay:s.dl,color:s.c,background:s.c}} />
-        ))}
-      </div>
-      <div className="ember-field">
-        {emPos.map((s,i) => (
-          <div key={i} className="ember" style={{left:s.l,animationDuration:s.d,animationDelay:s.dl,width:s.w,height:s.h}} />
-        ))}
-      </div>
-      <div className="particles" ref={particlesRef} />
       {flash && <div className="screen-flash" style={{background:flash}} />}
     </>
   );

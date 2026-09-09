@@ -6,6 +6,7 @@ import { STRINGS } from "@/lib/strings";
 import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX, FiShield } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { BADGE_COLORS } from "../components/badgeColors";
+import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 import type { Screen, CommunityRule, CommunityMember } from "../components/types";
 import { COMMUNITIES, EVENTS } from "../components/types";
 import { getCommunityShareUrl, getEventShareUrl } from "@/lib/urls";
@@ -75,6 +76,7 @@ export const CommunityScreen = memo(function CommunityScreen({
   const [joinLoading, setJoinLoading] = useState<string | null>(null);
   const [groupMembers, setGroupMembers] = useState<CommunityMember[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
+  const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
 
   useEffect(() => {
     if (screen !== "community") return;
@@ -165,7 +167,7 @@ export const CommunityScreen = memo(function CommunityScreen({
   const filteredGroups = groupCatFilter === "all" ? groups : groups.filter((c: any) => c.cat === groupCatFilter);
 
   return (
-    <div className={"screen-el" + (screen === "community" ? " active" : "")}>
+    <div className={"screen-el" + (screen === "community" ? " active" : "")} data-screen="community">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#FF8A80,#FF4757,#FFD700,#FF8A80,#FF4757,#FF8A80)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", fontWeight: 800, animation: "shimmer 8s ease-in-out infinite" }}>Community</div>
@@ -244,8 +246,8 @@ export const CommunityScreen = memo(function CommunityScreen({
                 <>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--text2)" }}><FiUsers size={14} /> {detailItem.members} members</span>
-                    {detailItem.cat && <span style={{ fontSize: 12, padding: "4px 12px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontWeight: 600 }}>{detailItem.cat}</span>}
-                    {detailItem.nsfw && <span style={{ fontSize: 12, padding: "4px 12px", borderRadius: 99, background: "rgba(255,69,0,0.15)", border: "1px solid rgba(255,69,0,0.3)", color: "#ff6b6b", fontWeight: 600 }}>18+</span>}
+                    {detailItem.cat && <span role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: detailItem.cat, desc: "The category this community belongs to.", icon: "🏷", color: "#FFD700" })} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontWeight: 600, cursor: "pointer" }}>{detailItem.cat}</span>}
+                    {detailItem.nsfw && <span role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: "18+", desc: "Adult / NSFW community — only shown to verified adults.", icon: "🔞", color: "#ff6b6b" })} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 99, background: "rgba(255,69,0,0.15)", border: "1px solid rgba(255,69,0,0.3)", color: "#ff6b6b", fontWeight: 600, cursor: "pointer" }}>18+</span>}
                   </div>
                   <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6, marginBottom: 20 }}>{detailItem.desc || "No description yet."}</div>
 
@@ -288,7 +290,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                                   <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "var(--muted)", flexShrink: 0 }}>{(m.user_name || "?").trim().charAt(0).toUpperCase()}</div>
                                 )}
                                 <span style={{ fontSize: 13, color: "var(--text2)", flex: 1 }}>{m.user_name || "Member"}</span>
-                                {roleBadge && <span style={{ fontSize: 10, padding: "2px 9px", borderRadius: 99, background: roleBadge.bg, border: `1px solid ${roleBadge.bd}`, color: roleBadge.c, fontWeight: 700, textTransform: "capitalize" }}>{m.role}</span>}
+                                {roleBadge && <span role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: m.role, desc: m.role === "admin" ? "This member administers the community — they manage the group and its rules." : "This member is a moderator — they help keep the community welcoming and on-topic.", icon: m.role === "admin" ? "🛡" : "✋", color: roleBadge.c })} style={{ fontSize: 10, padding: "2px 9px", borderRadius: 99, background: roleBadge.bg, border: `1px solid ${roleBadge.bd}`, color: roleBadge.c, fontWeight: 700, textTransform: "capitalize", cursor: "pointer" }}>{m.role}</span>}
                               </div>
                             );
                           })}
@@ -386,7 +388,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                   if (joinedIds.has(c.id)) badges.push({ t: "✓ Joined", ...BADGE_COLORS.green });
                   else badges.push({ t: "Open to Join", ...BADGE_COLORS.lavender });
                   if (c.nsfw) badges.push({ t: "18+", ...BADGE_COLORS.red });
-                  return badges.map(b => <span key={b.t} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 600 }}>{b.t}</span>);
+                  return badges.map(b => <span key={b.t} role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: b.t, desc: b.t === "✓ Joined" ? "You've joined this community." : b.t === "Open to Join" ? "This community is open — anyone can join." : b.t === "18+" ? "Adult / NSFW community — only shown to verified adults." : b.t === "Large" ? "A large community with 500+ members." : b.t === "Growing" ? "A growing community with 100+ members." : b.t === "Intimate" ? "An intimate community with under 100 members — close and tight-knit." : "The category this community belongs to.", icon: b.t === "✓ Joined" ? "✅" : b.t === "Open to Join" ? "👋" : b.t === "18+" ? "🔞" : b.t === "Large" ? "👥" : b.t === "Growing" ? "🌱" : b.t === "Intimate" ? "💜" : "🏷", color: b.c });}} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 600, cursor: "pointer" }}>{b.t}</span>);
                 })()}
               </div>
             </div>
@@ -431,7 +433,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                   if (rsvpdEvents.includes(ev.id)) badges.push({ t: "✓ Going", ...BADGE_COLORS.green });
                   else badges.push({ t: "RSVP open", ...BADGE_COLORS.lavender });
                   if (ev.nsfw) badges.push({ t: "18+", ...BADGE_COLORS.red });
-                  return badges.map(b => <span key={b.t} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 600 }}>{b.t}</span>);
+                  return badges.map(b => <span key={b.t} role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: b.t, desc: b.t === "Today" ? "This event is happening today." : b.t === "This week" ? "This event is happening this week." : b.t === "Upcoming" ? "This event is scheduled for a later date." : b.t === "Online" ? "This event takes place online / virtually." : b.t === "In person" ? "This event is held in person at a live location." : b.t === "✓ Going" ? "You've RSVP'd to this event." : b.t === "RSVP open" ? "This event is open for RSVPs right now." : b.t === "18+" ? "Adult / NSFW event — only shown to verified adults." : "This event's status.", icon: b.t === "Today" ? "📌" : b.t === "This week" ? "📅" : b.t === "Upcoming" ? "🗓" : b.t === "Online" ? "💻" : b.t === "In person" ? "📍" : b.t === "✓ Going" ? "✅" : b.t === "RSVP open" ? "🎟" : "🔞", color: b.c });}} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 600, cursor: "pointer" }}>{b.t}</span>);
                 })()}
               </div>
             </div>
@@ -442,6 +444,7 @@ export const CommunityScreen = memo(function CommunityScreen({
           </div>
         ))}
       </div>
+      <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
       <Nav active="community" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );

@@ -67,7 +67,7 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
 
   if (loading) {
     return (
-      <div className={"screen-el" + (screen === "analytics" ? " active" : "")} style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      <div className={"screen-el" + (screen === "analytics" ? " active" : "")} style={{ display: "flex", flexDirection: "column", height: "100vh" }} data-screen="analytics">
         <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
           <button className="chat-back" onClick={() => showScreen("profile")}><FiArrowLeft size={20} /></button>
           <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#B388FF,#80DEEA,#90CAF9,#B388FF,#80DEEA,#B388FF)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, whiteSpace: "nowrap", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Analytics</div>

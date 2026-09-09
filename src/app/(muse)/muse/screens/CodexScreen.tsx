@@ -82,7 +82,7 @@ export const CodexScreen = memo(function CodexScreen({
   const [tab, setTab] = useState<"glossary" | "codex">("glossary");
 
   return (
-    <div className={"screen-el" + (screen === "codex" ? " active" : "")}>
+    <div className={"screen-el" + (screen === "codex" ? " active" : "")} data-screen="codex">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("profile")}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{ fontSize: 37.5, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontWeight: 800, color: "var(--gold)", position: "relative", margin: 0, padding: 0, display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}> Glossary + Codex</div>

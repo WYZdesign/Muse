@@ -38,6 +38,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
   const [filter, setFilter] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [streakOpen, setStreakOpen] = useState(true);
 
   const quests = rotateQuests(allQuests);
 
@@ -117,7 +118,33 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
               </div>
             </div>
           </div>
-          <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
+          {streakOpen ? (
+            <div
+              role="button"
+              tabIndex={0}
+              aria-expanded={streakOpen}
+              onClick={() => setStreakOpen(false)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStreakOpen(false); } }}
+              style={{ flexShrink: 0, cursor: "pointer" }}
+            >
+              <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
+              <div style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", marginTop: 4 }}>▲ Collapse</div>
+            </div>
+          ) : (
+            <div
+              role="button"
+              tabIndex={0}
+              aria-expanded={streakOpen}
+              onClick={() => setStreakOpen(true)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStreakOpen(true); } }}
+              style={{ flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+            >
+              <span style={{ fontSize: 22 }}>🔥</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: "var(--gold)" }}>{loginStreak}</span>
+              <span style={{ fontSize: 12, color: "var(--text2)" }}>day streak</span>
+              <span style={{ marginLeft: "auto", color: "var(--muted)", fontSize: 13 }}>▼</span>
+            </div>
+          )}
         </div>
 
         {/* Filter Tabs — color-fill when selected */}
@@ -228,9 +255,9 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                 <div style={{
                   display: "flex",
                   alignItems: "center",
-                  padding: "12px 16px 12px 20px",
+                  padding: "20px 16px 20px 20px",
                   gap: 12,
-                  minHeight: 48,
+                  minHeight: 64,
                 }}>
                   {/* Emoji — no bubble, just raw character */}
                   <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}>{q.icon}</span>

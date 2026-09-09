@@ -6,6 +6,7 @@ import { FiArrowLeft } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { ALL_STUDIOS, type StudioProfile } from "../components/studios";
 import type { Screen } from "../components/types";
+import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 
 interface StudiosScreenProps {
   screen: Screen;
@@ -27,6 +28,7 @@ export const StudiosScreen = memo(function StudiosScreen({
   const [oracleQ, setOracleQ] = useState("");
   const [oracleAnswer, setOracleAnswer] = useState<string | null>(null);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
 
   const studio: StudioProfile = ALL_STUDIOS.find((s) => s.id === activeStudio) || ALL_STUDIOS[0];
   const building = studio.buildings.find((b) => b.id === activeBuilding) || studio.buildings[0];
@@ -48,7 +50,7 @@ export const StudiosScreen = memo(function StudiosScreen({
   };
 
   return (
-    <div className={"screen-el" + (screen === "studios" ? " active" : "")}>
+    <div className={"screen-el" + (screen === "studios" ? " active" : "")} data-screen="studios">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("sessions")} aria-label="Back"><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#E07A5F,#F4A261,#81B29A,#E07A5F,#F4A261,#E07A5F)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>LA Studios</div>
@@ -101,7 +103,7 @@ export const StudiosScreen = memo(function StudiosScreen({
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 700 }}>{s.name}</div>
-                <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 1, lineHeight: 1.35 }}>{s.feature}</div>
+                <div role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: s.feature, desc: "A standout feature of this studio space — what makes it unique for your shoot.", icon: "🏠", color: studio.color[0] })} style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 1, lineHeight: 1.35, cursor: "pointer" }}>{s.feature}</div>
                 {/* Audit fix (2026-09-08): OTHER_STUDIOS (Apex, Hubble) use price:"hourly"
                     as a placeholder for pending-partnership listings, since their real
                     rates aren't in yet (see studios.ts comments). This unconditionally
@@ -143,6 +145,7 @@ export const StudiosScreen = memo(function StudiosScreen({
           {oracleAnswer && <div style={{ marginTop: 10, fontSize: 12, color: "var(--text2)", lineHeight: 1.6, padding: "10px 12px", borderRadius: 10, background: "rgba(255,215,0,0.06)" }}>{oracleAnswer}</div>}
         </div>
       </div>
+      <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
       <Nav active="sessions" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );

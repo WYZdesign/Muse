@@ -53,7 +53,7 @@ export const FD_STUDIO: StudioProfile = {
   id: "fd",
   name: "FD Photo Studio",
   tagline: "LA's largest studio network — 6 buildings, 30+ stages, from $29.99/hr",
-  color: ["#E91E63", "#9C27B0"],
+  color: ["#7FD624", "#3EB4E0"],
   siteUrl: FD_BASE,
   oracle: [
     { q: "How does booking work?", a: "Pick a studio, check availability, submit a request. FD confirms details and issues a payment link — you have 48 hrs to pay (unless last-minute). Pay → confirmation email with your access code + entry instructions. Help: 844-644-3377." },

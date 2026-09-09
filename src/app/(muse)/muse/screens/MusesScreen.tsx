@@ -10,6 +10,7 @@ import UpsellModal from "../components/UpsellModal";
 import { EmptyState } from "../components/EmptyState";
 import type { Screen, Match, Profile } from "../components/types";
 import { isPaidTier } from "../components/subscriptionTiers";
+import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 
 export interface MusesScreenProps {
   screen: Screen;
@@ -75,6 +76,7 @@ export const MusesScreen = memo(function MusesScreen({
   // plain toast instead of a real upsell moment.
   const [showLikesUpsell, setShowLikesUpsell] = useState(false);
   const [showRequests, setShowRequests] = useState(false);
+  const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
 
   useEffect(() => {
     if (!showLikesYou) return;
@@ -112,7 +114,7 @@ export const MusesScreen = memo(function MusesScreen({
   }, [screen, matchesView]);
 
   return (
-    <div className={"screen-el" + (screen === "matches" ? " active" : "")}>
+    <div className={"screen-el" + (screen === "matches" ? " active" : "")} data-screen="matches">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         <div
@@ -141,10 +143,10 @@ export const MusesScreen = memo(function MusesScreen({
           Muses
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button className="hdr-btn" style={{ width: 34, height: 34, borderRadius: 10 }} onClick={() => setSearchOpen(!searchOpen)} aria-label="Search"><FiSearch size={16} /></button>
           {!showLikesYou && (
             <button className="hdr-btn" style={{ width: 34, height: 34, borderRadius: 10 }} onClick={() => setMatchesView(v => v === "list" ? "grid" : "list")} aria-label="Toggle view">{matchesView === "list" ? <FiGrid size={21} /> : <FiList size={21} />}</button>
           )}
+          <button className="hdr-btn" style={{ width: 34, height: 34, borderRadius: 10 }} onClick={() => setSearchOpen(!searchOpen)} aria-label="Search"><FiSearch size={16} /></button>
         </div>
       </div>
 
@@ -191,7 +193,7 @@ export const MusesScreen = memo(function MusesScreen({
 
       {showRequests ? (
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
-          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14 }}>Message requests from people who want to connect</div>
+          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14, textAlign: "center" }}>Message requests from people who want to connect</div>
           {messageRequests.length === 0 ? (
             <EmptyState icon="📬" title="No pending requests" sub="When someone messages you for the first time, their request will appear here." style={{ padding: "40px 20px" }} />
           ) : (
@@ -250,8 +252,8 @@ export const MusesScreen = memo(function MusesScreen({
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{p.name}</div>
                     <div style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600 }}>{p.type}</div>
                   </div>
-                  <div style={{ position: "absolute", top: 8, right: 8, padding: "3px 8px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 9, fontWeight: 800, color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>✦ Interested</div>
-                  {!unlocked && (<div style={{ position: "absolute", top: 8, left: 8, padding: "2px 7px", borderRadius: 99, background: "rgba(0,0,0,0.65)", fontSize: 9, fontWeight: 700, color: "var(--gold)", border: "1px solid rgba(255,215,0,0.3)" }}>PRO</div>)}
+                  <div role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Interested", desc: "This person has shown interest in connecting with you — go Pro to reveal exactly who and connect instantly.", icon: "✦", color: "#FF69B4" }); }} style={{ position: "absolute", top: 8, right: 8, padding: "3px 8px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 9, fontWeight: 800, color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.4)", cursor: "pointer" }}>✦ Interested</div>
+                  {!unlocked && (<div role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Pro", desc: "Pro members get full access — reveal who's interested and message them directly.", icon: "⭐", color: "var(--gold)" }); }} style={{ position: "absolute", top: 8, left: 8, padding: "2px 7px", borderRadius: 99, background: "rgba(0,0,0,0.65)", fontSize: 9, fontWeight: 700, color: "var(--gold)", border: "1px solid rgba(255,215,0,0.3)", cursor: "pointer" }}>PRO</div>)}
                 </div>
                 );
               })}
@@ -270,6 +272,7 @@ export const MusesScreen = memo(function MusesScreen({
           ))}
         </div>
       )}
+      <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
       <Nav active="matches" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
       <UpsellModal
         open={showLikesYou && showLikesUpsell}

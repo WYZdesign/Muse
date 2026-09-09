@@ -10,6 +10,7 @@ import ScreenSkeleton from "@/components/ScreenSkeleton";
 import Image from "next/image";
 import { STRINGS } from "@/lib/strings";
 import type { Screen } from "../components/types";
+import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 
 export interface FeedScreenProps {
   screen: Screen;
@@ -106,6 +107,7 @@ export const FeedScreen = memo(function FeedScreen({
 }: FeedScreenProps) {
   const [postReplies, setPostReplies] = useState<Record<number, any[]>>({});
   const [detailPostId, setDetailPostId] = useState<number | null>(null);
+  const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
 
   // Real posts fetched from the DB (liveFeed) are the source of truth once
   // present; feedPostsStatic (hardcoded demo posts) is only a placeholder
@@ -288,7 +290,7 @@ export const FeedScreen = memo(function FeedScreen({
   };
 
   return (
-    <div className={"screen-el" + (screen === "connections" ? " active" : "")}>
+    <div className={"screen-el" + (screen === "connections" ? " active" : "")} data-screen="connections">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         <div
@@ -462,7 +464,7 @@ export const FeedScreen = memo(function FeedScreen({
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
                       {post.author}
-                      {post.authorVerified && <span className="card-verified-mark" style={{ fontSize: 12 }} title="Identity verified">✓</span>}
+                      {post.authorVerified && <span className="card-verified-mark" style={{ fontSize: 12, cursor: "pointer" }} title="Identity verified" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#FFD700" }); }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#FFD700" }); } }}>✓</span>}
                     </div>
                     <div style={{ fontSize: 11, color: "var(--muted)" }}>{post.time}</div>
                   </div>
@@ -704,6 +706,7 @@ export const FeedScreen = memo(function FeedScreen({
           )}
         </div>
       )}
+      <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
       <Nav active="connections" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );

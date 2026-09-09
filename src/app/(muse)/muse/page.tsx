@@ -1045,6 +1045,33 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     } catch {}
   }, []);
 
+  // Show the tide waves only when the user scrolls to the very bottom of the
+  // active screen — attach a scroll listener to whichever .screen-el is active,
+  // re-binding on screen change. The waves fade in (CSS .show) ~40px from the
+  // bottom; the active screen is found via the live DOM so this keeps working
+  // for every screen without a per-screen listener.
+  const waveShowRef = useRef(false);
+  useEffect(() => {
+    const wave = document.querySelector(".wave-bottom");
+    const check = () => {
+      const p = document.querySelector('.screen-el.active');
+      if (!p || !wave) return;
+      const scroller = (p as HTMLElement).scrollTop !== undefined ? (p as HTMLElement) : p.querySelector<HTMLElement>('[style*="overflow"],.conn-scroll,.profile-scroll,.settings-scroll,.portfolio-scroll,.match-list');
+      const el: HTMLElement | null = scroller || p as HTMLElement;
+      const near = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+      if (near !== waveShowRef.current) {
+        waveShowRef.current = near;
+        wave.classList.toggle("show", near);
+      }
+    };
+    const scroller = document.querySelector(".screen-el.active");
+    if (scroller) {
+      scroller.addEventListener("scroll", check, { passive: true });
+      check();
+    }
+    return () => { if (scroller) scroller.removeEventListener("scroll", check); };
+  }, [screen]);
+
 
 
   const showToast = useCallback((msg: string | { msg: string; onTap?: () => void; type?: ToastType }) => { const t = typeof msg === "string" ? { msg } : msg; setToastMsg(t); setTimeout(() => setToastMsg(null), 3000); }, []);
@@ -1976,14 +2003,14 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       {swipeDir && <SwipeParticles active dir={swipeDir} />}
       <BackgroundScene flash={screenFlash} />
       <div className="wave-bottom">
-        <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
-          <path className="wave-path-1" d="M0,60 C360,120 720,0 1080,60 C1260,90 1350,30 1440,60 L1440,120 L0,120 Z" />
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
+          <path className="wave-path-1" d="M0,90 C120,130 260,60 420,86 C560,108 640,40 800,84 C950,124 1060,58 1200,88 C1300,108 1370,72 1440,92 L1440,160 L0,160 Z" />
         </svg>
-        <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
-          <path className="wave-path-2" d="M0,80 C240,40 480,100 720,60 C960,20 1200,90 1440,50 L1440,120 L0,120 Z" />
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
+          <path className="wave-path-2" d="M0,110 C150,70 300,130 470,96 C620,68 760,128 930,102 C1060,82 1180,124 1300,98 C1360,86 1400,108 1440,100 L1440,160 L0,160 Z" />
         </svg>
-        <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
-          <path className="wave-path-3" d="M0,40 C180,80 360,20 540,60 C720,100 900,30 1080,70 C1260,110 1350,50 1440,80 L1440,120 L0,120 Z" />
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
+          <path className="wave-path-3" d="M0,72 C170,116 340,58 520,92 C660,118 820,66 980,96 C1120,120 1240,74 1360,96 L1440,108 L1440,160 L0,160 Z" />
         </svg>
       </div>
       {showMatchOverlay && (
@@ -2772,13 +2799,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
       {/* DISCOVERY PREFERENCES MODAL */}
       {showDiscoveryPrefs && (
-        <div className="modal-overlay">
-          <div className="modal-header">
+        <div className="modal-overlay" onClick={()=>setShowDiscoveryPrefs(false)}>
+          <div className="modal-header" onClick={e=>e.stopPropagation()}>
             <button className="modal-back" onClick={()=>setShowDiscoveryPrefs(false)}><FiArrowLeft size={20} /></button>
-            <div className="modal-title">Discovery Preferences</div>
-            <button className="modal-close" onClick={()=>setShowDiscoveryPrefs(false)} aria-label="Close"><FiX size={18} /></button>
+            <div className="modal-title" style={{fontSize:16.5,whiteSpace:"nowrap"}}>Discovery Preferences</div>
           </div>
-          <div className="modal-body">
+          <div className="modal-body" onClick={e=>e.stopPropagation()}>
             <div style={{marginBottom:20}}>
               <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Age Range: {discoveryPrefs.ageMin} to {discoveryPrefs.ageMax}</div>
               <div style={{display:"flex",gap:10,alignItems:"center"}}>
@@ -2792,9 +2818,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             </div>
             <div style={{marginBottom:20}}>
               <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Show Me</div>
-              <div style={{display:"flex",gap:8}}>
+              <div style={{display:"flex",gap:8,overflowX:"auto",whiteSpace:"nowrap",scrollbarWidth:"none",paddingBottom:4,WebkitOverflowScrolling:"touch"}}>
                 {["all","women","men","non-binary"].map(g=>(
-                   <div key={g} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDiscoveryPrefs(p=>({...p,gender:g})); } }} onClick={()=>setDiscoveryPrefs(p=>({...p,gender:g}))} style={{padding:"8px 16px",borderRadius:99,cursor:"pointer",fontSize:12,fontWeight:600,transition:"all .25s",background:discoveryPrefs.gender===g?"rgba(255,215,0,0.12)":"rgba(255,255,255,0.04)",border:"1px solid "+(discoveryPrefs.gender===g?"rgba(255,215,0,0.3)":"rgba(255,255,255,0.06)"),color:discoveryPrefs.gender===g?"var(--gold)":"var(--muted)"}}>{g.charAt(0).toUpperCase()+g.slice(1)}</div>
+                   <div key={g} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDiscoveryPrefs(p=>({...p,gender:g})); } }} onClick={()=>setDiscoveryPrefs(p=>({...p,gender:g}))} style={{padding:"8px 16px",borderRadius:99,cursor:"pointer",fontSize:12,fontWeight:600,transition:"all .25s",whiteSpace:"nowrap",flexShrink:0,background:discoveryPrefs.gender===g?"rgba(255,215,0,0.12)":"rgba(255,255,255,0.04)",border:"1px solid "+(discoveryPrefs.gender===g?"rgba(255,215,0,0.3)":"rgba(255,255,255,0.06)"),color:discoveryPrefs.gender===g?"var(--gold)":"var(--muted)"}}>{g.charAt(0).toUpperCase()+g.slice(1)}</div>
                 ))}
               </div>
             </div>

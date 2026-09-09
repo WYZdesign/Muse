@@ -8,6 +8,7 @@ import { BADGE_COLORS } from "../components/badgeColors";
 import { EmptyState } from "../components/EmptyState";
 import { sessionTier } from "../components/sessionTiers";
 import { matchesSessionSearch } from "../components/searchMatch";
+import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 
 import type { Screen, Match, SessionListing } from "../components/types";
 import { SESSIONS } from "../components/types";
@@ -100,6 +101,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   setSavedSessionIds = () => {},
 }: SessionsScreenProps) {
   const [showCreate, setShowCreate] = useState(false);
+  const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
   const [newSession, setNewSession] = useState({ title: "", description: "", type: "Photoshoot", rate: "", duration: "60 min", date: "", location: "" });
   const [creating, setCreating] = useState(false);
 
@@ -223,7 +225,6 @@ export const SessionsScreen = memo(function SessionsScreen({
   // Same convergent finding as Collab's brief search (Thumbtack/TaskRabbit
   // free-text project search) applied to session listings — client-side
   // filter over the already-fetched liveSessions array, no backend change.
-  const [sessionSearchOpen, setSessionSearchOpen] = useState(false);
   const [sessionSearchQuery, setSessionSearchQuery] = useState("");
 
   const submitReview = async () => {
@@ -240,15 +241,11 @@ export const SessionsScreen = memo(function SessionsScreen({
     } catch { showToast("Failed to submit review"); } finally { setReviewSending(false); }
   };
   return (
-    <div className={"screen-el" + (screen === "sessions" ? " active" : "")}>
+    <div className={"screen-el" + (screen === "sessions" ? " active" : "")} data-screen="sessions">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#F2CC8F,#E07A5F,#F4A261,#F2CC8F,#E07A5F,#F2CC8F)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Sessions</div>
-        {sessTab === "sessions" ? (
-          <button className="hdr-btn" onClick={() => setSessionSearchOpen(v => !v)} aria-label="Search sessions"><FiSearch size={17} /></button>
-        ) : (
-          <div style={{ width: 42 }} />
-        )}
+        <div style={{ width: 42 }} />
       </div>
       <div className="conn-tabs" style={{ padding: "0 16px", justifyContent: "center" }}>
         {/* Small leading icon per tab (audit finding tu-2) — same treatment as
@@ -259,7 +256,7 @@ export const SessionsScreen = memo(function SessionsScreen({
           </div>
         ))}
       </div>
-      {sessTab === "sessions" && sessionSearchOpen && (
+      {sessTab === "sessions" && (
         <div style={{ margin: "0 16px 12px", display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "6px 12px", animation: "fadeIn .2s ease" }}>
           <FiSearch size={14} color="var(--muted)" />
           <input className="inp" placeholder="Name, type, or skill..." value={sessionSearchQuery} onChange={e => setSessionSearchQuery(e.target.value)} autoFocus style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
@@ -270,10 +267,10 @@ export const SessionsScreen = memo(function SessionsScreen({
             {sessTab === "sessions" && (
               <>
                 <button className="btn btn-gold" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, marginTop: 4, marginBottom: 12 }} onClick={() => setShowCreate(true)}>+ List a Session</button>
-                <div style={{ margin: "0 0 10px" }}>
+                <div style={{ margin: "0 0 10px", textAlign: "center" }}>
                   <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>Available Sessions</div>
             </div>
-            <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 12 }}>Browse creatives offering sessions — pick one, book, and pay securely.</div>
+            <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 12, textAlign: "center" }}>Find a session, book it, and pay securely.</div>
             {(() => {
               const base = (liveSessions?.length ? liveSessions : SESSIONS as SessionListing[]);
               const q = sessionSearchQuery.trim().toLowerCase();
@@ -287,7 +284,7 @@ export const SessionsScreen = memo(function SessionsScreen({
               }
               return list.map(s => (
               <div key={s.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch", position: "relative" }}>
-                <button aria-label="Report session" title="Report" onClick={() => { setReportTarget({ id: s.id, type: "session", name: s.name || "session" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(10,6,18,0.6)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
+                <button aria-label="Report session" title="Report" onClick={() => { setReportTarget({ id: s.id, type: "session", name: s.name || "session" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
                 <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0 }}>
                   {s.img && (
                     <Image src={s.img} alt={s.name} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
@@ -296,14 +293,17 @@ export const SessionsScreen = memo(function SessionsScreen({
                 <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <div className="conn-name" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     {s.name}
-                    {s.hostVerified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
+                    {s.hostVerified && <span className="card-verified-mark" style={{ fontSize: 13, cursor: "pointer" }} title="Identity verified" role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: "Verified Host", desc: "Identity verified by Muse — we confirmed this host's government ID and credentials.", icon: "✓", color: "#FFD700" })} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { setBadgeInfo({ name: "Verified Host", desc: "Identity verified by Muse — we confirmed this host's government ID and credentials.", icon: "✓", color: "#FFD700" }); } }}>✓</span>}
                     {(() => {
                       const tier = sessionTier(s);
                       if (!tier) return null;
                       return (
                         <span
+                          role="button"
+                          tabIndex={0}
                           title={`${tier.minSessions}+ completed sessions and a ${tier.minRating}+ average rating`}
-                          style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.3, padding: "2px 7px", borderRadius: 20, background: tier.bg, border: `1px solid ${tier.border}`, color: tier.color, textTransform: "uppercase" }}
+                          onClick={() => setBadgeInfo({ name: tier.label, desc: tier.key === "elite" ? "Muse's top tier — 25+ completed sessions and a 4.8+ average rating, among the most trusted hosts on Muse." : tier.key === "top" ? "Top Rated — 10+ completed sessions and a 4.5+ average rating, a proven and reliable host." : "Rising Muse — 3+ completed sessions and a 4.0+ average rating, building a strong track record.", icon: tier.icon, color: tier.color })}
+                          style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.3, padding: "2px 7px", borderRadius: 20, background: tier.bg, border: `1px solid ${tier.border}`, color: tier.color, textTransform: "uppercase", cursor: "pointer" }}
                         >{tier.icon} {tier.label}</span>
                       );
                     })()}
@@ -313,7 +313,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                     <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{s.hostCompletedSessions} session{s.hostCompletedSessions === 1 ? "" : "s"} completed</div>
                   )}
                   <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
-                    {(s.skills || []).map((sk: string) => <span key={sk} className="conn-tag" style={{ fontSize: 10, padding: "3px 8px" }}>{sk}</span>)}
+                    {(s.skills || []).map((sk: string) => <span key={sk} className="conn-tag" role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: sk, desc: `A skill covered in this session — what you'll work on or learn.`, icon: "🛠", color: "#90caf9" })} style={{ fontSize: 10, padding: "3px 8px", cursor: "pointer" }}>{sk}</span>)}
                   </div>
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                     <button
@@ -359,7 +359,7 @@ export const SessionsScreen = memo(function SessionsScreen({
               ));
             })()}
             <div style={{ height: 1, margin: "20px 0 8px", background: "linear-gradient(90deg, transparent, rgba(233,30,99,0.4), transparent)" }} />
-            <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", marginBottom: 8 }}>Looking to shoot in LA? Browse partner photo studios and book direct.</div>
+            <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", marginBottom: 8 }}>Browse local studios in the LA area</div>
             <button className="btn ls-gradient" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 800, borderRadius: 12 }} onClick={() => showScreen("studios")}>✦ Browse LA Studios</button>
           </>
         )}
@@ -370,7 +370,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                 tabs (Browse -> "Available Sessions", Requests -> "Incoming
                 Requests") both use a distinct, more descriptive heading
                 instead of echoing the tab name. */}
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>Your Booked Sessions</div>
+
             {/* Audit fix (2026-09-08): bookingReminders mixes both asBooker and
                 asHost upcoming bookings (that's correct for a general reminder
                 feed), but this widget sits directly above a list that's
@@ -422,11 +422,11 @@ export const SessionsScreen = memo(function SessionsScreen({
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                       <div className="conn-name" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6 }}>
                         {host.name || "Host"}
-                        {host.verified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
+                        {host.verified && <span className="card-verified-mark" style={{ fontSize: 13, cursor: "pointer" }} title="Identity verified" role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: "Verified Host", desc: "Identity verified by Muse — we confirmed this host's government ID and credentials.", icon: "✓", color: "#FFD700" })}>✓</span>}
                       </div>
                       <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                        {pp && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap" }}>{pp.label}</span>}
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: sc.bg, color: sc.c, border: `1px solid ${sc.bd}`, whiteSpace: "nowrap" }}>{label}</span>
+                        {pp && <span role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: pp.label, desc: pp.label === "Payment held" ? "Your payment is held in escrow securely until the session is completed." : pp.label === "Paid" ? "Payment completed successfully through secure checkout." : pp.label === "Refunded" ? "This payment was refunded to the client." : pp.label === "Payment failed" ? "The payment attempt failed — no money was taken." : "Payment confirmation state.", icon: "💳", color: pp.colors.c })} style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap", cursor: "pointer" }}>{pp.label}</span>}
+                        <span role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: label, desc: label === "Awaiting host" ? "Waiting for the host to confirm your request." : label === "Confirmed" ? "The host has confirmed this booking." : label === "Completed" ? "This session has been completed." : label === "Cancelled" ? "This booking was cancelled." : "Current status of this booking.", icon: "📋", color: sc.c })} style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: sc.bg, color: sc.c, border: `1px solid ${sc.bd}`, whiteSpace: "nowrap", cursor: "pointer" }}>{label}</span>
                       </div>
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
@@ -462,7 +462,6 @@ export const SessionsScreen = memo(function SessionsScreen({
         )}
         {sessTab === "requests" && (
           <div style={{ padding: "0 0 20px" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "4px 0 10px" }}>Incoming Requests</div>
             {payout?.needsConnect && (
               <div style={{ padding: "12px 14px", marginBottom: 12, borderRadius: 12, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.35)" }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: "var(--gold)" }}>💸 You have earnings pending</div>
@@ -496,11 +495,11 @@ export const SessionsScreen = memo(function SessionsScreen({
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                       <div className="conn-name" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6 }}>
                         {booker.name || "Booker"}
-                        {booker.verified && <span className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified">✓</span>}
+                        {booker.verified && <span className="card-verified-mark" style={{ fontSize: 13, cursor: "pointer" }} title="Identity verified" role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: "Verified Member", desc: "Identity verified by Muse — we confirmed this member's government ID and credentials.", icon: "✓", color: "#FFD700" })}>✓</span>}
                       </div>
                       <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                        {pp && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap" }}>{pp.label}</span>}
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: sc.bg, border: `1px solid ${sc.bd}`, color: sc.c, whiteSpace: "nowrap" }}>{label}</span>
+                        {pp && <span role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: pp.label, desc: pp.label === "Payment held" ? "Payment is held in escrow securely until the session is completed." : pp.label === "Paid" ? "Payment completed successfully through secure checkout." : pp.label === "Refunded" ? "This payment was refunded to the client." : pp.label === "Payment failed" ? "The payment attempt failed — no money was taken." : "Payment confirmation state.", icon: "💳", color: pp.colors.c })} style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: pp.colors.bg, color: pp.colors.c, border: `1px solid ${pp.colors.bd}`, whiteSpace: "nowrap", cursor: "pointer" }}>{pp.label}</span>}
+                        <span role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: label, desc: label === "Pending" ? "Waiting for you to accept or decline this request." : label === "Confirmed" ? "You've confirmed this booking." : label === "Completed" ? "This session has been completed." : label === "Cancelled" ? "This booking was cancelled." : "Current status of this request.", icon: "📋", color: sc.c })} style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: sc.bg, color: sc.c, border: `1px solid ${sc.bd}`, whiteSpace: "nowrap", cursor: "pointer" }}>{label}</span>
                       </div>
                     </div>
                     <div className="conn-meta" style={{ fontSize: 12 }}>{sess.title || "Session"} · {sess.rate || "Rate TBD"}</div>
@@ -572,6 +571,7 @@ export const SessionsScreen = memo(function SessionsScreen({
           </div>
         </div>
       )}
+      <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
       <Nav active="sessions" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );

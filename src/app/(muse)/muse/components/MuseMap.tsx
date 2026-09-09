@@ -1,17 +1,19 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { CITY_GEO } from "./types";
 import { ALL_STUDIOS } from "./studios";
 
 export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filteredProfiles: any[], myGeo?: {lat:number,lng:number}, onClose: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
     const w = window as any;
     const init = () => {
+      try {
       w.mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
       const center: [number, number] = myGeo ? [myGeo.lng, myGeo.lat] : [-98.5, 39.8];
       const zoom = myGeo ? 9 : 3.5;
@@ -70,11 +72,12 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
           new w.mapboxgl.Marker({ element: el })
             .setLngLat([building.geo.long, building.geo.lat])
             .setPopup(new w.mapboxgl.Popup({ offset: 25 }).setHTML(
-              `<strong>${profile.name} — ${building.label}</strong><br/>${building.address || ""}<br/>${building.studios.length} stage${building.studios.length === 1 ? "" : "s"} · from ${building.studios.reduce((min, s) => (parseFloat(s.price.replace(/[^0-9.]/g, "")) < parseFloat(min.replace(/[^0-9.]/g, "")) ? s.price : min), building.studios[0]?.price || "")}`
+              `<strong>${profile.name} — ${building.label}</strong><br/>${building.address || ""}<br/>${building.studios.length} stage${building.studios.length === 1 ? "" : "s"} · from ${building.studios.reduce((min, s) => (parseFloat(s.price.replace(/[^0-9.]/g, "")) < parseFloat(min.replace(/[^0-9.]/g, "")) ? s.price : min), building.studios[0]?.price || "")}<br/><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(building.address || `${profile.name} ${building.label}`)}" target="_blank" rel="noopener noreferrer" style="color:#FFD700;font-weight:700;text-decoration:underline">Open in Maps</a>`
             ))
             .addTo(map);
         }
       }
+      } catch (err) { setLoadError(true); console.error("Map failed to initialize", err); }
     };
     if (w.mapboxgl) {
       init();
@@ -89,19 +92,33 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
       s.src = "https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js";
       s.async = true;
       s.onload = init;
+      s.onerror = () => setLoadError(true);
       document.head.appendChild(s);
     }
     return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; } };
   }, [filteredProfiles, myGeo]);
 
+  if (loadError) {
+    return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
+        <div style={{ textAlign: "center", padding: 24 }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🗺️</div>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Map failed to load</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginBottom: 18 }}>The map provider could not be reached. Check your connection and try again.</div>
+          <button onClick={onClose} style={{ background: "rgba(10,6,18,0.85)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "10px 16px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", backdropFilter: "blur(8px)" }}>← Back to cards</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#0a0612" }}>
       <div style={{ position: "absolute", top: 18, left: 16, right: 16, zIndex: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button onClick={onClose} style={{ background: "rgba(10,6,18,0.85)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "10px 16px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", backdropFilter: "blur(8px)" }}>← Back to cards</button>
-        <div style={{ color: "#fff", fontSize: 14, fontWeight: 700, textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>Creatives near you</div>
+        <div style={{ color: "#fff", fontSize: 14, fontWeight: 700, textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>Studios</div>
       </div>
       <div ref={containerRef} style={{ position: "absolute", inset: 0, touchAction: "none" }} />
-      <div style={{ position: "absolute", bottom: 24, left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.55)", fontSize: 12, zIndex: 2, pointerEvents: "none" }}>Tap a marker to see how many creatives are active nearby</div>
+      <div style={{ position: "absolute", bottom: 24, left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.55)", fontSize: 12, zIndex: 2, pointerEvents: "none" }}>Tap a marker to see creative studios nearby</div>
     </div>
   );
 }
