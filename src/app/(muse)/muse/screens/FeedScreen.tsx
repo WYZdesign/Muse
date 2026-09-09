@@ -331,13 +331,13 @@ export const FeedScreen = memo(function FeedScreen({
             );
           })}
         </div>
-<div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", gap: 16, alignItems: "flex-start" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, paddingRight: 3 }}>
-            <div style={{ position: "relative", width: 39, height: 39 }}>
-              <Image loading="lazy" src={currentUser.avatar} alt="Avatar" width={39} height={39} className="feed-avatar" style={{ flexShrink: 0 }} onError={handleImgError} />
+<div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", gap: 16, alignItems: "center" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingRight: 3, alignSelf: "center" }}>
+            <div style={{ position: "relative", width: 52, height: 52 }}>
+              <Image loading="lazy" src={currentUser.avatar} alt="Avatar" width={52} height={52} className="feed-avatar" style={{ flexShrink: 0 }} onError={handleImgError} />
               {/* Feed composer profile image: no hoolah-hoop, just a halo ~20% larger
-                  than the 39px avatar, matching the halo's color gradient. */}
-              <div className="profile-ring" style={{ width: 47, height: 47 }} />
+                  than the avatar, matching the halo's color gradient. */}
+              <div className="profile-ring" style={{ width: 60, height: 60 }} />
             </div>
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
