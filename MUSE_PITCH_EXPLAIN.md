@@ -73,7 +73,7 @@ no-show/damage, a physical check-in point, and the FD case study ("we filled X h
 > **trust and transaction layer** for shoots: Instagram does discovery, ModelMayhem is dated, and
 > Peerspace owns the space but not the talent, the consent, or the settlement.
 >
-> Museum [Muse] is that layer. We monetize two ways: a freemium subscription (Muse Pro $9.99/mo, Muse
+> Muse is that layer. We monetize two ways: a freemium subscription (Muse Pro $9.99/mo, Muse
 > Studio $29.99/mo for industry) and a **15% take on every paid booking** via Stripe Connect escrow. We
 > seed supply from an existing LA/NYC/Chicago offline community (FD Mixers) and an anchor studio
 > partner (FD Photo Studio) — so we launch with supply, not a cold start.

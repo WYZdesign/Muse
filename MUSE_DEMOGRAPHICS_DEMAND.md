@@ -57,7 +57,7 @@ group. This is how a single invite creates both a market and a community.
 - **Personality "vibe" signals:** zodiac, Chinese zodiac, MBTI, life path — a distinct differentiator
   from a plain marketplace, but also a tension (see `MUSE_CLAUDE_CRITIQUE.md`).
 - **Communities:** LA Photographers, Queer Creatives United, Figure Art Collective, Film & Video
-  Directors, MUA & Stylist Network, Indie Film Collective, Digital Artists Guild, Street Photography,
+  Directors, MUA & Stylist Network, Indie Film Collective, Digital Artists Guild, Street Photography NYC,
   Women in Film & TV, Body Positive Artists, Music Video Directors, Fashion Photographers Hub.
 - **Professionals (industry):** Casting Director, Producer, Art Buyer, Fine Art Agent, Creative Director.
 

@@ -32,7 +32,7 @@ analytics consumption, load testing — is deliberately deferred. That's fine fo
 real risk as soon as there's real traffic.
 
 ### 2b. The monolith is the root of future pain
-`page.tsx` is ~3,800 lines with ~177 hooks. Every new feature makes it worse. The prior agent's call:
+`page.tsx` is ~3,252 lines with ~130+ `useState` calls. Every new feature makes it worse. The prior agent's call:
 **split it *before* adding features, not after.** The counter-argument is that the split needs visual
 verification, which was deliberately deferred — so it's a chicken-and-egg. Someone has to own the
 discipline of extracting screens/components as features land.

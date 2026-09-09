@@ -45,7 +45,7 @@
 
 ### Infrastructure
 - **15 DB migrations applied** (001–015, all verified on live Supabase)
-- **280+ API actions** registered in `api/muse/route.ts`
+- **180+ API actions** across all route files (`api/muse/route.ts`, `connect/route.ts`, `auth/route.ts`, `verification/route.ts`, `mfa/route.ts`, `referral/route.ts`, `push/route.ts`, `social/route.ts`, cron endpoints)
 - **8 themes** — 4 dark (lasunset/deepspace/nebula/deepsea) + 4 light (sunrise/daylight/sky/rose)
 - **37 test files, 285 tests passing**
 - **Vercel auto-deploy** — pushed to main = production in ~90s
@@ -84,7 +84,7 @@
 
 ## Tech debt (known, not blocking)
 
-- **`page.tsx` monolith** — ~3,251 lines, 166 useState, 237 setShow. Extraction plan exists (4 phases) but deferred until visual verification is possible.
+- **`page.tsx` monolith** — ~3,252 lines, 166 useState, 237 setShow. Extraction plan exists (4 phases) but deferred until visual verification is possible.
 - **25 SyntaxWarnings** — invalid escape sequences in Windows paths (benign).
 - **Demo corpus** — hardcoded profiles/briefs/sessions in `types.ts` still serve as fallback for new users. Real discovery works on live DB via `discover-ranked`.
 
@@ -94,7 +94,7 @@
 
 | Metric | Value |
 |--------|-------|
-| API actions | 280+ |
+| API actions | 180+ |
 | DB migrations | 15 (all applied) |
 | Test files | 37 |
 | Tests | 285 (all passing) |

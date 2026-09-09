@@ -246,6 +246,19 @@ export const checkinRespond = async ({ sb, profile, rest }: ActionContext) => {
   if (error) return safeServerError(error, "db op");
 
   if (response === "cancelled" && checkin.booking_id) {
+    // Release held funds — match bookingCancel's Stripe PaymentIntent cancel
+    const { data: cancelPayment } = await sb.from("muse_booking_payments")
+      .select("id, stripe_payment_intent, status").eq("booking_id", checkin.booking_id).maybeSingle();
+    if (cancelPayment?.stripe_payment_intent && cancelPayment.status !== "succeeded") {
+      try {
+        const Stripe = (await import("stripe")).default;
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+        await stripe.paymentIntents.cancel(cancelPayment.stripe_payment_intent);
+        await sb.from("muse_booking_payments").update({ status: "cancelled" }).eq("id", cancelPayment.id);
+      } catch (e: unknown) {
+        console.error("[checkin-cancel] Stripe paymentIntent cancel failed:", e instanceof Error ? e.message : e);
+      }
+    }
     await sb.from("muse_bookings").update({
       status: "cancelled", cancelled_at: new Date().toISOString(),
       cancel_reason: updates.cancel_reason as string, updated_at: new Date().toISOString()

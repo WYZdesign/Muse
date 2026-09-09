@@ -121,8 +121,9 @@ Everything below is real, working code (some of it seed/demo data, some live DB)
 
 It's a blend of *professional* fit (styles, roles) and *vibe* fit (the personality layer). This is what
 claude's critique flags as a tension (professional marketplace vs. personality-matching) — see
-`MUSE_CLAUDE_CRITIQUE.md`. Note: `calcMatch` is currently **client-side on demo data**; it is not yet a
-live server-side ranking for real profiles (gap — `MUSE_GAPS_ADJUSTMENTS.md` #5).
+`MUSE_CLAUDE_CRITIQUE.md`. `calcMatch` runs both client-side (demo data) and server-side via
+`calcMatchScore` powering the live `discover-ranked` endpoint (real DB rows). See
+`MUSE_GAPS_ADJUSTMENTS.md` #2a.
 
 ---
 

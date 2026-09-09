@@ -50,7 +50,8 @@ The digital trust layer is **always on** for both. Studios add physical oversigh
 - On booking confirmation, two **`pre_shoot_24h` check-ins** are created — one for each party (from
   `sessions.ts`).
 - Each party **proceeds or cancels** via `checkinRespond`. A cancel auto-cancels the booking and
-  releases any held funds. One-tap cancel is encouraged — the whole point is a frictionless "out."
+  releases any held funds (Stripe PaymentIntent cancelled). One-tap cancel is encouraged — the whole
+  point is a frictionless "out."
 
 ### 2.4 Trusted contact + location share
 - A **safety profile** holds an emergency/trusted contact.
