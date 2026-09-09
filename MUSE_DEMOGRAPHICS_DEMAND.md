@@ -86,7 +86,7 @@ The demand is **already proven** — it's huge and it's currently unmanaged:
 
 ### The expansion ladder
 1. Modeling + photography (the FD authority wedge).
-2. Studio/space network (FD first, then others / Peerspace hosts).
+2. **Studio/space network** — FD first, then partners. **Apex Photo Studios** (Downtown LA) and **Hubble Studio** (Arts District) are listed in the app as aspirational partner studios with market-rate pricing — not officially partnered yet, but real LA studios Muse would like to onboard. Partner studios expand supply without owning space.
 3. MUA, stylist, musician, adjacent creative services.
 4. **"First-shoot normies"** — consumer "safe first shoot" (headshots, couples, creator days) — the
    mass market.

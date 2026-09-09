@@ -128,8 +128,8 @@ export const OTHER_STUDIOS: StudioProfile[] = [
     siteUrl: "https://maps.google.com/?q=Apex+Photo+Studios+Los+Angeles",
     oracle: [
       { q: "What's Apex known for?", a: "Affordable hourly multi-set studio rentals in Downtown LA with integrated lighting and grip packages and versatile cyc walls — very close to FD's self-service hourly model." },
-      { q: "How do I book?", a: "Book directly via the studio's site (Apex Photo Studios, Downtown LA). Reserve your desired set, pick a time, and pay for the block — self-service hourly, no hidden fees. Last-minute slots are usually open." },
-      { q: "What's included?", a: "Integrated lighting and grip on every set, cyc walls, and a versatile multi-set floor. Bring your own modifiers or rent from the house kit on site." },
+      { q: "How do I book?", a: "Visit Apex's site or call them directly to book. Full Muse integration (in-app booking + escrow) is coming once the partnership is finalized." },
+      { q: "What's included?", a: "Integrated lighting + grip on all sets, cyc walls, make-up station, and a shared gear kit. Wi-Fi, changing area, and music system on request." },
       { q: "What are the rates?", a: "From $39.99/hr for a cyc set to $44.99/hr for the full multi-set floor. Hourly blocks, fully self-serve." },
     ],
     rules: [
@@ -152,7 +152,7 @@ export const OTHER_STUDIOS: StudioProfile[] = [
     siteUrl: "https://www.hubblestudio.com",
     oracle: [
       { q: "What's Hubble known for?", a: "Flexible, modular boutique-style studio spaces in the Arts District designed for fashion, portrait, and commercial creators who want self-service hourly configurations — similar to FD." },
-      { q: "How do I book?", a: "Book via Hubble's site (hubblestudio.com). Choose a modular or boutique space, pick your time, and pay for the block — self-service and flexible." },
+      { q: "How do I book?", a: "Visit Hubble's site (hubblestudio.com) to book. Full Muse integration (in-app booking + escrow) is coming once the partnership is finalized." },
       { q: "What's included?", a: "Fully customizable self-service spaces with flexible seating and styling. Ideal for fashion, portrait, and commercial shoots that need a clean, adjustable set." },
       { q: "What are the rates?", a: "From $44.99/hr for the boutique stage to $49.99/hr for the full modular space. Hourly blocks, bookable by the hour." },
     ],

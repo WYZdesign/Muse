@@ -23,20 +23,20 @@ users sign up into a live Supabase backend, but the experience and the marketing
 
 ## 2. Getting discovered — the gaps that actually matter
 
-### 2a. The match score is client-side on demo data
+### 2a. The match score is client-side on demo data — SHIPPED ✅
 - **[CODE — SHIPPED]** `calcMatch` was client-side on demo `PROFILES`. Now there's a server-side mirror
   (`calcMatchScore` + `CREATIVE_SIDE` in `get.ts`) and a live-ranked endpoint `discover-ranked` that:
   fetches real `muse_profiles`, scores each against the requesting user (professional fit + vibe),
   and surfaces **boosted + complementary-side** profiles first. "Getting discovered" now runs on live
   rows. A dedicated "similar to this profile" can layer on top of the same scorer.
 
-### 2c. "Vibe" matching can hurt a professional marketplace's credibility
+### 2b. "Vibe" matching can hurt a professional marketplace's credibility — ADDRESSED
 - **[PRODUCT — partially addressed]** The vibe layer (zodiac/MBTI/life-path) is still in the score, but
   discovery now ranks primarily on **professional fit** + boosted/side-matching (not vibe). The scorer
   weights style/reliability/verified alongside vibe, so the industry/buyer side gets a professional
   ranking. Recommendation stands: keep vibe secondary, never lead with it in copy.
 
-### 2d. No public trust surface for the *buyer* side
+### 2c. No public trust surface for the *buyer* side — SHIPPED ✅
 - **[CODE — SHIPPED]** `creative-trust` GET aggregates all buyer-facing trust signals for one creative:
   verified, age-verified, review rating + count + structured criteria (communication/reliability/
   creative quality/professionalism/safety), completed bookings as host, profile completion %, and
@@ -47,18 +47,20 @@ users sign up into a live Supabase backend, but the experience and the marketing
 
 ## 3. Making money — the gaps that actually matter
 
-### 3a. Muse Studio tier ($29.99/mo) — CHECKOUT WIRED, WEBHOOK FIXED ✅
-- **[CODE — FIXED]** `api/checkout/route.ts` already maps `muse_studio` → `price_muse_studio_monthly` +
-  `DEV_FALLBACK_PRICING` (both the price map and the dev fallback). The real bug was in the **webhook**:
-  `KNOWN_TIERS` was `["free","muse_pro","muse","sovereign"]` — missing `muse_studio` — so a Studio
-  purchase landed the user on `muse_pro`. **Fixed:** added `muse_studio` to `KNOWN_TIERS`.
-  Remaining: create the actual `price_muse_studio_monthly` Stripe price (live-mode operator step).
+### 3a. Muse Studio tier ($29.99/mo) — SHIPPED ✅
+- **[CODE — SHIPPED]** `api/checkout/route.ts` maps `muse_studio` → `price_muse_studio_monthly` +
+  `DEV_FALLBACK_PRICING`. Webhook `KNOWN_TIERS` includes `muse_studio`. Live Stripe price
+  `price_muse_studio_monthly` exists and is active.
 
 ### 3b. Pay-per-boost for free users — SHIPPED ✅
 - **[CODE — SHIPPED]** `create-boost-checkout` action in `api/muse/connect/route.ts` creates a Stripe
-  one-off Checkout Session (boost credit = $4.99). `boost-purchase-complete` (in misc.ts) grants the
-  boost inventory idempotently (guarded by a `muse_boost_purchases` row, retry-safe). Requires the
-  `muse_boost_purchases` table (migration 013).
+  one-off Checkout Session. **3-tier duration pricing:**
+  - 24h boost: $3.99
+  - 72h boost: $9.99
+  - 7d boost: $19.99
+  `boost-purchase-complete` (in misc.ts) grants the boost inventory idempotently (guarded by a
+  `muse_boost_purchases` row, retry-safe). Requires the `muse_boost_purchases` table (migration 013).
+  Webhook marks purchases as `paid` before granting inventory (security hardened).
 
 ### 3c. Boost inventory + duration/expiry — SHIPPED ✅
 - **[CODE — SHIPPED]** Boost is now a **unified inventory model** (migration 013):
@@ -74,11 +76,10 @@ users sign up into a live Supabase backend, but the experience and the marketing
   #1 friction in the booking→money path.** Fix: a clear, low-friction host-onboarding flow + a
   pre-onboarding nudge. (`create-account` → `create-booking-checkout` → `account-status` are all built.)
 
-### 3e. No self-serve refund/dispute resolution surfaced
-- **[CODE/PRODUCT]** Payment holds and cancels, but there's no explicit buyer-facing **refund** or
-  **dispute** flow (no-show, damaged delivery, scope dispute). Stripe handles the mechanics; the
-  product needs a visible resolution prompt. (STRATEGY.md lists "own escrow/insurance vs third-party"
-  as an open question.)
+### 3e. Self-serve refund/dispute resolution — SHIPPED ✅
+- **[CODE — SHIPPED]** `admin-refunds` (list open refund requests) + `admin-resolve-refund` (resolve
+  with note + audit log) are live. Users can request refunds through the sessions flow; admins resolve
+  them with structured resolution notes. Full audit trail via `admin-audit-log`.
 
 ### 3f. No CSAM/NSFW monetization clarity (deliberate)
 - **[PRODUCT]** NSFW + payment is **hard-blocked** (`disclosures.ts`). Fine-art/figure/body work is a
@@ -90,22 +91,21 @@ users sign up into a live Supabase backend, but the experience and the marketing
 
 ## 4. Booking — the gaps / friction points
 
-### 4a. Payment is manual-capture only at completion; no time-release
+### 4a. Payment is manual-capture only at completion; no time-release — SHIPPED ✅
 - **[CODE — DONE]** `api/cron/capture-bookings` already auto-captures any `pending`/`held` payment
   older than `CAPTURE_SAFETY_DAYS` (4 days, conservative vs the shortest ~4d18h card window),
   re-verifying the PaymentIntent is still `requires_capture` before capturing. Runs every 6h
-  (vercel.json). This is the general-availability auto-capture that prevents money hanging. Stripes'
-  native `automatic_delayed` mode is a private-preview alternative — not needed.
+  (vercel.json). This is the general-availability auto-capture that prevents money hanging.
 
-### 4b. No scheduling/availability calendar
+### 4b. Scheduling/availability calendar — SHIPPED ✅
 - **[CODE — SHIPPED]** `host-availability` returns a host's pending/confirmed bookings (the occupied
   slots to render a calendar + prevent double-booking); `toggle-session-availability` lets a host mark
   a session open/closed (owner-gated). A full per-time-slot calendar UI is the remaining frontend step.
 
-### 4c. Booking reminders are built but not surfaced
-- **[CODE — SHIPPED endpoint]** `booking-reminders` returns upcoming (next 7 days) bookings with session
-  + other-party info. Remaining: wire the frontend `Bookings` screen to call it and render a
-  "your shoot is coming up" card.
+### 4c. Booking reminders — SHIPPED ✅
+- **[CODE — SHIPPED]** `booking-reminders` returns upcoming (next 7 days) bookings with session
+  + other-party info. **Frontend rendered** in `SessionsScreen.tsx` as "Upcoming shoots" card with
+  session details, date, other party, and action buttons.
 
 ### 4d. No video/voice pre-meet
 - **[PRODUCT]** HANDOVER flags video/voice chat (Daily.co) as the remaining booking-enabler — a pre-shoot
@@ -113,7 +113,30 @@ users sign up into a live Supabase backend, but the experience and the marketing
 
 ---
 
-## 5. The cross-cutting adjustment (the real recommendation)
+## 5. Security & authentication — SHIPPED ✅
+
+### 5a. Two-factor authentication (2FA/TOTP) — SHIPPED ✅
+- **[CODE — SHIPPED]** `/api/muse/mfa` route wrapping Supabase Auth MFA (TOTP). GET: `mfa-status`,
+  `mfa-factors`. POST: `enroll` (returns secret + QR URI), `verify-code` (challenge+verify),
+  `challenge`, `unenroll`. Supabase Auth already has TOTP MFA enabled on the project. Client helpers:
+  `mfaStatus`, `mfaEnroll`, `mfaVerify`, `mfaUnenroll` in `lib/api.ts`. **Note:** Settings screen
+  UI toggle still needed (backend complete).
+
+---
+
+## 6. Partner studios — LISTINGS LIVE, PARTNERSHIP PENDING
+
+### 6a. Apex Photo Studios & Hubble Studio — ASPIRATIONAL LISTINGS
+- **[CODE — SHIPPED]** Both studios are listed in the Studios browser with professional descriptions,
+  pricing (market-rate placeholder), rules, and oracle FAQs. **Not officially partnered.** Listings are
+  aspirational — real studios in LA that Muse would like to partner with. Pricing reflects comparable
+  market rates for self-service hourly studios in LA. Booking links go to the studios' own sites.
+  - **Apex Photo Studios** (Downtown LA): Multi-Set $44.99/hr, Cyc Wall $39.99/hr
+  - **Hubble Studio** (Arts District): Modular Space $49.99/hr, Boutique Stage $44.99/hr
+
+---
+
+## 7. The cross-cutting adjustment (the real recommendation)
 
 The product is **feature-complete but not market-complete.** Almost every gap above reduces to one
 thing:
@@ -123,9 +146,10 @@ thing:
 > secondary. A boardroom cares about: **can a creative get discovered, book, get paid, and get a
 > review — reliably, on a live DB, today?**
 
-Recommended focus order (matches STRATEGY.md's GTM):
-1. **Fix Muse Studio pricing** (3a) — money, immediately shippable.
-2. **Seed real supply** (1) — launch in one city (LA or Chicago) with real Mixers/FB creatives.
-3. **Ship the paid boost** (3b + 3c) — the free→paid visibility lever.
-4. **Make discovery read live data + professional-fit ranking** (2a/2c) — real "get discovered."
-5. **Reduce host-onboarding friction** (3d) + **auto-capture** (4a) — so the money loop closes itself.
+### Recommended focus order (updated):
+1. **Seed real supply** — launch in one city (LA or Chicago) with real Mixers/FB creatives.
+2. **Reduce host-onboarding friction** (3d) — so the money loop closes itself.
+3. **Ship video/voice pre-meet** (4d) — needs Daily.co API key.
+4. **Wire notification preferences persistence** — toggles currently cosmetic.
+5. **Settings 2FA toggle UI** — backend done, needs frontend.
+6. **Split `page.tsx` monolith** — architectural debt, blocks maintainability.

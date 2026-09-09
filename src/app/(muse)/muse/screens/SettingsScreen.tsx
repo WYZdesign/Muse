@@ -1,7 +1,8 @@
 "use client";
 
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect } from "react";
 import { FiArrowLeft, FiUser, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiTwitter, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX, FiLock, FiBell, FiHelpCircle, FiDownload, FiAlertTriangle, FiCompass } from "react-icons/fi";
+import { mfaStatus, mfaEnroll, mfaVerify, mfaUnenroll } from "../lib/api";
 // Push subscribe/unsubscribe arrive as PROPS (page.tsx owns the real impls) —
 // importing the module fns here too shadowed them and invited drift.
 import type { Screen } from "../components/types";
@@ -221,6 +222,42 @@ export const SettingsScreen = memo(function SettingsScreen({
   const [ideaDescription, setIdeaDescription] = useState("");
   const [ideaSubmitting, setIdeaSubmitting] = useState(false);
 
+  // 2FA / MFA state
+  const [showMFA, setShowMFA] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaFactors, setMfaFactors] = useState<{ id: string; status: string; friendlyName?: string }[]>([]);
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaEnrolling, setMfaEnrolling] = useState(false);
+  const [mfaQrUri, setMfaQrUri] = useState("");
+  const [mfaSecret, setMfaSecret] = useState("");
+  const [mfaVerifyCode, setMfaVerifyCode] = useState("");
+  const [mfaError, setMfaError] = useState("");
+
+  // Profile completion state
+  const [completionPct, setCompletionPct] = useState(0);
+  const [completionBreakdown, setCompletionBreakdown] = useState<Record<string, { done: boolean; weight: number }>>({});
+  const [showCompletionDetails, setShowCompletionDetails] = useState(false);
+
+  // Load profile completion on mount
+  useEffect(() => {
+    if (screen !== "settings" || !authFetch) return;
+    authFetch("/api/muse?type=profile-completion").then(r => r.json()).then(d => {
+      if (d.completion != null) setCompletionPct(d.completion);
+      if (d.breakdown) setCompletionBreakdown(d.breakdown);
+    }).catch(() => {});
+  }, [screen, authFetch]);
+
+  // Load MFA status when the sub-page opens
+  useEffect(() => {
+    if (!showMFA) return;
+    setMfaLoading(true);
+    mfaStatus().then(d => {
+      setMfaEnabled(!!d.enabled);
+      setMfaFactors(d.factors || []);
+      setMfaLoading(false);
+    }).catch(() => setMfaLoading(false));
+  }, [showMFA]);
+
   const changePassword = async () => {
     if (pwNew.length < 6) { showToast("Password must be at least 6 characters"); return; }
     if (!/[A-Z]/.test(pwNew)) { showToast("Password needs a capital letter"); return; }
@@ -285,6 +322,13 @@ export const SettingsScreen = memo(function SettingsScreen({
       desc: !ageVerified ? "Expired — paid features locked. Tap to verify" : verificationExpiringSoon ? "Expires in ≤30 days — tap to re-verify" : "Verified ✓",
       action: () => setShowAgeVerification(true),
       dot: !ageVerified || verificationExpiringSoon,
+    },
+    {
+      icon: <FiLock size={18} />,
+      label: "Two-Factor Authentication",
+      desc: mfaEnabled ? "Enabled ✓" : "Add an extra layer of security",
+      action: () => setShowMFA(true),
+      dot: false,
     },
   ];
 
@@ -389,6 +433,47 @@ export const SettingsScreen = memo(function SettingsScreen({
 
           <div className="settings-group">
             <div className="settings-group-title">Account</div>
+            {completionPct < 100 && (
+              <div
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowCompletionDetails(!showCompletionDetails); } }}
+                onClick={() => setShowCompletionDetails(!showCompletionDetails)}
+                style={{ padding: "10px 14px", marginBottom: 8, borderRadius: 12, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", cursor: "pointer" }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)" }}>Profile Completion</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)" }}>{completionPct}%</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${completionPct}%`, borderRadius: 3, background: "linear-gradient(90deg, var(--gold), var(--coral))", transition: "width .5s ease" }} />
+                </div>
+                {showCompletionDetails && (
+                  <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                    {[
+                      { k: "avatar", l: "Profile photo" },
+                      { k: "bio", l: "Bio (20+ chars)" },
+                      { k: "type", l: "Creative type" },
+                      { k: "styles", l: "Styles / aesthetics" },
+                      { k: "looking", l: "Looking for" },
+                      { k: "prompts", l: "Prompt responses (3+)" },
+                      { k: "photos", l: "Portfolio photos (2+)" },
+                      { k: "verification", l: "Identity verification" },
+                      { k: "personality", l: "Personality traits" },
+                    ].map(item => {
+                      const b = completionBreakdown[item.k];
+                      return (
+                        <div key={item.k} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: b?.done ? "var(--text2)" : "var(--text)" }}>
+                          <span style={{ color: b?.done ? "#A5D6A7" : "var(--muted)", fontWeight: 700 }}>{b?.done ? "✓" : "○"}</span>
+                          <span style={{ opacity: b?.done ? 0.6 : 1 }}>{item.l}</span>
+                          {!b?.done && <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>+{b?.weight || 0}%</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
             {accountItems.map(renderRow)}
           </div>
 
@@ -625,6 +710,129 @@ export const SettingsScreen = memo(function SettingsScreen({
                 <button className="btn btn-outline" style={{ padding: "4px 12px", fontSize: 12 }} onClick={() => { setBlockedUsers(blockedUsers.filter(b => b !== uid)); if (apiFetch) { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unblock", target_id: uid }) }).catch(() => {}); } }}>Unblock</button>
               </div>
             ))
+          )}
+        </SettingsSubPage>
+      )}
+
+      {showMFA && (
+        <SettingsSubPage title="Two-Factor Authentication" onClose={() => { setShowMFA(false); setMfaEnrolling(false); setMfaQrUri(""); setMfaSecret(""); setMfaVerifyCode(""); setMfaError(""); }}>
+          {mfaLoading ? (
+            <div style={{ textAlign: "center", padding: 20, color: "var(--text2)", fontSize: 13 }}>Loading...</div>
+          ) : mfaEnrolling ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>
+                Scan this QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.), then enter the 6-digit code below.
+              </div>
+              {mfaQrUri && (
+                <div style={{ textAlign: "center", padding: 16, background: "rgba(255,255,255,0.95)", borderRadius: 12 }}>
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(mfaQrUri)}`} alt="MFA QR Code" style={{ width: 200, height: 200 }} />
+                </div>
+              )}
+              {mfaSecret && (
+                <div style={{ textAlign: "center", padding: "8px 12px", background: "rgba(255,255,255,0.04)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Manual entry key:</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", fontFamily: "monospace", letterSpacing: 1 }}>{mfaSecret}</div>
+                </div>
+              )}
+              <input
+                className="inp"
+                type="text"
+                inputMode="numeric"
+                placeholder="Enter 6-digit code"
+                value={mfaVerifyCode}
+                onChange={e => setMfaVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                style={{ margin: 0, textAlign: "center", fontSize: 18, letterSpacing: 4 }}
+              />
+              {mfaError && <div style={{ fontSize: 12, color: "#ff8a80", textAlign: "center" }}>{mfaError}</div>}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button className="btn btn-outline" style={{ flex: 1, fontSize: 13 }} onClick={() => { setMfaEnrolling(false); setMfaQrUri(""); setMfaSecret(""); setMfaVerifyCode(""); setMfaError(""); }}>Cancel</button>
+                <button
+                  className="btn btn-gold"
+                  style={{ flex: 1, fontSize: 13 }}
+                  disabled={mfaVerifyCode.length !== 6}
+                  onClick={async () => {
+                    if (!mfaFactors.length) return;
+                    setMfaError("");
+                    try {
+                      const res = await mfaVerify(mfaFactors[0].id, mfaVerifyCode);
+                      if (res.success) {
+                        setMfaEnabled(true);
+                        setMfaEnrolling(false);
+                        setMfaQrUri("");
+                        setMfaSecret("");
+                        setMfaVerifyCode("");
+                        showToast("✓ Two-factor authentication enabled");
+                        // Refresh factors
+                        const status = await mfaStatus();
+                        setMfaFactors(status.factors || []);
+                      } else {
+                        setMfaError(res.error || "Invalid code — try again");
+                      }
+                    } catch { setMfaError("Verification failed — try again"); }
+                  }}
+                >Verify & Enable</button>
+              </div>
+            </div>
+          ) : mfaEnabled ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "rgba(165,214,167,0.08)", borderRadius: 12, border: "1px solid rgba(165,214,167,0.2)" }}>
+                <FiShield size={20} style={{ color: "#A5D6A7" }} />
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Two-factor is active</div>
+                  <div style={{ fontSize: 12, color: "var(--text2)" }}>Your account is protected with TOTP verification.</div>
+                </div>
+              </div>
+              {mfaFactors.filter(f => f.status === "verified").map(f => (
+                <div key={f.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{f.friendlyName || "Authenticator"}</div>
+                    <div style={{ fontSize: 11, color: "var(--text2)" }}>Verified</div>
+                  </div>
+                  <button
+                    className="btn btn-outline"
+                    style={{ padding: "4px 12px", fontSize: 12, color: "#ff8a80", borderColor: "rgba(255,107,107,0.3)" }}
+                    onClick={async () => {
+                      try {
+                        const res = await mfaUnenroll(f.id);
+                        if (res.success) {
+                          setMfaEnabled(false);
+                          setMfaFactors([]);
+                          showToast("Two-factor authentication disabled");
+                        } else {
+                          showToast(res.error || "Could not disable");
+                        }
+                      } catch { showToast("Could not disable two-factor"); }
+                    }}
+                  >Disable</button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>
+                Two-factor authentication adds an extra layer of security to your account. When enabled, you'll enter a code from your authenticator app each time you sign in.
+              </div>
+              <button
+                className="btn btn-gold"
+                style={{ width: "100%", fontSize: 13 }}
+                onClick={async () => {
+                  setMfaLoading(true);
+                  setMfaError("");
+                  try {
+                    const res = await mfaEnroll();
+                    if (res.id && res.qr_uri) {
+                      setMfaQrUri(res.qr_uri);
+                      setMfaSecret(res.secret || "");
+                      setMfaFactors([{ id: res.id, status: "unverified" }]);
+                      setMfaEnrolling(true);
+                    } else {
+                      showToast(res.error || "Could not start setup");
+                    }
+                  } catch { showToast("Could not start setup"); }
+                  setMfaLoading(false);
+                }}
+              >Set Up Two-Factor</button>
+            </div>
           )}
         </SettingsSubPage>
       )}

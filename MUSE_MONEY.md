@@ -10,7 +10,7 @@
 
 Muse makes money two ways:
 
-1. **Subjections (subscriptions)** — recurring Muse Pro / Muse Studio.
+1. **Subscriptions** — recurring Muse Pro / Muse Studio.
 2. **Marketplace take** — a cut of every paid booking (the big one).
 
 Plus three **growth/incentive** levers that don't directly charge the core act but create the loop:
@@ -54,7 +54,7 @@ acquisition engine that feeds A/B/C/D.
 |------|-------|-------|
 | Free | $0 forever | Basic profile, limited likes, standard discover. The acquisition tier. |
 | **Muse Pro** | **$9.99/mo** (or $79.99/yr, ~33% off) | Unlimited likes, see who likes you, advanced filters, read receipts, 1×/week boost, incognito, priority discover. |
-| **Muse Studio** (industry) | **$29.99/mo** | Agency/casting/brand tier — boosted brief placement, unlimited talent lists, priority support. *(In `TIERS_BY_SIDE.industry`; see gap #1 in `MUSE_GAPS_ADJUSTMENTS.md` — not yet wired to a Stripe price.)* |
+| **Muse Studio** (industry) | **$29.99/mo** | Agency/casting/brand tier — boosted brief placement, unlimited talent lists, priority support. Live Stripe price `price_muse_studio_monthly`. |
 
 ### Marketplace take on paid bookings (the big engine)
 Every paid Session booking carries a **15% blended platform take**, split so neither side eats it alone:
@@ -71,10 +71,21 @@ Both amounts go to `application_fee_amount` (the platform's share). The host is 
 - Muse keeps **`$8 fee + $7 commission = $15`** (15%).
 - Host receives **$93** (via Stripe Connect destination charge).
 
+### À la carte boosts (pay-per-boost)
+3-tier duration pricing for one-off boost purchases (free users buy inventory, Pro users get 1×/week free):
+
+| Duration | Price | Use case |
+|----------|-------|----------|
+| 24 hours | **$3.99** | Quick visibility spike for a weekend shoot |
+| 72 hours | **$9.99** | Extended visibility for a launch or portfolio drop |
+| 7 days | **$19.99** | Maximum exposure for serious booking push |
+
+Boost inventory is granted on webhook confirmation (`boost-purchase-complete`). Active boost duration
+extends (not stacks) if already boosted. Quest rewards also grant boost inventory.
+
 ### Growth levers (not direct core charges, but they generate direct revenue)
 - **Referrals** — "refer 3 friends → get a year of Pro free." Cheap acquisition.
-- **Boosts** — Pro get 1×/week; free users are a *future* pay-per-boost opportunity (gap #2 in
-  `MUSE_GAPS_ADJUSTMENTS.md`). Boost = top of the Discover stack.
+- **Boosts** — Pro get 1×/week free; free users buy à la carte (see above). Boost = top of the Discover stack.
 - **Founding tier** — first 150 get lifetime Pro free (acquisition + social proof, not revenue).
 
 ---
@@ -109,7 +120,7 @@ Both amounts go to `application_fee_amount` (the platform's share). The host is 
 - The other party is notified to **leave a review**.
 
 ### PHASE 5 — REVIEW
-- `reviewSubmit` → both parties leave a 1–5 rating + text + **structured criteria** (communication,
+- `reviewSubmit` → both parties leave a 1–5 rating + text + **5 structured criteria** (communication,
   reliability, creative quality, professionalism, safety).
 - These reviews + match/booking history are the trust signal that drives future discovery.
 
@@ -117,6 +128,8 @@ Both amounts go to `application_fee_amount` (the platform's share). The host is 
 - `bookingCancel` (either party) → booking `cancelled` + Stripe PaymentIntent **cancelled** (no charge).
 - `checkinRespond` cancelling → booking auto-cancelled, held funds released.
 - Capture failure → `bookingComplete` returns 402, booking stays `confirmed`, money still held.
+- **Refund requests** → user submits via sessions flow → `admin-refunds` lists open requests →
+  `admin-resolve-refund` resolves with note + audit log.
 
 ---
 

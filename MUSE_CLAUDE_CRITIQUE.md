@@ -47,18 +47,21 @@ brands, studios), it can:
 
 **My critique:** keep the vibe layer, but make it *secondary*. Rank primarily on professional fit
 (styles, role, availability, verified, reviews). The "psychic match %" is a hook for the creative side;
-the industry buyer needs a trust card, not a horoscope. (See `MUSE_GAPS_ADJUSTMENTS.md` #2c.)
+the industry buyer needs a trust card, not a horoscope. (See `MUSE_GAPS_ADJUSTMENTS.md` #2b.)
 
-### 2d. The demo-data marketplace problem
+### 2d. The demo-data marketplace problem — PARTIALLY ADDRESSED
 The product's discovery runs largely on hardcoded demo profiles/briefs/sessions. **A marketplace
 running on fake supply is a demo, not a business.** Until real creatives populate the live DB, every
-"discover/get discovered/earn money" claim is illustrative. This is the single biggest non-engineering
-gap.
+"discover/get discovered/earn money" claim is illustrative. **Progress:** a live server-side
+`discover-ranked` endpoint now scores real `muse_profiles` against the requesting user, so the
+discovery engine works on real data. The demo corpus remains as a fallback for new users with empty
+networks. This is the single biggest non-engineering gap.
 
-### 2e. Discovery is static, not live-ranked
-The matching/ranking is seeded once (rules + embeddings), and it's client-side on demo data. There's no
-**live LLM/re-ranking** and no real "similar to this profile" for live rows. For a marketplace where the
-whole point is "the right person finds me," a static, demo-driven rank undercuts the core promise.
+### 2e. Discovery is now live-ranked — UPDATED ✅
+- **[CODE — SHIPPED]** `discover-ranked` endpoint fetches real `muse_profiles`, computes professional
+  fit (styles, roles, verified status, reviews) + vibe signals (zodiac/MBTI/life-path) server-side,
+  and surfaces boosted + complementary-side profiles first. Discovery is no longer static or
+  client-side-only. The ranking weights professional fit above vibe.
 
 ### 2f. NCMEC / CSAM is legally dormant
 The CSAM pipeline is code-complete but gated on NCMEC ESP approval. **This is the single biggest
@@ -73,8 +76,7 @@ moderation posture is weaker than the marketing implies.
    match→shoot time.** The valuation story is payments/trust, not social graph.
 2. **Add a live "similar to this profile" recommendation** on the real DB — the exact thing a creative
    needs to get discovered. (Left as the top discovery gap.)
-3. **Do the Studio tier + paid boost** — the two cleanest direct-revenue levers not yet wired
-   (see `MUSE_GAPS_ADJUSTMENTS.md` #3a/#3b).
+3. **Do the Studio tier + paid boost** — the two cleanest direct-revenue levers. **BOTH NOW SHIPPED.**
 4. **Boost visibility via the FD anchor + Mixers** — seed 20 real creatives from those channels before
    public open. Two-sided markets die on the empty side.
 5. **Pick ONE city for the first transaction loop** (LA or Chicago — deepest FD relationships). Get 5
@@ -100,21 +102,21 @@ don't self-insure. The risk isn't payment mechanics — it's the **liability lan
 content line**. That's an attorney call, not an engineering one.
 
 **Q4. The biggest thing to get right:** **Don't let it drift into a dating app.** That kills supply
-(models) and triggers payment/App-Store risk. Every feature desigand decision should be filtered
-through "does this keep this professional + safe?" The zodiatr/MBTI match % is the one place that creeps
+(models) and triggers payment/App-Store risk. Every feature design decision should be filtered
+through "does this keep this professional + safe?" The zodiac/MBTI match % is the one place that creeps
 closest — treat it as flavor, not identity.
 
 ---
 
 ## 5. What I'd change tomorrow (shortlist)
 
-1. Surface the **industry tier** and let it be purchased (money, instantly).
-2. Rank discovery on **professional fit**, keep vibe secondary.
-3. Wire **live-DB discovery** + a real "similar profiles" query (get discovered).
+1. ~~Surface the **industry tier** and let it be purchased~~ — **DONE** (Muse Studio $29.99/mo live).
+2. Rank discovery on **professional fit**, keep vibe secondary — **DONE** (server-side `discover-ranked`).
+3. Wire **live-DB discovery** + a real "similar profiles" query — **DONE** (endpoint live).
 4. Make the **buyer trust card** (verified, review history, completion pace, response rate) obvious at a
-   glance.
+   glance — **DONE** (`creative-trust` endpoint).
 5. Get **NCMEC/observability** sorted before public — the two real "surprise" risks.
-6. Add **auto-capture** so no booking's funds hang because nobody clicked "complete."
+6. ~~Add **auto-capture**~~ — **DONE** (`capture-bookings` cron runs every 6h).
 
 ---
 
