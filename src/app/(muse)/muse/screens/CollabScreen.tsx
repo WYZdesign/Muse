@@ -2,7 +2,7 @@
 
 import React, { memo, useEffect, useState } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiPlus, FiSearch, FiGrid, FiRepeat, FiDollarSign, FiVolume2, FiZap, FiFlag } from "react-icons/fi";
+import { FiArrowLeft, FiPlus, FiSearch, FiGrid, FiRepeat, FiDollarSign, FiVolume2, FiZap, FiFlag, FiBookmark } from "react-icons/fi";
 import { matchesBriefSearch } from "../components/searchMatch";
 import Nav from "../components/Nav";
 import { EmptyState } from "../components/EmptyState";
@@ -169,7 +169,7 @@ export const CollabScreen = memo(function CollabScreen({
         <input className="inp" placeholder="Describe what you're looking for..." value={briefSearchQuery} onChange={e => setBriefSearchQuery(e.target.value)} style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
         {briefSearchQuery && <button onClick={() => setBriefSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
       </div>
-      <div className="conn-tabs" style={{ padding: "0 12px", justifyContent: "flex-start" }}>
+      <div className="conn-tabs" style={{ padding: "12px 12px 0", justifyContent: "flex-start" }}>
         {/* Small leading icon per tab (audit finding tu-2) — text-only tabs
             work fine at this row length, but a glance-able icon removes a
             beat of reading for a frequently-tapped row like this one. Kept
@@ -229,12 +229,12 @@ export const CollabScreen = memo(function CollabScreen({
                   aria-label="Not interested"
                   title="Not interested"
                   onClick={() => hideBrief(brief.id)}
-                  style={{ position: "absolute", top: 14, right: 14, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  style={{ position: "absolute", top: 14, left: 14, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >✕</button>
               )}
               {/* Report flag (Torreé audit): inverted-color flag icon so it reads
                   as an action, sitting beside the Not-interested X. */}
-              {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ position: "absolute", top: 14, right: 42, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={13} /></button>)}
+              {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ position: "absolute", top: 14, left: 42, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={13} /></button>)}
               <div className="brief-header" style={{ flexWrap: "wrap", gap: 6 }}>
                 <Image loading="lazy" src={brief.authorImg} alt={brief.author} width={86} height={86} className={"brief-avatar brief-variant-" + (bi % 5)} />
                 <div className="brief-info" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -300,7 +300,7 @@ export const CollabScreen = memo(function CollabScreen({
                   aria-label="Safety info"
                   title="Safety info"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSafetyInfoOpen(true); }}
-                  style={{ position: "absolute", top: 44, left: 10, width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3 }}
+                  style={{ position: "absolute", top: 14, right: 14, width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3 }}
                 >ⓘ</button>
               )}
               <div className="brief-tags">{brief.tags.map((t: string) => <span key={t} className="brief-tag">{t}</span>)}</div>
@@ -338,7 +338,7 @@ export const CollabScreen = memo(function CollabScreen({
                 )}
                 <button
                   className={"brief-btn-save" + (savedBriefs.includes(brief.id) ? " saved" : "")}
-                  style={{ padding: "8px 14px", fontSize: 12, background: "transparent", border: "none", borderRadius: 0, color: savedBriefs.includes(brief.id) ? "var(--gold)" : "var(--text2)", flex: "0 0 auto" }}
+                  style={{ padding: 8, fontSize: 16, background: "transparent", border: "none", borderRadius: 0, color: savedBriefs.includes(brief.id) ? "var(--gold)" : "var(--text2)", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}
                   onClick={() => {
                     const isSaved = savedBriefs.includes(brief.id);
                     if (isSaved) {
@@ -351,7 +351,7 @@ export const CollabScreen = memo(function CollabScreen({
                     apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { savedBriefs: isSaved ? savedBriefs.filter(x => x !== brief.id) : [...savedBriefs, brief.id] } }) }).catch(() => showToast(isSaved ? "Couldn't unsave — try again" : "Couldn't save — try again"));
                   }}
                 >
-                  {savedBriefs.includes(brief.id) ? "Saved" : "Save"}
+                  <FiBookmark size={16} fill={savedBriefs.includes(brief.id) ? "var(--gold)" : "none"} />
                 </button>
               </div>
             </div>

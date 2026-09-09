@@ -180,7 +180,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
 
   return (
     <>
-      <div className="scene">
+      <div className="scene" style={{ opacity: "var(--scene-opacity, 1)" } as React.CSSProperties}>
         <div className="scene-wash" />
         <div className="scene-orb orb-coral" /><div className="scene-orb orb-gold" />
         <div className="scene-orb orb-pink" /><div className="scene-orb orb-lavender" />

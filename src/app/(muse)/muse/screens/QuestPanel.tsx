@@ -25,15 +25,18 @@ const TIER_CONFIG: Record<string, { label: string; color: string; bg: string; bo
   legendary: { label: "Legendary", color: "#FF8A80", bg: "rgba(255,138,128,0.12)",  border: "rgba(255,138,128,0.3)" },
 };
 
+const FILTER_OPTIONS = [
+  { key: "all", label: "All" },
+  { key: "daily", label: "Daily" },
+  { key: "monthly", label: "Monthly" },
+  { key: "weekly", label: "Weekly" },
+];
+
 export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewardGranted, onClaimablesChange, onQuestsChange, loginStreak = 0, weeklyLogins = [false,false,false,false,false,false,false] }: QuestPanelProps) {
   const [allQuests, setAllQuests] = useState<any[]>([]);
   const [xp, setXp] = useState({ total_xp: 0, level: 1 });
   const [filter, setFilter] = useState<string>("all");
-  // Session 85: Torreé asked for two tabs — "top" shows the 4 quests closest to being
-  // claimed (or already claimable), "all" shows the full list with the tier bubbles.
-  // This replaces the old "tracking" (in-progress) vs "all" split and the separate
-  // "Almost there" near-completion widget, which the new top-4 tab supersedes.
-  const [view, setView] = useState<"top" | "all">("top");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
   const quests = rotateQuests(allQuests);
@@ -71,21 +74,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
     setClaimingId(null);
   };
 
-  // "Top 4" tab: quests closest to being claimed. Claimable quests (100%, just waiting
-  // to be claimed) sort first since they're literally as close as it gets; everything
-  // else ranks by progress ratio descending. Already-claimed quests are excluded — they
-  // have nothing left to work toward.
-  const topFour = [...quests]
-    .filter(q => !(q.completed && q.claimed))
-    .sort((a, b) => {
-      const aClaimable = a.completed && !a.claimed;
-      const bClaimable = b.completed && !b.claimed;
-      if (aClaimable !== bClaimable) return aClaimable ? -1 : 1;
-      return (b.progress / b.target) - (a.progress / a.target);
-    })
-    .slice(0, 4);
-  const visible = view === "top" ? topFour : quests.filter(q => filter === "all" || q.quest_tier === filter);
-  const tiers = ["starter", "daily", "weekly", "monthly", "season", "legendary"];
+  const visible = quests.filter(q => filter === "all" || q.quest_tier === filter);
   const claimableCount = quests.filter(q => q.completed && !q.claimed).length;
 
   const xpIntoLevel = xp.total_xp - 50 * Math.pow(xp.level - 1, 2);
@@ -131,110 +120,233 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
           <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
         </div>
 
-        {/* View Tabs: Top 4 (closest to claim) vs All (full category list) */}
-        <div className="quest-view-tabs">
-          <button className={`quest-view-tab ${view === "top" ? "active" : ""}`} onClick={() => setView("top")}>
-            <FiStar size={13} /> Top 4 {claimableCount > 0 && <span className="quest-view-count">{claimableCount}</span>}
-          </button>
-          <button className={`quest-view-tab ${view === "all" ? "active" : ""}`} onClick={() => setView("all")}>
-            <FiCheck size={13} /> All Quests <span className="quest-view-count">{quests.length}</span>
-          </button>
+        {/* Filter Tabs — color-fill when selected */}
+        <div style={{ display: "flex", gap: 8, padding: "16px 20px 0", flexShrink: 0 }}>
+          {FILTER_OPTIONS.map(f => {
+            const isActive = filter === f.key;
+            return (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                style={{
+                  flex: 1,
+                  padding: "10px 0",
+                  borderRadius: 10,
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  transition: "all .2s",
+                  background: isActive ? "linear-gradient(135deg, #FFD700, #FFA500)" : "rgba(255,255,255,0.04)",
+                  color: isActive ? "#0a0612" : "var(--text2)",
+                  boxShadow: isActive ? "0 2px 12px rgba(255,215,0,0.25)" : "none",
+                }}
+              >
+                {f.label}
+                {f.key === "all" && claimableCount > 0 && (
+                  <span style={{
+                    marginLeft: 6,
+                    fontSize: 10,
+                    padding: "1px 6px",
+                    borderRadius: 99,
+                    background: isActive ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.1)",
+                    color: isActive ? "#0a0612" : "var(--text2)",
+                    fontWeight: 800,
+                  }}>{claimableCount}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Filter Tabs (tier) — only meaningful once you're looking at the full list */}
-        {view === "all" && (
-          <div className="quest-filters">
-            <button className={`quest-filter-btn ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>All</button>
-            {tiers.map(t => {
-              const cfg = TIER_CONFIG[t];
-              const count = quests.filter(q => q.quest_tier === t && !q.completed).length;
-              return (
-                <button key={t} className={`quest-filter-btn ${filter === t ? "active" : ""}`} style={filter === t ? { borderColor: cfg.color, color: cfg.color } : {}} onClick={() => setFilter(t)}>
-                  {cfg.label} {count > 0 && <span className="quest-filter-count" style={filter === t ? { background: `${cfg.color}22`, color: cfg.color } : {}}>{count}</span>}
-                </button>
-              );
-            })}
+        {/* Claimable banner */}
+        {claimableCount > 0 && (
+          <div style={{
+            margin: "14px 20px 0",
+            padding: "10px 16px",
+            borderRadius: 12,
+            background: "linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,138,128,0.08))",
+            border: "1px solid rgba(255,215,0,0.2)",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 13,
+            fontWeight: 700,
+            color: "#FFD700",
+            flexShrink: 0,
+          }}>
+            <span style={{ fontSize: 16 }}>🎁</span>
+            {claimableCount} quest{claimableCount !== 1 ? "s" : ""} ready to claim!
           </div>
         )}
 
-        {/* Quest List — full-width rectangle rows */}
-        <div className="quest-grid">
+        {/* Quest List */}
+        <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "14px 16px 52px", display: "flex", flexDirection: "column", gap: 10, WebkitOverflowScrolling: "touch" }}>
           {visible.length === 0 && (
-            <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, textAlign: "center", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, textAlign: "center", gap: 12 }}>
               <div style={{ fontSize: 36 }}>📋</div>
-<div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{view === "top" ? "No quests to claim yet" : "No quests in this category"}</div>
-<div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 280 }}>{view === "top" ? "Start a quest to see it here — they populate as you engage on Muse." : "Switch to a different filter or check back later."}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>No quests in this category</div>
+              <div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 280 }}>Switch to a different filter or check back later.</div>
             </div>
           )}
           {visible.map((q: any) => {
             const tier = TIER_CONFIG[q.quest_tier] || TIER_CONFIG.weekly;
             const pct = Math.min(100, (q.progress / q.target) * 100);
             const isClaimable = q.completed && !q.claimed;
+            const isExpanded = expandedId === q.id;
 
             return (
-              <div key={q.id} className={`quest-card ${q.completed ? "completed" : ""} ${isClaimable ? "claimable" : ""}`} style={{ borderLeftColor: tier.color, position: "relative", overflow: "hidden" }}>
-                {/* Vertical tier tab on the left edge (Torreé audit) — the badge
-                    was a small pill in the top-right corner; now it's a colored
-                    tab running down the left side with vertical label text. */}
-                <span className="quest-tier-badge-vertical" style={{ background: `${tier.color}1f`, borderRight: `1px solid ${tier.color}`, color: tier.color }}>{tier.label}</span>
-                <div className="quest-card-row">
-                  <div className="quest-card-icon" style={{ background: tier.bg, border: `1px solid ${tier.border}` }}>
-                    {q.icon}
+              <div
+                key={q.id}
+                onClick={() => setExpandedId(isExpanded ? null : q.id)}
+                style={{
+                  position: "relative",
+                  borderRadius: 14,
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  background: isClaimable
+                    ? "linear-gradient(135deg, rgba(255,215,0,0.06), rgba(255,138,128,0.04))"
+                    : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${isClaimable ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.06)"}`,
+                  boxShadow: isClaimable ? "0 0 20px rgba(255,215,0,0.05)" : "none",
+                  transition: "all .2s",
+                  opacity: q.completed && !isClaimable ? 0.6 : 1,
+                }}
+              >
+                {/* Color-fill left strip */}
+                <div style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: 5,
+                  background: tier.color,
+                  borderRadius: "14px 0 0 14px",
+                }} />
+
+                {/* Main row: emoji  Name  +reward  |  progress */}
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "12px 16px 12px 20px",
+                  gap: 12,
+                  minHeight: 48,
+                }}>
+                  {/* Emoji — no bubble, just raw character */}
+                  <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}>{q.icon}</span>
+
+                  {/* Name + reward on one line */}
+                  <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: "var(--text)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}>{q.title}</span>
+                    <span style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: tier.color,
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
+                    }}>+{q.reward_amount > 1 ? `${q.reward_amount}× ` : ""}{q.reward_label}</span>
                   </div>
-                  <div className="quest-card-main">
-                    {/* Audit fix (2026-09-08): title + description + reward were
-                        one nowrap/ellipsis text block. Ellipsis truncates a whole
-                        block at ITS edge, not per-child, so on a long title (e.g.
-                        "Quick Browse - Swipe 5 profiles") the reward span — the
-                        one piece of text that actually matters, what you get for
-                        completing the quest — got shoved past the edge and hard
-                        clipped mid-letter with no "…" to even signal it was cut.
-                        Now title+description truncate together in their own
-                        flex-shrinking span while the reward sits in a
-                        flex-shrink:0 span that's always shown in full. */}
-                    <div className="quest-card-line" title={`${q.title}${q.description ? " - " + q.description : ""}: ${q.reward_amount > 1 ? `${q.reward_amount}× ` : ""}${q.reward_label}`}>
-                      <span className="quest-card-titledesc">
-                        <span className="quest-card-title">{q.title}</span>
-                        {q.description && <span className="quest-card-desc"> - {q.description}:</span>}
-                      </span>
-                      <span className="quest-card-reward" style={{ color: tier.color }}>{" "}{q.reward_amount > 1 ? `${q.reward_amount}× ` : ""}{q.reward_label}</span>
-                    </div>
-                  </div>
+
+                  {/* Claim button (if claimable) */}
+                  {isClaimable && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); claimReward(q.id); }}
+                      disabled={claimingId === q.id}
+                      style={{
+                        padding: "6px 14px",
+                        borderRadius: 8,
+                        border: "none",
+                        background: `linear-gradient(135deg, ${tier.color}, ${tier.color}cc)`,
+                        color: "#0a0612",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        flexShrink: 0,
+                        opacity: claimingId === q.id ? 0.6 : 1,
+                      }}
+                    >
+                      {claimingId === q.id ? "..." : "Claim"}
+                    </button>
+                  )}
+
+                  {/* Claimed badge */}
+                  {q.completed && q.claimed && !isClaimable && (
+                    <span style={{ fontSize: 11, color: "var(--text2)", fontWeight: 600, flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
+                      <FiCheck size={12} /> Claimed
+                    </span>
+                  )}
+
+                  {/* Expand chevron */}
+                  <span style={{
+                    fontSize: 12,
+                    color: "var(--text2)",
+                    transition: "transform .2s",
+                    transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                    flexShrink: 0,
+                  }}>›</span>
                 </div>
 
-                {/* Progress bar OR complete/incomplete for single-task quests */}
-                {q.target > 1 ? (
-                  <div className="quest-progress-wrap">
-                    <div className="quest-progress-track">
-                      <div className="quest-progress-fill" style={{ width: `${pct}%`, background: tier.color }} />
-                    </div>
-                    <span className="quest-progress-text">{q.progress}/{q.target}</span>
+                {/* Thin progress bar at bottom of tab */}
+                <div style={{ padding: "0 16px 10px 20px", display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{
+                    flex: 1,
+                    height: 4,
+                    borderRadius: 2,
+                    background: "rgba(255,255,255,0.06)",
+                    overflow: "hidden",
+                  }}>
+                    <div style={{
+                      height: "100%",
+                      borderRadius: 2,
+                      width: `${pct}%`,
+                      background: "linear-gradient(90deg, #FFD700, #FF8A80)",
+                      transition: "width .4s cubic-bezier(.4,0,.2,1)",
+                    }} />
                   </div>
-                ) : (
-                  <div className="quest-single-status" style={{ fontSize: 12, fontWeight: 700, color: q.completed ? "var(--gold)" : "var(--muted)" }}>
-                    {q.completed ? "✓ Complete" : "Incomplete"}
-                  </div>
-                )}
+                  <span style={{
+                    fontSize: 11,
+                    color: "var(--text2)",
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                  }}>{q.progress}/{q.target}</span>
+                </div>
 
-                {/* Claim Button */}
-                {isClaimable && (
-                  <button
-                    className="quest-claim-btn"
-                    style={{ background: `linear-gradient(135deg, ${tier.color}, ${tier.color}cc)` }}
-                    onClick={() => claimReward(q.id)}
-                    disabled={claimingId === q.id}
-                  >
-                    {claimingId === q.id ? "..." : `Claim`}
-                  </button>
-                )}
-                {q.completed && q.claimed && (
-                  <div className="quest-claimed-badge"><FiCheck size={12} /> Claimed</div>
+                {/* Expanded description area — accordion push */}
+                {isExpanded && (
+                  <div style={{
+                    padding: "0 16px 14px 20px",
+                    borderTop: "1px solid rgba(255,255,255,0.05)",
+                  }}>
+                    <div style={{
+                      fontSize: 13,
+                      color: "var(--text2)",
+                      lineHeight: 1.5,
+                      paddingTop: 10,
+                    }}>
+                      {q.description || "No description available."}
+                    </div>
+                  </div>
                 )}
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* Minimal scoped styles for quest-list scrollbar */}
+      <style>{`
+        .quest-panel div[style*="overflow-y: auto"]::-webkit-scrollbar { width: 4px; }
+        .quest-panel div[style*="overflow-y: auto"]::-webkit-scrollbar-track { background: transparent; }
+        .quest-panel div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.3); border-radius: 99px; }
+      `}</style>
     </div>
   );
 }

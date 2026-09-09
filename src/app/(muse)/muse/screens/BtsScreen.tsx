@@ -219,12 +219,6 @@ export const BtsScreen = memo(function BtsScreen({
         <button
           className="chat-back"
           onClick={() => showScreen("discover")}
-          style={{
-            background: "linear-gradient(135deg,#FF69B4,#fff)",
-            border: "none",
-            borderRadius: 10,
-            color: "#0a0612",
-          }}
           aria-label="Back"
         >
           <FiArrowLeft size={20} />
@@ -413,7 +407,7 @@ export const BtsScreen = memo(function BtsScreen({
             weight) as Feed's and Network's content-filter chips, so it reads as the same
             control across the app; keeps BTS's own established pink/gold gradient fill
             for the active state rather than borrowing another page's accent color. */}
-        <div className="filter-scroll-row" style={{ padding: "12px 14px 4px" }}>
+        <div className="filter-scroll-row" style={{ padding: "22px 14px 4px" }}>
           {FILTER_TABS.map((t) => (
             <button
               type="button"

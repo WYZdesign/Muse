@@ -346,6 +346,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   }, []);
 
   const [viewProfile, setViewProfileRaw] = useState<any>(null);
+  const [viewProfilePhotoIdx, setViewProfilePhotoIdx] = useState(0);
+  // Reset photo carousel when a new profile is opened
+  useEffect(() => { setViewProfilePhotoIdx(0); }, [viewProfile?.id]);
   // Tracked wrapper — counts one view per real profile per session (duality
   // stats plumbing); demo/numeric ids are skipped server-side anyway.
   const viewedSessionRef = useRef<Set<string>>(new Set());
@@ -1032,6 +1035,14 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     // no separate read-modify-write here to avoid a lost-update race on muse_v1.
   }, [theme]);
 
+  // Load background transparency from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("muse_bg_opacity");
+      if (stored) document.documentElement.style.setProperty("--scene-opacity", stored);
+    } catch {}
+  }, []);
+
 
 
   const showToast = useCallback((msg: string | { msg: string; onTap?: () => void; type?: ToastType }) => { const t = typeof msg === "string" ? { msg } : msg; setToastMsg(t); setTimeout(() => setToastMsg(null), 3000); }, []);
@@ -1612,12 +1623,14 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (dragRef.current.axis === null) {
       if (absDx < 5 && absDy < 5) return;
       if (absDy > absDx) {
-        // Vertical gesture — no swipe-up actions. Release the card so the
-        // browser's native pan-y scrolling takes over.
+        // Vertical gesture — release so native scroll takes over.
         dragRef.current.active = false;
         (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
         return;
       }
+      // Require horizontal movement to be significantly greater than vertical
+      // before locking into swipe mode — lets vertical scroll win by default.
+      if (absDx < absDy * 1.5) return;
       dragRef.current.axis = "x";
     }
     dragValuesRef.current = { x: 0, y: 0, opacity: 0 };
@@ -1960,6 +1973,17 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       
       {swipeDir && <SwipeParticles active dir={swipeDir} />}
       <BackgroundScene flash={screenFlash} />
+      <div className="wave-bottom">
+        <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+          <path className="wave-path-1" d="M0,60 C360,120 720,0 1080,60 C1260,90 1350,30 1440,60 L1440,120 L0,120 Z" />
+        </svg>
+        <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+          <path className="wave-path-2" d="M0,80 C240,40 480,100 720,60 C960,20 1200,90 1440,50 L1440,120 L0,120 Z" />
+        </svg>
+        <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+          <path className="wave-path-3" d="M0,40 C180,80 360,20 540,60 C720,100 900,30 1080,70 C1260,110 1350,50 1440,80 L1440,120 L0,120 Z" />
+        </svg>
+      </div>
       {showMatchOverlay && (
         <div
           className="match-overlay"
@@ -2103,12 +2127,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     never lost: Settings > Privacy & Safety > Identity Verification always shows
     the same live state, dismissed or not. */}
 {((!ageVerified) || verificationExpiringSoon) && !verificationBannerDismissed && (
-  <div style={{ position: "absolute", top: "calc(12px + env(safe-area-inset-top,0px))", left: "50%", transform: "translateX(-50%)", zIndex: 60, maxWidth: "min(94%, 380px)", background: verificationExpiringSoon ? "linear-gradient(135deg, #ff8c00, #ffd700)" : "linear-gradient(135deg, #ff4444, #ff6b6b)", padding: "10px 38px 10px 16px", borderRadius: 24, boxShadow: "0 8px 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12)", textAlign: "center", fontSize: 12.5, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, whiteSpace: "nowrap", opacity: 0.85 }}>
-    <span>Update Verification to Unlock Features</span>
-    <button onClick={() => setShowAgeVerification(true)} style={{ background: "none", border: "none", color: "#0a0612", textDecoration: "underline", cursor: "pointer", fontWeight: 800, padding: 0 }}>Verify</button>
+  <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9999, background: verificationExpiringSoon ? "linear-gradient(135deg, #ff8c00, #ffd700)" : "linear-gradient(135deg, #ff4444, #ff6b6b)", padding: "14px 40px 14px 16px", boxShadow: "0 -4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12)", textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, whiteSpace: "nowrap" }}>
+    <span>Verify your identity to continue</span>
+    <button onClick={() => setShowAgeVerification(true)} style={{ background: "none", border: "none", color: "#0a0612", textDecoration: "underline", cursor: "pointer", fontWeight: 800, padding: 0 }}>Verify Now</button>
     <button
       onClick={() => setVerificationBannerDismissed(true)}
-      aria-label="Dismiss — find this later in Settings > Privacy & Safety"
+      aria-label="Dismiss"
       style={{ position: "absolute", top: "50%", right: 10, transform: "translateY(-50%)", background: "none", border: "none", color: "#0a0612", opacity: 0.75, cursor: "pointer", padding: 4, display: "flex" }}
     >
       <FiX size={15} />
@@ -2868,19 +2892,38 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={()=>setViewProfile(null)}>
           <div className="modal-panel" onClick={e=>e.stopPropagation()} style={{maxWidth:400,width:"90%",maxHeight:"85vh",overflowY:"auto",borderRadius:24,padding:0,background:"linear-gradient(180deg,#0f081e,#0a0612)"}}>
             <div style={{position:"relative",width:"100%",aspectRatio:"3/4",overflow:"hidden"}}>
-              <Image loading="lazy" src={viewProfile.img} alt={viewProfile.name} fill sizes="(max-width: 600px) 100vw, 400px" style={{objectFit:"cover",filter:viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))?"blur(26px) brightness(0.7)":"none",transition:"filter .3s"}} />
-              {viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))&&(
-                <button onClick={(e)=>{e.stopPropagation();setRevealedNsfw(prev=>{const n=new Set(prev);n.add(String(viewProfile.id));return n;})}} style={{position:"absolute",inset:0,zIndex:5,background:"rgba(10,6,18,0.45)",border:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer"}}>
-                  <div style={{fontSize:30,fontWeight:800,color:"#ff8a80"}}>18+</div>
-                  <div style={{fontSize:13,fontWeight:700,color:"#fff",letterSpacing:0.03}}>NSFW content</div>
-                  <div style={{fontSize:11,color:"rgba(255,255,255,0.7)"}}>Tap to reveal</div>
-                </button>
-              )}
+              {(() => {
+                const photos: string[] = (viewProfile.photos?.length ? viewProfile.photos : [viewProfile.img]).filter(Boolean);
+                const curPhoto = photos[viewProfilePhotoIdx] || photos[0] || viewProfile.img;
+                return <>
+                  <Image loading="lazy" src={curPhoto} alt={viewProfile.name} fill sizes="(max-width: 600px) 100vw, 400px" style={{objectFit:"cover",filter:viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))?"blur(26px) brightness(0.7)":"none",transition:"filter .3s"}} />
+                  {viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))&&(
+                    <button onClick={(e)=>{e.stopPropagation();setRevealedNsfw(prev=>{const n=new Set(prev);n.add(String(viewProfile.id));return n;})}} style={{position:"absolute",inset:0,zIndex:5,background:"rgba(10,6,18,0.45)",border:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer"}}>
+                      <div style={{fontSize:30,fontWeight:800,color:"#ff8a80"}}>18+</div>
+                      <div style={{fontSize:13,fontWeight:700,color:"#fff",letterSpacing:0.03}}>NSFW content</div>
+                      <div style={{fontSize:11,color:"rgba(255,255,255,0.7)"}}>Tap to reveal</div>
+                    </button>
+                  )}
+                  {/* Photo carousel nav dots */}
+                  {photos.length > 1 && (
+                    <div style={{position:"absolute",bottom:70,left:0,right:0,display:"flex",justifyContent:"center",gap:6,zIndex:4}}>
+                      {photos.map((_:string,i:number)=>(
+                        <div key={i} onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(i);}} role="button" tabIndex={0} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setViewProfilePhotoIdx(i);}}} style={{width:7,height:7,borderRadius:"50%",background:i===viewProfilePhotoIdx?"#FFD700":"rgba(255,255,255,0.4)",cursor:"pointer",transition:"all .2s"}} />
+                      ))}
+                    </div>
+                  )}
+                  {/* Left/right tap zones for carousel */}
+                  {photos.length > 1 && <>
+                    <div role="button" tabIndex={0} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setViewProfilePhotoIdx(p=>p>0?p-1:photos.length-1);}}} onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(p=>p>0?p-1:photos.length-1);}} style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:3,cursor:"pointer"}} />
+                    <div role="button" tabIndex={0} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setViewProfilePhotoIdx(p=>p<photos.length-1?p+1:0);}}} onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(p=>p<photos.length-1?p+1:0);}} style={{position:"absolute",right:0,top:0,bottom:0,width:"35%",zIndex:3,cursor:"pointer"}} />
+                  </>}
+                </>;
+              })()}
               <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px",background:"linear-gradient(to top,rgba(10,6,18,0.95),transparent)"}}>
                 <div style={{fontSize:24,fontWeight:800,fontFamily:"'Playfair Display',serif",fontStyle:"italic"}}>{viewProfile.name}</div>
                 <div style={{fontSize:14,color:"var(--gold)",fontWeight:600}}>{viewProfile.type}</div>
               </div>
-              <button onClick={()=>setViewProfile(null)} aria-label="Close profile" style={{position:"absolute",top:12,right:12,width:32,height:32,borderRadius:"50%",background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+              <button onClick={()=>setViewProfile(null)} aria-label="Close profile" style={{position:"absolute",top:12,right:12,width:32,height:32,borderRadius:"50%",background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5}}>✕</button>
             </div>
             <div style={{padding:20}}>
               {viewProfile.bio && <p style={{color:"var(--text2)",lineHeight:1.6,fontSize:14,marginBottom:16}}>{viewProfile.bio}</p>}
@@ -2903,9 +2946,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                 </div>
               )}
               <button className="btn btn-gold" style={{width:"100%"}} onClick={()=>{
-                if(!matches.find((m:any)=>m.id===viewProfile.id)) setMatches((prev:any)=>[...prev,{...viewProfile,messages:[]}]);
-                setChatTarget({...viewProfile,messages:[]});setViewProfile(null);showScreen("chat");
-              }}>Message</button>
+                setViewProfile(null);
+                setScreen("profile");
+              }}>View Profile</button>
             </div>
           </div>
         </div>

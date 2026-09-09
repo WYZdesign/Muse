@@ -296,7 +296,7 @@ a{color:inherit;text-decoration:none}
    visible. Titles without descenders (Discover, Muse Pro, Your Profile) never
    showed it. A slightly taller line-height gives descenders room while the
    flex/grid parents that hold this title all center it, so nothing shifts. */
-.logo-link{font-size:30px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;background:var(--title-gradient,linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500));background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite;text-decoration:none;cursor:pointer;line-height:1.3;padding:0 0.18em;display:inline-block;whiteSpace:nowrap;align-self:center}
+.logo-link{font-size:37.5px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;background:var(--title-gradient,linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500));background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite;text-decoration:none;cursor:pointer;line-height:1.3;padding:0 0.18em;display:inline-block;whiteSpace:nowrap;align-self:center}
 .logo-img{height:34px;width:auto;object-fit:contain;flex-shrink:0}
 @keyframes logoShimmer{0%,100%{filter:brightness(1) hue-rotate(0deg)}50%{filter:brightness(1.2) hue-rotate(5deg)}}
 @keyframes lavaFlow{0%{background-position:0% 50%}25%{background-position:50% 100%}50%{background-position:100% 50%}75%{background-position:50% 0%}100%{background-position:0% 50%}}
@@ -358,15 +358,18 @@ a{color:inherit;text-decoration:none}
 .muse-pro-banner:hover{box-shadow:0 0 34px rgba(255,215,0,0.3), inset 0 0 22px rgba(255,215,0,0.14);transform:translateY(-1px)}
 /* One-shot sweep, triggered from MenuModal.tsx on a randomized timer (see
    the proShineOn state there) instead of running on a fixed infinite CSS
-   loop — irregular timing instead of a steady beat. The keyframes fade in
-   slowly, accelerate across the middle, then fade out at the tail. */
-.muse-pro-banner-shine{position:absolute;top:0;left:-80%;width:50%;height:100%;background:linear-gradient(105deg,transparent 0%,rgba(255,255,255,0.22) 50%,transparent 100%);opacity:0}
-.muse-pro-banner-shine.shine-play{animation:museProShine 1.8s cubic-bezier(.3,0,.2,1)}
+   loop — irregular timing instead of a steady beat. The sheen fades in
+   very slowly over the first ~60%, then accelerates through the sweep
+   and fades out quickly at the tail. Gradient is wider and softer for a
+   feathered-edge feel. */
+.muse-pro-banner-shine{position:absolute;top:0;left:-80%;width:65%;height:100%;background:linear-gradient(105deg,transparent 0%,rgba(255,255,255,0.06) 20%,rgba(255,255,255,0.18) 42%,rgba(255,255,255,0.25) 50%,rgba(255,255,255,0.18) 58%,rgba(255,255,255,0.06) 80%,transparent 100%);opacity:0}
+.muse-pro-banner-shine.shine-play{animation:museProShine 4.5s cubic-bezier(.22,1,.36,1)}
 @keyframes museProShine{
   0%{left:-80%;opacity:0}
-  18%{left:-55%;opacity:1}
-  60%{left:35%;opacity:1}
-  85%{left:100%;opacity:0.5}
+  55%{left:-60%;opacity:0}
+  70%{left:-10%;opacity:0.8}
+  82%{left:60%;opacity:1}
+  92%{left:110%;opacity:0.4}
   100%{left:130%;opacity:0}
 }
 .muse-pro-banner-content{position:relative;display:flex;align-items:center;gap:12px}
@@ -895,7 +898,7 @@ img{background-color:#1a0a2e}
   body{overflow-y:auto;overflow-x:hidden}
   /* Scrollbar visibility for all scroll containers */
   .screen-el,.match-list,.messages,.profile-scroll,.portfolio-scroll,.settings-scroll,.briefs-scroll,.conn-scroll,.sub-scroll,.modal-body,.hamburger-panel,.onboard-content,.card-info,.swipe-card.expanded,.swipe-card .card-info-scroll,.card-info-scroll{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.12) transparent}
-  .screen-el::-webkit-scrollbar,.match-list::-webkit-scrollbar,.messages::-webkit-scrollbar,.profile-scroll::-webkit-scrollbar,.portfolio-scroll::-webkit-scrollbar,.settings-scroll::-webkit-scrollbar,.briefs-scroll::-webkit-scrollbar,.conn-scroll::-webkit-scrollbar,.sub-scroll::-webkit-scrollbar,.modal-body::-webkit-scrollbar,.hamburger-panel::-webkit-scrollbar,.onboard-content::-webkit-scrollbar,.card-info::-webkit-scrollbar,.swipe-card.expanded::-webkit-scrollbar,.swipe-card .card-info-scroll::-webkit-scrollbar,.card-info-scroll::-webkit-scrollbar{width:6px}
+  .screen-el::-webkit-scrollbar,.match-list::-webkit-scrollbar,.messages::-webkit-scrollbar,.profile-scroll::-webkit-scrollbar,.portfolio-scroll::-webkit-scrollbar,.settings-scroll::-webkit-scrollbar,.briefs-scroll::-webkit-scrollbar,.conn-scroll::-webkit-scrollbar,.sub-scroll::-webkit-scrollbar,.modal-body::-webkit-scrollbar,.hamburger-panel::-webkit-scrollbar,.onboard-content::-webkit-scrollbar,.card-info::-webkit-scrollbar,.swipe-card.expanded::-webkit-scrollbar,.swipe-card .card-info-scroll::-webkit-scrollbar,.card-info-scroll::-webkit-scrollbar{width:3px}
   .screen-el::-webkit-scrollbar-thumb,.match-list::-webkit-scrollbar-thumb,.messages::-webkit-scrollbar-thumb,.profile-scroll::-webkit-scrollbar-thumb,.portfolio-scroll::-webkit-scrollbar-thumb,.settings-scroll::-webkit-scrollbar-thumb,.briefs-scroll::-webkit-scrollbar-thumb,.conn-scroll::-webkit-scrollbar-thumb,.sub-scroll::-webkit-scrollbar-thumb,.modal-body::-webkit-scrollbar-thumb,.hamburger-panel::-webkit-scrollbar-thumb,.onboard-content::-webkit-scrollbar-thumb,.card-info::-webkit-scrollbar-thumb,.swipe-card.expanded::-webkit-scrollbar-thumb,.swipe-card .card-info-scroll::-webkit-scrollbar-thumb,.card-info-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
   .screen-el::-webkit-scrollbar-track,.match-list::-webkit-scrollbar-track,.messages::-webkit-scrollbar-track,.profile-scroll::-webkit-scrollbar-track,.portfolio-scroll::-webkit-scrollbar-track,.settings-scroll::-webkit-scrollbar-track,.briefs-scroll::-webkit-scrollbar-track,.conn-scroll::-webkit-scrollbar-track,.sub-scroll::-webkit-scrollbar-track,.modal-body::-webkit-scrollbar-track,.hamburger-panel::-webkit-scrollbar-track,.onboard-content::-webkit-scrollbar-track,.card-info::-webkit-scrollbar-track,.swipe-card.expanded::-webkit-scrollbar-track,.swipe-card .card-info-scroll::-webkit-scrollbar-track,.card-info-scroll::-webkit-scrollbar-track{background:transparent}
   /* Nav font-size increase on desktop */
@@ -1349,10 +1352,10 @@ img{background-color:#1a0a2e}
 /* +30% tint so the warm light theme reads clearly warm/distinct from the pastel one */
 [data-theme="sunrise"]{--gold:#C08420;--coral:#C45A3C;--pink:#D4A060;--lavender:#5A8A6A;--mint:#C08030;--theme-gold:#C08420;--theme-accent:#C45A3C;--theme-glow:rgba(196,90,60,0.18);--theme-bg-tint:rgba(192,132,32,0.08);--theme-border:rgba(196,90,60,0.22);--bg:#FFF8F0;--surface:rgba(0,0,0,0.04);--glass:rgba(0,0,0,0.06);--text:#1A1612;--text2:rgba(26,22,18,0.72);--muted:rgba(26,22,18,0.48);--card-bg:#FFFDF8;--panel-bg:rgba(255,248,240,0.95);--panel-bg-solid:#FFF8F0;--border-subtle:rgba(26,22,18,0.08);--border-med:rgba(26,22,18,0.12);--border-strong:rgba(26,22,18,0.18);--surface-hover:rgba(26,22,18,0.06);--surface-active:rgba(26,22,18,0.1);--input-bg:rgba(0,0,0,0.04);--input-border:rgba(26,22,18,0.14);--hero-gradient:linear-gradient(to top,rgba(255,248,240,0.95) 0%,rgba(255,248,240,0.7) 50%,transparent 100%);--chat-header-bg:rgba(255,248,240,0.85);--chat-input-bg:rgba(255,248,240,0.95);--badge-bg:rgba(26,22,18,0.08);--badge-text:#1A1612;--scrollbar:rgba(26,22,18,0.18)}
 [data-theme="daylight"]{--gold:#D0901A;--coral:#D07050;--pink:#C08090;--lavender:#9060C0;--mint:#B09030;--peach:#D0A070;--cream:#FFF6E7;--sun:#C0A050;--theme-gold:#D0901A;--theme-accent:#9060C0;--theme-glow:rgba(144,96,192,0.14);--theme-bg-tint:rgba(208,144,26,0.06);--theme-border:rgba(144,96,192,0.22);--bg:#FFF6E7;--surface:rgba(0,0,0,0.03);--glass:rgba(0,0,0,0.05);--text:#2A2418;--text2:rgba(42,36,24,0.72);--muted:rgba(42,36,24,0.48);--card-bg:#FFFBF4;--panel-bg:rgba(255,246,231,0.95);--panel-bg-solid:#FFF6E7;--border-subtle:rgba(42,36,24,0.08);--border-med:rgba(42,36,24,0.12);--border-strong:rgba(42,36,24,0.18);--surface-hover:rgba(42,36,24,0.06);--surface-active:rgba(42,36,24,0.1);--input-bg:rgba(0,0,0,0.04);--input-border:rgba(42,36,24,0.14);--hero-gradient:linear-gradient(to top,rgba(255,246,231,0.95) 0%,rgba(255,246,231,0.7) 50%,transparent 100%);--chat-header-bg:rgba(255,246,231,0.85);--chat-input-bg:rgba(255,246,231,0.95);--badge-bg:rgba(42,36,24,0.08);--badge-text:#2A2418;--scrollbar:rgba(42,36,24,0.18)}
-[data-theme="sky"]{--gold:#4A8AB8;--coral:#5090C0;--pink:#70A8D0;--lavender:#7060B0;--mint:#509890;--peach:#80B0D8;--cream:#F3F9FF;--sun:#60A0D0;--theme-gold:#4A8AB8;--theme-accent:#7060B0;--theme-glow:rgba(112,96,176,0.16);--theme-bg-tint:rgba(74,138,184,0.08);--theme-border:rgba(112,96,176,0.24);--bg:#F3F9FF;--surface:rgba(0,0,0,0.03);--glass:rgba(0,0,0,0.05);--text:#1A2636;--text2:rgba(26,38,54,0.72);--muted:rgba(26,38,54,0.48);--card-bg:#F8FCFF;--panel-bg:rgba(243,249,255,0.95);--panel-bg-solid:#F3F9FF;--border-subtle:rgba(26,38,54,0.08);--border-med:rgba(26,38,54,0.12);--border-strong:rgba(26,38,54,0.18);--surface-hover:rgba(26,38,54,0.06);--surface-active:rgba(26,38,54,0.1);--input-bg:rgba(0,0,0,0.04);--input-border:rgba(26,38,54,0.14);--hero-gradient:linear-gradient(to top,rgba(243,249,255,0.95) 0%,rgba(243,249,255,0.7) 50%,transparent 100%);--chat-header-bg:rgba(243,249,255,0.85);--chat-input-bg:rgba(243,249,255,0.95);--badge-bg:rgba(26,38,54,0.08);--badge-text:#1A2636;--scrollbar:rgba(26,38,54,0.18)}
-[data-theme="rose"]{--gold:#C06070;--coral:#D07070;--pink:#D090A0;--lavender:#B080A8;--mint:#D0A0A8;--peach:#D8B0B8;--cream:#FFF5F7;--sun:#D0A0B0;--theme-gold:#C06070;--theme-accent:#B080A8;--theme-glow:rgba(176,128,168,0.16);--theme-bg-tint:rgba(192,96,112,0.08);--theme-border:rgba(176,128,168,0.26);--bg:#FFF5F7;--surface:rgba(0,0,0,0.03);--glass:rgba(0,0,0,0.05);--text:#2A1A22;--text2:rgba(42,26,34,0.72);--muted:rgba(42,26,34,0.48);--card-bg:#FFF9FA;--panel-bg:rgba(255,245,247,0.95);--panel-bg-solid:#FFF5F7;--border-subtle:rgba(42,26,34,0.08);--border-med:rgba(42,26,34,0.12);--border-strong:rgba(42,26,34,0.18);--surface-hover:rgba(42,26,34,0.06);--surface-active:rgba(42,26,34,0.1);--input-bg:rgba(0,0,0,0.04);--input-border:rgba(42,26,34,0.14);--hero-gradient:linear-gradient(to top,rgba(255,245,247,0.95) 0%,rgba(255,245,247,0.7) 50%,transparent 100%);--chat-header-bg:rgba(255,245,247,0.85);--chat-input-bg:rgba(255,245,247,0.95);--badge-bg:rgba(42,26,34,0.08);--badge-text:#2A1A22;--scrollbar:rgba(42,26,34,0.18)}
-[data-theme="sunrise"]{--gold:#E8A838;--coral:#E07A5F;--pink:#F2CC8F;--lavender:#81B29A;--mint:#F4A261;--theme-gold:#E8A838;--theme-accent:#E07A5F;--theme-glow:rgba(224,122,95,0.12);--theme-bg-tint:rgba(232,168,56,0.04);--theme-border:rgba(224,122,95,0.15);--bg:#FFF8F0;--surface:rgba(0,0,0,0.04);--glass:rgba(0,0,0,0.06);--text:#2D2A26;--text2:rgba(45,42,38,0.6);--muted:rgba(45,42,38,0.35)}
-[data-theme="daylight"]{--gold:#F2B234;--coral:#FFA07A;--pink:#FFB5C2;--lavender:#D4A5FF;--mint:#F9E79F;--peach:#FFDAB9;--cream:#FFF6E7;--sun:#F9D98A;--theme-gold:#F2B234;--theme-accent:#D4A5FF;--theme-glow:rgba(244,178,52,0.14);--theme-bg-tint:rgba(255,218,185,0.06);--theme-border:rgba(212,165,255,0.22);--bg:#FFF6E7;--surface:rgba(0,0,0,0.03);--glass:rgba(0,0,0,0.05);--text:#4A3F35;--text2:rgba(74,63,53,0.62);--muted:rgba(74,63,53,0.4)}
+[data-theme="sky"]{--gold:#4A8AB8;--coral:#5090C0;--pink:#70A8D0;--lavender:#7060B0;--mint:#509890;--peach:#80B0D8;--cream:#F3F9FF;--sun:#60A0D0;--theme-gold:#4A8AB8;--theme-accent:#7060B0;--theme-glow:rgba(112,96,176,0.16);--theme-bg-tint:rgba(74,138,184,0.08);--theme-border:rgba(112,96,176,0.24);--bg:#F3F9FF;--surface:rgba(0,0,0,0.03);--glass:rgba(0,0,0,0.05);--text:#1A2636;--text2:rgba(26,38,54,0.95);--muted:rgba(26,38,54,0.77);--card-bg:#F8FCFF;--panel-bg:rgba(243,249,255,0.95);--panel-bg-solid:#F3F9FF;--border-subtle:rgba(26,38,54,0.08);--border-med:rgba(26,38,54,0.12);--border-strong:rgba(26,38,54,0.18);--surface-hover:rgba(26,38,54,0.06);--surface-active:rgba(26,38,54,0.1);--input-bg:rgba(0,0,0,0.04);--input-border:rgba(26,38,54,0.14);--hero-gradient:linear-gradient(to top,rgba(243,249,255,0.95) 0%,rgba(243,249,255,0.7) 50%,transparent 100%);--chat-header-bg:rgba(243,249,255,0.85);--chat-input-bg:rgba(243,249,255,0.95);--badge-bg:rgba(26,38,54,0.08);--badge-text:#1A2636;--scrollbar:rgba(26,38,54,0.18)}
+[data-theme="rose"]{--gold:#C06070;--coral:#D07070;--pink:#D090A0;--lavender:#B080A8;--mint:#D0A0A8;--peach:#D8B0B8;--cream:#FFF5F7;--sun:#D0A0B0;--theme-gold:#C06070;--theme-accent:#B080A8;--theme-glow:rgba(176,128,168,0.16);--theme-bg-tint:rgba(192,96,112,0.08);--theme-border:rgba(176,128,168,0.26);--bg:#FFF5F7;--surface:rgba(0,0,0,0.03);--glass:rgba(0,0,0,0.05);--text:#2A1A22;--text2:rgba(42,26,34,0.95);--muted:rgba(42,26,34,0.77);--card-bg:#FFF9FA;--panel-bg:rgba(255,245,247,0.95);--panel-bg-solid:#FFF5F7;--border-subtle:rgba(42,26,34,0.08);--border-med:rgba(42,26,34,0.12);--border-strong:rgba(42,26,34,0.18);--surface-hover:rgba(42,26,34,0.06);--surface-active:rgba(42,26,34,0.1);--input-bg:rgba(0,0,0,0.04);--input-border:rgba(42,26,34,0.14);--hero-gradient:linear-gradient(to top,rgba(255,245,247,0.95) 0%,rgba(255,245,247,0.7) 50%,transparent 100%);--chat-header-bg:rgba(255,245,247,0.85);--chat-input-bg:rgba(255,245,247,0.95);--badge-bg:rgba(42,26,34,0.08);--badge-text:#2A1A22;--scrollbar:rgba(42,26,34,0.18)}
+[data-theme="sunrise"]{--gold:#E8A838;--coral:#E07A5F;--pink:#F2CC8F;--lavender:#81B29A;--mint:#F4A261;--theme-gold:#E8A838;--theme-accent:#E07A5F;--theme-glow:rgba(224,122,95,0.12);--theme-bg-tint:rgba(232,168,56,0.04);--theme-border:rgba(224,122,95,0.15);--bg:#FFF8F0;--surface:rgba(0,0,0,0.04);--glass:rgba(0,0,0,0.06);--text:#2D2A26;--text2:rgba(45,42,38,0.95);--muted:rgba(45,42,38,0.56)}
+[data-theme="daylight"]{--gold:#F2B234;--coral:#FFA07A;--pink:#FFB5C2;--lavender:#D4A5FF;--mint:#F9E79F;--peach:#FFDAB9;--cream:#FFF6E7;--sun:#F9D98A;--theme-gold:#F2B234;--theme-accent:#D4A5FF;--theme-glow:rgba(244,178,52,0.14);--theme-bg-tint:rgba(255,218,185,0.06);--theme-border:rgba(212,165,255,0.22);--bg:#FFF6E7;--surface:rgba(0,0,0,0.03);--glass:rgba(0,0,0,0.05);--text:#4A3F35;--text2:rgba(74,63,53,0.99);--muted:rgba(74,63,53,0.64)}
 
 /* ═══ THEME PICKER ═══ */
 /* Audit fix (2026-09-08): 6 themes with flex:1/flex-wrap wrapped unevenly
@@ -1379,6 +1382,8 @@ img{background-color:#1a0a2e}
 .theme-swatch[data-val="daylight"]{background:linear-gradient(135deg,#FFDAB9,#FFB5C2 45%,#D4A5FF);color:#4A3F35;text-shadow:none}
 .theme-swatch[data-val="sky"]{background:linear-gradient(135deg,#90CAF9,#C5B5F5 45%,#A5E8E0);color:#2F3A48;text-shadow:none}
 .theme-swatch[data-val="rose"]{background:linear-gradient(135deg,#FFC1D4,#E7B7E3 45%,#FAD7E0);color:#4A2F36;text-shadow:none}
+.theme-swatch[data-val="lasunset"]::after{content:"DEFAULT";position:absolute;bottom:-14px;font-size:8px;font-weight:700;letter-spacing:.5px;color:var(--muted)}
+[data-theme="sunrise"] .theme-swatch[data-val="sunrise"]::after,.theme-swatch[data-val="sunrise"]::after{content:"DEFAULT";position:absolute;bottom:-14px;font-size:8px;font-weight:700;letter-spacing:.5px;color:var(--muted)}
 
 /* ═══ SUNRISE LIGHT-MODE OVERRIDES ═══ */
 /* Audit fix (2026-09-08): tapping the sunrise swatch made the whole app look
@@ -1392,6 +1397,10 @@ img{background-color:#1a0a2e}
    compositing into a near-black screen with dark-on-dark text. These three
    overrides make the frame and backdrop follow the sunrise palette too. */
 [data-theme="sunrise"] .scene{background:linear-gradient(180deg,#FFF8F0 0%,#FCEFDD 40%,#FCE8D4 70%,#FFF8F0 100%)}
+[data-theme="deepspace"] .scene{background:linear-gradient(180deg,#08041a 0%,#0d0828 40%,#12103a 70%,#08041a 100%)}
+[data-theme="nebula"] .scene{background:linear-gradient(180deg,#0a0618 0%,#10082a 40%,#0e0a24 70%,#0a0618 100%)}
+[data-theme="deepsea"] .scene{background:linear-gradient(180deg,#040a14 0%,#061220 40%,#081828 70%,#040a14 100%)}
+[data-theme="lasunset"] .scene{background:linear-gradient(180deg,#0a0612 0%,#1a0a18 40%,#12081e 70%,#0a0612 100%)}
 [data-theme="sunrise"] .phone{background:rgba(255,248,240,0.55)}
 /* Light-theme surfaces (sunrise/daylight/sky/rose): the dark-frame, dark-panel, and
    dark-input defaults make every light theme look "broken/dark" on those surfaces.
@@ -2043,3 +2052,17 @@ img{background-color:#1a0a2e}
 .mapboxgl-ctrl-icon{filter:invert(1)!important}
 .mapboxgl-ctrl-attrib{background:rgba(10,6,18,0.6)!important;color:rgba(255,255,255,0.4)!important;font-size:10px!important}
 .mapboxgl-ctrl-attrib a{color:rgba(255,215,0,0.5)!important}
+
+/* ═══ WAVE BOTTOM — animated wave at bottom of scene ═══ */
+.wave-bottom{position:fixed;bottom:0;left:0;width:100%;height:15%;z-index:1;pointer-events:none;overflow:hidden}
+.wave-bottom svg{position:absolute;bottom:0;left:0;width:200%;height:100%;animation:waveScroll 8s linear infinite}
+.wave-bottom svg:nth-child(2){animation:waveScroll 12s linear infinite reverse;opacity:0.5}
+@keyframes waveScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.wave-bottom .wave-path-1{fill:rgba(135,206,235,0.25)}
+.wave-bottom .wave-path-2{fill:rgba(135,206,235,0.15)}
+.wave-bottom .wave-path-3{fill:rgba(135,206,235,0.08)}
+
+/* Thinner horizontal scrollbar thumbs */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) ::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{height:3px}

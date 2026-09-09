@@ -2,7 +2,7 @@
 
 import React, { memo, useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiX, FiBell } from "react-icons/fi";
+import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiX, FiBell, FiHeart, FiMessageCircle, FiZap, FiPackage, FiBriefcase } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import StreakWidget from "../components/StreakWidget";
 import { useFocusTrap } from "../hooks/useFocusTrap";
@@ -169,15 +169,30 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
           </div>
           {notifications.length === 0
             ? <EmptyState icon="🔔" title="No notifications yet" sub="Likes, matches, bookings and activity will appear here." />
-            : notifications.map(a => (
+            : notifications.map(a => {
+                const typeIcons: Record<string, React.ReactNode> = {
+                  like: <FiHeart size={16} color="#FF69B4" />,
+                  match: <FiStar size={16} color="#FFD700" />,
+                  message: <FiMessageCircle size={16} color="#7B68EE" />,
+                  booking: <FiBriefcase size={16} color="#00E676" />,
+                  quest: <FiZap size={16} color="#FFA500" />,
+                  brief: <FiPackage size={16} color="#87CEEB" />,
+                  community: <FiUsers size={16} color="#D4A5FF" />,
+                };
+                const notifIcon = typeIcons[a.type] || <FiBell size={16} color="var(--gold)" />;
+                return (
                 <div key={a.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1, background: a.read ? "transparent" : "rgba(255,215,0,0.03)", borderRadius: 8, marginBottom: 4 }}>
                   <NotificationAvatar name={a.from} src={a.avatar} letter={a._systemAvatar} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, color: "var(--text)" }}><strong>{a.from}</strong> {a.text}</div>
+                    <div style={{ fontSize: 14, color: "var(--text)", display: "flex", alignItems: "flex-start", gap: 6 }}>
+                      <span style={{ flexShrink: 0, marginTop: 2 }}>{notifIcon}</span>
+                      <span><strong>{a.from}</strong> {a.text}</span>
+                    </div>
                     <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{new Date(a.created_at).toLocaleString()}</div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
           {/* Audit fix (2026-09-08): notifHasMore starts true and is only
               flipped to false once a fetch actually resolves — if that
               fetch errors (network hiccup, auth not ready yet) the catch

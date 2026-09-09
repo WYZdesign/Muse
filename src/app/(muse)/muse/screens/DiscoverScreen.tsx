@@ -378,11 +378,11 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                           {isTop && (!(profile as any).nsfw || revealedNsfw.has(String(profile.id))) && (
                             <button
                               className={"card-anchor-like-btn" + (cardScrolled ? " hidden" : "")}
-                              style={{ top: 12, right: 12 }}
+                              style={{ top: 12, right: 12, display: "flex", alignItems: "center", gap: 5 }}
                               onPointerDown={(e) => e.stopPropagation()}
-                              onClick={(e) => { e.stopPropagation(); handleAnchorLike({ type: "photo", value: `Photo #${(currentPhotoIdx ?? 0) + 1}` }); }}
+                              onClick={(e) => { e.stopPropagation(); togglePhotoLike(heroSrc); }}
                               aria-label={`Like photo ${(currentPhotoIdx ?? 0) + 1}`}
-                            >✦ Like this photo</button>
+                            ><span aria-hidden="true">✨</span>{(photoLike[heroSrc]?.count || 0) > 0 && <span style={{ fontSize: 11, fontWeight: 700 }}>{photoLike[heroSrc]?.count}</span>}</button>
                           )}
                           {showNoteTooltip && (
                             <div style={{ textAlign: "center", padding: "4px 16px 0", animation: "tooltipIn .4s ease" }}>
@@ -511,7 +511,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 <button className="match-radial-btn btn-rewind" style={{ left: -110, top: 7 }} onClick={doRewind} aria-label="Rewind">↺</button>
                                 <button className="match-radial-btn btn-nope" style={{ left: -106, top: -40 }} onClick={() => doSwipe("left")} aria-label="Pass">✕</button>
                                 <button className="match-radial-btn btn-super" style={{ left: -77, top: -77, width: 37, height: 37, fontSize: 16 }} onClick={() => doSwipe("super")} aria-label="Super Like">★</button>
-                                <button className="match-radial-btn btn-like" style={{ left: -40, top: -106, width: 44, height: 44, flexDirection: "column", fontSize: 16, lineHeight: 1 }} onClick={() => togglePhotoLike(topHeroSrc)} aria-label="Like this photo"><span aria-hidden="true" style={{ fontSize: 18 }}>✦</span><span style={{ fontSize: 9, fontWeight: 800, marginTop: 1 }}>{(photoLike[topHeroSrc]?.count || 0) + (photoLike[topHeroSrc]?.liked ? 0 : 0)}</span></button>
+                                <button className="match-radial-btn btn-like" style={{ left: -40, top: -106, width: 44, height: 44, flexDirection: "column", fontSize: 16, lineHeight: 1 }} onClick={() => handleAnchorLike({ type: "photo", value: `Photo #${(currentPhotoIdx ?? 0) + 1}` })} aria-label="Like this match"><span aria-hidden="true" style={{ fontSize: 18 }}>♥</span><span style={{ fontSize: 9, fontWeight: 800, marginTop: 1 }}>like</span></button>
                                 <button className="match-radial-btn btn-note" style={{ left: 7, top: -110 }} onClick={() => doLikeWithNote()} aria-label="Like + Note">✎</button>
                               </div>
                             </div>

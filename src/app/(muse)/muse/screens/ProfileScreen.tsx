@@ -209,10 +209,8 @@ export const ProfileScreen = memo(function ProfileScreen({
   return (
     <div className={"screen-el" + (screen === "profile" ? " active" : "")}>
       <div className="hdr" style={{ justifyContent: "space-between", borderBottom: "1px solid rgba(255,215,0,0.15)" }}>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
-        </div>
-        <div className="logo-link" style={{ position: "relative", margin: 0, padding: 0, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 24, fontWeight: 800, background: "linear-gradient(90deg,#FFD700,#F48FB1,#CE93D8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Your Profile</div>
+        <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
+        <div className="logo-link" style={{ position: "relative", margin: 0, padding: 0, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 28, fontWeight: 800, backgroundImage: "linear-gradient(135deg,var(--gold),var(--lavender),var(--pink),var(--gold))", backgroundSize: "400% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", animation: "gradientShift 6s ease-in-out infinite", lineHeight: "36px", whiteSpace: "nowrap", width: "max-content", textAlign: "center" }}>Your Profile</div>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="hdr-btn" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setEditNsfw(!!currentUser.nsfw); setEditMediaKit(obData.mediaKitUrl || ""); setShowEditProfile(true); }} aria-label="Edit Profile"><FiEdit2 size={18} /></button>
         </div>
@@ -247,6 +245,7 @@ export const ProfileScreen = memo(function ProfileScreen({
                 circling/hovering just above it, still never touching. orbit-full added
                 (Session 85 final correction): without it this rendered as a partial
                 comet-arc, not a full ring — see the .avatar-orbit comment in muse.css. */}
+            <div className="avatar-orbit orbit-full swirl-ring-1" style={{ "--orbit-size": "156px" } as React.CSSProperties} />
             <div className="profile-ring profile-ring-large swirl-ring-1" />
           </div>
           <div className="profile-name">{currentUser.name}</div>

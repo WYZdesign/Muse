@@ -380,9 +380,12 @@ export const SettingsScreen = memo(function SettingsScreen({
         <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px`, position: "relative", gap: 12 }}>
           <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }}><FiArrowLeft size={18} /></button>
           <div className="logo-link" style={{
-            fontSize: 30,
-            backgroundImage: "linear-gradient(90deg,#CE93D8,#B388FF,#A5D6A7,#CE93D8,#B388FF,#CE93D8)",
-            backgroundSize: "300% 100%",
+            fontSize: 28,
+            fontFamily: "'Playfair Display',serif",
+            fontStyle: "italic",
+            fontWeight: 800,
+            backgroundImage: "linear-gradient(135deg,var(--gold),var(--lavender),var(--pink),var(--gold))",
+            backgroundSize: "400% 100%",
             WebkitBackgroundClip: "text",
             backgroundClip: "text",
             WebkitTextFillColor: "transparent",
@@ -393,6 +396,8 @@ export const SettingsScreen = memo(function SettingsScreen({
             margin: 0,
             padding: 0,
             whiteSpace: "nowrap",
+            animation: "gradientShift 6s ease-in-out infinite",
+            lineHeight: "36px",
           }}>Settings</div>
           <span style={{ flex: "0 0 40px" }} aria-hidden="true" />
         </div>
@@ -405,7 +410,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               (see MenuModal.tsx) would have silently dropped them. Ported
               here so nothing is lost. */}
           <div className="settings-group">
-            <div className="settings-group-title" style={{ textAlign: "center" }}>Discovery Preferences</div>
+            <div className="settings-group-title" style={{ textAlign: "left" }}>Preferences</div>
             <div style={{ padding: "10px 0" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Age Range</div>
               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -543,6 +548,35 @@ export const SettingsScreen = memo(function SettingsScreen({
               {LIGHT_THEMES.map(t => (
                 <div key={t} role="radio" aria-checked={theme === t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme(t); } }} onClick={() => setTheme(t)} style={{ textTransform: "uppercase" }}>{theme === t ? `${THEME_ABBR[t]} ✓` : THEME_ABBR[t]}</div>
               ))}
+            </div>
+          </div>
+
+          <div className="settings-group">
+            <div className="settings-group-title">Background</div>
+            <div style={{ padding: "10px 0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Scene Transparency</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--gold)" }}>{["20%", "40%", "60%", "80%", "100%"][Math.round((() => { try { return parseFloat(localStorage.getItem("muse_bg_opacity") || "1"); } catch { return 1; } })() * 4)] || "100%"}</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={4}
+                step={1}
+                defaultValue={(() => { try { return String(Math.round(parseFloat(localStorage.getItem("muse_bg_opacity") || "1") * 4)); } catch { return "4"; } })()}
+                onChange={e => {
+                  const steps = [0.2, 0.4, 0.6, 0.8, 1.0];
+                  const val = steps[Number(e.target.value)];
+                  try { localStorage.setItem("muse_bg_opacity", String(val)); } catch {}
+                  document.documentElement.style.setProperty("--scene-opacity", String(val));
+                }}
+                style={{ width: "100%", accentColor: "var(--gold)" }}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                {["20%", "40%", "60%", "80%", "100%"].map((l, i) => (
+                  <span key={i} style={{ fontSize: 10, color: "var(--muted)" }}>{l}</span>
+                ))}
+              </div>
             </div>
           </div>
 

@@ -332,17 +332,17 @@ export const FeedScreen = memo(function FeedScreen({
           })}
         </div>
 <div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", gap: 10, alignItems: "flex-start" }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-            <div style={{ position: "relative", width: 52, height: 52 }}>
-              <Image loading="lazy" src={currentUser.avatar} alt="Avatar" width={68} height={68} className="feed-avatar" style={{ flexShrink: 0 }} onError={handleImgError} />
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+            <div style={{ position: "relative", width: 39, height: 39 }}>
+              <Image loading="lazy" src={currentUser.avatar} alt="Avatar" width={52} height={52} className="feed-avatar" style={{ flexShrink: 0 }} onError={handleImgError} />
               {/* Feed composer profile image: no hoolah-hoop, just a halo ~20% larger
-                  than the 52px avatar, matching the halo's color gradient. */}
-              <div className="profile-ring" style={{ width: 62, height: 62 }} />
+                  than the 39px avatar, matching the halo's color gradient. */}
+              <div className="profile-ring" style={{ width: 47, height: 47 }} />
             </div>
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ position: "relative" }}>
-              <textarea className="inp" placeholder="Share your work, ideas, or find collaborators..." rows={2} value={feedText} maxLength={500} onChange={e => setFeedText(e.target.value)} style={{ resize: "none", margin: 0, minHeight: 52, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)" }} />
+              <textarea className="inp" placeholder="Share your work or ideas.." rows={2} value={feedText} maxLength={500} onChange={e => setFeedText(e.target.value)} style={{ resize: "none", margin: 0, minHeight: 52, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)" }} />
               {feedText.length > 0 && (
                 <span style={{ position: "absolute", bottom: 7, right: 10, fontSize: 10, color: feedText.length > 450 ? "#ff8a80" : "var(--muted)", fontWeight: 700, pointerEvents: "none" }}>{feedText.length}/500</span>
               )}
