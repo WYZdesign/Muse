@@ -71,6 +71,21 @@ export const MusesScreen = memo(function MusesScreen({
   messageRequests = [],
   setMessageRequests = () => {},
 }: MusesScreenProps) {
+  // Track which matches the user has opened so the "new match" right-edge tab
+  // disappears once they've gone into the chat. Persisted so it survives reloads.
+  const [seenMatches, setSeenMatches] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("muse_seen_matches") || "[]")); } catch { return new Set(); }
+  });
+  const markSeen = (id: string) => {
+    setSeenMatches(prev => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      try { localStorage.setItem("muse_seen_matches", JSON.stringify([...next].slice(-500))); } catch {}
+      return next;
+    });
+  };
+  const isNewMatch = (m: any) => !(m.messages && m.messages.length > 0) && !seenMatches.has(String(m.id));
   // "Likes You" is already blurred/badged for free-tier viewers (the
   // in-context paywall) — this only covers what used to happen on tap: a
   // plain toast instead of a real upsell moment.
@@ -268,7 +283,9 @@ export const MusesScreen = memo(function MusesScreen({
             </EmptyState>
           )}
           {matches.filter(m => searchQuery === "" || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(m => (
-            <MatchCard key={m.id} m={m} view={matchesView} actions={matchActions} />
+            <div key={m.id} onClickCapture={() => markSeen(String(m.id))}>
+              <MatchCard m={m} view={matchesView} isNew={isNewMatch(m)} actions={matchActions} />
+            </div>
           ))}
         </div>
       )}

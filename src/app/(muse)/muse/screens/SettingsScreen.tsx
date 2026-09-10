@@ -6,6 +6,7 @@ import { mfaStatus, mfaEnroll, mfaVerify, mfaUnenroll } from "../lib/api";
 // Push subscribe/unsubscribe arrive as PROPS (page.tsx owns the real impls) —
 // importing the module fns here too shadowed them and invited drift.
 import type { Screen } from "../components/types";
+import { BEHIND_CAMERA, IN_FRONT_CAMERA, AESTHETICS, lookingForOptions } from "../components/types";
 import { STRINGS } from "@/lib/strings";
 
 const SUPPORT_EMAIL = "info@wyzdesign.com";
@@ -141,8 +142,8 @@ function ToggleRow({ label, checked, onToggle }: { label: string; checked: boole
 // 100% = opacity 1. Persisted to localStorage per-slider; the CSS variable is
 // applied straight to the root so BackgroundScene picks it up live.
 function OpacitySlider({ label, storageKey, cssVar }: { label: string; storageKey: string; cssVar: string }) {
-  const STEPS = [0.2, 0.4, 0.6, 0.8, 1.0];
-  const LABELS = ["20%", "40%", "60%", "80%", "100%"];
+  const STEPS = [0, 0.25, 0.5, 0.75, 1.0];
+  const LABELS = ["0%", "25%", "50%", "75%", "100%"];
   const [idx, setIdx] = useState<number>(() => {
     try {
       const v = parseFloat(localStorage.getItem(storageKey) || "1");
@@ -247,6 +248,10 @@ export const SettingsScreen = memo(function SettingsScreen({
 }: SettingsScreenProps) {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showPersonality, setShowPersonality] = useState(false);
+  const [showCreativeProfile, setShowCreativeProfile] = useState(false);
+  const [cpType, setCpType] = useState((obData as any)?.type || "");
+  const [cpLooking, setCpLooking] = useState<string[]>((obData as any)?.looking || []);
+  const [cpStyles, setCpStyles] = useState<string[]>((obData as any)?.styles || []);
   const [persZodiac, setPersZodiac] = useState((obData as any)?.zodiac || "");
   const [persChinese, setPersChinese] = useState((obData as any)?.chinese || "");
   const [persMbti, setPersMbti] = useState((obData as any)?.mbti || "");
@@ -375,7 +380,7 @@ export const SettingsScreen = memo(function SettingsScreen({
   const accountItems = [
     { icon: <FiUser size={18} />, label: "Edit Profile", desc: "Name, bio, photos", action: () => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditNsfw(!!currentUser.nsfw); setShowEditProfile(true); } },
     { icon: <FiStar size={18} />, label: "Personality Profile", desc: "Zodiac, MBTI, Life Path", action: () => setShowPersonality(true) },
-    { icon: <FiUsers size={18} />, label: "Creative Profile", desc: "Type, styles, looking for", action: () => { setScreen("onboard"); setObStep(4); } },
+    { icon: <FiUsers size={18} />, label: "Creative Profile", desc: "Type, styles, looking for", action: () => setShowCreativeProfile(true) },
     { icon: <FiLock size={18} />, label: "Change Password", desc: "Update your login password", action: () => setShowChangePassword(true) },
   ];
 
@@ -699,9 +704,9 @@ export const SettingsScreen = memo(function SettingsScreen({
                   </select>
                   <textarea value={bugDescription} onChange={e => setBugDescription(e.target.value)} placeholder="What happened?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
                   <textarea value={bugSteps} onChange={e => setBugSteps(e.target.value)} placeholder="Steps to reproduce (optional)" rows={2} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
-                  <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                    <input value={bugExpected} onChange={e => setBugExpected(e.target.value)} placeholder="Expected behavior" style={{ flex: 1, padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
-                    <input value={bugActual} onChange={e => setBugActual(e.target.value)} placeholder="Actual behavior" style={{ flex: 1, padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
+                  <div style={{ display: "flex", gap: 8, marginBottom: 8, minWidth: 0 }}>
+                    <input value={bugExpected} onChange={e => setBugExpected(e.target.value)} placeholder="Expected behavior" style={{ flex: 1, minWidth: 0, boxSizing: "border-box", padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
+                    <input value={bugActual} onChange={e => setBugActual(e.target.value)} placeholder="Actual behavior" style={{ flex: 1, minWidth: 0, boxSizing: "border-box", padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,107,107,0.15)", border: "1px solid rgba(255,107,107,0.3)", color: "#ff8a80" }} disabled={bugSubmitting || !bugDescription.trim() || !authFetch} onClick={async () => { if (!authFetch) return; setBugSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "report-bug", category: bugCategory, description: bugDescription, steps: bugSteps, expected: bugExpected, actual: bugActual }) }); if (!r.ok) throw new Error("failed"); showToast("Bug report sent — thank you!"); setShowBugForm(false); setBugDescription(""); setBugSteps(""); setBugExpected(""); setBugActual(""); } catch { showToast("Failed to send bug report"); } setBugSubmitting(false); }}>{bugSubmitting ? "Sending…" : "Submit Bug"}</button>
@@ -710,7 +715,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                 </div>
               )}
               <button className="btn" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 13 }} onClick={async () => { if (!authFetch) { showToast("Can't export right now"); return; } try { const res = await authFetch("/api/muse?type=export"); if (!res.ok) { showToast("Export failed"); return; } const j = await res.json(); const blob = new Blob([JSON.stringify(j, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "muse-my-data.json"; a.click(); URL.revokeObjectURL(url); showToast("Data exported"); } catch { showToast("Export failed"); } }}><FiDownload size={14} style={{ marginRight: 6 }} />Export My Data</button>
-              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => window.open("mailto:" + SUPPORT_EMAIL + "?subject=Muse%20Support%20Request")}><FiHelpCircle size={14} style={{ marginRight: 6 }} />Email Support</button>
+              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { try { window.location.href = "mailto:" + SUPPORT_EMAIL + "?subject=" + encodeURIComponent("Muse Support Request") + "&body=" + encodeURIComponent("Describe your issue here:\n\n"); } catch { showToast?.("Email us at " + SUPPORT_EMAIL); } }}><FiHelpCircle size={14} style={{ marginRight: 6 }} />Email Support</button>
             </div>
           </div>
 
@@ -838,6 +843,48 @@ export const SettingsScreen = memo(function SettingsScreen({
                     await apiFetch?.("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "update-profile", zodiac: persZodiac, chinese: persChinese, mbti: persMbti, life_path: persLifePath }) });
                     showToast("Personality profile saved!");
                     setShowPersonality(false);
+                  } catch { showToast("Couldn't save — try again"); }
+                }}>Save</button>
+              </div>
+            );
+          })()}
+        </SettingsSubPage>
+      )}
+
+      {showCreativeProfile && (
+        <SettingsSubPage title="Creative Profile" onClose={() => setShowCreativeProfile(false)}>
+          {(() => {
+            const toggle = (arr: string[], v: string, set: (x: string[]) => void, max = 6) => {
+              if (arr.includes(v)) set(arr.filter(x => x !== v));
+              else if (arr.length < max) set([...arr, v]);
+              else showToast(`Max ${max} selected`);
+            };
+            const row = (label: string, options: string[], value: any, onPick: (v: string) => void, multi = false) => (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8, textAlign: "center" }}>{label}</div>
+                <div className="chips" style={{ marginBottom: 0 }}>
+                  {options.map(o => {
+                    const sel = multi ? (value as string[]).includes(o) : value === o;
+                    return (
+                      <div key={o} className={"chip" + (sel ? " sel" : "")} role="button" tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(o); } }}
+                        onClick={() => onPick(o)}><span>{o}</span></div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+            return (
+              <div>
+                {row("Behind the Camera", BEHIND_CAMERA, cpType, (v) => setCpType(v))}
+                {row("In Front of the Camera", IN_FRONT_CAMERA, cpType, (v) => setCpType(v))}
+                {row("Looking For", lookingForOptions(cpType), cpLooking, (v) => toggle(cpLooking, v, setCpLooking, 4), true)}
+                {row("Aesthetic", AESTHETICS, cpStyles, (v) => toggle(cpStyles, v, setCpStyles, 6), true)}
+                <button className="btn btn-gold" style={{ width: "100%", marginTop: 8 }} onClick={async () => {
+                  try {
+                    await apiFetch?.("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "update-profile", type: cpType, looking: cpLooking, styles: cpStyles }) });
+                    showToast("Creative profile saved!");
+                    setShowCreativeProfile(false);
                   } catch { showToast("Couldn't save — try again"); }
                 }}>Save</button>
               </div>

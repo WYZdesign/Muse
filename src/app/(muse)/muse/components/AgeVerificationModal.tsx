@@ -84,22 +84,22 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)" }}>
       <div style={{ background: "var(--card-bg)", border: "1px solid var(--gold)", borderRadius: 24, padding: 32, maxWidth: 440, width: "90%", textAlign: "center" }}>
         <div style={{ fontSize: 44, marginBottom: 12 }}>🪪</div>
-        <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f5f0ff", marginBottom: 10 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", marginBottom: 10 }}>
           {state === "verified" ? "Verified!" : "Age Verification Required"}
         </h2>
 
         {state === "verified" ? (
-          <p style={{ fontSize: 14, color: "#98FB98", marginBottom: 20 }}>Your identity has been verified. You're all set for paid bookings.</p>
+          <p style={{ fontSize: 14, color: "#3a9e3a", marginBottom: 20 }}>Your identity has been verified. You're all set for paid bookings.</p>
         ) : (
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 20, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 13, color: "var(--text2)", marginBottom: 20, lineHeight: 1.6 }}>
             Paid bookings require government ID + selfie verification (18+ only). This is a one-time check via Stripe Identity. Secure, encrypted, and never shared with other members.
           </p>
         )}
 
         {state === "error" && <p style={{ fontSize: 12, color: "#ff6b6b", marginBottom: 14 }}>{message}</p>}
-        {state === "redirected" && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 14 }}>{message}</p>}
-        {state === "checking" && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 14 }}>Checking verification status…</p>}
-        {state === "loading" && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 14 }}>Starting secure verification…</p>}
+        {state === "redirected" && <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>{message}</p>}
+        {state === "checking" && <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Checking verification status…</p>}
+        {state === "loading" && <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Starting secure verification…</p>}
 
         <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>
           {state === "idle" && (
@@ -120,7 +120,7 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
               </button>
               <button
                 onClick={checkStatus}
-                style={{ width: "100%", padding: "12px 0", borderRadius: 14, background: "rgba(255,255,255,0.1)", border: "none", color: "#f5f0ff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ width: "100%", padding: "12px 0", borderRadius: 14, background: "var(--surface-hover)", border: "none", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 I Completed Verification — Check Status
               </button>
@@ -135,13 +135,13 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
             </button>
           )}
           {state !== "verified" && (
-            <button onClick={onClose} style={{ padding: "8px 0", background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 13, cursor: "pointer" }}>
+            <button onClick={onClose} style={{ padding: "8px 0", background: "none", border: "none", color: "var(--muted)", fontSize: 13, cursor: "pointer" }}>
               Not now
             </button>
           )}
         </div>
 
-        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 16, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 10, color: "var(--muted)", marginTop: 16, lineHeight: 1.5 }}>
           Verification is provided by Stripe Identity. Your documents are encrypted and never stored on Muse servers. You can verify or skip at any time. Paid bookings require it.
         </p>
       </div>

@@ -8,6 +8,7 @@ import type { Screen, Match } from "../components/types";
 import { isPaidTier } from "../components/subscriptionTiers";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 import Lightbox from "../components/Lightbox";
+import SelfDiscoveryModal from "../components/SelfDiscoveryModal";
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 
 export interface ProfileScreenProps {
@@ -136,6 +137,7 @@ export const ProfileScreen = memo(function ProfileScreen({
   // (Discover's swipe cards) already made them tappable for a detail
   // popover. Reusing that exact pattern here.
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
+  const [showSelfDiscovery, setShowSelfDiscovery] = useState(false);
 
   useEffect(() => {
     const fetchReferralData = async () => {
@@ -227,13 +229,6 @@ export const ProfileScreen = memo(function ProfileScreen({
             <button onClick={() => setShowUnlimitedBadge(false)} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
           </div>
         )}
-        <div className="completeness" style={{ marginTop: 16 }}>
-          <div className="completeness-text">
-            <span>Profile Completeness</span>
-            <span>{Math.min(100, (currentUser.name !== "You" ? 15 : 0) + (obData.bio ? 15 : 0) + (obData.type ? 15 : 0) + ((obData.looking || []).length ? 10 : 0) + ((obData.styles || []).length ? 10 : 0) + (obData.zodiac ? 8 : 0) + (obData.mbti ? 7 : 0) + (obData.lifePath ? 5 : 0) + (obData.chinese ? 5 : 0) + (obData.loc ? 10 : 0))}%</span>
-          </div>
-          <div className="completeness-bar"><div className="completeness-fill" style={{ width: Math.min(100, (currentUser.name !== "You" ? 15 : 0) + (obData.bio ? 15 : 0) + (obData.type ? 15 : 0) + ((obData.looking || []).length ? 10 : 0) + ((obData.styles || []).length ? 10 : 0) + (obData.zodiac ? 8 : 0) + (obData.mbti ? 7 : 0) + (obData.lifePath ? 5 : 0) + (obData.chinese ? 5 : 0) + (obData.loc ? 10 : 0)) + "%" }} /></div>
-        </div>
         <div className="profile-top">
           <div className="profile-avatar-wrap">
             <Image loading="lazy" src={currentUser.avatar} alt={currentUser.name} width={100} height={100} className="profile-avatar" onError={handleImgError} />
@@ -266,6 +261,15 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div className="stat"><div className="stat-num">{currentUser.stats.likes}</div><div className="stat-label">Likes</div></div>
           <div className="stat"><div className="stat-num">{currentUser.stats.superLikes}</div><div className="stat-label">Superlikes</div></div>
           <div className="stat"><div className="stat-num">{currentUser.stats.passes}</div><div className="stat-label">Passes</div></div>
+        </div>
+        <div className="section">
+          <div className="completeness" style={{ marginTop: 0 }}>
+            <div className="completeness-text">
+              <span>Profile Completeness</span>
+              <span>{Math.min(100, (currentUser.name !== "You" ? 15 : 0) + (obData.bio ? 15 : 0) + (obData.type ? 15 : 0) + ((obData.looking || []).length ? 10 : 0) + ((obData.styles || []).length ? 10 : 0) + (obData.zodiac ? 8 : 0) + (obData.mbti ? 7 : 0) + (obData.lifePath ? 5 : 0) + (obData.chinese ? 5 : 0) + (obData.loc ? 10 : 0))}%</span>
+            </div>
+            <div className="completeness-bar"><div className="completeness-fill" style={{ width: Math.min(100, (currentUser.name !== "You" ? 15 : 0) + (obData.bio ? 15 : 0) + (obData.type ? 15 : 0) + ((obData.looking || []).length ? 10 : 0) + ((obData.styles || []).length ? 10 : 0) + (obData.zodiac ? 8 : 0) + (obData.mbti ? 7 : 0) + (obData.lifePath ? 5 : 0) + (obData.chinese ? 5 : 0) + (obData.loc ? 10 : 0)) + "%" }} /></div>
+          </div>
         </div>
         <div className="section">
           <div className="section-title">About</div>
@@ -470,7 +474,7 @@ export const ProfileScreen = memo(function ProfileScreen({
               const result = obData[key];
               const testLabel = key === "mbti" ? "MBTI" : key === "lifePath" ? "Life Path" : key === "chinese" ? "Chinese Zodiac" : "Zodiac";
               return (
-                <button key={key} className="btn btn-outline" style={{ textAlign: "left", padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, fontSize: 14 }} onClick={() => { setObTestKey(key as any); setTestScreen(key as any); setObStep(13); setObTestStep(0); setScreen("onboard"); }}>
+                <button key={key} className="btn btn-outline" style={{ textAlign: "left", padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, fontSize: 14 }} onClick={() => setShowSelfDiscovery(true)}>
                   <span style={{ flex: 1 }}>{result ? String(result) + " (Lv." + (testLevels[key] || 1) + ")" : "Take " + testLabel + " test"}</span>
                   <span style={{ fontSize: 12, color: "var(--gold)" }}>{result ? "Retake" : "Start"}</span>
                 </button>
@@ -577,6 +581,14 @@ export const ProfileScreen = memo(function ProfileScreen({
         />
       )}
       <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
+      <SelfDiscoveryModal
+        open={showSelfDiscovery}
+        onClose={() => setShowSelfDiscovery(false)}
+        obData={obData}
+        onSaved={(k, v) => setObData((d: any) => ({ ...d, [k]: v }))}
+        apiFetch={apiFetch}
+        showToast={showToast}
+      />
       <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );

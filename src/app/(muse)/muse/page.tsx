@@ -2088,21 +2088,21 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         <div className="splash-cloud spc-1" /><div className="splash-cloud spc-2" /><div className="splash-cloud spc-3" />
         <div className="splash-ocean">
           <svg className="splash-waves-svg" viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
-            <path className="swv swv-6" d="M0,80 L60,40 L120,90 L200,20 L300,100 L380,30 L460,85 L540,10 L620,70 L700,25 L780,95 L860,15 L940,80 L1020,35 L1100,90 L1180,20 L1260,75 L1340,40 L1440,60 L1440,360 L0,360 Z" />
-            <path className="swv swv-7" d="M0,100 L80,55 L160,110 L240,30 L340,120 L420,45 L520,95 L600,15 L680,105 L760,35 L860,115 L940,25 L1040,90 L1120,40 L1200,100 L1300,20 L1380,70 L1440,50 L1440,360 L0,360 Z" />
-            <path className="swv swv-8" d="M0,130 L100,70 L180,140 L280,40 L360,130 L460,55 L540,120 L640,25 L720,110 L820,45 L900,135 L1000,30 L1080,100 L1160,60 L1260,130 L1340,35 L1440,80 L1440,360 L0,360 Z" />
-            <path className="swv swv-1" d="M0,160 L70,90 L170,170 L250,50 L350,155 L430,65 L530,145 L610,30 L710,140 L790,55 L890,160 L970,40 L1070,130 L1150,70 L1250,155 L1330,45 L1440,100 L1440,360 L0,360 Z" />
-            <path className="swv swv-2" d="M0,190 L90,110 L190,200 L270,70 L370,185 L450,80 L550,175 L630,45 L730,170 L810,65 L910,190 L990,50 L1090,160 L1170,85 L1270,185 L1350,55 L1440,120 L1440,360 L0,360 Z" />
-            <path className="swv swv-3" d="M0,220 L110,140 L210,230 L290,90 L390,215 L470,100 L570,205 L650,60 L750,200 L830,80 L930,225 L1010,65 L1110,190 L1190,100 L1290,220 L1370,70 L1440,150 L1440,360 L0,360 Z" />
-            <path className="swv swv-4" d="M0,250 L130,170 L230,260 L310,110 L410,245 L490,130 L590,235 L670,80 L770,230 L850,100 L950,255 L1030,85 L1130,220 L1210,120 L1310,250 L1390,90 L1440,170 L1440,360 L0,360 Z" />
-            <path className="swv swv-5" d="M0,280 L150,200 L250,290 L330,140 L430,275 L510,160 L610,265 L690,100 L790,260 L870,130 L970,285 L1050,110 L1150,250 L1230,145 L1330,280 L1410,120 L1440,190 L1440,360 L0,360 Z" />
+            <path className="swv swv-6" d="M0,86 C90,52 160,118 250,74 C340,34 410,112 505,70 C600,40 672,116 775,66 C878,30 952,104 1058,76 C1164,52 1240,112 1342,70 L1440,98 L1440,360 L0,360 Z" />
+            <path className="swv swv-7" d="M0,104 C70,132 150,58 245,96 C340,132 415,52 512,88 C609,120 678,46 780,92 C882,134 958,54 1062,84 C1166,112 1244,50 1344,90 L1440,72 L1440,360 L0,360 Z" />
+            <path className="swv swv-8" d="M0,128 C96,88 168,150 268,108 C368,66 438,146 540,112 C642,78 710,152 815,104 C920,60 992,140 1098,110 C1204,82 1276,148 1378,104 L1440,128 L1440,360 L0,360 Z" />
+            <path className="swv swv-1" d="M0,158 C88,196 176,116 272,152 C368,188 444,104 545,146 C646,186 716,100 820,150 C924,198 1000,110 1105,144 C1210,178 1286,100 1388,140 L1440,120 L1440,360 L0,360 Z" />
+            <path className="swv swv-2" d="M0,188 C82,150 168,214 270,172 C372,130 448,212 552,178 C656,144 726,220 832,168 C938,118 1014,204 1120,176 C1226,150 1300,216 1400,166 L1440,190 L1440,360 L0,360 Z" />
+            <path className="swv swv-3" d="M0,216 C100,252 190,176 292,214 C394,250 470,168 575,210 C680,250 750,164 858,214 C966,262 1042,172 1148,208 C1254,242 1330,166 1420,206 L1440,230 L1440,360 L0,360 Z" />
+            <path className="swv swv-4" d="M0,248 C92,212 184,272 288,234 C392,196 468,278 574,242 C680,206 750,286 860,232 C970,180 1046,266 1154,240 C1262,216 1338,280 1428,230 L1440,256 L1440,360 L0,360 Z" />
+            <path className="swv swv-5" d="M0,278 C108,314 200,238 306,276 C412,314 488,230 596,272 C704,314 774,226 884,276 C994,324 1070,234 1178,270 C1286,304 1362,228 1436,266 L1440,360 L0,360 Z" />
           </svg>
         </div>
       </div>
       <div className="splash-content">
         <Image src="/muse-app-icon.png" alt="" width={120} height={120} className="splash-logo-icon" />
         <div className="splash-logo-text">Muse</div>
-        <div className="splash-tagline">Creative Professional Network</div>
+        <div className="splash-tagline" style={{ whiteSpace: "nowrap" }}>Where Creatives Connect</div>
         <div className="splash-loader"><div className="splash-loader-bar" /></div>
       </div>
     </div>

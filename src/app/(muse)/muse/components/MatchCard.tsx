@@ -8,6 +8,7 @@ import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, typ
 export interface MatchCardProps {
   m: any;
   view: "list" | "grid";
+  isNew?: boolean;
   actions: {
     setExpandedMatchId: (v: string | null) => void;
     setChatTarget: (v: any) => void;
@@ -43,7 +44,7 @@ const ORBIT_VARIANTS = ["orbit-v1", "orbit-v2", "orbit-v3", "orbit-v4", "orbit-v
 // spinning in sync, and different cards' hoops visibly vary in pace from each other.
 const ORBIT_SPEEDS = [7.5, 5.5, 9, 6.8, 8.2, 6.0, 7.9, 5.2, 8.6, 6.6];
 
-const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) {
+const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCardProps) {
   const {
     setChatTarget,
     showScreen,
@@ -83,6 +84,12 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
         showScreen("chat");
       }}
     >
+      {/* "New match" vertical color tab on the right edge (list view only).
+          Represents an unseen match; disappears once the user opens the chat
+          (MusesScreen tracks seen ids). */}
+      {isList && isNew && (
+        <div className="match-new-tab" aria-label="New match" title="New match" />
+      )}
       <div className="match-avatar-wrap" style={isList ? { position: "relative", width: AVATAR_SIZE, height: AVATAR_SIZE, flexShrink: 0 } : undefined}>
         {isList && <div className={`avatar-orbit orbit-full ${orbitVariant}`} style={{ "--orbit-size": `${ORBIT_SIZE}px`, animationDuration: `${orbitSpeed}s` } as React.CSSProperties} />}
         {isList && <div className={`profile-ring ${ringVariant}`} style={{ width: RING_SIZE, height: RING_SIZE, animationDuration: `${ringSpeed}s` }} />}
@@ -195,7 +202,7 @@ const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) 
           );
         })()}
       </div>
-      <div className="match-time">{m.messages?.[m.messages.length - 1]?.time || "New"}</div>
+      <div className="match-time">{m.messages?.[m.messages.length - 1]?.time || ""}</div>
       <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
     </div>
   );

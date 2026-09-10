@@ -345,8 +345,8 @@ export const FeedScreen = memo(function FeedScreen({
             <div style={{ position: "relative", width: 52, height: 52 }}>
               <Image loading="lazy" src={currentUser.avatar} alt="Avatar" width={52} height={52} className="feed-avatar" style={{ flexShrink: 0 }} onError={handleImgError} />
               {/* Feed composer profile image: no hoolah-hoop, just a halo ~20% larger
-                  than the avatar, matching the halo's color gradient. */}
-              <div className="profile-ring" style={{ width: 60, height: 60 }} />
+                  than the avatar. Halo thickness reduced 40% (mask band 5.5/4.7px -> 3.3/2.8px). */}
+              <div className="profile-ring" style={{ width: 60, height: 60, WebkitMask: "radial-gradient(farthest-side,transparent calc(100% - 3.3px),#000 calc(100% - 2.8px))", mask: "radial-gradient(farthest-side,transparent calc(100% - 3.3px),#000 calc(100% - 2.8px))" }} />
             </div>
           </div>
             <div style={{ position: "relative", flex: 1 }}>

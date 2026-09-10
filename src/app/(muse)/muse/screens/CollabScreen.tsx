@@ -242,7 +242,7 @@ export const CollabScreen = memo(function CollabScreen({
               )}
               {/* Report flag (Torreé audit): sits in the very top-right corner of
                   the card. The safety-info button moves just left of it. */}
-              {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ position: "absolute", top: 14, right: 14, zIndex: 3, color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={14} /></button>)}
+              {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ position: "absolute", top: 14, right: 14, zIndex: 3, width: 22, height: 22, color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={14} /></button>)}
               <div className="brief-header" style={{ flexWrap: "wrap", gap: 6 }}>
                 <Image loading="lazy" src={brief.authorImg} alt={brief.author} width={86} height={86} className={"brief-avatar brief-variant-" + (bi % 5)} />
                 <div className="brief-info" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -308,7 +308,7 @@ export const CollabScreen = memo(function CollabScreen({
                   aria-label="Safety info"
                   title="Safety info"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSafetyInfoOpen(true); }}
-                  style={{ position: "absolute", top: 14, right: 46, width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3 }}
+                  style={{ position: "absolute", top: 14, right: 42, width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3 }}
                 >ⓘ</button>
               )}
               <div className="brief-tags">{brief.tags.map((t: string) => <span key={t} role="button" tabIndex={0} className="brief-tag" onClick={() => setBadgeInfo({ name: t, desc: "A project tag that helps creatives find this brief.", icon: "🏷", color: "#90caf9" })} style={{ cursor: "pointer" }}>{t}</span>)}</div>

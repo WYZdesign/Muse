@@ -578,6 +578,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 sizes="(max-width: 600px) 100vw, 500px"
                 style={{
                   objectFit: "cover",
+                  objectPosition: "center top",
                 }}
                 onError={handleImgError}
               />
