@@ -2,9 +2,9 @@
 
 // Reusable horizontal-scroll carousel that REPLACES the blocky browser
 // scrollbar with hidden scrollbars + subtle ‹ › arrow buttons that nudge the
-// row. Arrows are vertically centered on the row, have no bubble/background,
-// and only appear when the row actually overflows in that direction. No edge
-// fades or shadows. Used for filter-tab rows across the app.
+// row. The arrows live OUTSIDE the scrolling element (siblings, absolutely
+// positioned against the non-scrolling wrapper) so they stay put while the row
+// scrolls underneath — they never drift with the content. No bubble, no fades.
 import React, { useRef, useState, useCallback, useEffect } from "react";
 
 export default function HScroll({
@@ -47,13 +47,13 @@ export default function HScroll({
   };
 
   return (
-    <div className={`hsc-wrap ${className}`} style={{ position: "relative", ...style }}>
+    <div className="hsc-wrap" style={{ position: "relative" }}>
       <button className={"hsc-arrow left" + (canLeft ? "" : " hidden")} aria-label="Scroll left" tabIndex={-1} onClick={() => nudge(-1)}>‹</button>
       <div
         ref={ref}
-        className="hsc-fade"
+        className={"hsc-fade " + className}
         onScroll={update}
-        style={{ display: "flex", gap, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", padding: "2px 0" }}
+        style={{ display: "flex", gap, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", ...style }}
       >
         {children}
       </div>

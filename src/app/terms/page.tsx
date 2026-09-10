@@ -62,7 +62,7 @@ export default function TermsPage() {
 
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>9. Payments &amp; Bookings</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>All paid bookings are processed via Stripe Connect. Muse charges a 5% platform commission on each completed booking. Refund disputes are between the provider and the client; Muse will mediate if needed. Tipping is non-refundable.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>All paid bookings are processed via Stripe Connect. Muse charges a combined 15% platform fee on each completed booking, split as a 7% host service fee and an 8% buyer service fee (both shown transparently before checkout). Refund disputes are between the provider and the client; Muse will mediate if needed. Tipping is non-refundable.</p>
         </section>
 
         <section style={{ marginBottom: 28 }}>

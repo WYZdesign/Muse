@@ -84,16 +84,13 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
     let animId = 0, spawnTimer = 0, t = 0;
 
     function spawnComet() {
-      if (comets.filter((c: any) => c.active).length >= 6) return;
-      const angle = Math.random() < 0.5
-        ? (Math.PI * 0.08 + Math.random() * Math.PI * 0.22)   // down-right ~14-54°
-        : (Math.PI * 0.72 + Math.random() * Math.PI * 0.2);   // down-left ~130-165°
-      const speed = 3.2 + Math.random() * 0.8, edge = Math.random();
-      let x: number, y: number;
-      if (edge < 0.25) { x = -50; y = Math.random() * h; }
-      else if (edge < 0.5) { x = w + 50; y = Math.random() * h; }
-      else if (edge < 0.75) { x = Math.random() * w; y = -50; }
-      else { x = Math.random() * w; y = h + 50; }
+      if (comets.filter((c: any) => c.active).length >= 4) return;
+      // Comets fall DOWNWARD only — steep, near-vertical angles (63°–117°) so
+      // there's no horizontal drift and never any upward motion.
+      const angle = Math.PI * 0.5 + (Math.random() - 0.5) * Math.PI * 0.3;
+      const speed = 3.2 + Math.random() * 0.8;
+      // Always enter from the top edge (falling down), random x.
+      const x = Math.random() * w, y = -50;
       comets.push({
         x, y,
         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
@@ -110,7 +107,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
     function animate() {
       ctx!.clearRect(0, 0, w, h);
       spawnTimer++;
-      if (spawnTimer > 35 + Math.random() * 70) { spawnComet(); spawnTimer = 0; }
+      if (spawnTimer > 50 + Math.random() * 100) { spawnComet(); spawnTimer = 0; }
       for (let i = comets.length - 1; i >= 0; i--) {
         const c = comets[i];
         if (!c.active) continue;
@@ -171,7 +168,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
       animId = requestAnimationFrame(animate);
     }
 
-    for (let i = 0; i < 3; i++) spawnComet();
+    for (let i = 0; i < 2; i++) spawnComet();
     animId = requestAnimationFrame(animate);
     const onVis = () => { if (document.hidden) { cancelAnimationFrame(animId); } else { animId = requestAnimationFrame(animate); } };
     document.addEventListener("visibilitychange", onVis);
@@ -181,7 +178,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
   return (
     <>
       <div className="scene" style={{ opacity: "var(--scene-opacity, 1)" } as React.CSSProperties}>
-        <div className="scene-wash" />
+        <div className="scene-wash" style={{ opacity: "var(--film-opacity, 1)" } as React.CSSProperties} />
         <div className="scene-orb orb-coral" /><div className="scene-orb orb-gold" />
         <div className="scene-orb orb-pink" /><div className="scene-orb orb-lavender" />
         <div className="scene-orb orb-amber" /><div className="scene-orb orb-peach" />

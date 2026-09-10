@@ -16,6 +16,7 @@ import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 export interface CollabScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
+  goBack?: () => void;
   museCat: "all" | "tfp" | "paid" | "opencall" | "concept";
   setMuseCat: (c: "all" | "tfp" | "paid" | "opencall" | "concept") => void;
   userBriefs: any[];
@@ -51,6 +52,7 @@ export interface CollabScreenProps {
 export const CollabScreen = memo(function CollabScreen({
   screen,
   showScreen,
+  goBack,
   museCat,
   setMuseCat,
   userBriefs,
@@ -146,7 +148,7 @@ export const CollabScreen = memo(function CollabScreen({
   return (
     <div className={"screen-el" + (screen === "briefs" ? " active" : "")} data-screen="briefs">
       <div className="hdr" style={{ display: "grid", gridTemplateColumns: "42px 1fr 42px", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
-        <button className="hdr-btn" onClick={() => showScreen("discover")} aria-label="Back"><FiArrowLeft size={18} /></button>
+        <button className="hdr-btn" onClick={() => (goBack ? goBack() : showScreen("discover"))} aria-label="Back"><FiArrowLeft size={18} /></button>
         <div
           className="logo-link"
           style={{

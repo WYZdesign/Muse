@@ -11,6 +11,7 @@ export interface ChatScreenProps {
   chatTarget: any;
   setChatTarget: React.Dispatch<React.SetStateAction<any>>;
   showScreen: (s: Screen) => void;
+  goBack?: () => void;
   messages: any[];
   setMessages: React.Dispatch<React.SetStateAction<any[]>>;
   chatText: string;
@@ -47,6 +48,7 @@ export const ChatScreen = memo(function ChatScreen({
   chatTarget,
   setChatTarget,
   showScreen,
+  goBack,
   messages,
   setMessages,
   chatText,
@@ -82,7 +84,7 @@ export const ChatScreen = memo(function ChatScreen({
       {chatTarget && (
         <div className="chat-wrap">
           <div className="chat-header">
-            <button className="chat-back" onClick={() => showScreen("matches")}><FiArrowLeft size={20} /></button>
+            <button className="chat-back" onClick={() => (goBack ? goBack() : showScreen("matches"))}><FiArrowLeft size={20} /></button>
             <Image loading="lazy" src={chatTarget.img} alt={chatTarget.name} width={40} height={40} className="chat-avatar" onError={handleImgError} onClick={() => setViewProfile(chatTarget)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewProfile(chatTarget); } }} style={{ cursor: "pointer" }} />
             {/* Audit fix (2026-09-08, wyzmind's Torreé batch item 4): only the
                 40px avatar circle opened the full profile — the name/type text

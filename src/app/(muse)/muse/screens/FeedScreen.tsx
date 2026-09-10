@@ -343,10 +343,7 @@ export const FeedScreen = memo(function FeedScreen({
             <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingRight: 3 }}>
             <div style={{ position: "relative", width: 52, height: 52 }}>
-              <Image loading="lazy" src={currentUser.avatar} alt="Avatar" width={52} height={52} className="feed-avatar" style={{ flexShrink: 0 }} onError={handleImgError} />
-              {/* Feed composer profile image: no hoolah-hoop, just a halo ~20% larger
-                  than the avatar. Halo thickness reduced 40% (mask band 5.5/4.7px -> 3.3/2.8px). */}
-              <div className="profile-ring" style={{ width: 60, height: 60, WebkitMask: "radial-gradient(farthest-side,transparent calc(100% - 3.3px),#000 calc(100% - 2.8px))", mask: "radial-gradient(farthest-side,transparent calc(100% - 3.3px),#000 calc(100% - 2.8px))" }} />
+              <Image loading="lazy" src={currentUser.avatar} alt="Avatar" width={52} height={52} className="feed-avatar" style={{ flexShrink: 0, borderRadius: "50%", objectFit: "cover" }} onError={handleImgError} />
             </div>
           </div>
             <div style={{ position: "relative", flex: 1 }}>
@@ -517,13 +514,17 @@ export const FeedScreen = memo(function FeedScreen({
                       rounded edge and clip Report. */}
                   <button className={"feed-action-btn" + (post.liked ? " liked-pop" : "")} style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: post.liked ? "var(--gold)" : "var(--muted)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { const newLiked = !post.liked; const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) { setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); return; } updateFeedPostState(post.id, p => ({ ...p, liked: newLiked })); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "like-feed-post", postId: post.id, liked: newLiked }) }).then(r => { if (!r.ok) throw new Error("failed"); }).catch(() => { updateFeedPostState(post.id, p => ({ ...p, liked: !newLiked })); showToast("Failed to update like"); }); }}>✦ {post.likes + (post.liked ? 1 : 0)}</button>
                   <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: "#87CEEB", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => {
+                    // Tapping Comment always gives a visible result: expand the
+                    // inline reply composer AND open the full post detail (which
+                    // has the same composer), so the user can't get a no-op.
+                    setReplyingTo(post.id);
+                    openPostDetail(post.id);
                     if (replyingTo !== post.id && !postReplies[post.id]) {
                       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "get-replies", postId: post.id }) })
                         .then((r: any) => r.json?.()).then((data: any) => {
                           if (data?.replies?.length) setPostReplies(prev => ({ ...prev, [post.id]: data.replies }));
                         }).catch(() => {});
                     }
-                    setReplyingTo(replyingTo === post.id ? null : post.id);
                   }}>💬 {post.comments}</button>
                   <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => setShareTarget(post)}>Share</button>
                   <button className="feed-action-btn" title="Save for later" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: post.saved ? "#FFD700" : "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { const newSaved = !post.saved; if (feedPostsStatic.some(p => p.id === post.id)) { setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, saved: newSaved }) : p)); } else { updateFeedPostState(post.id, p => ({ ...p, saved: newSaved })); } showToast(newSaved ? "Saved ✓" : "Removed from saves"); }}>{post.saved ? "Saved" : "Save"}</button>

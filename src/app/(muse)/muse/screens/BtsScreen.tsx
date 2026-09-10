@@ -13,6 +13,7 @@ export interface BtsScreenProps {
   stories: any[];
   setStories: React.Dispatch<React.SetStateAction<any[]>>;
   showScreen: (s: Screen) => void;
+  goBack?: () => void;
   openHamburger: () => void;
   unreadNotificationCount: number;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
@@ -51,6 +52,7 @@ export const BtsScreen = memo(function BtsScreen({
   stories,
   setStories,
   showScreen,
+  goBack,
   openHamburger,
   unreadNotificationCount,
   showToast,
@@ -252,7 +254,7 @@ export const BtsScreen = memo(function BtsScreen({
         <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.15)", pointerEvents: "none" }} />
         <button
           className="chat-back"
-          onClick={() => showScreen("discover")}
+          onClick={() => (goBack ? goBack() : showScreen("discover"))}
           aria-label="Back"
           style={{ position: "relative", zIndex: 1 }}
         >

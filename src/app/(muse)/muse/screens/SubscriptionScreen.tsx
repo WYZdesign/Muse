@@ -15,6 +15,7 @@ export interface SubscriptionScreenProps {
   setUserTier?: (t: string) => void;
   authUser: any;
   showScreen: (s: Screen) => void;
+  goBack?: () => void;
   openHamburger: () => void;
   unreadNotificationCount: number;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
@@ -30,6 +31,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
   setUserTier,
   authUser,
   showScreen,
+  goBack,
   openHamburger,
   unreadNotificationCount,
   showToast,
@@ -60,7 +62,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
     <div className="phone-wrap">
       <div className="phone" id="muse-app">
         <div className="hdr" style={{ display: "grid", gridTemplateColumns: "42px 1fr 42px", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
-          <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
+          <button className="hdr-btn" onClick={() => (goBack ? goBack() : showScreen("profile"))} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
           <div
             className="logo-link"
             style={{

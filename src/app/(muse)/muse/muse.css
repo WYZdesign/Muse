@@ -253,6 +253,14 @@ a{color:inherit;text-decoration:none}
 @keyframes swave6{0%{transform:translate(0,-12px) scaleY(1)}21%{transform:translate(8px,14px) scaleY(0.92)}43%{transform:translate(-11px,-16px) scaleY(1.08)}64%{transform:translate(5px,6px) scaleY(0.99)}85%{transform:translate(-7px,-10px) scaleY(1.04)}100%{transform:translate(0,-12px) scaleY(1)}}
 @keyframes swave7{0%{transform:translate(0,12px) scaleY(0.97)}18%{transform:translate(-9px,-18px) scaleY(1.09)}39%{transform:translate(11px,8px) scaleY(0.94)}61%{transform:translate(-6px,-14px) scaleY(1.06)}82%{transform:translate(8px,16px) scaleY(0.98)}100%{transform:translate(0,12px) scaleY(0.97)}}
 @keyframes swave8{0%{transform:translate(0,-10px) scaleY(1.03)}20%{transform:translate(10px,10px) scaleY(0.96)}40%{transform:translate(-8px,-14px) scaleY(1.05)}62%{transform:translate(7px,12px) scaleY(0.99)}83%{transform:translate(-5px,-8px) scaleY(1.02)}100%{transform:translate(0,-10px) scaleY(1.03)}}
+/* Splash uses the same 3-layer tide waves as the bottom of the pages. */
+.splash-ocean-tide{overflow:hidden}
+.splash-ocean-tide .splash-tide{position:absolute;bottom:0;left:0;width:220%;height:100%;animation:waveDrift 18s ease-in-out infinite}
+.splash-ocean-tide .splash-tide:nth-child(2){animation-duration:26s;animation-delay:-6s;opacity:.75}
+.splash-ocean-tide .splash-tide:nth-child(3){animation-duration:34s;animation-delay:-13s;opacity:.55}
+.splash-ocean-tide .wave-path-1{fill:rgba(135,206,235,0.42)}
+.splash-ocean-tide .wave-path-2{fill:rgba(100,181,246,0.32)}
+.splash-ocean-tide .wave-path-3{fill:rgba(80,160,230,0.22)}
 
 /* Splash meteor trajectories */
 @keyframes shootA{0%{transform:translate(0,0) rotate(28deg) scaleX(0);opacity:0}4%{opacity:1;transform:translate(32px,17px) rotate(28deg) scaleX(1)}36%{opacity:0.9;transform:translate(288px,153px) rotate(28deg) scaleX(1)}48%{opacity:0;transform:translate(384px,204px) rotate(28deg) scaleX(0.6)}100%{opacity:0;transform:translate(384px,204px) rotate(28deg) scaleX(0)}}
@@ -408,11 +416,11 @@ a{color:inherit;text-decoration:none}
 @keyframes hamburgerSlideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:.6}}
 @keyframes hamburgerBackdropOut{from{opacity:1}to{opacity:0}}
 .onboard{padding:50px 28px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;height:100%;width:100%;position:relative;overflow:hidden;overflow-y:auto}
-.hero-text{font-size:56px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;text-align:left;line-height:1.02;margin-bottom:16px;background:linear-gradient(120deg,var(--gold),var(--amber),var(--pink),var(--lavender),var(--sunset-orange),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:300% 300%;animation:lavaFlow 7s ease-in-out infinite,heroPulse 3s ease-in-out infinite;padding:0 0.18em;display:inline-block}
+.hero-text{font-size:67px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;text-align:center;line-height:1.02;margin:0 auto 16px;background:linear-gradient(120deg,var(--gold),var(--amber),var(--pink),var(--lavender),var(--sunset-orange),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:300% 300%;animation:lavaFlow 7s ease-in-out infinite,heroPulse 3s ease-in-out infinite;padding:0 0.18em;display:block;width:fit-content}
 @keyframes heroPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.15) drop-shadow(0 4px 20px rgba(255,215,0,0.2))}}
-.hero-sub{font-size:16px;font-weight:400;color:var(--text2);text-align:left;line-height:1.7;margin-bottom:12px;max-width:300px;max-width:100%}
+.hero-sub{font-size:16px;font-weight:400;color:var(--text2);text-align:center;line-height:1.7;margin:0 auto 12px;max-width:100%}
 .hero-sub em{color:var(--gold);font-style:normal;font-weight:600;text-shadow:0 0 20px rgba(255,215,0,0.3)}
-.hero-quote{font-size:13px;font-weight:400;color:var(--muted);text-align:left;font-style:italic;margin-bottom:28px;max-width:100%;line-height:1.6}
+.hero-quote{font-size:13px;font-weight:400;color:var(--muted);text-align:center;font-style:italic;margin:0 auto 28px;max-width:100%;line-height:1.6}
 .sparkle{position:absolute;pointer-events:none;animation:sparkleFloat 4s ease-in-out infinite;color:var(--gold);text-shadow:0 0 12px rgba(255,215,0,0.5)}
 @keyframes sparkleFloat{0%,100%{transform:translateY(0) rotate(0deg) scale(1);opacity:.4}50%{transform:translateY(-25px) rotate(180deg) scale(1.3);opacity:1}}
 .step-title{font-size:30px;font-weight:800;text-align:left;margin-bottom:6px;background:linear-gradient(135deg,var(--gold),var(--pink),var(--lavender));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 200%;animation:stepGrad 3s ease-in-out infinite}
@@ -621,7 +629,7 @@ img{background-color:#1a0a2e}
 .send-btn:hover{box-shadow:0 2px 8px rgba(255,215,0,0.16);transform:scale(1.05)}
 .profile-scroll{flex:1;overflow-y:auto;padding:0 20px 90px;scrollbar-width:none}
 .profile-scroll::-webkit-scrollbar{width:0}
-.profile-top{display:flex;flex-direction:column;align-items:center;padding:20px 0 28px}
+.profile-top{display:flex;flex-direction:column;align-items:center;padding:44px 0 28px}
 /* display:inline-block is load-bearing: without it this is a plain block div, and in
    contexts that aren't a centered flex column (e.g. the hamburger side-panel "Your
    Profile" view, which is just a text-align:center block wrapper) it stretches to the
@@ -2134,7 +2142,7 @@ img{background-color:#1a0a2e}
    The three layers use mismatched, low-frequency bezier curves so they read as
    real, uneven tides rather than a repeating synthwave pattern.
    ══════════════════════════════════════════════════════════════════════════ */
-.wave-bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100vw);height:12%;z-index:4;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s ease}
+.wave-bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100vw);height:14.5%;z-index:4;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s ease}
 .wave-bottom.show{opacity:1}
 .wave-bottom svg{position:absolute;bottom:0;left:0;width:220%;height:100%;animation:waveDrift 18s ease-in-out infinite}
 .wave-bottom svg:nth-child(2){animation-duration:26s;animation-delay:-6s;opacity:.55}

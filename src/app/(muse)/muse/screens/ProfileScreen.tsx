@@ -14,6 +14,7 @@ import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, Badge
 export interface ProfileScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
+  goBack?: () => void;
   currentUser: any;
   obData: any;
   setObData: React.Dispatch<React.SetStateAction<any>>;
@@ -97,6 +98,7 @@ export const ProfileScreen = memo(function ProfileScreen({
   setShowPromptBank,
   matches,
   showScreen,
+  goBack,
   unreadNotificationCount,
   obSelects = [],
   testLevels = {},
@@ -211,7 +213,7 @@ export const ProfileScreen = memo(function ProfileScreen({
   return (
     <div className={"screen-el" + (screen === "profile" ? " active" : "")} data-screen="profile">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
-        <button className="hdr-btn" onClick={() => showScreen("discover")} aria-label="Back"><FiArrowLeft size={18} /></button>
+        <button className="hdr-btn" onClick={() => (goBack ? goBack() : showScreen("discover"))} aria-label="Back"><FiArrowLeft size={18} /></button>
         <div className="logo-link" style={{ position: "relative", margin: 0, padding: 0, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 37.5, fontWeight: 800, backgroundImage: "linear-gradient(135deg,var(--gold),var(--lavender),var(--pink),var(--gold))", backgroundSize: "400% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", animation: "gradientShift 6s ease-in-out infinite", lineHeight: "38px", whiteSpace: "nowrap", width: "max-content", textAlign: "center" }}>Profile</div>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="hdr-btn" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setEditNsfw(!!currentUser.nsfw); setEditMediaKit(obData.mediaKitUrl || ""); setShowEditProfile(true); }} aria-label="Edit Profile"><FiEdit2 size={18} /></button>
@@ -541,16 +543,21 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {activityFeed.length > 0 ? activityFeed.slice(0, 4).map(a => {
               const avatar = a.avatar || "";
-              const from = a.from || "Someone";
+              const from = (a.from && String(a.from).trim()) || "Someone";
               const text = a.text || "interacted with your profile";
               const time = a.time || "";
+              const typeIcon: Record<string, string> = { like: "♥", match: "✦", message: "💬", profile_view: "👁", booking: "📅", quest: "⚡", brief: "📋", community: "👥" };
+              const icon = typeIcon[(a as any).type] || "•";
               return (
-                <div key={a.id} style={{ display: "flex", gap: 10, padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.04)" }}>
-                  {avatar ? (
-                    <Image loading="lazy" src={avatar} alt="" width={36} height={36} style={{ borderRadius: "50%", objectFit: "cover", background: "#1a0a2e", flexShrink: 0 }} onError={handleImgError} />
-                  ) : (
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--pink),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{(a as any)._systemAvatar || from.charAt(0).toUpperCase()}</div>
-                  )}
+                <div key={a.id} style={{ display: "flex", gap: 10, padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.04)", alignItems: "center" }}>
+                  <div style={{ position: "relative", flexShrink: 0 }}>
+                    {avatar ? (
+                      <Image loading="lazy" src={avatar} alt={from} width={36} height={36} style={{ borderRadius: "50%", objectFit: "cover", background: "linear-gradient(135deg,var(--gold),var(--pink),var(--lavender))", flexShrink: 0, display: "block" }} onError={handleImgError} />
+                    ) : (
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--pink),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{from.charAt(0).toUpperCase()}</div>
+                    )}
+                    <span style={{ position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "var(--panel-bg-solid)", border: "1px solid var(--border-med)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, lineHeight: 1 }}>{icon}</span>
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><strong>{from}</strong> {text}</div>
                     {time && <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{time}</div>}

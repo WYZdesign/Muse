@@ -9,6 +9,7 @@ import MyAlbumsManager from "../components/MyAlbumsManager";
 export interface PortfolioScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
+  goBack?: () => void;
   openHamburger: () => void;
   unreadNotificationCount: number;
   matches: Match[];
@@ -20,6 +21,7 @@ export interface PortfolioScreenProps {
 export const PortfolioScreen = memo(function PortfolioScreen({
   screen,
   showScreen,
+  goBack,
   openHamburger,
   unreadNotificationCount,
   matches,
@@ -30,7 +32,7 @@ export const PortfolioScreen = memo(function PortfolioScreen({
   return (
     <div className={"screen-el" + (screen === "portfolio" ? " active" : "")} data-screen="portfolio">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
-        <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
+        <button className="chat-back" onClick={() => (goBack ? goBack() : showScreen("discover"))}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{
           fontSize: 37.5,
           backgroundImage: "linear-gradient(90deg,#64B5F6,#98FB98,#D4A5FF,#64B5F6,#98FB98,#64B5F6)",

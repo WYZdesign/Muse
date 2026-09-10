@@ -15,6 +15,7 @@ import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 export interface MusesScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
+  goBack?: () => void;
   matches: Match[];
   setMatches: React.Dispatch<React.SetStateAction<any[]>>;
   searchOpen: boolean;
@@ -54,6 +55,7 @@ export const MusesScreen = memo(function MusesScreen({
   setSearchOpen,
   currentUser,
   showScreen,
+  goBack,
   showToast,
   setViewProfile,
   showNsfw,
@@ -131,7 +133,7 @@ export const MusesScreen = memo(function MusesScreen({
   return (
     <div className={"screen-el" + (screen === "matches" ? " active" : "")} data-screen="matches">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
-        <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
+        <button className="chat-back" onClick={() => (goBack ? goBack() : showScreen("discover"))}><FiArrowLeft size={20} /></button>
         <div
           className="logo-link"
           style={{

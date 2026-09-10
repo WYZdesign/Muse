@@ -20,6 +20,7 @@ const LIGHT_THEMES = ["sunrise", "daylight", "sky", "rose"] as const;
 export interface SettingsScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
+  goBack?: () => void;
   currentUser: any;
   obData: any;
   showNsfw: boolean;
@@ -186,6 +187,7 @@ function OpacitySlider({ label, storageKey, cssVar }: { label: string; storageKe
 export const SettingsScreen = memo(function SettingsScreen({
   screen,
   showScreen,
+  goBack,
   currentUser,
   obData,
   showNsfw,
@@ -466,7 +468,7 @@ export const SettingsScreen = memo(function SettingsScreen({
     <div className="phone-wrap">
       <div className="phone" id="muse-app">
         <div className="hdr" style={{ display: "grid", gridTemplateColumns: "42px 1fr 42px", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 16px` }}>
-          <button className="hdr-btn" onClick={() => showScreen("profile")} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
+          <button className="hdr-btn" onClick={() => (goBack ? goBack() : showScreen("profile"))} aria-label="Back to Profile"><FiArrowLeft size={18} /></button>
           <div className="logo-link" style={{
             fontSize: 37.5,
             fontFamily: "'Playfair Display',serif",
@@ -608,8 +610,9 @@ export const SettingsScreen = memo(function SettingsScreen({
 
           <div className="settings-group">
             <div className="settings-group-title">Background</div>
-            <OpacitySlider label="Scene Opacity" storageKey="muse_bg_opacity" cssVar="--scene-opacity" />
+            <OpacitySlider label="Background" storageKey="muse_bg_opacity" cssVar="--scene-opacity" />
             <OpacitySlider label="Sprite Opacity" storageKey="muse_sprite_opacity" cssVar="--sprite-opacity" />
+            <OpacitySlider label="Glossy Film" storageKey="muse_film_opacity" cssVar="--film-opacity" />
           </div>
 
           <div className="settings-group">

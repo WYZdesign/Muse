@@ -18,6 +18,7 @@ import { STRINGS } from "@/lib/strings";
 export interface SessionsScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
+  goBack?: () => void;
   sessTab: "sessions" | "bookings" | "requests";
   setSessTab: (t: "sessions" | "bookings" | "requests") => void;
   matches: Match[];
@@ -79,6 +80,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   openChat,
   setChatTarget,
   showScreen,
+  goBack,
   showToast,
   handleImgError,
   setShowAgeVerification,
@@ -265,7 +267,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   return (
     <div className={"screen-el" + (screen === "sessions" ? " active" : "")} data-screen="sessions">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
-        <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
+        <button className="chat-back" onClick={() => (goBack ? goBack() : showScreen("discover"))}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#F2CC8F,#E07A5F,#F4A261,#F2CC8F,#E07A5F,#F2CC8F)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Sessions</div>
         <div style={{ width: 42 }} />
       </div>

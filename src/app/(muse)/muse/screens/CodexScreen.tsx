@@ -12,6 +12,7 @@ import { FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiHeart, FiTarget } from 
 export interface CodexScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
+  goBack?: () => void;
   openHamburger: () => void;
   unreadNotificationCount: number;
 }
@@ -75,6 +76,7 @@ const CONN_TYPES = [
 export const CodexScreen = memo(function CodexScreen({
   screen,
   showScreen,
+  goBack,
   openHamburger,
   unreadNotificationCount,
 }: CodexScreenProps) {
@@ -84,7 +86,7 @@ export const CodexScreen = memo(function CodexScreen({
   return (
     <div className={"screen-el" + (screen === "codex" ? " active" : "")} data-screen="codex">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
-        <button className="chat-back" onClick={() => showScreen("profile")}><FiArrowLeft size={20} /></button>
+        <button className="chat-back" onClick={() => (goBack ? goBack() : showScreen("profile"))}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{ fontSize: 37.5, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontWeight: 800, color: "var(--gold)", position: "relative", margin: 0, padding: 0, display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}> Glossary + Codex</div>
         <div style={{ width: 34 }} />
       </div>

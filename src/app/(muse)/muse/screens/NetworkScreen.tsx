@@ -17,6 +17,7 @@ import Nav from "../components/Nav";
 export interface NetworkScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
+  goBack?: () => void;
   showNsfw: boolean;
   openHamburger: () => void;
   unreadNotificationCount: number;
@@ -79,6 +80,7 @@ function generateBio(exp: string, skills: string[]): string {
 export const NetworkScreen = memo(function NetworkScreen({
   screen,
   showScreen,
+  goBack,
   showNsfw,
   openHamburger,
   unreadNotificationCount,
@@ -360,7 +362,7 @@ export const NetworkScreen = memo(function NetworkScreen({
           padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px`,
         }}
       >
-        <button className="chat-back" onClick={() => showScreen("discover")}>
+        <button className="chat-back" onClick={() => (goBack ? goBack() : showScreen("discover"))}>
           <FiArrowLeft size={20} />
         </button>
         <div

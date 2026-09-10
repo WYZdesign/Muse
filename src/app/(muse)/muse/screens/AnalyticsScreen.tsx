@@ -13,6 +13,7 @@ interface AnalyticsScreenProps {
   showToast: (msg: string) => void;
   openHamburger: () => void;
   unreadNotificationCount?: number;
+  goBack?: () => void;
 }
 
 export const AnalyticsScreen = memo(function AnalyticsScreen({
@@ -23,6 +24,7 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
   showToast,
   openHamburger,
   unreadNotificationCount,
+  goBack,
 }: AnalyticsScreenProps) {
   const [analytics, setAnalytics] = useState<{
     views: number;
@@ -87,14 +89,14 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
     <div className="phone" id="muse-app">
     <div className={"screen-el" + (screen === "analytics" ? " active" : "")} style={{ display: "flex", flexDirection: "column", height: "100vh" }} data-screen="analytics">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
-        <button className="chat-back" onClick={() => showScreen("profile")}><FiArrowLeft size={20} /></button>
+        <button className="chat-back" onClick={() => (goBack ? goBack() : showScreen("profile"))}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#B388FF,#80DEEA,#90CAF9,#B388FF,#80DEEA,#B388FF)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, whiteSpace: "nowrap", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Analytics</div>
-        <button onClick={openHamburger} style={{ width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center" }}><FiUsers size={24} style={{ color: "var(--text)" }} /></button>
+        <div style={{ width: 42 }} />
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 100px" }}>
         <div style={{ marginBottom: 20, padding: "0 4px" }}>
           <div style={{ fontSize: 14, color: "var(--text2)", marginBottom: 8 }}>Last 30 days</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {statCards.map((stat, i) => (
               <div key={stat.label} style={{
                 background: "rgba(255,255,255,0.04)",
