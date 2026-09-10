@@ -289,6 +289,12 @@ export const FeedScreen = memo(function FeedScreen({
     }
   };
 
+  // Cross-wire fix: a BTS post shown in the Feed may carry a `momentId` that
+  // points at the underlying muse_moments row. Comments on it must target that
+  // moment id so they land on the BTS moment (the `feed-comment` action handles
+  // both feed-post ids and moment ids), not the ephemeral feed-post id.
+  const commentTargetId = (p: any) => p?.momentId ?? p?.id;
+
   return (
     <div className={"screen-el" + (screen === "connections" ? " active" : "")} data-screen="connections">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
@@ -333,8 +339,9 @@ export const FeedScreen = memo(function FeedScreen({
             );
           })}
         </div>
-<div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", gap: 16, alignItems: "center" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingRight: 3, alignSelf: "center" }}>
+<div style={{ margin: "0 20px 12px", padding: "12px 0", display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingRight: 3 }}>
             <div style={{ position: "relative", width: 52, height: 52 }}>
               <Image loading="lazy" src={currentUser.avatar} alt="Avatar" width={52} height={52} className="feed-avatar" style={{ flexShrink: 0 }} onError={handleImgError} />
               {/* Feed composer profile image: no hoolah-hoop, just a halo ~20% larger
@@ -342,13 +349,13 @@ export const FeedScreen = memo(function FeedScreen({
               <div className="profile-ring" style={{ width: 60, height: 60 }} />
             </div>
           </div>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ position: "relative" }}>
+            <div style={{ position: "relative", flex: 1 }}>
               <textarea className="inp" placeholder="Share your work or ideas.." rows={2} value={feedText} maxLength={500} onChange={e => setFeedText(e.target.value)} style={{ resize: "none", margin: 0, minHeight: 52, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)" }} />
               {feedText.length > 0 && (
                 <span style={{ position: "absolute", bottom: 7, right: 10, fontSize: 10, color: feedText.length > 450 ? "#ff8a80" : "var(--muted)", fontWeight: 700, pointerEvents: "none" }}>{feedText.length}/500</span>
               )}
             </div>
+          </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", width: "100%" }}>
               <label style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }}>
                 <FiImage size={16} />
@@ -421,7 +428,6 @@ export const FeedScreen = memo(function FeedScreen({
                 ))}
               </div>
             )}
-          </div>
         </div>
         {!bootstrapped ? (
           <ScreenSkeleton rows={4} image />
@@ -541,11 +547,11 @@ export const FeedScreen = memo(function FeedScreen({
                             placeholder="Write a reply..."
                             value={commentText}
                             onChange={e => setCommentText(e.target.value)}
-                            onKeyDown={async e => { if (e.key === "Enter" && commentText.trim()) { const txt = commentText.trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: post.id, text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
+                            onKeyDown={async e => { if (e.key === "Enter" && commentText.trim()) { const txt = commentText.trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
                             style={{ width: "100%", margin: 0, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.06)", borderRadius: 99, padding: "10px 42px 10px 14px", fontSize: 13, color: "var(--text)" }}
                           />
                           <button
-                            onClick={async () => { if (commentText.trim()) { const txt = commentText.trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: post.id, text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
+                            onClick={async () => { if (commentText.trim()) { const txt = commentText.trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
                             style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", width: 30, height: 30, borderRadius: "50%", border: "none", background: commentText.trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: commentText.trim() ? "#fff" : "rgba(255,255,255,0.25)", cursor: commentText.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
                           ><FiSend size={14} /></button>
                       </div>
@@ -572,7 +578,7 @@ export const FeedScreen = memo(function FeedScreen({
           setCommentText("");
           if (isStatic) { showToast("Reply posted!"); return; }
           try {
-            const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: dp.id, text: txt }) });
+            const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(dp), text: txt }) });
             if (!r.ok) throw new Error("failed");
             showToast("Reply posted!");
           } catch {
@@ -584,9 +590,9 @@ export const FeedScreen = memo(function FeedScreen({
         return createPortal(
           <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
             <div className="modal-header">
-              <button className="modal-back" onClick={() => setDetailPostId(null)}><FiArrowLeft size={20} /></button>
+              <button className="modal-back" onClick={() => setDetailPostId(null)} aria-label="Back"><FiArrowLeft size={20} /></button>
               <div className="modal-title">Post</div>
-              <button className="modal-close" onClick={() => setDetailPostId(null)} aria-label="Close">✕</button>
+              <div style={{ width: 42 }} />
             </div>
             <div className="modal-body">
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>

@@ -328,9 +328,9 @@ export const CommunityScreen = memo(function CommunityScreen({
       {showCreate && (
         <div className="modal-overlay" style={{ position: "fixed", zIndex: 400 }}>
           <div className="modal-header">
-            <button className="modal-back" onClick={() => setShowCreate(false)}><FiArrowLeft size={20} /></button>
+            <button className="modal-back" onClick={() => setShowCreate(false)} aria-label="Back"><FiArrowLeft size={20} /></button>
             <div className="modal-title">{commTab === "groups" ? "Create Group" : "Create Event"}</div>
-            <button className="modal-close" onClick={() => setShowCreate(false)} aria-label="Close">✕</button>
+            <div style={{ width: 42 }} />
           </div>
           <div className="modal-body" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
             {commTab === "groups" ? (

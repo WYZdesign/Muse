@@ -705,6 +705,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ prefs });
     }
 
+    if (type === "saved-search-list" && profileId) {
+      const { data } = await sb.from("muse_saved_searches")
+        .select("id, name, query, filters, created_at")
+        .eq("user_id", profileId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return NextResponse.json({ searches: data || [] });
+    }
+
     if (type === "boost-status" && user) {
       const status = await getBoostStatus(sb, profileId || "");
       return NextResponse.json(status);

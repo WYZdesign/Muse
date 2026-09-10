@@ -1,11 +1,10 @@
 "use client";
 
 // Reusable horizontal-scroll carousel that REPLACES the blocky browser
-// scrollbar with: (1) a hidden scrollbar, (2) edge-fade gradients hinting
-// more content, and (3) subtle ‹ › arrow buttons that nudge the row. Arrows
-// auto-hide at the start/end and only appear when the row actually overflows.
-// Used for filter-tab rows across BTS / Collab / Community / Sessions / Network
-// so the old horizontal scrollbar can never overlap the filter buttons again.
+// scrollbar with hidden scrollbars + subtle ‹ › arrow buttons that nudge the
+// row. Arrows are vertically centered on the row, have no bubble/background,
+// and only appear when the row actually overflows in that direction. No edge
+// fades or shadows. Used for filter-tab rows across the app.
 import React, { useRef, useState, useCallback, useEffect } from "react";
 
 export default function HScroll({
@@ -52,9 +51,9 @@ export default function HScroll({
       <button className={"hsc-arrow left" + (canLeft ? "" : " hidden")} aria-label="Scroll left" tabIndex={-1} onClick={() => nudge(-1)}>‹</button>
       <div
         ref={ref}
-        className={"hsc-fade" + (canLeft ? "" : " fade-end") + (canRight ? "" : " fade-start")}
+        className="hsc-fade"
         onScroll={update}
-        style={{ display: "flex", gap, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", padding: "2px 4px" }}
+        style={{ display: "flex", gap, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", padding: "2px 0" }}
       >
         {children}
       </div>

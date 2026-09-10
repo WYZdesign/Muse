@@ -32,6 +32,27 @@ const FILTER_OPTIONS = [
   { key: "weekly", label: "Weekly" },
 ];
 
+// Concise one-line objective shown when a quest is expanded. Prefers the
+// backend description; when that's empty, derives a short sentence from the
+// quest title/type so the card never reads "No description available."
+function deriveQuestDescription(q: any): string {
+  const desc = typeof q?.description === "string" ? q.description.trim() : "";
+  if (desc) return desc;
+  const t = String(q?.title || "").toLowerCase();
+  if (t.includes("login") || t.includes("log in") || t.includes("check in")) return "Log in to Muse today";
+  if (t.includes("like")) return "Like a post to show some love";
+  if (t.includes("comment") || t.includes("reply")) return "Leave a comment on a post";
+  if (t.includes("post") || t.includes("share") || t.includes("upload")) return "Share something with the community";
+  if (t.includes("follow") || t.includes("connect") || t.includes("friend")) return "Connect with other creatives";
+  if (t.includes("swipe") || t.includes("browse") || t.includes("discover")) return "Swipe through profiles on Discover";
+  if (t.includes("profile")) return "Update your Muse profile";
+  if (t.includes("message") || t.includes("chat") || t.includes("dm")) return "Send a message to a match";
+  if (t.includes("book") || t.includes("session")) return "Book a session with a pro";
+  if (t.includes("streak")) return "Keep your daily login streak going";
+  if (t.includes("bts") || t.includes("moment")) return "Post a behind-the-scenes moment";
+  return `Complete "${q?.title || "this quest"}" to earn your reward`;
+}
+
 export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewardGranted, onClaimablesChange, onQuestsChange, loginStreak = 0, weeklyLogins = [false,false,false,false,false,false,false] }: QuestPanelProps) {
   const [allQuests, setAllQuests] = useState<any[]>([]);
   const [xp, setXp] = useState({ total_xp: 0, level: 1 });
@@ -228,6 +249,11 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                 onClick={() => setExpandedId(isExpanded ? null : q.id)}
                 style={{
                   position: "relative",
+                  width: "100%",
+                  maxWidth: "100%",
+                  minWidth: 0,
+                  minHeight: 72,
+                  boxSizing: "border-box",
                   borderRadius: 14,
                   overflow: "hidden",
                   cursor: "pointer",
@@ -235,7 +261,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                     ? "linear-gradient(135deg, rgba(255,215,0,0.06), rgba(255,138,128,0.04))"
                     : "rgba(255,255,255,0.03)",
                   border: `1px solid ${isClaimable ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.06)"}`,
-                  boxShadow: isClaimable ? "0 0 20px rgba(255,215,0,0.05)" : "none",
+                  boxShadow: isClaimable ? "0 2px 8px rgba(255,215,0,0.08)" : "none",
                   transition: "all .2s",
                   opacity: q.completed && !isClaimable ? 0.6 : 1,
                 }}
@@ -270,6 +296,11 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                       fontWeight: 700,
                       color: "var(--text)",
                       display: "block",
+                      flex: "1 1 60%",
+                      minWidth: 0,
+                      whiteSpace: "normal",
+                      overflowWrap: "anywhere",
+                      lineHeight: 1.3,
                     }}>{q.title}</span>
                     <span style={{
                       fontSize: 12,
@@ -357,7 +388,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                       lineHeight: 1.5,
                       paddingTop: 10,
                     }}>
-                      {q.description || "No description available."}
+                      {deriveQuestDescription(q)}
                     </div>
                   </div>
                 )}

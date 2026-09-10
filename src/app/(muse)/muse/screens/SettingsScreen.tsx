@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useState, useEffect } from "react";
+import React, { memo, useState, useEffect, useRef } from "react";
 import { FiArrowLeft, FiUser, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiTwitter, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX, FiLock, FiBell, FiHelpCircle, FiDownload, FiAlertTriangle, FiCompass } from "react-icons/fi";
 import { mfaStatus, mfaEnroll, mfaVerify, mfaUnenroll } from "../lib/api";
 // Push subscribe/unsubscribe arrive as PROPS (page.tsx owns the real impls) —
@@ -246,6 +246,11 @@ export const SettingsScreen = memo(function SettingsScreen({
   setSupportOpen,
 }: SettingsScreenProps) {
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showPersonality, setShowPersonality] = useState(false);
+  const [persZodiac, setPersZodiac] = useState((obData as any)?.zodiac || "");
+  const [persChinese, setPersChinese] = useState((obData as any)?.chinese || "");
+  const [persMbti, setPersMbti] = useState((obData as any)?.mbti || "");
+  const [persLifePath, setPersLifePath] = useState((obData as any)?.lifePath || "");
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
@@ -305,6 +310,37 @@ export const SettingsScreen = memo(function SettingsScreen({
     }).catch(() => setMfaLoading(false));
   }, [showMFA]);
 
+  // Notification prefs: hydrate from the server when the sub-page opens, then
+  // persist each toggle back (debounced) so they stick across devices.
+  const notifSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!showNotificationsSettings || !apiFetch) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await apiFetch("/api/muse?type=notification-prefs");
+        const d = await r.json();
+        if (!cancelled && d && d.prefs && typeof d.prefs === "object") {
+          setNotifPrefs(prev => ({ ...prev, ...d.prefs }));
+        }
+      } catch { /* non-fatal — keep local defaults */ }
+    })();
+    return () => { cancelled = true; };
+  }, [showNotificationsSettings, apiFetch, setNotifPrefs]);
+
+  const updateNotifPref = (key: string) => {
+    setNotifPrefs(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      if (apiFetch) {
+        if (notifSaveTimerRef.current) clearTimeout(notifSaveTimerRef.current);
+        notifSaveTimerRef.current = setTimeout(() => {
+          apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { notifications: next } }) }).catch(() => {});
+        }, 600);
+      }
+      return next;
+    });
+  };
+
   const changePassword = async () => {
     if (pwNew.length < 6) { showToast("Password must be at least 6 characters"); return; }
     if (!/[A-Z]/.test(pwNew)) { showToast("Password needs a capital letter"); return; }
@@ -338,7 +374,7 @@ export const SettingsScreen = memo(function SettingsScreen({
   // accordion that used to push the whole list down.
   const accountItems = [
     { icon: <FiUser size={18} />, label: "Edit Profile", desc: "Name, bio, photos", action: () => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditNsfw(!!currentUser.nsfw); setShowEditProfile(true); } },
-    { icon: <FiStar size={18} />, label: "Personality Profile", desc: "Zodiac, MBTI, Life Path", action: () => { setScreen("onboard"); setObStep(7); } },
+    { icon: <FiStar size={18} />, label: "Personality Profile", desc: "Zodiac, MBTI, Life Path", action: () => setShowPersonality(true) },
     { icon: <FiUsers size={18} />, label: "Creative Profile", desc: "Type, styles, looking for", action: () => { setScreen("onboard"); setObStep(4); } },
     { icon: <FiLock size={18} />, label: "Change Password", desc: "Update your login password", action: () => setShowChangePassword(true) },
   ];
@@ -686,7 +722,7 @@ export const SettingsScreen = memo(function SettingsScreen({
         <SettingsSubPage title="Notification Preferences" onClose={() => setShowNotificationsSettings(false)}>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {[{ k: "match", l: "New Matches" }, { k: "message", l: "Messages" }, { k: "brief", l: "Quest Updates" }, { k: "like", l: "Likes" }].map(n => (
-              <ToggleRow key={n.k} label={n.l} checked={!!notifPrefs[n.k]} onToggle={() => setNotifPrefs(prev => ({ ...prev, [n.k]: !prev[n.k] }))} />
+              <ToggleRow key={n.k} label={n.l} checked={!!notifPrefs[n.k]} onToggle={() => updateNotifPref(n.k)} />
             ))}
             <ToggleRow
               label="Lock-Screen Push"
@@ -769,6 +805,44 @@ export const SettingsScreen = memo(function SettingsScreen({
               </div>
             ))
           )}
+        </SettingsSubPage>
+      )}
+
+      {showPersonality && (
+        <SettingsSubPage title="Personality Profile" onClose={() => setShowPersonality(false)}>
+          {(() => {
+            const ZODIAC = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+            const CHINESE = ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"];
+            const MBTI = ["INTJ","INTP","ENTJ","ENTP","INFJ","INFP","ENFJ","ENFP","ISTJ","ISFJ","ESTJ","ESFJ","ISTP","ISFP","ESTP","ESFP"];
+            const LIFE_PATHS = [1,2,3,4,5,6,7,8,9,11,22,33];
+            const chipRow = (label: string, options: (string|number)[], value: any, setValue: (v: any) => void) => (
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8, textAlign: "center" }}>{label}</div>
+                <div className="chips" style={{ marginBottom: 0 }}>
+                  {options.map(o => (
+                    <div key={String(o)} className={"chip" + (value === o ? " sel" : "")} role="button" tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setValue(o); } }}
+                      onClick={() => setValue(o)}><span>{o}</span></div>
+                  ))}
+                </div>
+              </div>
+            );
+            return (
+              <div>
+                {chipRow("Zodiac", ZODIAC, persZodiac, setPersZodiac)}
+                {chipRow("Chinese Zodiac", CHINESE, persChinese, setPersChinese)}
+                {chipRow("MBTI", MBTI, persMbti, setPersMbti)}
+                {chipRow("Life Path", LIFE_PATHS, persLifePath, setPersLifePath)}
+                <button className="btn btn-gold" style={{ width: "100%", marginTop: 8 }} onClick={async () => {
+                  try {
+                    await apiFetch?.("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "update-profile", zodiac: persZodiac, chinese: persChinese, mbti: persMbti, life_path: persLifePath }) });
+                    showToast("Personality profile saved!");
+                    setShowPersonality(false);
+                  } catch { showToast("Couldn't save — try again"); }
+                }}>Save</button>
+              </div>
+            );
+          })()}
         </SettingsSubPage>
       )}
 

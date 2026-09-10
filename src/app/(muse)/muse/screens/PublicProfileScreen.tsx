@@ -90,6 +90,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
   const [reviews, setReviews] = useState<any[]>(user.reviews || []);
   const [feedPosts, setFeedPosts] = useState<any[]>(user.feedPosts || []);
+  const [trust, setTrust] = useState<any | null>(null);
 
   const photos: string[] = (user.photos?.length ? user.photos : [user.photo, user.img].filter(Boolean) as string[]);
   const displayName = user.name || "Unknown";
@@ -114,6 +115,20 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
     apiFetch(`/api/muse?type=feed&profile_id=${encodeURIComponent(user.id)}`)
       .then((r: any) => r.json())
       .then((d: any) => { if (!cancelled) setFeedPosts(d.posts || []); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [user.id, apiFetch]);
+
+  // Buyer-side trust card (creative-trust): verification, review aggregate +
+  // structured criteria, completed-as-host count, quick-response rate, boost +
+  // last-seen. This is the "can I trust this person to show up and deliver"
+  // surface — real data from the backend, shown to anyone viewing the profile.
+  useEffect(() => {
+    if (!user.id || !apiFetch) return;
+    let cancelled = false;
+    apiFetch(`/api/muse?type=creative-trust&profile_id=${encodeURIComponent(user.id)}`)
+      .then((r: any) => r.json())
+      .then((d: any) => { if (!cancelled) setTrust(d.trust || null); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [user.id, apiFetch]);
@@ -306,6 +321,62 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
             </div>
           </div>
         ) : null}
+
+        {/* Buyer Trust Card (creative-trust) — real aggregate data */}
+        {trust && (
+          <div style={{ marginBottom: 20, padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,215,0,0.15)" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)", marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.05 }}>Trust & Track Record</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: (trust.rating || trust.completedAsHost || trust.responseRate != null || trust.lastSeenDaysAgo != null) ? 14 : 0 }}>
+              {trust.verified && <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 99, background: "rgba(34,197,94,0.12)", color: "#22c55e" }}><FiShield size={11} /> ID Verified</span>}
+              {trust.ageVerified && <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 99, background: "rgba(59,130,246,0.12)", color: "#3b82f6" }}><FiCheck size={11} /> Age Verified</span>}
+              {trust.isBoosted && <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 99, background: "rgba(255,69,0,0.12)", color: "var(--coral)" }}>⚡ Boosted</span>}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+              {trust.rating != null && (
+                <div style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(255,255,255,0.03)" }}>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "var(--gold)", display: "flex", alignItems: "center", gap: 5 }}><FiStar size={14} /> {trust.rating}</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{trust.reviewCount} review{trust.reviewCount !== 1 ? "s" : ""}</div>
+                </div>
+              )}
+              {trust.completedAsHost != null && (
+                <div style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(255,255,255,0.03)" }}>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)" }}>{trust.completedAsHost}</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Completed as host</div>
+                </div>
+              )}
+              {trust.responseRate != null && (
+                <div style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(255,255,255,0.03)" }}>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#4ecdc4" }}>{trust.responseRate}%</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Response rate</div>
+                </div>
+              )}
+              {trust.lastSeenDaysAgo != null && (
+                <div style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(255,255,255,0.03)" }}>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)" }}>{trust.lastSeenDaysAgo === 0 ? "Today" : `${trust.lastSeenDaysAgo}d`}</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Last active</div>
+                </div>
+              )}
+            </div>
+            {trust.criteria && Object.values(trust.criteria).some((v: any) => v != null) && (
+              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+                {["communication", "reliability", "creative_quality", "professionalism", "safety"].map((k) => {
+                  const v = trust.criteria[k];
+                  if (v == null) return null;
+                  const label = k.replace("_", " ");
+                  return (
+                    <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11 }}>
+                      <span style={{ width: 110, color: "var(--muted)", textTransform: "capitalize" }}>{label}</span>
+                      <div style={{ flex: 1, height: 5, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                        <div style={{ width: `${(v / 5) * 100}%`, height: "100%", background: "linear-gradient(90deg,var(--gold),var(--coral))" }} />
+                      </div>
+                      <span style={{ color: "var(--text2)", fontWeight: 700 }}>{v}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Portfolio / Gallery */}
         {allPhotos.length > 0 && (

@@ -66,6 +66,12 @@ export const BtsScreen = memo(function BtsScreen({
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
   const [activeFilter, setActiveFilter] = useState<FilterTab>("All");
   const [windowEnd, setWindowEnd] = useState(() => Date.now() + 24 * 60 * 60 * 1000);
+  // Cross-wire fix: commenting on a BTS card now opens an inline composer in
+  // place (instead of navigating away to the Feed with a toast) and POSTs the
+  // comment to that moment via the shared `feed-comment` action.
+  const [commentingId, setCommentingId] = useState<string | number | null>(null);
+  const [commentDraft, setCommentDraft] = useState("");
+  const [sendingComment, setSendingComment] = useState(false);
 
   useEffect(() => {
     if (screen !== "bts") return;
@@ -148,6 +154,31 @@ export const BtsScreen = memo(function BtsScreen({
       }
     },
     [showToast]
+  );
+
+  const submitComment = useCallback(
+    async (s: any) => {
+      const text = commentDraft.trim();
+      if (!text || sendingComment) return;
+      setSendingComment(true);
+      try {
+        const r = await apiFetch("/api/muse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "feed-comment", postId: s.id, text }),
+        });
+        if (!r.ok) throw new Error("failed");
+        setStories((prev) => prev.map((item) => item.id === s.id ? { ...item, comments: (item.comments || 0) + 1 } : item));
+        setCommentDraft("");
+        setCommentingId(null);
+        showToast("Comment posted!");
+      } catch {
+        showToast("Failed to post comment");
+      } finally {
+        setSendingComment(false);
+      }
+    },
+    [apiFetch, commentDraft, sendingComment, setStories, showToast]
   );
 
   // Hold-to-report on the stories-row circles: the old "⋯" button sat directly
@@ -570,12 +601,12 @@ export const BtsScreen = memo(function BtsScreen({
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 5,
-                    padding: "8px 0",
+                    padding: "11px 0",
                     borderRadius: 10,
                     border: "none",
                     background: "transparent",
                     color: "var(--muted, #999)",
-                    fontSize: 12,
+                    fontSize: 16,
                     fontWeight: 700,
                     cursor: "pointer",
                     transition: "background 0.2s, color 0.2s",
@@ -584,25 +615,47 @@ export const BtsScreen = memo(function BtsScreen({
                   return (
                     <div style={{ display: "flex", alignItems: "stretch", gap: 2, padding: "2px 8px 10px", borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: 8 }}>
                       <button onClick={() => handleLike(s)} aria-label="Like" style={{ ...itemStyle, background: s.liked ? "rgba(255,215,0,0.15)" : "transparent", color: s.liked ? "var(--gold)" : "var(--muted, #999)" } as any}>
-                        <span aria-hidden="true" style={{ fontSize: 13 }}>{s.liked ? "✦" : "✧"}</span>{fmt(s.likes || 0)}
+                        <span aria-hidden="true" style={{ fontSize: 17 }}>{s.liked ? "✦" : "✧"}</span>{fmt(s.likes || 0)}
                       </button>
                       <button
-                        onClick={() => { showScreen("connections"); showToast("Open feed to comment"); }}
+                        onClick={() => { setCommentingId(commentingId === s.id ? null : s.id); setCommentDraft(""); }}
                         aria-label="Comment"
                         style={{ ...itemStyle } as any}
                       >
-                        <span aria-hidden="true" style={{ fontSize: 13 }}>✎</span>{fmt(s.comments || 0)}
+                        <span aria-hidden="true" style={{ fontSize: 17 }}>✎</span>{fmt(s.comments || 0)}
                       </button>
                       <button onClick={() => handleShare(s)} aria-label="Share" style={{ ...itemStyle } as any}>
-                        <span aria-hidden="true" style={{ fontSize: 13 }}>↗</span>Share
+                        <span aria-hidden="true" style={{ fontSize: 17 }}>↗</span>Share
                       </button>
                       <div style={{ ...itemStyle, cursor: "default" } as any} title="Views" aria-label="Views">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                         {fmt(views)}
                       </div>
                     </div>
                   );
                 })()}
+
+                {commentingId === s.id && (
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "0 12px 12px" }}>
+                    <input
+                      className="inp"
+                      placeholder="Write a comment…"
+                      value={commentDraft}
+                      autoFocus
+                      onChange={(e) => setCommentDraft(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") submitComment(s); }}
+                      style={{ flex: 1, margin: 0, borderRadius: 99, padding: "10px 14px", fontSize: 13 }}
+                    />
+                    <button
+                      onClick={() => submitComment(s)}
+                      disabled={!commentDraft.trim() || sendingComment}
+                      aria-label="Send comment"
+                      style={{ width: 38, height: 38, flexShrink: 0, borderRadius: "50%", border: "none", background: commentDraft.trim() ? pinkGradient : "rgba(255,255,255,0.06)", color: commentDraft.trim() ? "#fff" : "rgba(255,255,255,0.25)", cursor: commentDraft.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", opacity: sendingComment ? 0.6 : 1 }}
+                    >
+                      <FiArrowLeft size={16} style={{ transform: "rotate(180deg)" }} />
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}

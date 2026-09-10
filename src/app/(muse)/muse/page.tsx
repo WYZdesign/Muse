@@ -71,9 +71,11 @@ import { normalizeCommunity, normalizeEvent, normalizeForumPost, normalizeBrief,
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL || "torree.marcel@gmail.com";
 
-// Demo scaffolding gate — when true, simulated chat replies + randomized
-// match inflation are active (for testing/demo). Set false for production.
-const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true" || false;
+// Demo scaffolding gate — during pre-closed-beta the app runs with demo supply
+// so there's always something to swipe/post (real supply seeds over time).
+// Defaults ON; set NEXT_PUBLIC_DEMO_MODE=false at public launch to disable all
+// demo scaffolding (discover deck, matches seed, feed posts, catalogs).
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 
 // Identity re-verification window (Torreé's policy, Sept 2026) — mirrors
 // AGE_VERIFICATION_VALID_DAYS in src/lib/muse-actions/shared.ts. Kept as a
@@ -310,6 +312,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
   const [serverNotifCount, setServerNotifCount] = useState(0);
   const [discoveryPrefs, setDiscoveryPrefs] = useState<{ageMin:number;ageMax:number;distance:number;gender:string}>({ageMin:18,ageMax:50,distance:50,gender:"all"});
+  const [savedSearches, setSavedSearches] = useState<{id:string;name:string;query?:string;filters?:any}[]>([]);
   const [myGeo, setMyGeo] = useState<{lat:number;long:number;city:string;state:string;requiresIdVerification:boolean}|null>(null);
   const [supportOpen, setSupportOpen] = useState(false);
 
@@ -506,6 +509,22 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     })();
     return () => { cancelled = true; };
   }, [viewProfile?.id]);
+
+  // Saved searches: hydrate whenever the Discovery Preferences modal opens so
+  // the list reflects the latest server state (save/delete both happen inside
+  // that modal). Non-fatal on failure — the modal still works without it.
+  useEffect(() => {
+    if (!showDiscoveryPrefs) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await apiFetch("/api/muse?type=saved-search-list");
+        const d = await r.json();
+        if (!cancelled) setSavedSearches(Array.isArray(d.searches) ? d.searches : []);
+      } catch { if (!cancelled) setSavedSearches([]); }
+    })();
+    return () => { cancelled = true; };
+  }, [showDiscoveryPrefs, apiFetch]);
 
   // Pulls real data from the API on mount; silently keeps the static demo
   // arrays when the table is empty or the request fails (graceful fallback).
@@ -1141,6 +1160,15 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
 
   const showToast = useCallback((msg: string | { msg: string; onTap?: () => void; type?: ToastType }) => { const t = typeof msg === "string" ? { msg } : msg; setToastMsg(t); setTimeout(() => setToastMsg(null), 3000); }, []);
+
+  // Onboarding multi-select toggle with a hard cap. Toggling off always works;
+  // adding beyond the cap is ignored and surfaces a toast instead.
+  const toggleObMulti = (field: "looking" | "styles", value: string, max: number) => {
+    const arr: string[] = ((obData as any)[field] as string[] | undefined) || [];
+    if (arr.includes(value)) { setObData(d => ({ ...d, [field]: arr.filter(x => x !== value) })); return; }
+    if (arr.length >= max) { showToast(`Max ${max} selected`); return; }
+    setObData(d => ({ ...d, [field]: [...arr, value] }));
+  };
 
   const handleQuestsChange = useCallback(async () => {
     try {
@@ -2229,7 +2257,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           </div>
         </div>
       ) : (
-<div className={"phone-wrap"+((screen==="subscription"||screen==="settings")?" phone-wrap-standalone-hidden":"")}>
+<div className={"phone-wrap"+((screen==="subscription"||screen==="settings"||screen==="analytics")?" phone-wrap-standalone-hidden":"")}>
 <div className="phone" id="muse-app">
 <div className="notch" />
 
@@ -2275,6 +2303,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <input className="inp" placeholder="Location (City, State)" value={obData.loc||""} onChange={e=>setObData(d=>({...d,loc:e.target.value}))} />
                     <textarea className="inp" placeholder="Who are you as a creative?" rows={3} value={obData.bio||""} onChange={e=>setObData(d=>({...d,bio:e.target.value}))} />
                     <button className="btn btn-gold" disabled={!(obData.name||"").trim()} style={!(obData.name||"").trim()?{opacity:0.5}:undefined} onClick={()=>setObStep(2)}>Next</button>
+                    <button className="back-link" onClick={()=>setObStep(0)}>Back</button>
                   </div>
                 )}
                 {obStep === 2 && (
@@ -2306,6 +2335,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     </div>
                     {!obData.type && <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", margin: "6px 0 2px" }}>Select one to continue</div>}
                     <button className="btn btn-gold" disabled={!obData.type} style={!obData.type?{opacity:0.5}:undefined} onClick={()=>setObStep(3)}>Next</button>
+                    <button className="back-link" onClick={()=>setObStep(1)}>Back</button>
                   </div>
                 )}
                 {obStep === 3 && (
@@ -2314,11 +2344,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <div className="step-sub">What kind of connections interest you?</div>
                     <div className="chips">
                       {lookingForOptions(obData.type || "").map(l => (
-                        <div key={l} className={"chip"+((obData.looking||[]).includes(l)?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const arr=obData.looking||[];setObData(d=>({...d,looking:arr.includes(l)?arr.filter(x=>x!==l):[...arr,l]})); } }} onClick={()=>{const arr=obData.looking||[];setObData(d=>({...d,looking:arr.includes(l)?arr.filter(x=>x!==l):[...arr,l]}))}}><span>{l}</span></div>
+                        <div key={l} className={"chip"+((obData.looking||[]).includes(l)?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleObMulti("looking", l, 4); } }} onClick={()=>toggleObMulti("looking", l, 4)}><span>{l}</span></div>
                       ))}
                     </div>
                     {!(obData.looking||[]).length && <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", margin: "6px 0 2px" }}>Select at least one to continue</div>}
                     <button className="btn btn-gold" disabled={!(obData.looking||[]).length} style={!(obData.looking||[]).length?{opacity:0.5}:undefined} onClick={()=>setObStep(4)}>Next</button>
+                    <button className="back-link" onClick={()=>setObStep(2)}>Back</button>
                   </div>
                 )}
                 {obStep === 4 && (
@@ -2327,11 +2358,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <div className="step-sub">What's your creative aesthetic?</div>
                     <div className="chips">
                       {AESTHETICS.map(s => (
-                        <div key={s} className={"chip"+((obData.styles||[]).includes(s)?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const arr=obData.styles||[];setObData(d=>({...d,styles:arr.includes(s)?arr.filter(x=>x!==s):[...arr,s]})); } }} onClick={()=>{const arr=obData.styles||[];setObData(d=>({...d,styles:arr.includes(s)?arr.filter(x=>x!==s):[...arr,s]}))}}><span>{s}</span></div>
+                        <div key={s} className={"chip"+((obData.styles||[]).includes(s)?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleObMulti("styles", s, 5); } }} onClick={()=>toggleObMulti("styles", s, 5)}><span>{s}</span></div>
                       ))}
                     </div>
                     {!(obData.styles||[]).length && <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", margin: "6px 0 2px" }}>Select at least one style to continue</div>}
                     <button className="btn btn-gold" disabled={!(obData.styles||[]).length} style={!(obData.styles||[]).length?{opacity:0.5}:undefined} onClick={()=>setObStep(5)}>Next</button>
+                    <button className="back-link" onClick={()=>setObStep(3)}>Back</button>
                   </div>
                 )}
                 {obStep === 5 && (
@@ -2515,7 +2547,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     </div>
                     <button className="btn btn-gold" onClick={()=>setObStep(15)}>Next</button>
                     <button className="ob-skip" onClick={()=>setObStep(15)}>Skip for now</button>
-                    <button className="back-link" onClick={()=>setObStep(9)}>Back</button>
+                    <button className="back-link" onClick={()=>setObStep(5)}>Back</button>
                   </div>
                 )}
                 {obStep === 15 && (
@@ -2587,16 +2619,17 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <div className="sparkle" style={{bottom:"15%",right:"6%",fontSize:16}}>✧</div>
                     <div className="step-title" style={{fontSize:32}}>You're All Set!</div>
                     <div className="step-sub">Ready to find your creative connections?</div>
-                    <div style={{width:"100%",maxWidth:360,marginBottom:16}}>
-                      <div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginBottom:6}}>Have a referral code? (optional)</div>
+                    <div style={{width:"100%",maxWidth:360,marginBottom:20,padding:"16px 18px",borderRadius:16,border:"1px solid rgba(255,215,0,0.28)",background:"rgba(255,215,0,0.05)",boxShadow:"0 2px 14px rgba(255,215,0,0.06)"}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"var(--gold)",letterSpacing:0.4,textTransform:"uppercase",marginBottom:4}}>Have a referral code?</div>
+                      <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginBottom:10}}>Optional — you and a friend both get a free month.</div>
                       <div style={{display:"flex",gap:8}}>
                         <input className="inp" placeholder="MUSE-XXXXXX" value={obData.referralCode || ""} onChange={e=>setObData(prev=>({...prev,referralCode:e.target.value}))} style={{margin:0,flex:1,textTransform:"uppercase",letterSpacing:1,fontFamily:"monospace"}} />
                       </div>
                       {obData.referralCode && obData.referralCode.length >= 6 && (
-                        <div style={{fontSize:11,color:"#4ecdc4",marginTop:6}}>🎉 You and your friend will both get a free month when you subscribe!</div>
+                        <div style={{fontSize:11,color:"#4ecdc4",marginTop:8}}>🎉 You and your friend will both get a free month when you subscribe!</div>
                       )}
                     </div>
-                    <button className="btn btn-gold" onClick={async ()=>{
+                    <button className="btn btn-gold" style={{padding:"18px 24px",fontSize:17,fontWeight:800,letterSpacing:0.3,marginTop:4}} onClick={async ()=>{
                       setCurrentUser(prev=>({...prev,name:obData.name||prev.name,type:obData.type||prev.type,avatar:obProfilePic||prev.avatar}));
                       const geo = await getGeolocation();
                       if(authUser?.id){
@@ -2633,7 +2666,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                         }
                       }
                       setScreen("discover");showToast("Welcome to Muse!")
-                    }}>Enter Muse</button>
+                    }}>Enter Muse →</button>
                     <button className="back-link" onClick={()=>setObStep(16)}>Back</button>
                   </div>
                 )}
@@ -2908,6 +2941,18 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                 ))}
               </div>
             </div>
+            <button className="btn btn-outline" style={{width:"100%",marginBottom:10}} onClick={async ()=>{
+              // Auto-name from the active filters; prefer the live search prompt
+              // when the user has typed one (same convention as search).
+              const autoName = `${discoveryPrefs.gender==="all"?"Anyone":discoveryPrefs.gender.charAt(0).toUpperCase()+discoveryPrefs.gender.slice(1)} · ${discoveryPrefs.ageMin}-${discoveryPrefs.ageMax} · ${discoveryPrefs.distance}mi`;
+              const name = (searchQuery||"").trim() || autoName;
+              try {
+                const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "saved-search-save", name, query: (searchQuery||"").trim(), filters: { ...discoveryPrefs, filterStyles, filterScore } }) });
+                if (!r.ok) throw new Error("failed");
+                showToast("Search saved");
+                try { const lr = await apiFetch("/api/muse?type=saved-search-list"); const ld = await lr.json(); setSavedSearches(Array.isArray(ld.searches)?ld.searches:[]); } catch {}
+              } catch { showToast("Couldn't save search"); }
+            }}>Save this search</button>
             <button className="btn btn-gold" style={{width:"100%"}} onClick={()=>{
               setShowDiscoveryPrefs(false);
               showToast("Preferences saved!");
@@ -2918,6 +2963,34 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
               // click rather than debouncing every slider tick.
               apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: discoveryPrefs }) }).catch(() => {});
             }}>{STRINGS.save}</button>
+            {savedSearches.length > 0 && (
+              <div style={{marginTop:16}}>
+                <div style={{fontSize:12,fontWeight:700,color:"var(--text2)",marginBottom:8}}>Saved Searches</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {savedSearches.map(s => (
+                    <div key={s.id} style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 10px"}}>
+                      <button onClick={()=>{
+                        const f = s.filters || {};
+                        setDiscoveryPrefs(p=>({...p, ageMin: typeof f.ageMin==="number"?f.ageMin:p.ageMin, ageMax: typeof f.ageMax==="number"?f.ageMax:p.ageMax, distance: typeof f.distance==="number"?f.distance:p.distance, gender: typeof f.gender==="string"?f.gender:p.gender}));
+                        if (Array.isArray(f.filterStyles)) setFilterStyles(f.filterStyles);
+                        if (typeof f.filterScore==="number") setFilterScore(f.filterScore);
+                        setShowDiscoveryPrefs(false);
+                        showToast("Search applied");
+                      }} style={{flex:1,textAlign:"left",background:"none",border:"none",color:"var(--text)",fontSize:13,fontWeight:600,cursor:"pointer",padding:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.name}</button>
+                      <button aria-label="Delete saved search" title="Delete" onClick={async (e)=>{
+                        e.stopPropagation();
+                        const prev = savedSearches;
+                        setSavedSearches(p=>p.filter(x=>x.id!==s.id));
+                        try {
+                          const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "saved-search-delete", searchId: s.id, id: s.id }) });
+                          if (!r.ok) throw new Error("failed");
+                        } catch { setSavedSearches(prev); showToast("Couldn't delete"); }
+                      }} style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:14,lineHeight:1,padding:"2px 4px"}}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -3132,10 +3205,10 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       {/* ══════ EDIT PROFILE MODAL ══════ */}
       {showEditProfile && (
         <div className="modal-overlay">
-          <div className="modal-header">
+          <div className="modal-header" style={{ position: "relative" }}>
             <button className="modal-back" onClick={()=>setShowEditProfile(false)} aria-label="Back"><FiArrowLeft size={20} /></button>
-            <div className="modal-title">Edit Profile</div>
-            <button className="modal-close" onClick={()=>setShowEditProfile(false)} aria-label="Close"><FiX size={18} /></button>
+            <div className="modal-title" style={{ flex: 1, textAlign: "center" }}>Edit Profile</div>
+            <div style={{ width: 42 }} />
           </div>
           <div className="modal-body">
             <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>

@@ -108,6 +108,25 @@ export const SessionsScreen = memo(function SessionsScreen({
   const [newSession, setNewSession] = useState({ title: "", description: "", type: "Photoshoot", rate: "", duration: "60 min", date: "", location: "" });
   const [creating, setCreating] = useState(false);
 
+  // Host availability toggle — optimistic local overrides keyed by session id
+  // (the liveSessions array is owned by the parent hook, so we can't mutate it
+  // directly here). Only shown on sessions the current user hosts.
+  const [availability, setAvailability] = useState<Record<string, boolean>>({});
+  const isHostOwned = (s: any) => !!s && (String(s.host_id) === String(currentUser?.id) || !!s.isMine);
+  const sessionAvailable = (s: any) => availability[String(s.id)] ?? s.available;
+  const toggleAvailability = async (s: any) => {
+    const next = !sessionAvailable(s);
+    setAvailability(p => ({ ...p, [String(s.id)]: next }));
+    try {
+      const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "toggle-session-availability", sessionId: s.id, available: next }) });
+      if (!r.ok) throw new Error("failed");
+      showToast(next ? "Marked available" : "Marked booked out");
+    } catch {
+      setAvailability(p => ({ ...p, [String(s.id)]: !next }));
+      showToast("Couldn't update availability");
+    }
+  };
+
   // Host payout nudge — if the host has completed bookings but isn't connected
   // to Stripe yet, surface a "connect to get paid" CTA (3d, MUSE_GAPS).
   const [payout, setPayout] = useState<{ needsConnect: boolean; unpaidEarningsCents: number; chargesEnabled: boolean } | null>(null);
@@ -319,6 +338,16 @@ export const SessionsScreen = memo(function SessionsScreen({
                     {(s.skills || []).map((sk: string) => <span key={sk} className="conn-tag" role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: sk, desc: `A skill covered in this session — what you'll work on or learn.`, icon: "🛠", color: "#90caf9" })} style={{ fontSize: 10, padding: "3px 8px", cursor: "pointer" }}>{sk}</span>)}
                   </div>
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    {isHostOwned(s) && (
+                      <button
+                        className="btn btn-outline"
+                        style={{ flex: "0 0 auto", padding: "12px 10px", fontSize: 11, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap", color: sessionAvailable(s) ? "var(--gold)" : "var(--muted)", borderColor: sessionAvailable(s) ? "rgba(255,215,0,0.35)" : undefined }}
+                        onClick={() => toggleAvailability(s)}
+                        title="Toggle whether this session is bookable"
+                      >
+                        {sessionAvailable(s) ? "Available" : "Booked out"}
+                      </button>
+                    )}
                     <button
                       className="btn btn-gold"
                       style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap" }}
@@ -327,6 +356,14 @@ export const SessionsScreen = memo(function SessionsScreen({
                         if (btn.disabled) return;
                         btn.disabled = true;
                         try {
+                          // Best-effort availability probe (fire-and-forget — never
+                          // blocks or gates the booking action below).
+                          try {
+                            apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "host-availability", sessionId: s.id }) })
+                              .then(r => r.json())
+                              .then(d => console.log("[host-availability]", s.id, Array.isArray(d?.slots) ? d.slots.length : 0))
+                              .catch(() => {});
+                          } catch {}
                           const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "book-session", sessionId: s.id }) });
                           if (r.status === 403) {
                             const d = await r.json().catch(() => ({}));

@@ -785,13 +785,11 @@ export const NetworkScreen = memo(function NetworkScreen({
             {showNewPost && (
               <div className="modal-overlay" style={{ position: "fixed", zIndex: 400 }}>
                 <div className="modal-header">
-                  <button className="modal-back" onClick={() => setShowNewPost(false)}>
+                  <button className="modal-back" onClick={() => setShowNewPost(false)} aria-label="Back">
                     <FiArrowLeft size={20} />
                   </button>
                   <div className="modal-title">New Post</div>
-                  <button className="modal-close" onClick={() => setShowNewPost(false)} aria-label="Close">
-                    {"\u2715"}
-                  </button>
+                  <div style={{ width: 42 }} />
                 </div>
                 <div
                   className="modal-body"
@@ -1146,11 +1144,11 @@ export const NetworkScreen = memo(function NetworkScreen({
         {threadPost && createPortal(
           <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
             <div className="modal-header">
-              <button className="modal-back" onClick={() => { setThreadId(null); setReplyTo(null); }}>
+              <button className="modal-back" onClick={() => { setThreadId(null); setReplyTo(null); }} aria-label="Back">
                 <FiArrowLeft size={20} />
               </button>
               <div className="modal-title">Thread</div>
-              <button className="modal-close" onClick={() => { setThreadId(null); setReplyTo(null); }} aria-label="Close">{"\u2715"}</button>
+              <div style={{ width: 42 }} />
             </div>
             <div className="modal-body">
               {/* FULL POST */}
