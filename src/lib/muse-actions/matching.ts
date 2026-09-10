@@ -66,12 +66,22 @@ export const matchCreate = async ({ sb, profile, rest, ip }: ActionContext) => {
     { onConflict: "user_id,target_id", ignoreDuplicates: false }
   );
   if (error) return safeServerError(error, "db op");
-  await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id, anchor_type: anchorType, anchor_value: anchorValue || undefined } });
+  // Mutual-match detection: did the target already like the viewer? If so,
+  // tell the client it's a real match so it can show the celebratory overlay
+  // even when the client-side heuristic score is below its own threshold.
+  // NOTE: must read `count` (not `data`) — a `head:true` request returns no
+  // body, so `data` is always null and `!!data` would always be false.
+  const { count: reciprocalCount } = await sb.from("muse_matches")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", target_id)
+    .eq("target_id", profile.id);
+  const matched = (reciprocalCount || 0) > 0;
+  await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id, anchor_type: anchorType, anchor_value: anchorValue || undefined, matched } });
   const body = likeNotificationBody(String(profile.name || "Someone"), anchorType, anchorValue, note);
   await sb.from("muse_notifications").insert({ user_id: target_id, from_id: profile.id, type: "match", body, read: false });
   await emailProfile(sb, target_id, "Someone liked you ✦", "New like on Muse", body, "See who it is", "https://muse.wyzdesign.com/muse", "match");
   await bumpQuest(sb, profile.id, "match");
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, matched });
 };
 
 export const matchDelete = async ({ sb, profile, rest }: ActionContext) => {
@@ -94,5 +104,16 @@ export const profileViewTrack = async ({ sb, profile, rest }: ActionContext) => 
   const next = ((cur as any)?.views_count || 0) + 1;
   const { error } = await sb.from("muse_profiles").update({ views_count: next }).eq("id", target_id);
   if (error) return safeServerError(error, "db op");
+  // Record the view so the "viewed your profile" surface can read it back.
+  // Set BOTH `action` and `type` to "profile_view" — get.ts reads
+  // profile-viewers via .eq("action",…) and my-analytics/boost-analytics via
+  // .eq("type",…) in different places, so a single row must satisfy both.
+  await sb.from("muse_activity_log").insert({
+    user_id: target_id,
+    actor_id: profile.id,
+    action: "profile_view",
+    type: "profile_view",
+    details: { viewer_id: profile.id, viewed_at: new Date().toISOString() },
+  });
   return NextResponse.json({ success: true });
 };

@@ -201,16 +201,16 @@ export const MusesScreen = memo(function MusesScreen({
               {messageRequests.map((req: any) => (
                 <div key={req.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 16, display: "flex", gap: 12, alignItems: "flex-start" }}>
                   <div style={{ width: 48, height: 48, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
-                    {req.from_avatar ? (
-                      <img src={req.from_avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    {(() => { const av = req.request_from?.avatar || req.from_avatar; return av ? (
+                      <img src={av} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
                       <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: "var(--muted)" }}>
-                        {(req.from_name || "?")[0]}
+                        {((req.request_from?.name || req.from_name || "?")[0])}
                       </div>
-                    )}
+                    ); })()}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 2 }}>{req.from_name || "Someone"}</div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 2 }}>{req.request_from?.name || req.from_name || "Someone"}</div>
                     <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 8, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{req.message_preview || "No message preview"}</div>
                     <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 10 }}>{req.time || "Recently"}</div>
                     <div style={{ display: "flex", gap: 8 }}>

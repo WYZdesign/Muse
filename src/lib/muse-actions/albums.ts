@@ -140,5 +140,10 @@ export async function albumLike({ sb, profile, rest, ip }: ActionContext) {
   await sb.from("muse_album_likes").insert({ album_id: albumId, user_id: profile.id });
   const { count } = await sb.from("muse_album_likes").select("*", { count: "exact", head: true }).eq("album_id", albumId);
   await sb.from("muse_albums").update({ like_count: (count ?? 0) }).eq("id", albumId);
+  // Notify the album owner (skip self-likes).
+  const ownerId = album.profile_id;
+  if (ownerId && String(ownerId) !== String(profile.id)) {
+    await sb.from("muse_notifications").insert({ user_id: String(ownerId), from_id: profile.id, type: "like", body: `${profile.name} liked your album`, read: false });
+  }
   return NextResponse.json({ success: true });
 }

@@ -223,6 +223,15 @@ export const reviewSubmit = async ({ sb, profile, rest, ip }: ActionContext) => 
     ...criteriaUpdate,
   }, { onConflict: "booking_id,reviewer_id" }).select().single();
   if (error) return safeServerError(error, "db op");
+  // Notify the reviewee that they got a new review. Skip self-review.
+  if (revieweeId && revieweeId !== profile.id) {
+    const pct = criteriaUpdate.criteria_communication || null;
+    await sb.from("muse_notifications").insert({
+      user_id: revieweeId, from_id: profile.id, type: "review",
+      body: `${profile.name} left you a ${r}★ review`, read: false,
+    });
+  }
+  await bumpQuest(sb, profile.id, "review");
   return NextResponse.json({ success: true, review: data });
 };
 

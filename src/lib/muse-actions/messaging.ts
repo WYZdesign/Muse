@@ -108,21 +108,36 @@ export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
 };
 
 export const messageRequestAccept = async ({ sb, profile, rest }: ActionContext) => {
-  const { fromId } = rest;
-  if (!fromId) return NextResponse.json({ error: "fromId required" }, { status: 400 });
-  const { data: req } = await sb.from("muse_message_requests").select("*").eq("request_from", fromId).eq("request_to", profile.id).maybeSingle();
+  const fromId = rest.fromId || rest.from_id;
+  const requestId = rest.requestId || rest.request_id;
+  let req;
+  if (requestId) {
+    const { data } = await sb.from("muse_message_requests").select("*").eq("id", requestId).eq("request_to", profile.id).maybeSingle();
+    req = data;
+  } else if (fromId) {
+    const { data } = await sb.from("muse_message_requests").select("*").eq("request_from", fromId).eq("request_to", profile.id).maybeSingle();
+    req = data;
+  }
   if (!req) return NextResponse.json({ error: "Request not found" }, { status: 404 });
+  const fromIdAddr = req.request_from;
   const { error } = await sb.from("muse_message_requests").update({ status: "accepted", responded_at: new Date().toISOString() }).eq("id", req.id);
   if (error) return safeServerError(error, "accept request");
-  await sb.from("muse_notifications").insert({ user_id: fromId, from_id: profile.id, type: "message_request_accepted", body: `${profile.name} accepted your message request`, read: false });
-  pushToProfile(fromId, "Request Accepted!", `${profile.name} accepted your message request — you can now chat`, "/muse/matches").catch(() => {});
+  await sb.from("muse_notifications").insert({ user_id: fromIdAddr, from_id: profile.id, type: "message_request_accepted", body: `${profile.name} accepted your message request`, read: false });
+  pushToProfile(fromIdAddr, "Request Accepted!", `${profile.name} accepted your message request — you can now chat`, "/muse/matches").catch(() => {});
   return NextResponse.json({ success: true });
 };
 
 export const messageRequestDecline = async ({ sb, profile, rest }: ActionContext) => {
-  const { fromId } = rest;
-  if (!fromId) return NextResponse.json({ error: "fromId required" }, { status: 400 });
-  const { data: req } = await sb.from("muse_message_requests").select("*").eq("request_from", fromId).eq("request_to", profile.id).maybeSingle();
+  const fromId = rest.fromId || rest.from_id;
+  const requestId = rest.requestId || rest.request_id;
+  let req;
+  if (requestId) {
+    const { data } = await sb.from("muse_message_requests").select("*").eq("id", requestId).eq("request_to", profile.id).maybeSingle();
+    req = data;
+  } else if (fromId) {
+    const { data } = await sb.from("muse_message_requests").select("*").eq("request_from", fromId).eq("request_to", profile.id).maybeSingle();
+    req = data;
+  }
   if (!req) return NextResponse.json({ error: "Request not found" }, { status: 404 });
   const { error } = await sb.from("muse_message_requests").update({ status: "declined", responded_at: new Date().toISOString() }).eq("id", req.id);
   if (error) return safeServerError(error, "decline request");
@@ -130,13 +145,21 @@ export const messageRequestDecline = async ({ sb, profile, rest }: ActionContext
 };
 
 export const messageRequestBlock = async ({ sb, profile, rest }: ActionContext) => {
-  const { fromId } = rest;
-  if (!fromId) return NextResponse.json({ error: "fromId required" }, { status: 400 });
-  const { data: req } = await sb.from("muse_message_requests").select("*").eq("request_from", fromId).eq("request_to", profile.id).maybeSingle();
+  const fromId = rest.fromId || rest.from_id;
+  const requestId = rest.requestId || rest.request_id;
+  let req;
+  if (requestId) {
+    const { data } = await sb.from("muse_message_requests").select("*").eq("id", requestId).eq("request_to", profile.id).maybeSingle();
+    req = data;
+  } else if (fromId) {
+    const { data } = await sb.from("muse_message_requests").select("*").eq("request_from", fromId).eq("request_to", profile.id).maybeSingle();
+    req = data;
+  }
   if (!req) return NextResponse.json({ error: "Request not found" }, { status: 404 });
+  const fromIdAddr = req.request_from;
   const { error } = await sb.from("muse_message_requests").update({ status: "blocked", responded_at: new Date().toISOString() }).eq("id", req.id);
   if (error) return safeServerError(error, "block request");
-  await sb.from("muse_blocks").insert({ user_id: profile.id, target_id: fromId }).select("*").maybeSingle();
+  await sb.from("muse_blocks").insert({ user_id: profile.id, target_id: fromIdAddr }).select("*").maybeSingle();
   return NextResponse.json({ success: true });
 };
 

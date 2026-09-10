@@ -11,6 +11,7 @@
 import { checkRate } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/request-safety";
 import { screenText } from "@/lib/aiModeration";
+import { bumpQuest } from "@/lib/questEngine";
 import { UUID_RE, validateInput, NextResponse, safeServerError, type ActionContext } from "./shared";
 
 export const feedPost = async ({ sb, profile, rest, ip }: ActionContext) => {
@@ -55,6 +56,15 @@ export const feedPostLike = async ({ sb, profile, rest, ip }: ActionContext) => 
     const { error: updErr } = await sb.from("muse_feed_posts").update({ likes: newLikes }).eq("id", feedPostId);
     if (updErr) return safeServerError(updErr, "db op");
   }
+  // Notify the post author on a like (skip self-likes).
+  if (liked) {
+    const { data: author } = await sb.from("muse_feed_posts").select("author_id").eq("id", feedPostId).maybeSingle();
+    const authorId = author?.author_id;
+    if (authorId && authorId !== profile.id) {
+      await sb.from("muse_notifications").insert({ user_id: authorId, from_id: profile.id, type: "like", body: `${profile.name} liked your post`, read: false });
+    }
+  }
+  if (liked) await bumpQuest(sb, profile.id, "feed_like");
   return NextResponse.json({ success: true, likes: newLikes });
 };
 
@@ -84,6 +94,13 @@ export const feedCommentAdd = async ({ sb, profile, rest, ip }: ActionContext) =
   const { data: feedPost } = await sb.from("muse_feed_posts").select("comments").eq("id", postId).maybeSingle();
   const newComments = (feedPost?.comments || 0) + 1;
   await sb.from("muse_feed_posts").update({ comments: newComments }).eq("id", postId);
+  // Notify the post author (skip self-comments).
+  const { data: fp } = await sb.from("muse_feed_posts").select("author_id").eq("id", postId).maybeSingle();
+  const authorId = fp?.author_id;
+  if (authorId && authorId !== profile.id) {
+    await sb.from("muse_notifications").insert({ user_id: authorId, from_id: profile.id, type: "comment", body: `${profile.name} commented on your post`, read: false });
+  }
+  await bumpQuest(sb, profile.id, "feed_comment");
   return NextResponse.json({ success: true, comments: newComments });
 };
 
@@ -126,6 +143,15 @@ export const momentLike = async ({ sb, profile, rest, ip }: ActionContext) => {
     const { error: updErr } = await sb.from("muse_moments").update({ likes: newLikes }).eq("id", momentId);
     if (updErr) return safeServerError(updErr, "db op");
   }
+  // Notify the moment author on a like (skip self-likes).
+  if (liked) {
+    const { data: moment } = await sb.from("muse_moments").select("author_id").eq("id", momentId).maybeSingle();
+    const authorId = moment?.author_id;
+    if (authorId && authorId !== profile.id) {
+      await sb.from("muse_notifications").insert({ user_id: authorId, from_id: profile.id, type: "like", body: `${profile.name} liked your moment`, read: false });
+    }
+  }
+  if (liked) await bumpQuest(sb, profile.id, "moment_like");
   return NextResponse.json({ success: true, likes: newLikes });
 };
 
@@ -164,5 +190,11 @@ export const briefApply = async ({ sb, profile, rest }: ActionContext) => {
     }
   } catch { /* non-fatal — DB is source of truth, preferences is cache */ }
   await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "brief_apply", details: { brief_id: briefId } });
+  // Notify the brief author (skip self-applies).
+  const { data: brief } = await sb.from("muse_briefs").select("author_id").eq("id", briefId).maybeSingle();
+  const authorId = brief?.author_id;
+  if (authorId && authorId !== profile.id) {
+    await sb.from("muse_notifications").insert({ user_id: authorId, from_id: profile.id, type: "brief", body: `${profile.name} applied to your brief`, read: false });
+  }
   return NextResponse.json({ success: true });
 };

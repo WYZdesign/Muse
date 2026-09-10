@@ -308,6 +308,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [showStory, setShowStory] = useState<number|null>(null);
   const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"deepsea"|"sunrise"|"daylight"|"sky"|"rose">("lasunset");
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
+  const [serverNotifCount, setServerNotifCount] = useState(0);
   const [discoveryPrefs, setDiscoveryPrefs] = useState<{ageMin:number;ageMax:number;distance:number;gender:string}>({ageMin:18,ageMax:50,distance:50,gender:"all"});
   const [myGeo, setMyGeo] = useState<{lat:number;long:number;city:string;state:string;requiresIdVerification:boolean}|null>(null);
   const [supportOpen, setSupportOpen] = useState(false);
@@ -1044,6 +1045,64 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     // no separate read-modify-write here to avoid a lost-update race on muse_v1.
   }, [theme]);
 
+  // Poll the server's unread-notification count so the menu/bottom-nav bell
+  // reflects real DB rows (matches, likes, bookings, reviews, brief apps, etc.)
+  // and not just the local activityFeed. Only when the user is authed.
+  useEffect(() => {
+    if (!authUser?.id) return;
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const r = await authFetch("/api/muse?type=notification-count");
+        if (cancelled) return;
+        const d = await r.json();
+        if (d && typeof d.count === "number") setServerNotifCount(d.count);
+      } catch {}
+    };
+    poll();
+    const iv = setInterval(poll, 20000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, [authUser?.id, authFetch]);
+
+  // Pull the real "who viewed my profile" list so the Profile Activity section
+  // shows genuine viewer avatars/names (fed by track-view → profile_view rows),
+  // not just the local activityFeed. Feed them into activityFeed as deduped
+  // "viewed your profile" items too, so the section is populated from the DB.
+  useEffect(() => {
+    if (!authUser?.id) return;
+    let cancelled = false;
+    const pull = async () => {
+      try {
+        const r = await authFetch("/api/muse?type=profile-viewers");
+        if (cancelled) return;
+        const d = await r.json();
+        if (d && Array.isArray(d.viewers)) {
+          setProfileViewers(d.viewers);
+          // Merge new viewer rows into the activity feed (dedup by viewer id),
+          // placed chronologically by view time.
+          setActivityFeed(prev => {
+            const existingViewerIds = new Set(prev.filter(x => x.type === "profile_view").map(x => x.id));
+            const newItems = d.viewers
+              .filter((v: any) => !existingViewerIds.has(v.id))
+              .map((v: any) => ({
+                id: (v.id || uid()) as any,
+                type: "profile_view",
+                from: v.name || "Someone",
+                avatar: v.avatar || "",
+                text: "viewed your profile",
+                time: v.viewedAt ? (() => { const ms = Date.now() - new Date(v.viewedAt).getTime(); const m = Math.floor(ms / 60000); if (m < 1) return "Just now"; if (m < 60) return `${m}m ago`; const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`; return `${Math.floor(h / 24)}d ago`; })() : "",
+                read: true,
+              }));
+            return [...newItems, ...prev];
+          });
+        }
+      } catch {}
+    };
+    pull();
+    const iv = setInterval(pull, 60000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, [authUser?.id, authFetch]);
+
   // Load background transparency from localStorage on mount
   useEffect(() => {
     try {
@@ -1269,7 +1328,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     return b;
   };
 
-  const unreadNotificationCount = useMemo(() => activityFeed.filter(n => !n.read).length, [activityFeed]);
+  const unreadNotificationCount = useMemo(() => Math.max(activityFeed.filter(n => !n.read).length, serverNotifCount), [activityFeed, serverNotifCount]);
 
   // Audit fix (2026-09-08): the hamburger's Activity > Applied/Saved tabs
   // only ever had the bare brief ID for each entry (appliedBriefs/
@@ -1538,28 +1597,39 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (!userDefaultIntent) { setIntentProfile(p); setShowIntentPicker(true); swipeLocked.current = false; return; }
       const intent = dir === "super" ? "super" : userDefaultIntent;
       const matchScore = (p as any).matchScore ?? calcMatch({ styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath }, p);
-        const isMatch = matchScore > 55 || (DEMO_MODE && Math.random() < 0.3);
+      // Every right-swipe is a real like — the backend `match` action always
+      // fires (creating a muse_matches row + notifying the target). `isMatch`
+      // only decides whether we show the celebratory "You matched!" overlay;
+      // it must NOT swallow the like, or a like on a low-score profile is lost.
+      const isMatch = matchScore > 55 || (DEMO_MODE && Math.random() < 0.3);
+      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id, intent }) }).then(async (r) => {
+        if (!r.ok) throw new Error("match failed");
+        const d = await r.json().catch(() => ({}));
+        // If the server reported this is a mutual match (target already liked
+        // us), surface the overlay even below the client score threshold.
+        if (d?.matched && !isMatch) {
+          const newMatch: Match = { ...p, messages: [] };
+          setMatches(prev => [...prev, newMatch]);
+          setMatchStreak(prev => prev + 1);
+          setTimeout(() => {
+            setShowMatchOverlay(newMatch);
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 1500);
+            setExpandedMatchId(String(newMatch.id));
+            trackEvent("muse_match", { name: p.name, type: p.type });
+            setActivityFeed(prev => [{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
+            flash("#FFD700");
+          }, 450);
+        }
+      }).catch(() => {
+        showToast("Match failed — try again");
+      });
       if (isMatch) {
         const newMatch: Match = { ...p, messages: [] };
         const prevMatches = matchesRef.current;
         setMatches(prev => [...prev, newMatch]);
         setMatchStreak(prev => prev + 1);
-        // Delay match overlay so swipe animation completes first
-        setTimeout(() => {
-          setShowMatchOverlay(newMatch);
-          setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 1500);
-          setExpandedMatchId(String(newMatch.id));
-          trackEvent("muse_match", { name: p.name, type: p.type });
-          setActivityFeed(prev => [{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
-          flash("#FFD700");
-        }, 450);
-        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id, intent }) }).then(r => { if (!r.ok) throw new Error("match failed"); }).catch(() => {
-          setMatches(prevMatches);
-          setMatchStreak(prev => Math.max(0, prev - 1));
-          setShowMatchOverlay(null);
-          showToast("Match failed — try again");
-        });
+        setActivityFeed(prev => [{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
       }
       if (DEMO_MODE && Math.random() > 0.4 && !likedBy.find(l => l.id === p.id)) {
         setLikedBy(prev => [...prev, p]);
