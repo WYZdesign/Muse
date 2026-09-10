@@ -1387,7 +1387,6 @@ img{background-color:#1a0a2e}
 [data-theme="lasunset"] .theme-swatch[data-val="lasunset"]{background:linear-gradient(135deg,#FFD700,#FF8A80)}
 [data-theme="deepspace"] .theme-swatch[data-val="deepspace"]{background:linear-gradient(135deg,#7B68EE,#4FC3F7)}
 [data-theme="nebula"] .theme-swatch[data-val="nebula"]{background:linear-gradient(135deg,#B388FF,#98FB98)}
-[data-theme="villa"] .theme-swatch[data-val="villa"]{background:linear-gradient(135deg,#FFD1A4,#E57373)}
 [data-theme="deepsea"] .theme-swatch[data-val="deepsea"]{background:linear-gradient(135deg,#00BCD4,#1E88E5)}
 [data-theme="sunrise"] .theme-swatch[data-val="sunrise"]{background:linear-gradient(135deg,#E8A838,#E07A5F);color:#2D2A26;text-shadow:none}
 .theme-swatch[data-val="lasunset"]{background:linear-gradient(135deg,#FFD700,#FF8A80)}
@@ -1421,10 +1420,10 @@ img{background-color:#1a0a2e}
    This consolidates the light treatment for all four so sky/rose/daylight render light
    too (mirrors the per-property sunrise overrides just below). */
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .phone{background:rgba(255,255,255,0.55)}
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .swipe-card{background:#FFFDF8}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .swipe-card{background:#FFFDF8;border:1px solid rgba(90,70,50,0.1);box-shadow:0 4px 24px rgba(90,70,50,0.08)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .swipe-card img{background:#F7EFE3}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .swipe-card .card-details{background:#FFFDF8;box-shadow:0 -8px 32px rgba(90,70,50,0.12)}
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-card-grid{background:#FFFDF8;border-color:rgba(90,70,50,0.12);box-shadow:0 4px 16px rgba(90,70,50,0.1)}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-card-grid{background:#FFFDF8;border:1px solid rgba(90,70,50,0.12);box-shadow:0 4px 16px rgba(90,70,50,0.1)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .intent-modal{background:#FFFDF8}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .modal-panel{background:#FFFDF8!important}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .nav{background:rgba(255,253,248,0.94);border-color:rgba(90,70,50,0.12)}
@@ -1438,10 +1437,10 @@ img{background-color:#1a0a2e}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .search-input{color:#2F2A24}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .chat-inp{background:rgba(0,0,0,0.04);border-color:rgba(90,70,50,0.16);color:#2F2A24}
 @media(max-width:767px){[data-theme="sunrise"] .phone{background:rgba(255,248,240,0.92)}}
-[data-theme="sunrise"] .swipe-card{background:#FFF8F0}
+[data-theme="sunrise"] .swipe-card{background:#FFF8F0;border:1px solid rgba(0,0,0,0.08);box-shadow:0 4px 24px rgba(0,0,0,0.06)}
 [data-theme="sunrise"] .swipe-card img{background:#F5EDE3}
 [data-theme="sunrise"] .swipe-card .card-details{background:#FFF8F0;box-shadow:0 -8px 32px rgba(0,0,0,0.08)}
-[data-theme="sunrise"] .match-card-grid{background:#FFF8F0;border-color:rgba(0,0,0,0.08);box-shadow:0 4px 16px rgba(0,0,0,0.08)}
+[data-theme="sunrise"] .match-card-grid{background:#FFF8F0;border:1px solid rgba(0,0,0,0.08);box-shadow:0 4px 16px rgba(0,0,0,0.08)}
 [data-theme="sunrise"] .intent-modal{background:#FFF8F0}
 [data-theme="sunrise"] .modal-panel{background:#FFF8F0!important}
 [data-theme="sunrise"] .nav{background:rgba(255,248,240,0.92);border-color:rgba(0,0,0,0.06)}
