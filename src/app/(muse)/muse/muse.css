@@ -1936,9 +1936,8 @@ img{background-color:#1a0a2e}
 
 @media(max-width:360px){.tour-card{padding:26px 18px 18px}.tour-sprite-wrap{width:120px;height:120px}.tour-sprite-badge{width:72px;height:72px}}
 
-/* Horizontal-scroll row — styled thin scrollbar as the scroll affordance */
-.conn-tab-sub-scroll{scrollbar-width:thin;scrollbar-color:rgba(255,215,0,0.3) transparent;-ms-overflow-style:none;position:relative}
-.conn-tab-sub-scroll{scrollbar-width:none;-ms-overflow-style:none}
+/* Horizontal-scroll row — scrollbar hidden (HScroll arrows are the cue) */
+.conn-tab-sub-scroll{scrollbar-width:none;-ms-overflow-style:none;position:relative}
 .conn-tab-sub-scroll::-webkit-scrollbar{display:none;width:0;height:0}
 .conn-tab-sub-scroll::-webkit-scrollbar-button{display:none;width:0;height:0}
 
