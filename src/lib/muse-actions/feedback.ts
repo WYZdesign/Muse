@@ -68,6 +68,13 @@ export async function feedbackDeleteNotification({ sb, profile, rest }: ActionCo
   return NextResponse.json({ success: true });
 }
 
+export async function feedbackClearNotifications({ sb, profile }: ActionContext) {
+  // Wipe the user's entire notification list (all read + unread rows).
+  const { error } = await sb.from("muse_notifications").delete().eq("user_id", profile.id);
+  if (error) return safeServerError(error, "clear notifications");
+  return NextResponse.json({ success: true });
+}
+
 export async function feedbackReportBug({ sb, profile, rest }: ActionContext) {
   if (!await checkRateUser(profile.id, "report-bug", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { category, description, steps, expected, actual } = rest;

@@ -290,6 +290,15 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
     } catch {}
   };
 
+  const clearAll = async () => {
+    if (!authFetch) return;
+    try {
+      await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "clear-all-notifications" }) });
+      setNotifications([]);
+      onMarkAllRead?.();
+    } catch {}
+  };
+
   const tabBtn = (key: any, label: string) => (
     <div key={key} className={"conn-tab-sub" + (hubTab === key ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setHubTab(key); } }} onClick={() => setHubTab(key)} style={{ cursor: "pointer", fontSize: 11, padding: "5px 10px", flexShrink: 0 }}>{label}</div>
   );
@@ -317,7 +326,10 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <div style={{ fontSize: 12, color: "var(--text2)" }}>{notifications.filter(n => !n.read).length} unread</div>
-            {notifications.some(n => !n.read) && <button onClick={markAllRead} style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>}
+            <div style={{ display: "flex", gap: 12 }}>
+              {notifications.some(n => !n.read) && <button onClick={markAllRead} style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>}
+              {notifications.length > 0 && <button onClick={clearAll} style={{ fontSize: 11, color: "#ff8a80", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>Clear all</button>}
+            </div>
           </div>
           {notifications.length === 0
             ? <EmptyState icon="🔔" title="No notifications yet" sub="Likes, matches, bookings and activity will appear here." />
