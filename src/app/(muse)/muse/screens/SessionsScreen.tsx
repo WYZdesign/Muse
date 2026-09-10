@@ -12,6 +12,7 @@ import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 
 import type { Screen, Match, SessionListing } from "../components/types";
 import { SESSIONS } from "../components/types";
+import HScroll from "../components/HScroll";
 import { STRINGS } from "@/lib/strings";
 
 export interface SessionsScreenProps {
@@ -34,6 +35,7 @@ export interface SessionsScreenProps {
   setReportTarget?: (t: { id: number | string; type: string; name: string }) => void;
   openHamburger?: () => void;
   unreadNotificationCount?: number;
+  demo?: boolean;
   liveSessions?: SessionListing[];
   myBookings?: { asBooker: any[]; asHost: any[] };
   setMyBookings?: React.Dispatch<React.SetStateAction<{ asBooker: any[]; asHost: any[] }>>;
@@ -88,6 +90,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   authFetch,
   openHamburger,
   unreadNotificationCount,
+  demo = false,
   setMatches = () => {},
   liveSessions = [],
   myBookings = { asBooker: [], asHost: [] },
@@ -247,7 +250,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#F2CC8F,#E07A5F,#F4A261,#F2CC8F,#E07A5F,#F2CC8F)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Sessions</div>
         <div style={{ width: 42 }} />
       </div>
-      <div className="conn-tabs" style={{ padding: "0 16px", justifyContent: "center" }}>
+      <HScroll className="conn-tabs" gap={0} style={{ padding: "0 16px", justifyContent: "center" }}>
         {/* Small leading icon per tab (audit finding tu-2) — same treatment as
             Collab's category row, for the same glance-ability reason. */}
         {([["sessions", "Browse", FiCompass], ["bookings", "My Bookings", FiCalendar], ["requests", "Requests", FiInbox]] as const).map(([t, label, Icon]) => (
@@ -255,7 +258,7 @@ export const SessionsScreen = memo(function SessionsScreen({
             <Icon size={11} />{label}
           </div>
         ))}
-      </div>
+      </HScroll>
       {sessTab === "sessions" && (
         <div style={{ margin: "0 16px 12px", display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "6px 12px", animation: "fadeIn .2s ease" }}>
           <FiSearch size={14} color="var(--muted)" />
@@ -272,7 +275,7 @@ export const SessionsScreen = memo(function SessionsScreen({
             </div>
             <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 12, textAlign: "center" }}>Find a session, book it, and pay securely.</div>
             {(() => {
-              const base = (liveSessions?.length ? liveSessions : SESSIONS as SessionListing[]);
+              const base = (liveSessions?.length ? liveSessions : (demo ? SESSIONS as SessionListing[] : []));
               const q = sessionSearchQuery.trim().toLowerCase();
               const list = q ? base.filter(s => matchesSessionSearch(s, sessionSearchQuery)) : base;
               if (q && list.length === 0) {

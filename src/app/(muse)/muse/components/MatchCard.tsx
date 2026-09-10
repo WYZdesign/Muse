@@ -33,15 +33,15 @@ const RING_SIZE = 90; // wyzmind's live-verified sizing (Session 81/82 — 83 wa
 // not touching). A % of RING_SIZE rather than a fixed px so the gap scales with it.
 const ORBIT_SIZE = Math.round(RING_SIZE * 1.08);
 const RING_SPEEDS = [3.2, 4.5, 5.8, 3.8, 5.1, 4.2, 6.0, 3.5, 4.8, 5.5];
-const RING_VARIANTS = ["ring-v1", "ring-v2", "ring-v3", "ring-v4", "ring-v5"];
+const RING_VARIANTS = ["ring-v1", "ring-v2", "ring-v3", "ring-v4", "ring-v5", "ring-v6", "ring-v7", "ring-v8", "ring-v9", "ring-v10"];
 // Hoolah-hoop color variants — matched 1:1 to RING_VARIANTS by index (see the
 // .orbit-vN rules in muse.css) so a card's outer hoop is always the same palette as
 // its inner halo, instead of every hoop defaulting to the same flat gold/pink mix.
-const ORBIT_VARIANTS = ["orbit-v1", "orbit-v2", "orbit-v3", "orbit-v4", "orbit-v5"];
+const ORBIT_VARIANTS = ["orbit-v1", "orbit-v2", "orbit-v3", "orbit-v4", "orbit-v5", "orbit-v6", "orbit-v7", "orbit-v8", "orbit-v9", "orbit-v10"];
 // Hoolah-hoop speeds for the outer orbit ring — deliberately offset from RING_SPEEDS
 // (different array, different modulo base) so the hoop and its halo are never
 // spinning in sync, and different cards' hoops visibly vary in pace from each other.
-const ORBIT_SPEEDS = [7.5, 5.5, 9, 6.8, 8.2];
+const ORBIT_SPEEDS = [7.5, 5.5, 9, 6.8, 8.2, 6.0, 7.9, 5.2, 8.6, 6.6];
 
 const MatchCard = memo(function MatchCard({ m, view, actions }: MatchCardProps) {
   const {

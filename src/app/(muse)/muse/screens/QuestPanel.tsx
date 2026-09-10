@@ -202,7 +202,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
             color: "#FFD700",
             flexShrink: 0,
           }}>
-            <span style={{ fontSize: 16 }}>🎁</span>
+            <span style={{ fontSize: 16, display: "none" }}>🎁</span>
             {claimableCount} quest{claimableCount !== 1 ? "s" : ""} ready to claim!
           </div>
         )}
@@ -255,22 +255,21 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                 <div style={{
                   display: "flex",
                   alignItems: "center",
-                  padding: "20px 16px 20px 20px",
+                  padding: "18px 16px 16px 22px",
                   gap: 12,
-                  minHeight: 64,
+                  minHeight: 72,
+                  flexWrap: "wrap",
                 }}>
                   {/* Emoji — no bubble, just raw character */}
                   <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}>{q.icon}</span>
 
-                  {/* Name + reward on one line */}
-                  <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                  {/* Name + reward */}
+                  <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <span style={{
                       fontSize: 14,
                       fontWeight: 700,
                       color: "var(--text)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      display: "block",
                     }}>{q.title}</span>
                     <span style={{
                       fontSize: 12,

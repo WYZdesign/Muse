@@ -525,7 +525,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 <button className="match-radial-btn btn-rewind" style={{ left: -110, top: 7 }} onClick={doRewind} aria-label="Rewind">↺</button>
                                 <button className="match-radial-btn btn-nope" style={{ left: -106, top: -40 }} onClick={() => doSwipe("left")} aria-label="Pass">✕</button>
                                 <button className="match-radial-btn btn-super" style={{ left: -77, top: -77, width: 37, height: 37, fontSize: 16 }} onClick={() => doSwipe("super")} aria-label="Super Like">★</button>
-                                <button className="match-radial-btn btn-like" style={{ left: -40, top: -106, width: 44, height: 44, flexDirection: "column", fontSize: 16, lineHeight: 1 }} onClick={() => handleAnchorLike({ type: "photo", value: `Photo #${(currentPhotoIdx ?? 0) + 1}` })} aria-label="Like this match"><span aria-hidden="true" style={{ fontSize: 18 }}>♥</span><span style={{ fontSize: 9, fontWeight: 800, marginTop: 1 }}>like</span></button>
+                                <button className="match-radial-btn btn-like" style={{ left: -40, top: -106, width: 44, height: 44, flexDirection: "column", fontSize: 16, lineHeight: 1 }} onClick={() => handleAnchorLike({ type: "photo", value: `Photo #${(currentPhotoIdx ?? 0) + 1}` })} aria-label="Like this match"><span aria-hidden="true" style={{ fontSize: 18 }}>♥</span></button>
                                 <button className="match-radial-btn btn-note" style={{ left: 7, top: -110 }} onClick={() => doLikeWithNote()} aria-label="Like + Note">✎</button>
                               </div>
                             </div>

@@ -197,8 +197,8 @@ export const BtsScreen = memo(function BtsScreen({
     showToast("Share your moment from the Feed composer!");
   }, [showScreen, showToast]);
 
-  const headerGradient = "linear-gradient(135deg, #FF1493 0%, #FF69B4 50%, #FFD700 100%)";
-  const pinkGradient = "linear-gradient(135deg, #FF1493 0%, #FF69B4 35%, #FFFFFF 60%, #FFB6C1 80%, #FFD700 100%)";
+  const headerGradient = "linear-gradient(135deg, #FFFFFF 0%, #FF69B4 45%, #FFD700 100%)";
+  const pinkGradient = "linear-gradient(135deg, #FF1493 0%, #FF69B4 40%, #FFD700 100%)";
   const activePill = "linear-gradient(135deg, #FF1493, #FF69B4)";
 
   const gridCardStyle: React.CSSProperties = { width: "100%", maxWidth: "100%", minWidth: 0, overflow: "hidden" };
@@ -209,6 +209,8 @@ export const BtsScreen = memo(function BtsScreen({
       <div
         style={{
           background: headerGradient,
+          backgroundSize: "400% 400%",
+          animation: "lavaFlow 8s ease-in-out infinite",
           padding: "calc(14px + env(safe-area-inset-top,0px)) 18px 14px",
           display: "flex",
           alignItems: "center",
@@ -216,7 +218,7 @@ export const BtsScreen = memo(function BtsScreen({
           position: "relative",
         }}
       >
-        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.15)", pointerEvents: "none" }} />
         <button
           className="chat-back"
           onClick={() => showScreen("discover")}
@@ -250,8 +252,6 @@ export const BtsScreen = memo(function BtsScreen({
           style={{
             margin: "14px 14px 0",
             background: pinkGradient,
-            backgroundSize: "400% 400%",
-            animation: "lavaFlow 8s ease-in-out infinite",
             borderRadius: 16,
             padding: "18px 16px",
             position: "relative",
@@ -557,111 +557,52 @@ export const BtsScreen = memo(function BtsScreen({
                   </div>
                 </div>
 
-                {/* Reaction pills + views/engagement stats (Feed-style) */}
+                {/* Action bar — one evenly-distributed row of like/comment/share/
+                    views so every card reads clean at the bottom (no duplicate rows). */}
                 {(() => {
                   const views = typeof (s as any).views === "number"
                     ? (s as any).views
                     : 50 + (s.likes || 0) * 8 + (s.comments || 0) * 15;
-                  const engagement = (s.likes || 0) + (s.comments || 0) * 2;
                   const fmt = (n: number) => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K" : String(n);
+                  const itemStyle: React.CSSProperties = {
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 5,
+                    padding: "8px 0",
+                    borderRadius: 10,
+                    border: "none",
+                    background: "transparent",
+                    color: "var(--muted, #999)",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    transition: "background 0.2s, color 0.2s",
+                    whiteSpace: "nowrap",
+                  } as any;
                   return (
-                    <div style={{ display: "flex", gap: 10, padding: "8px 12px 0", alignItems: "center", flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 11, color: "var(--text2)", display: "inline-flex", alignItems: "center", gap: 4 }} title="Views">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                    <div style={{ display: "flex", alignItems: "stretch", gap: 2, padding: "2px 8px 10px", borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: 8 }}>
+                      <button onClick={() => handleLike(s)} aria-label="Like" style={{ ...itemStyle, background: s.liked ? "rgba(255,215,0,0.15)" : "transparent", color: s.liked ? "var(--gold)" : "var(--muted, #999)" } as any}>
+                        <span aria-hidden="true" style={{ fontSize: 13 }}>{s.liked ? "✦" : "✧"}</span>{fmt(s.likes || 0)}
+                      </button>
+                      <button
+                        onClick={() => { showScreen("connections"); showToast("Open feed to comment"); }}
+                        aria-label="Comment"
+                        style={{ ...itemStyle } as any}
+                      >
+                        <span aria-hidden="true" style={{ fontSize: 13 }}>✎</span>{fmt(s.comments || 0)}
+                      </button>
+                      <button onClick={() => handleShare(s)} aria-label="Share" style={{ ...itemStyle } as any}>
+                        <span aria-hidden="true" style={{ fontSize: 13 }}>↗</span>Share
+                      </button>
+                      <div style={{ ...itemStyle, cursor: "default" } as any} title="Views" aria-label="Views">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                         {fmt(views)}
-                      </span>
-                      <span style={{ fontSize: 11, color: engagement > 0 ? "var(--gold)" : "var(--muted)", fontWeight: engagement > 0 ? 700 : 400, display: "inline-flex", alignItems: "center", gap: 4 }} title={`Engagement: likes(${s.likes || 0}) · comments×2(${s.comments || 0})`}>
-                        ✦ {fmt(engagement)}
-                      </span>
+                      </div>
                     </div>
                   );
                 })()}
-
-                {/* Audit fix (2026-09-08): this "N likes" / "N comments"
-                    pill row rendered the exact same s.likes/s.comments
-                    numbers as the interactive Like/Comment buttons in the
-                    Action row directly below it — every BTS card with any
-                    engagement showed each count twice back-to-back. The
-                    views/engagement row above already surfaces the same
-                    facts (engagement = likes + comments×2), and the action
-                    buttons keep the exact counts visible and tappable, so
-                    this static, non-interactive duplicate row is removed
-                    rather than the buttons. */}
-
-                {/* Action row */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "8px 12px 12px",
-                    gap: 4,
-                  }}
-                >
-                  <button
-                    onClick={() => handleLike(s)}
-                    style={{
-                      flex: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 6,
-                      padding: "7px 0",
-                      borderRadius: 10,
-                      border: "none",
-                      background: s.liked ? "rgba(255,215,0,0.15)" : "rgba(255,255,255,0.06)",
-                      color: s.liked ? "var(--gold)" : "var(--muted, #999)",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      transition: "background 0.2s",
-                    }}
-                  >
-                    {s.liked ? "\u2726" : "\u2727"} {s.likes || 0}
-                  </button>
-                  <button
-                    onClick={() => {
-                      showScreen("connections");
-                      showToast("Open feed to comment");
-                    }}
-                    style={{
-                      flex: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 6,
-                      padding: "7px 0",
-                      borderRadius: 10,
-                      border: "none",
-                      background: "rgba(255,255,255,0.06)",
-                      color: "var(--muted, #999)",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                  >
-                    {"\u270E"} {s.comments || 0}
-                  </button>
-                  <button
-                    onClick={() => handleShare(s)}
-                    style={{
-                      flex: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 6,
-                      padding: "7px 0",
-                      borderRadius: 10,
-                      border: "none",
-                      background: "rgba(255,255,255,0.06)",
-                      color: "var(--muted, #999)",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                  >
-                    {"\u2197"} Share
-                  </button>
-                </div>
               </div>
             );
           })}

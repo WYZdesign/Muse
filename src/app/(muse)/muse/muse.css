@@ -337,9 +337,11 @@ a{color:inherit;text-decoration:none}
 .chip-scroll>*{flex:0 0 auto}
 .hamburger-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)}
 .hamburger-panel{width:78%;max-width:340px;height:100%;background:linear-gradient(180deg,rgba(15,8,30,0.98) 0%,rgba(10,6,18,0.99) 100%);backdrop-filter:blur(40px);padding:calc(128px + env(safe-area-inset-top,0px)) 20px calc(32px + env(safe-area-inset-bottom,0px));overflow-y:auto;overflow-x:hidden;position:relative;border-left:1px solid rgba(212,165,255,0.08);animation:hamburgerSlide .35s cubic-bezier(.4,0,.2,1)}
-/* Torreé's Session 84 ask: push the separator line (this pseudo-element's bottom
-   border) up by 20% — was 104px down from the top, now 83px (104 × 0.8). */
-.hamburger-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:calc(83px + env(safe-area-inset-top,0px));background:linear-gradient(135deg,rgba(212,165,255,0.32) 0%,rgba(255,215,0,0.24) 30%,rgba(255,181,194,0.26) 55%,rgba(152,251,152,0.22) 80%,rgba(15,8,30,0.06) 100%);background-size:300% 100%;animation:gradientShift 8s ease-in-out infinite;border-bottom:1px solid rgba(212,165,255,0.32);pointer-events:none}
+/* Gradient animation now covers the ENTIRE panel (full background), plus a 15%
+   dark overlay so the menu buttons stay legible over it. No header separator
+   (no border-bottom) — the top bar is just the X-close (left) + bell (right). */
+.hamburger-panel::before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,rgba(212,165,255,0.30) 0%,rgba(255,215,0,0.24) 30%,rgba(255,181,194,0.26) 55%,rgba(152,251,152,0.22) 80%,rgba(15,8,30,0.06) 100%);background-size:300% 100%;animation:gradientShift 8s ease-in-out infinite;pointer-events:none}
+.hamburger-panel::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.15);pointer-events:none}
 .hamburger-close{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));left:12px;width:42px;height:42px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:var(--text);cursor:pointer;font-size:18px;transition:all .2s;z-index:1}
 .hamburger-close:hover{background:rgba(255,255,255,0.06);color:var(--gold)}
 .hamburger-bell{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));right:12px;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);cursor:pointer;font-size:16px;transition:all .2s;z-index:1;animation:floatySmall 4s ease-in-out infinite}
@@ -642,12 +644,6 @@ img{background-color:#1a0a2e}
    band, so the ring's inner edge lands exactly on the photo's edge instead
    of floating ~19px above it. Band thickness 2.5px -> 3.5px (+40%). */
 .profile-ring-menu{width:107px;height:107px;-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3.5px),#000 calc(100% - 1.75px));mask:radial-gradient(farthest-side,transparent calc(100% - 3.5px),#000 calc(100% - 1.75px))}
-/* Theme-aware ring color variants — rotate per-match-card for varied gradient hues + speeds */
-.ring-v1{background:conic-gradient(var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));animation-duration:5s}
-.ring-v2{background:conic-gradient(var(--coral),var(--gold),var(--peach),var(--sunset),var(--coral));animation-duration:6.5s;animation-direction:reverse}
-.ring-v3{background:conic-gradient(var(--sky),var(--mint),var(--lavender),var(--sky));animation-duration:5.8s}
-.ring-v4{background:conic-gradient(var(--pink),var(--lavender),var(--coral),var(--pink));animation-duration:7s;animation-direction:reverse}
-.ring-v5{background:conic-gradient(var(--amber),var(--honey),var(--gold),var(--amber));animation-duration:6.2s}
 /* ═══ HOOLAH-HOOP — a ring that literally circles the halo like a hoolah hoop: same
    center, a small fixed radius past the halo's own edge, close enough to read as
    orbiting it and never touching it. ═══
@@ -724,22 +720,33 @@ img{background-color:#1a0a2e}
    active theme's own --gold/--coral/--pink/--lavender/--mint/--amber/--sky/--honey
    vars, so they re-theme automatically when the site color theme is switched.
    MatchCard assigns one per profile (hashed off id). ═══ */
-.ring-v1{background:conic-gradient(var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));animation-duration:5s}
-.ring-v2{background:conic-gradient(var(--coral),var(--gold),var(--peach),var(--sunset),var(--coral));animation-duration:6.5s;animation-direction:reverse}
-.ring-v3{background:conic-gradient(var(--sky),var(--mint),var(--lavender),var(--sky));animation-duration:5.8s}
-.ring-v4{background:conic-gradient(var(--pink),var(--lavender),var(--coral),var(--pink));animation-duration:7s;animation-direction:reverse}
-.ring-v5{background:conic-gradient(var(--amber),var(--honey),var(--gold),var(--amber));animation-duration:6.2s}
 /* Hoolah-hoop (outer .avatar-orbit) color variants matching each .ring-v halo above —
    Torreé's ask: the hoop's colors should match the halo it's circling, not always the
    flat default gold/amber/pink/lavender regardless of which ring-v the card landed on.
    MatchCard applies orbit-vN alongside ring-vN using the same hashed index so a card's
-   hoop and halo are always the same palette. Same var-driven approach as ring-v1..5 so
-   both re-theme together when the site color theme changes. */
-.avatar-orbit.orbit-full.orbit-v1{background:conic-gradient(from var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold))}
-.avatar-orbit.orbit-full.orbit-v2{background:conic-gradient(from var(--grad-angle,0deg),var(--coral),var(--gold),var(--peach),var(--sunset),var(--coral))}
-.avatar-orbit.orbit-full.orbit-v3{background:conic-gradient(from var(--grad-angle,0deg),var(--sky),var(--mint),var(--lavender),var(--sky))}
-.avatar-orbit.orbit-full.orbit-v4{background:conic-gradient(from var(--grad-angle,0deg),var(--pink),var(--lavender),var(--coral),var(--pink))}
-.avatar-orbit.orbit-full.orbit-v5{background:conic-gradient(from var(--grad-angle,0deg),var(--amber),var(--honey),var(--gold),var(--amber))}
+   hoop and halo are always the same palette. Same var-driven approach as ring-v1..10 so
+   both re-theme together when the site color theme changes. All gradients are 3 stops so
+   every card's halo+hoop reads as one distinct trio — no two cards repeat (10 unique). */
+.ring-v1{background:conic-gradient(var(--gold),var(--amber),var(--pink));animation-duration:5s}
+.ring-v2{background:conic-gradient(var(--coral),var(--sunset),var(--gold));animation-duration:6.5s;animation-direction:reverse}
+.ring-v3{background:conic-gradient(var(--sky),var(--lavender),var(--mint));animation-duration:5.8s}
+.ring-v4{background:conic-gradient(var(--pink),var(--coral),var(--peach));animation-duration:7s;animation-direction:reverse}
+.ring-v5{background:conic-gradient(var(--gold),var(--honey),var(--amber));animation-duration:6.2s}
+.ring-v6{background:conic-gradient(var(--lavender),var(--sky),var(--coral));animation-duration:6.9s;animation-direction:reverse}
+.ring-v7{background:conic-gradient(var(--mint),var(--sky),var(--gold));animation-duration:5.4s}
+.ring-v8{background:conic-gradient(var(--peach),var(--golden-rose),var(--coral));animation-duration:7.4s;animation-direction:reverse}
+.ring-v9{background:conic-gradient(var(--warm-cream),var(--gold),var(--pink));animation-duration:6s}
+.ring-v10{background:conic-gradient(var(--sunset),var(--coral),var(--lavender));animation-duration:5.6s;animation-direction:reverse}
+.avatar-orbit.orbit-full.orbit-v1{background:conic-gradient(from var(--grad-angle,0deg),var(--gold),var(--amber),var(--pink))}
+.avatar-orbit.orbit-full.orbit-v2{background:conic-gradient(from var(--grad-angle,0deg),var(--coral),var(--sunset),var(--gold))}
+.avatar-orbit.orbit-full.orbit-v3{background:conic-gradient(from var(--grad-angle,0deg),var(--sky),var(--lavender),var(--mint))}
+.avatar-orbit.orbit-full.orbit-v4{background:conic-gradient(from var(--grad-angle,0deg),var(--pink),var(--coral),var(--peach))}
+.avatar-orbit.orbit-full.orbit-v5{background:conic-gradient(from var(--grad-angle,0deg),var(--gold),var(--honey),var(--amber))}
+.avatar-orbit.orbit-full.orbit-v6{background:conic-gradient(from var(--grad-angle,0deg),var(--lavender),var(--sky),var(--coral))}
+.avatar-orbit.orbit-full.orbit-v7{background:conic-gradient(from var(--grad-angle,0deg),var(--mint),var(--sky),var(--gold))}
+.avatar-orbit.orbit-full.orbit-v8{background:conic-gradient(from var(--grad-angle,0deg),var(--peach),var(--golden-rose),var(--coral))}
+.avatar-orbit.orbit-full.orbit-v9{background:conic-gradient(from var(--grad-angle,0deg),var(--warm-cream),var(--gold),var(--pink))}
+.avatar-orbit.orbit-full.orbit-v10{background:conic-gradient(from var(--grad-angle,0deg),var(--sunset),var(--coral),var(--lavender))}
 .profile-name{font-size:26px;font-weight:800}
 .profile-type{font-size:16px;font-weight:600;margin-top:4px;background:linear-gradient(90deg,var(--gold),var(--amber),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .profile-loc{font-size:13px;color:var(--text2);margin-top:5px}
@@ -2136,3 +2143,25 @@ img{background-color:#1a0a2e}
   98%{transform:translateX(170%) skewX(-14deg);opacity:0}
   100%{transform:translateX(175%) skewX(-14deg);opacity:0}
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HORIZONTAL FILTER ROWS — no blocky scrollbar, just touch/pinch + edge fades.
+   Scrollbars on horizontal chip/filter rows were blocking the buttons (the bar
+   sat under the active-tab underline and swallowed taps). Now the bar is hidden
+   everywhere; rows scroll by swipe, and the .filter-scroll-fade wrapper paints
+   a soft gradient + the .filter-scroll-arrow buttons (‹ ›) that slide the row.
+   ══════════════════════════════════════════════════════════════════════════ */
+.hsc-fade{scrollbar-width:none;-ms-overflow-style:none}
+.hsc-fade::-webkit-scrollbar{display:none;width:0;height:0}
+.hsc-fade{position:relative}
+.hsc-fade::before,.hsc-fade::after{content:"";position:absolute;top:0;bottom:0;width:22px;pointer-events:none;opacity:.9;transition:opacity .2s;z-index:2}
+.hsc-fade::before{left:-1px;background:linear-gradient(90deg,var(--panel-bg-solid),transparent)}
+.hsc-fade::after{right:-1px;background:linear-gradient(270deg,var(--panel-bg-solid),transparent)}
+.hsc-fade.fade-end::before{opacity:0}
+.hsc-fade.fade-start::after{opacity:0}
+.hsc-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:26px;height:26px;border-radius:50%;background:var(--panel-bg-solid);border:1px solid var(--border-med);color:var(--text2);font-size:15px;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);transition:opacity .2s,transform .15s}
+.hsc-wrap:hover .hsc-arrow,.hsc-wrap.has-overflow .hsc-arrow{display:flex}
+.hsc-arrow:active{transform:translateY(-50%) scale(0.9)}
+.hsc-arrow.left{left:-8px}
+.hsc-arrow.right{right:-8px}
+.hsc-arrow.hidden{opacity:0;pointer-events:none}

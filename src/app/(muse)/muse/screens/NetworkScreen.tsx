@@ -7,6 +7,7 @@ import { createSpatialScene } from "../hooks/useDeviceTilt";
 import { FiArrowLeft, FiShare2, FiMapPin, FiBriefcase, FiStar, FiFlag, FiMessageCircle, FiChevronDown, FiChevronUp, FiUserPlus, FiSearch, FiTarget, FiZap, FiArrowUpRight, FiDollarSign, FiBookmark } from "react-icons/fi";
 import type { Screen, Match, Professional } from "../components/types";
 import { PROFESSIONALS, FORUM_POSTS } from "../components/types";
+import HScroll from "../components/HScroll";
 import { BADGE_COLORS } from "../components/badgeColors";
 import { BadgeInfoModal, STYLE_FULL, type BadgeInfo } from "../components/badgeInfo";
 import { viewerSide } from "@/lib/role";
@@ -49,6 +50,7 @@ export interface NetworkScreenProps {
   openTab?: "pros" | "forum";
   savedProfileIds?: (string | number)[];
   setSavedProfileIds?: React.Dispatch<React.SetStateAction<(string | number)[]>>;
+  demo?: boolean;
 }
 
 const SKILL_COLORS = [
@@ -106,6 +108,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   openTab,
   savedProfileIds = [],
   setSavedProfileIds = () => {},
+  demo = false,
 }: NetworkScreenProps) {
   // Save/bookmark toggle — same client+server pattern as Briefs' savedBriefs.
   const toggleSaveProfessional = (id: string | number) => {
@@ -178,7 +181,7 @@ export const NetworkScreen = memo(function NetworkScreen({
     if (proSearchServer.trim().length >= 2 && proServerResults.length > 0) {
       return proServerResults.filter((p: any) => showNsfw || !p.nsfw);
     }
-    let list = (liveProfessionals?.length ? liveProfessionals : PROFESSIONALS).filter((p) => showNsfw || !p.nsfw);
+    let list = (liveProfessionals?.length ? liveProfessionals : (demo ? PROFESSIONALS : [])).filter((p) => showNsfw || !p.nsfw);
     if (proExp !== "all") list = list.filter((p) => expBand(p.exp) === proExp);
     if (proHiringOnly) list = list.filter((p) => p.openings > 0);
     const q = proSearch.trim().toLowerCase();
@@ -212,7 +215,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   })();
 
   const filteredForum = useMemo(() => {
-    return [...(liveForum?.length ? liveForum : FORUM_POSTS)]
+    return [...(liveForum?.length ? liveForum : (demo ? FORUM_POSTS : []))]
       .filter((p) => forumCategory === "all" || p.cat === forumCategory)
       .sort((a, b) =>
         forumSort === "top"
@@ -308,7 +311,7 @@ export const NetworkScreen = memo(function NetworkScreen({
     // over `prev` was a no-op and the fallback's vote count never moved (arrow
     // highlighted via votedPosts, count frozen). Seed liveForum from FORUM_POSTS
     // on first interaction so the rendered copy updates.
-    setLiveForum?.((prev) => (prev && prev.length ? prev.map(applyDelta) : FORUM_POSTS.map(applyDelta)));
+    setLiveForum?.((prev) => (prev && prev.length ? prev.map(applyDelta) : (demo ? FORUM_POSTS.map(applyDelta) : prev)));
     setForumPosts((prev) => prev.map(applyDelta));
     if (typeof postId === "number" && !liveForum?.length) return;
     apiFetch("/api/muse", {
@@ -329,7 +332,7 @@ export const NetworkScreen = memo(function NetworkScreen({
     const removeC = (p: any) => (p.id === postId ? { ...p, comments: p.comments.filter((c: any) => c !== newComment) } : p);
     // Same fallback-seeding fix as handleVote — without it, replying to a seed post
     // showed "Comment added" but the comment never appeared.
-    setLiveForum?.((prev) => (prev && prev.length ? prev.map(addC) : FORUM_POSTS.map(addC)));
+    setLiveForum?.((prev) => (prev && prev.length ? prev.map(addC) : (demo ? FORUM_POSTS.map(addC) : prev)));
     setForumPosts((prev) => prev.map(addC));
     setCommentTexts((prev) => ({ ...prev, [postId]: "" }));
     if (typeof postId === "number" && !liveForum?.length) { showToast("Comment added"); return; }
@@ -435,7 +438,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 lighter/darker shades) for its sub-options below — Skills (pink)
                 and Looking (teal) already used one consistent hue for their
                 sub-options, so their pill gradient now matches that hue too. */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 10, alignItems: "center", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: 2, paddingTop: 10 }}>
+            <HScroll gap={6} style={{ marginBottom: 10, alignItems: "center", paddingBottom: 2, paddingTop: 10 }}>
               {([
                 { key: "experience", label: "Experience", active: proExp !== "all", grad: "linear-gradient(135deg,#90CAF9,#42A5F5)" },
                 { key: "sort", label: "Sort", active: proSort !== "match", grad: "linear-gradient(135deg,var(--gold),var(--amber))" },
@@ -462,7 +465,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               >
                 Hiring{proHiringOnly ? " ✓" : ""}
               </span>
-            </div>
+            </HScroll>
             {/* Expanded filter panels — single-line horizontal scroll, color-coded per category */}
             {filterSections.experience && (
               <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
@@ -1299,20 +1302,21 @@ export const NetworkScreen = memo(function NetworkScreen({
               onClick={() => setProDetail(null)}
               style={{
                 position: "absolute",
-                top: "calc(48px + env(safe-area-inset-top, 0px))",
-                right: 16,
+                top: 12,
+                right: 12,
                 zIndex: 10,
-                background: "rgba(0,0,0,0.5)",
-                border: "1px solid rgba(255,255,255,0.15)",
-                borderRadius: 99,
-                width: 36,
-                height: 36,
+                background: "transparent",
+                border: "none",
+                color: "#fff",
+                fontSize: 20,
+                lineHeight: 1,
+                cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#fff",
-                fontSize: 18,
-                cursor: "pointer",
+                width: 42,
+                height: 42,
+                textShadow: "0 1px 6px rgba(0,0,0,0.7)",
               }}
             >
               {"\u2715"}

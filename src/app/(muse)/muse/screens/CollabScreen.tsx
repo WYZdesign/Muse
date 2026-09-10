@@ -8,6 +8,7 @@ import Nav from "../components/Nav";
 import { EmptyState } from "../components/EmptyState";
 import type { Screen, Brief } from "../components/types";
 import { BRIEFS } from "../components/types";
+import HScroll from "../components/HScroll";
 import { viewerSide } from "@/lib/role";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
@@ -44,6 +45,7 @@ export interface CollabScreenProps {
   setBriefCat?: (c: "tfp" | "paid" | "opencall" | "concept") => void;
   setShowReport?: (v: boolean) => void;
   setReportTarget?: (t: any) => void;
+  demo?: boolean;
 }
 
 export const CollabScreen = memo(function CollabScreen({
@@ -78,6 +80,7 @@ export const CollabScreen = memo(function CollabScreen({
   unreadNotificationCount,
   setShowReport = () => {},
   setReportTarget = () => {},
+  demo = false,
 }: CollabScreenProps) {
   // Long brief descriptions used to always render in full, which could bloat
   // a card well past its neighbors in a scrolling list (LinkedIn's inline
@@ -174,7 +177,7 @@ export const CollabScreen = memo(function CollabScreen({
         <input className="inp" placeholder="Describe what you're looking for..." value={briefSearchQuery} onChange={e => setBriefSearchQuery(e.target.value)} style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
         {briefSearchQuery && <button onClick={() => setBriefSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
       </div>
-      <div className="conn-tabs" style={{ padding: "12px 12px 0", justifyContent: "flex-start" }}>
+      <HScroll className="conn-tabs" gap={0} style={{ padding: "12px 12px 0", justifyContent: "flex-start" }}>
         {/* Small leading icon per tab (audit finding tu-2) — text-only tabs
             work fine at this row length, but a glance-able icon removes a
             beat of reading for a frequently-tapped row like this one. Kept
@@ -184,7 +187,7 @@ export const CollabScreen = memo(function CollabScreen({
             <Icon size={11} />{l}
           </div>
         ))}
-      </div>
+      </HScroll>
       <div className="briefs-scroll">
         {(() => {
           const allBriefs = [
@@ -197,7 +200,7 @@ export const CollabScreen = memo(function CollabScreen({
               nsfw: false,
               cat: b.cat || "concept",
             })),
-            ...(liveBriefs?.length ? liveBriefs : BRIEFS),
+            ...(liveBriefs?.length ? liveBriefs : (demo ? BRIEFS : [])),
           ];
           let filtered = (museCat === "all" ? allBriefs : allBriefs.filter(b => b.cat === museCat)).filter(b => !hiddenBriefIds.has(b.id));
           if (briefSearchQuery.trim()) {
@@ -237,9 +240,9 @@ export const CollabScreen = memo(function CollabScreen({
                   style={{ position: "absolute", top: 14, left: 14, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >✕</button>
               )}
-              {/* Report flag (Torreé audit): plain flag icon sitting just left
-                  of the safety-info button on the right side of the card. */}
-              {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ position: "absolute", top: 14, right: 44, zIndex: 2, color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={13} /></button>)}
+              {/* Report flag (Torreé audit): sits in the very top-right corner of
+                  the card. The safety-info button moves just left of it. */}
+              {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ position: "absolute", top: 14, right: 14, zIndex: 3, color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={14} /></button>)}
               <div className="brief-header" style={{ flexWrap: "wrap", gap: 6 }}>
                 <Image loading="lazy" src={brief.authorImg} alt={brief.author} width={86} height={86} className={"brief-avatar brief-variant-" + (bi % 5)} />
                 <div className="brief-info" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -305,7 +308,7 @@ export const CollabScreen = memo(function CollabScreen({
                   aria-label="Safety info"
                   title="Safety info"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSafetyInfoOpen(true); }}
-                  style={{ position: "absolute", top: 14, right: 14, width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3 }}
+                  style={{ position: "absolute", top: 14, right: 46, width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3 }}
                 >ⓘ</button>
               )}
               <div className="brief-tags">{brief.tags.map((t: string) => <span key={t} role="button" tabIndex={0} className="brief-tag" onClick={() => setBadgeInfo({ name: t, desc: "A project tag that helps creatives find this brief.", icon: "🏷", color: "#90caf9" })} style={{ cursor: "pointer" }}>{t}</span>)}</div>

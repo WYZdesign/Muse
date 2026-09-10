@@ -5,6 +5,7 @@ import Image from "next/image";
 import { STRINGS } from "@/lib/strings";
 import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX, FiShield } from "react-icons/fi";
 import Nav from "../components/Nav";
+import { EmptyState } from "../components/EmptyState";
 import { BADGE_COLORS } from "../components/badgeColors";
 import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 import type { Screen, CommunityRule, CommunityMember } from "../components/types";
@@ -34,6 +35,7 @@ export interface CommunityScreenProps {
   unreadNotificationCount?: number;
   setShowReport?: (v: boolean) => void;
   setReportTarget?: (t: { id: number | string; type: string; name: string }) => void;
+  demo?: boolean;
 }
 
 async function shareItem(title: string, url: string, showToast: (m: string) => void) {
@@ -61,6 +63,7 @@ export const CommunityScreen = memo(function CommunityScreen({
   showToast,
   handleImgError,
   apiFetch,
+  demo = false,
 }: CommunityScreenProps) {
   const [showCreate, setShowCreate] = useState(false);
   // Category filter for Groups — the one dimension Network/Feed/BTS already
@@ -161,8 +164,8 @@ export const CommunityScreen = memo(function CommunityScreen({
   };
   const openEventDetail = (ev: any) => { setDetailItem(ev); setDetailType("event"); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_event"] }) }).catch(() => {}); };
 
-  const groups = (liveCommunities?.length ? liveCommunities : COMMUNITIES).filter((c: any) => showNsfw || !c.nsfw);
-  const events = (liveEvents?.length ? liveEvents : EVENTS).filter((e: any) => showNsfw || !e.nsfw);
+  const groups = (liveCommunities?.length ? liveCommunities : (demo ? COMMUNITIES : [])).filter((c: any) => showNsfw || !c.nsfw);
+  const events = (liveEvents?.length ? liveEvents : (demo ? EVENTS : [])).filter((e: any) => showNsfw || !e.nsfw);
   const groupCategories = Array.from(new Set(groups.map((c: any) => c.cat).filter(Boolean))) as string[];
   const filteredGroups = groupCatFilter === "all" ? groups : groups.filter((c: any) => c.cat === groupCatFilter);
 
@@ -356,6 +359,12 @@ export const CommunityScreen = memo(function CommunityScreen({
       )}
 
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
+        {commTab === "groups" && filteredGroups.length === 0 && (
+          <EmptyState icon={<FiUsers size={44} />} title="No communities yet" sub="Communities are starting soon — create one and gather your crew." />
+        )}
+        {commTab === "events" && events.length === 0 && (
+          <EmptyState icon={<FiCalendar size={44} />} title="No events yet" sub="When events are posted they'll appear here." />
+        )}
         {commTab === "groups" && filteredGroups.map((c: any) => (
           <div key={c.id} className="conn-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openGroupDetail(c); } }} style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "column", alignItems: "center", cursor: "pointer", position: "relative" }} onClick={() => openGroupDetail(c)}>
             {/* Top-banner layout (matches Events). Seeded communities have img:"" — a bare

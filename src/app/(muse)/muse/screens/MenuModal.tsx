@@ -653,14 +653,9 @@ export const MenuModal = memo(function MenuModal({
             {unreadCount ? <span className="hamburger-bell-dot">{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
           </button>
         )}
-        {!hamburgerScreen && <div className="hamburger-menu-title">Menu</div>}
-        {/* Activity used to render its own separate .hdr bar (with a second back
-            button that closed the whole menu instead of returning to it) further down
-            inside the scrolling body — a duplicate, misplaced header. Now it uses the
-            same top bar every other hamburger sub-screen uses, centered next to the
-            existing back arrow, just like Settings/Your Profile above. */}
+        {!hamburgerScreen && <div className="hamburger-menu-title" style={{ display: "none" }}>Menu</div>}
         {hamburgerScreen === "activity" && (
-          <div className="hamburger-menu-title" style={{ color: "var(--text)", WebkitTextFillColor: "currentColor", background: "none", animation: "none", fontSize: 17, fontWeight: 700 }}>Activity</div>
+          <div className="hamburger-menu-title" style={{ display: "none" }}>Activity</div>
         )}
         {!hamburgerScreen ? (
           <>
