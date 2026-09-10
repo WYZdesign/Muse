@@ -119,8 +119,9 @@ users sign up into a live Supabase backend, but the experience and the marketing
 - **[CODE — SHIPPED]** `/api/muse/mfa` route wrapping Supabase Auth MFA (TOTP). GET: `mfa-status`,
   `mfa-factors`. POST: `enroll` (returns secret + QR URI), `verify-code` (challenge+verify),
   `challenge`, `unenroll`. Supabase Auth already has TOTP MFA enabled on the project. Client helpers:
-  `mfaStatus`, `mfaEnroll`, `mfaVerify`, `mfaUnenroll` in `lib/api.ts`. **Note:** Settings screen
-  UI toggle still needed (backend complete).
+  `mfaStatus`, `mfaEnroll`, `mfaVerify`, `mfaUnenroll` in `lib/api.ts`. **Settings UI SHIPPED ✅** —
+  `SettingsScreen.tsx` has the full Two-Factor Authentication sub-page (status, enroll with QR +
+  secret, verify, unenroll).
 
 ---
 
@@ -150,6 +151,6 @@ thing:
 1. **Seed real supply** — launch in one city (LA or Chicago) with real Mixers/FB creatives.
 2. **Reduce host-onboarding friction** (3d) — so the money loop closes itself.
 3. **Ship video/voice pre-meet** (4d) — needs Daily.co API key.
-4. **Wire notification preferences persistence** — toggles currently cosmetic.
-5. **Settings 2FA toggle UI** — backend done, needs frontend.
+4. ✅ **Notification preferences persistence — SHIPPED** — persisted server-side (`save-preferences`) and enforced (gates both email + push via `pushToProfile`/`emailProfile`).
+5. ✅ **Settings 2FA toggle UI — SHIPPED** — full TOTP setup UI live in `SettingsScreen.tsx`.
 6. **Split `page.tsx` monolith** — architectural debt, blocks maintainability.

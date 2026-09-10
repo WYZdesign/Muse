@@ -1152,7 +1152,7 @@ Everything below is confirmed in-scope now (user explicitly overrode previous co
 - Currently: mutual match OR shared community = can message
 - **NEED:** Separate "Message Requests" inbox for non-matched users (filterable: pending/accepted/declined)
 - **NEED:** UI to accept/decline/block from request inbox
-- **NEED:** Push/email notification for new message requests
+- **SHIPPED ✅:** New message requests send both push (`pushToProfile`) and email (`emailProfile`) — see `messaging.ts`.
 - Backend: `muse_messages` can accept messages from non-matched (same-community check exists), but no request-state tracking
 
 **7. Video/voice chat**
@@ -1221,7 +1221,7 @@ Everything below is confirmed in-scope now (user explicitly overrode previous co
 - Current: `muse_notifications` table, `get.ts` `notifications` type, `MenuModal.tsx` Notifications tab
 - **NEED:** Group by type (matches, messages, bookings, community, safety, system)
 - **NEED:** "Mark all read" per-group + global
-- **NEED:** Push preferences per-category (already in `preferences.notifications` but not fully wired)
+- **SHIPPED ✅:** Push preferences per-category — persisted server-side and enforced (`pushToProfile` checks `preferences.notifications.push`; email pref gating also live).
 - **NEED:** In-app notification bell with unread count badge (header/nav)
 
 ---
@@ -1252,7 +1252,7 @@ Everything below is confirmed in-scope now (user explicitly overrode previous co
 
 **17. Quest system polish**
 - Current: `questEngine.ts` with tiers, rewards, streak tracking, daily/weekly/seasonal
-- **NEED:** Quest notifications (push when claimable, when new daily available)
+- **SHIPPED ✅:** Quest notifications — push fires when quests become claimable and on completion (`pushToProfile` in `quests.ts`).
 - **NEED:** Quest progress widget on Profile (shows active quests + progress)
 - **NEED:** Seasonal quest lines (themed, limited-time, exclusive rewards)
 - **NEED:** Social quests: "Match with 3 people this week", "Host a collab session"

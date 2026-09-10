@@ -2,6 +2,8 @@
 
 > Single source of truth for where Muse stands today. Boardroom-ready. Updated after each major session.
 
+> **Corrections (audited) — 2026-09-10:** Several entries below were stale and understated shipped work. Corrected: email notifications are ~21 wired call sites via `src/lib/email.ts` (Resend), gated on `RESEND_API_KEY` (not "1 of 12"); push has a real server-side sender in `src/lib/push.ts` (`sendPushToUser`/`pushToProfile`), gated on VAPID keys (not "no sender"); the referral reward is wired in `src/app/api/webhooks/stripe/route.ts` (`grantReferralReward` on `checkout.session.completed`); boosts have a full inventory/duration/expiry model with pay-per-boost checkout and a webhook-gated grant (not "cosmetic"); `bootstrapData()` does fetch communities/sessions; mark-all-read persists server-side (`mark-all-notifications-read`); data export + delete-account UI, gallery zoom/share/download (`components/Lightbox.tsx`), MFA/2FA backend + Settings UI, and enforced notification prefs are all shipped. Commission is 15% blended (7% host + 8% buyer).
+
 ---
 
 > **What is Muse?** A professional creative-networking platform — photographers, models, filmmakers, musicians, designers, artists — for collaboration, booking, and portfolio work. Explicitly not a dating app. Live at muse.wyzdesign.com.
@@ -10,7 +12,7 @@
 
 ## TL;DR
 
-**Feature-complete. Not market-complete.** Muse is a professional creative-networking platform with a full booking/escrow/review loop, 15% marketplace take (7% host + 8% buyer via Stripe Connect), $9.99/mo Pro and $29.99/mo Studio subscriptions, 3-tier pay-per-boost, MFA/2FA, live server-side discovery, and 8 themes. 180+ API actions, 15 DB migrations, 285 tests passing. The gap is real supply (no real users transacting yet), non-functional email/push notifications, and demo scaffolding that must be gated before open beta. The moat is trust data that only a running marketplace accumulates.
+**Feature-complete. Not market-complete.** Muse is a professional creative-networking platform with a full booking/escrow/review loop, 15% marketplace take (7% host + 8% buyer via Stripe Connect), $9.99/mo Pro and $29.99/mo Studio subscriptions, 3-tier pay-per-boost, MFA/2FA, live server-side discovery, and 8 themes. 180+ API actions, 15 DB migrations, 285 tests passing. The gap is real supply (no real users transacting yet), notification delivery that is fully wired but gated on external keys (`RESEND_API_KEY` + DNS, VAPID), and demo scaffolding that must be gated before open beta. The moat is trust data that only a running marketplace accumulates.
 
 ---
 
@@ -34,7 +36,7 @@
 ### Revenue system
 - **Subscriptions** — Muse Pro ($9.99/mo or $79.99/yr), Muse Studio ($29.99/mo) — both live Stripe prices
 - **Marketplace take** — 15% blended (7% host commission + 8% buyer service fee), escrowed via Stripe Connect
-- **Boosts** — 3-tier pricing configured in Stripe ($3.99/24h, $9.99/72h, $19.99/7d) + Pro weekly free boost + quest-granted inventory. **Note: server-side paywall enforcement not yet wired — pricing is live but paywall is cosmetic only.**
+- **Boosts** — full inventory/duration/expiry model (`boost_inventory` + `boost_expires_at`, migration 013) + 3-tier pay-per-boost checkout ($3.99/24h, $9.99/72h, $19.99/7d) + Pro weekly free boost + quest-granted inventory. Webhook-gated grant (`boost-purchase-complete`); server-side ranked discovery surfaces boosted profiles first.
 - **Refund/dispute queue** — admin-resolve-refund with audit log
 
 ### Trust & safety
@@ -46,6 +48,14 @@
 - **Moderation** — AWS Rekognition scans on every upload, AI triage, reports with outcomes, strikes + auto-suspension (threshold: 3)
 - **Blocking** — full block/unblock/mute system, bidirectional enforcement in Discover + matches + messaging
 - **MFA/2FA** — Supabase Auth TOTP (enroll/verify/challenge/unenroll), Settings UI live
+
+### Notifications & rewards
+- **Email** — `src/lib/email.ts` (Resend), ~21 wired call sites (signup, match, message, booking, referral, verification, report, safety escalation, etc.). Fail-open; gated on `RESEND_API_KEY` + `wyzdesign.com` DNS.
+- **Push** — `src/lib/push.ts` (web-push/VAPID): `sendPushToUser` + `pushToProfile`, wired for match/message/request/accept, quest, and booking events. `pushToProfile` honors notification prefs. Gated on VAPID keys.
+- **Notification prefs** — persisted server-side (`save-preferences`) and enforced (gates both email and push).
+- **Referral reward** — `grantReferralReward()` in `src/app/api/webhooks/stripe/route.ts` on `checkout.session.completed`; idempotent, grants both sides a free month.
+- **Mark-all-read** — persists server-side via `mark-all-notifications-read`.
+- **Settings** — data export + delete-account UI shipped; gallery zoom/share/download in `components/Lightbox.tsx`.
 
 ### Infrastructure
 - **15 DB migrations** applied (001–015, all verified on live Supabase)
@@ -80,7 +90,7 @@
 - **Capacitor wrappers** exist for iOS and Android (`capacitor.config.ts`, `android/`, `ios/` directories)
 - **RevenueCat** integration stub configured but API keys are empty
 - **App store submission** is explicitly a "separate later effort" per HANDOVER_APP.md — open beta runs as web/PWA first
-- Native push notifications are a deliberate no-op; web push (VAPID) is the current target
+- Native push notifications are a deliberate no-op; **web push (VAPID) is shipped** via `src/lib/push.ts` (`sendPushToUser`/`pushToProfile`), gated on VAPID keys being configured
 
 ---
 
@@ -88,9 +98,8 @@
 
 | Item | Blocker | What's needed |
 |------|---------|---------------|
-| Push notifications | No VAPID sender | Backend stores subscriptions but no server-side dispatch. Users get zero push. |
-| Email notifications | Only waitlist sends | 11 of 12 email events (signup, match, booking, etc.) are silent. |
-| Referral free-month reward | Stripe webhook gap | `redeem-reward` never triggered by webhook. Referred users never get free month. |
+| Push notifications | VAPID keys not set in Vercel | Sender shipped (`src/lib/push.ts` — `sendPushToUser`/`pushToProfile`); dispatch is live once VAPID keys are configured. |
+| Email notifications | `RESEND_API_KEY` + DNS | ~21 call sites wired through `src/lib/email.ts` (Resend); all fail-open and activate once the key + `wyzdesign.com` domain are set. |
 | Legal counsel sign-off | Not started | ToS, Privacy, DMCA, age-verification language need review before open beta. |
 | Video/voice chat | No Daily.co API key | Provider key + WebRTC integration |
 | NSFW monetization | Product decision | Strategic clarity on fine-art vs explicit |
@@ -100,24 +109,24 @@
 
 ---
 
-## What's partially built (backend done, frontend missing)
+## Previously partial — now shipped / remaining
 
 | Item | Backend status | Frontend needed |
 |------|---------------|-----------------|
-| Community/Sessions live data | API endpoints exist | `bootstrapData()` never fetches them; screens show hardcoded demo arrays |
-| Mark-all-read persistence | DB writes on every event | "Mark as read" only flips React state, never writes back to `muse_notifications` |
-| Nested forum threading | Migration 006 ready (`parent_reply_id`) | Real threading UI needed (currently flat) |
-| Booking reminders | ✅ Endpoint + SessionsScreen card | **Done** — move to "What's built" |
+| Community/Sessions live data | ✅ SHIPPED | `bootstrapData()` fetches `communities` + `sessions` and writes `liveCommunities`/`liveSessions` |
+| Mark-all-read persistence | ✅ SHIPPED | `mark-all-notifications-read` persists server-side; the UI writes back to `muse_notifications` |
+| Nested forum threading | Migration 006 ready (`parent_reply_id`) | Real threading UI still needed (currently flat) |
+| Booking reminders | ✅ SHIPPED | Endpoint + `SessionsScreen` "Upcoming shoots" card |
 
 ---
 
 ## Tech debt (known, blocking or near-blocking)
 
 - **`page.tsx` monolith** — ~3,252 lines, ~100+ `useState`, 237 `setShow`. Extraction plan exists (4 phases) but deferred. This is the root of most future pain — every new feature makes it worse. Blocks maintainability and parallel development. Should happen before adding new features.
-- **Demo scaffolding still live** — fake matches (30% random inflation), simulated chat replies, fake social connect, hardcoded profiles/briefs/sessions in `types.ts`. Real discovery works via `discover-ranked`, but Community and Sessions screens still show entirely hardcoded demo arrays. Must be gated or removed before open beta.
-- **Email system 1/12 wired** — only waitlist signup sends email. 11 events (signup welcome, new match, booking confirm, etc.) are silent.
-- **Push notifications non-functional** — backend stores VAPID subscriptions but no server-side sender dispatches. Native (Capacitor) push is a deliberate no-op.
-- **Notification mark-read is client-only** — resets on every page reload. Never writes back to `muse_notifications`.
+- **Demo scaffolding still live** — fake matches (30% random inflation), simulated chat replies, fake social connect, hardcoded profiles/briefs in `types.ts`. Real discovery works via `discover-ranked`, and `bootstrapData()` now hydrates Community/Sessions from live rows; remaining demo scaffolding must still be gated or removed before open beta.
+- **Email delivery gated on key** — ~21 call sites wired through `src/lib/email.ts` (signup, match, message, booking, referral, verification, report, etc.). Sends are fail-open and go live when `RESEND_API_KEY` + `wyzdesign.com` DNS are configured.
+- **Push delivery gated on keys** — `src/lib/push.ts` (`sendPushToUser`/`pushToProfile`) dispatches web push; activates once VAPID keys are set. Native (Capacitor) push is a deliberate no-op.
+- **Notification mark-read — SHIPPED** — `mark-all-notifications-read` persists to `muse_notifications` server-side.
 - **25 SyntaxWarnings** — invalid escape sequences in Windows paths (benign).
 
 ---
@@ -135,7 +144,7 @@
 | `page.tsx` useState | ~100+ |
 | Route files | 12 (api/muse/, api/cron/, api/webhooks/) |
 | Stripe prices live | 3 (Pro monthly, Pro annual, Studio monthly) |
-| Boost tiers | 3 ($3.99/$9.99/$19.99) — pricing configured, paywall not enforced |
+| Boost tiers | 3 ($3.99/$9.99/$19.99) — full inventory/duration/expiry model, webhook-gated |
 
 ---
 
@@ -144,16 +153,22 @@
 ### Must-do before open beta
 1. **Seed real supply** — 20 creatives from FD Mixers/FB groups (ops, not code)
 2. **Legal counsel sign-off** — ToS, Privacy, DMCA, age-verification language review
-3. **Gate or remove demo scaffolding** — fake matches, simulated chat, fake social connect, hardcoded Community/Sessions data
-4. **Wire email notifications** — 11 silent events need `sendEmail()` calls (~1 hour, biggest trust win)
-5. **Fix referral free-month reward** — Stripe webhook never triggers `redeem-reward`
+3. **Gate or remove remaining demo scaffolding** — fake matches, simulated chat, fake social connect, hardcoded profiles/briefs
+4. **Set notification keys** — `RESEND_API_KEY` (+ `wyzdesign.com` DNS) and VAPID keys in Vercel; the code is fully wired and fail-open
+
+### Shipped (previously listed here)
+- ✅ **Email notifications** — ~21 call sites wired (`src/lib/email.ts`, Resend)
+- ✅ **Push notifications** — `src/lib/push.ts` web-push sender (`sendPushToUser`/`pushToProfile`)
+- ✅ **Referral free-month reward** — `grantReferralReward()` on `checkout.session.completed` in `src/app/api/webhooks/stripe/route.ts`
+- ✅ **Community/Sessions live data** — `bootstrapData()` fetches both
+- ✅ **Mark-all-read persistence** — `mark-all-notifications-read` server-side
+- ✅ **Boosts** — full inventory/duration/expiry + pay-per-boost checkout + webhook-gated grant
+- ✅ **MFA/2FA** — backend + Settings UI
+- ✅ **Notification prefs** — persisted + enforced (gates email + push)
 
 ### High-value, low-effort
-6. **Push notification sender** — VAPID dispatch for match/message/booking events
-7. **Community/Sessions live data** — `bootstrapData()` needs to fetch from API instead of hardcoded arrays
-8. **Mark-all-read persistence** — write back to `muse_notifications` on mark-read
-9. **Split `page.tsx`** — architectural debt, blocks parallel development. Should happen before new features.
+5. **Split `page.tsx`** — architectural debt, blocks parallel development. Should happen before new features.
 
 ### When unblocked
-10. **Daily.co video/voice chat** — when API key is obtained
-11. **Counsel review** — liability cap, arbitration, CCPA/GDPR exposure
+6. **Daily.co video/voice chat** — when API key is obtained
+7. **Counsel review** — liability cap, arbitration, CCPA/GDPR exposure

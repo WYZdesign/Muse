@@ -23,7 +23,7 @@ Read everything below, form your own opinions, and answer with (a) an honest rea
 
 ## 1. What Muse is
 
-A professional creative-networking platform (photographers, models, filmmakers, musicians, designers, artists) for collaboration, paid bookings, and portfolio work. Explicitly **not** a dating app. Adult content exists but is age-gated and hidden by default. Business model: 5% platform commission on bookings + a `$9.99/mo` Muse Pro subscription.
+A professional creative-networking platform (photographers, models, filmmakers, musicians, designers, artists) for collaboration, paid bookings, and portfolio work. Explicitly **not** a dating app. Adult content exists but is age-gated and hidden by default. Business model: 15% blended marketplace take on bookings (7% host commission + 8% buyer service fee, via Stripe Connect) + a `$9.99/mo` Muse Pro subscription.
 
 ---
 
@@ -98,8 +98,8 @@ A large body of work was completed across this session. Key milestones, in rough
 3. **No Sentry** — `errorTracker` does `sendBeacon` to `/api/muse action=track-error` → `muse_events_log`, but there's no alerting/dashboard.
 4. **No staging environment** — the operator has been testing in production.
 5. **No product analytics dashboard** — `trackEvent()` fires events into `muse_events_log` (screen_view, signup, swipe, match, message_sent) but nothing consumes them.
-6. **No push notifications confirmed** — VAPID is referenced but not end-to-end verified.
-7. **Discovery is static** — rules + embeddings seeded once; no live LLM-based ranking/re-ranking.
+6. **Push notifications** — a real server-side sender is shipped (`src/lib/push.ts`: `sendPushToUser`/`pushToProfile`, web-push/VAPID) and wired for match/message/request/accept/quest/booking events; delivery is gated on VAPID keys being set. (Native Capacitor push remains a deliberate no-op.)
+7. **Discovery is live, not static** — server-side ranked discovery (`discover-ranked`) scores real `muse_profiles` rows (professional fit + boost + complementary-side), replacing the old client-side scoring on demo data. No live LLM-based re-ranking yet.
 8. **Missing chat UX** — no read receipts, typing indicators, or message delivery status.
 9. **No load testing** — unknown concurrency ceiling.
 10. **Test coverage** — 36 unit + 14 E2E smoke; no route-level integration tests yet.

@@ -61,7 +61,7 @@ Four pages are live and drafted to be near-final:
 
 | Page | Path | Key content |
 |------|------|-------------|
-| Terms of Service | `/terms` | 20 sections: eligibility (18+), content license, prohibited content (CSAM zero-tolerance), NSFW age-gating, age verification (TX/LA/AR/UT), payments (5% commission), DMCA, moderation, suspension, IP, disclaimer, liability cap ($100 or 12-mo fees), indemnification, arbitration (AAA), governing law (Delaware) |
+| Terms of Service | `/terms` | 20 sections: eligibility (18+), content license, prohibited content (CSAM zero-tolerance), NSFW age-gating, age verification (TX/LA/AR/UT), payments (15% blended marketplace take: 7% host commission + 8% buyer service fee), DMCA, moderation, suspension, IP, disclaimer, liability cap ($100 or 12-mo fees), indemnification, arbitration (AAA), governing law (Delaware) |
 | Privacy Policy | `/privacy` | Data collected, usage, sharing, retention, deletion |
 | DMCA | `/dmca` | Takedown + counter-notice procedure |
 | Safety | `/safety` | Community guidelines + reporting |

@@ -166,7 +166,11 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [threadId, setThreadId] = useState<number | null>(null);
   const [threadSort, setThreadSort] = useState<"best" | "new">("best");
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyToId, setReplyToId] = useState<string | null>(null);
   const [commentVotes, setCommentVotes] = useState<Record<string, "up" | "down" | null>>({});
+  // Real, DB-backed replies for the open thread (nested via parentReplyId).
+  // Falls back to a post's inline `comments` for demo/seed posts.
+  const [threadReplies, setThreadReplies] = useState<Record<string, any[]>>({});
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
   const [filterSections, setFilterSections] = useState<Record<string, boolean>>({ experience: false, sort: false, rate: false, skills: false, looking: false });
   const iAmIndustry = viewerSide(currentUser?.type) === "industry";
@@ -326,28 +330,70 @@ export const NetworkScreen = memo(function NetworkScreen({
   const threadPost =
     threadId != null ? filteredForum.find((p) => p.id === threadId) || null : null;
 
-  function addComment(postId: number) {
+  // Open a post's thread and lazily load its real replies (nested via
+  // parentReplyId/depth). Demo/numeric posts keep using inline `comments`.
+  function openThread(postId: any) {
+    setThreadId(postId);
+    setReplyTo(null);
+    setReplyToId(null);
+    const key = String(postId);
+    if (typeof postId === "number" || threadReplies[key]) return;
+    apiFetch("/api/muse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "forum", type: "get-replies", postId }),
+    })
+      .then((r: any) => (r.ok ? r.json() : null))
+      .then((d: any) => {
+        if (!Array.isArray(d?.replies)) return;
+        setThreadReplies((prev) => {
+          const serverIds = new Set(d.replies.map((r: any) => String(r.id)));
+          const optimistic = (prev[key] || []).filter(
+            (r: any) => String(r.id).startsWith("tmp-") && !serverIds.has(String(r.id))
+          );
+          return { ...prev, [key]: [...d.replies, ...optimistic] };
+        });
+      })
+      .catch(() => {});
+  }
+
+  function addComment(postId: any, parentReplyId: string | null = null) {
     const text = (commentTexts[postId] || "").trim();
     if (!text) return;
-    const newComment = { author: currentUser.name || "You", text };
-    const addC = (p: any) => (p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p);
-    const removeC = (p: any) => (p.id === postId ? { ...p, comments: p.comments.filter((c: any) => c !== newComment) } : p);
+    const key = String(postId);
+    const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const newComment = {
+      id: tempId,
+      author: currentUser.name || "You",
+      avatar: currentUser.avatar || "",
+      text,
+      time: "Just now",
+      parentReplyId: parentReplyId || null,
+      depth: 0,
+      isOwn: true,
+    };
+    const addC = (p: any) => (p.id === postId ? { ...p, comments: [...(p.comments || []), newComment] } : p);
+    const removeC = (p: any) => (p.id === postId ? { ...p, comments: (p.comments || []).filter((c: any) => c.id !== tempId) } : p);
     // Same fallback-seeding fix as handleVote — without it, replying to a seed post
     // showed "Comment added" but the comment never appeared.
     setLiveForum?.((prev) => (prev && prev.length ? prev.map(addC) : (demo ? FORUM_POSTS.map(addC) : prev)));
     setForumPosts((prev) => prev.map(addC));
+    setThreadReplies((prev) => (prev[key] ? { ...prev, [key]: [...prev[key], newComment] } : prev));
     setCommentTexts((prev) => ({ ...prev, [postId]: "" }));
+    setReplyTo(null);
+    setReplyToId(null);
     if (typeof postId === "number" && !liveForum?.length) { showToast("Comment added"); return; }
     apiFetch("/api/muse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "forum", type: "reply", postId, text }),
+      body: JSON.stringify({ action: "forum", type: "reply", postId, text, parentReplyId: parentReplyId || undefined }),
     }).then((r: any) => {
       if (!r.ok) throw new Error("failed");
-      showToast("Comment added");
+      showToast(parentReplyId ? "Reply added" : "Comment added");
     }).catch(() => {
       setLiveForum?.((prev) => (prev && prev.length ? prev.map(removeC) : prev));
       setForumPosts((prev) => prev.map(removeC));
+      setThreadReplies((prev) => (prev[key] ? { ...prev, [key]: prev[key].filter((c: any) => c.id !== tempId) } : prev));
       showToast("Failed to post comment");
     });
   }
@@ -990,8 +1036,8 @@ export const NetworkScreen = memo(function NetworkScreen({
                       role="button"
                       tabIndex={0}
                       style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4, cursor: "pointer" }}
-                      onClick={() => { setThreadId(post.id); setReplyTo(null); }}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setThreadId(post.id); setReplyTo(null); } }}
+                      onClick={() => { openThread(post.id); }}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openThread(post.id); } }}
                     >
                       {post.title}
                     </div>
@@ -1002,8 +1048,8 @@ export const NetworkScreen = memo(function NetworkScreen({
                       role="button"
                       tabIndex={0}
                       style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.4, cursor: "pointer" }}
-                      onClick={() => { setThreadId(post.id); setReplyTo(null); }}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setThreadId(post.id); setReplyTo(null); } }}
+                      onClick={() => { openThread(post.id); }}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openThread(post.id); } }}
                     >
                       {post.body.slice(0, 120)}
                       {post.body.length > 120 ? "..." : ""}
@@ -1147,7 +1193,7 @@ export const NetworkScreen = memo(function NetworkScreen({
         {threadPost && createPortal(
           <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
             <div className="modal-header">
-              <button className="modal-back" onClick={() => { setThreadId(null); setReplyTo(null); }} aria-label="Back">
+              <button className="modal-back" onClick={() => { setThreadId(null); setReplyTo(null); setReplyToId(null); }} aria-label="Back">
                 <FiArrowLeft size={20} />
               </button>
               <div className="modal-title">Thread</div>
@@ -1191,7 +1237,7 @@ export const NetworkScreen = memo(function NetworkScreen({
 
               {/* COMMENTS */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 12, marginBottom: 10 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)" }}>{threadPost.comments.length} {threadPost.comments.length === 1 ? "comment" : "comments"}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)" }}>{(() => { const n = threadReplies[String(threadPost.id)]?.length || threadPost.comments.length; return `${n} ${n === 1 ? "comment" : "comments"}`; })()}</div>
                 <div style={{ display: "flex", gap: 6 }}>
                   {(["best", "new"] as const).map((s) => (
                     <div key={s} role="tab" aria-selected={threadSort === s} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setThreadSort(s); } }} className={"conn-tab-sub" + (threadSort === s ? " active" : "")} onClick={() => setThreadSort(s)} style={{ cursor: "pointer", fontSize: 11, padding: "4px 10px" }}>
@@ -1201,47 +1247,73 @@ export const NetworkScreen = memo(function NetworkScreen({
                 </div>
               </div>
 
-              {(threadSort === "new" ? [...threadPost.comments].reverse() : threadPost.comments).map((c: any, i: number) => {
-                const key = `${threadPost.id}:${threadSort === "new" ? threadPost.comments.length - 1 - i : i}`;
-                const cv = commentVotes[key];
-                return (
-                  <div key={key} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "10px 12px", marginBottom: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <div style={{ width: 22, height: 22, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "#0a0612" }}>
-                        {(c.author || "?").charAt(0).toUpperCase()}
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text2)" }}>{c.author}</span>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
-                        <button style={{ background: "none", border: "none", color: cv === "up" ? "#FFD700" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [key]: p[key] === "up" ? null : "up" }))}>▲</button>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>{cv === "up" ? 2 : cv === "down" ? 0 : 1}</span>
-                        <button style={{ background: "none", border: "none", color: cv === "down" ? "#ff6b6b" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [key]: p[key] === "down" ? null : "down" }))}>▼</button>
-                      </div>
+              {(() => {
+                const tKey = String(threadPost.id);
+                const source: any[] = threadReplies[tKey]?.length ? threadReplies[tKey] : (threadPost.comments || []);
+                if (source.length === 0) {
+                  return (
+                    <div style={{ textAlign: "center", padding: "20px 0", color: "var(--muted)", fontSize: 12, fontStyle: "italic" }}>
+                      No comments yet — start the conversation.
                     </div>
-                    <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5, marginBottom: 6 }}>{c.text}</div>
-                    <button
-                      style={{ background: "none", border: "none", color: "var(--gold)", fontSize: 11, fontWeight: 700, cursor: "pointer", padding: 0 }}
-                      onClick={() => {
-                        setReplyTo(c.author);
-                        setCommentTexts((prev) => ({ ...prev, [threadPost.id]: prev[threadPost.id] || `@${c.author} ` }));
-                      }}
-                    >
-                      Reply
-                    </button>
-                  </div>
-                );
-              })}
-              {threadPost.comments.length === 0 && (
-                <div style={{ textAlign: "center", padding: "20px 0", color: "var(--muted)", fontSize: 12, fontStyle: "italic" }}>
-                  No comments yet — start the conversation.
-                </div>
-              )}
+                  );
+                }
+                // Nest by parentReplyId (data stays flat/correct server-side; only
+                // presentation is indented). Level is derived from the tree so it
+                // stays right even if `depth` is missing, capped at 3 levels.
+                const nodes = new Map<string, any>();
+                source.forEach((r: any, i: number) => {
+                  const rk = r.id != null ? String(r.id) : `idx-${i}`;
+                  nodes.set(rk, { ...r, __key: rk, children: [] });
+                });
+                const roots: any[] = [];
+                nodes.forEach((node) => {
+                  const pid = node.parentReplyId != null ? String(node.parentReplyId) : null;
+                  if (pid && nodes.has(pid) && pid !== node.__key) nodes.get(pid).children.push(node);
+                  else roots.push(node);
+                });
+                if (threadSort === "new") roots.reverse();
+                const renderReply = (node: any, level: number): React.ReactNode => {
+                  const cvKey = `${threadPost.id}:${node.__key}`;
+                  const cv = commentVotes[cvKey];
+                  return (
+                    <div key={node.__key} style={{ marginLeft: Math.min(level, 3) * 16 }}>
+                      <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "10px 12px", marginBottom: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <div style={{ width: 22, height: 22, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "#0a0612" }}>
+                            {(node.author || "?").charAt(0).toUpperCase()}
+                          </div>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text2)" }}>{node.author}</span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
+                            <button style={{ background: "none", border: "none", color: cv === "up" ? "#FFD700" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [cvKey]: p[cvKey] === "up" ? null : "up" }))}>▲</button>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>{cv === "up" ? 2 : cv === "down" ? 0 : 1}</span>
+                            <button style={{ background: "none", border: "none", color: cv === "down" ? "#ff6b6b" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [cvKey]: p[cvKey] === "down" ? null : "down" }))}>▼</button>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5, marginBottom: 6 }}>{node.text}</div>
+                        <button
+                          style={{ background: "none", border: "none", color: "var(--gold)", fontSize: 11, fontWeight: 700, cursor: "pointer", padding: 0 }}
+                          onClick={() => {
+                            setReplyTo(node.author);
+                            setReplyToId(node.id != null ? String(node.id) : null);
+                            setCommentTexts((prev) => ({ ...prev, [threadPost.id]: prev[threadPost.id] || `@${node.author} ` }));
+                          }}
+                        >
+                          Reply
+                        </button>
+                      </div>
+                      {node.children.length > 0 && node.children.map((child: any) => renderReply(child, level + 1))}
+                    </div>
+                  );
+                };
+                return roots.map((r) => renderReply(r, 0));
+              })()}
 
               {/* COMPOSER */}
               <div style={{ marginTop: 14 }}>
                 {replyTo && (
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", borderRadius: 8, padding: "6px 10px", marginBottom: 8 }}>
                     <span style={{ fontSize: 11, color: "var(--gold)" }}>Replying to @{replyTo}</span>
-                    <button style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12 }} onClick={() => setReplyTo(null)}>✕</button>
+                    <button style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12 }} onClick={() => { setReplyTo(null); setReplyToId(null); }}>✕</button>
                   </div>
                 )}
                 <input
@@ -1249,11 +1321,11 @@ export const NetworkScreen = memo(function NetworkScreen({
                   placeholder="Add a comment…"
                   value={commentTexts[threadPost.id] || ""}
                   onChange={(e) => setCommentTexts((prev) => ({ ...prev, [threadPost.id]: e.target.value }))}
-                  onKeyDown={(e) => { if (e.key === "Enter") addComment(threadPost.id); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") addComment(threadPost.id, replyToId); }}
                   style={{ width: "100%", fontSize: 13, padding: "10px 12px", marginBottom: 8 }}
                 />
-                <button className="btn btn-gold" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 10 }} onClick={() => addComment(threadPost.id)}>
-                  Comment
+                <button className="btn btn-gold" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 10 }} onClick={() => addComment(threadPost.id, replyToId)}>
+                  {replyToId ? "Reply" : "Comment"}
                 </button>
               </div>
             </div>

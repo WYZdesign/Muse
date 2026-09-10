@@ -3,7 +3,7 @@
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
 import { STRINGS } from "@/lib/strings";
-import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX, FiShield } from "react-icons/fi";
+import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX, FiShield, FiUserPlus } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { EmptyState } from "../components/EmptyState";
 import { BADGE_COLORS } from "../components/badgeColors";
@@ -36,6 +36,7 @@ export interface CommunityScreenProps {
   unreadNotificationCount?: number;
   setShowReport?: (v: boolean) => void;
   setReportTarget?: (t: { id: number | string; type: string; name: string }) => void;
+  currentUser?: any;
   demo?: boolean;
 }
 
@@ -65,6 +66,7 @@ export const CommunityScreen = memo(function CommunityScreen({
   showToast,
   handleImgError,
   apiFetch,
+  currentUser,
   demo = false,
 }: CommunityScreenProps) {
   const [showCreate, setShowCreate] = useState(false);
@@ -82,6 +84,10 @@ export const CommunityScreen = memo(function CommunityScreen({
   const [groupMembers, setGroupMembers] = useState<CommunityMember[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
+  // Moderation state — join-request queue and per-member action menu.
+  const [joinRequests, setJoinRequests] = useState<any[]>([]);
+  const [memberMenuFor, setMemberMenuFor] = useState<string | null>(null);
+  const [memberActionId, setMemberActionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (screen !== "community") return;
@@ -155,6 +161,8 @@ export const CommunityScreen = memo(function CommunityScreen({
     // Real member roster (with role) only exists for real, DB-backed groups —
     // the demo/fallback dataset has no real members to fetch.
     setGroupMembers([]);
+    setJoinRequests([]);
+    setMemberMenuFor(null);
     if (UUID_RE.test(String(c.id))) {
       setMembersLoading(true);
       apiFetch("/api/muse?type=community-members&communityId=" + c.id)
@@ -162,9 +170,79 @@ export const CommunityScreen = memo(function CommunityScreen({
         .then(d => setGroupMembers(Array.isArray(d.members) ? d.members : []))
         .catch(() => setGroupMembers([]))
         .finally(() => setMembersLoading(false));
+      // Server enforces admin/mod access and returns [] for everyone else.
+      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-community-join-requests", communityId: c.id }) })
+        .then(r => r.ok ? r.json() : { requests: [] })
+        .then(d => setJoinRequests(Array.isArray(d.requests) ? d.requests.filter((q: any) => q.status === "pending") : []))
+        .catch(() => setJoinRequests([]));
     }
   };
   const openEventDetail = (ev: any) => { setDetailItem(ev); setDetailType("event"); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_event"] }) }).catch(() => {}); };
+
+  // ─── MODERATION ───
+  // Owner is the community creator (muse_communities.created_by === profile id);
+  // role comes from the real member roster. Both are optional fields, so the
+  // checks are defensive.
+  const myMembership = detailType === "group" && detailItem
+    ? groupMembers.find((m) => String(m.user_id) === String(currentUser?.id))
+    : undefined;
+  const isOwner = !!detailItem && !!currentUser && String(detailItem.created_by || "") === String(currentUser.id);
+  const myRole = myMembership?.role || (isOwner ? "admin" : null);
+  const canManage = myRole === "admin" || myRole === "moderator";
+
+  const memberAction = async (kind: "kick" | "ban" | "mute" | "make-mod" | "remove-mod", target: CommunityMember) => {
+    if (!detailItem) return;
+    const communityId = detailItem.id;
+    const targetUserId = target.user_id;
+    const prevMembers = groupMembers;
+    setMemberMenuFor(null);
+    setMemberActionId(targetUserId);
+    // Optimistic local update (mute changes no roster field, so it's toast-only).
+    if (kind === "kick" || kind === "ban") setGroupMembers((prev) => prev.filter((x) => x.user_id !== targetUserId));
+    else if (kind === "make-mod") setGroupMembers((prev) => prev.map((x) => x.user_id === targetUserId ? { ...x, role: "moderator" as const } : x));
+    else if (kind === "remove-mod") setGroupMembers((prev) => prev.map((x) => x.user_id === targetUserId ? { ...x, role: "member" as const } : x));
+    const actionMap: Record<string, string> = {
+      kick: "kick-community-member",
+      ban: "ban-community-member",
+      mute: "mute-community-member",
+      "make-mod": "set-community-role",
+      "remove-mod": "set-community-role",
+    };
+    const body: any = { action: actionMap[kind], communityId, targetUserId };
+    if (kind === "ban") body.reason = "Removed by moderator";
+    if (kind === "mute") body.duration = 60 * 24;
+    if (kind === "make-mod") body.role = "moderator";
+    if (kind === "remove-mod") body.role = "member";
+    try {
+      const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!r.ok) throw new Error("failed");
+      if (kind === "kick" || kind === "ban") setDetailItem((d: any) => d ? { ...d, members: Math.max(0, (d.members || 0) - 1) } : d);
+      showToast(kind === "kick" ? "Member kicked" : kind === "ban" ? "Member banned" : kind === "mute" ? "Member muted for 24h" : kind === "make-mod" ? "Member is now a moderator" : "Moderator removed");
+    } catch {
+      setGroupMembers(prevMembers);
+      showToast("Couldn't update member — try again");
+    } finally {
+      setMemberActionId(null);
+    }
+  };
+
+  const handleJoinRequest = async (req: any, approve: boolean) => {
+    if (!detailItem) return;
+    const prevRequests = joinRequests;
+    setJoinRequests((prev) => prev.filter((q) => q.id !== req.id));
+    try {
+      const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: approve ? "approve-community-join-request" : "deny-community-join-request", communityId: detailItem.id, requestId: req.id }) });
+      if (!r.ok) throw new Error("failed");
+      if (approve) {
+        setGroupMembers((prev) => prev.some((x) => x.user_id === req.user_id) ? prev : [...prev, { user_id: req.user_id, user_name: req.user_name, user_avatar: req.user_avatar, role: "member" as const }]);
+        setDetailItem((d: any) => d ? { ...d, members: (d.members || 0) + 1 } : d);
+      }
+      showToast(approve ? "Request approved" : "Request declined");
+    } catch {
+      setJoinRequests(prevRequests);
+      showToast("Couldn't process request — try again");
+    }
+  };
 
   const groups = (liveCommunities?.length ? liveCommunities : (demo ? COMMUNITIES : [])).filter((c: any) => showNsfw || !c.nsfw);
   const events = (liveEvents?.length ? liveEvents : (demo ? EVENTS : [])).filter((e: any) => showNsfw || !e.nsfw);
