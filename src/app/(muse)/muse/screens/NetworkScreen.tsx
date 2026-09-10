@@ -362,6 +362,28 @@ export const NetworkScreen = memo(function NetworkScreen({
     if (!text) return;
     const key = String(postId);
     const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    // Derive depth from parent's position in the tree (capped at 3)
+    let depth = 0;
+    if (parentReplyId) {
+      const existing = threadReplies[key] || [];
+      const findDepth = (list: any[], targetId: string, d: number): number | null => {
+        for (const r of list) {
+          if (String(r.id) === targetId) return d;
+          if (r.children?.length) {
+            const found = findDepth(r.children, targetId, d + 1);
+            if (found !== null) return found;
+          }
+        }
+        return null;
+      };
+      // Build flat tree to search
+      const nodes = new Map<string, any>();
+      existing.forEach((r: any, i: number) => { const rk = r.id != null ? String(r.id) : `idx-${i}`; nodes.set(rk, { ...r, __key: rk, children: [] }); });
+      nodes.forEach((node) => { const pid = node.parentReplyId != null ? String(node.parentReplyId) : null; if (pid && nodes.has(pid) && pid !== node.__key) nodes.get(pid).children.push(node); });
+      const roots = [...nodes.values()].filter(n => !n.parentReplyId || !nodes.has(String(n.parentReplyId)));
+      const found = findDepth(roots, String(parentReplyId), 0);
+      if (found !== null) depth = Math.min(found + 1, 3);
+    }
     const newComment = {
       id: tempId,
       author: currentUser.name || "You",
@@ -369,26 +391,24 @@ export const NetworkScreen = memo(function NetworkScreen({
       text,
       time: "Just now",
       parentReplyId: parentReplyId || null,
-      depth: 0,
+      depth,
       isOwn: true,
     };
     const addC = (p: any) => (p.id === postId ? { ...p, comments: [...(p.comments || []), newComment] } : p);
     const removeC = (p: any) => (p.id === postId ? { ...p, comments: (p.comments || []).filter((c: any) => c.id !== tempId) } : p);
-    // Same fallback-seeding fix as handleVote — without it, replying to a seed post
-    // showed "Comment added" but the comment never appeared.
     setLiveForum?.((prev) => (prev && prev.length ? prev.map(addC) : (demo ? FORUM_POSTS.map(addC) : prev)));
     setForumPosts((prev) => prev.map(addC));
     setThreadReplies((prev) => (prev[key] ? { ...prev, [key]: [...prev[key], newComment] } : prev));
     setCommentTexts((prev) => ({ ...prev, [postId]: "" }));
-    setReplyTo(null);
-    setReplyToId(null);
-    if (typeof postId === "number" && !liveForum?.length) { showToast("Comment added"); return; }
+    if (typeof postId === "number" && !liveForum?.length) { setReplyTo(null); setReplyToId(null); showToast("Comment added"); return; }
     apiFetch("/api/muse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "forum", type: "reply", postId, text, parentReplyId: parentReplyId || undefined }),
     }).then((r: any) => {
       if (!r.ok) throw new Error("failed");
+      setReplyTo(null);
+      setReplyToId(null);
       showToast(parentReplyId ? "Reply added" : "Comment added");
     }).catch(() => {
       setLiveForum?.((prev) => (prev && prev.length ? prev.map(removeC) : prev));
@@ -1284,13 +1304,14 @@ export const NetworkScreen = memo(function NetworkScreen({
                           </div>
                           <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text2)" }}>{node.author}</span>
                           <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
-                            <button style={{ background: "none", border: "none", color: cv === "up" ? "#FFD700" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [cvKey]: p[cvKey] === "up" ? null : "up" }))}>▲</button>
+                            <button aria-label="Upvote" style={{ background: "none", border: "none", color: cv === "up" ? "#FFD700" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [cvKey]: p[cvKey] === "up" ? null : "up" }))}>▲</button>
                             <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>{cv === "up" ? 2 : cv === "down" ? 0 : 1}</span>
-                            <button style={{ background: "none", border: "none", color: cv === "down" ? "#ff6b6b" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [cvKey]: p[cvKey] === "down" ? null : "down" }))}>▼</button>
+                            <button aria-label="Downvote" style={{ background: "none", border: "none", color: cv === "down" ? "#ff6b6b" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [cvKey]: p[cvKey] === "down" ? null : "down" }))}>▼</button>
                           </div>
                         </div>
                         <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5, marginBottom: 6 }}>{node.text}</div>
                         <button
+                          aria-label={`Reply to ${node.author}`}
                           style={{ background: "none", border: "none", color: "var(--gold)", fontSize: 11, fontWeight: 700, cursor: "pointer", padding: 0 }}
                           onClick={() => {
                             setReplyTo(node.author);
@@ -1313,7 +1334,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 {replyTo && (
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", borderRadius: 8, padding: "6px 10px", marginBottom: 8 }}>
                     <span style={{ fontSize: 11, color: "var(--gold)" }}>Replying to @{replyTo}</span>
-                    <button style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12 }} onClick={() => { setReplyTo(null); setReplyToId(null); }}>✕</button>
+                    <button aria-label="Cancel reply" style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12 }} onClick={() => { setReplyTo(null); setReplyToId(null); }}>✕</button>
                   </div>
                 )}
                 <input

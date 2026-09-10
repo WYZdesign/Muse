@@ -1436,6 +1436,15 @@ img{background-color:#1a0a2e}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .hamburger-item{background:rgba(0,0,0,0.02);border-color:rgba(90,70,50,0.08)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .search-input{color:#2F2A24}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .chat-inp{background:rgba(0,0,0,0.04);border-color:rgba(90,70,50,0.16);color:#2F2A24}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .card-gradient{background:linear-gradient(to top,rgba(255,253,248,0.95) 0%,rgba(255,253,248,0.7) 50%,transparent 100%)}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .modal-overlay{background:rgba(0,0,0,0.35)}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .modal-header{background:rgba(255,253,248,0.96);border-color:rgba(90,70,50,0.1);color:#2F2A24}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .modal-body{background:#FFFDF8;color:#2F2A24}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .quest-panel{background:rgba(255,253,248,0.97);border-color:rgba(90,70,50,0.1);color:#2F2A24}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .daily-login-card{background:rgba(255,253,248,0.97);border-color:rgba(90,70,50,0.1);color:#2F2A24}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) select.inp option{background:#FFFDF8;color:#2F2A24}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .card-hero-type{color:var(--gold);text-shadow:none}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .card-hero-name{text-shadow:0 1px 4px rgba(0,0,0,0.2);filter:none}
 @media(max-width:767px){[data-theme="sunrise"] .phone{background:rgba(255,248,240,0.92)}}
 [data-theme="sunrise"] .swipe-card{background:#FFF8F0;border:1px solid rgba(0,0,0,0.08);box-shadow:0 4px 24px rgba(0,0,0,0.06)}
 [data-theme="sunrise"] .swipe-card img{background:#F5EDE3}

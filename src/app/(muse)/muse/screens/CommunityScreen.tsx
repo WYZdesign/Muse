@@ -220,6 +220,7 @@ export const CommunityScreen = memo(function CommunityScreen({
       showToast(kind === "kick" ? "Member kicked" : kind === "ban" ? "Member banned" : kind === "mute" ? "Member muted for 24h" : kind === "make-mod" ? "Member is now a moderator" : "Moderator removed");
     } catch {
       setGroupMembers(prevMembers);
+      if (kind === "kick" || kind === "ban") setDetailItem((d: any) => d ? { ...d, members: (d.members || 0) + 1 } : d);
       showToast("Couldn't update member — try again");
     } finally {
       setMemberActionId(null);
