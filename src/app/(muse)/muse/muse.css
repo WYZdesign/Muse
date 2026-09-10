@@ -422,8 +422,8 @@ a{color:inherit;text-decoration:none}
 .step-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.1);transition:all .3s}
 .step-dot.active{background:var(--gold);box-shadow:0 0 6px rgba(255,215,0,0.3)}
 .step-dot.done{background:var(--gold);opacity:0.4}
-.inp{width:100%;border:0.75px solid transparent;border-radius:16px;padding:15px 18px;font-size:16px;color:var(--text);margin-bottom:14px;transition:all .3s cubic-bezier(.4,0,.2,1);font-family:inherit;background:linear-gradient(var(--input-bg,rgba(255,255,255,0.1)),var(--input-bg,rgba(255,255,255,0.1))) padding-box,linear-gradient(135deg,color-mix(in srgb,var(--accent,#FFD700) 50%,transparent),color-mix(in srgb,var(--coral) 50%,transparent),color-mix(in srgb,var(--lavender) 50%,transparent)) border-box}
-.inp:focus{border-color:transparent;background:linear-gradient(var(--input-bg,rgba(255,255,255,0.1)),var(--input-bg,rgba(255,255,255,0.1))) padding-box,linear-gradient(135deg,var(--accent,#FFD700),var(--coral),var(--lavender)) border-box;box-shadow:0 0 8px color-mix(in srgb,var(--accent,#FFD700) 10%,transparent)}
+.inp{width:100%;border:0.75px solid transparent;border-radius:16px;padding:15px 18px;font-size:16px;color:var(--text);margin-bottom:14px;transition:all .3s cubic-bezier(.4,0,.2,1);font-family:inherit;background:linear-gradient(var(--panel-bg-solid),var(--panel-bg-solid)) padding-box,linear-gradient(135deg,color-mix(in srgb,var(--accent,#FFD700) 50%,transparent),color-mix(in srgb,var(--coral) 50%,transparent),color-mix(in srgb,var(--lavender) 50%,transparent)) border-box}
+.inp:focus{border-color:transparent;background:linear-gradient(var(--panel-bg-solid),var(--panel-bg-solid)) padding-box,linear-gradient(135deg,var(--accent,#FFD700),var(--coral),var(--lavender)) border-box;box-shadow:0 0 8px color-mix(in srgb,var(--accent,#FFD700) 10%,transparent)}
 .inp{font-size:16px}.inp::placeholder{color:rgba(255,255,255,0.45)}
 .inp.error{border-color:var(--coral)!important;box-shadow:0 0 16px rgba(255,138,128,0.15)!important;animation:inputShake .4s ease}
 select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:40px}
@@ -1565,6 +1565,15 @@ img{background-color:#1a0a2e}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .modal-close{background:var(--surface-hover);color:var(--text2)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .age-gate-deny{border-color:var(--border-med)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .auth-divider::before,.auth-divider::after{background:var(--border-med)}
+/* Force dark, legible auth text on every light theme (tabs, socials, divider, terms). */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .auth-tab{color:var(--text2)!important;background:rgba(0,0,0,0.04)!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .auth-tab.active{color:#1A1612!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .auth-social-btn{color:var(--text)!important;background:rgba(0,0,0,0.04)!important;border-color:var(--border-med)!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .auth-divider span{color:var(--muted)!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .auth-terms-wrap span{color:var(--text2)!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .social-proof{color:var(--text2)!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .hero-sub{color:var(--text2)!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .hero-quote{color:var(--text2)!important}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) select.inp option{background:var(--card-bg);color:var(--text)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .moments-card{background:var(--panel-bg);border-color:var(--border-subtle)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .moments-card-img{background:var(--card-bg)}
