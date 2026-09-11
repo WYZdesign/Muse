@@ -28,7 +28,7 @@ img{-webkit-user-drag:none;user-select:none}
 ::selection{background:rgba(255,215,0,0.3)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
 
-/* Hero full-bleed: strip padding from first section in each screen */
-.screen-el.active > div:first-child,
-.screen-el.active > section:first-of-type { padding-top: 0; }
-.screen-el.active .discover-wrap { padding-top: 0; }
+/* Ensure first section in hero screens stays full-bleed; other screens keep safe-area padding */
+.screen-el.active > section:first-of-type { padding-top: env(safe-area-inset-top, 12px); }
+.screen-el.active > div:first-child:not(.hdr) { padding-top: env(safe-area-inset-top, 12px); }
+.screen-el.active .discover-wrap { padding-top: env(safe-area-inset-top, 12px); }

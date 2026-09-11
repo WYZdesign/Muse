@@ -15,6 +15,9 @@ interface TourPage {
   icon: React.ReactNode;
   from: string;
   to: string;
+  screen: string;
+  highlight: string;
+  steps: string[];
 }
 
 // Content order mirrors the main nav + the rest of the app's key surfaces,
@@ -28,6 +31,9 @@ const ALL_PAGES: TourPage[] = [
     icon: <FiStar size={40} />,
     from: "#FFD700",
     to: "#FF8A80",
+    screen: "global",
+    highlight: "Welcome to Muse — find your people",
+    steps: ["Swipe to explore features", "Skip anytime", "Replay from Menu → Help & Support"],
   },
   {
     id: "discover",
@@ -37,6 +43,9 @@ const ALL_PAGES: TourPage[] = [
     icon: <FiCompass size={40} />,
     from: "#FFD700",
     to: "#FFA07A",
+    screen: "discover",
+    highlight: "Swipe cards · Filter · Super Like",
+    steps: ["Swipe right to connect, left to pass", "Swipe up for a super like", "Tap filters to narrow by style, distance, type"],
   },
   {
     id: "feed",
@@ -46,6 +55,9 @@ const ALL_PAGES: TourPage[] = [
     icon: <FiUsers size={40} />,
     from: "#1E90FF",
     to: "#ADD8E6",
+    screen: "feed",
+    highlight: "Post · Comment · Save",
+    steps: ["Tap + to create a new post", "Like or comment on others' posts", "Save posts for later with the bookmark"],
   },
   {
     id: "collab",
@@ -55,6 +67,9 @@ const ALL_PAGES: TourPage[] = [
     icon: <FiZap size={40} />,
     from: "#20B2AA",
     to: "#7CFC00",
+    screen: "collab",
+    highlight: "Apply · Book · Track",
+    steps: ["Browse quests & briefs", "Apply or book with one tap", "Track status in Menu → Your Activity"],
   },
   {
     id: "muses",
@@ -64,6 +79,9 @@ const ALL_PAGES: TourPage[] = [
     icon: <FiStar size={40} />,
     from: "#FF4500",
     to: "#FFD700",
+    screen: "matches",
+    highlight: "Chat · Report · Unmatch",
+    steps: ["Switch between list and grid view", "Swipe left/right on cards to unmatch or report", "Tap a match to start chatting"],
   },
   {
     id: "bts",
@@ -73,6 +91,9 @@ const ALL_PAGES: TourPage[] = [
     icon: <FiCamera size={40} />,
     from: "#FF1493",
     to: "#FF69B4",
+    screen: "bts",
+    highlight: "Tap rings · Watch stories",
+    steps: ["Tap any story ring to watch", "Swipe sideways to navigate stories", "Stories disappear after viewing"],
   },
   {
     id: "community",
@@ -82,6 +103,9 @@ const ALL_PAGES: TourPage[] = [
     icon: <FiCalendar size={40} />,
     from: "#D4A5FF",
     to: "#FF8A80",
+    screen: "community",
+    highlight: "Groups · RSVP · Events",
+    steps: ["Browse groups by category", "RSVP to upcoming events", "Check your calendar for confirmations"],
   },
   {
     id: "network",
@@ -93,6 +117,9 @@ const ALL_PAGES: TourPage[] = [
     icon: <FiMessageCircle size={40} />,
     from: "#00CED1",
     to: "#1E90FF",
+    screen: "network",
+    highlight: "Book · Forum · Tips",
+    steps: ["Browse verified professionals", "Book a session or ask in the forum", "Leave tips for creators you love"],
   },
   {
     id: "profile",
@@ -102,6 +129,9 @@ const ALL_PAGES: TourPage[] = [
     icon: <FiUser size={40} />,
     from: "#FFD700",
     to: "#FF8C00",
+    screen: "profile",
+    highlight: "Portfolio · Verify · Streak",
+    steps: ["Build your portfolio with photos & work", "Verify for a trust badge", "Check in daily to maintain your streak"],
   },
   {
     id: "done",
@@ -111,6 +141,9 @@ const ALL_PAGES: TourPage[] = [
     icon: <FiStar size={40} />,
     from: "#FFD700",
     to: "#D4A5FF",
+    screen: "global",
+    highlight: "You're all set!",
+    steps: ["Start exploring", "Replay this tour anytime", "Find Help & Support in Menu"],
   },
 ];
 
@@ -153,11 +186,16 @@ function TourSprite({ page }: { page: TourPage }) {
   );
 }
 
-export default function FeatureTour({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function FeatureTour({ open, onClose, startScreen }: { open: boolean; onClose: () => void; startScreen?: string }) {
   const [idx, setIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
 
-  useEffect(() => { if (open) setIdx(0); }, [open]);
+  useEffect(() => { 
+    if (open) {
+      const startIdx = startScreen ? PAGES.findIndex(p => p.id === startScreen) : 0;
+      setIdx(startIdx >= 0 ? startIdx : 0);
+    }
+  }, [open, startScreen]);
 
   if (!open) return null;
 
@@ -194,6 +232,15 @@ export default function FeatureTour({ open, onClose }: { open: boolean; onClose:
           <div className="tour-eyebrow">{page.eyebrow}</div>
           <div className="tour-title">{page.title}</div>
           <div className="tour-body">{page.body}</div>
+          <div className="tour-highlight">{page.highlight}</div>
+          <div className="tour-steps">
+            {page.steps.map((s, i) => (
+              <div key={i} className="tour-step">
+                <span className="tour-step-num">{i + 1}</span>
+                {s}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="tour-footer">

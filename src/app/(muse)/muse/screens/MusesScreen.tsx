@@ -1,9 +1,9 @@
 "use client";
 
-import React, { memo, useEffect, useState } from "react";
+import React, { memo, useEffect, useState, useRef } from "react";
 import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../hooks/useDeviceTilt";
 import Image from "next/image";
-import { FiArrowLeft, FiSearch, FiGrid, FiList } from "react-icons/fi";
+import { FiArrowLeft, FiSearch, FiGrid, FiList, FiX, FiHeart, FiFlag, FiUserX } from "react-icons/fi";
 import MatchCard from "../components/MatchCard";
 import Nav from "../components/Nav";
 import UpsellModal from "../components/UpsellModal";
@@ -27,6 +27,8 @@ export interface MusesScreenProps {
   likedBy: Profile[];
   openChat: (m: any) => void;
   setChatTarget: (m: any) => void;
+  setBlockTarget: (t: { id: string; name: string } | null) => void;
+  setReportTarget: (t: any) => void;
   apiFetch: (url: string, opts?: any) => Promise<any>;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
@@ -62,6 +64,8 @@ export const MusesScreen = memo(function MusesScreen({
   setMatches = () => {},
   openChat,
   setChatTarget,
+  setBlockTarget,
+  setReportTarget,
   apiFetch,
   handleImgError,
   openHamburger,
@@ -94,6 +98,44 @@ export const MusesScreen = memo(function MusesScreen({
   const [showLikesUpsell, setShowLikesUpsell] = useState(false);
   const [showRequests, setShowRequests] = useState(false);
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
+  const [swipeInfo, setSwipeInfo] = useState<{ id: string; startX: number; diff: number } | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Swipe gesture support for list view (unmatch/report)
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (matchesView !== "list") return;
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (matchesView !== "list" || touchStartX.current === null) return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchEndX - touchStartX.current;
+
+    if (Math.abs(diff) > 40) {
+      const cardId = e.currentTarget.getAttribute("data-card-id");
+      if (!cardId) return;
+
+      if (diff < -40) {
+        // Swipe left: unmatch
+        setMatches(prev => prev.filter(m => String(m.id) !== cardId));
+        try { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unmatch", target_id: cardId }) }); } catch {}
+        showToast("Unmatched");
+      } else if (diff > 40) {
+        // Swipe right: report/block
+        const target = matches.find(m => String(m.id) === cardId);
+        if (target) {
+          setBlockTarget({ id: String(target.id), name: target.name || "Unknown" });
+          try { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "block", target_id: cardId }) }); } catch {}
+          showToast("Blocked");
+        }
+      }
+    }
+
+    touchStartX.current = null;
+  };
 
   useEffect(() => {
     if (!showLikesYou) return;
@@ -285,7 +327,7 @@ export const MusesScreen = memo(function MusesScreen({
             </EmptyState>
           )}
           {matches.filter(m => searchQuery === "" || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(m => (
-            <div key={m.id} onClickCapture={() => markSeen(String(m.id))}>
+            <div key={m.id} data-card-id={m.id} onClickCapture={() => markSeen(String(m.id))} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
               <MatchCard m={m} view={matchesView} isNew={isNewMatch(m)} actions={matchActions} />
             </div>
           ))}

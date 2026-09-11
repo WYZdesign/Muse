@@ -72,9 +72,16 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
     }
   };
 
-  // When returning from Stripe (URL contains a verification fragment), auto-check
+  // When returning from Stripe (URL contains a verification fragment), auto-check.
+  // Stripe's return_url uses QUERY params (session_id=...), not a hash fragment —
+  // the old hash check never fired, so users had to click "Check Status"
+  // manually. Now we check both hash AND query params.
   useEffect(() => {
-    if (typeof window !== "undefined" && window.location.hash?.includes("session") && state === "idle") {
+    if (typeof window === "undefined" || state !== "idle") return;
+    const hash = window.location.hash || "";
+    const search = window.location.search || "";
+    const hasSessionFragment = hash.includes("session") || search.includes("session_id=") || search.includes("session=");
+    if (hasSessionFragment) {
       checkStatus();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

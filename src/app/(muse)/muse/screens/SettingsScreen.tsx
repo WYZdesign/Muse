@@ -607,12 +607,12 @@ export const SettingsScreen = memo(function SettingsScreen({
             {rewardsItems.map(renderRow)}
           </div>
 
-          <div className="settings-group">
-            <div className="settings-group-title">Background</div>
-            <OpacitySlider label="Background" storageKey="muse_bg_opacity" cssVar="--scene-opacity" />
-            <OpacitySlider label="Sprite Opacity" storageKey="muse_sprite_opacity" cssVar="--sprite-opacity" />
-            <OpacitySlider label="Glossy Film" storageKey="muse_film_opacity" cssVar="--film-opacity" />
-          </div>
+<div className="settings-group">
+             <div className="settings-group-title">Background</div>
+             <OpacitySlider label="Background" storageKey="muse_bg_opacity" cssVar="--scene-opacity" />
+             <OpacitySlider label="Sprites" storageKey="muse_sprite_opacity" cssVar="--sprite-opacity" />
+             <OpacitySlider label="Gloss" storageKey="muse_film_opacity" cssVar="--film-opacity" />
+           </div>
 
           <div className="settings-group">
             <div className="settings-group-title">Privacy & Safety</div>
