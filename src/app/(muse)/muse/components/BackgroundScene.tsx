@@ -180,8 +180,8 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
           ))}
         </div>
         <canvas className="comet-field" ref={cometRef} />
-        <div className="nebula-fog nf-1" /><div className="nebula-fog nf-2" /><div className="nebula-fog nf-3" /><div className="nebula-fog nf-4" /><div className="nebula-fog nf-5" /><div className="nebula-fog nf-6" /><div className="nebula-fog nf-7" /><div className="nebula-fog nf-8" /><div className="nebula-fog nf-9" /><div className="nebula-fog nf-10" />
-        <div className="aurora-strip aurora-s1" /><div className="aurora-strip aurora-s2" />
+        <div className="nebula-fog nf-1" style={{ opacity: "var(--nebula-opacity, 1)" }} /><div className="nebula-fog nf-2" style={{ opacity: "var(--nebula-opacity, 1)" }} /><div className="nebula-fog nf-3" style={{ opacity: "var(--nebula-opacity, 1)" }} /><div className="nebula-fog nf-4" style={{ opacity: "var(--nebula-opacity, 1)" }} /><div className="nebula-fog nf-5" style={{ opacity: "var(--nebula-opacity, 1)" }} /><div className="nebula-fog nf-6" style={{ opacity: "var(--nebula-opacity, 1)" }} /><div className="nebula-fog nf-7" style={{ opacity: "var(--nebula-opacity, 1)" }} /><div className="nebula-fog nf-8" style={{ opacity: "var(--nebula-opacity, 1)" }} /><div className="nebula-fog nf-9" style={{ opacity: "var(--nebula-opacity, 1)" }} /><div className="nebula-fog nf-10" style={{ opacity: "var(--nebula-opacity, 1)" }} />
+        <div className="aurora-strip aurora-s1" style={{ opacity: "var(--nebula-opacity, 1)" }} /><div className="aurora-strip aurora-s2" style={{ opacity: "var(--nebula-opacity, 1)" }} />
         <div className="aurora-strip aurora-s3" />
         <div className="sparkle-field">
           {spPos.map((s,i) => (
@@ -193,7 +193,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
             <div key={i} className="ember" style={{left:s.l,animationDuration:s.d,animationDelay:s.dl,width:s.w,height:s.h}} />
           ))}
         </div>
-        <div className="fizzy-bubbles">
+        <div className="fizzy-bubbles" style={{ opacity: "var(--fizzy-opacity, 1)" }}>
           {[...Array(20)].map((_,i) => (
             <div key={i} className="bubble" style={{
               left: Math.random()*100 + '%',
