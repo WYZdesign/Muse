@@ -64,14 +64,10 @@ export default function StreakWidget({
       <div className="streak-widget-header">
         <div className="streak-widget-flame">
           <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-            <circle cx="20" cy="20" r="19" stroke="url(#ringGrad)" strokeWidth="2" fill="rgba(255,215,0,0.06)" />
+            <circle cx="20" cy="20" r="19" stroke="var(--gold)" strokeWidth="2" />
             <path d="M20 6C20 6 10 16 10 23a10 10 0 0020 0c0-7-10-17-10-17z" fill="url(#fireGradLg)" />
             <path d="M20 14c0 0-5 5-5 9a5 5 0 0010 0c0-4-5-9-5-9z" fill="url(#innerGradLg)" />
             <defs>
-              <linearGradient id="ringGrad" x1="0" y1="0" x2="40" y2="40">
-                <stop stopColor="#FFD700" />
-                <stop offset="1" stopColor="#FF8C00" />
-              </linearGradient>
               <linearGradient id="fireGradLg" x1="20" y1="6" x2="20" y2="34" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#FFD700" />
                 <stop offset="0.5" stopColor="#FF8C00" />
