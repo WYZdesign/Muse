@@ -896,7 +896,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             try { window.dispatchEvent(new CustomEvent("muse:toast", { detail: "Your account has been suspended. Contact support@wyzdesign.com" })); } catch {}
           }
           setAuthUser(null);
-          setScreen(prev => (prev === "discover" || prev === "matches" || prev === "connections") ? prev : "auth");
+          setScreen("auth");
         }
         // Session resolved — splash can hide regardless of outcome
         try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
@@ -2247,7 +2247,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                 <div className="sparkle" style={{bottom:"12%",right:"6%",fontSize:16}}>✧</div>
                 <div className="hero-text" style={{marginBottom:14}}>muse</div>
                 <div className="hero-sub">Where creatives find <em>real connections</em></div>
-                <div className="social-proof">Join thousands of creatives already finding their muse</div>
                 <div style={{width:"100%",maxWidth:320}}>
                   <div className="auth-tabs">
                     <button className={"auth-tab"+(authMode==="login"?" active":"")} onClick={()=>setAuthMode("login")}>Log In</button>
@@ -2270,7 +2269,10 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <button className="auth-social-btn" style={{flex:1}} onClick={()=>handleOAuth("x")} aria-label="Continue with X"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#fff" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>X</button>
                   </div>
                   <div className="auth-terms-wrap">
-                    <span style={{fontSize:12,color:"var(--muted)"}}>By continuing you agree to our</span><span className="auth-terms" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowTerms(true); } }} onClick={()=>setShowTerms(true)}>Terms</span><span className="auth-terms" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowPrivacy(true); } }} onClick={()=>setShowPrivacy(true)}>Privacy</span><span className="auth-terms" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowGuidelines(true); } }} onClick={()=>setShowGuidelines(true)}>Guidelines</span>
+                    <span style={{fontSize:12,color:"var(--muted)"}}>By continuing you agree to our</span>
+                    <span className="auth-terms" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowTerms(true); } }} onClick={()=>setShowTerms(true)}>Terms</span>
+                    <span className="auth-terms" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowPrivacy(true); } }} onClick={()=>setShowPrivacy(true)}>Privacy</span>
+                    <span className="auth-terms" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowGuidelines(true); } }} onClick={()=>setShowGuidelines(true)}>Guidelines</span>
                   </div>
                 </div>
               </div>
