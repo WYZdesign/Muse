@@ -183,7 +183,6 @@ const [excludedPortfolios, _setExcludedPortfolios] = useState<string[]>(EXCLUDED
     filterScore, setFilterScore,
   } = useDiscoverState();
 const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setShowMatchMenu, unmatchTarget, setUnmatchTarget, chatImages, setChatImages, typingTarget, setTypingTarget, themTyping, setThemTyping } = useChatState();
-  const [_connFilter, _setConnFilter] = useState("all");
   const [showNsfw, setShowNsfw] = useState(false);
   const [showOnline, setShowOnline] = useState(true);
   const [showDistance, setShowDistance] = useState(true);
@@ -278,7 +277,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       setSessTab(viewerSide(t) === "industry" ? "bookings" : "sessions");
     }
   }, [currentUser?.type]);
-  const [_netTab, _setNetTab] = useState<"pros"|"forum">("pros");
   const [_networkOpenTab, _setNetworkOpenTab] = useState<"pros"|"forum"|undefined>(undefined);
   const [forumSort, setForumSort] = useState<"hot"|"new"|"top">("hot");
   const [forumCategory, setForumCategory] = useState<string>("all");
@@ -287,7 +285,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [expandedPost, setExpandedPost] = useState<number|null>(null);
   const [commentText, setCommentText] = useState("");
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const [_eventsFilter, _setEventsFilter] = useState<"all"|"upcoming"|"past">("all");
   const [feedText, setFeedText] = useState("");
   const [feedMedia, setFeedMedia] = useState<string[]>([]);
   const [feedPostsStatic, setFeedPostsStatic] = useState<{id:number;author:string;avatar:string;type:string;text:string;likes:number;comments:number;shares:number;time:string;liked:boolean;saved:boolean;img?:string}[]>([{id:401,author:"Maya Chen",avatar:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",type:"photo",text:"Golden hour never gets old. Shot this at El Matador Beach last weekend.",likes:234,comments:18,shares:5,time:"2h ago",img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600",liked:false,saved:false},{id:402,author:"Jordan Rivera",avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",type:"text",text:"Just wrapped principal photography on a 30-min short. 14-hour days for 12 days straight. The footage is incredible!",likes:189,comments:32,shares:12,time:"5h ago",liked:false,saved:false},{id:403,author:"Sam Taylor",avatar:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",type:"photo",text:"New album art I designed. Surreal dreamlike aesthetic.",likes:312,comments:24,shares:8,time:"8h ago",img:"https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=600",liked:false,saved:false},{id:404,author:"Riley Patel",avatar:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",type:"photo",text:"Motion graphics reel. 6 months of work in 90 seconds.",likes:567,comments:45,shares:23,time:"1d ago",liked:false,saved:false}]);
@@ -389,6 +386,17 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const superLabelRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
   const dragValuesRef = useRef({x:0,y:0,opacity:0});
+
+  const confettiPieces = useMemo(() => Array.from({length:40}).map((_,i)=>({
+    left: Math.random()*100+"%",
+    width: (Math.random()*6+4)+"px",
+    height: (Math.random()*8+6)+"px",
+    background: ["var(--gold)","var(--amber)","var(--pink)","var(--lavender)","var(--coral)","var(--mint)","#fff"][i%7],
+    animationDuration: (Math.random()*2+2)+"s",
+    animationDelay: Math.random()*1.5+"s",
+    "--drift": (Math.random()*120-60)+"px",
+    "--rot": (Math.random()*720)+"deg"
+  })), []);
 
   const handleImgError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const el = e.currentTarget;
@@ -630,7 +638,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         testLevels, obSelects, obProfilePic, obPortfolioItems,         likedBy: likedBy.slice(-MAX_ITEMS),
         profileViews: DEMO_MODE ? profileViews : 0, profileViewers: DEMO_MODE ? profileViewers.slice(-20) : [], stories: stories.slice(-20), theme, activityFeed: activityFeed.slice(-MAX_ITEMS),
         discoveryPrefs, chatImages: Object.fromEntries(Object.entries(chatImages).slice(-20).map(([k,v]) => [k, v.slice(-20)])), screen, filterStyles, filterScore,
-        searchQuery, connTab, museCat, _connFilter, authUser, chatTarget
+        searchQuery, connTab, museCat, authUser, chatTarget
       };
       safeSetItem(STORAGE_KEY, JSON.stringify(data));
       // Throttle the server sync to once per 30s (was every saveState tick) — big load reduction at scale.
@@ -640,7 +648,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs, stats: currentUser.stats }) }).catch(() => {});
       }
     } catch(e) {}
-  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,savedSessionIds,savedProfileIds,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,_connFilter,authUser,chatTarget]);
+  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,savedSessionIds,savedProfileIds,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,authUser,chatTarget]);
 
   const loadState = useCallback(async () => {
     try {
@@ -709,7 +717,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       // bounced you back to Discover. "community" is gated behind the closed-beta
       // flag so a stale persisted value from before the flag existed can't restore
       // straight into a screen the menu no longer offers a way to reach.
-      const VALID_SCREENS = ["onboard","discover","connections","matches","chat","briefs","sessions","network","portfolio","bts","profile","settings","subscription","codex", ...(MUSE_CLOSED_BETA_HIDE_SOCIAL ? [] : ["community"])];
+      const VALID_SCREENS = ["onboard","discover","connections","matches","chat","briefs","sessions","network","portfolio","bts","profile","settings","subscription","codex","studios","analytics", ...(MUSE_CLOSED_BETA_HIDE_SOCIAL ? [] : ["community"])];
 
   // Check for OAuth callback on mount
   React.useEffect(() => {
@@ -1034,7 +1042,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     // Listen for auth state changes (OAuth completion)
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.access_token) {
-        if (sessionAppliedRef.current) return;
+        if (sessionAppliedRef.current) {
+          sessionAppliedRef.current = false;
+        }
         sessionAppliedRef.current = true;
         applySession(session.access_token, session.refresh_token);
       }
@@ -1550,7 +1560,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   }), [setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping, setReportTarget, setShowReport, setUnmatchTarget, setBlockTarget, handleImgError, getIcebreaker, setViewProfile]);
 
   const navActive = useMemo(() => {
-    const m: Record<string, string> = { discover: "discover", connections: "connections", matches: "matches", chat: "matches", briefs: "briefs", bts: "bts", profile: "profile", settings: "profile", subscription: "profile", portfolio: "profile", commissions: "commissions", analytics: "profile" };
+    const m: Record<string, string> = { discover: "discover", connections: "connections", matches: "matches", chat: "matches", briefs: "briefs", bts: "bts", profile: "profile", settings: "profile", subscription: "profile", portfolio: "profile", analytics: "profile" };
     return m[screen as string] || "discover";
   }, [screen]);
 
@@ -1613,7 +1623,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (authMode === "signup") setObStep(0);
       trackEvent(authMode === "signup" ? "muse_signup" : "muse_login", { email: authEmail?.slice(0,3) + "***" });
       flash("#FFD700");
-    } catch { showToast({ msg: "Login failed — check your credentials", type: "error" }); setAuthLoading(false); }
+    } catch { showToast({ msg: "Login failed — check your credentials", type: "error" }); }
     setAuthLoading(false);
   }, [authMode, authEmail, authPass, authName, authLoading, flash]);
 
@@ -2152,16 +2162,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           onClick={() => setShowMatchOverlay(null)}
         >
           <button className="match-overlay-close" onClick={(e)=>{e.stopPropagation();setShowMatchOverlay(null)}} aria-label="Close match overlay"><FiX size={22} /></button>
-          {Array.from({length:40}).map((_,i)=><div key={i} className="confetti-piece" style={{
-            left:Math.random()*100+"%",
-            width:(Math.random()*6+4)+"px",
-            height:(Math.random()*8+6)+"px",
-            background:["var(--gold)","var(--amber)","var(--pink)","var(--lavender)","var(--coral)","var(--mint)","#fff"][i%7],
-            animationDuration:(Math.random()*2+2)+"s",
-            animationDelay:Math.random()*1.5+"s",
-            "--drift":(Math.random()*120-60)+"px",
-            "--rot":(Math.random()*720)+"deg"
-          } as React.CSSProperties} />)}
+          {confettiPieces.map((piece,i)=><div key={i} className="confetti-piece" style={piece as React.CSSProperties} />)}
           <div
             className="match-title"
           >

@@ -153,8 +153,7 @@ function OpacitySlider({ label, storageKey, cssVar }: { label: string; storageKe
   });
   useEffect(() => {
     try { document.documentElement.style.setProperty(cssVar, String(STEPS[idx])); } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [cssVar, idx]);
   const handleSlide = (i: number) => {
     setIdx(i);
     try { localStorage.setItem(storageKey, String(STEPS[i])); } catch {}
@@ -843,7 +842,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                 {chipRow("Life Path", LIFE_PATHS, persLifePath, setPersLifePath)}
                 <button className="btn btn-gold" style={{ width: "100%", marginTop: 8 }} onClick={async () => {
                   try {
-                    await apiFetch?.("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "update-profile", zodiac: persZodiac, chinese: persChinese, mbti: persMbti, life_path: persLifePath }) });
+                    await apiFetch?.("/api/muse/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-profile", zodiac: persZodiac, chinese: persChinese, mbti: persMbti, life_path: persLifePath }) });
                     showToast("Personality profile saved!");
                     setShowPersonality(false);
                   } catch { showToast("Couldn't save — try again"); }
@@ -885,7 +884,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                 {row("Aesthetic", AESTHETICS, cpStyles, (v) => toggle(cpStyles, v, setCpStyles, 6), true)}
                 <button className="btn btn-gold" style={{ width: "100%", marginTop: 8 }} onClick={async () => {
                   try {
-                    await apiFetch?.("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "update-profile", type: cpType, looking: cpLooking, styles: cpStyles }) });
+                    await apiFetch?.("/api/muse/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-profile", type: cpType, looking: cpLooking, styles: cpStyles }) });
                     showToast("Creative profile saved!");
                     setShowCreativeProfile(false);
                   } catch { showToast("Couldn't save — try again"); }

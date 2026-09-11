@@ -169,6 +169,7 @@ export const FeedScreen = memo(function FeedScreen({
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const recTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [camMode, setCamMode] = useState<"photo" | "video">("photo");
   const [camError, setCamError] = useState("");
@@ -182,6 +183,7 @@ export const FeedScreen = memo(function FeedScreen({
     if (videoRef.current) videoRef.current.srcObject = null;
   };
   const closeCamera = () => {
+    if (recTimeoutRef.current) { clearTimeout(recTimeoutRef.current); recTimeoutRef.current = null; }
     try { recorderRef.current?.state !== "inactive" && recorderRef.current?.stop(); } catch {}
     recorderRef.current = null;
     setRecording(false); setRecSecs(0);
@@ -190,6 +192,9 @@ export const FeedScreen = memo(function FeedScreen({
     setCamError("");
   };
   useEffect(() => { if (!cameraOpen) return; return () => stopStream(); }, [cameraOpen]);
+  useEffect(() => {
+    return () => { if (recTimeoutRef.current) clearTimeout(recTimeoutRef.current); };
+  }, []);
   useEffect(() => {
     if (!recording) return;
     const t = setInterval(() => setRecSecs(s => s + 1), 1000);
@@ -273,7 +278,8 @@ export const FeedScreen = memo(function FeedScreen({
       rec.start();
       setRecording(true);
       setRecSecs(0);
-      setTimeout(() => { try { if (recorderRef.current === rec && rec.state !== "inactive") rec.stop(); } catch {} }, 30000);
+      if (recTimeoutRef.current) clearTimeout(recTimeoutRef.current);
+      recTimeoutRef.current = setTimeout(() => { try { if (recorderRef.current === rec && rec.state !== "inactive") rec.stop(); } catch {} }, 30000);
     } catch {
       showToast("Couldn't start recording");
     }

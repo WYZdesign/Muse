@@ -260,9 +260,9 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div className="stats-row">
           <div className="stat"><div className="stat-num">{matches.length}</div><div className="stat-label">Muses</div></div>
           <div className="stat"><div className="stat-num">{matchStreak}</div><div className="stat-label">Streak</div></div>
-          <div className="stat"><div className="stat-num">{currentUser.stats.likes}</div><div className="stat-label">Likes</div></div>
-          <div className="stat"><div className="stat-num">{currentUser.stats.superLikes}</div><div className="stat-label">Superlikes</div></div>
-          <div className="stat"><div className="stat-num">{currentUser.stats.passes}</div><div className="stat-label">Passes</div></div>
+          <div className="stat"><div className="stat-num">{currentUser.stats?.likes ?? 0}</div><div className="stat-label">Likes</div></div>
+          <div className="stat"><div className="stat-num">{currentUser.stats?.superLikes ?? 0}</div><div className="stat-label">Superlikes</div></div>
+          <div className="stat"><div className="stat-num">{currentUser.stats?.passes ?? 0}</div><div className="stat-label">Passes</div></div>
         </div>
         <div className="section">
           <div className="completeness" style={{ marginTop: 0 }}>

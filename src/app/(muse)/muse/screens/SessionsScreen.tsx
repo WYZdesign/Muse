@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useState, useEffect } from "react";
+import React, { memo, useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiBookmark, FiSearch, FiCompass, FiCalendar, FiInbox, FiEye } from "react-icons/fi";
 import Nav from "../components/Nav";
@@ -105,6 +105,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   savedSessionIds = [],
   setSavedSessionIds = () => {},
 }: SessionsScreenProps) {
+  const bookBtnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
   const [newSession, setNewSession] = useState({ title: "", description: "", type: "Photoshoot", rate: "", duration: "60 min", date: "", location: "" });
@@ -139,6 +140,10 @@ export const SessionsScreen = memo(function SessionsScreen({
       .then(d => { if (!cancelled && d && typeof d.needsConnect === "boolean") setPayout(d); })
       .catch(() => {});
     return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    return () => { if (bookBtnTimeoutRef.current) clearTimeout(bookBtnTimeoutRef.current); };
   }, []);
 
   const connectStripe = async () => {
@@ -380,7 +385,8 @@ export const SessionsScreen = memo(function SessionsScreen({
                         } catch {
                           showToast("Failed to book session");
                         } finally {
-                          setTimeout(() => { btn.disabled = false; }, 2000);
+                          if (bookBtnTimeoutRef.current) clearTimeout(bookBtnTimeoutRef.current);
+                          bookBtnTimeoutRef.current = setTimeout(() => { btn.disabled = false; }, 2000);
                         }
                       }}
                     >
