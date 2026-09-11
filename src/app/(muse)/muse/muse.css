@@ -41,7 +41,7 @@ a{color:inherit;text-decoration:none}
 .scene{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;background:linear-gradient(180deg,var(--bg) 0%,#120820 40%,#1a0a28 70%,#0d0618 100%)}
 
 /* Moving gradient orbs - sunset/golden hour palette, mouse reactive */
-.scene-orb{position:absolute;border-radius:50%;filter:blur(90px);mix-blend-mode:screen;will-change:transform;transition:transform 0.6s cubic-bezier(.4,0,.2,1)}
+.scene-orb{position:absolute;border-radius:50%;filter:blur(calc(90px * (1 - var(--sprite-opacity, 0))));mix-blend-mode:screen;will-change:transform;transition:transform 0.6s cubic-bezier(.4,0,.2,1)}
 .orb-coral{width:600px;height:600px;background:radial-gradient(circle,rgba(255,107,107,0.35),rgba(255,138,128,0.15) 50%,transparent 70%);top:-15%;left:-10%;animation:orbA 18s ease-in-out infinite}
 .orb-gold{width:550px;height:550px;background:radial-gradient(circle,rgba(255,215,0,0.3),rgba(255,191,0,0.12) 50%,transparent 70%);top:-5%;right:-8%;animation:orbB 22s ease-in-out infinite}
 .orb-pink{width:500px;height:500px;background:radial-gradient(circle,rgba(255,181,194,0.28),rgba(255,107,107,0.1) 50%,transparent 70%);top:25%;left:15%;animation:orbC 20s ease-in-out infinite;animation-delay:3s}
@@ -76,7 +76,7 @@ a{color:inherit;text-decoration:none}
 .comet-field{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none;display:block}
 
 /* Nebula fog clouds - colorful, floating, Muse palette */
-.nebula-fog{position:absolute;border-radius:50%;filter:blur(30px);mix-blend-mode:screen;animation:nebulaDrift ease-in-out infinite;pointer-events:none}
+.nebula-fog{position:absolute;border-radius:50%;filter:blur(calc(30px * (1 - var(--sprite-opacity, 0))));mix-blend-mode:screen;animation:nebulaDrift ease-in-out infinite;pointer-events:none}
 .nf-1{width:400px;height:300px;top:5%;left:10%;background:radial-gradient(ellipse,rgba(255,138,128,0.18),rgba(255,107,107,0.06) 50%,transparent 70%);animation-duration:28s}
 .nf-2{width:350px;height:250px;top:15%;right:15%;background:radial-gradient(ellipse,rgba(212,165,255,0.16),rgba(160,80,220,0.05) 50%,transparent 70%);animation-duration:32s;animation-delay:4s}
 .nf-3{width:300px;height:220px;top:40%;left:25%;background:radial-gradient(ellipse,rgba(255,215,0,0.14),rgba(245,197,66,0.04) 50%,transparent 70%);animation-duration:26s;animation-delay:8s}
@@ -88,7 +88,7 @@ a{color:inherit;text-decoration:none}
 @keyframes nebulaDrift{0%,100%{transform:translate(0,0) scale(1);opacity:0.55}25%{transform:translate(30px,-20px) scale(1.08);opacity:0.8}50%{transform:translate(-20px,25px) scale(0.95);opacity:0.45}75%{transform:translate(15px,10px) scale(1.04);opacity:0.7}}
 
 /* ═══ AURORA BOREALIS — top of every page (realistic northern lights) ═══ */
-.aurora-strip{position:absolute;width:120%;height:160px;left:-10%;pointer-events:none;z-index:2;filter:blur(45px);mix-blend-mode:screen;opacity:0.55;will-change:transform,opacity}
+.aurora-strip{position:absolute;width:120%;height:160px;left:-10%;pointer-events:none;z-index:2;filter:blur(calc(45px * (1 - var(--sprite-opacity, 0))));mix-blend-mode:screen;opacity:0.55;will-change:transform,opacity}
 .aurora-s1{top:-20px;background:linear-gradient(90deg,transparent 0%,rgba(0,255,180,0.45) 20%,rgba(100,255,210,0.6) 40%,rgba(50,180,255,0.5) 60%,rgba(180,120,255,0.3) 80%,transparent 100%);animation:auroraDrift1 14s ease-in-out infinite}
 .aurora-s2{top:5px;background:linear-gradient(110deg,transparent 0%,rgba(150,100,255,0.5) 25%,rgba(0,240,255,0.65) 50%,rgba(100,255,150,0.4) 75%,transparent 100%);animation:auroraDrift2 18s ease-in-out infinite;animation-delay:-5s}
 .aurora-s3{top:-10px;background:linear-gradient(70deg,transparent 0%,rgba(255,120,200,0.35) 30%,rgba(120,220,255,0.55) 60%,rgba(0,255,200,0.4) 85%,transparent 100%);animation:auroraDrift3 12s ease-in-out infinite;animation-delay:-2s}
@@ -207,6 +207,11 @@ a{color:inherit;text-decoration:none}
 .ember-field{position:absolute;top:0;left:0;width:100%;height:100%;z-index:3;overflow:hidden;pointer-events:none}
 .ember{position:absolute;border-radius:50%;background:var(--amber);box-shadow:0 0 5px var(--amber),0 0 10px var(--gold);animation:emberRise linear infinite}
 @keyframes emberRise{0%{opacity:0;transform:translateY(100vh) translateX(0) scale(0.3)}6%{opacity:0.7}35%{opacity:0.5;transform:translateY(65vh) translateX(20px) scale(0.7)}65%{opacity:0.2}100%{opacity:0;transform:translateY(-5vh) translateX(-10px) scale(0.08)}}
+
+/* Fizzy bubbles */
+.fizzy-bubbles{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;overflow:hidden;pointer-events:none}
+.bubble{position:absolute;border-radius:50%;background:rgba(255,215,0,0.35);border:1px solid rgba(255,215,0,0.2);box-shadow:0 0 6px rgba(255,215,0,0.3),0 0 12px rgba(212,165,255,0.2);animation:bubbleRise linear infinite}
+@keyframes bubbleRise{0%{opacity:0;transform:translateY(100vh) translateX(0) scale(0.5)}6%{opacity:0.6}35%{opacity:0.4;transform:translateY(60vh) translateX(15px) scale(0.8)}65%{opacity:0.15}100%{opacity:0;transform:translateY(-10vh) translateX(-5px) scale(0.3)}}
 
 .app-wrap{display:flex;min-height:100vh;min-height:100dvh;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
 .phone{width:100%;max-width:430px;height:min(844px,calc(100dvh - 48px));margin:24px auto;border-radius:48px;border:2.5px solid rgba(255,255,255,0.08);overflow:hidden;position:relative;z-index:10;background:rgba(10,6,18,0.35);backdrop-filter:blur(30px);box-shadow:0 0 100px rgba(255,215,0,0.08),0 0 200px rgba(255,181,194,0.04),inset 0 0 80px rgba(255,255,255,0.015),0 25px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column}
@@ -1534,6 +1539,14 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .comet-field{display:none!important}
 /* Particles: white dots on light — hide */
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .particles{display:none!important}
+/* Fizzy bubbles: gold bubbles visible on light — tone down */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .fizzy-bubbles{opacity:0.15!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .bubble{background:rgba(180,120,40,0.25)!important;border-color:rgba(180,120,40,0.15)!important;box-shadow:none!important}
+/* Sparkle field: colored dots on light — soften */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .sparkle-field{opacity:0.2!important}
+/* Ember field: warm particles on light — soften */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .ember-field{opacity:0.15!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .ember{background:rgba(180,80,30,0.25)!important;box-shadow:none!important}
 /* Splash ambient: splash screen only shows at load, but adapt stars/nebula for light splash bg */
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .splash-stars{opacity:0.3}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .splash-star{background:rgba(80,60,40,0.3)!important;box-shadow:none!important}
@@ -1674,7 +1687,7 @@ img{background-color:var(--card-bg)}
 .gallery-view-count{font-size:12px;color:var(--muted);margin-top:4px}
 
 
-@media(max-width:767px){.scene-wash{opacity:0.3!important}.aurora-strip{opacity:0.3!important}.sparkle-field{opacity:0.3!important}.star-field{opacity:0.3!important}.nebula-fog{opacity:0.15!important}}
+@media(max-width:767px){.scene-wash{opacity:0.3!important}.aurora-strip{opacity:0.3!important}.sparkle-field{opacity:0.3!important}.star-field{opacity:0.3!important}.nebula-fog{opacity:0.15!important}.fizzy-bubbles{opacity:0.2!important}}
 
 /* Pause ambient animations when tab is hidden (battery/thermal savings) */
 .animations-paused .star-field,.animations-paused .aurora-strip,.animations-paused .nebula-fog,.animations-paused .sparkle-field,.animations-paused .ember-field,.animations-paused .scene-orb{animation-play-state:paused!important}

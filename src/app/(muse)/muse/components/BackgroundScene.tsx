@@ -15,16 +15,16 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
   const cometRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
 
-  const starPos = useMemo(() => Array.from({length:30}, (_,i) => ({
+  const starPos = useMemo(() => Array.from({length:39}, (_,i) => ({
     l:`${(i*7.3+3.1)%100}%`, t:`${(i*11.7+5.8)%35}%`, d:`${2+(i*3.7)%6}s`, dl:`${(i*1.9)%10}s`
   })), []);
 
-  const spPos = useMemo(() => Array.from({length:5}, (_,i) => ({
+  const spPos = useMemo(() => Array.from({length:7}, (_,i) => ({
     l:`${(i*13.7+2.1)%100}%`, t:`${(i*9.3+4.5)%25}%`, d:`${5+(i*5.3)%8}s`, dl:`${(i*2.3)%10}s`,
-    c:['#FFD700','#FFB5C2','#D4A5FF','#FFDAB9','#98FB98'][i%5]
+    c:['#FFD700','#FFB5C2','#D4A5FF','#FFDAB9','#98FB98','#87CEEB','#FF8A80','#FFD1A4','#FFB5C2','#FFE4B5','#FF9A56','#E6E6FA','#FFD700','#FF6B6B','#D4A5FF'][i%15]
   })), []);
 
-  const emPos = useMemo(() => Array.from({length:3}, (_,i) => ({
+  const emPos = useMemo(() => Array.from({length:4}, (_,i) => ({
     l:`${10+(i*6.7)%80}%`, t:`${(i*11.7+5.8)%30}%`, d:`${12+(i*3.1)%15}s`, dl:`${(i*4.3)%20}s`,
     w:`${2+(i*0.7)%2}px`, h:`${2+(i*1.1)%2}px`
   })), []);
@@ -180,9 +180,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
           ))}
         </div>
         <canvas className="comet-field" ref={cometRef} />
-        <div className="nebula-fog nf-1" /><div className="nebula-fog nf-2" /><div className="nebula-fog nf-3" />
-        <div className="nebula-fog nf-4" /><div className="nebula-fog nf-5" /><div className="nebula-fog nf-6" />
-        <div className="nebula-fog nf-7" /><div className="nebula-fog nf-8" />
+        <div className="nebula-fog nf-1" /><div className="nebula-fog nf-2" /><div className="nebula-fog nf-3" /><div className="nebula-fog nf-4" /><div className="nebula-fog nf-5" /><div className="nebula-fog nf-6" /><div className="nebula-fog nf-7" /><div className="nebula-fog nf-8" /><div className="nebula-fog nf-9" /><div className="nebula-fog nf-10" />
         <div className="aurora-strip aurora-s1" /><div className="aurora-strip aurora-s2" />
         <div className="aurora-strip aurora-s3" />
         <div className="sparkle-field">
@@ -193,6 +191,19 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
         <div className="ember-field">
           {emPos.map((s,i) => (
             <div key={i} className="ember" style={{left:s.l,animationDuration:s.d,animationDelay:s.dl,width:s.w,height:s.h}} />
+          ))}
+        </div>
+        <div className="fizzy-bubbles">
+          {[...Array(20)].map((_,i) => (
+            <div key={i} className="bubble" style={{
+              left: Math.random()*100 + '%',
+              top: Math.random()*80 + 10 + '%',
+              width: 2 + Math.random()*4 + 'px',
+              height: 2 + Math.random()*4 + 'px',
+              opacity: 0.3 + Math.random()*0.4,
+              animationDuration: 3 + Math.random()*6 + 's',
+              animationDelay: Math.random()*10 + 's'
+            }} />
           ))}
         </div>
         <div className="particles" ref={particlesRef} />
