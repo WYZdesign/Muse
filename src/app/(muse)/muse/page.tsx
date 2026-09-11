@@ -778,7 +778,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           const userObj = { id: d.user.id, email: d.user.email, profile: d.profile };
           setAuthUser(userObj);
           if (refreshToken) setRefreshToken(refreshToken);
-          safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, user: userObj }));
+          safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken, user: userObj }));
           ensureMusePushRegistered();
           // Sync the Settings toggle with the browser's actual push
           // subscription state — previously always initialized to false
@@ -1611,7 +1611,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       const userObj = { id: j.user.id, email: j.user.email, profile: j.profile || null };
       setAuthUser(userObj);
       if (refreshToken) setRefreshToken(refreshToken);
-      safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, user: userObj }));
+      safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken, user: userObj }));
       // Attach session to browser supabase client so realtime works under RLS.
       if (accessToken) {
         supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).catch(() => {});
