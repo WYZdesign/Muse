@@ -767,31 +767,34 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       .catch(() => {});
   }, [screen, authUser]);
 
-  const applySession = useCallback((accessToken: string, refreshToken?: string, attempt = 0) => {
-    if (accessToken) {
-      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || "" }).catch(() => {});
-    }
-    authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "session", access_token: accessToken }) })
-      .then(r => r.json())
-      .then(d => {
-        if (d.success && d.user) {
-          const userObj = { id: d.user.id, email: d.user.email, profile: d.profile };
-          setAuthUser(userObj);
-          if (refreshToken) setRefreshToken(refreshToken);
-          safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken, user: userObj }));
-          ensureMusePushRegistered();
-          // Sync the Settings toggle with the browser's actual push
-          // subscription state — previously always initialized to false
-          // even when push was already active from a prior session.
-          (async () => {
-            try {
-              if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-                const reg = await navigator.serviceWorker.getRegistration();
-                const sub = await reg?.pushManager.getSubscription();
-                if (sub) setPushEnabled(true);
-              }
-            } catch {}
-          })();
+const applySession = useCallback((accessToken: string, refreshToken?: string, attempt = 0) => {
+    // Refresh the session first — access tokens expire after 1hr, but refresh tokens
+    // can silently fail (revoked, expired, etc). We try to get a fresh token before
+    // validating so the user doesn't get bounced to login while actively using the app.
+    let pendingToken = accessToken;
+    let pendingRefresh = refreshToken || "";
+    const doSessionCheck = () => {
+      authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "session", access_token: pendingToken }) })
+        .then(r => r.json())
+        .then(d => {
+          if (d.success && d.user) {
+            const userObj = { id: d.user.id, email: d.user.email, profile: d.profile };
+            setAuthUser(userObj);
+            if (pendingRefresh) setRefreshToken(pendingRefresh);
+            safeSetItem("muse_user", JSON.stringify({ access_token: pendingToken, refresh_token: pendingRefresh, user: userObj }));
+            ensureMusePushRegistered();
+            // Sync the Settings toggle with the browser's actual push
+            // subscription state — previously always initialized to false
+            // even when push was already active from a prior session.
+            (async () => {
+              try {
+                if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+                  const reg = await navigator.serviceWorker.getRegistration();
+                  const sub = await reg?.pushManager.getSubscription();
+                  if (sub) setPushEnabled(true);
+                }
+              } catch {}
+            })();
             if (d.profile) {
               const isOwner = d.user.email === OWNER_EMAIL;
               const effTier = isOwner ? "muse_pro" : (d.profile.tier || "free");
@@ -880,34 +883,59 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             } else {
               setScreen(prev => (prev === "auth") ? "onboard" : prev);
             }
-        } else {
-          // Retry once before giving up — network hiccup, not invalid token
+          } else {
+            // Retry once before giving up — network hiccup, not invalid token
+            if (attempt < 1) {
+              setTimeout(() => { try { applySession(accessToken, refreshToken, attempt + 1); } catch {} }, 1000);
+              return;
+            }
+            // Suspended accounts were silently bounced to the login screen with no
+            // explanation — tell the user why, and clear the dead token so reloads
+            // don't loop through the same rejection. (Event, not showToast: this
+            // callback is defined before showToast's declaration.)
+            if (d.code === "ACCOUNT_SUSPENDED") {
+              try { safeRemoveItem("muse_user"); } catch {}
+              clearRefreshToken();
+              try { window.dispatchEvent(new CustomEvent("muse:toast", { detail: "Your account has been suspended. Contact support@wyzdesign.com" })); } catch {}
+            }
+            setAuthUser(null);
+            setScreen("auth");
+          }
+          // Session resolved — splash can hide regardless of outcome
+          try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
+        })
+        .catch(() => {
           if (attempt < 1) {
             setTimeout(() => { try { applySession(accessToken, refreshToken, attempt + 1); } catch {} }, 1000);
-            return;
+          } else {
+            try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
           }
-          // Suspended accounts were silently bounced to the login screen with no
-          // explanation — tell the user why, and clear the dead token so reloads
-          // don't loop through the same rejection. (Event, not showToast: this
-          // callback is defined before showToast's declaration.)
-          if (d.code === "ACCOUNT_SUSPENDED") {
-            try { safeRemoveItem("muse_user"); } catch {}
-            clearRefreshToken();
-            try { window.dispatchEvent(new CustomEvent("muse:toast", { detail: "Your account has been suspended. Contact support@wyzdesign.com" })); } catch {}
+        });
+    };
+    // If we have a refresh token, try to get a fresh session first
+    if (pendingRefresh) {
+      supabase.auth.refreshSession({ refresh_token: pendingRefresh })
+        .then(({ data: { session } }) => {
+          if (session?.access_token) {
+            pendingToken = session.access_token;
+            pendingRefresh = session.refresh_token || pendingRefresh;
+            // Update storage with fresh tokens
+            safeSetItem("muse_user", JSON.stringify({ access_token: pendingToken, refresh_token: pendingRefresh }));
+            setRefreshToken(pendingRefresh);
+            doSessionCheck();
+          } else {
+            // Refresh failed, fall back to original token
+            doSessionCheck();
           }
-          setAuthUser(null);
-          setScreen("auth");
-        }
-        // Session resolved — splash can hide regardless of outcome
-        try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
-      })
-      .catch(() => {
-        if (attempt < 1) {
-          setTimeout(() => { try { applySession(accessToken, refreshToken, attempt + 1); } catch {} }, 1000);
-        } else {
-          try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
-        }
-      });
+        })
+        .catch(() => {
+          // Refresh failed, fall back to original token
+          doSessionCheck();
+        });
+    } else {
+      // No refresh token, just check the session
+      doSessionCheck();
+    }
   }, []);
 
   useEffect(() => {
