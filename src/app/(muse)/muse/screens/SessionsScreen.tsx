@@ -281,7 +281,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         ))}
       </HScroll>
       {sessTab === "sessions" && (
-        <div style={{ margin: "0 16px 12px", display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "6px 12px", animation: "fadeIn .2s ease" }}>
+        <div style={{ margin: "0 16px 12px", display: "flex", alignItems: "center", gap: 8, background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, padding: "6px 12px", animation: "fadeIn .2s ease" }}>
           <FiSearch size={14} color="var(--muted)" />
           <input className="inp" placeholder="Name, type, or skill..." value={sessionSearchQuery} onChange={e => setSessionSearchQuery(e.target.value)} autoFocus style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
           {sessionSearchQuery && <button onClick={() => setSessionSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
@@ -308,7 +308,7 @@ export const SessionsScreen = memo(function SessionsScreen({
               }
               return list.map(s => (
               <div key={s.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch", position: "relative" }}>
-                <button aria-label="Report session" title="Report" onClick={() => { setReportTarget({ id: s.id, type: "session", name: s.name || "session" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
+                <button aria-label="Report session" title="Report" onClick={() => { setReportTarget({ id: s.id, type: "session", name: s.name || "session" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "var(--card-bg)", color: "var(--text)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
                 <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0 }}>
                   {s.img && (
                     <Image src={s.img} alt={s.name} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
@@ -400,7 +400,7 @@ export const SessionsScreen = memo(function SessionsScreen({
               </div>
               ));
             })()}
-            <div style={{ height: 1, margin: "20px 0 8px", background: "linear-gradient(90deg, transparent, rgba(233,30,99,0.4), transparent)" }} />
+            <div style={{ height: 1, margin: "20px 0 8px", background: "linear-gradient(90deg, transparent, var(--border-subtle), transparent)" }} />
             <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", marginBottom: 8 }}>Browse local studios in the LA area</div>
             <button className="btn ls-gradient" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 800, borderRadius: 12 }} onClick={() => showScreen("studios")}>✦ Browse LA Studios</button>
           </>
@@ -487,13 +487,13 @@ export const SessionsScreen = memo(function SessionsScreen({
                         <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => completeBooking(b.id)}>Complete</button>
                       )}
                       {(b.status === "pending" || b.status === "confirmed") && (
-                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12, borderColor: "rgba(255,100,100,0.2)", color: "#ff6464" }} onClick={() => setCancelTarget(b.id)}>{STRINGS.cancel}</button>
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12, borderColor: "var(--border-subtle)", color: "var(--coral)" }} onClick={() => setCancelTarget(b.id)}>{STRINGS.cancel}</button>
                       )}
                       {b.status === "completed" && (
                         <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setReviewTarget(b)}>Leave Review</button>
                       )}
                       {b.status === "completed" && b.payment_status === "succeeded" && (
-                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, borderColor: "rgba(255,100,100,0.2)", color: "#ff8a80" }} onClick={() => requestRefund(b.id)}>Request refund</button>
+                        <button className="btn btn-outline" style={{ flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, borderRadius: 12, borderColor: "var(--border-subtle)", color: "var(--coral)" }} onClick={() => requestRefund(b.id)}>Request refund</button>
                       )}
                     </div>
                   </div>
@@ -505,7 +505,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         {sessTab === "requests" && (
           <div style={{ padding: "0 0 20px" }}>
             {payout?.needsConnect && (
-              <div style={{ padding: "12px 14px", marginBottom: 12, borderRadius: 12, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.35)" }}>
+              <div style={{ padding: "12px 14px", marginBottom: 12, borderRadius: 12, background: "var(--card-bg)", border: "1px solid var(--border-subtle)" }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: "var(--gold)" }}>💸 You have earnings pending</div>
                 <div style={{ fontSize: 11.5, color: "var(--text2)", marginTop: 4 }}>Connect Stripe to receive payouts for your completed bookings ({(payout.unpaidEarningsCents / 100).toFixed(2)} pending).</div>
                 <button className="btn btn-gold" style={{ width: "100%", marginTop: 10, padding: "10px 14px", fontSize: 12, fontWeight: 700, borderRadius: 12 }} onClick={connectStripe}>Connect to get paid</button>
@@ -605,7 +605,7 @@ export const SessionsScreen = memo(function SessionsScreen({
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>How was your shoot with {reviewTarget.host_id?.name || reviewTarget.user_id?.name || "them"}?</div>
             <div style={{ display: "flex", gap: 6, marginBottom: 12, justifyContent: "center" }}>
               {[1, 2, 3, 4, 5].map(n => (
-                <button key={n} onClick={() => setReviewRating(n)} style={{ background: "none", border: "none", fontSize: 30, cursor: "pointer", color: n <= reviewRating ? "var(--gold)" : "rgba(255,255,255,0.2)", lineHeight: 1 }}>{n <= reviewRating ? "★" : "☆"}</button>
+                <button key={n} onClick={() => setReviewRating(n)} style={{ background: "none", border: "none", fontSize: 30, cursor: "pointer", color: n <= reviewRating ? "var(--gold)" : "var(--border-subtle)", lineHeight: 1 }}>{n <= reviewRating ? "★" : "☆"}</button>
               ))}
             </div>
             <textarea className="inp" placeholder="Share your experience (optional)" rows={3} value={reviewBody} onChange={e => setReviewBody(e.target.value)} style={{ resize: "none" }} />

@@ -32,7 +32,7 @@ function NotificationAvatar({ name, src, letter }: { name?: string; src?: string
   if (!src || failed) {
     return <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--pink),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{initial}</div>;
   }
-  return <Image loading="lazy" src={src} alt="Avatar" width={40} height={40} onError={() => setFailed(true)} style={{ borderRadius: "50%", objectFit: "cover", backgroundColor: "#1a0a2e", flexShrink: 0 }} />;
+  return <Image loading="lazy" src={src} alt="Avatar" width={40} height={40} onError={() => setFailed(true)} style={{ borderRadius: "50%", objectFit: "cover", backgroundColor: "var(--card-bg)", flexShrink: 0 }} />;
 }
 
 // Swipe-to-dismiss notification row. Horizontal swipe (touch OR mouse) translates
@@ -158,7 +158,7 @@ function SwipeableNotification({ a, notifIcon, activeDragId, setActiveDragId, on
         onTouchMove={(e) => moveTo(e.touches[0]?.clientX ?? 0, e.touches[0]?.clientY ?? 0)}
         onTouchEnd={end}
         onTouchCancel={cancel}
-        style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", opacity: a.read ? 0.55 : 1, background: a.read ? "transparent" : "rgba(255,215,0,0.03)", position: "relative", zIndex: 1, touchAction: "pan-y", userSelect: dragging ? "none" : undefined, transform: removing ? `translateX(${offPct})` : `translateX(${dx}px)`, transition: dragging ? "none" : "transform 220ms ease", willChange: "transform" }}
+        style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--border-subtle)", opacity: a.read ? 0.55 : 1, background: a.read ? "transparent" : "rgba(255,215,0,0.03)", position: "relative", zIndex: 1, touchAction: "pan-y", userSelect: dragging ? "none" : undefined, transform: removing ? `translateX(${offPct})` : `translateX(${dx}px)`, transition: dragging ? "none" : "transform 220ms ease", willChange: "transform" }}
       >
         <NotificationAvatar name={a.from} src={a.avatar} letter={a._systemAvatar} />
         <div style={{ flex: 1 }}>
@@ -368,7 +368,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
         return (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {ids.map((id, i) => (
-              <div key={`${id}-${i}`} style={{ padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 10 }}>
+              <div key={`${id}-${i}`} style={{ padding: "12px 14px", background: "var(--card-bg)", borderRadius: 12, border: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", gap: 10 }}>
                 {/* Audit fix (2026-09-08): appliedBriefs/savedBriefs are
                     just id arrays, so this used to always fall back to a
                     generic "Quest #<id>" — never the brief's real title
@@ -387,7 +387,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
         const b = bookingsForHub || { asBooker: [], asHost: [] };
         if (!b.asBooker.length && !b.asHost.length) return <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No bookings yet.</div>;
         const row = (x: any, role: string) => (
-          <div key={x.id} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.04)", borderRadius: 12, marginBottom: 8 }}>
+          <div key={x.id} style={{ padding: "10px 12px", background: "var(--card-bg)", borderRadius: 12, marginBottom: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{x.session_id?.title || "Session"}</span>
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: "capitalize", color: x.status === "completed" ? "#98fb98" : x.status === "confirmed" ? "var(--gold)" : x.status === "cancelled" ? "#ff6464" : "var(--muted)" }}>{x.status}</span>
@@ -409,21 +409,21 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
             const statusMeta: Record<string, { label: string; color: string }> = {
               open: { label: "Under review", color: "#ffd166" },
               actioned: { label: "Action taken", color: "#7ee2a0" },
-              dismissed: { label: "Reviewed — no action needed", color: "rgba(255,255,255,0.5)" },
+              dismissed: { label: "Reviewed — no action needed", color: "var(--muted)" },
             };
             const meta = statusMeta[status] || statusMeta.open;
             return (
-              <div key={r.id} style={{ padding: "10px 12px", background: "rgba(255,100,100,0.05)", borderRadius: 12, border: "1px solid rgba(255,100,100,0.12)", marginBottom: 8 }}>
+              <div key={r.id} style={{ padding: "10px 12px", background: "var(--card-bg)", borderRadius: 12, border: "1px solid var(--border-subtle)", marginBottom: 8 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
                   <span style={{ fontWeight: 700, textTransform: "capitalize", color: "#ff8a80" }}>{String(r.target_type).replace("_", " ")}</span>
                   <span style={{ color: "var(--muted)", fontSize: 11 }}>{new Date(r.created_at).toLocaleDateString()}</span>
                 </div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 3 }}>{r.reason}</div>
+                <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 3 }}>{r.reason}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 6 }}>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: meta.color, flexShrink: 0 }} />
                   <span style={{ fontSize: 11, fontWeight: 600, color: meta.color }}>{meta.label}</span>
                 </div>
-                {r.resolution_note && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 3 }}>{r.resolution_note}</div>}
+                {r.resolution_note && <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 3 }}>{r.resolution_note}</div>}
               </div>
             );
           }))}
@@ -722,12 +722,12 @@ export const MenuModal = memo(function MenuModal({
               ) : topQuests.map(q => {
                 const pct = Math.round((q.progress / q.target) * 100);
                 return (
-                  <div key={q.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div key={q.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: "1px solid var(--border-subtle)" }}>
                     <span style={{ fontSize: 16, flexShrink: 0 }}>{q.icon}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{q.title}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-                        <div style={{ flex: 1, height: 5, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                        <div style={{ flex: 1, height: 5, borderRadius: 3, background: "var(--border-subtle)", overflow: "hidden" }}>
                           <div style={{ height: "100%", borderRadius: 3, width: `${pct}%`, background: q.color, transition: "width .4s" }} />
                         </div>
                         <span style={{ fontSize: 10, fontWeight: 800, color: q.color, minWidth: 24, textAlign: "right" }}>{pct}%</span>

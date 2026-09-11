@@ -357,7 +357,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           ) : referralData ? (
             <>
               {/* Referral Code Section */}
-              <div style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+              <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, padding: 16, marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text2)" }}>Your Referral Code</div>
                   <FiExternalLink size={16} style={{ color: "var(--muted)" }} />
@@ -370,10 +370,10 @@ export const ProfileScreen = memo(function ProfileScreen({
                     letterSpacing: 2, 
                     color: "var(--gold)",
                     fontFamily: "monospace",
-                    background: "rgba(0,0,0,0.2)",
+                    background: "var(--card-bg)",
                     padding: "12px 16px",
                     borderRadius: 8,
-                    border: "1px solid rgba(255,215,0,0.3)",
+                    border: "1px solid var(--border-subtle)",
                     textAlign: "center"
                   }}>
                     {referralData.code || "—"}
@@ -412,26 +412,26 @@ export const ProfileScreen = memo(function ProfileScreen({
                   <div style={{ fontSize: 28, fontWeight: 800, color: "var(--gold)", fontFamily: "monospace" }}>{referralStats?.signups || currentUser.referrals || 0}</div>
                   <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>Signups</div>
                 </div>
-                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, padding: 16, textAlign: "center" }}>
                   <div style={{ fontSize: 28, fontWeight: 800, color: "#90caf9", fontFamily: "monospace" }}>{referralStats?.purchases || 0}</div>
                   <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>Purchases</div>
                 </div>
-                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, padding: 16, textAlign: "center" }}>
                   <div style={{ fontSize: 28, fontWeight: 800, color: "var(--gold)", fontFamily: "monospace" }}>${(referralStats?.totalEarned || 0).toFixed(2)}</div>
                   <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>Total Earned</div>
                 </div>
-                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, padding: 16, textAlign: "center" }}>
                   <div style={{ fontSize: 28, fontWeight: 800, color: "#90caf9", fontFamily: "monospace" }}>${(referralStats?.paid || 0).toFixed(2)}</div>
                   <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>Paid Out</div>
                 </div>
-                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center", gridColumn: "span 2" }}>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "#FF69B4", fontFamily: "monospace" }}>${(referralStats?.pending || 0).toFixed(2)}</div>
+                <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, padding: 16, textAlign: "center", gridColumn: "span 2" }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--pink)", fontFamily: "monospace" }}>${(referralStats?.pending || 0).toFixed(2)}</div>
                   <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>Pending</div>
                 </div>
               </div>
 
               {/* Tier Progress */}
-              <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16 }}>
+              <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, padding: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text2)" }}>Current Tier</div>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "var(--gold)", background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.35)", padding: "4px 12px", borderRadius: 99 }}>
@@ -501,7 +501,7 @@ export const ProfileScreen = memo(function ProfileScreen({
               if (filtered.length > 0) return filtered.slice(0, 9).map((a: any) => {
                 const openLightbox = () => openAlbumLightbox(a.id, a.cover_url);
                 return (
-                <div key={a.id} style={{ aspectRatio: "3/4", borderRadius: 12, overflow: "hidden", background: "#1a0a2e", position: "relative", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLightbox(); } }} onClick={openLightbox}>
+                <div key={a.id} style={{ aspectRatio: "3/4", borderRadius: 12, overflow: "hidden", background: "var(--card-bg)", position: "relative", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLightbox(); } }} onClick={openLightbox}>
                   {a.cover_url ? (
                     <Image loading="lazy" src={a.cover_url} alt={a.title} fill sizes="(max-width: 600px) 33vw, 200px" style={{ objectFit: "cover" }} onError={handleImgError} />
                   ) : (

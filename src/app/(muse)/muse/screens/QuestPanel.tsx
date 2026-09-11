@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { FiX, FiCheck, FiStar } from "react-icons/fi";
 import StreakWidget from "../components/StreakWidget";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import { rotateQuests } from "@/lib/questEngine";
 
 interface QuestPanelProps {
@@ -103,16 +104,18 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
   const xpForLevel = 50 * (Math.pow(xp.level, 2) - Math.pow(xp.level - 1, 2));
   const xpPct = Math.max(0, Math.min(100, (xpIntoLevel / Math.max(xpForLevel, 1)) * 100));
 
+  const panelRef = useFocusTrap(show, onClose);
+
   if (!show) return null;
 
   return (
-    <div className="quest-overlay" role="presentation" aria-hidden="true" onClick={onClose}>
-      <div className="quest-panel" onClick={e => e.stopPropagation()}>
+      <div className="quest-overlay" role="presentation" aria-hidden="true" onClick={onClose}>
+        <div ref={panelRef} className="quest-panel" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="quest-header">
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #FFD700, #FF8A80)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <FiStar size={18} color="#0a0612" />
+              <FiStar size={18} color="var(--text)" />
             </div>
             <div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)" }}>Quests</div>
@@ -158,7 +161,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
               aria-expanded={streakOpen}
               onClick={() => setStreakOpen(true)}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStreakOpen(true); } }}
-              style={{ flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+              style={{ flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "var(--card-bg)", border: "1px solid var(--border-subtle)" }}
             >
               <span style={{ fontSize: 22 }}>🔥</span>
               <span style={{ fontSize: 16, fontWeight: 700, color: "var(--gold)" }}>{loginStreak}</span>
@@ -185,8 +188,8 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                   fontSize: 13,
                   fontWeight: 700,
                   transition: "all .2s",
-                  background: isActive ? "linear-gradient(135deg, #FFD700, #FFA500)" : "rgba(255,255,255,0.04)",
-                  color: isActive ? "#0a0612" : "var(--text2)",
+                  background: isActive ? "linear-gradient(135deg, #FFD700, #FFA500)" : "var(--card-bg)",
+                  color: isActive ? "var(--text)" : "var(--text2)",
                   boxShadow: isActive ? "0 2px 12px rgba(255,215,0,0.25)" : "none",
                 }}
               >
@@ -197,8 +200,8 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                     fontSize: 10,
                     padding: "1px 6px",
                     borderRadius: 99,
-                    background: isActive ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.1)",
-                    color: isActive ? "#0a0612" : "var(--text2)",
+                    background: isActive ? "rgba(0,0,0,0.15)" : "var(--border-subtle)",
+                  color: isActive ? "var(--text)" : "var(--text2)",
                     fontWeight: 800,
                   }}>{claimableCount}</span>
                 )}
@@ -321,7 +324,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                         borderRadius: 8,
                         border: "none",
                         background: `linear-gradient(135deg, ${tier.color}, ${tier.color}cc)`,
-                        color: "#0a0612",
+                        color: "var(--text)",
                         fontSize: 12,
                         fontWeight: 700,
                         cursor: "pointer",

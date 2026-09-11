@@ -333,7 +333,7 @@ export const FeedScreen = memo(function FeedScreen({
             const active = feedFilter === f.k;
             return (
               <button type="button" key={f.k} role="tab" aria-selected={active} onClick={() => setFeedFilter(f.k as any)}
-                style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: active ? "#0a0612" : "#90CAF9", background: active ? "rgba(144,202,249,0.3)" : "rgba(255,255,255,0.06)", border: active ? "1.5px solid rgba(144,202,249,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
+                style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: active ? "var(--text)" : "#90CAF9", background: active ? "rgba(144,202,249,0.3)" : "var(--card-bg)", border: active ? "1.5px solid rgba(144,202,249,0.4)" : "1px solid var(--border-subtle)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
                 {f.l}
               </button>
             );
@@ -347,14 +347,14 @@ export const FeedScreen = memo(function FeedScreen({
             </div>
           </div>
             <div style={{ position: "relative", flex: 1 }}>
-              <textarea className="inp" placeholder="Share your work or ideas.." rows={2} value={feedText} maxLength={500} onChange={e => setFeedText(e.target.value)} style={{ resize: "none", margin: 0, minHeight: 52, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)" }} />
+              <textarea className="inp" placeholder="Share your work or ideas.." rows={2} value={feedText} maxLength={500} onChange={e => setFeedText(e.target.value)} style={{ resize: "none", margin: 0, minHeight: 52, background: "var(--glass)", border: "1px solid var(--border-subtle)" }} />
               {feedText.length > 0 && (
                 <span style={{ position: "absolute", bottom: 7, right: 10, fontSize: 10, color: feedText.length > 450 ? "#ff8a80" : "var(--muted)", fontWeight: 700, pointerEvents: "none" }}>{feedText.length}/500</span>
               )}
             </div>
           </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", width: "100%" }}>
-              <label style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }}>
+              <label style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }}>
                 <FiImage size={16} />
                 <input
                   type="file"
@@ -374,7 +374,7 @@ export const FeedScreen = memo(function FeedScreen({
                   }}
                 />
               </label>
-              <button style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
+              <button style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
               {feedMedia.slice(0, 1).map((url, i) => (
                 <div key={i} style={{ position: "relative", width: 36, height: 36, flexShrink: 0 }}>
                   {url.endsWith(".mp4") || url.includes("video") ? (
@@ -461,7 +461,7 @@ export const FeedScreen = memo(function FeedScreen({
                 <div style={{ padding: "14px 18px 0", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPostDetail(post.id); } }} onClick={() => openPostDetail(post.id)}>
                     <div style={{ position: "relative", flexShrink: 0 }}>
                       <Image loading="lazy" src={post.avatar} alt={`${post.author}'s avatar`} width={52} height={52} className="feed-avatar" style={{ flexShrink: 0, borderRadius: "50%", objectFit: "cover", cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: post.rid || post.id, name: post.author, avatar: post.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: post.rid || post.id, name: post.author, img: post.avatar, type: "Creative" }); } }} />
-                      {isOnline && <span title="Online" style={{ position: "absolute", right: -1, bottom: -1, width: 12, height: 12, borderRadius: "50%", background: "#22c55e", border: "2px solid #0a0612", boxShadow: "0 0 6px rgba(34,197,94,0.7)" }} />}
+                      {isOnline && <span title="Online" style={{ position: "absolute", right: -1, bottom: -1, width: 12, height: 12, borderRadius: "50%", background: "#22c55e", border: "2px solid var(--bg)", boxShadow: "0 0 6px rgba(34,197,94,0.7)" }} />}
 
                    </div>
                   <div>
@@ -482,7 +482,7 @@ export const FeedScreen = memo(function FeedScreen({
                   onClick={() => openPostDetail(post.id)}
                 >{post.text}</div>
                 {post.img && (
-                  <div className="feed-post-img-wrap" style={{ position: "relative", width: "100%", aspectRatio: "4/3", overflow: "hidden", background: "#12091f" }}>
+                  <div className="feed-post-img-wrap" style={{ position: "relative", width: "100%", aspectRatio: "4/3", overflow: "hidden", background: "var(--card-bg)" }}>
                     {/* Full-bleed contained media: a fixed aspect-ratio frame spans the
                         full card width edge-to-edge and the image fills it (objectFit:cover),
                         so photos/videos never letterbox, overflow, or leave a gap. Any
@@ -490,7 +490,7 @@ export const FeedScreen = memo(function FeedScreen({
                     <Image loading="lazy" src={post.img} alt="Photo" width={800} height={600} className="feed-post-img" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }} onError={handleImgError} />
                   </div>
                 )}
-                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "8px 18px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "8px 18px", borderTop: "1px solid var(--border-subtle)" }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <span style={{ fontSize: 12, color: "var(--text2)", display: "inline-flex", alignItems: "center", gap: 4 }} title="Views">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
@@ -508,12 +508,12 @@ export const FeedScreen = memo(function FeedScreen({
                     </span>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 6, padding: "10px 12px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                <div style={{ display: "flex", gap: 6, padding: "10px 12px", borderTop: "1px solid var(--border-subtle)" }}>
                   {/* Equal flex:1 + minWidth:0 on all three (was 1.25/1.25/0.9 with
                       Report flexShrink:0) — uneven ratios could overflow the card's
                       rounded edge and clip Report. */}
                   <button className={"feed-action-btn" + (post.liked ? " liked-pop" : "")} style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: post.liked ? "var(--gold)" : "var(--muted)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { const newLiked = !post.liked; const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) { setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); return; } updateFeedPostState(post.id, p => ({ ...p, liked: newLiked })); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "like-feed-post", postId: post.id, liked: newLiked }) }).then(r => { if (!r.ok) throw new Error("failed"); }).catch(() => { updateFeedPostState(post.id, p => ({ ...p, liked: !newLiked })); showToast("Failed to update like"); }); }}>✦ {post.likes + (post.liked ? 1 : 0)}</button>
-                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: "#87CEEB", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => {
+                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => {
                     // Tapping Comment always gives a visible result: expand the
                     // inline reply composer AND open the full post detail (which
                     // has the same composer), so the user can't get a no-op.
@@ -530,9 +530,9 @@ export const FeedScreen = memo(function FeedScreen({
                   <button className="feed-action-btn" title="Save for later" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: post.saved ? "#FFD700" : "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { const newSaved = !post.saved; if (feedPostsStatic.some(p => p.id === post.id)) { setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, saved: newSaved }) : p)); } else { updateFeedPostState(post.id, p => ({ ...p, saved: newSaved })); } showToast(newSaved ? "Saved ✓" : "Removed from saves"); }}>{post.saved ? "Saved" : "Save"}</button>
                 </div>
                 {replyingTo === post.id && (
-                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div style={{ borderTop: "1px solid var(--border-subtle)" }}>
                     {(postReplies[post.id] || []).map((reply: any, i: number) => (
-                      <div key={i} style={{ display: "flex", gap: 10, padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                      <div key={i} style={{ display: "flex", gap: 10, padding: "10px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
                         <Image loading="lazy" src={reply.avatar || currentUser.avatar} alt={`${reply.author || "User"}'s avatar`} width={36} height={36} className="feed-avatar" style={{ flexShrink: 0, cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: reply.author, name: reply.author, img: reply.avatar, type: "Creative" }); } }} />
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 12, fontWeight: 700 }}>{reply.author || "User"}</div>
@@ -549,7 +549,7 @@ export const FeedScreen = memo(function FeedScreen({
                             value={commentText}
                             onChange={e => setCommentText(e.target.value)}
                             onKeyDown={async e => { if (e.key === "Enter" && commentText.trim()) { const txt = commentText.trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
-                            style={{ width: "100%", margin: 0, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.06)", borderRadius: 99, padding: "10px 42px 10px 14px", fontSize: 13, color: "var(--text)" }}
+                            style={{ width: "100%", margin: 0, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.06)", borderRadius: 99, padding: "10px 42px 10px 14px", fontSize: 13, color: "var(--text)" }}
                           />
                           <button
                             onClick={async () => { if (commentText.trim()) { const txt = commentText.trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
@@ -597,7 +597,7 @@ export const FeedScreen = memo(function FeedScreen({
             </div>
             <div className="modal-body">
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                <Image loading="lazy" src={dp.avatar} alt="Avatar" width={60} height={60} className="feed-avatar" style={{ backgroundColor: "#1a0a2e" }} onError={handleImgError} />
+                <Image loading="lazy" src={dp.avatar} alt="Avatar" width={60} height={60} className="feed-avatar" style={{ backgroundColor: "var(--card-bg)" }} onError={handleImgError} />
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 800 }}>{dp.author}</div>
                   <div style={{ fontSize: 12, color: "var(--muted)" }}>{dp.time}</div>
@@ -610,7 +610,7 @@ export const FeedScreen = memo(function FeedScreen({
                 const dEng = (dp.likes || 0) + (dp.comments || 0) * 2 + (dp.shares || 0) * 3;
                 const dFmt = (n: number) => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K" : String(n);
                 return (
-                  <div style={{ display: "flex", gap: 18, padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 14, fontSize: 13, color: "var(--muted)", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: 18, padding: "10px 0", borderTop: "1px solid var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)", marginBottom: 14, fontSize: 13, color: "var(--muted)", flexWrap: "wrap" }}>
                     <span title="Views" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>👁 {dFmt(dViews)} views</span>
                     <span>✦ {dp.likes + (dp.liked ? 1 : 0)} likes</span>
                     <span>💬 {dp.comments} replies</span>
@@ -632,7 +632,7 @@ export const FeedScreen = memo(function FeedScreen({
                 </div>
               )}
               {replies.map((reply: any, i: number) => (
-                <div key={i} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <div key={i} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--border-subtle)" }}>
                    <Image loading="lazy" src={reply.avatar || currentUser.avatar} alt={`${reply.author || "User"}'s avatar`} width={30} height={30} className="feed-avatar" style={{ flexShrink: 0, borderRadius: "50%", objectFit: "cover", cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: reply.author, name: reply.author, img: reply.avatar, type: "Creative" }); } }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12, fontWeight: 700 }}>{reply.author || "User"} <span style={{ fontWeight: 400, color: "var(--muted)", fontSize: 11 }}>· {reply.time || "now"}</span></div>
@@ -665,16 +665,16 @@ export const FeedScreen = memo(function FeedScreen({
           {camError && (
             <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: 30, background: "#000" }}>
               <div style={{ fontSize: 40 }}>📷</div>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", textAlign: "center", lineHeight: 1.6 }}>{camError}</div>
+              <div style={{ fontSize: 14, color: "var(--text2)", textAlign: "center", lineHeight: 1.6 }}>{camError}</div>
               <button className="btn btn-gold" style={{ padding: "10px 28px", borderRadius: 99 }} onClick={closeCamera}>{STRINGS.close}</button>
             </div>
           )}
           {/* Top bar */}
           <div style={{ position: "absolute", top: "calc(14px + env(safe-area-inset-top,0px))", left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 18px" }}>
-            <button onClick={closeCamera} aria-label="Close camera" style={{ width: 38, height: 38, borderRadius: "50%", background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            <button onClick={closeCamera} aria-label="Close camera" style={{ width: 38, height: 38, borderRadius: "50%", background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.2)", color: "var(--text)", fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             <div style={{ display: "flex", background: "rgba(0,0,0,0.55)", borderRadius: 999, padding: 3, border: "1px solid rgba(255,255,255,0.15)" }}>
               {(["photo", "video"] as const).map(m => (
-                <button key={m} disabled={recording} onClick={() => setCamMode(m)} style={{ padding: "7px 16px", borderRadius: 999, border: "none", background: camMode === m ? "var(--gold)" : "transparent", color: camMode === m ? "#0a0612" : "rgba(255,255,255,0.8)", fontWeight: 700, fontSize: 12, cursor: recording ? "default" : "pointer", textTransform: "capitalize" }}>{m}</button>
+                <button key={m} disabled={recording} onClick={() => setCamMode(m)} style={{ padding: "7px 16px", borderRadius: 999, border: "none", background: camMode === m ? "var(--gold)" : "transparent", color: camMode === m ? "var(--text)" : "rgba(255,255,255,0.8)", fontWeight: 700, fontSize: 12, cursor: recording ? "default" : "pointer", textTransform: "capitalize" }}>{m}</button>
               ))}
             </div>
             <div style={{ width: 38 }} />

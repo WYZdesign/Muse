@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, memo } from "react";
+import React, { useState, useMemo, useEffect, useRef, memo } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { createSpatialScene } from "../hooks/useDeviceTilt";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import { FiArrowLeft, FiShare2, FiMapPin, FiBriefcase, FiStar, FiFlag, FiMessageCircle, FiChevronDown, FiChevronUp, FiUserPlus, FiSearch, FiTarget, FiZap, FiArrowUpRight, FiDollarSign, FiBookmark } from "react-icons/fi";
 import type { Screen, Match, Professional } from "../components/types";
 import { PROFESSIONALS, FORUM_POSTS } from "../components/types";
@@ -330,6 +331,11 @@ export const NetworkScreen = memo(function NetworkScreen({
   const threadPost =
     threadId != null ? filteredForum.find((p) => p.id === threadId) || null : null;
 
+  const threadModalRef = useFocusTrap(
+    threadPost != null,
+    () => { setThreadId(null); setReplyTo(null); setReplyToId(null); },
+  );
+
   // Open a post's thread and lazily load its real replies (nested via
   // parentReplyId/depth). Demo/numeric posts keep using inline `comments`.
   function openThread(postId: any) {
@@ -518,7 +524,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                   key={f.key}
                   type="button"
                   onClick={() => setFilterSections(s => ({ ...s, [f.key]: !s[f.key] }))}
-                  style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: f.active ? "#0a0612" : "var(--text)", background: f.active ? f.grad : "rgba(255,255,255,0.06)", border: f.active ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "6px 14px", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
+                  style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: f.active ? "var(--text)" : "var(--text)", background: f.active ? f.grad : "rgba(255,255,255,0.06)", border: f.active ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "6px 14px", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
                 >
                   {f.label}{f.active ? " ✓" : ""}
                 </button>
@@ -529,7 +535,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProHiringOnly(!proHiringOnly); } }}
                 onClick={() => setProHiringOnly(!proHiringOnly)}
-                style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: proHiringOnly ? "#0a0612" : "var(--text)", background: proHiringOnly ? "#4cdd88" : "rgba(255,255,255,0.06)", border: proHiringOnly ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "6px 14px", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
+                style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: proHiringOnly ? "var(--text)" : "var(--text)", background: proHiringOnly ? "#4cdd88" : "rgba(255,255,255,0.06)", border: proHiringOnly ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "6px 14px", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
               >
                 Hiring{proHiringOnly ? " ✓" : ""}
               </span>
@@ -546,7 +552,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                   <button type="button" key={b.k} role="tab" aria-selected={proExp === b.k} tabIndex={0}
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProExp(b.k); } }}
                     onClick={() => setProExp(b.k)}
-                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proExp === b.k ? "#0a0612" : b.color, background: proExp === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proExp === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
+                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proExp === b.k ? "var(--text)" : b.color, background: proExp === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proExp === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
                   >{b.label}</button>
                 ))}
               </div>
@@ -563,7 +569,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 ] as const).map((b) => (
                   <button type="button" key={b.k}
                     onClick={() => setProSort(b.k)}
-                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSort === b.k ? "#0a0612" : b.color, background: proSort === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proSort === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
+                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSort === b.k ? "var(--text)" : b.color, background: proSort === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proSort === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
                   >{b.label}</button>
                 ))}
               </div>
@@ -579,7 +585,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 ] as const).map((b) => (
                   <button type="button" key={b.k}
                     onClick={() => setProRateBand(b.k)}
-                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proRateBand === b.k ? "#0a0612" : b.color, background: proRateBand === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proRateBand === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
+                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proRateBand === b.k ? "var(--text)" : b.color, background: proRateBand === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proRateBand === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
                   >{b.label}</button>
                 ))}
               </div>
@@ -593,21 +599,21 @@ export const NetworkScreen = memo(function NetworkScreen({
                 {filterSections.skills && (
                   <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
                     <button type="button" aria-pressed={!proSkill.length} onClick={() => setProSkill([])}
-                      className="filter-chip" style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: !proSkill.length ? "#0a0612" : "#FF69B4", background: !proSkill.length ? "rgba(255,105,180,0.3)" : "rgba(255,255,255,0.06)", border: !proSkill.length ? "1.5px solid rgba(255,105,180,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>All skills</button>
+                      className="filter-chip" style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: !proSkill.length ? "var(--text)" : "#FF69B4", background: !proSkill.length ? "rgba(255,105,180,0.3)" : "rgba(255,255,255,0.06)", border: !proSkill.length ? "1.5px solid rgba(255,105,180,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>All skills</button>
                     {allSkills.map((s) => (
                       <button key={s} type="button" aria-pressed={proSkill.includes(s)}
                         onClick={() => setProSkill(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
-                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSkill.includes(s) ? "#0a0612" : "#FF69B4", background: proSkill.includes(s) ? "rgba(255,105,180,0.3)" : "rgba(255,255,255,0.06)", border: proSkill.includes(s) ? "1.5px solid rgba(255,105,180,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>{s}</button>
+                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSkill.includes(s) ? "var(--text)" : "#FF69B4", background: proSkill.includes(s) ? "rgba(255,105,180,0.3)" : "rgba(255,255,255,0.06)", border: proSkill.includes(s) ? "1.5px solid rgba(255,105,180,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>{s}</button>
                     ))}
                   </div>
                 )}
                 {filterSections.looking && allLooking.length > 0 && (
                   <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
                     <button type="button" onClick={() => setProLooking("all")}
-                      style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === "all" ? "#0a0612" : "#20B2AA", background: proLooking === "all" ? "rgba(32,178,170,0.25)" : "rgba(255,255,255,0.06)", border: proLooking === "all" ? "1.5px solid rgba(32,178,170,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>Anyone</button>
+                      style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === "all" ? "var(--text)" : "#20B2AA", background: proLooking === "all" ? "rgba(32,178,170,0.25)" : "rgba(255,255,255,0.06)", border: proLooking === "all" ? "1.5px solid rgba(32,178,170,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>Anyone</button>
                     {allLooking.map((l) => (
                       <button key={l} type="button" onClick={() => setProLooking(l)}
-                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === l ? "#0a0612" : "#20B2AA", background: proLooking === l ? "rgba(32,178,170,0.25)" : "rgba(255,255,255,0.06)", border: proLooking === l ? "1.5px solid rgba(32,178,170,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>{l}</button>
+                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === l ? "var(--text)" : "#20B2AA", background: proLooking === l ? "rgba(32,178,170,0.25)" : "rgba(255,255,255,0.06)", border: proLooking === l ? "1.5px solid rgba(32,178,170,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>{l}</button>
                     ))}
                   </div>
                 )}
@@ -673,7 +679,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                   height: 34,
                   borderRadius: 10,
                   background: savedProfileIds.includes(p.id) ? "rgba(255,215,0,0.22)" : "rgba(0,0,0,0.45)",
-                  border: savedProfileIds.includes(p.id) ? "1px solid rgba(255,215,0,0.4)" : "1px solid rgba(255,255,255,0.15)",
+                  border: savedProfileIds.includes(p.id) ? "1px solid rgba(255,215,0,0.4)" : "1px solid var(--border-subtle)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -729,7 +735,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                     style={{
                       fontSize: 12,
                       fontWeight: 600,
-                      color: "rgba(255,255,255,0.75)",
+                      color: "var(--text2)",
                       textShadow: "0 1px 4px rgba(0,0,0,0.8)",
                     }}
                   >
@@ -1102,7 +1108,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                       <button
                         style={{
                           background: "none",
-                          border: "1px solid rgba(255,255,255,0.1)",
+                          border: "1px solid var(--border-subtle)",
                           color: "var(--text2)",
                           fontSize: 11,
                           display: "flex",
@@ -1137,7 +1143,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                       <div
                         style={{
                           marginTop: 10,
-                          borderTop: "1px solid rgba(255,255,255,0.06)",
+                          borderTop: "1px solid var(--border-subtle)",
                           paddingTop: 10,
                           display: "flex",
                           flexDirection: "column",
@@ -1177,6 +1183,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                           <input
                             className="inp"
                             placeholder="Write a reply..."
+                            aria-label="Write a reply"
                             value={commentTexts[post.id] || ""}
                             onChange={(e) =>
                               setCommentTexts((prev) => ({ ...prev, [post.id]: e.target.value }))
@@ -1184,7 +1191,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                             onKeyDown={(e) => {
                               if (e.key === "Enter") addComment(post.id);
                             }}
-                            style={{ width: "100%", fontSize: 12, padding: "9px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "var(--text)" }}
+                            style={{ width: "100%", fontSize: 12, padding: "9px 12px", background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 10, color: "var(--text)" }}
                           />
                           <button
                             className="btn btn-gold"
@@ -1211,7 +1218,7 @@ export const NetworkScreen = memo(function NetworkScreen({
 
         {/* ─── THREAD DETAIL (Reddit-style) ─── */}
         {threadPost && createPortal(
-          <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
+          <div ref={threadModalRef} className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
             <div className="modal-header">
               <button className="modal-back" onClick={() => { setThreadId(null); setReplyTo(null); setReplyToId(null); }} aria-label="Back">
                 <FiArrowLeft size={20} />
@@ -1256,7 +1263,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               </div>
 
               {/* COMMENTS */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 12, marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border-subtle)", paddingTop: 12, marginBottom: 10 }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)" }}>{(() => { const n = threadReplies[String(threadPost.id)]?.length || threadPost.comments.length; return `${n} ${n === 1 ? "comment" : "comments"}`; })()}</div>
                 <div style={{ display: "flex", gap: 6 }}>
                   {(["best", "new"] as const).map((s) => (
@@ -1297,15 +1304,15 @@ export const NetworkScreen = memo(function NetworkScreen({
                   const cv = commentVotes[cvKey];
                   return (
                     <div key={node.__key} style={{ marginLeft: Math.min(level, 3) * 16 }}>
-                      <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "10px 12px", marginBottom: 8 }}>
+                      <div style={{ background: "var(--card-bg)", borderRadius: 12, padding: "10px 12px", marginBottom: 8 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                          <div style={{ width: 22, height: 22, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "#0a0612" }}>
+                          <div style={{ width: 22, height: 22, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "var(--text)" }}>
                             {(node.author || "?").charAt(0).toUpperCase()}
                           </div>
                           <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text2)" }}>{node.author}</span>
                           <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
                             <button aria-label="Upvote" style={{ background: "none", border: "none", color: cv === "up" ? "#FFD700" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [cvKey]: p[cvKey] === "up" ? null : "up" }))}>▲</button>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>{cv === "up" ? 2 : cv === "down" ? 0 : 1}</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>{cv === "up" ? 1 : cv === "down" ? -1 : 0}</span>
                             <button aria-label="Downvote" style={{ background: "none", border: "none", color: cv === "down" ? "#ff6b6b" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [cvKey]: p[cvKey] === "down" ? null : "down" }))}>▼</button>
                           </div>
                         </div>
@@ -1340,6 +1347,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 <input
                   className="inp"
                   placeholder="Add a comment…"
+                  aria-label="Add a comment"
                   value={commentTexts[threadPost.id] || ""}
                   onChange={(e) => setCommentTexts((prev) => ({ ...prev, [threadPost.id]: e.target.value }))}
                   onKeyDown={(e) => { if (e.key === "Enter") addComment(threadPost.id, replyToId); }}

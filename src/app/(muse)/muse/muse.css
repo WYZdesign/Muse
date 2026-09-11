@@ -4,7 +4,7 @@
   --ease-buttery:cubic-bezier(.22,1.2,.36,1);--ease-buttery-soft:cubic-bezier(.16,1,.3,1);--ease-buttery-out:cubic-bezier(.4,0,.2,1);--dur-fast:.18s;--dur-med:.32s;--dur-slow:.55s;--btn-glow:var(--gold)}
 html,body{height:100%;overflow:hidden;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text)}
 input,textarea,select{font-size:16px}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important}.hamburger-menu-title,.hamburger-panel::before{animation:none}.star-field,.aurora-strip,.nebula-fog,.sparkle-field,.ember-field,.scene-orb,.comet-field,.skeleton-pulse,.skeleton-block,[style*=animation]{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important}.swipe-card.top-card,.swipe-card .card-hero img,.messages .msg,.match-title,.card-hero-name,.card-hero-type{animation:none!important}.tour-sprite-glow,.tour-sprite-ring,.tour-sprite-ring-2,.tour-sprite-badge,.tour-sprite-orbit-0,.tour-sprite-orbit-1,.tour-sprite-orbit-2,.tour-sprite-spark,.tour-card-wash,.tour-btn-primary,.brief-avatar,.profile-ring,.feed-avatar,.match-avatar,.conn-avatar,.chat-avatar{animation:none!important}}
 button{cursor:pointer;font-family:inherit;border:none;outline:none;background:none}
 a{color:inherit;text-decoration:none}
 .bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden}
@@ -342,11 +342,11 @@ a{color:inherit;text-decoration:none}
 .nav-item.active{color:var(--gold);font-weight:700}
 .nav-icon{font-size:22px;transition:all .3s cubic-bezier(.4,0,.2,1);filter:brightness(0.85)}
 .nav-item.active .nav-icon{transform:scale(1.12);filter:drop-shadow(0 2px 6px rgba(255,215,0,0.25));color:var(--line-color,#FFD700)}
-.nav-icon-grad.grad-discover svg{fill:transparent;background:linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
-.nav-icon-grad.grad-connections svg{fill:transparent;background:linear-gradient(90deg,#1E90FF,#87CEEE,#B0C4DE,#1E90FF,#ADD8E6,#1E90FF);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
-.nav-icon-grad.grad-briefs svg{fill:transparent;background:linear-gradient(90deg,#20B2AA,#9ACD32,#00CED1,#20B2AA,#7CFC00,#20B2AA);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
-.nav-icon-grad.grad-matches svg{fill:transparent;background:linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
-.nav-icon-grad.grad-moments svg{fill:transparent;background:linear-gradient(90deg,#FF1493,#FF0000,#DDA0DD,#FF1493,#FF69B4,#FF1493);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-discover svg{fill:transparent;background:linear-gradient(90deg,var(--gold),var(--coral),var(--pink),var(--gold),var(--lavender),var(--gold));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-connections svg{fill:transparent;background:linear-gradient(90deg,var(--sky),var(--mint),var(--lavender),var(--sky),var(--pink),var(--sky));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-briefs svg{fill:transparent;background:linear-gradient(90deg,var(--mint),var(--gold),var(--coral),var(--mint),var(--lavender),var(--mint));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-matches svg{fill:transparent;background:linear-gradient(90deg,var(--sunset),var(--gold),var(--amber),var(--sunset),var(--coral),var(--sunset));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
+.nav-icon-grad.grad-moments svg{fill:transparent;background:linear-gradient(90deg,var(--pink),var(--sunset),var(--lavender),var(--pink),var(--coral),var(--pink));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 4s ease-in-out infinite}
 .nav-icon-grad svg{width:22px;height:22px;display:block}
 .nav-muse-btn{position:relative;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--pink),var(--lavender));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;margin-top:-18px;border:3px solid rgba(10,6,18,0.95);box-shadow:0 0 8px rgba(255,215,0,0.14),0 3px 10px rgba(0,0,0,0.3);transition:all .3s cubic-bezier(.4,0,.2,1)}
 .nav-muse-btn:hover{transform:scale(1.08);box-shadow:0 0 9px rgba(255,215,0,0.22)}
@@ -378,7 +378,6 @@ a{color:inherit;text-decoration:none}
    two lines). nowrap forces it to size to its actual one-line content, and
    left:50%/translateX(-50%) still centers that single-line box correctly. */
 .hamburger-menu-title{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-size:28px;font-weight:800;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(135deg,var(--gold),var(--lavender),var(--pink),var(--gold));background-size:400% 100%;animation:gradientShift 6s ease-in-out infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:1;pointer-events:none;line-height:36px;margin:0;white-space:nowrap;width:max-content;text-align:center}
-@media(prefers-reduced-motion:reduce){.hamburger-menu-title,.hamburger-panel::before{animation:none}}
 .side-group{margin-bottom:8px}
 .side-label{font-size:14px;font-weight:800;color:var(--gold);margin-bottom:4px;letter-spacing:0.02em}
 .side-sub{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5}
@@ -551,7 +550,7 @@ img{background-color:#1a0a2e}
 .match-card:hover{background:rgba(255,215,0,0.03)}
 .match-card:active{background:rgba(255,215,0,0.06);transform:scale(0.98)}
 .match-avatar-wrap{position:relative;flex-shrink:0}
-.match-avatar{width:96px;height:96px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-color:#1a0a2e;background-image:linear-gradient(#1a0a2e,#1a0a2e),linear-gradient(var(--grad-angle,135deg),#533483,#e94560,#ffa07a,#ffd93d);background-origin:border-box;background-clip:padding-box,border-box;animation:avatarEccentric 8s linear infinite}
+.match-avatar{width:96px;height:96px;box-sizing:border-box;border-radius:50%;object-fit:cover;border:2.5px solid transparent;background-color:var(--card,#1a0a2e);background-image:linear-gradient(var(--card,#1a0a2e),var(--card,#1a0a2e)),linear-gradient(var(--grad-angle,135deg),#533483,#e94560,#ffa07a,#ffd93d);background-origin:border-box;background-clip:padding-box,border-box;animation:avatarEccentric 8s linear infinite}
 @property --grad-angle{syntax:"<angle>";initial-value:135deg;inherits:false}
 @keyframes avatarEccentric{
   0%  {--grad-angle:135deg}
@@ -798,7 +797,7 @@ img{background-color:#1a0a2e}
 .avail-sub{font-size:13px;color:var(--muted);margin-top:3px}
 .toggle{width:52px;height:30px;border-radius:15px;background:rgba(255,255,255,0.08);position:relative;cursor:pointer;transition:all .35s}
 .toggle.on{background:linear-gradient(135deg,var(--gold),var(--amber))}
-.toggle-dot{width:24px;height:24px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:all .35s;box-shadow:0 2px 10px rgba(0,0,0,0.3)}
+.toggle-dot{width:24px;height:24px;border-radius:50%;background:var(--text);position:absolute;top:3px;left:3px;transition:all .35s;box-shadow:0 2px 10px rgba(0,0,0,0.3)}
 .toggle.on .toggle-dot{left:25px}
 .profile-btn{margin:24px 0;text-align:center}
 .profile-btn .btn{display:inline-block;padding:15px 52px}
@@ -1630,9 +1629,35 @@ img{background-color:#1a0a2e}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .mapboxgl-ctrl-attrib a{color:var(--gold)!important}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) ::-webkit-scrollbar-button{display:none;width:0;height:0}
 
+/* ═══ AMBIENT / DECORATIVE LIGHT OVERRIDES ═══ */
+/* Stars: invisible (white on light bg) — hide completely */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star-field,
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star{opacity:0!important;animation:none!important}
+/* Scene orbs: screen blend mode washes out on light — tone down */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .scene-orb{opacity:0.12!important;filter:blur(120px)!important;mix-blend-mode:normal!important}
+/* Nebula fog: same screen-blend issue — soften */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .nebula-fog{opacity:0.15!important;mix-blend-mode:normal!important}
+/* Aurora: screen blend invisible on light — hide */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .aurora-strip{opacity:0!important}
+/* Scene wash: gradient overlay muddy on light — hide */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .scene-wash{opacity:0!important}
+/* Shooting comets: white streaks invisible on light — hide */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .comet-field{display:none!important}
+/* Particles: white dots on light — hide */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .particles{display:none!important}
+/* Splash ambient: splash screen only shows at load, but adapt stars/nebula for light splash bg */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .splash-stars{opacity:0.3}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .splash-star{background:rgba(80,60,40,0.3)!important;box-shadow:none!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .splash-nebula{opacity:0.3!important;mix-blend-mode:normal!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .splash-meteor{opacity:0!important}
+/* Splash sky: dark sunset gradient → light pastel for light themes */
+:is([data-theme="sunrise"],[data-theme="daylight"]) .splash-sky{background:linear-gradient(180deg,#FFF6E7 0%,#FFE0B2 12%,#FFCC80 24%,#FFB74D 36%,#FFA726 46%,#FF9800 52%,#FB8C00 58%,#F57C00 62%,#E65100 66%,#1E88E5 67%,#1565C0 82%,#0D47A1 100%)}
+:is([data-theme="sky"],[data-theme="rose"]) .splash-sky{background:linear-gradient(180deg,#E3F2FD 0%,#BBDEFB 12%,#90CAF9 24%,#64B5F6 36%,#42A5F5 46%,#2196F3 52%,#1E88E5 58%,#1976D2 62%,#1565C0 66%,#0D47A1 67%,#0A3D7A 82%,#062548 100%)}
+
 /* ═══ NAV ICON HUE SHIFT ═══ */
 @keyframes gradientShift{0%{background-position:0% 50%}20%{background-position:34% 72%}40%{background-position:70% 26%}60%{background-position:100% 64%}80%{background-position:52% 16%}100%{background-position:0% 50%}}
 .nav-icon-glow{filter:drop-shadow(0 2px 5px rgba(255,255,255,0.24))}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .nav-icon-glow{filter:drop-shadow(0 2px 5px rgba(0,0,0,0.15))!important}
 
 /* ═══ SWIPE CARD FULL-IMAGE HERO ═══ */
 .card-stack{position:relative;width:100%;flex:1;min-height:0;overflow:hidden;margin:0 auto;display:block}
@@ -1654,7 +1679,7 @@ img{background-color:#1a0a2e}
 /* ═══ MOMENTS PAGE ═══ */
 .moments-page{padding:0 16px 20px;display:flex;flex-direction:column;gap:14px}
 .moments-hero{text-align:center;padding:12px 0 6px}
-.moments-hero h2{font-size:22px;font-weight:800;background:linear-gradient(90deg,#FF1493,#FF69B4,#FFA07A,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0 0 4px;letter-spacing:-0.02em}
+.moments-hero h2{font-size:22px;font-weight:800;background:linear-gradient(90deg,var(--coral),var(--pink),var(--lavender),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0 0 4px;letter-spacing:-0.02em}
 .moments-hero p{font-size:13px;color:var(--text2);margin:0}
 .moments-quick-capture{display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(255,255,255,0.04);border-radius:18px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;transition:all .25s}
 .moments-quick-capture:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,20,147,0.3);transform:translateY(-1px)}
@@ -1684,7 +1709,6 @@ img{background-color:#1a0a2e}
 .moments-action-btn{flex:1;padding:8px 0;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text2);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:all .2s}
 .moments-action-btn:hover{background:rgba(255,255,255,0.08);transform:scale(1.03)}
 .moments-action-btn.liked{color:#ff5c5c;background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.25)}
-@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 .intent-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center;padding-bottom:40px;animation:fadeIn .2s ease}
 .intent-modal{background:var(--bg);border-radius:20px 20px 0 0;padding:24px 20px 32px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease}
 .intent-btn:hover{background:rgba(255,255,255,.06)!important;border-color:var(--gold)!important}
@@ -1726,9 +1750,9 @@ img{background-color:#1a0a2e}
 /* ═══ SWIPE CARD HERO (v2 rework) ═══ */
 .card-hero-info{position:absolute;bottom:0;left:0;right:0;padding:24px 20px 16px;background:linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.7) 50%,transparent 100%);z-index:4;pointer-events:none;transition:opacity .3s ease,transform .3s ease}
 .card-hero-info.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
-.card-hero-name{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:800;color:#fff;font-family:"Playfair Display",serif;font-style:italic;text-shadow:0 2px 8px rgba(0,0,0,0.7),0 4px 20px rgba(0,0,0,0.5),0 0 40px rgba(10,6,18,0.8)}
+.card-hero-name{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:800;color:#fff;font-family:"Playfair Display",serif;font-style:italic;text-shadow:0 1px 4px rgba(0,0,0,0.4),0 2px 12px rgba(0,0,0,0.3),0 0 20px rgba(10,6,18,0.5);filter:drop-shadow(0 1px 6px rgba(0,0,0,0.3))}
 .card-verified-mark{font-size:18px;color:var(--gold)}
-.card-hero-type{font-family:"Playfair Display",serif;font-style:italic;font-size:18px;font-weight:600;color:#FFD700;margin:4px 0 4px;text-shadow:0 1px 6px rgba(0,0,0,0.6),0 2px 12px rgba(0,0,0,0.4),0 0 20px rgba(255,215,0,0.4)}
+.card-hero-type{font-family:"Playfair Display",serif;font-style:italic;font-size:18px;font-weight:600;color:var(--gold);margin:4px 0 4px;text-shadow:none}
 .card-hero-bio{font-size:13px;color:rgba(255,255,255,0.85);line-height:1.4;text-shadow:0 1px 4px rgba(0,0,0,0.5)}
 .card-hero-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .card-hero-tag{font-size:10px;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85)}
@@ -1767,8 +1791,6 @@ img{background-color:#1a0a2e}
 .animations-paused .star-field,.animations-paused .aurora-strip,.animations-paused .nebula-fog,.animations-paused .sparkle-field,.animations-paused .ember-field,.animations-paused .scene-orb{animation-play-state:paused!important}
 
 /* Respect OS reduced-motion preference */
-@media(prefers-reduced-motion:reduce){.star-field,.aurora-strip,.nebula-fog,.sparkle-field,.ember-field,.scene-orb,.comet-field,.skeleton-pulse,.skeleton-block,[style*=animation]{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important}}
-
 /* GPU acceleration for card swipe transforms */
 .card-stack>div[style*="transform"]{will-change:transform}
 
@@ -2056,8 +2078,6 @@ img{background-color:#1a0a2e}
 
 
 /* Reduce motion preference */
-@media(prefers-reduced-motion:reduce){.swipe-card.top-card,.swipe-card .card-hero img,.messages .msg,.match-title,.card-hero-name,.card-hero-type{animation:none!important}.tour-sprite-glow,.tour-sprite-ring,.tour-sprite-ring-2,.tour-sprite-badge,.tour-sprite-orbit-0,.tour-sprite-orbit-1,.tour-sprite-orbit-2,.tour-sprite-spark,.tour-card-wash,.tour-btn-primary,.brief-avatar,.profile-ring,.feed-avatar,.match-avatar,.conn-avatar,.chat-avatar{animation:none!important}}
-
 @keyframes avatarEccentricConn{
   0%  {--grad-angle:135deg}
   100%{--grad-angle:495deg}

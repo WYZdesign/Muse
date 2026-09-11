@@ -3,7 +3,7 @@
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
 import { STRINGS } from "@/lib/strings";
-import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX, FiShield, FiUserPlus } from "react-icons/fi";
+import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX, FiShield, FiUserPlus, FiMoreHorizontal } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { EmptyState } from "../components/EmptyState";
 import { BADGE_COLORS } from "../components/badgeColors";
@@ -274,7 +274,7 @@ export const CommunityScreen = memo(function CommunityScreen({
             role="tab"
             aria-selected={groupCatFilter === "all"}
             className="filter-chip"
-            style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: groupCatFilter === "all" ? "#0a0612" : "var(--gold)", background: groupCatFilter === "all" ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)", border: groupCatFilter === "all" ? "1.5px solid rgba(255,215,0,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
+            style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: groupCatFilter === "all" ? "var(--text)" : "var(--gold)", background: groupCatFilter === "all" ? "rgba(255,215,0,0.3)" : "var(--card-bg)", border: groupCatFilter === "all" ? "1.5px solid rgba(255,215,0,0.4)" : "1px solid var(--border-subtle)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
             onClick={() => setGroupCatFilter("all")}
           >All</button>
           {groupCategories.map((cat) => (
@@ -284,7 +284,7 @@ export const CommunityScreen = memo(function CommunityScreen({
               key={cat}
               aria-selected={groupCatFilter === cat}
               className="filter-chip"
-              style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: groupCatFilter === cat ? "#0a0612" : "var(--gold)", background: groupCatFilter === cat ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)", border: groupCatFilter === cat ? "1.5px solid rgba(255,215,0,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
+              style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: groupCatFilter === cat ? "var(--text)" : "var(--gold)", background: groupCatFilter === cat ? "rgba(255,215,0,0.3)" : "var(--card-bg)", border: groupCatFilter === cat ? "1.5px solid rgba(255,215,0,0.4)" : "1px solid var(--border-subtle)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
               onClick={() => setGroupCatFilter(cat)}
             >{cat.charAt(0).toUpperCase() + cat.slice(1)}</button>
           ))}
@@ -313,7 +313,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                   </div>
                 )}
               </div>
-              <button onClick={() => setDetailItem(null)} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(255,255,255,0.6)", flexShrink: 0 }}><FiX size={16} /></button>
+              <button onClick={() => setDetailItem(null)} style={{ background: "var(--card-bg)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}><FiX size={16} /></button>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 100px" }}>
               {/* Same img:'' seed-data gap as the card views — gradient-initial fallback */}
@@ -365,16 +365,45 @@ export const CommunityScreen = memo(function CommunityScreen({
                           {groupMembers.slice(0, 20).map(m => {
                             const roleBadge = m.role === "admin" ? BADGE_COLORS.gold : m.role === "moderator" ? BADGE_COLORS.blue : null;
                             return (
-                              <div key={m.user_id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <div key={m.user_id} style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}>
                                 {m.user_avatar ? (
                                   <div style={{ position: "relative", width: 28, height: 28, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
                                     <Image src={m.user_avatar} alt={m.user_name} fill sizes="28px" style={{ objectFit: "cover" }} onError={handleImgError} />
                                   </div>
                                 ) : (
-                                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "var(--muted)", flexShrink: 0 }}>{(m.user_name || "?").trim().charAt(0).toUpperCase()}</div>
+                                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--badge-bg)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "var(--muted)", flexShrink: 0 }}>{(m.user_name || "?").trim().charAt(0).toUpperCase()}</div>
                                 )}
                                 <span style={{ fontSize: 13, color: "var(--text2)", flex: 1 }}>{m.user_name || "Member"}</span>
                                 {roleBadge && <span role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: m.role, desc: m.role === "admin" ? "This member administers the community — they manage the group and its rules." : "This member is a moderator — they help keep the community welcoming and on-topic.", icon: m.role === "admin" ? "🛡" : "✋", color: roleBadge.c })} style={{ fontSize: 10, padding: "2px 9px", borderRadius: 99, background: roleBadge.bg, border: `1px solid ${roleBadge.bd}`, color: roleBadge.c, fontWeight: 700, textTransform: "capitalize", cursor: "pointer" }}>{m.role}</span>}
+                                {canManage && String(m.user_id) !== String(currentUser?.id) && (
+                                  <div style={{ position: "relative" }}>
+                                    <button
+                                      aria-label={`Actions for ${m.user_name}`}
+                                      onClick={(e) => { e.stopPropagation(); setMemberMenuFor(memberMenuFor === String(m.user_id) ? null : String(m.user_id)); }}
+                                      style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 4, display: "flex", alignItems: "center" }}
+                                    >
+                                      <FiMoreHorizontal size={16} />
+                                    </button>
+                                    {memberMenuFor === String(m.user_id) && (
+                                      <div style={{ position: "absolute", right: 0, top: "100%", zIndex: 10, background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, padding: 6, minWidth: 150, boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
+                                        {m.role !== "admin" && (
+                                          <>
+                                            <button onClick={() => memberAction("kick", m)} disabled={memberActionId === m.user_id} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", color: "var(--text)", fontSize: 13, padding: "8px 12px", borderRadius: 8, cursor: "pointer" }} onMouseEnter={(e) => e.currentTarget.style.background = "var(--surface-hover)"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>Kick</button>
+                                            <button onClick={() => memberAction("ban", m)} disabled={memberActionId === m.user_id} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", color: "#ff6b6b", fontSize: 13, padding: "8px 12px", borderRadius: 8, cursor: "pointer" }} onMouseEnter={(e) => e.currentTarget.style.background = "var(--surface-hover)"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>Ban</button>
+                                            <button onClick={() => memberAction("mute", m)} disabled={memberActionId === m.user_id} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", color: "var(--text)", fontSize: 13, padding: "8px 12px", borderRadius: 8, cursor: "pointer" }} onMouseEnter={(e) => e.currentTarget.style.background = "var(--surface-hover)"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>Mute (24h)</button>
+                                            <div style={{ height: 1, background: "var(--border-subtle)", margin: "4px 0" }} />
+                                          </>
+                                        )}
+                                        {m.role === "moderator" && (
+                                          <button onClick={() => memberAction("remove-mod", m)} disabled={memberActionId === m.user_id} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", color: "var(--text)", fontSize: 13, padding: "8px 12px", borderRadius: 8, cursor: "pointer" }} onMouseEnter={(e) => e.currentTarget.style.background = "var(--surface-hover)"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>Remove Mod</button>
+                                        )}
+                                        {m.role !== "admin" && m.role !== "moderator" && (
+                                          <button onClick={() => memberAction("make-mod", m)} disabled={memberActionId === m.user_id} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", color: "var(--text)", fontSize: 13, padding: "8px 12px", borderRadius: 8, cursor: "pointer" }} onMouseEnter={(e) => e.currentTarget.style.background = "var(--surface-hover)"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>Make Mod</button>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -460,7 +489,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                 {(c.name || "").trim().charAt(0).toUpperCase()}
               </div>
             )}
-            <button aria-label="Report community" title="Report" onClick={(e) => { e.stopPropagation(); setReportTarget({ id: c.id, type: "community", name: c.name || "community" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(10,6,18,0.6)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
+            <button aria-label="Report community" title="Report" onClick={(e) => { e.stopPropagation(); setReportTarget({ id: c.id, type: "community", name: c.name || "community" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "var(--card-bg)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
             {/* width:"100%" is required — .conn-card sets align-items:flex-start, so a
                 column child without explicit width shrink-wraps and left-anchors, making
                 the title and badges center against different reference boxes. */}
@@ -501,7 +530,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                 {(ev.title || "").trim().charAt(0).toUpperCase()}
               </div>
             )}
-            <button aria-label="Report event" title="Report" onClick={(e) => { e.stopPropagation(); setReportTarget({ id: ev.id, type: "community_event", name: ev.title || "event" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(10,6,18,0.6)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
+            <button aria-label="Report event" title="Report" onClick={(e) => { e.stopPropagation(); setReportTarget({ id: ev.id, type: "community_event", name: ev.title || "event" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "var(--card-bg)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
             {/* width:"100%" fixes shrink-wrap left-anchoring under .conn-card's
                 align-items:flex-start — same root cause as the Groups cards above. */}
             <div style={{ width: "100%", padding: 16, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>

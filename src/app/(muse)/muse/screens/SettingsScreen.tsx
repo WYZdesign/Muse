@@ -107,7 +107,7 @@ function SettingsSubPage({ title, onClose, children }: { title: string; onClose:
         onClick={(e) => e.stopPropagation()}
         style={{ width: "100%", maxWidth: 480, maxHeight: "85vh", background: "var(--panel-bg-solid)", backdropFilter: "blur(30px)", borderRadius: "24px 24px 0 0", border: "1px solid var(--border-subtle)", borderBottom: "none", display: "flex", flexDirection: "column", overflow: "hidden" }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 20px 16px", borderBottom: "1px solid var(--border-subtle)", flexShrink: 0 }}>
           <div style={{ fontSize: 17, fontWeight: 800, color: "var(--text)" }}>{title}</div>
           <button onClick={onClose} aria-label={`Close ${title}`} style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", padding: 6 }}><FiX size={20} /></button>
         </div>
@@ -456,7 +456,7 @@ export const SettingsScreen = memo(function SettingsScreen({
       <div className="settings-item-left">
         <div className="settings-icon" style={{ position: "relative" }}>
           {item.icon}
-          {item.dot && <span style={{ position: "absolute", top: -2, right: -2, width: 10, height: 10, borderRadius: "50%", background: "#FF69B4", border: "1.5px solid #0f0a1e" }} />}
+          {item.dot && <span style={{ position: "absolute", top: -2, right: -2, width: 10, height: 10, borderRadius: "50%", background: "var(--pink)", border: "1.5px solid var(--bg)" }} />}
         </div>
         <div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div>
       </div>
@@ -540,7 +540,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                   <span style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)" }}>Profile Completion</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)" }}>{completionPct}%</span>
                 </div>
-                <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                <div style={{ height: 6, borderRadius: 3, background: "var(--border-subtle)", overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${completionPct}%`, borderRadius: 3, background: "linear-gradient(90deg, var(--gold), var(--coral))", transition: "width .5s ease" }} />
                 </div>
                 {showCompletionDetails && (
@@ -559,7 +559,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                       const b = completionBreakdown[item.k];
                       return (
                         <div key={item.k} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: b?.done ? "var(--text2)" : "var(--text)" }}>
-                          <span style={{ color: b?.done ? "#A5D6A7" : "var(--muted)", fontWeight: 700 }}>{b?.done ? "✓" : "○"}</span>
+                          <span style={{ color: b?.done ? "var(--text)" : "var(--muted)", fontWeight: 700 }}>{b?.done ? "✓" : "○"}</span>
                           <span style={{ opacity: b?.done ? 0.6 : 1 }}>{item.l}</span>
                           {!b?.done && <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>+{b?.weight || 0}%</span>}
                         </div>
@@ -663,7 +663,7 @@ export const SettingsScreen = memo(function SettingsScreen({
           <div className="settings-group">
             <div className="settings-group-title">Help &amp; Support</div>
             {faqItems.map((faq, i) => (
-              <div key={i} style={{ marginBottom: 10, padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+              <div key={i} style={{ marginBottom: 10, padding: "12px 14px", borderRadius: 12, background: "var(--card-bg)", border: "1px solid var(--border-subtle)" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{faq.q}</div>
                 <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>{faq.a}</div>
               </div>
@@ -674,7 +674,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               {!showIdeaForm ? (
                 <button className="btn" style={{ width: "100%", fontSize: 13, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)" }} onClick={() => setShowIdeaForm(true)}>Have an Idea?</button>
               ) : (
-                <div style={{ padding: 14, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 12 }}>
+                <div style={{ padding: 14, background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginBottom: 10 }}>Share Your Idea</div>
                   <select value={ideaCategory} onChange={e => setIdeaCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
                     <option value="feature">New Feature</option>
@@ -692,10 +692,10 @@ export const SettingsScreen = memo(function SettingsScreen({
                 </div>
               )}
               {!showBugForm ? (
-                <button className="btn" style={{ width: "100%", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", color: "#ff8a80", fontSize: 13 }} onClick={() => setShowBugForm(true)}><FiAlertTriangle size={14} style={{ marginRight: 6 }} />Report a Bug</button>
+                <button className="btn" style={{ width: "100%", background: "rgba(255,107,107,0.08)", border: "1px solid var(--border-subtle)", color: "var(--coral)", fontSize: 13 }} onClick={() => setShowBugForm(true)}><FiAlertTriangle size={14} style={{ marginRight: 6 }} />Report a Bug</button>
               ) : (
-                <div style={{ padding: 14, background: "rgba(255,107,107,0.06)", border: "1px solid rgba(255,107,107,0.15)", borderRadius: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#ff8a80", marginBottom: 10 }}>Report a Bug</div>
+                <div style={{ padding: 14, background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--coral)", marginBottom: 10 }}>Report a Bug</div>
                   <select value={bugCategory} onChange={e => setBugCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
                     <option value="ui">UI / Visual Issue</option>
                     <option value="crash">App Crash</option>
@@ -712,12 +712,12 @@ export const SettingsScreen = memo(function SettingsScreen({
                     <input value={bugActual} onChange={e => setBugActual(e.target.value)} placeholder="Actual behavior" style={{ flex: 1, minWidth: 0, boxSizing: "border-box", padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,107,107,0.15)", border: "1px solid rgba(255,107,107,0.3)", color: "#ff8a80" }} disabled={bugSubmitting || !bugDescription.trim() || !authFetch} onClick={async () => { if (!authFetch) return; setBugSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "report-bug", category: bugCategory, description: bugDescription, steps: bugSteps, expected: bugExpected, actual: bugActual }) }); if (!r.ok) throw new Error("failed"); showToast("Bug report sent — thank you!"); setShowBugForm(false); setBugDescription(""); setBugSteps(""); setBugExpected(""); setBugActual(""); } catch { showToast("Failed to send bug report"); } setBugSubmitting(false); }}>{bugSubmitting ? "Sending…" : "Submit Bug"}</button>
+                    <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,107,107,0.15)", border: "1px solid var(--border-subtle)", color: "var(--coral)" }} disabled={bugSubmitting || !bugDescription.trim() || !authFetch} onClick={async () => { if (!authFetch) return; setBugSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "report-bug", category: bugCategory, description: bugDescription, steps: bugSteps, expected: bugExpected, actual: bugActual }) }); if (!r.ok) throw new Error("failed"); showToast("Bug report sent — thank you!"); setShowBugForm(false); setBugDescription(""); setBugSteps(""); setBugExpected(""); setBugActual(""); } catch { showToast("Failed to send bug report"); } setBugSubmitting(false); }}>{bugSubmitting ? "Sending…" : "Submit Bug"}</button>
                     <button className="btn btn-outline" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => setShowBugForm(false)}>{STRINGS.cancel}</button>
                   </div>
                 </div>
               )}
-              <button className="btn" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)", fontSize: 13 }} onClick={async () => { if (!authFetch) { showToast("Can't export right now"); return; } try { const res = await authFetch("/api/muse?type=export"); if (!res.ok) { showToast("Export failed"); return; } const j = await res.json(); const blob = new Blob([JSON.stringify(j, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "muse-my-data.json"; a.click(); URL.revokeObjectURL(url); showToast("Data exported"); } catch { showToast("Export failed"); } }}><FiDownload size={14} style={{ marginRight: 6 }} />Export My Data</button>
+              <button className="btn" style={{ width: "100%", background: "var(--card-bg)", border: "1px solid var(--border-subtle)", color: "var(--text)", fontSize: 13 }} onClick={async () => { if (!authFetch) { showToast("Can't export right now"); return; } try { const res = await authFetch("/api/muse?type=export"); if (!res.ok) { showToast("Export failed"); return; } const j = await res.json(); const blob = new Blob([JSON.stringify(j, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "muse-my-data.json"; a.click(); URL.revokeObjectURL(url); showToast("Data exported"); } catch { showToast("Export failed"); } }}><FiDownload size={14} style={{ marginRight: 6 }} />Export My Data</button>
               <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { try { window.location.href = "mailto:" + SUPPORT_EMAIL + "?subject=" + encodeURIComponent("Muse Support Request") + "&body=" + encodeURIComponent("Describe your issue here:\n\n"); } catch { showToast?.("Email us at " + SUPPORT_EMAIL); } }}><FiHelpCircle size={14} style={{ marginRight: 6 }} />Email Support</button>
             </div>
           </div>
@@ -807,7 +807,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             <div style={{ textAlign: "center", padding: 20, color: "var(--text2)", fontSize: 13 }}>No blocked users</div>
           ) : (
             blockedUsers.map(uid => (
-              <div key={uid} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div key={uid} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border-subtle)" }}>
                 <span style={{ fontSize: 14, color: "var(--text)" }}>{uid}</span>
                 <button className="btn btn-outline" style={{ padding: "4px 12px", fontSize: 12 }} onClick={() => { setBlockedUsers(blockedUsers.filter(b => b !== uid)); if (apiFetch) { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unblock", target_id: uid }) }).catch(() => {}); } }}>Unblock</button>
               </div>
@@ -911,7 +911,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                 </div>
               )}
               {mfaSecret && (
-                <div style={{ textAlign: "center", padding: "8px 12px", background: "rgba(255,255,255,0.04)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div style={{ textAlign: "center", padding: "8px 12px", background: "var(--card-bg)", borderRadius: 8, border: "1px solid var(--border-subtle)" }}>
                   <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Manual entry key:</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", fontFamily: "monospace", letterSpacing: 1 }}>{mfaSecret}</div>
                 </div>
@@ -925,7 +925,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                 onChange={e => setMfaVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 style={{ margin: 0, textAlign: "center", fontSize: 18, letterSpacing: 4 }}
               />
-              {mfaError && <div style={{ fontSize: 12, color: "#ff8a80", textAlign: "center" }}>{mfaError}</div>}
+              {mfaError && <div style={{ fontSize: 12, color: "var(--coral)", textAlign: "center" }}>{mfaError}</div>}
               <div style={{ display: "flex", gap: 8 }}>
                 <button className="btn btn-outline" style={{ flex: 1, fontSize: 13 }} onClick={() => { setMfaEnrolling(false); setMfaQrUri(""); setMfaSecret(""); setMfaVerifyCode(""); setMfaError(""); }}>Cancel</button>
                 <button
@@ -957,22 +957,22 @@ export const SettingsScreen = memo(function SettingsScreen({
             </div>
           ) : mfaEnabled ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "rgba(165,214,167,0.08)", borderRadius: 12, border: "1px solid rgba(165,214,167,0.2)" }}>
-                <FiShield size={20} style={{ color: "#A5D6A7" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "var(--card-bg)", borderRadius: 12, border: "1px solid var(--border-subtle)" }}>
+                <FiShield size={20} style={{ color: "var(--text)" }} />
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Two-factor is active</div>
                   <div style={{ fontSize: 12, color: "var(--text2)" }}>Your account is protected with TOTP verification.</div>
                 </div>
               </div>
               {mfaFactors.filter(f => f.status === "verified").map(f => (
-                <div key={f.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div key={f.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "var(--card-bg)", borderRadius: 10, border: "1px solid var(--border-subtle)" }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{f.friendlyName || "Authenticator"}</div>
                     <div style={{ fontSize: 11, color: "var(--text2)" }}>Verified</div>
                   </div>
                   <button
                     className="btn btn-outline"
-                    style={{ padding: "4px 12px", fontSize: 12, color: "#ff8a80", borderColor: "rgba(255,107,107,0.3)" }}
+                    style={{ padding: "4px 12px", fontSize: 12, color: "var(--coral)", borderColor: "var(--border-subtle)" }}
                     onClick={async () => {
                       try {
                         const res = await mfaUnenroll(f.id);
