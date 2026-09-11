@@ -1058,7 +1058,11 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
             const parsed = JSON.parse(raw);
             if (parsed?.access_token && parsed.access_token !== session.access_token) {
               if (session.refresh_token) setRefreshToken(session.refresh_token);
-              safeSetItem("muse_user", JSON.stringify({ ...parsed, access_token: session.access_token }));
+              safeSetItem("muse_user", JSON.stringify({
+                ...parsed,
+                access_token: session.access_token,
+                refresh_token: session.refresh_token || parsed.refresh_token,
+              }));
             }
           }
         } catch {}
