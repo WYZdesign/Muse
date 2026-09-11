@@ -15,16 +15,16 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
   const cometRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
 
-  const starPos = useMemo(() => Array.from({length:80}, (_,i) => ({
+  const starPos = useMemo(() => Array.from({length:30}, (_,i) => ({
     l:`${(i*7.3+3.1)%100}%`, t:`${(i*11.7+5.8)%100}%`, d:`${2+(i*3.7)%6}s`, dl:`${(i*1.9)%10}s`
   })), []);
 
-  const spPos = useMemo(() => Array.from({length:20}, (_,i) => ({
+  const spPos = useMemo(() => Array.from({length:5}, (_,i) => ({
     l:`${(i*13.7+2.1)%100}%`, t:`${(i*9.3+4.5)%100}%`, d:`${5+(i*5.3)%8}s`, dl:`${(i*2.3)%10}s`,
-    c:['#FFD700','#FFB5C2','#D4A5FF','#FFDAB9','#98FB98','#87CEEB','#FF6B6B'][i%7]
+    c:['#FFD700','#FFB5C2','#D4A5FF','#FFDAB9','#98FB98'][i%5]
   })), []);
 
-  const emPos = useMemo(() => Array.from({length:10}, (_,i) => ({
+  const emPos = useMemo(() => Array.from({length:3}, (_,i) => ({
     l:`${10+(i*6.7)%80}%`, d:`${12+(i*3.1)%15}s`, dl:`${(i*4.3)%20}s`,
     w:`${2+(i*0.7)%2}px`, h:`${2+(i*1.1)%2}px`
   })), []);
@@ -34,11 +34,12 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
     if (!orbs.length) return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     ensureDeviceTiltActive();
-    let frame: number;
-    let skip = 0;
-    const animate = () => {
-      skip = (skip + 1) % 2;
-      if (skip === 0) {
+    const animFrameRef = { current: 0 };
+    let lastTime = 0;
+    const STEP = 1000 / 30;
+    const animate = (now: number) => {
+      if (now - lastTime < STEP) { animFrameRef.current = requestAnimationFrame(animate); return; }
+      lastTime = now;
       const tilt = getDeviceTilt();
       orbs.forEach((orb, i) => {
         const f = (i + 1) * 10;
@@ -47,20 +48,19 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
         const ty = (Math.cos(Date.now()/7000 + i*2) - 0.5) * f + tilt.y * tiltAmt;
         (orb as HTMLElement).style.transform = `translate(${tx}px,${ty}px)`;
       });
-      }
-      frame = requestAnimationFrame(animate);
+      animFrameRef.current = requestAnimationFrame(animate);
     };
-    animate();
-    const onVis = () => { if (document.hidden) cancelAnimationFrame(frame); else animate(); };
+    animFrameRef.current = requestAnimationFrame(animate);
+    const onVis = () => { if (document.hidden) { cancelAnimationFrame(animFrameRef.current); } else { lastTime = 0; animFrameRef.current = requestAnimationFrame(animate); } };
     document.addEventListener("visibilitychange", onVis);
-    return () => { cancelAnimationFrame(frame); document.removeEventListener("visibilitychange", onVis); };
+    return () => { if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); } document.removeEventListener("visibilitychange", onVis); };
   }, []);
 
   useEffect(() => {
     if (!particlesRef.current) return;
     const c = particlesRef.current;
     c.innerHTML = "";
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 20; i++) {
       const p = document.createElement("div");
       p.className = "particle";
       p.style.cssText = `left:${Math.random()*100}%;animation-duration:${3+Math.random()*7}s;animation-delay:${Math.random()*8}s;width:${1.5+Math.random()*4}px;height:${1.5+Math.random()*4}px;background:${PC[~~(Math.random()*PC.length)]}`;
@@ -84,53 +84,48 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
     let animId = 0, spawnTimer = 0, t = 0;
 
     function spawnComet() {
-      if (comets.filter((c: any) => c.active).length >= 4) return;
-      // Comets fall DOWNWARD only — steep, near-vertical angles (63°–117°) so
-      // there's no horizontal drift and never any upward motion.
+      if (comets.filter((c: any) => c.active).length >= 2) return;
       const angle = Math.PI * 0.5 + (Math.random() - 0.5) * Math.PI * 0.3;
       const speed = 3.2 + Math.random() * 0.8;
-      // Always enter from the top edge (falling down), random x.
       const x = Math.random() * w, y = -50;
       comets.push({
         x, y,
         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
         color: COLORS[~~(Math.random() * COLORS.length)],
-        tailLen: 80 + Math.random() * 140,
-        life: 0, maxLife: 160 + Math.random() * 100,
+        tailLen: 60 + Math.random() * 80,
+        life: 0, maxLife: 120 + Math.random() * 80,
         sparks: [], active: true,
-        size: 2.5 + Math.random() * 3,
+        size: 2 + Math.random() * 2,
         freq: 0.12 + Math.random() * 0.2,
-        amp: 8 + Math.random() * 24,
+        amp: 8 + Math.random() * 16,
       });
     }
 
     function animate() {
       ctx!.clearRect(0, 0, w, h);
       spawnTimer++;
-      if (spawnTimer > 50 + Math.random() * 100) { spawnComet(); spawnTimer = 0; }
+      if (spawnTimer > 60 + Math.random() * 120) { spawnComet(); spawnTimer = 0; }
       for (let i = comets.length - 1; i >= 0; i--) {
         const c = comets[i];
         if (!c.active) continue;
         c.life++;
         if (c.life > c.maxLife) { c.active = false; comets.splice(i, 1); continue; }
         c.x += c.vx; c.y += c.vy;
-        if (Math.random() > 0.65) {
-          c.sparks.push({ x: c.x, y: c.y, vx: (Math.random()-0.5)*2.5, vy: (Math.random()-0.5)*2.5, life: 25+Math.random()*35, size: 1+Math.random()*2.5, color: c.color });
+        if (Math.random() > 0.75 && c.sparks.length < 3) {
+          c.sparks.push({ x: c.x, y: c.y, vx: (Math.random()-0.5)*2.5, vy: (Math.random()-0.5)*2.5, life: 20+Math.random()*25, size: 1+Math.random()*2, color: c.color });
         }
         const fadeIn = Math.min(c.life / 25, 1);
         const fadeOut = c.life > c.maxLife - 70 ? (c.maxLife - c.life) / 70 : 1;
         const opacity = fadeIn * fadeOut;
-
-          // Super thin, smooth tail — follows velocity with a barely-there curve
-          const tailSteps = Math.floor(c.tailLen);
-          ctx!.beginPath();
-          ctx!.moveTo(c.x, c.y);
-          for (let t = 1; t <= tailSteps; t++) {
-            const p = t / tailSteps;
-            const tx = c.x - c.vx * t * 0.9 + Math.sin(t * 0.18 + c.life * 0.03) * (1 - p) * 2.2;
-            const ty = c.y - c.vy * t * 0.9 + Math.cos(t * 0.16 + c.life * 0.03) * (1 - p) * 1.8;
-            ctx!.lineTo(tx, ty);
-          }
+        const tailSteps = Math.floor(c.tailLen / 2);
+        ctx!.beginPath();
+        ctx!.moveTo(c.x, c.y);
+        for (let tt = 1; tt <= tailSteps; tt++) {
+          const p = tt / tailSteps;
+          const tx = c.x - c.vx * tt * 0.9 + Math.sin(tt * 0.18 + c.life * 0.03) * (1 - p) * 2.2;
+          const ty = c.y - c.vy * tt * 0.9 + Math.cos(tt * 0.16 + c.life * 0.03) * (1 - p) * 1.8;
+          ctx!.lineTo(tx, ty);
+        }
         const endX = c.x - c.vx * tailSteps * 0.9, endY = c.y - c.vy * tailSteps * 0.9;
         const tailGrad = ctx!.createLinearGradient(c.x, c.y, endX, endY);
         tailGrad.addColorStop(0, hexToRgba(c.color, opacity));
@@ -141,18 +136,14 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
         ctx!.lineWidth = Math.max(1, c.size * 0.6);
         ctx!.lineCap = 'round';
         ctx!.stroke();
-
-        // Glow aura around head
-        const g = ctx!.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.size * 5);
+        const g = ctx!.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.size * 4);
         g.addColorStop(0, `rgba(255, 255, 255, ${opacity})`);
         g.addColorStop(0.2, hexToRgba(c.color, opacity * 0.7));
         g.addColorStop(0.5, hexToRgba(c.color, opacity * 0.2));
         g.addColorStop(1, hexToRgba(c.color, 0));
-        ctx!.beginPath(); ctx!.arc(c.x, c.y, c.size * 5, 0, Math.PI * 2); ctx!.fillStyle = g; ctx!.fill();
+        ctx!.beginPath(); ctx!.arc(c.x, c.y, c.size * 4, 0, Math.PI * 2); ctx!.fillStyle = g; ctx!.fill();
         ctx!.beginPath(); ctx!.arc(c.x, c.y, c.size * 0.6, 0, Math.PI * 2);
         ctx!.fillStyle = `rgba(255, 255, 255, ${opacity})`; ctx!.fill();
-
-        // Sparks along tail
         for (let s = c.sparks.length - 1; s >= 0; s--) {
           const sp = c.sparks[s];
           sp.x += sp.vx; sp.y += sp.vy;
@@ -180,14 +171,8 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
       <div className="scene" style={{ opacity: "var(--scene-opacity, 1)" } as React.CSSProperties}>
         <div className="scene-wash" style={{ opacity: "var(--film-opacity, 1)" } as React.CSSProperties} />
         <div className="scene-orb orb-coral" /><div className="scene-orb orb-gold" />
-        <div className="scene-orb orb-pink" /><div className="scene-orb orb-lavender" />
-        <div className="scene-orb orb-amber" /><div className="scene-orb orb-peach" />
-        <div className="scene-orb orb-sunset" /><div className="scene-orb orb-honey" />
+        <div className="scene-orb orb-pink" />
       </div>
-      {/* Sprite layer (comets, fog, aurora, sparkles, embers, particles) is a
-          separate opacity channel from the .scene gradient above so the
-          Settings Background section can dim them independently via
-          --sprite-opacity (SettingsScreen's "Sprite Opacity" slider). */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", opacity: "var(--sprite-opacity, 1)" } as React.CSSProperties}>
         <div className="star-field">
           {starPos.map((s,i) => (

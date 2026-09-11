@@ -60,7 +60,7 @@ a{color:inherit;text-decoration:none}
 @keyframes orbH{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(-20px,-25px) scale(1.05)}50%{transform:translate(30px,15px) scale(0.96)}75%{transform:translate(-10px,30px) scale(1.04)}}
 
 /* Animated gradient wash - cycles through sunset colors */
-.scene-wash{position:absolute;inset:0;z-index:0;opacity:0.29;animation:colorWash 30s ease-in-out infinite;background:linear-gradient(135deg,rgba(255,107,107,0.17),rgba(255,181,194,0.1275),rgba(212,165,255,0.085),rgba(255,215,0,0.1275),rgba(255,154,86,0.17));background-size:400% 400%}
+.scene-wash{position:absolute;inset:0;z-index:0;opacity:0.15;animation:colorWash 30s ease-in-out infinite;background:linear-gradient(135deg,rgba(255,107,107,0.17),rgba(255,181,194,0.1275),rgba(212,165,255,0.085),rgba(255,215,0,0.1275),rgba(255,154,86,0.17));background-size:400% 400%}
 @keyframes colorWash{0%{background-position:0% 50%}25%{background-position:100% 0%}50%{background-position:100% 100%}75%{background-position:0% 100%}100%{background-position:0% 50%}}
 
 /* Stars */
@@ -76,7 +76,7 @@ a{color:inherit;text-decoration:none}
 .comet-field{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none;display:block}
 
 /* Nebula fog clouds - colorful, floating, Muse palette */
-.nebula-fog{position:absolute;border-radius:50%;filter:blur(80px);mix-blend-mode:screen;animation:nebulaDrift ease-in-out infinite;pointer-events:none}
+.nebula-fog{position:absolute;border-radius:50%;filter:blur(30px);mix-blend-mode:screen;animation:nebulaDrift ease-in-out infinite;pointer-events:none}
 .nf-1{width:400px;height:300px;top:5%;left:10%;background:radial-gradient(ellipse,rgba(255,138,128,0.18),rgba(255,107,107,0.06) 50%,transparent 70%);animation-duration:28s}
 .nf-2{width:350px;height:250px;top:15%;right:15%;background:radial-gradient(ellipse,rgba(212,165,255,0.16),rgba(160,80,220,0.05) 50%,transparent 70%);animation-duration:32s;animation-delay:4s}
 .nf-3{width:300px;height:220px;top:40%;left:25%;background:radial-gradient(ellipse,rgba(255,215,0,0.14),rgba(245,197,66,0.04) 50%,transparent 70%);animation-duration:26s;animation-delay:8s}
