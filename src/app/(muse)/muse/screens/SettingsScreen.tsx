@@ -99,7 +99,7 @@ export interface SettingsScreenProps {
 function SettingsSubPage({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div
-      style={{ position: "fixed", inset: 0, zIndex: 950, display: "flex", alignItems: "flex-end", justifyContent: "center", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+      style={{ position: "fixed", inset: 0, zIndex: 950, display: "flex", alignItems: "flex-end", justifyContent: "center", background: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)" }}
       role="presentation"
       onClick={onClose}
     >

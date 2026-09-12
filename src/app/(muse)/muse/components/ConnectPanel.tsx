@@ -53,7 +53,7 @@ export default function ConnectPanel({ onClose }: Props) {
   };
 
   if (loading) return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(10,6,18,0.95)" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(5,3,10,0.85)" }}>
       <div style={{ color: "#f5f0ff", fontSize: 14 }}>Loading...</div>
     </div>
   );

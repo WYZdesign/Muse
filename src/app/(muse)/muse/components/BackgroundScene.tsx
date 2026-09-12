@@ -84,18 +84,22 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
     let animId = 0, spawnTimer = 0, t = 0;
 
     function spawnComet() {
-      if (comets.filter((c: any) => c.active).length >= 2) return;
+      if (comets.filter((c: any) => c.active).length >= 1) return;
       const angle = Math.PI * 0.5 + (Math.random() - 0.5) * Math.PI * 0.3;
-      const speed = 3.2 + Math.random() * 0.8;
+      const dist = Math.random(); // 0=far, 1=near
+      const speed = 1.5 + dist * 3.5 + Math.random() * 0.8;
+      const tailLen = 20 + dist * 100 + Math.random() * 40;
+      const size = 0.8 + dist * 3.5 + Math.random() * 1.2;
+      const opacity = 0.25 + dist * 0.55;
       const x = Math.random() * w, y = -50;
       comets.push({
         x, y,
         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
         color: COLORS[~~(Math.random() * COLORS.length)],
-        tailLen: 60 + Math.random() * 80,
-        life: 0, maxLife: 120 + Math.random() * 80,
+        tailLen, opacity,
+        life: 0, maxLife: 100 + Math.random() * 100,
         sparks: [], active: true,
-        size: 2 + Math.random() * 2,
+        size,
         freq: 0.12 + Math.random() * 0.2,
         amp: 8 + Math.random() * 16,
       });
@@ -104,7 +108,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
     function animate() {
       ctx!.clearRect(0, 0, w, h);
       spawnTimer++;
-      if (spawnTimer > 60 + Math.random() * 120) { spawnComet(); spawnTimer = 0; }
+      if (spawnTimer > 85 + Math.random() * 170) { spawnComet(); spawnTimer = 0; }
       for (let i = comets.length - 1; i >= 0; i--) {
         const c = comets[i];
         if (!c.active) continue;
@@ -116,7 +120,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
         }
         const fadeIn = Math.min(c.life / 25, 1);
         const fadeOut = c.life > c.maxLife - 70 ? (c.maxLife - c.life) / 70 : 1;
-        const opacity = fadeIn * fadeOut;
+        const opacity = fadeIn * fadeOut * (c.opacity || 0.8);
         const tailSteps = Math.floor(c.tailLen / 2);
         ctx!.beginPath();
         ctx!.moveTo(c.x, c.y);
@@ -159,7 +163,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
       animId = requestAnimationFrame(animate);
     }
 
-    for (let i = 0; i < 2; i++) spawnComet();
+    for (let i = 0; i < 1; i++) spawnComet();
     animId = requestAnimationFrame(animate);
     const onVis = () => { if (document.hidden) { cancelAnimationFrame(animId); } else { animId = requestAnimationFrame(animate); } };
     document.addEventListener("visibilitychange", onVis);

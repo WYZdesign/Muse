@@ -2882,7 +2882,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* TERMS OF SERVICE MODAL */}
       {showTerms && (
-        <div className="modal-overlay">
+        <div className="modal-overlay lighter">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowTerms(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Terms of Service</div>
@@ -2907,7 +2907,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       )}
 
       {showPrivacy && (
-        <div className="modal-overlay">
+        <div className="modal-overlay lighter">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowPrivacy(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Privacy Policy</div>
@@ -2931,7 +2931,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       )}
 
       {showGuidelines && (
-        <div className="modal-overlay">
+        <div className="modal-overlay lighter">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowGuidelines(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Community Guidelines</div>
@@ -2955,7 +2955,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* DELETE ACCOUNT CONFIRMATION */}
       {showDeleteConfirm && (
-        <div className="modal-overlay">
+        <div className="modal-overlay lighter">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowDeleteConfirm(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Delete Account</div>
