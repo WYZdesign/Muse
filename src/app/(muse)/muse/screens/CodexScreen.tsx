@@ -6,7 +6,7 @@ import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 import { CODEX_ZODIAC, CODEX_CHINESE, CODEX_LIFE_PATH, CODEX_MBTI, CODEX_TYPES, CODEX_AESTHETICS } from "../components/codexData";
 import { MBTI_ICON, LIFE_PATH_ICON } from "../components/traitIcons";
-import * as icons from "react-icons/gi";
+import { GiMoon, GiCrown, GiButterfly, GiPaintBrush } from "react-icons/gi";
 import { FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiHeart, FiTarget } from "react-icons/fi";
 
 export interface CodexScreenProps {
@@ -18,7 +18,7 @@ export interface CodexScreenProps {
 }
 
 // ── BADGE MASTER GLOSSARY ────────────────────────────────────────────────────
-const GI = icons as Record<string, any>;
+const GI: Record<string, any> = { GiMoon, GiCrown, GiButterfly, GiPaintBrush };
 // MBTI and Life Path icons come from the shared traitIcons module (single
 // source of truth — DiscoverScreen and ProfileScreen use the same maps) so
 // all three stay consistent instead of drifting. Life Path is re-keyed

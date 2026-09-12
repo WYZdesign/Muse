@@ -24,7 +24,7 @@ export function useRevenueCat() {
 
     try {
       // Configure RevenueCat
-      await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
+      await Purchases.setLogLevel({ level: process.env.NODE_ENV === "development" ? LOG_LEVEL.DEBUG : LOG_LEVEL.INFO });
       
       // These keys should be set via environment or config
       const iosApiKey = process.env.NEXT_PUBLIC_REVENUECAT_IOS_API_KEY || "";

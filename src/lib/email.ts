@@ -139,7 +139,7 @@ export function waitlistWelcome(email: string, source?: string): EmailMessage {
 
       <div style="text-align:center;">
         <a href="${getMuseUrl()}?src=welcome_email" style="display:inline-block;padding:13px 30px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;font-size:14px;">Create your account</a>
-        <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:10px;">Signed up with ${email}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:10px;">Signed up with ${escapeHtml(email)}</div>
       </div>
     </div>
   `);
@@ -192,7 +192,7 @@ export function signupWelcome(email: string, name?: string): EmailMessage {
   const who = name && name.trim() ? name.trim() : "there";
   const html = SHELL(`
     <div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.3);border-radius:16px;padding:32px 28px;text-align:center;">
-      <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Welcome to Muse, ${who} ✦</h1>
+      <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Welcome to Muse, ${escapeHtml(who)} ✦</h1>
       <p style="font-size:15px;color:rgba(255,255,255,0.8);line-height:1.7;margin:0 0 20px;">
         Your account is live. Set up your profile, pick what kind of work you're into, and start matching with creatives who get it.
       </p>

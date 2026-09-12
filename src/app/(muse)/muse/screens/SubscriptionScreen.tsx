@@ -37,8 +37,6 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
   showToast,
   apiFetch,
 }: SubscriptionScreenProps) {
-  if (screen !== "subscription") return null;
-
   const [promo, setPromo] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
   const [applyingPromo, setApplyingPromo] = useState(false);
@@ -57,6 +55,8 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
     } catch { /* non-fatal */ }
   };
   useEffect(() => { loadBoost(); }, []);
+
+  if (screen !== "subscription") return null;
 
   return (
     <div className="phone-wrap">

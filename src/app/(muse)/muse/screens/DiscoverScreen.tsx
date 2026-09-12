@@ -463,8 +463,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 <div className="card-section-title">Portfolio</div>
                                 {(() => {
                                   const albumPhotos = cardAlbumIdx > 0 ? cardAlbumPhotos : allPhotos;
-                                  const portIdx = Math.min(portfolioPhotoIdx, albumPhotos.length - 1);
                                   if (!albumPhotos.length) return <div style={{ fontSize: 12, color: "var(--muted)" }}>No portfolio photos</div>;
+                                  const portIdx = Math.min(portfolioPhotoIdx, albumPhotos.length - 1);
                                   return (
                                     <div>
                                       {cardAlbums.length > 0 && (

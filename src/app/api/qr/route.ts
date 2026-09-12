@@ -26,6 +26,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "url parameter required" }, { status: 400 });
   }
 
+  // SSRF prevention: validate URL format and block internal addresses
+  try {
+    const parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return NextResponse.json({ error: "Only http/https URLs allowed" }, { status: 400 });
+    }
+    const host = parsed.hostname.toLowerCase();
+    if (host === "localhost" || host === "127.0.0.1" || host === "::1" || host.startsWith("169.254.") || host.startsWith("10.") || host.startsWith("192.168.")) {
+      return NextResponse.json({ error: "Internal URLs not allowed" }, { status: 400 });
+    }
+  } catch {
+    return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+  }
+
   try {
     // Track QR scan event
     await sb.from("muse_qr_events").insert({
@@ -62,6 +76,20 @@ export async function POST(req: NextRequest) {
   
   if (!url) {
     return NextResponse.json({ error: "url required" }, { status: 400 });
+  }
+
+  // SSRF prevention: validate URL format and block internal addresses
+  try {
+    const parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return NextResponse.json({ error: "Only http/https URLs allowed" }, { status: 400 });
+    }
+    const host = parsed.hostname.toLowerCase();
+    if (host === "localhost" || host === "127.0.0.1" || host === "::1" || host.startsWith("169.254.") || host.startsWith("10.") || host.startsWith("192.168.")) {
+      return NextResponse.json({ error: "Internal URLs not allowed" }, { status: 400 });
+    }
+  } catch {
+    return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
   }
 
   try {

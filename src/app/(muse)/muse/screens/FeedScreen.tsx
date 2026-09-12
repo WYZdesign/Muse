@@ -106,6 +106,7 @@ export const FeedScreen = memo(function FeedScreen({
   authFetch,
 }: FeedScreenProps) {
   const [postReplies, setPostReplies] = useState<Record<number, any[]>>({});
+  const [postCommentTexts, setPostCommentTexts] = useState<Record<number, string>>({});
   const [detailPostId, setDetailPostId] = useState<number | null>(null);
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
 
@@ -401,14 +402,16 @@ export const FeedScreen = memo(function FeedScreen({
                     const txt = feedText.trim();
                     const hasVideo = feedMedia.some(u => u.endsWith(".mp4") || u.includes("video"));
                     const type = feedMedia.length ? (hasVideo ? "video" : "photo") : "text";
+                    const optimisticId = uid();
                     setFeedText("");
                     setFeedMedia([]);
-                    setFeedPosts(prev => [{ id: uid(), author: currentUser.name, avatar: currentUser.avatar, type, text: txt, likes: 0, comments: 0, shares: 0, views: 0, time: "Just now", img: feedMedia[0] || undefined, media: feedMedia, liked: false, saved: false, reactions: {}, isBts: hasVideo }, ...prev]);
+                    setFeedPosts(prev => [{ id: optimisticId, author: currentUser.name, avatar: currentUser.avatar, type, text: txt, likes: 0, comments: 0, shares: 0, views: 0, time: "Just now", img: feedMedia[0] || undefined, media: feedMedia, liked: false, saved: false, reactions: {}, isBts: hasVideo }, ...prev]);
                     try {
                       await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed", text: txt, media: feedMedia, userId: currentUser.id }) });
                       showToast("Posted!");
                       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_key: "post_feed" }) }).catch(() => {});
                     } catch {
+                      setFeedPosts(prev => prev.filter(p => p.id !== optimisticId));
                       showToast("Failed to post");
                     }
                   }
@@ -552,14 +555,14 @@ export const FeedScreen = memo(function FeedScreen({
                         <input
                             className="inp"
                             placeholder="Write a reply..."
-                            value={commentText}
-                            onChange={e => setCommentText(e.target.value)}
-                            onKeyDown={async e => { if (e.key === "Enter" && commentText.trim()) { const txt = commentText.trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
+                            value={postCommentTexts[post.id] || ""}
+                            onChange={e => setPostCommentTexts(prev => ({ ...prev, [post.id]: e.target.value }))}
+                            onKeyDown={async e => { if (e.key === "Enter" && (postCommentTexts[post.id] || "").trim()) { const txt = (postCommentTexts[post.id] || "").trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setPostCommentTexts(prev => ({ ...prev, [post.id]: "" })); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
                             style={{ width: "100%", margin: 0, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.06)", borderRadius: 99, padding: "10px 42px 10px 14px", fontSize: 13, color: "var(--text)" }}
                           />
                           <button
-                            onClick={async () => { if (commentText.trim()) { const txt = commentText.trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setCommentText(""); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
-                            style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", width: 30, height: 30, borderRadius: "50%", border: "none", background: commentText.trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: commentText.trim() ? "#fff" : "rgba(255,255,255,0.25)", cursor: commentText.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
+                            onClick={async () => { if ((postCommentTexts[post.id] || "").trim()) { const txt = (postCommentTexts[post.id] || "").trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setPostCommentTexts(prev => ({ ...prev, [post.id]: "" })); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
+                            style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", width: 30, height: 30, borderRadius: "50%", border: "none", background: (postCommentTexts[post.id] || "").trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: (postCommentTexts[post.id] || "").trim() ? "#fff" : "rgba(255,255,255,0.25)", cursor: (postCommentTexts[post.id] || "").trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
                           ><FiSend size={14} /></button>
                       </div>
                     </div>
@@ -575,14 +578,14 @@ export const FeedScreen = memo(function FeedScreen({
         if (!dp) return null;
         const replies = postReplies[dp.id] || [];
         const sendDetailReply = async () => {
-          const txt = commentText.trim();
+          const txt = (postCommentTexts[dp.id] || "").trim();
           if (!txt) return;
           const optimistic = { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" };
           const isStatic = feedPostsStatic.some(p => p.id === dp.id);
           setPostReplies(prev => ({ ...prev, [dp.id]: [...(prev[dp.id] || []), optimistic] }));
           if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === dp.id ? { ...p, comments: p.comments + 1 } : p));
           else updateFeedPostState(dp.id, p => ({ ...p, comments: p.comments + 1 }));
-          setCommentText("");
+          setPostCommentTexts(prev => ({ ...prev, [dp.id]: "" }));
           if (isStatic) { showToast("Reply posted!"); return; }
           try {
             const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(dp), text: txt }) });
@@ -651,14 +654,14 @@ export const FeedScreen = memo(function FeedScreen({
                   <input
                     className="inp"
                     placeholder="Post your reply…"
-                    value={commentText}
-                    onChange={e => setCommentText(e.target.value)}
+                    value={postCommentTexts[dp.id] || ""}
+                    onChange={e => setPostCommentTexts(prev => ({ ...prev, [dp.id]: e.target.value }))}
                     onKeyDown={e => { if (e.key === "Enter") sendDetailReply(); }}
                     style={{ width: "100%", margin: 0, borderRadius: 99, padding: "10px 42px 10px 14px" }}
                   />
                   <button
                     onClick={sendDetailReply}
-                    style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", width: 30, height: 30, borderRadius: "50%", border: "none", background: commentText.trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: commentText.trim() ? "#fff" : "rgba(255,255,255,0.25)", cursor: commentText.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
+                    style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", width: 30, height: 30, borderRadius: "50%", border: "none", background: (postCommentTexts[dp.id] || "").trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: (postCommentTexts[dp.id] || "").trim() ? "#fff" : "rgba(255,255,255,0.25)", cursor: (postCommentTexts[dp.id] || "").trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
                   ><FiSend size={14} /></button>
                 </div>
               </div>

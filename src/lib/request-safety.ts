@@ -35,8 +35,14 @@ export function sanitizeText(input: string, maxLen = 2000): string {
   return input
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
     .replace(/<[^>]*>/g, "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
     .replace(/javascript\s*:/gi, "")
     .replace(/on\w+\s*=/gi, "")
+    .replace(/data\s*:[^,]*base64/gi, "")
     .slice(0, maxLen)
     .trim();
 }

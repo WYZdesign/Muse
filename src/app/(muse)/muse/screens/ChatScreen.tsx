@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useState } from "react";
+import React, { memo, useState, useRef } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiImage, FiSend, FiMoreVertical, FiFlag, FiUserX, FiSlash } from "react-icons/fi";
 import Nav from "../components/Nav";
@@ -74,6 +74,7 @@ export const ChatScreen = memo(function ChatScreen({
   // chat media can be sensitive, so it's blurred until the viewer taps to reveal,
   // instead of rendering unblurred like a plain img.
   const [revealedChatImgs, setRevealedChatImgs] = useState<Set<string>>(() => new Set());
+  const scrollSentinelRef = useRef<HTMLDivElement | null>(null);
   // Report/Unmatch/Block were fully wired end-to-end (setters passed as props,
   // modals built and rendered in page.tsx) but had no entry point anywhere in
   // the app to actually reach them from an active conversation — a real gap,
@@ -154,7 +155,7 @@ export const ChatScreen = memo(function ChatScreen({
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef as any} />
+            <div ref={scrollSentinelRef} />
           </div>
           <div className="quick-replies">
             {["Hey! Love your work", "Let's collab", "What's your vision?", "Love your portfolio"].map(q => (

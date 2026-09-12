@@ -242,7 +242,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
           )}
           {visible.map((q: any) => {
             const tier = TIER_CONFIG[q.quest_tier] || TIER_CONFIG.weekly;
-            const pct = Math.min(100, (q.progress / q.target) * 100);
+            const pct = q.target > 0 ? Math.min(100, (q.progress / q.target) * 100) : 0;
             const isClaimable = q.completed && !q.claimed;
             const isExpanded = expandedId === q.id;
 

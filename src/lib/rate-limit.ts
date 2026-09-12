@@ -29,6 +29,17 @@ function memCheck(key: string, maxPerMin: number): boolean {
   return true;
 }
 
+// Periodically sweep stale keys to prevent unbounded memory growth.
+function memCleanup() {
+  const now = Date.now();
+  for (const [key, timestamps] of MEM_RATE.entries()) {
+    const fresh = timestamps.filter(t => now - t < 60000);
+    if (fresh.length === 0) MEM_RATE.delete(key);
+    else MEM_RATE.set(key, fresh);
+  }
+}
+if (typeof setInterval !== "undefined") setInterval(memCleanup, 60000);
+
 export async function checkRate(ip: string, action: string, maxPerMin: number): Promise<boolean> {
   const key = `${ip}:${action}`;
 
