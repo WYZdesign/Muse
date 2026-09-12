@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 
 // ═══ MFA / 2FA (Supabase Auth TOTP) ═══
 // Supabase Auth has TOTP MFA enabled for this project (mfa_totp_enroll_enabled,
@@ -16,12 +17,20 @@ import { supabase } from "@/lib/supabase";
 const MFA_ACTIONS = new Set(["enroll", "verify", "verify-code", "unenroll", "challenge", "verify-session"]);
 
 export async function GET(req: NextRequest) {
-  const type = req.nextUrl.searchParams.get("type") || "mfa-status";
-  const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
-  if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  const client = supabase;
-  const { data: user, error: authErr } = await client.auth.getUser(token);
-  if (authErr || !user.user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  try {
+    const type = req.nextUrl.searchParams.get("type") || "mfa-status";
+    const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+    if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+    // Rate limit MFA reads to prevent enumeration
+    const ip = clientIp(req);
+    if (!await checkRate(ip, "mfa-read", 30)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
+
+    const client = supabase;
+    const { data: user, error: authErr } = await client.auth.getUser(token);
+    if (authErr || !user.user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   if (type === "mfa-factors") {
     const { data: factors, error } = await client.auth.mfa.listFactors();
@@ -44,15 +53,31 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ error: "Unknown type" }, { status: 400 });
+  } catch (e) {
+    console.error("[mfa] GET failed:", e);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
-  const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
-  if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  const client = supabase;
-  const { data: user, error: authErr } = await client.auth.getUser(token);
-  if (authErr || !user.user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-  const body = await req.json().catch(() => ({}));
+  try {
+    const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+    if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+    // Rate limit MFA actions — TOTP brute-force at 5/min per IP
+    const ip = clientIp(req);
+    if (!await checkRate(ip, "mfa-write", 30)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
+    // Extra lock on verify (brute-force sensitive)
+    const body = await req.json().catch(() => ({}));
+    if ((body.action === "verify" || body.action === "verify-code") && !await checkRate(ip, "mfa-verify", 5)) {
+      return NextResponse.json({ error: "Too many verification attempts" }, { status: 429 });
+    }
+
+    const client = supabase;
+    const { data: user, error: authErr } = await client.auth.getUser(token);
+    if (authErr || !user.user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const action = String(body.action || "");
   if (!MFA_ACTIONS.has(action)) return NextResponse.json({ error: "Unknown action" }, { status: 400 });
@@ -102,4 +127,8 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+  } catch (e) {
+    console.error("[mfa] POST failed:", e);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }

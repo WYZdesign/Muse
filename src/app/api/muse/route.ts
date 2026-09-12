@@ -247,6 +247,11 @@ export async function POST(req: NextRequest) {
       if (!name || typeof name !== "string" || name.length > 100) {
         return NextResponse.json({ error: "Invalid event name" }, { status: 400 });
       }
+      // Limit payload size to prevent abuse via huge props blobs
+      const propsStr = props && typeof props === "object" ? JSON.stringify(props) : "";
+      if (propsStr.length > 10000) {
+        return NextResponse.json({ error: "Props payload too large" }, { status: 413 });
+      }
       const sbEvt = getServiceClient();
       const ua = req.headers.get("user-agent") || "";
       await sbEvt.from("muse_events_log").insert({ name, props: props && typeof props === "object" ? props : {}, ua: ua.slice(0, 300), ip: String(ip).slice(0, 100) });
@@ -256,6 +261,11 @@ export async function POST(req: NextRequest) {
     if (actionType === "track-error") {
       if (!await checkRate(ip, "track-error", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
       const { name, params, time } = rest;
+      // Limit payload size
+      const paramsStr = params && typeof params === "object" ? JSON.stringify(params) : "";
+      if (paramsStr.length > 10000) {
+        return NextResponse.json({ error: "Params payload too large" }, { status: 413 });
+      }
       const sbErr = getServiceClient();
       await sbErr.from("muse_events_log").insert({
         name: `error:${name || "unknown"}`,

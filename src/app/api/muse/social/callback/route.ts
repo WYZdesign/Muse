@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { getMuseUrl } from "@/lib/urls";
+import { verifyState } from "@/lib/oauth-state";
 
 export const runtime = "nodejs";
 
@@ -92,19 +93,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${getMuseUrl()}?error=invalid_callback`);
     }
 
-    let stateData: { profileId: string; provider: string; ts: number };
+    let stateData: { profileId: string; provider: string; ts: number } | null;
     try {
-      stateData = JSON.parse(Buffer.from(state, "base64url").toString());
+      stateData = verifyState(state) as { profileId: string; provider: string; ts: number } | null;
+      if (!stateData) {
+        return NextResponse.redirect(`${getMuseUrl()}?error=invalid_state`);
+      }
     } catch {
       return NextResponse.redirect(`${getMuseUrl()}?error=invalid_state`);
     }
 
     if (stateData.provider !== provider) {
       return NextResponse.redirect(`${getMuseUrl()}?error=provider_mismatch`);
-    }
-
-    if (Date.now() - stateData.ts > 10 * 60 * 1000) {
-      return NextResponse.redirect(`${getMuseUrl()}?error=state_expired`);
     }
 
     const tokenData = await exchangeCodeForToken(provider, code);

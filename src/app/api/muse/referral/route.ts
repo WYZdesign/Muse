@@ -139,18 +139,8 @@ export async function POST(req: NextRequest) {
     }
 
     // ═══ REDEEM-REWARD: Give free month when referee subscribes ═══
-    // ═══ REDEEM-REWARD: DISABLED — fraud surface ═══
-    // This endpoint performed NO subscription verification: either party to any
-    // referral could call it directly and grant themselves a free month for a
-    // referral where nothing was ever purchased. Until a verified-purchase check
-    // exists (Stripe subscription lookup server-side), it stays disabled.
+    // Now with Stripe subscription verification — prevents self-minting.
     if (action === "redeem-reward") {
-      return NextResponse.json({ error: "Reward redemption is handled automatically on subscription" }, { status: 410 });
-    }
-    /* ORIGINAL redeem-reward body disabled — no subscription verification existed,
-       letting either party mint free months for any referralId. Preserved below
-       for the future verified-purchase implementation.
-       ─────────────────────────────────────────────────────────────────────
       const secret = process.env.STRIPE_SECRET_KEY;
       if (!secret) return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
 
@@ -164,11 +154,38 @@ export async function POST(req: NextRequest) {
       if (!referral) return NextResponse.json({ error: "Referral not found" }, { status: 404 });
       if (referral.status === "reward_issued") return NextResponse.json({ error: "Reward already issued" }, { status: 400 });
 
+      // Only admin can trigger reward redemption (called via Stripe webhook or admin action)
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase());
-      const isParty = String(referral.referrer_id) === String(profile.id) || String(referral.referee_id) === String(profile.id);
       const isAdmin = admins.includes((profile.email || "").toLowerCase());
-      if (!isParty && !isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      if (!isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+      // Verify the referee actually has an active Stripe subscription
+      const stripe = new Stripe(secret);
+      const { data: refereeProfile } = await sb.from("muse_profiles")
+        .select("stripe_customer_id")
+        .eq("id", referral.referee_id)
+        .maybeSingle();
+      if (!refereeProfile?.stripe_customer_id) {
+        return NextResponse.json({ error: "Referee has no Stripe customer" }, { status: 400 });
+      }
+
+      const subscriptions = await stripe.subscriptions.list({
+        customer: refereeProfile.stripe_customer_id,
+        status: "active",
+        limit: 1,
+      });
+      if (subscriptions.data.length === 0) {
+        return NextResponse.json({ error: "Referee has no active subscription" }, { status: 400 });
+      }
+
+      // Verify the subscription was created after the referral signup
+      const subCreated = subscriptions.data[0].created * 1000;
+      const referralCreated = new Date(referral.created_at).getTime();
+      if (subCreated < referralCreated) {
+        return NextResponse.json({ error: "Subscription predates referral" }, { status: 400 });
+      }
+
+      // All checks passed — issue reward
       await sb.from("muse_referrals").update({
         status: "reward_issued",
         reward_issued_at: new Date().toISOString(),
@@ -190,7 +207,7 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json({ success: true, message: "Free month issued to both parties" });
-     ================================================================================ */
+    }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (e: unknown) {

@@ -3,6 +3,7 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { safeServerError } from "@/lib/http";
 import { sendPushToUser, getVapidPublicKey } from "@/lib/push";
+import { isAdminEmail } from "@/lib/muse-actions/shared";
 
 export const runtime = "nodejs";
 
@@ -15,16 +16,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, subscription, access_token, userId: bodyUserId, payload } = body;
 
-    if (action === "send" && bodyUserId && payload) {
-      const result = await sendPushToUser(bodyUserId, payload);
-      return NextResponse.json({ success: true, ...result });
+    // All actions require authentication — the old code let "send" bypass auth.
+    if (!access_token) {
+      return NextResponse.json({ success: false, error: "Missing access token" }, { status: 401 });
     }
 
-    if (!action || !subscription || !access_token) {
-      return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
-    }
-
-    // Validate the access token against Supabase auth
     const { data: authData, error: authErr } = await supabase.auth.getUser(access_token);
     if (authErr || !authData.user) {
       return NextResponse.json({ success: false, error: "Invalid access token" }, { status: 401 });
@@ -32,11 +28,10 @@ export async function POST(req: NextRequest) {
 
     const authId = authData.user.id;
 
-    // Resolve the muse profile id from the auth id
     const sb = getServiceClient();
     const { data: profile, error: profileErr } = await sb
       .from("muse_profiles")
-      .select("id")
+      .select("id, tier")
       .eq("auth_id", authId)
       .maybeSingle();
 
@@ -45,11 +40,27 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = profile.id;
+    const ip = clientIp(req);
+
+    if (action === "send" && bodyUserId && payload) {
+      if (!await checkRate(ip, "push-send", 30)) {
+        return NextResponse.json({ success: false, error: "Rate limited" }, { status: 429 });
+      }
+      // Only allow sending to self or if admin (future: implement fan-out)
+      if (String(bodyUserId) !== String(userId) && !isAdminEmail(authData.user.email)) {
+        return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+      }
+      const result = await sendPushToUser(bodyUserId, payload);
+      return NextResponse.json({ success: true, ...result });
+    }
+
+    if (!action || !subscription) {
+      return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
+    }
+
     const endpoint = subscription.endpoint;
     const p256dh = subscription.p256dh;
     const auth = subscription.auth;
-
-    const ip = clientIp(req);
 
     if (action === "subscribe") {
       if (!await checkRate(ip, "push-subscribe", 10)) {

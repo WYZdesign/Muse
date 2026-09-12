@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
+import { signState } from "@/lib/oauth-state";
+import { checkRate, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -80,7 +82,11 @@ export async function GET(req: NextRequest) {
     if (!config) return NextResponse.json({ error: `${provider} OAuth not configured — add ${provider.toUpperCase()}_CLIENT_ID and ${provider.toUpperCase()}_CLIENT_SECRET to your environment` }, { status: 503 });
 
     if (action === "auth") {
-      const state = Buffer.from(JSON.stringify({ profileId, provider, ts: Date.now() })).toString("base64url");
+      const ip = clientIp(req);
+      if (!await checkRate(ip, "social-auth", 10)) {
+        return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      }
+      const state = signState({ profileId, provider, ts: Date.now() });
       const params = new URLSearchParams({
         client_id: config.clientId!,
         redirect_uri: config.redirectUri,

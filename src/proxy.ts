@@ -1,92 +1,145 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getBaseUrl } from "@/lib/urls";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-// IMPORTANT: this must be the bare origin (scheme + host, no path) —
-// getMuseUrl() returns `${base}/muse` and was used here previously, which
-// meant ALLOWED_ORIGINS never matched a real browser Origin header (the
-// Origin header never includes a path). That silently 403'd every
-// same-origin, non-GET /api/* request in production (referral, messaging,
-// swipes, posts — anything routed through the main /api/muse dispatcher),
-// while GET requests kept working fine, making it look like isolated
-// feature bugs (e.g. "Failed to fetch referral data: API 403") rather than
-// a site-wide origin-check bug.
-const APP_ORIGIN = getBaseUrl();
-const WYZDESIGN_URL = "https://www.wyzdesign.com";
+// ═══ Muse Edge Proxy ═══
+// Runs before every request. Handles:
+// 1. Origin/CORS gating for POST/PUT/DELETE API requests
+// 2. Rate limiting sensitive API endpoints (in-memory, per-instance)
+// 3. Blocking known malicious user agents
+// 4. Security headers
+//
+// NOTE: This is Edge runtime — no Node.js APIs, no database.
+// For durable rate limiting, the per-route handlers use checkRate() (Postgres-backed).
 
-const ALLOWED_ORIGINS = [
-  "https://muse.wyzdesign.com",
-  APP_ORIGIN,
-  WYZDESIGN_URL,
-  WYZDESIGN_URL.replace("www.", ""),
-];
+// ── Origin allowlist ──
+const PROD_ORIGIN = "https://muse.wyzdesign.com";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || PROD_ORIGIN;
+let ALLOWED_ORIGINS: string[];
+try {
+  ALLOWED_ORIGINS = [new URL(APP_URL).origin];
+} catch {
+  ALLOWED_ORIGINS = [PROD_ORIGIN];
+}
+if (!ALLOWED_ORIGINS.includes(PROD_ORIGIN)) ALLOWED_ORIGINS.push(PROD_ORIGIN);
 
-// Auth endpoints that should be more permissive
-const AUTH_PATHS = ["/api/muse/auth", "/api/muse/social", "/api/muse/social/callback"];
+const AUTH_PATHS = ["/api/muse/auth"];
 
-function originAllowed(origin: string): boolean {
-  if (!origin) return false;
-  if (ALLOWED_ORIGINS.includes(origin)) return true;
-  // Allow all vercel preview deployments
-  if (/^https:\/\/muse-.+\.vercel\.app$/.test(origin)) return true;
-  if (origin.endsWith("-wyzdesigns-projects.vercel.app")) return true;
-  if (process.env.NODE_ENV === "development" && /^https?:\/\/localhost(:\d+)?$/.test(origin)) return true;
-  // Allow any vercel.app subdomain for preview deployments
-  if (origin.endsWith(".vercel.app")) return true;
-  return false;
+// ── Edge rate limiting ──
+const SENSITIVE_ROUTES: Record<string, number> = {
+  "/api/muse/mfa": 30,
+  "/api/muse/push": 60,
+  "/api/muse/verification": 10,
+  "/api/muse/connect": 10,
+  "/api/muse/referral": 20,
+  "/api/muse/social": 20,
+};
+
+const RATE_MAP = new Map<string, number[]>();
+function edgeRateCheck(key: string, maxPerMin: number): boolean {
+  const now = Date.now();
+  const ts = (RATE_MAP.get(key) || []).filter((t) => now - t < 60_000);
+  if (ts.length >= maxPerMin) return false;
+  ts.push(now);
+  RATE_MAP.set(key, ts);
+  return true;
 }
 
-function isAuthPath(pathname: string): boolean {
-  return AUTH_PATHS.some(p => pathname.startsWith(p));
+if (typeof setInterval !== "undefined") {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [k, v] of RATE_MAP.entries()) {
+      const fresh = v.filter((t) => now - t < 60_000);
+      if (fresh.length === 0) RATE_MAP.delete(k);
+      else RATE_MAP.set(k, fresh);
+    }
+  }, 60_000);
 }
 
-function corsHeaders(response: NextResponse, origin?: string) {
-  // Use the requesting origin if allowed, otherwise default to the app's
-  // own bare origin (must be scheme+host only — a path here makes the
-  // Access-Control-Allow-Origin header invalid and browsers ignore it).
-  const allowOrigin = origin && originAllowed(origin) ? origin : APP_ORIGIN;
-  response.headers.set("Access-Control-Allow-Origin", allowOrigin);
-  response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
-  response.headers.set("Access-Control-Allow-Credentials", "true");
-  response.headers.set("Access-Control-Max-Age", "86400");
-  return response;
+const BLOCKED_AGENTS = /bot\b|crawl|spider|scrape|curl|wget|python-requests/i;
+
+function clientIp(req: NextRequest): string {
+  const real = req.headers.get("x-real-ip");
+  if (real) return real.trim();
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0].trim();
+  return "unknown";
 }
 
-export default function proxy(request: NextRequest) {
-  // Handle OPTIONS preflight requests
-  if (request.method === "OPTIONS") {
-    const origin = request.headers.get("origin") || "";
-    const response = new NextResponse(null, { status: 204 });
-    return corsHeaders(response, origin);
+function originFromReq(req: NextRequest): string | null {
+  const origin = req.headers.get("origin");
+  if (origin) {
+    try { return new URL(origin).origin; } catch { return null; }
+  }
+  const referer = req.headers.get("referer");
+  if (referer) {
+    try { return new URL(referer).origin; } catch { return null; }
+  }
+  return null;
+}
+
+export default function proxy(req: NextRequest): Response {
+  const { pathname } = req.nextUrl;
+  const method = req.method.toUpperCase();
+
+  // ── Non-API: just add security headers ──
+  if (!pathname.startsWith("/api/")) {
+    const res = NextResponse.next();
+    res.headers.set("X-Content-Type-Options", "nosniff");
+    res.headers.set("X-Frame-Options", "DENY");
+    res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    return res;
   }
 
-  const pathname = request.nextUrl.pathname;
-  const isAuth = isAuthPath(pathname);
+  // ── Block known bad user agents ──
+  const ua = req.headers.get("user-agent") || "";
+  if (BLOCKED_AGENTS.test(ua)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
-  // Skip origin check for auth endpoints - allow login from any device
-  if (pathname.startsWith("/api/") && !["GET", "HEAD", "OPTIONS"].includes(request.method)) {
-    const origin = request.headers.get("origin") || "";
-    const referer = request.headers.get("referer") || "";
-    
-    // Always allow auth endpoints from any origin
-    if (!isAuth) {
-      if (!originAllowed(origin) && !originAllowed(referer.split("/").slice(0, 3).join("/"))) {
-        return NextResponse.json({ error: "Forbidden — cross-origin request blocked" }, { status: 403 });
+  // ── Origin / CORS gating for mutating API requests ──
+  if (method !== "GET" && method !== "HEAD") {
+    const isAuthPath = AUTH_PATHS.some((p) => pathname.startsWith(p));
+    if (!isAuthPath) {
+      const origin = originFromReq(req);
+      const isAllowed = origin !== null && ALLOWED_ORIGINS.includes(origin);
+      if (!isAllowed) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     }
   }
 
-  if (pathname.startsWith("/api/")) {
-    const origin = request.headers.get("origin") || "";
-    const response = NextResponse.next();
-    response.headers.set("X-Content-Type-Options", "nosniff");
-    response.headers.set("X-Frame-Options", "DENY");
-    response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-    response.headers.set("Cache-Control", "no-store, max-age=0");
-    // Add CORS headers to all API responses
-    corsHeaders(response, origin);
-    return response;
+  // ── Edge rate limiting for sensitive API routes ──
+  const ip = clientIp(req);
+  for (const [route, limit] of Object.entries(SENSITIVE_ROUTES)) {
+    if (pathname.startsWith(route)) {
+      if (!edgeRateCheck(`${ip}:${route}`, limit)) {
+        return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+      }
+      break;
+    }
   }
-  
-  return NextResponse.next();
+
+  const res = NextResponse.next();
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+
+  // Set CORS header for API responses
+  const requestOrigin = req.headers.get("origin");
+  if (requestOrigin) {
+    try {
+      const reqOrigin = new URL(requestOrigin).origin;
+      if (ALLOWED_ORIGINS.includes(reqOrigin)) {
+        res.headers.set("Access-Control-Allow-Origin", reqOrigin);
+      }
+    } catch { /* ignore malformed origin */ }
+  }
+
+  return res;
 }
+
+export const config = {
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)",
+  ],
+};

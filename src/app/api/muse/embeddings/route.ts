@@ -41,10 +41,14 @@ export async function POST(req: NextRequest) {
       if (!vector || !Array.isArray(vector)) return NextResponse.json({ error: "vector required" }, { status: 400 });
 
       const sb = getServiceClient();
-      const { data: profiles } = await sb.from("muse_profiles")
+      const { data: profiles, error: searchErr } = await sb.from("muse_profiles")
         .select("id, name, type, embedding")
         .not("embedding", "is", null)
         .limit(500);
+      if (searchErr) {
+        console.error("[embeddings] search query failed:", searchErr.message);
+        return NextResponse.json({ error: "Search failed" }, { status: 500 });
+      }
 
       const results = (profiles || [])
         .filter((p: any) => String(p.id) !== String(excludeUserId) && Array.isArray(p.embedding) && p.embedding.length === vector.length)
@@ -75,8 +79,12 @@ export async function POST(req: NextRequest) {
     // ── INFO: embedding coverage stats ──
     if (action === "info") {
       const sb = getServiceClient();
-      const { count: total } = await sb.from("muse_profiles").select("*", { count: "exact", head: true });
-      const { count: embedded } = await sb.from("muse_profiles").select("*", { count: "exact", head: true }).not("embedded_at", "is", null);
+      const { count: total, error: totalErr } = await sb.from("muse_profiles").select("*", { count: "exact", head: true });
+      const { count: embedded, error: embeddedErr } = await sb.from("muse_profiles").select("*", { count: "exact", head: true }).not("embedded_at", "is", null);
+      if (totalErr || embeddedErr) {
+        console.error("[embeddings] info query failed:", totalErr?.message || embeddedErr?.message);
+        return NextResponse.json({ error: "Stats query failed" }, { status: 500 });
+      }
       return NextResponse.json({ aiEnabled: aiEnabled(), totalProfiles: total || 0, embeddedProfiles: embedded || 0 });
     }
 

@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     const { data: { user }, error } = await sb.auth.getUser(token);
     if (error || !user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-    const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).single();
+    const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
     const { action } = await req.json();
