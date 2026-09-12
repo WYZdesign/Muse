@@ -89,7 +89,7 @@ export default function Lightbox({ photos, idx, onClose, onNavigate, onError }: 
     <div
       role="presentation"
       aria-hidden="true"
-      style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.95)", display: "flex", alignItems: "center", justifyContent: "center" }}
+      style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.98)", display: "flex", alignItems: "center", justifyContent: "center" }}
       onClick={onClose}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}

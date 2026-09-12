@@ -610,7 +610,6 @@ export const SettingsScreen = memo(function SettingsScreen({
               <div className="settings-group-title">Background</div>
               <OpacitySlider label="Sprites & Animations" storageKey="muse_sprite_opacity" cssVar="--sprite-opacity" />
               <OpacitySlider label="Background" storageKey="muse_bg_opacity" cssVar="--scene-opacity" />
-              <OpacitySlider label="Gloss" storageKey="muse_film_opacity" cssVar="--film-opacity" />
            </div>
 
           <div className="settings-group">
