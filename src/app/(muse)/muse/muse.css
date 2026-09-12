@@ -4,7 +4,7 @@
   --ease-buttery:cubic-bezier(.22,1.2,.36,1);--ease-buttery-soft:cubic-bezier(.16,1,.3,1);--ease-buttery-out:cubic-bezier(.4,0,.2,1);--dur-fast:.18s;--dur-med:.32s;--dur-slow:.55s;--btn-glow:var(--gold)}
 html,body{height:100%;overflow:hidden;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text)}
 input,textarea,select{font-size:16px}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important}.hamburger-menu-title,.hamburger-panel::before{animation:none}.star-field,.aurora-strip,.nebula-fog,.sparkle-field,.ember-field,.scene-orb,.comet-field,.skeleton-pulse,.skeleton-block,[style*=animation]{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important}.swipe-card.top-card,.swipe-card .card-hero img,.messages .msg,.match-title,.card-hero-name,.card-hero-type{animation:none!important}.premium-star-icon,.match-radial.open .match-radial-btn,.muse-pro-banner-shine,.tour-sprite-glow,.tour-sprite-ring,.tour-sprite-ring-2,.tour-sprite-badge,.tour-sprite-orbit-0,.tour-sprite-orbit-1,.tour-sprite-orbit-2,.tour-sprite-spark,.tour-card-wash,.tour-btn-primary,.brief-avatar,.profile-ring,.feed-avatar,.match-avatar,.conn-avatar,.chat-avatar{animation:none!important}.tour-badge-float,.tour-orbit-0,.tour-orbit-1,.tour-orbit-2,.tour-spark-burst,.tour-dot-pop,.tour-glow-pulse,.tour-ring-spin{animation:none!important;transition:none!important}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important}.hamburger-menu-title{animation:none}.star-field,.aurora-strip,.nebula-fog,.sparkle-field,.ember-field,.scene-orb,.comet-field,.skeleton-pulse,.skeleton-block,[style*=animation]{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important}.swipe-card.top-card,.swipe-card .card-hero img,.messages .msg,.match-title,.card-hero-name,.card-hero-type{animation:none!important}.premium-star-icon,.match-radial.open .match-radial-btn,.muse-pro-banner-shine,.tour-sprite-glow,.tour-sprite-ring,.tour-sprite-ring-2,.tour-sprite-badge,.tour-sprite-orbit-0,.tour-sprite-orbit-1,.tour-sprite-orbit-2,.tour-sprite-spark,.tour-card-wash,.tour-btn-primary,.brief-avatar,.profile-ring,.feed-avatar,.match-avatar,.conn-avatar,.chat-avatar{animation:none!important}.tour-badge-float,.tour-orbit-0,.tour-orbit-1,.tour-orbit-2,.tour-spark-burst,.tour-dot-pop,.tour-glow-pulse,.tour-ring-spin{animation:none!important;transition:none!important}}
 button{cursor:pointer;font-family:inherit;border:none;outline:none;background:none}
 a{color:inherit;text-decoration:none}
 .bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden}
@@ -282,11 +282,8 @@ a{color:inherit;text-decoration:none}
 .chip-scroll::-webkit-scrollbar{display:none}
 .chip-scroll>*{flex:0 0 auto}
 .hamburger-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)}
-.hamburger-panel{width:78%;max-width:340px;height:100%;background:linear-gradient(180deg,rgba(15,8,30,0.98) 0%,rgba(10,6,18,0.99) 100%);backdrop-filter:blur(40px);padding:calc(96px + env(safe-area-inset-top,0px)) 20px calc(32px + env(safe-area-inset-bottom,0px));overflow-y:auto;overflow-x:hidden;position:relative;border-left:1px solid rgba(212,165,255,0.08);animation:hamburgerSlide .35s cubic-bezier(.4,0,.2,1)}
-/* Gradient animation now covers the ENTIRE panel (full background), plus a 15%
-   dark overlay so the menu buttons stay legible over it. No header separator
-   (no border-bottom) — the top bar is just the X-close (left) + bell (right). */
-.hamburger-panel::before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,rgba(212,165,255,0.30) 0%,rgba(255,215,0,0.24) 30%,rgba(255,181,194,0.26) 55%,rgba(152,251,152,0.22) 80%,rgba(15,8,30,0.06) 100%);background-size:300% 100%;animation:gradientShift 8s ease-in-out infinite;pointer-events:none}
+.hamburger-panel{width:78%;max-width:340px;height:100%;background:linear-gradient(135deg,rgba(212,165,255,0.30) 0%,rgba(255,215,0,0.24) 30%,rgba(255,181,194,0.26) 55%,rgba(152,251,152,0.22) 80%,rgba(15,8,30,0.06) 100%),linear-gradient(180deg,rgba(15,8,30,0.98) 0%,rgba(10,6,18,0.99) 100%);background-size:300% 100%,100% 100%;background-attachment:local;backdrop-filter:blur(40px);padding:calc(96px + env(safe-area-inset-top,0px)) 20px calc(32px + env(safe-area-inset-bottom,0px));overflow-y:auto;overflow-x:hidden;position:relative;border-left:1px solid rgba(212,165,255,0.08);animation:gradientShift 8s ease-in-out infinite,hamburgerSlide .35s cubic-bezier(.4,0,.2,1)}
+/* Dark overlay for legibility (scrolls with content since it's ::after on the panel) */
 .hamburger-panel::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.15);pointer-events:none}
 .hamburger-close{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));left:12px;width:42px;height:42px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:var(--text);cursor:pointer;font-size:18px;transition:all .2s;z-index:1}
 .hamburger-close:hover{background:rgba(255,255,255,0.06);color:var(--gold)}
@@ -486,6 +483,7 @@ img{background-color:var(--card-bg)}
 .match-loc-dist span{white-space:nowrap}
 .match-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
 .match-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,215,0,0.15);color:var(--gold)}
+.match-badge-trait{background:rgba(255,255,255,0.85);color:#1A1612;text-shadow:none}
 .match-card-grid .match-loc-dist{color:rgba(255,255,255,0.8);font-size:11px;text-shadow:0 1px 4px rgba(0,0,0,0.8)}
 .match-card-grid .match-badge{background:rgba(255,255,255,0.15);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.6);font-size:9px}
 .match-time{font-size:11px;color:var(--muted);flex-shrink:0}
@@ -1354,7 +1352,6 @@ img{background-color:var(--card-bg)}
    theme-aware, so opening the menu in sunrise dropped back into a dark
    panel while the rest of the app had gone light. */
 [data-theme="sunrise"] .hamburger-panel{background:linear-gradient(180deg,rgba(255,248,240,0.98) 0%,rgba(252,239,221,0.99) 100%);border-left-color:rgba(0,0,0,0.06)}
-[data-theme="sunrise"] .hamburger-panel::before{background:linear-gradient(135deg,rgba(224,122,95,0.1) 0%,rgba(232,168,56,0.08) 50%,rgba(255,248,240,0.02) 100%);border-bottom-color:rgba(0,0,0,0.06)}
 [data-theme="sunrise"] .hamburger-bell{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.1);color:rgba(45,42,38,0.6)}
 [data-theme="sunrise"] .hamburger-item{background:rgba(0,0,0,0.02);border-color:rgba(0,0,0,0.05)}
 [data-theme="sunrise"] .auth-tab{background:rgba(0,0,0,0.03);color:rgba(45,42,38,0.5)}
@@ -1393,7 +1390,6 @@ img{background-color:var(--card-bg)}
 [data-theme="daylight"] .story-ring img{border-color:#FFFBF4}
 [data-theme="daylight"] .moments-story-ring img{border-color:#FFFBF4}
 [data-theme="daylight"] .hamburger-panel{background:linear-gradient(180deg,rgba(255,246,231,0.99) 0%,rgba(255,233,240,0.99) 100%);border-left-color:rgba(120,90,60,0.1)}
-[data-theme="daylight"] .hamburger-panel::before{background:linear-gradient(135deg,rgba(212,165,255,0.16) 0%,rgba(255,218,185,0.14) 50%,rgba(255,246,231,0.02) 100%);border-bottom-color:rgba(120,90,60,0.1)}
 [data-theme="daylight"] .hamburger-bell{background:rgba(0,0,0,0.04);border-color:rgba(120,90,60,0.14);color:rgba(74,63,53,0.62)}
 [data-theme="daylight"] .hamburger-item{background:rgba(0,0,0,0.02);border-color:rgba(120,90,60,0.08)}
 [data-theme="daylight"] .auth-tab{background:rgba(0,0,0,0.03);color:rgba(74,63,53,0.5)}
@@ -1438,6 +1434,7 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-radial-btn{background:var(--panel-bg);border-color:var(--border-med)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-radial-btn.btn-note{background:var(--panel-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-badge{background:rgba(0,0,0,0.15);color:#1A1612}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-badge-trait{background:rgba(255,255,255,0.9);color:#1A1612;border:1px solid rgba(0,0,0,0.08)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-card-grid .match-badge{background:rgba(0,0,0,0.2);color:#fff}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .tag{background:rgba(0,0,0,0.15);color:#1A1612}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .tag-pill{background:rgba(0,0,0,0.15);color:#1A1612}

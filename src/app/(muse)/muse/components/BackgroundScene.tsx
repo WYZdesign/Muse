@@ -168,6 +168,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
 
   return (
     <>
+      <div style={{ position: "fixed", inset: 0, zIndex: -1, background: "#0a0612" } as React.CSSProperties} />
       <div className="scene" style={{ opacity: "var(--scene-opacity, 1)" } as React.CSSProperties} />
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", opacity: "var(--sprite-opacity, 1)" } as React.CSSProperties}>
         <div className="scene-orb orb-coral" />
@@ -192,7 +193,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
             <div key={i} className="ember" style={{left:s.l,animationDuration:s.d,animationDelay:s.dl,width:s.w,height:s.h}} />
           ))}
         </div>
-        <div className="fizzy-bubbles" style={{ opacity: "var(--sprite-opacity, 1)" }}>
+        <div className="fizzy-bubbles">
           {[...Array(20)].map((_,i) => (
             <div key={i} className="bubble" style={{
               left: Math.random()*100 + '%',

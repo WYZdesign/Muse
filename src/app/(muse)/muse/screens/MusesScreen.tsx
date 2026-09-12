@@ -105,36 +105,71 @@ export const MusesScreen = memo(function MusesScreen({
   // Swipe gesture support for list view (unmatch/report)
   const handleTouchStart = (e: React.TouchEvent) => {
     if (matchesView !== "list") return;
+    const cardEl = e.currentTarget.querySelector<HTMLElement>(".match-card");
+    if (!cardEl) return;
     touchStartX.current = e.touches[0].clientX;
+    setSwipeInfo({ id: e.currentTarget.getAttribute("data-card-id") || "", startX: e.touches[0].clientX, diff: 0 });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (matchesView !== "list" || touchStartX.current === null) return;
+    const touchCurrentX = e.touches[0].clientX;
+    const diff = touchCurrentX - touchStartX.current;
+    const cardEl = e.currentTarget.querySelector<HTMLElement>(".match-card");
+    if (cardEl) {
+      cardEl.style.transition = "none";
+      cardEl.style.transform = `translateX(${diff}px)`;
+      cardEl.style.opacity = String(1 - Math.abs(diff) / 300);
+    }
+    setSwipeInfo(prev => prev ? { ...prev, diff } : null);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (matchesView !== "list" || touchStartX.current === null) return;
+    const cardEl = e.currentTarget.querySelector<HTMLElement>(".match-card");
 
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchEndX - touchStartX.current;
 
-    if (Math.abs(diff) > 40) {
+    if (cardEl) {
+      cardEl.style.transition = "transform .25s ease, opacity .25s ease";
+      cardEl.style.transform = "";
+      cardEl.style.opacity = "";
+    }
+
+    if (Math.abs(diff) > 80) {
       const cardId = e.currentTarget.getAttribute("data-card-id");
       if (!cardId) return;
 
-      if (diff < -40) {
+      if (diff < -80) {
         // Swipe left: unmatch
+        const prevMatches = matches;
         setMatches(prev => prev.filter(m => String(m.id) !== cardId));
-        try { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unmatch", target_id: cardId }) }); } catch {}
         showToast("Unmatched");
-      } else if (diff > 40) {
+        try {
+          apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unmatch", target_id: cardId }) }).then((r: any) => {
+            if (!r.ok) { setMatches(prevMatches); showToast("Couldn't unmatch — try again"); }
+          });
+        } catch { setMatches(prevMatches); showToast("Couldn't unmatch — try again"); }
+      } else if (diff > 80) {
         // Swipe right: report/block
         const target = matches.find(m => String(m.id) === cardId);
         if (target) {
+          const prevMatches = matches;
+          setMatches(prev => prev.filter(m => String(m.id) !== cardId));
           setBlockTarget({ id: String(target.id), name: target.name || "Unknown" });
-          try { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "block", target_id: cardId }) }); } catch {}
-          showToast("Blocked");
+          showToast(`${target.name || "User"} blocked`);
+          try {
+            apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "block", target_id: cardId }) }).then((r: any) => {
+              if (!r.ok) { setMatches(prevMatches); showToast("Couldn't block — try again"); }
+            });
+          } catch { setMatches(prevMatches); showToast("Couldn't block — try again"); }
         }
       }
     }
 
     touchStartX.current = null;
+    setSwipeInfo(null);
   };
 
   useEffect(() => {
@@ -327,7 +362,23 @@ export const MusesScreen = memo(function MusesScreen({
             </EmptyState>
           )}
           {matches.filter(m => searchQuery === "" || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(m => (
-            <div key={m.id} data-card-id={m.id} onClickCapture={() => markSeen(String(m.id))} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+            <div key={m.id} data-card-id={m.id} onClickCapture={() => markSeen(String(m.id))} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ position: "relative", overflow: "hidden", borderRadius: 16 }}>
+              {swipeInfo?.id === String(m.id) && swipeInfo.diff < -30 && (
+                <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: "50%", zIndex: 10, display: "flex", alignItems: "center", paddingLeft: 18, background: "linear-gradient(90deg,rgba(255,68,68,0.85) 0%,rgba(255,68,68,0.4) 70%,transparent 100%)", borderRadius: "16px 0 0 16px", opacity: Math.min(1, Math.abs(swipeInfo.diff) / 100) }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+                    <FiUserX size={22} color="#fff" />
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>Unmatch</span>
+                  </div>
+                </div>
+              )}
+              {swipeInfo?.id === String(m.id) && swipeInfo.diff > 30 && (
+                <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "50%", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 18, background: "linear-gradient(270deg,rgba(255,68,68,0.85) 0%,rgba(255,68,68,0.4) 70%,transparent 100%)", borderRadius: "0 16px 16px 0", opacity: Math.min(1, Math.abs(swipeInfo.diff) / 100) }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                    <FiFlag size={22} color="#fff" />
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>Block</span>
+                  </div>
+                </div>
+              )}
               <MatchCard m={m} view={matchesView} isNew={isNewMatch(m)} actions={matchActions} />
             </div>
           ))}
