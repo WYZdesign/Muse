@@ -1,3 +1,22 @@
+## Torree batch — UI/behavior round (waves, intents, likes, member-since, discover heart)
+
+Continued the Muse UI polish session. Checked wyzmind's machine first: `main` had moved 3 commits ahead (`e2e2d40` Visual audit + `0e7271f` HANDOVER_AUDIT_SESSION.md + `42e5771` 14 audit fixes) — all non-overlapping with these changes (referral tier discount tweak, Facebook icon swap, portfolio portIdx reorder, QR route, rate-limit/request-safety helpers). `tsc --noEmit` clean after merge.
+
+**Changes:**
+- **Waves behind phone viewport** — `.wave-bottom` z-index dropped from `4` to `-1` so the desktop waves render behind the glass phone frame instead of on top of it.
+- **Match success rate 50%** — `doSwipe`'s `isMatch` threshold moved from `> 55` to `> 50` with demo probability `0.3 → 0.5`.
+- **Unlimited likes** — `isUnlimited` hard-set to `true` (was `authUser?.email === OWNER_EMAIL`), so the daily-likes/super-likes gates are inert and the "∞ Unlimited" badge shows for everyone.
+- **Discover heart button is pure like** — `DiscoverScreen.tsx`'s radial `btn-like` now calls `doSwipe("right")` instead of `handleAnchorLike({ type: "photo", ... })` (which opened the note composer). The `btn-note` (✎) still opens the composer; the photo/prompt anchor buttons still work.
+- **Intent modal: up to 2 selections + submit** — `page.tsx` gained `intentSelection` state; the 4 intent buttons toggle selection (max 2, gold fill when selected), a gold **Submit** button appears once ≥1 is picked and fires `doSwipe("right")` with the first selection as the default intent. Overlay close / Skip both clear `intentSelection`.
+- **Member-since editable** — `ProfileScreen.tsx`'s "Member since" line is now clickable; opens an inline editor with a 50-char text/emoji field, Escape to dismiss, gold Save button. State `memberSinceNote` is local to the component (not persisted server-side — surface-only).
+- **Sessions 3-dot report button** — `border:1px solid #fff`, `background:transparent`, `color:#fff`.
+- **Settings Appearance/Background merged** — the standalone "Background" group was folded into "Appearance" (theme swatches + Background Effects sliders in one block).
+- **Profile: redundant bottom "Edit Profile" button removed** — the header's `FiEdit2` already opens the editor.
+
+`tsc --noEmit` clean; `vitest run` not re-run this session — visual verification pending on wyzmind's machine.
+
+---
+
 ## Claude — depth pass round 4 (theme swatch losing its label, quest reward text hard-clipped)
 
 Continued the same audit session where round 3 left off. First live-verified the round 3 deploy is live: reopened Menu on wyzmind's build with sunrise theme active and confirmed the hamburger drawer now goes light along with the rest of the app (the fix made reactively at the end of round 3, not yet re-checked live at the time). Confirmed Community is genuinely closed-beta-hidden (not present in the Menu list — consistent with `MUSE_CLOSED_BETA_HIDE_SOCIAL`, not a bug). Exercised the previously-untested Settings modals: Safety Center (all 4 tabs — Check-ins, Safety Profile, Share Details, Strikes & Disclosures — render correctly, "Strikes & Disclosures" briefly shows a "Loading…" state then resolves fine), Marketplace Payments (correct "Not Connected" state, did not click "Connect with Stripe" since that's a real Stripe OAuth flow), Payment History (correct empty state, no seed transactions — not a bug), Referral Program (renders correctly with a live referral code/link). Found and fixed 2 more surgical bugs:

@@ -140,6 +140,9 @@ export const ProfileScreen = memo(function ProfileScreen({
   // popover. Reusing that exact pattern here.
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
   const [showSelfDiscovery, setShowSelfDiscovery] = useState(false);
+  const [memberSinceNote, setMemberSinceNote] = useState("");
+  const [showMemberSinceEditor, setShowMemberSinceEditor] = useState(false);
+  const [memberSinceEditorValue, setMemberSinceEditorValue] = useState("");
 
   useEffect(() => {
     const fetchReferralData = async () => {
@@ -249,8 +252,18 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div className="profile-type">{obData.type || "Creative"}</div>
           <div className="profile-loc">{obData.loc || "Set your location"}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center", marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
-            <span>Member since {new Date(currentUser.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })}</span>
+            <span onClick={()=>{setShowMemberSinceEditor(true);setMemberSinceEditorValue(memberSinceNote || "");}} style={{cursor:"pointer",whiteSpace:"nowrap"}}>
+              Member since {new Date(currentUser.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+              {memberSinceNote && <span style={{color:"var(--gold)",marginLeft:4}}>{memberSinceNote}</span>}
+            </span>
           </div>
+          {showMemberSinceEditor && (
+            <div style={{display:"flex",flexDirection:"column",gap:6,marginTop:4,padding:"8px 0",borderTop:"1px solid rgba(255,255,255,0.06)",cursor:"pointer"}} onClick={()=>setShowMemberSinceEditor(false)}>
+              <input value={memberSinceEditorValue} onChange={e=>{setMemberSinceEditorValue(e.target.value.slice(0,50));}} onKeyDown={e=>{if(e.key==="Escape"){setShowMemberSinceEditor(false);setMemberSinceEditorValue("");}}} onClick={e=>e.stopPropagation()} style={{flex:1,background:"var(--card-bg)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:8,padding:"6px 10px",color:"var(--text)",fontSize:12,width:"100%",outline:"none"}} placeholder="Add note with emoji..." maxLength={50} />
+              <span style={{fontSize:10,color:"var(--muted)",textAlign:"center"}}>Tip: Use emoji to express your vibe! {50-memberSinceEditorValue.length} chars left</span>
+              <button onClick={(e)=>{e.stopPropagation();setMemberSinceNote(memberSinceEditorValue || "");setShowMemberSinceEditor(false);}} style={{alignSelf:"center",padding:"4px 12px",background:"var(--gold)",color:"var(--text-dark)",border:"none",borderRadius:99,fontSize:11,fontWeight:600,cursor:"pointer"}}>Save</button>
+            </div>
+          )}
           {currentUser.status ? (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 8, fontSize: 12, fontWeight: 600, color: "#FFD700", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 99, padding: "4px 12px", width: "fit-content", marginLeft: "auto", marginRight: "auto" }}>
               {currentUser.status}
@@ -569,7 +582,6 @@ export const ProfileScreen = memo(function ProfileScreen({
             )}
           </div>
         </div>
-        <div className="profile-btn"><button className="btn btn-outline" onClick={() => { setEditName(currentUser.name); setEditBio(obData.bio || ""); setEditLoc(obData.loc || ""); setEditAvatar(currentUser.avatar || ""); setEditType(currentUser.type || obData.type || ""); setEditLooking(obData.looking || []); setEditNsfw(!!currentUser.nsfw); setEditMediaKit(obData.mediaKitUrl || ""); setShowEditProfile(true); }}>Edit Profile</button></div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => setScreen("analytics")}><FiTrendingUp size={16} style={{ marginRight: 6 }} /> Insights</button></div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => setScreen("settings")}><FiSettings size={16} style={{ marginRight: 6 }} /> Account Settings</button></div>
         <div className="profile-btn"><button className="btn btn-outline" onClick={() => setShowShareProfile(true)}>Share Profile</button></div>

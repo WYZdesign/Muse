@@ -575,7 +575,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             {renderRow({ icon: <FiBell size={18} />, label: "Notification Preferences", desc: "Push, lock-screen and per-category alerts", action: () => setShowNotificationsSettings(true) })}
           </div>
 
-          <div className="settings-group">
+<div className="settings-group">
             <div className="settings-group-title">Appearance</div>
             <div className="theme-grid" style={{ margin: "12px 0 4px" }}>
               {/* Audit fix (2026-09-08): t.slice(0,3) gave "deepspace" and
@@ -599,18 +599,15 @@ export const SettingsScreen = memo(function SettingsScreen({
                 <div key={t} role="radio" aria-checked={theme === t} className={"theme-swatch" + (theme === t ? " active" : "")} data-val={t} title={t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme(t); } }} onClick={() => setTheme(t)} style={{ textTransform: "uppercase" }}>{theme === t ? `${THEME_ABBR[t]} ✓` : THEME_ABBR[t]}</div>
               ))}
             </div>
+            <div className="settings-group-title" style={{ marginTop: 16 }}>Background Effects</div>
+            <OpacitySlider label="Sprites & Animations" storageKey="muse_sprite_opacity" cssVar="--sprite-opacity" />
+            <OpacitySlider label="Background" storageKey="muse_bg_opacity" cssVar="--scene-opacity" />
           </div>
 
           <div className="settings-group">
             <div className="settings-group-title">Quests &amp; Rewards</div>
             {rewardsItems.map(renderRow)}
           </div>
-
-<div className="settings-group">
-              <div className="settings-group-title">Background</div>
-              <OpacitySlider label="Sprites & Animations" storageKey="muse_sprite_opacity" cssVar="--sprite-opacity" />
-              <OpacitySlider label="Background" storageKey="muse_bg_opacity" cssVar="--scene-opacity" />
-           </div>
 
           <div className="settings-group">
             <div className="settings-group-title">Privacy & Safety</div>

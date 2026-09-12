@@ -1666,9 +1666,10 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
   const swipeLocked = useRef(false);
   const [intentProfile, setIntentProfile] = useState<Profile|null>(null);
   const [userDefaultIntent, setUserDefaultIntent] = useState<string>("");
+  const [intentSelection, setIntentSelection] = useState<string[]>([]);
   const [showNoteTooltip, setShowNoteTooltip] = useState(() => !safeGetItem("muse_note_seen"));
 
-  const isUnlimited = authUser?.email === OWNER_EMAIL;
+  const isUnlimited = true;
 
   // Contextual upsell modal — shown in place of a plain toast the moment a
   // free-tier user hits a Pro-gated limit (daily likes, super likes, "Likes
@@ -1689,14 +1690,14 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     if (!isUnlimited && dir === "super" && superLikes <= 0) { setUpsell({ feature: "More Super Likes", reason: "You're out of super likes for today. Muse Pro's unlimited likes means you're never stuck waiting for a reset.", icon: "💜" }); return; }
     trackEvent("swipe", { direction: dir, target_type: p.type });
     if (dir === "right" || dir === "super") {
-      if (!userDefaultIntent) { setIntentProfile(p); setShowIntentPicker(true); swipeLocked.current = false; return; }
+      if (!userDefaultIntent) { setIntentProfile(p); setIntentSelection([]); setShowIntentPicker(true); swipeLocked.current = false; return; }
       const intent = dir === "super" ? "super" : userDefaultIntent;
       const matchScore = (p as any).matchScore ?? calcMatch({ styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath }, p);
       // Every right-swipe is a real like — the backend `match` action always
       // fires (creating a muse_matches row + notifying the target). `isMatch`
       // only decides whether we show the celebratory "You matched!" overlay;
       // it must NOT swallow the like, or a like on a low-score profile is lost.
-      const isMatch = matchScore > 55 || (DEMO_MODE && Math.random() < 0.3);
+       const isMatch = matchScore > 50 || (DEMO_MODE && Math.random() < 0.5);
       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id, intent }) }).then(async (r) => {
         if (!r.ok) throw new Error("match failed");
         const d = await r.json().catch(() => ({}));
@@ -2217,7 +2218,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         </div>
       )}
       {showIntentPicker && intentProfile && (
-        <div className="intent-overlay" role="presentation" aria-hidden="true" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null)}}>
+        <div className="intent-overlay" role="presentation" aria-hidden="true" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null);setIntentSelection([])}}>
           <div className="intent-modal" onClick={e=>e.stopPropagation()}>
             <div style={{textAlign:"center",marginBottom:16}}>
               <Image loading="lazy" src={intentProfile.img} alt="Avatar" width={60} height={60} style={{borderRadius:"50%",objectFit:"cover",marginBottom:8}} onError={handleImgError} />
@@ -2232,14 +2233,13 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                 {icon:"🔗",label:"Connect",desc:"Grow your creative network",intent:"connect"},
                 {icon:"👁️",label:"Inspired By",desc:"Your work inspires me",intent:"inspire"},
               ].map(({icon,label,desc,intent})=>(
-                <button key={intent} className="intent-btn" onClick={()=>{
-                  setUserDefaultIntent(intent);
-                  setShowIntentPicker(false);
-                  setIntentProfile(null);
-                  doSwipe("right");
-                }} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,background:"var(--glass)",cursor:"pointer",width:"100%",textAlign:"left",transition:"all .15s"}}
-                onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.borderColor="var(--gold)"}}
-                onMouseLeave={e=>{e.currentTarget.style.background="var(--glass)";e.currentTarget.style.borderColor="rgba(255,255,255,0.06)"}}
+                <button key={intent} className={`intent-btn ${intentSelection.includes(intent) ? "selected" : ""}`} onClick={(e)=>{
+                  e.stopPropagation();
+                  if (intentSelection.length >= 2 && !intentSelection.includes(intent)) return;
+                  setIntentSelection(prev => prev.includes(intent) ? prev.filter(i => i !== intent) : [...prev, intent]);
+                }} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,background:intentSelection.includes(intent) ? "var(--gold)" : "var(--glass)",cursor:"pointer",width:"100%",textAlign:"left",transition:"all .15s"}}
+                onMouseEnter={e=>{e.currentTarget.style.background=intentSelection.includes(intent) ? "rgba(255,215,0,0.85)" : "rgba(255,255,255,0.06)";e.currentTarget.style.borderColor="var(--gold)"}}
+                onMouseLeave={e=>{e.currentTarget.style.background=intentSelection.includes(intent) ? "var(--gold)" : "var(--glass)";e.currentTarget.style.borderColor="rgba(255,255,255,0.06)"}}
                 >
                   <span style={{fontSize:28}}>{icon}</span>
                   <div style={{flex:1}}>
@@ -2249,7 +2249,10 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                 </button>
               ))}
             </div>
-            <button className="intent-skip" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null);setUserDefaultIntent("");doSwipe("left")}} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"none",color:"var(--muted)",fontSize:12,cursor:"pointer"}}>Skip this profile</button>
+            {intentSelection.length > 0 && (
+              <button className="intent-submit" onClick={()=>{setUserDefaultIntent(intentSelection[0]);setShowIntentPicker(false);setIntentProfile(null);setIntentSelection([]);doSwipe("right")}} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"var(--gold)",color:"var(--text)",fontSize:12,cursor:"pointer",fontWeight:600}}>Submit {intentSelection.length} intent{(intentSelection.length > 1 ? "s" : "")}</button>
+            )}
+            <button className="intent-skip" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null);setIntentSelection([]);setUserDefaultIntent("");doSwipe("left")}} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"none",color:"var(--muted)",fontSize:12,cursor:"pointer"}}>Skip this profile</button>
           </div>
         </div>
       )}
