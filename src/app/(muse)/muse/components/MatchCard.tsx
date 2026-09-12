@@ -158,19 +158,10 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
           </div>
         )}
         {isList && (() => {
-          const personality: React.ReactNode[] = [];
-          if (m.zodiac) personality.push(<button key="z" className="match-badge match-badge-trait" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.zodiac} — ${ZODIAC_FULL[m.zodiac]?.tag || ""}`, desc: ZODIAC_FULL[m.zodiac]?.desc || "", icon: ZODIAC_GLYPH[m.zodiac] || "✦", color: "#D4A5FF" }); }} style={{ cursor: "pointer" }}>{ZODIAC_GLYPH[m.zodiac] || "✦"} {m.zodiac}</button>);
-          if (m.mbti) personality.push(<button key="m" className="match-badge match-badge-trait" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.mbti} — ${MBTI_FULL[m.mbti]?.tag || ""}`, desc: MBTI_FULL[m.mbti]?.desc || "", icon: <MbtiIcon code={m.mbti} size={20} />, color: "#FFD700" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><MbtiIcon code={m.mbti} size={11} /> {m.mbti}</button>);
-          if (m.lifePath) personality.push(<button key="lp" className="match-badge match-badge-trait" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `Life Path ${m.lifePath}`, desc: LIFE_PATH_FULL[String(m.lifePath)] || "", icon: <LifePathIcon n={Number(m.lifePath)} size={20} />, color: "#98FB98" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><LifePathIcon n={Number(m.lifePath)} size={11} /> LP {m.lifePath}</button>);
-          return personality.length > 0 ? <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>{personality}</div> : null;
-        })()}
-        {isList && (m.styles || []).length > 0 && (
-          <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
-            {(m.styles || []).slice(0, 3).map((s: string) => <button key={"style-" + s} className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: s, desc: STYLE_FULL[s] || "A creative style this member works in.", icon: "🎨", color: "#FFD700" }); }} style={{ fontSize: 10, padding: "2px 7px", cursor: "pointer" }}>{s}</button>)}
-          </div>
-        )}
-        {isList && (() => {
           const items: React.ReactNode[] = [];
+          if (m.zodiac) items.push(<button key="z" className="match-badge match-badge-trait" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.zodiac} — ${ZODIAC_FULL[m.zodiac]?.tag || ""}`, desc: ZODIAC_FULL[m.zodiac]?.desc || "", icon: ZODIAC_GLYPH[m.zodiac] || "✦", color: "#D4A5FF" }); }} style={{ cursor: "pointer" }}>{ZODIAC_GLYPH[m.zodiac] || "✦"} {m.zodiac}</button>);
+          if (m.mbti) items.push(<button key="m" className="match-badge match-badge-trait" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.mbti} — ${MBTI_FULL[m.mbti]?.tag || ""}`, desc: MBTI_FULL[m.mbti]?.desc || "", icon: <MbtiIcon code={m.mbti} size={20} />, color: "#FFD700" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><MbtiIcon code={m.mbti} size={11} /> {m.mbti}</button>);
+          if (m.lifePath) items.push(<button key="lp" className="match-badge match-badge-trait" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `Life Path ${m.lifePath}`, desc: LIFE_PATH_FULL[String(m.lifePath)] || "", icon: <LifePathIcon n={Number(m.lifePath)} size={20} />, color: "#98FB98" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><LifePathIcon n={Number(m.lifePath)} size={11} /> LP {m.lifePath}</button>);
           (m.skills || []).forEach((s: string) => items.push(<button key={"s-" + s} className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: s, desc: STYLE_FULL[s] || `A skill this member brings to a collaboration.`, icon: "🛠", color: "#90CAF9" }); }} style={{ cursor: "pointer" }}>{s}</button>));
           (m.looking || []).forEach((l: string) => items.push(<button key={"l-" + l} className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: l, desc: `This member is looking for ${l.toLowerCase()}s to collaborate with.`, icon: "🤝", color: "#FF69B4" }); }} style={{ background: "rgba(255,105,180,0.12)", color: "#FF69B4", border: "1px solid rgba(255,105,180,0.2)", cursor: "pointer" }}>looking for {l}</button>));
           const shown = items.slice(0, 4);

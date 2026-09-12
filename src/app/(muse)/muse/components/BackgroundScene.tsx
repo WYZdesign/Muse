@@ -209,7 +209,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
         <div className="particles" ref={particlesRef} />
       </div>
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 } as React.CSSProperties}>
-        <div className="scene-wash" style={{ opacity: "var(--film-opacity, 1)" } as React.CSSProperties} />
+        <div className="scene-wash" style={{ opacity: "calc(var(--film-opacity, 1) * var(--scene-opacity, 1))" } as React.CSSProperties} />
       </div>
     </>
   );
