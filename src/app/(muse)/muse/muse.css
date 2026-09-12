@@ -867,6 +867,7 @@ img{background-color:var(--card-bg)}
 /* ═══ MODAL ═══ */
 .modal-overlay{position:absolute;inset:0;z-index:400;background:rgba(5,3,10,0.94);backdrop-filter:blur(20px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;animation:modalIn .35s cubic-bezier(.4,0,.2,1)}
 .modal-overlay.lighter{background:rgba(5,3,10,0.85)}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .modal-overlay.lighter{background:rgba(0,0,0,0.45)}
 @keyframes modalIn{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
 .modal-header{display:flex;align-items:center;padding:16px 20px 10px;gap:12px;width:min(92%,460px);margin:0 auto;background:#170a28;border:1px solid rgba(212,165,255,0.18);border-bottom:none;border-radius:22px 22px 0 0}
 .modal-back{font-size:18px;padding:0;color:var(--text);transition:all .2s;border-radius:15px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;flex-shrink:0}
@@ -1413,6 +1414,74 @@ img{background-color:var(--card-bg)}
 [data-theme="daylight"] .story-ring{border-color:#F2B234}
 [data-theme="daylight"] .moments-hero{color:#4A3F35}
 
+/* ═══ SKY LIGHT-MODE OVERRIDES ═══ */
+[data-theme="sky"] .scene{background:linear-gradient(180deg,#EFF7FC 0%,#D6E8F5 42%,#C5DEF0 72%,#EFF7FC 100%)}
+[data-theme="sky"] .phone{background:rgba(239,247,252,0.6)}
+@media(max-width:767px){[data-theme="sky"] .phone{background:rgba(239,247,252,0.94)}}
+[data-theme="sky"] .swipe-card{background:#F6FBFF;border:1px solid rgba(22,34,46,0.08);box-shadow:0 4px 24px rgba(22,34,46,0.06)}
+[data-theme="sky"] .swipe-card img{background:#E4EFF8}
+[data-theme="sky"] .swipe-card .card-details{background:#F6FBFF;box-shadow:0 -8px 32px rgba(22,34,46,0.08)}
+[data-theme="sky"] .match-card-grid{background:#F6FBFF;border:1px solid rgba(22,34,46,0.08);box-shadow:0 4px 16px rgba(22,34,46,0.08)}
+[data-theme="sky"] .intent-modal{background:#F6FBFF}
+[data-theme="sky"] .modal-panel{background:#F6FBFF!important}
+[data-theme="sky"] .nav{background:rgba(239,247,252,0.94);border-color:rgba(22,34,46,0.08)}
+[data-theme="sky"] .inp{--input-bg:rgba(0,0,0,0.04);border-color:transparent;color:#16222E}
+[data-theme="sky"] .inp::placeholder{color:rgba(22,34,46,0.45)}
+[data-theme="sky"] .chip{background:rgba(0,0,0,0.04);border-color:rgba(22,34,46,0.08);color:#16222E}
+[data-theme="sky"] .btn-outline{border-color:rgba(22,34,46,0.12);color:#16222E}
+[data-theme="sky"] .conn-btn-ghost{background:rgba(0,0,0,0.04);border-color:rgba(22,34,46,0.08);color:#16222E}
+[data-theme="sky"] .online-dot{border-color:#F6FBFF}
+[data-theme="sky"] .story-ring img{border-color:#F6FBFF}
+[data-theme="sky"] .moments-story-ring img{border-color:#F6FBFF}
+[data-theme="sky"] .hamburger-panel{background:linear-gradient(180deg,rgba(239,247,252,0.99) 0%,rgba(214,232,245,0.99) 100%);border-left-color:rgba(22,34,46,0.06)}
+[data-theme="sky"] .hamburger-bell{background:rgba(0,0,0,0.04);border-color:rgba(22,34,46,0.1);color:rgba(22,34,46,0.6)}
+[data-theme="sky"] .hamburger-item{background:rgba(0,0,0,0.02);border-color:rgba(22,34,46,0.05)}
+[data-theme="sky"] .auth-tab{background:rgba(0,0,0,0.03);color:rgba(22,34,46,0.5)}
+[data-theme="sky"] .auth-social-btn{background:rgba(0,0,0,0.04);border-color:rgba(22,34,46,0.08);color:#16222E}
+[data-theme="sky"] .search-input{color:#16222E}
+[data-theme="sky"] .album-tab{background:rgba(0,0,0,0.04);border-color:rgba(22,34,46,0.08);color:rgba(22,34,46,0.6)}
+[data-theme="sky"] .moments-tab{background:rgba(0,0,0,0.03);border-color:rgba(22,34,46,0.06);color:rgba(22,34,46,0.6)}
+[data-theme="sky"] .filter-chip{background:rgba(0,0,0,0.04);border-color:rgba(22,34,46,0.08);color:rgba(22,34,46,0.6)}
+[data-theme="sky"] select.inp option{background:#F6FBFF;color:#16222E}
+[data-theme="sky"] .chat-inp{background:rgba(0,0,0,0.04);border-color:rgba(22,34,46,0.08);color:#16222E}
+[data-theme="sky"] .theme-swatch.active{border-color:#16222E;box-shadow:0 0 6px rgba(46,110,150,0.3)}
+[data-theme="sky"] .story-ring{border-color:#2E6E96}
+[data-theme="sky"] .moments-hero{color:#16222E}
+
+/* ═══ ROSE LIGHT-MODE OVERRIDES ═══ */
+[data-theme="rose"] .scene{background:linear-gradient(180deg,#FCF1F4 0%,#F5DCE4 42%,#EDD0DC 72%,#FCF1F4 100%)}
+[data-theme="rose"] .phone{background:rgba(252,241,244,0.6)}
+@media(max-width:767px){[data-theme="rose"] .phone{background:rgba(252,241,244,0.94)}}
+[data-theme="rose"] .swipe-card{background:#FEF7F9;border:1px solid rgba(42,26,34,0.08);box-shadow:0 4px 24px rgba(42,26,34,0.06)}
+[data-theme="rose"] .swipe-card img{background:#F5E4EA}
+[data-theme="rose"] .swipe-card .card-details{background:#FEF7F9;box-shadow:0 -8px 32px rgba(42,26,34,0.08)}
+[data-theme="rose"] .match-card-grid{background:#FEF7F9;border:1px solid rgba(42,26,34,0.08);box-shadow:0 4px 16px rgba(42,26,34,0.08)}
+[data-theme="rose"] .intent-modal{background:#FEF7F9}
+[data-theme="rose"] .modal-panel{background:#FEF7F9!important}
+[data-theme="rose"] .nav{background:rgba(252,241,244,0.94);border-color:rgba(42,26,34,0.08)}
+[data-theme="rose"] .inp{--input-bg:rgba(0,0,0,0.04);border-color:transparent;color:#2A1A22}
+[data-theme="rose"] .inp::placeholder{color:rgba(42,26,34,0.45)}
+[data-theme="rose"] .chip{background:rgba(0,0,0,0.04);border-color:rgba(42,26,34,0.08);color:#2A1A22}
+[data-theme="rose"] .btn-outline{border-color:rgba(42,26,34,0.12);color:#2A1A22}
+[data-theme="rose"] .conn-btn-ghost{background:rgba(0,0,0,0.04);border-color:rgba(42,26,34,0.08);color:#2A1A22}
+[data-theme="rose"] .online-dot{border-color:#FEF7F9}
+[data-theme="rose"] .story-ring img{border-color:#FEF7F9}
+[data-theme="rose"] .moments-story-ring img{border-color:#FEF7F9}
+[data-theme="rose"] .hamburger-panel{background:linear-gradient(180deg,rgba(252,241,244,0.99) 0%,rgba(245,220,228,0.99) 100%);border-left-color:rgba(42,26,34,0.06)}
+[data-theme="rose"] .hamburger-bell{background:rgba(0,0,0,0.04);border-color:rgba(42,26,34,0.1);color:rgba(42,26,34,0.6)}
+[data-theme="rose"] .hamburger-item{background:rgba(0,0,0,0.02);border-color:rgba(42,26,34,0.05)}
+[data-theme="rose"] .auth-tab{background:rgba(0,0,0,0.03);color:rgba(42,26,34,0.5)}
+[data-theme="rose"] .auth-social-btn{background:rgba(0,0,0,0.04);border-color:rgba(42,26,34,0.08);color:#2A1A22}
+[data-theme="rose"] .search-input{color:#2A1A22}
+[data-theme="rose"] .album-tab{background:rgba(0,0,0,0.04);border-color:rgba(42,26,34,0.08);color:rgba(42,26,34,0.6)}
+[data-theme="rose"] .moments-tab{background:rgba(0,0,0,0.03);border-color:rgba(42,26,34,0.06);color:rgba(42,26,34,0.6)}
+[data-theme="rose"] .filter-chip{background:rgba(0,0,0,0.04);border-color:rgba(42,26,34,0.08);color:rgba(42,26,34,0.6)}
+[data-theme="rose"] select.inp option{background:#FEF7F9;color:#2A1A22}
+[data-theme="rose"] .chat-inp{background:rgba(0,0,0,0.04);border-color:rgba(42,26,34,0.08);color:#2A1A22}
+[data-theme="rose"] .theme-swatch.active{border-color:#2A1A22;box-shadow:0 0 6px rgba(168,82,106,0.3)}
+[data-theme="rose"] .story-ring{border-color:#A8526A}
+[data-theme="rose"] .moments-hero{color:#2A1A22}
+
 /* ═══ UNIVERSAL LIGHT-THEME OVERRIDES ═══ */
 /* Covers every surface that uses hardcoded dark values — card internals, chat,
    match overlay, quest/subscription/settings tabs, moments, briefs, connections,
@@ -1537,10 +1606,18 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .scene-orb{opacity:0.12!important;filter:blur(120px)!important;mix-blend-mode:normal!important}
 /* Nebula fog: same screen-blend issue — soften */
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .nebula-fog{opacity:0.15!important;mix-blend-mode:normal!important}
-/* Aurora: screen blend invisible on light — hide */
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .aurora-strip{opacity:0!important}
-/* Scene wash: gradient overlay muddy on light — hide */
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .scene-wash{opacity:0!important}
+/* Aurora: soft pastel nebula clouds on light — muted warm tones, no screen blend */
+:is([data-theme="sunrise"],[data-theme="daylight"]) .aurora-strip{opacity:0.25!important;mix-blend-mode:normal!important;filter:blur(calc(65px * var(--scene-opacity, 1)))!important}
+:is([data-theme="sunrise"],[data-theme="daylight"]) .aurora-s1{background:radial-gradient(ellipse at 30% 50%,rgba(180,130,60,0.25) 0%,rgba(200,160,80,0.15) 30%,transparent 65%),radial-gradient(ellipse at 65% 40%,rgba(160,120,70,0.2) 0%,rgba(180,140,90,0.12) 35%,transparent 65%),radial-gradient(ellipse at 50% 60%,rgba(190,140,80,0.12) 0%,transparent 55%)}
+:is([data-theme="sunrise"],[data-theme="daylight"]) .aurora-s2{background:radial-gradient(ellipse at 55% 45%,rgba(170,130,70,0.2) 0%,rgba(190,150,80,0.15) 30%,transparent 60%),radial-gradient(ellipse at 25% 55%,rgba(180,140,75,0.15) 0%,rgba(200,160,90,0.1) 35%,transparent 60%)}
+:is([data-theme="sunrise"],[data-theme="daylight"]) .aurora-s3{background:radial-gradient(ellipse at 40% 50%,rgba(185,135,75,0.2) 0%,rgba(195,155,85,0.12) 30%,transparent 55%),radial-gradient(ellipse at 70% 35%,rgba(175,125,65,0.15) 0%,rgba(190,145,80,0.1) 40%,transparent 60%)}
+:is([data-theme="sky"],[data-theme="rose"]) .aurora-strip{opacity:0.2!important;mix-blend-mode:normal!important;filter:blur(calc(65px * var(--scene-opacity, 1)))!important}
+:is([data-theme="sky"],[data-theme="rose"]) .aurora-s1{background:radial-gradient(ellipse at 30% 50%,rgba(100,140,200,0.2) 0%,rgba(130,160,210,0.12) 30%,transparent 65%),radial-gradient(ellipse at 65% 40%,rgba(120,150,190,0.15) 0%,rgba(140,170,200,0.1) 35%,transparent 65%)}
+:is([data-theme="sky"],[data-theme="rose"]) .aurora-s2{background:radial-gradient(ellipse at 55% 45%,rgba(140,120,180,0.18) 0%,rgba(160,140,190,0.12) 30%,transparent 60%),radial-gradient(ellipse at 25% 55%,rgba(130,150,180,0.12) 0%,rgba(150,165,195,0.08) 35%,transparent 60%)}
+:is([data-theme="sky"],[data-theme="rose"]) .aurora-s3{background:radial-gradient(ellipse at 40% 50%,rgba(150,130,175,0.15) 0%,rgba(165,145,185,0.1) 30%,transparent 55%)}
+/* Scene wash: soft warm tint on light backgrounds instead of dark space overlay */
+:is([data-theme="sunrise"],[data-theme="daylight"]) .scene-wash{opacity:0.08!important;animation:colorWash 30s ease-in-out infinite;background:linear-gradient(135deg,rgba(180,120,50,0.12),rgba(200,140,60,0.08),rgba(160,110,45,0.06),rgba(190,130,55,0.1),rgba(170,115,48,0.12));background-size:400% 400%}
+:is([data-theme="sky"],[data-theme="rose"]) .scene-wash{opacity:0.06!important;animation:colorWash 30s ease-in-out infinite;background:linear-gradient(135deg,rgba(100,130,180,0.1),rgba(130,150,190,0.07),rgba(110,140,185,0.05),rgba(120,135,175,0.08));background-size:400% 400%}
 /* Shooting comets: white streaks invisible on light — hide */
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .comet-field{display:none!important}
 /* Particles: white dots on light — hide */
@@ -1561,6 +1638,20 @@ img{background-color:var(--card-bg)}
 /* Splash sky: dark sunset gradient → light pastel for light themes */
 :is([data-theme="sunrise"],[data-theme="daylight"]) .splash-sky{background:linear-gradient(180deg,#FFF6E7 0%,#FFE0B2 12%,#FFCC80 24%,#FFB74D 36%,#FFA726 46%,#FF9800 52%,#FB8C00 58%,#F57C00 62%,#E65100 66%,#1E88E5 67%,#1565C0 82%,#0D47A1 100%)}
 :is([data-theme="sky"],[data-theme="rose"]) .splash-sky{background:linear-gradient(180deg,#E3F2FD 0%,#BBDEFB 12%,#90CAF9 24%,#64B5F6 36%,#42A5F5 46%,#2196F3 52%,#1E88E5 58%,#1976D2 62%,#1565C0 66%,#0D47A1 67%,#0A3D7A 82%,#062548 100%)}
+/* Splash ocean-tide waves: lighter pastel fills for light backgrounds */
+:is([data-theme="sunrise"],[data-theme="daylight"]) .splash-ocean-tide .wave-path-1{fill:rgba(180,150,100,0.3)}
+:is([data-theme="sunrise"],[data-theme="daylight"]) .splash-ocean-tide .wave-path-2{fill:rgba(190,160,110,0.22)}
+:is([data-theme="sunrise"],[data-theme="daylight"]) .splash-ocean-tide .wave-path-3{fill:rgba(200,170,120,0.15)}
+:is([data-theme="sky"],[data-theme="rose"]) .splash-ocean-tide .wave-path-1{fill:rgba(130,160,200,0.28)}
+:is([data-theme="sky"],[data-theme="rose"]) .splash-ocean-tide .wave-path-2{fill:rgba(140,165,205,0.2)}
+:is([data-theme="sky"],[data-theme="rose"]) .splash-ocean-tide .wave-path-3{fill:rgba(150,170,210,0.13)}
+/* Bottom waves: lighter pastel fills for light themes */
+:is([data-theme="sunrise"],[data-theme="daylight"]) .wave-bottom .wave-path-1{fill:rgba(180,150,100,0.22)}
+:is([data-theme="sunrise"],[data-theme="daylight"]) .wave-bottom .wave-path-2{fill:rgba(190,160,110,0.15)}
+:is([data-theme="sunrise"],[data-theme="daylight"]) .wave-bottom .wave-path-3{fill:rgba(200,170,120,0.09)}
+:is([data-theme="sky"],[data-theme="rose"]) .wave-bottom .wave-path-1{fill:rgba(130,160,200,0.2)}
+:is([data-theme="sky"],[data-theme="rose"]) .wave-bottom .wave-path-2{fill:rgba(140,165,205,0.14)}
+:is([data-theme="sky"],[data-theme="rose"]) .wave-bottom .wave-path-3{fill:rgba(150,170,210,0.08)}
 
 /* ═══ NAV ICON HUE SHIFT ═══ */
 @keyframes gradientShift{0%{background-position:0% 50%}20%{background-position:34% 72%}40%{background-position:70% 26%}60%{background-position:100% 64%}80%{background-position:52% 16%}100%{background-position:0% 50%}}
