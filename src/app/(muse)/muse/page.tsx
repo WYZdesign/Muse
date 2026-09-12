@@ -484,17 +484,10 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // POST calls so the server can authenticate writes. Falls back to a plain
   // fetch for GET/other endpoints and for /api/muse/auth (which manages its own auth).
   const apiFetch = useCallback(async (url: string, opts: RequestInit = {}) => {
-    try {
-      const raw = safeGetItem("muse_user");
-      const token = raw ? (JSON.parse(raw).access_token || "") : "";
-      if (token) {
-        opts.headers = { ...(opts.headers || {}), "Authorization": `Bearer ${token}` };
-      }
-    } catch {}
-    const res = await fetch(url, opts);
+    const res = await authFetch(url, opts);
     if (!res.ok) throw new Error(`API ${res.status}`);
     return res;
-  }, []);
+  }, [authFetch]);
 
   const { liveProfiles, setLiveProfiles, matches, setMatches, likedBy, setLikedBy, blockedUsers, setBlockedUsers, matchStreak, setMatchStreak } = useDiscoveryData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
   // Ref to avoid stale closure on rapid swipes — always holds latest matches
@@ -745,6 +738,14 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   }, []);
 
   useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{safeRemoveItem("muse_boost");}catch{}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd]);
+
+  // Fetch connected accounts status from server on mount (overrides stale localStorage)
+  useEffect(() => {
+    authFetch("/api/muse/social?action=status")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.connected) setObConnectedSocials(d.connected); })
+      .catch(() => {});
+  }, []);
 
   // ─── CROSS-DEVICE: Persist all preferences to server (single debounced) ───
   const prefsSnapshotRef = useRef({ obStep, notifPrefs, filterStyles, filterScore, appliedBriefs, showNsfw });

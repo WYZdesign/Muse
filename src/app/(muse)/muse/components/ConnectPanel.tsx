@@ -37,14 +37,18 @@ export default function ConnectPanel({ onClose }: Props) {
         body: JSON.stringify({ action: "create-account" }),
       });
       const d = await r.json();
-      if (d.onboardingUrl) {
+      if (d.url) {
+        window.location.href = d.url;
+      } else if (d.onboardingUrl) {
         window.location.href = d.onboardingUrl;
       } else if (d.onboardingComplete) {
         setStatus({ connected: true, chargesEnabled: d.chargesEnabled, payoutsEnabled: d.payoutsEnabled, onboardingComplete: true });
       } else if (d.error) {
-        alert(d.error);
+        alert(d.error + (d.status === 503 ? " — Stripe may not be configured yet" : ""));
+      } else {
+        alert("Unexpected response — try again");
       }
-    } catch { alert("Could not start onboarding — try again"); }
+    } catch (e: any) { alert("Could not start onboarding — " + (e?.message || "try again")); }
     setConnecting(false);
   };
 

@@ -51,11 +51,6 @@ export async function GET(req: NextRequest) {
     const provider = url.searchParams.get("provider");
     const action = url.searchParams.get("action") || "auth";
 
-    if (!provider) return NextResponse.json({ error: "Provider required" }, { status: 400 });
-
-    const config = getProviderConfig(provider);
-    if (!config) return NextResponse.json({ error: `${provider} OAuth not configured` }, { status: 503 });
-
     const bearer = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
     let profileId: string | null = null;
     if (bearer) {
@@ -68,6 +63,22 @@ export async function GET(req: NextRequest) {
     }
     if (!profileId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    // Status: which providers are connected for this user
+    if (action === "status") {
+      const sb = getServiceClient();
+      const { data: conns } = await sb.from("muse_social_connections").select("provider").eq("user_id", profileId);
+      const connected: Record<string, boolean> = {};
+      for (const p of ["instagram", "facebook", "spotify", "soundcloud"]) {
+        connected[p] = !!(conns || []).some((c: any) => c.provider === p);
+      }
+      return NextResponse.json({ connected });
+    }
+
+    if (!provider) return NextResponse.json({ error: "Provider required" }, { status: 400 });
+
+    const config = getProviderConfig(provider);
+    if (!config) return NextResponse.json({ error: `${provider} OAuth not configured — add ${provider.toUpperCase()}_CLIENT_ID and ${provider.toUpperCase()}_CLIENT_SECRET to your environment` }, { status: 503 });
+
     if (action === "auth") {
       const state = Buffer.from(JSON.stringify({ profileId, provider, ts: Date.now() })).toString("base64url");
       const params = new URLSearchParams({
@@ -78,7 +89,7 @@ export async function GET(req: NextRequest) {
         state,
       });
       const authUrl = `${config.authUrl}?${params.toString()}`;
-      return NextResponse.redirect(authUrl);
+      return NextResponse.json({ authUrl });
     }
 
     if (action === "disconnect") {

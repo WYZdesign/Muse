@@ -38,9 +38,14 @@ export async function POST(req: NextRequest) {
     }
 
     // No AI — still give a useful answer from retrieval alone (context-only).
-    const { context } = await retrieveContext(question);
+    const { context, sources } = await retrieveContext(question);
     if (context) {
-      return NextResponse.json({ answer: context, sources: [], ai: false, partial: true });
+      // Context-only mode: the raw doc text is too verbose for a chat reply.
+      // Synthesize a short answer from the top sources instead of dumping docs.
+      const topSource = sources[0] || "Muse";
+      const snippet = context.split("\n\n")[0] || context;
+      const shortAnswer = snippet.length > 500 ? snippet.slice(0, 497) + "..." : snippet;
+      return NextResponse.json({ answer: shortAnswer, sources, ai: false, partial: true });
     }
 
     return NextResponse.json({ answer: fallbackAnswer(question), sources: [], ai: false });

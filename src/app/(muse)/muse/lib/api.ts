@@ -1,10 +1,49 @@
 "use client";
 
-import { safeGetItem } from "./safe-storage";
+import { safeGetItem, safeSetItem, getRefreshToken, setRefreshToken, clearRefreshToken } from "./safe-storage";
 
 export function getAccessToken(): string {
   if (typeof window === "undefined") return "";
   try { return JSON.parse(safeGetItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
+}
+
+// Try to refresh the Supabase access token using the refresh token stored
+// in sessionStorage. Returns the new access token on success, or "" on failure.
+let _refreshPromise: Promise<string> | null = null;
+async function refreshAccessToken(): Promise<string> {
+  // Deduplicate concurrent refresh attempts
+  if (_refreshPromise) return _refreshPromise;
+  _refreshPromise = (async () => {
+    try {
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) return "";
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+      if (!supabaseUrl || !supabaseKey) return "";
+      const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: supabaseKey },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      if (!res.ok) { clearRefreshToken(); return ""; }
+      const data = await res.json();
+      if (data.access_token) {
+        // Persist the new session
+        const raw = safeGetItem("muse_user");
+        const session = raw ? JSON.parse(raw) : {};
+        session.access_token = data.access_token;
+        session.expires_at = data.expires_at;
+        if (data.refresh_token) {
+          session.refresh_token = data.refresh_token;
+          setRefreshToken(data.refresh_token);
+        }
+        safeSetItem("muse_user", JSON.stringify(session));
+        return data.access_token;
+      }
+      return "";
+    } catch { return ""; }
+  })();
+  try { return await _refreshPromise; } finally { _refreshPromise = null; }
 }
 
 export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
@@ -15,7 +54,17 @@ export async function authFetch(url: string, options: RequestInit = {}): Promise
   // ArrayBuffer bodies, the browser must set the multipart boundary itself —
   // forcing application/json here corrupts the request and breaks uploads.
   if (!headers.has("Content-Type") && typeof options.body === "string") headers.set("Content-Type", "application/json");
-  return fetch(url, { ...options, headers });
+  let res = await fetch(url, { ...options, headers });
+
+  // If 401, try refreshing the token once and retry
+  if (res.status === 401) {
+    const newToken = await refreshAccessToken();
+    if (newToken && newToken !== token) {
+      headers.set("Authorization", `Bearer ${newToken}`);
+      res = await fetch(url, { ...options, headers });
+    }
+  }
+  return res;
 }
 
 // Centralized Stripe subscription checkout. Returns the redirect URL on

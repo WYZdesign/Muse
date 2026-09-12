@@ -438,7 +438,6 @@ export const SettingsScreen = memo(function SettingsScreen({
     { icon: <FiFile size={18} />, label: "Privacy Policy", desc: "How we handle your data", action: () => setShowPrivacy(true) },
     { icon: <FiFile size={18} />, label: "Community Guidelines", desc: "Standards & expectations", action: () => setShowGuidelines(true) },
     { icon: <FiFile size={18} />, label: "DMCA / Copyright", desc: "Copyright infringement claims", action: () => window.open("/dmca", "_self") },
-    { icon: <FiCompass size={18} />, label: "Glossary + Codex", desc: "Terms & concepts explained", action: () => showScreen("codex") },
     { icon: <FiX size={18} />, label: "Delete Account", desc: "Permanently remove your data", action: () => setShowDeleteConfirm(true) },
   ];
 
@@ -669,6 +668,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             ))}
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
               <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => setShowFeatureTour?.(true)}>App Walkthrough</button>
+              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => showScreen("codex")}>Glossary + Codex</button>
               <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => setSupportOpen?.(true)}>Help Guide</button>
               {!showIdeaForm ? (
                 <button className="btn" style={{ width: "100%", fontSize: 13, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)" }} onClick={() => setShowIdeaForm(true)}>Have an Idea?</button>
