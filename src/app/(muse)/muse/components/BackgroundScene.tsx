@@ -168,13 +168,11 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
 
   return (
     <>
-      <div className="scene" style={{ opacity: "var(--scene-opacity, 1)" } as React.CSSProperties}>
-        <div className="scene-wash" style={{ opacity: "var(--film-opacity, 1)" } as React.CSSProperties} />
+      <div className="scene" style={{ opacity: "var(--scene-opacity, 1)" } as React.CSSProperties} />
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", opacity: "var(--sprite-opacity, 1)" } as React.CSSProperties}>
         <div className="scene-orb orb-coral" />
         <div className="scene-orb orb-gold" />
         <div className="scene-orb orb-pink" />
-      </div>
-      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", opacity: "var(--sprite-opacity, 1)" } as React.CSSProperties}>
         <div className="star-field">
           {starPos.map((s,i) => (
             <div key={i} className={"star"+(i%5===0?" bright":"")+(i%8===0?" warm":"")+(i%13===0?" blue":"")+(i%17===0?" gold":"")} style={{left:s.l,top:s.t,animationDuration:s.d,animationDelay:s.dl}} />
@@ -209,7 +207,7 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
         </div>
         <div className="particles" ref={particlesRef} />
       </div>
-      {flash && <div className="screen-flash" style={{background:flash}} />}
+      <div className="scene-wash" style={{ opacity: "var(--film-opacity, 1)" } as React.CSSProperties} />
     </>
   );
 }
