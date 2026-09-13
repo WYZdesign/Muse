@@ -362,7 +362,7 @@ export const MusesScreen = memo(function MusesScreen({
             </EmptyState>
           )}
           {matches.filter(m => searchQuery === "" || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(m => (
-            <div key={m.id} data-card-id={m.id} onClickCapture={() => markSeen(String(m.id))} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ position: "relative", overflow: "hidden", borderRadius: 16 }}>
+            <div key={m.id} data-card-id={m.id} onClickCapture={() => markSeen(String(m.id))} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ position: "relative", overflow: "hidden", borderRadius: 16, flexShrink: 0 }}>
               {swipeInfo?.id === String(m.id) && swipeInfo.diff < -30 && (
                 <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: "50%", zIndex: 10, display: "flex", alignItems: "center", paddingLeft: 18, background: "linear-gradient(90deg,rgba(255,68,68,0.85) 0%,rgba(255,68,68,0.4) 70%,transparent 100%)", borderRadius: "16px 0 0 16px", opacity: Math.min(1, Math.abs(swipeInfo.diff) / 100) }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
