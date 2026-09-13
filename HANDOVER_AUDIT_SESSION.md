@@ -140,3 +140,66 @@ Applied 11 critical/high security fixes + edge proxy + 30 new tests.
 ### Build + Tests
 - `next build`: passes (Proxy active, Turbopack)
 - `vitest`: 315/315 pass
+
+---
+
+## Session 3: Completing All Remaining Audit Items (2c6a476, 2026-09-12)
+
+### Status: COMMITTED + PUSHED
+
+Completed every remaining item from the comprehensive audit.
+
+### Fixes Applied
+
+| Fix | File | What changed |
+|-----|------|-------------|
+| OAuth token encryption at rest | `lib/token-crypto.ts` (new) + `social/callback/route.ts` | AES-256-GCM encryption for OAuth access/refresh tokens before DB storage. Transparent encrypt/decrypt with prefix detection (`enc:`). Falls back to plaintext when no key configured (dev). |
+| Landing page QR code | `app/muse/landing/page.tsx` | Fixed QR generation to convert SVG response to base64 data URL instead of ephemeral `URL.createObjectURL(blob)`. Data URLs persist across navigation. |
+| Supabase env var mismatch | `lib/supabase.ts` + `app/(muse)/muse/lib/api.ts` | Now reads both `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` with fallback. Matches `.env.example` naming. |
+
+### New Test Files (18 tests, 333 total)
+
+| File | Tests | Coverage |
+|------|-------|----------|
+| `connect/connect.route.test.ts` | 5 | Auth, profile not found, Stripe not configured, create-account, unknown action |
+| `upload/upload.route.test.ts` | 4 | Auth, no file, valid PNG, disallowed type |
+| `content-scan/content-scan.route.test.ts` | 5 | Auth, no file, disallowed type, valid JPEG, oversized |
+| `lib/contentScan.test.ts` | 4 | Fail-open no creds, result shape, logScan error handling, logScan success |
+
+### Build + Tests
+- `next build`: passes (Proxy active, Turbopack)
+- `vitest`: 333/333 pass
+
+---
+
+## Summary: All Audit Items Complete
+
+### Security (all fixed)
+- Push endpoint auth bypass → auth required
+- OAuth state tampering → HMAC-SHA256 signed
+- Edge proxy → CORS + rate limiting + security headers
+- Verification crash → .maybeSingle()
+- MFA brute-force → rate limiting + try/catch
+- OAuth tokens at rest → AES-256-GCM encrypted
+
+### Features (all fixed)
+- Blog page → real content
+- Referral reward → Stripe verification
+- QR code → data URL generation
+- StudiosScreen pricing → already handled (not a bug)
+
+### Tests (all critical untested files now covered)
+- 333 tests total, all passing
+- Coverage for: connect, upload, content-scan, contentScan, oauth-state, verification, mfa, embeddings
+
+### Code Quality
+- Supabase env var naming → dual fallback
+- Geocode error handling → try/catch wraps rate limit
+- Embeddings error checking → all Supabase queries checked
+- Track-event payload limits → 10KB cap
+
+### Remaining (Claude's territory, not to touch)
+- page.tsx architectural: 160+ useState → useReducer, ~40 deps on saveState, untracked setTimeouts
+- 25+ modal overlays missing role="dialog" aria-modal="true"
+- StudiosScreen pricing is correct — "hourly" is the pending-partnership placeholder
+- Quests menu item accessed via streak widget (design decision, not a bug)
