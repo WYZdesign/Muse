@@ -6,10 +6,12 @@ import {
   FiChevronLeft, FiMoreVertical, FiMapPin, FiMessageCircle,
   FiExternalLink, FiInstagram, FiTwitter, FiYoutube, FiGlobe,
   FiHeart, FiStar, FiClock, FiShield, FiCheck, FiFlag, FiSlash, FiVolumeX,
+  FiBriefcase, FiUsers, FiTrendingUp, FiZap,
 } from "react-icons/fi";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 import Lightbox from "../components/Lightbox";
+import { getMuseRole, roleBadgeText, ctaText, type MuseRole } from "@/lib/role";
 
 export interface PublicProfileUser {
   id: string;
@@ -91,6 +93,12 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
   const [reviews, setReviews] = useState<any[]>(user.reviews || []);
   const [feedPosts, setFeedPosts] = useState<any[]>(user.feedPosts || []);
   const [trust, setTrust] = useState<any | null>(null);
+
+  // Role detection — determines which profile variant to render
+  const viewedRole: MuseRole = getMuseRole({ audience: (user as any).audience, type: user.type });
+  const viewerRole: MuseRole = currentUser ? getMuseRole({ audience: currentUser.audience, type: currentUser.type }) : "creative";
+  const isMuseProfile = viewedRole === "muse";
+  const isCreativeProfile = viewedRole === "creative";
 
   const photos: string[] = (user.photos?.length ? user.photos : [user.photo, user.img].filter(Boolean) as string[]);
   const displayName = user.name || "Unknown";
@@ -198,6 +206,11 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
                   {(user.isVerified || user.verified) && <span role="button" tabIndex={0} title="Identity verified" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Identity Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#22c55e" }); }} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: "rgba(34,197,94,0.2)", border: "1.5px solid rgba(34,197,94,0.5)", fontSize: 12, fontWeight: 800, color: "#22c55e", pointerEvents: "auto", cursor: "pointer" }}>✓</span>}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>
+                  {/* Role badge */}
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 99, background: isMuseProfile ? "rgba(255,215,0,0.15)" : "rgba(138,43,226,0.15)", border: `1px solid ${isMuseProfile ? "rgba(255,215,0,0.3)" : "rgba(138,43,226,0.3)"}`, color: isMuseProfile ? "var(--gold)" : "#b388ff" }}>
+                    {isMuseProfile ? <FiBriefcase size={10} /> : <FiZap size={10} />}
+                    {roleBadgeText(viewedRole)}
+                  </span>
                   {user.type && <span>{user.type}</span>}
                   {user.location && (
                     <span style={{ display: "flex", alignItems: "center", gap: 3, color: "rgba(255,255,255,0.5)", fontWeight: 400, fontSize: 13 }}>
@@ -283,19 +296,35 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
           </div>
         )}
 
-        {/* Stats Bar */}
+        {/* Stats Bar — role-aware */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2, marginBottom: 20, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, overflow: "hidden" }}>
-          {[
-            { label: "Collabs", value: typeof user.collabs === "number" ? user.collabs : "—" },
-            { label: "Likes", value: typeof user.likes === "number" ? user.likes : "—" },
-            { label: "Response", value: typeof user.responseRate === "number" ? `${user.responseRate}%` : "—" },
-            { label: "Last Seen", value: user.lastSeen || "—" },
-          ].map((s, i) => (
-            <div key={i} style={{ padding: "14px 8px", textAlign: "center", borderRight: i < 3 ? "1px solid rgba(255,255,255,0.04)" : undefined }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "var(--gold)", fontFamily: "monospace" }}>{s.value}</div>
-              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{s.label}</div>
-            </div>
-          ))}
+          {isMuseProfile ? (
+            // Muse stats: briefs, team, hiring rate, response
+            [
+              { label: "Briefs", value: typeof user.collabs === "number" ? user.collabs : "—" },
+              { label: "Team", value: (user as any).teamSize || "—" },
+              { label: "Hired", value: (user as any).hiredCount ? `${(user as any).hiredCount}` : "—" },
+              { label: "Response", value: typeof user.responseRate === "number" ? `${user.responseRate}%` : "—" },
+            ].map((s, i) => (
+              <div key={i} style={{ padding: "14px 8px", textAlign: "center", borderRight: i < 3 ? "1px solid rgba(255,255,255,0.04)" : undefined }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "var(--gold)", fontFamily: "monospace" }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{s.label}</div>
+              </div>
+            ))
+          ) : (
+            // Creative stats: collabs, likes, response, last seen
+            [
+              { label: "Collabs", value: typeof user.collabs === "number" ? user.collabs : "—" },
+              { label: "Likes", value: typeof user.likes === "number" ? user.likes : "—" },
+              { label: "Response", value: typeof user.responseRate === "number" ? `${user.responseRate}%` : "—" },
+              { label: "Last Seen", value: user.lastSeen || "—" },
+            ].map((s, i) => (
+              <div key={i} style={{ padding: "14px 8px", textAlign: "center", borderRight: i < 3 ? "1px solid rgba(255,255,255,0.04)" : undefined }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "var(--gold)", fontFamily: "monospace" }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{s.label}</div>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Badges & Verification */}
@@ -529,12 +558,13 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
         )}
       </div>
 
-      {/* Sticky bottom bar */}
+      {/* Sticky bottom bar — role-aware CTA */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "12px 16px calc(12px + env(safe-area-inset-bottom, 0px))", background: "linear-gradient(to top,rgba(10,6,18,0.98) 60%,rgba(10,6,18,0.85) 80%,transparent 100%)", display: "flex", gap: 10, zIndex: 100 }}>
         {onMessage && (
-          <button onClick={() => onMessage(user)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px 0", borderRadius: 14, background: "linear-gradient(135deg,var(--gold),#FFA07A)", border: "none", color: "#0a0612", fontSize: 15, fontWeight: 700, cursor: "pointer", transition: "opacity .15s" }} onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")} onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
-          <FiMessageCircle size={18} /> Message
-        </button>
+          <button onClick={() => onMessage(user)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px 0", borderRadius: 14, background: isMuseProfile ? "linear-gradient(135deg,#FFD700,#FFA500)" : "linear-gradient(135deg,var(--gold),#FFA07A)", border: "none", color: "#0a0612", fontSize: 15, fontWeight: 700, cursor: "pointer", transition: "opacity .15s" }} onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")} onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+            {isMuseProfile ? <FiBriefcase size={18} /> : <FiMessageCircle size={18} />}
+            {ctaText(viewerRole, "message")}
+          </button>
         )}
       </div>
 

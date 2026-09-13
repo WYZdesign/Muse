@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiEdit2, FiSettings, FiUsers, FiShoppingBag, FiDollarSign, FiClock, FiExternalLink, FiTrendingUp, FiFileText } from "react-icons/fi";
+import { FiArrowLeft, FiEdit2, FiSettings, FiUsers, FiShoppingBag, FiDollarSign, FiClock, FiExternalLink, FiTrendingUp, FiFileText, FiBriefcase, FiZap } from "react-icons/fi";
 import { getReferralUrl } from "@/lib/urls";
 import Nav from "../components/Nav";
 import StreakWidget from "../components/StreakWidget";
@@ -10,6 +10,7 @@ import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../comp
 import Lightbox from "../components/Lightbox";
 import SelfDiscoveryModal from "../components/SelfDiscoveryModal";
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
+import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
 
 export interface ProfileScreenProps {
   screen: Screen;
@@ -144,6 +145,10 @@ export const ProfileScreen = memo(function ProfileScreen({
   const [showMemberSinceEditor, setShowMemberSinceEditor] = useState(false);
   const [memberSinceEditorValue, setMemberSinceEditorValue] = useState("");
 
+  // Role detection — determines which profile variant to render
+  const userRole: MuseRole = getMuseRole({ audience: currentUser?.audience, type: currentUser?.type || obData?.type });
+  const isMuseProfile = userRole === "muse";
+
   useEffect(() => {
     const fetchReferralData = async () => {
       try {
@@ -249,7 +254,13 @@ export const ProfileScreen = memo(function ProfileScreen({
             <div className="profile-ring profile-ring-large swirl-ring-1" />
           </div>
           <div className="profile-name">{currentUser.name}</div>
-          <div className="profile-type">{obData.type || "Creative"}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
+            <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: isMuseProfile ? "rgba(255,215,0,0.12)" : "rgba(138,43,226,0.12)", border: `1px solid ${isMuseProfile ? "rgba(255,215,0,0.25)" : "rgba(138,43,226,0.25)"}`, color: isMuseProfile ? "var(--gold)" : "#b388ff" }}>
+              {isMuseProfile ? <FiBriefcase size={9} style={{ marginRight: 3 }} /> : <FiZap size={9} style={{ marginRight: 3 }} />}
+              {roleBadgeText(userRole)}
+            </span>
+            <div className="profile-type">{obData.type || (isMuseProfile ? "Muse" : "Creative")}</div>
+          </div>
           <div className="profile-loc">{obData.loc || "Set your location"}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center", marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
             <span onClick={()=>{setShowMemberSinceEditor(true);setMemberSinceEditorValue(memberSinceNote || "");}} style={{cursor:"pointer",whiteSpace:"nowrap"}}>
@@ -271,11 +282,24 @@ export const ProfileScreen = memo(function ProfileScreen({
           ) : null}
         </div>
         <div className="stats-row">
-          <div className="stat"><div className="stat-num">{matches.length}</div><div className="stat-label">Muses</div></div>
-          <div className="stat"><div className="stat-num">{matchStreak}</div><div className="stat-label">Streak</div></div>
-          <div className="stat"><div className="stat-num">{currentUser.stats?.likes ?? 0}</div><div className="stat-label">Likes</div></div>
-          <div className="stat"><div className="stat-num">{currentUser.stats?.superLikes ?? 0}</div><div className="stat-label">Superlikes</div></div>
-          <div className="stat"><div className="stat-num">{currentUser.stats?.passes ?? 0}</div><div className="stat-label">Passes</div></div>
+          {isMuseProfile ? (
+            // Muse stats: briefs, team, hired, response rate
+            <>
+              <div className="stat"><div className="stat-num">{matches.length}</div><div className="stat-label">Briefs</div></div>
+              <div className="stat"><div className="stat-num">{matchStreak}</div><div className="stat-label">Team</div></div>
+              <div className="stat"><div className="stat-num">{currentUser.stats?.likes ?? 0}</div><div className="stat-label">Hired</div></div>
+              <div className="stat"><div className="stat-num">{currentUser.stats?.superLikes ?? 0}</div><div className="stat-label">Response</div></div>
+            </>
+          ) : (
+            // Creative stats: matches, streak, likes, superlikes, passes
+            <>
+              <div className="stat"><div className="stat-num">{matches.length}</div><div className="stat-label">Muses</div></div>
+              <div className="stat"><div className="stat-num">{matchStreak}</div><div className="stat-label">Streak</div></div>
+              <div className="stat"><div className="stat-num">{currentUser.stats?.likes ?? 0}</div><div className="stat-label">Likes</div></div>
+              <div className="stat"><div className="stat-num">{currentUser.stats?.superLikes ?? 0}</div><div className="stat-label">Superlikes</div></div>
+              <div className="stat"><div className="stat-num">{currentUser.stats?.passes ?? 0}</div><div className="stat-label">Passes</div></div>
+            </>
+          )}
         </div>
         <div className="section">
           <div className="completeness" style={{ marginTop: 0 }}>
@@ -608,7 +632,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         apiFetch={apiFetch}
         showToast={showToast}
       />
-      <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
+      <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} role={userRole} />
     </div>
   );
 });

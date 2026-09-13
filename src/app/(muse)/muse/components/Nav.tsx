@@ -2,6 +2,7 @@
 import React from "react";
 import { FiCompass, FiUsers, FiZap, FiCamera, FiEye, FiMenu, FiStar } from "react-icons/fi";
 import type { Screen } from "./types";
+import { type MuseRole, navTabLabel } from "@/lib/role";
 
 const lineColor: Record<string,string> = {
   discover: "#FFD700",
@@ -19,15 +20,18 @@ const lavaGradients: Record<string, string> = {
   bts: "linear-gradient(90deg,#FF69B4,#FF1493,#FFB6C1,#FF69B4,#FF69B4)",
 };
 
-const tabs: { key: string; label: string; icon: React.ReactNode; hasScreen: boolean }[] = [
-  { key:"discover", label:"Discover", icon:<FiCompass size={22} />, hasScreen:true },
-  { key:"connections", label:"Feed", icon:<FiUsers size={22} />, hasScreen:true },
-  { key:"briefs", label:"Collab", icon:<FiZap size={22} />, hasScreen:true },
-  { key:"matches", label:"Muses", icon:<FiCamera size={22} />, hasScreen:true },
-  { key:"bts", label:"BTS", icon:<FiEye size={22} />, hasScreen:true },
-];
+function buildTabs(role: MuseRole) {
+  return [
+    { key:"discover", label: navTabLabel(role, "discover"), icon:<FiCompass size={22} />, hasScreen:true },
+    { key:"connections", label: navTabLabel(role, "connections"), icon:<FiUsers size={22} />, hasScreen:true },
+    { key:"briefs", label: navTabLabel(role, "briefs"), icon:<FiZap size={22} />, hasScreen:true },
+    { key:"matches", label: navTabLabel(role, "matches"), icon:<FiCamera size={22} />, hasScreen:true },
+    { key:"bts", label: navTabLabel(role, "bts"), icon:<FiEye size={22} />, hasScreen:true },
+  ];
+}
 
-export default React.memo(function Nav({ active, onNavigate, onHamburgerToggle, unreadCount }: { active: string; onNavigate: (s: Screen) => void; onHamburgerToggle?: () => void; unreadCount?: number }) {
+export default React.memo(function Nav({ active, onNavigate, onHamburgerToggle, unreadCount, role = "creative" }: { active: string; onNavigate: (s: Screen) => void; onHamburgerToggle?: () => void; unreadCount?: number; role?: MuseRole }) {
+  const tabs = buildTabs(role);
   return (
     <div className="nav" role="navigation" aria-label="Main navigation">
       {tabs.map(tab => {

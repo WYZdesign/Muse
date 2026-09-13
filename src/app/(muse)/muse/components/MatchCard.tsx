@@ -4,6 +4,7 @@ import React, { memo, useState } from "react";
 import Image from "next/image";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon } from "./traitIcons";
 import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "./badgeInfo";
+import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
 
 export interface MatchCardProps {
   m: any;
@@ -64,6 +65,10 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
   const ringVariant = RING_VARIANTS[ringIdx] || RING_VARIANTS[0];
   const orbitVariant = ORBIT_VARIANTS[ringIdx] || ORBIT_VARIANTS[0];
   const orbitSpeed = ORBIT_SPEEDS[parseInt(mid, 10) % ORBIT_SPEEDS.length] || 7;
+
+  // Role detection for this match
+  const matchRole: MuseRole = getMuseRole({ audience: m.audience, type: m.type });
+  const isMuse = matchRole === "muse";
 
   // NSFW gating for matched-partner avatars (previously missing entirely —
   // see get.ts's "matches" handler, the actual enforcement point). By the
@@ -149,6 +154,10 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
         <div className="match-name" style={{ display: "flex", alignItems: "center", gap: 5, ...(isList ? { fontSize: 15, lineHeight: 1.2 } : {}) }}>
           {m.name}
           {m.verified && <span className="card-verified-mark" style={{ fontSize: 13, cursor: "pointer" }} title="Identity verified" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#FFD700" }); }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#FFD700" }); } }}>✓</span>}
+          {/* Role badge */}
+          <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 99, background: isMuse ? "rgba(255,215,0,0.12)" : "rgba(138,43,226,0.12)", border: `1px solid ${isMuse ? "rgba(255,215,0,0.25)" : "rgba(138,43,226,0.25)"}`, color: isMuse ? "var(--gold)" : "#b388ff", whiteSpace: "nowrap" }}>
+            {roleBadgeText(matchRole)}
+          </span>
         </div>
         <div className="match-type" style={isList ? { fontSize: 11 } : undefined}>{m.type}</div>
         {isList && (
