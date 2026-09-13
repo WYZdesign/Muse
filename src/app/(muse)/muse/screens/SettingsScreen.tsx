@@ -1,13 +1,14 @@
 "use client";
 
 import React, { memo, useState, useEffect, useRef } from "react";
-import { FiArrowLeft, FiUser, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiTwitter, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX, FiLock, FiBell, FiHelpCircle, FiDownload, FiAlertTriangle, FiCompass, FiFacebook } from "react-icons/fi";
+import { FiArrowLeft, FiUser, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiTwitter, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX, FiLock, FiBell, FiHelpCircle, FiDownload, FiAlertTriangle, FiCompass, FiFacebook, FiBriefcase } from "react-icons/fi";
 import { mfaStatus, mfaEnroll, mfaVerify, mfaUnenroll } from "../lib/api";
 // Push subscribe/unsubscribe arrive as PROPS (page.tsx owns the real impls) —
 // importing the module fns here too shadowed them and invited drift.
 import type { Screen } from "../components/types";
 import { BEHIND_CAMERA, IN_FRONT_CAMERA, AESTHETICS, lookingForOptions } from "../components/types";
 import { STRINGS } from "@/lib/strings";
+import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
 
 const SUPPORT_EMAIL = "info@wyzdesign.com";
 
@@ -291,6 +292,10 @@ export const SettingsScreen = memo(function SettingsScreen({
   const [mfaVerifyCode, setMfaVerifyCode] = useState("");
   const [mfaError, setMfaError] = useState("");
 
+  // Role detection — determines which settings variant to render
+  const userRole: MuseRole = getMuseRole({ audience: currentUser?.audience, type: currentUser?.type || obData?.type });
+  const isMuseProfile = userRole === "muse";
+
   // Profile completion state
   const [completionPct, setCompletionPct] = useState(0);
   const [completionBreakdown, setCompletionBreakdown] = useState<Record<string, { done: boolean; weight: number }>>({});
@@ -487,7 +492,12 @@ export const SettingsScreen = memo(function SettingsScreen({
             display: "block",
             justifySelf: "center",
           }}>Settings</div>
-          <div style={{ width: 42 }} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+            <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: isMuseProfile ? "rgba(255,215,0,0.12)" : "rgba(138,43,226,0.12)", border: `1px solid ${isMuseProfile ? "rgba(255,215,0,0.25)" : "rgba(138,43,226,0.25)"}`, color: isMuseProfile ? "var(--gold)" : "#b388ff" }}>
+              {isMuseProfile ? <FiBriefcase size={9} style={{ marginRight: 3 }} /> : <FiZap size={9} style={{ marginRight: 3 }} />}
+              {roleBadgeText(userRole)}
+            </span>
+          </div>
         </div>
         <div className="settings-scroll">
           {/* Audit fix (2026-09-08): the Menu's "Settings" card used to open
@@ -574,6 +584,23 @@ export const SettingsScreen = memo(function SettingsScreen({
             <div className="settings-group-title">Notifications</div>
             {renderRow({ icon: <FiBell size={18} />, label: "Notification Preferences", desc: "Push, lock-screen and per-category alerts", action: () => setShowNotificationsSettings(true) })}
           </div>
+
+          {/* Role-specific settings sections */}
+          {isMuseProfile ? (
+            <div className="settings-group">
+              <div className="settings-group-title">Hiring & Team</div>
+              {renderRow({ icon: <FiBriefcase size={18} />, label: "Brief Templates", desc: "Save and reuse brief formats", action: () => showToast("Brief templates coming soon") })}
+              {renderRow({ icon: <FiUsers size={18} />, label: "Team Management", desc: "Manage your team members and roles", action: () => showToast("Team management coming soon") })}
+              {renderRow({ icon: <FiStar size={18} />, label: "Hiring Preferences", desc: "Set preferred rates and availability requirements", action: () => showToast("Hiring preferences coming soon") })}
+            </div>
+          ) : (
+            <div className="settings-group">
+              <div className="settings-group-title">Portfolio & Availability</div>
+              {renderRow({ icon: <FiEye size={18} />, label: "Portfolio Settings", desc: "Manage visibility and featured work", action: () => showToast("Portfolio settings coming soon") })}
+              {renderRow({ icon: <FiLink size={18} />, label: "Availability Calendar", desc: "Set your schedule and booking preferences", action: () => showToast("Availability calendar coming soon") })}
+              {renderRow({ icon: <FiDollarSign size={18} />, label: "Rate Settings", desc: "Set your standard rates and packages", action: () => showToast("Rate settings coming soon") })}
+            </div>
+          )}
 
 <div className="settings-group">
             <div className="settings-group-title">Appearance</div>
