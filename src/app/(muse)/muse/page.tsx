@@ -2298,7 +2298,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                 <div className="sparkle" style={{bottom:"12%",right:"6%",fontSize:16}}>✧</div>
                 <div className="hero-text" style={{marginBottom:14}}>muse</div>
                 <div className="hero-sub">Where creatives find <em>real connections</em></div>
-                <div style={{width:"100%",maxWidth:320}}>
+                <div style={{width:"100%",maxWidth:320,margin:"0 auto"}}>
                   <div className="auth-tabs">
                     <button className={"auth-tab"+(authMode==="login"?" active":"")} onClick={()=>setAuthMode("login")}>Log In</button>
                     <button className={"auth-tab"+(authMode==="signup"?" active":"")} onClick={()=>setAuthMode("signup")}>Sign Up</button>
