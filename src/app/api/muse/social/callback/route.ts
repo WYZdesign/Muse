@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { getMuseUrl } from "@/lib/urls";
 import { verifyState } from "@/lib/oauth-state";
+import { encryptToken } from "@/lib/token-crypto";
 
 export const runtime = "nodejs";
 
@@ -120,8 +121,8 @@ export async function GET(req: NextRequest) {
       user_id: stateData.profileId,
       provider,
       provider_user_id: userInfo?.id || userInfo?.user_id || "unknown",
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token || null,
+      access_token: encryptToken(tokenData.access_token),
+      refresh_token: tokenData.refresh_token ? encryptToken(tokenData.refresh_token) : null,
       token_expires_at: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString() : null,
       username: userInfo?.username || userInfo?.display_name || userInfo?.name || null,
       profile_url: userInfo?.profile_url || userInfo?.external_urls?.spotify || null,

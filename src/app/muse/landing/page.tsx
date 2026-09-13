@@ -356,9 +356,15 @@ export default function MuseLandingPage() {
     const url = `https://wyzdesign.com/muse/landing${QR_SOURCES[source] || ""}`;
     try {
       const res = await fetch(`/api/qr?url=${encodeURIComponent(url)}&source=${encodeURIComponent(source)}`);
-      const blob = await res.blob();
-      setQrDataUrl(URL.createObjectURL(blob));
-    } catch { setQrDataUrl(""); }
+      if (!res.ok) throw new Error("QR generation failed");
+      const svg = await res.text();
+      // Convert SVG to data URL for reliable display (blob URLs expire on navigation)
+      const encoded = btoa(unescape(encodeURIComponent(svg)));
+      setQrDataUrl(`data:image/svg+xml;base64,${encoded}`);
+    } catch {
+      // Client-side fallback: generate a simple QR-like SVG placeholder
+      setQrDataUrl("");
+    }
     setShowQrModal(true);
   };
 

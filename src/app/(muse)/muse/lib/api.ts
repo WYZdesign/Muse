@@ -18,7 +18,7 @@ async function refreshAccessToken(): Promise<string> {
       const refreshToken = getRefreshToken();
       if (!refreshToken) return "";
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
       if (!supabaseUrl || !supabaseKey) return "";
       const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
         method: "POST",
