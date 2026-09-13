@@ -779,8 +779,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     let pendingRefresh = refreshToken || "";
     const doSessionCheck = () => {
       authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "session", access_token: pendingToken }) })
-        .then(r => r.json())
-        .then(d => {
+        .then(r => r.json().then(d => ({ status: r.status, d })))
+        .then(({ status, d }) => {
           if (d.success && d.user) {
             const userObj = { id: d.user.id, email: d.user.email, profile: d.profile };
             setAuthUser(userObj);
@@ -901,9 +901,28 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               try { safeRemoveItem("muse_user"); } catch {}
               clearRefreshToken();
               try { window.dispatchEvent(new CustomEvent("muse:toast", { detail: "Your account has been suspended. Contact support@wyzdesign.com" })); } catch {}
+              setAuthUser(null);
+              setScreen("auth");
+            } else if (status === 401) {
+              // Server explicitly rejected the token itself (getUser() failed) —
+              // this is the only case that actually means "not logged in."
+              setAuthUser(null);
+              setScreen("auth");
+            } else {
+              // Anything else (429 rate-limited, 500, a malformed response, etc.)
+              // is a failure of THIS check, not proof the token is invalid — the
+              // token in storage is untouched and may well still be good. Bouncing
+              // to the login screen here was the "logged out even though I'm
+              // logged in" bug: a single flaky /api/muse/auth call (e.g. hitting
+              // the 30/window session rate limit after repeated app opens) wiped
+              // authUser and forced the auth screen even though nothing about the
+              // session was actually invalid. Leave the current screen/authUser
+              // alone; real API calls elsewhere already handle their own 401s via
+              // authFetch's refresh-and-retry, and a genuinely dead token will
+              // surface there instead of on every load.
+              try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
+              return;
             }
-            setAuthUser(null);
-            setScreen("auth");
           }
           // Session resolved — splash can hide regardless of outcome
           try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
