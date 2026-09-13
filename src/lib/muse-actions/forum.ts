@@ -11,7 +11,7 @@ import { checkRate, checkRateUser } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/request-safety";
 import { screenText, moderateText } from "@/lib/aiModeration";
 import { sendEmail, notify } from "@/lib/email";
-import { UUID_RE, applyStrikeAndEscalate, validateInput, NextResponse, safeServerError, type ActionContext } from "./shared";
+import { UUID_RE, applyStrikeAndEscalate, validateInput, NextResponse, safeServerError, isAdminEmail, type ActionContext } from "./shared";
 
 export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionContext) => {
   if (!await checkRate(ip, "forum", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
@@ -131,11 +131,19 @@ export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionCo
     const isStubVote = typeof postId === "number" || !UUID_RE.test(String(postId));
     if (isStubVote) return NextResponse.json({ success: true, demo: true });
     const delta = direction === "down" ? -1 : 1;
+    // Per-user dedup (same pattern as feed-post-like/moment-like in feed.ts):
+    // without this, one user could call vote repeatedly to inflate/deflate a
+    // post's score arbitrarily — there was no muse_forum_votes table and
+    // no other tracking of who already voted on what.
+    const { data: existingVote } = await sb.from("muse_activity_log").select("id")
+      .eq("user_id", profile.id).eq("target_id", String(postId)).eq("type", "forum_vote").maybeSingle();
+    if (existingVote) return NextResponse.json({ error: "Already voted on this post" }, { status: 409 });
     const { data: post } = await sb.from("muse_forum_posts").select("votes").eq("id", postId).maybeSingle();
     if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
     const newVotes = (post.votes || 0) + delta;
     const { error: updErr } = await sb.from("muse_forum_posts").update({ votes: newVotes }).eq("id", postId);
     if (updErr) return safeServerError(updErr, "db op");
+    await sb.from("muse_activity_log").insert({ user_id: profile.id, target_id: String(postId), type: "forum_vote", details: { direction: delta > 0 ? "up" : "down" } });
     return NextResponse.json({ success: true, votes: newVotes });
   }
   if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
@@ -236,7 +244,7 @@ export const forumPostPin = async ({ sb, profile, rest }: ActionContext) => {
   if (!postId || !UUID_RE.test(String(postId))) return NextResponse.json({ error: "Valid postId required" }, { status: 400 });
   const { data: post } = await sb.from("muse_forum_posts").select("author_id").eq("id", postId).maybeSingle();
   if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
-  const isAdmin = profile.email && ["torree@wyzmind.com", "admin@muse.app"].includes(String(profile.email).toLowerCase());
+  const isAdmin = isAdminEmail(profile.email);
   const isAuthor = String(post.author_id) === String(profile.id);
   if (!isAdmin && !isAuthor) return NextResponse.json({ error: "Admin or author only" }, { status: 403 });
   const { data: current } = await sb.from("muse_forum_posts").select("pinned").eq("id", postId).maybeSingle();
@@ -250,7 +258,7 @@ export const forumPostLock = async ({ sb, profile, rest }: ActionContext) => {
   if (!postId || !UUID_RE.test(String(postId))) return NextResponse.json({ error: "Valid postId required" }, { status: 400 });
   const { data: post } = await sb.from("muse_forum_posts").select("author_id").eq("id", postId).maybeSingle();
   if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
-  const isAdmin = profile.email && ["torree@wyzmind.com", "admin@muse.app"].includes(String(profile.email).toLowerCase());
+  const isAdmin = isAdminEmail(profile.email);
   if (!isAdmin) return NextResponse.json({ error: "Admin only" }, { status: 403 });
   const { data: current } = await sb.from("muse_forum_posts").select("locked").eq("id", postId).maybeSingle();
   const newLocked = !(current as any)?.locked;
