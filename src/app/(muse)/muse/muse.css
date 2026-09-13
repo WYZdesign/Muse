@@ -1623,15 +1623,23 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) ::-webkit-scrollbar-button{display:none;width:0;height:0}
 
 /* ═══ AMBIENT / DECORATIVE LIGHT OVERRIDES ═══ */
-/* Stars: invisible (white on light bg) — hide completely */
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star-field,
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star{opacity:0!important;animation:none!important}
-/* Scene orbs: screen blend mode washes out on light — tone down.
+/* Stars: were fully hidden (opacity:0) because white dots vanish on a light
+   background. Per the "light mode should show the same ambient elements as
+   dark mode, just dark enough to see" direction, recolor instead of hiding:
+   dark-tinted dots read as a visible fleck on every light theme. !important
+   here also overrides the .star.warm/.blue/.gold variant background colors,
+   which is intentional — those hue variants only make sense against a dark
+   scene. */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star-field{opacity:1!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star{opacity:0.35!important;background:rgba(0,0,0,0.55)!important;box-shadow:none!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star.bright{opacity:0.5!important}
+/* Scene orbs: screen blend mode washes out on light — tone down, but keep
+   them clearly visible rather than nearly-gone (was 0.12).
    Blur stays scaled by --scene-opacity (matches the dark-mode base rule)
    so the Settings "Background" slider still affects orbs in light themes. */
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .scene-orb{opacity:0.12!important;filter:blur(calc(120px * var(--scene-opacity, 1)))!important;mix-blend-mode:normal!important}
-/* Nebula fog: same screen-blend issue — soften */
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .nebula-fog{opacity:0.15!important;mix-blend-mode:normal!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .scene-orb{opacity:0.22!important;filter:blur(calc(120px * var(--scene-opacity, 1)))!important;mix-blend-mode:normal!important}
+/* Nebula fog: same screen-blend issue — soften, but keep visible (was 0.15) */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .nebula-fog{opacity:0.28!important;mix-blend-mode:normal!important}
 /* Aurora: soft pastel nebula clouds on light — muted warm tones, no screen blend */
 :is([data-theme="sunrise"],[data-theme="daylight"]) .aurora-strip{opacity:0.25!important;mix-blend-mode:normal!important;filter:blur(calc(65px * var(--scene-opacity, 1)))!important}
 :is([data-theme="sunrise"],[data-theme="daylight"]) .aurora-s1{background:radial-gradient(ellipse at 30% 50%,rgba(180,130,60,0.25) 0%,rgba(200,160,80,0.15) 30%,transparent 65%),radial-gradient(ellipse at 65% 40%,rgba(160,120,70,0.2) 0%,rgba(180,140,90,0.12) 35%,transparent 65%),radial-gradient(ellipse at 50% 60%,rgba(190,140,80,0.12) 0%,transparent 55%)}
@@ -1648,13 +1656,16 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .comet-field{opacity:0.45!important;mix-blend-mode:normal!important}
 /* Particles: white dots on light — hide */
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .particles{display:none!important}
-/* Fizzy bubbles: gold bubbles visible on light — tone down */
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .fizzy-bubbles{opacity:0.15!important}
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .bubble{background:rgba(180,120,40,0.25)!important;border-color:rgba(180,120,40,0.15)!important;box-shadow:none!important}
-/* Sparkle field: colored dots on light — soften */
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .sparkle-field{opacity:0.2!important}
-/* Ember field: warm particles on light — soften */
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .ember-field{opacity:0.15!important}
+/* Fizzy bubbles: gold bubbles too vivid on light at full strength — tone down,
+   but the container opacity (was 0.15) was stacking multiplicatively with
+   each bubble's own ~0.25 alpha, netting under 0.04 effective opacity —
+   functionally invisible. Raised so bubbles actually read on light themes. */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .fizzy-bubbles{opacity:0.5!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .bubble{background:rgba(180,120,40,0.35)!important;border-color:rgba(180,120,40,0.2)!important;box-shadow:none!important}
+/* Sparkle field: colored dots on light — soften, but keep visible (was 0.2) */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .sparkle-field{opacity:0.4!important}
+/* Ember field: warm particles on light — soften, but keep visible (was 0.15) */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .ember-field{opacity:0.3!important}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .ember{background:rgba(180,80,30,0.25)!important;box-shadow:none!important}
 /* Splash ambient: splash screen only shows at load, but adapt stars/nebula for light splash bg */
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .splash-stars{opacity:0.3}

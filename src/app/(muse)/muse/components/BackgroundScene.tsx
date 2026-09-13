@@ -172,7 +172,13 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
 
   return (
     <>
-      <div style={{ position: "fixed", inset: 0, zIndex: -1, background: "#0a0612" } as React.CSSProperties} />
+      {/* Base canvas color behind .scene. Was hardcoded to the dark-theme navy
+          regardless of theme, so light themes flashed to a dark navy backdrop
+          whenever Background opacity was turned down (since .scene itself also
+          fades with --scene-opacity) — instead of a light backdrop matching
+          the active light theme, breaking the "see sprites on a light ground"
+          behavior light mode is supposed to mirror from dark mode. */}
+      <div style={{ position: "fixed", inset: 0, zIndex: -1, background: "var(--bg, #0a0612)" } as React.CSSProperties} />
       <div className="scene" style={{ opacity: "var(--scene-opacity, 1)" } as React.CSSProperties} />
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", opacity: "var(--sprite-opacity, 1)" } as React.CSSProperties}>
         <div className="scene-orb orb-coral" />
