@@ -928,16 +928,28 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             setRefreshToken(pendingRefresh);
             doSessionCheck();
           } else {
-            // Refresh failed, fall back to original token
+            // Refresh failed, fall back to original token. The SDK's own
+            // session was never set in this branch (refreshSession() only
+            // populates it on success) — without an explicit setSession
+            // here, supabase.auth.getSession()/onAuthStateChange never see
+            // a live session, so the TOKEN_REFRESHED auto-sync above never
+            // fires for this login and the client silently stops being able
+            // to tell the SDK apart from "logged out" (see doLogout's
+            // signOut() comment — it depends on the SDK actually holding a
+            // session to have anything to clear).
+            supabase.auth.setSession({ access_token: pendingToken, refresh_token: pendingRefresh }).catch(() => {});
             doSessionCheck();
           }
         })
         .catch(() => {
-          // Refresh failed, fall back to original token
+          // Refresh failed, fall back to original token — same reasoning as above.
+          supabase.auth.setSession({ access_token: pendingToken, refresh_token: pendingRefresh }).catch(() => {});
           doSessionCheck();
         });
     } else {
-      // No refresh token, just check the session
+      // No refresh token — still give the SDK the access token so its own
+      // session state matches what we're actually treating as logged in.
+      supabase.auth.setSession({ access_token: pendingToken, refresh_token: pendingRefresh }).catch(() => {});
       doSessionCheck();
     }
   }, []);
