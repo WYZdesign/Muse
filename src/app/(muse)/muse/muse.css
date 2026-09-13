@@ -953,7 +953,7 @@ img{background-color:var(--card-bg)}
 .quest-near-fill{height:100%;border-radius:3px;transition:width .4s cubic-bezier(.4,0,.2,1)}
 .quest-near-pct{font-size:11px;font-weight:800;min-width:28px;text-align:right}
 .quest-xp-track{height:6px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden}
-.quest-xp-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#FFD700,#FF8A80);transition:width .4s cubic-bezier(.4,0,.2,1)}
+.quest-xp-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--coral));transition:width .4s cubic-bezier(.4,0,.2,1)}
 /* Filter bar ~30% taller (16/12px padding -> 21/16px) and buttons ~15% bigger
    (8/15px padding -> 9/17px, 11px font -> 13px), per Torreé's ask. Explicit
    nowrap + hidden y-overflow so this stays a single row that only ever
@@ -969,7 +969,7 @@ img{background-color:var(--card-bg)}
 .quest-filters{display:flex;flex-shrink:0;flex-wrap:nowrap;align-items:center;gap:9px;padding:27px 24px 21px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:1px solid rgba(255,255,255,0.05)}
 .quest-filters::-webkit-scrollbar{display:none}
 .quest-filter-btn{flex-shrink:0;padding:9px 17px;border-radius:99px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap}
-.quest-filter-btn.active{background:rgba(255,215,0,0.1);border-color:rgba(255,215,0,0.3);color:#FFD700}
+.quest-filter-btn.active{background:rgba(255,215,0,0.1);border-color:rgba(255,215,0,0.3);color:var(--gold)}
 .quest-filter-count{font-size:11px;background:var(--gold-bg,rgba(255,215,0,0.15));color:var(--gold);padding:1px 7px;border-radius:99px}
 /* Tracking vs All view tabs */
 .quest-view-tabs{display:flex;gap:10px;padding:18px 24px 0}
@@ -1045,7 +1045,7 @@ img{background-color:var(--card-bg)}
 .streak-day.today .streak-day-label{color:var(--text)}
 .streak-day.today .streak-day-ring{filter:drop-shadow(0 0 6px rgba(255,215,0,0.5))}
 .streak-progress-track{height:4px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden;flex:1}
-.streak-progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#FFD700,#FF8C00);transition:width .5s cubic-bezier(.4,0,.2,1)}
+.streak-progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold),var(--amber));transition:width .5s cubic-bezier(.4,0,.2,1)}
 .streak-widget-progress{display:flex;align-items:center;gap:8px}
 .streak-progress-text{font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap}
 
@@ -1069,7 +1069,7 @@ img{background-color:var(--card-bg)}
 .daily-login-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px}
 .daily-login-streak{font-size:16px;font-weight:700;color:var(--gold);margin-bottom:8px}
 .daily-login-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
-.daily-login-btn{width:100%;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,#FFD700,#FF8A80);color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
+.daily-login-btn{width:100%;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--coral));color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
 .daily-login-btn:hover{transform:scale(1.02)}
 .daily-login-dismiss{width:100%;padding:10px;border:none;border-radius:12px;background:transparent;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;margin-top:8px}
 .daily-login-dismiss:hover{color:var(--text)}
@@ -1501,6 +1501,13 @@ img{background-color:var(--card-bg)}
 /* No pastel text on light themes — the purple location/distance line goes dark. */
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .card-hero-loc{color:var(--text)!important;text-shadow:none!important;opacity:1!important}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .card-hero-tag{background:var(--badge-bg);color:var(--badge-text)}
+/* .card-hero-chip/.card-hero-badge were hardcoded near-white-on-near-black
+   (chip) and white-on-white-glass (badge) for the dark base. Their container
+   .card-hero-info flips to a light gradient two lines up, along with every
+   sibling text element, but these two chip/badge styles were missed —
+   leaving near-illegible near-white text on a near-white background. */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .card-hero-chip{background:rgba(0,0,0,0.06);border-color:var(--border-med);color:var(--text)}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .card-hero-badge{background:var(--badge-bg);border-color:var(--border-med);color:var(--badge-text);text-shadow:none}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .card-photo-nav{background:var(--panel-bg);border-color:var(--border-med)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .card-photo-dot{background:var(--badge-bg);box-shadow:none}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .card-section{border-top-color:var(--border-subtle)}
@@ -1619,8 +1626,10 @@ img{background-color:var(--card-bg)}
 /* Stars: invisible (white on light bg) — hide completely */
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star-field,
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star{opacity:0!important;animation:none!important}
-/* Scene orbs: screen blend mode washes out on light — tone down */
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .scene-orb{opacity:0.12!important;filter:blur(120px)!important;mix-blend-mode:normal!important}
+/* Scene orbs: screen blend mode washes out on light — tone down.
+   Blur stays scaled by --scene-opacity (matches the dark-mode base rule)
+   so the Settings "Background" slider still affects orbs in light themes. */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .scene-orb{opacity:0.12!important;filter:blur(calc(120px * var(--scene-opacity, 1)))!important;mix-blend-mode:normal!important}
 /* Nebula fog: same screen-blend issue — soften */
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .nebula-fog{opacity:0.15!important;mix-blend-mode:normal!important}
 /* Aurora: soft pastel nebula clouds on light — muted warm tones, no screen blend */
