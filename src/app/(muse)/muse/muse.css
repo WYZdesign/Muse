@@ -1618,8 +1618,8 @@ img{background-color:var(--card-bg)}
 /* Scene wash: soft warm tint on light backgrounds instead of dark space overlay */
 :is([data-theme="sunrise"],[data-theme="daylight"]) .scene-wash{opacity:0.08!important;animation:colorWash 30s ease-in-out infinite;background:linear-gradient(135deg,rgba(180,120,50,0.12),rgba(200,140,60,0.08),rgba(160,110,45,0.06),rgba(190,130,55,0.1),rgba(170,115,48,0.12));background-size:400% 400%}
 :is([data-theme="sky"],[data-theme="rose"]) .scene-wash{opacity:0.06!important;animation:colorWash 30s ease-in-out infinite;background:linear-gradient(135deg,rgba(100,130,180,0.1),rgba(130,150,190,0.07),rgba(110,140,185,0.05),rgba(120,135,175,0.08));background-size:400% 400%}
-/* Shooting comets: white streaks invisible on light — hide */
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .comet-field{display:none!important}
+/* Shooting comets: same treatment as scene-orb/nebula-fog — tone down instead of hiding, so light themes keep the animation */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .comet-field{opacity:0.45!important;mix-blend-mode:normal!important}
 /* Particles: white dots on light — hide */
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .particles{display:none!important}
 /* Fizzy bubbles: gold bubbles visible on light — tone down */
