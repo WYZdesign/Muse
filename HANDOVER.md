@@ -1,47 +1,41 @@
-## Torree batch — FINAL VERIFICATION: All 15 tasks complete + build/tests/lint clean (2026-09-13)
+## Torree batch — FINAL VERIFICATION: All 15 tasks complete + build/tests/lint clean + duality shipped + claude bundle merged (2026-09-13)
 
 **Verification Summary:**
 - ✅ All 15 tasks from punch list confirmed implemented in codebase
-- ✅ `vitest run`: 37 test files, 285 tests passing
-- ✅ `npm run lint`: 0 errors, 20 warnings (all in scripts/ test files, pre-existing)
-- ✅ `npx tsc --noEmit`: clean (no type errors)
-- ✅ Git working tree clean (only `plans/` directory untracked from blueprint)
+- ✅ Muse/Creative duality shipped (role.ts, PublicProfileScreen, ProfileScreen, MatchCard, Nav, SettingsScreen)
+- ✅ Claude's bundle `muse-audit-fixes-r6.bundle` merged (8 commits: 08bd8f4 → 78f4c5d)
+- ✅ `npx tsc --noEmit`: clean
 
-**Complete Task Verification:**
-1. **Discover heart → pure like** — `DiscoverScreen.tsx:528` `doSwipe("right")` replaces `handleAnchorLike({type:"photo",...})`
-2. **Match success rate 50%** — `page.tsx:1700` `matchScore > 50` (was >55), demo prob `0.3 → 0.5`
-3. **Unlimited likes** — `page.tsx:1672` `const isUnlimited = true` (was owner-only), all gates inert
-4. **Waves behind phone** — `muse.css` `.wave-bottom` z-index `4 → -1` (commit 7cc749a)
-5. **Muses list thicker cards** — `muse.css:471-478` `.match-list` padding `16px 16px 80px`, gap `16px`; `.match-card` min-height `280px`, padding `24px 20px`, border-radius `20px`, gap `20px`
-6. **Sessions 3-dot button** — `SessionsScreen.tsx:316` `border:1px solid #fff`, `background:transparent`, `color:#fff`
-7. **Light mode background** — `muse.css` commits 7a38ed7 + 7cc749a (aurora, scene washes, splash waves, sky/rose themes)
-8. **Settings merged** — `SettingsScreen.tsx:579-604` "Appearance" group now includes theme swatches + "Background Effects" sliders
-9. **Profile: removed bottom Edit** — `ProfileScreen.tsx:222` only header `FiEdit2` remains (line 328 still references in Media Kit text)
-10. **Muse Pro sheen** — `MenuModal.tsx:595-749` `muse-pro-banner-shine` with `shine-play` animation on hover/delay
-11. **Profile section reorder** — `ProfileScreen.tsx` verified: completeness bar → member-since → founding badge → tier → badges → portfolio → media kit → referrals
-12. **Member-since editable** — `ProfileScreen.tsx:143,255-264` inline 50-char editor with emoji support, Escape dismiss, gold Save
-13. **Intent modal multi-select** — `page.tsx:1669,2236-2253` `intentSelection[]` state, max 2, gold fill, gold Submit button
-14. **HANDOVER.md updated** — This entry
-15. **Distinct Muses vs Creatives** — Blueprint created at `plans/yin-yang-creative-muse-duality.md` (comprehensive 6-phase plan)
+**Duality Implementation (shipped):**
+- `src/lib/role.ts` expanded to 190 lines: MuseRole type, 35 MUSE_TYPES, 60 CREATIVE_TYPES, getMuseRole(), ROLE_CAPABILITIES
+- PublicProfileScreen: role badge, role-specific stats, role-aware CTA
+- ProfileScreen: role badge, role-specific stats row, role-aware Nav
+- MatchCard: role badge on every card
+- Nav: tab labels adapt per role (Scout/Talent/Briefs vs Discover/Muses/Collab)
+- SettingsScreen: role badge, role-specific settings sections
+
+**Claude bundle merged (8 commits):**
+1. `08bd8f4` fix: restore SDK-level session sync in applySession's refresh-fallback paths
+2. `40f6eba` fix: forum admin gate + vote dedup (deep audit findings)
+3. `38de7a3` fix: Muses matches list rendering as blank/collapsed rows
+4. `347494d` fix: verify-identity banner overlapping bottom nav + OAuth button row clipping
+5. `1581593` fix: Discover card trait badges rendering behind the match-fab button
+6. `3b7d5c0` Give light-mode comets the same tone-down treatment as other sprites
+7. `ea7c3ca` Make ambient orb + nebula-fog glow follow the theme palette
+8. `78f4c5d` Fix broken Blocked Users list, dead promo code, and duplicate boost stat
 
 ---
+## Claude — double-check pass on wyzmind's 54-commit batch since the last audit (session/SDK regression fixed, one gap flagged)
 
-## Torree batch — UI/behavior round (waves, intents, likes, member-since, discover heart)
+Torreé asked me to review everything wyzmind shipped from my last check-in (`bd49ced`) up to now (`b9091e7`) — 54 commits spanning MFA/2FA, OAuth token encryption, an 11-item security-hardening pass, admin refund/dispute resolution, the checkin-cancel fund-release fix, session/auth refactors, and a large theming/background-scene overhaul. Prioritized the auth, payments, and security-hardening commits since that's where a real bug does the most damage; skimmed the rest for build health.
 
-Continued the Muse UI polish session. Checked wyzmind's machine first: `main` had moved 3 commits ahead (`e2e2d40` Visual audit + `0e7271f` HANDOVER_AUDIT_SESSION.md + `42e5771` 14 audit fixes) — all non-overlapping with these changes (referral tier discount tweak, Facebook icon swap, portfolio portIdx reorder, QR route, rate-limit/request-safety helpers). `tsc --noEmit` clean after merge.
+**Found and fixed a real regression** in `e362fac` ("refresh Supabase session before validating to prevent forced login"). That commit's rewrite of `applySession()` in `page.tsx` replaced the old unconditional `supabase.auth.setSession(accessToken, refreshToken)` call with `supabase.auth.refreshSession()` — but `refreshSession()` only populates the Supabase JS SDK's own internal session **on success**. When there's no refresh token, or the refresh call fails/errors, the code fell back to validating the original access token against the server (`doSessionCheck()`) and logged the user in at the app level — but never told the SDK about it. Two things depend on the SDK actually holding a session: the `onAuthStateChange` "TOKEN_REFRESHED" handler added earlier specifically to keep the cached token in `muse_user` from going stale (silently stops firing for any session that took this fallback path), and `doLogout()`'s explicit `supabase.auth.signOut()` call, whose own comment says its whole purpose is killing "the persisted supabase-js session" so a shared device doesn't silently re-log the previous user in — that guard is only meaningful if the SDK had a session to kill in the first place. Impact was mostly masked in practice because `authFetch()` in `lib/api.ts` does its own independent token refresh via a direct fetch to Supabase's `/auth/v1/token` endpoint and doesn't depend on the SDK's session at all — so API calls kept working — but the SDK-level mechanisms silently degraded. Fixed by adding the `setSession()` call back into both fallback branches (refresh failed, and no refresh token to begin with), so the SDK's session always matches whatever token the app is actually treating as the live one, regardless of which path got there. `tsc --noEmit` clean, 333/333 vitest passing after the fix.
 
-**Changes:**
-- **Waves behind phone viewport** — `.wave-bottom` z-index dropped from `4` to `-1` so the desktop waves render behind the glass phone frame instead of on top of it.
-- **Match success rate 50%** — `doSwipe`'s `isMatch` threshold moved from `> 55` to `> 50` with demo probability `0.3 → 0.5`.
-- **Unlimited likes** — `isUnlimited` hard-set to `true` (was `authUser?.email === OWNER_EMAIL`), so the daily-likes/super-likes gates are inert and the "∞ Unlimited" badge shows for everyone.
-- **Discover heart button is pure like** — `DiscoverScreen.tsx`'s radial `btn-like` now calls `doSwipe("right")` instead of `handleAnchorLike({ type: "photo", ... })` (which opened the note composer). The `btn-note` (✎) still opens the composer; the photo/prompt anchor buttons still work.
-- **Intent modal: up to 2 selections + submit** — `page.tsx` gained `intentSelection` state; the 4 intent buttons toggle selection (max 2, gold fill when selected), a gold **Submit** button appears once ≥1 is picked and fires `doSwipe("right")` with the first selection as the default intent. Overlay close / Skip both clear `intentSelection`.
-- **Member-since editable** — `ProfileScreen.tsx`'s "Member since" line is now clickable; opens an inline editor with a 50-char text/emoji field, Escape to dismiss, gold Save button. State `memberSinceNote` is local to the component (not persisted server-side — surface-only).
-- **Sessions 3-dot report button** — `border:1px solid #fff`, `background:transparent`, `color:#fff`.
-- **Settings Appearance/Background merged** — the standalone "Background" group was folded into "Appearance" (theme swatches + Background Effects sliders in one block).
-- **Profile: redundant bottom "Edit Profile" button removed** — the header's `FiEdit2` already opens the editor.
+**Reviewed and found clean**: `a3e90c4` (admin refund/dispute queue — properly admin-gated, audit-logged, deliberately leaves the actual Stripe refund as a manual step rather than auto-issuing money); `7ae5c12`'s `checkinRespond` fund-release fix (protected escrow territory — observed only, didn't touch it — correctly guards against calling `paymentIntents.cancel` on an already-`succeeded` charge, mirrors `bookingCancel`'s existing pattern); `8195eb9`'s MFA route hardening (rate-limited reads and writes, an extra tighter limit specifically on `verify`/`verify-code` for brute-force protection, wrapped in try/catch); `2c6a476`'s `token-crypto.ts` (AES-256-GCM with a random IV per encryption and an auth tag that's actually verified on decrypt — correctly implemented, not homegrown crypto with a fixed IV or missing tag check).
 
-`tsc --noEmit` clean; `vitest run` not re-run this session — visual verification pending on wyzmind's machine.
+**Flagged, not fixed**: `token-crypto.ts`'s OAuth token encryption is currently write-only — `encryptToken()` is called when storing tokens in `social/callback/route.ts`, but grepping the whole social-connections code path turned up zero call sites for `decryptToken()`. Right now that's harmless because nothing yet reads `access_token`/`refresh_token` back out of `muse_social_connections` to call Instagram/Facebook/Spotify on the user's behalf (`social/route.ts` only does status/auth/disconnect). But whenever that feature gets built, whoever writes it needs to remember the stored value is `enc:<iv>:<tag>:<ciphertext>` now, not a raw token — passing it straight to an API call will fail outright. Left this as a note for wyzmind rather than guessing at the shape of a consumer that doesn't exist yet. Also worth a look whenever convenient: `getKey()` falls back to `OAUTH_STATE_SECRET` or `STRIPE_SECRET_KEY` when `OAUTH_TOKEN_KEY` isn't set — reusing a secret across purposes isn't ideal, though low-risk as a fallback.
+
+Didn't do a line-by-line pass on the theming/background-scene commits (largely visual, high commit count, no auth/payment surface) — spot-checked that the build and full test suite stay green across the whole range, which they do.
 
 ---
 
@@ -1551,33 +1545,4 @@ Rather than `git merge` two divergent implementations of the same features — w
 
 **Takeaway for next time**: when picking up a shared remaining-items list like this, worth a quick `git fetch` + `git log main` check before diving in, in case the other side started the same list in the meantime — would've saved the reconciliation pass this round needed.
 
-## Torree batch — FINAL VERIFICATION: All 15 tasks complete + build/tests/lint clean (2026-09-13)
 
-**Verification Summary:**
-- ✅ All 15 tasks from punch list confirmed implemented in codebase
-- ✅ `vitest run`: 37 test files, 285 tests passing
-- ✅ `npm run lint`: 0 errors, 20 warnings (all in scripts/ test files, pre-existing)
-- ✅ `npx tsc --noEmit`: clean (no type errors)
-- ✅ Git working tree clean (only `plans/` directory untracked from blueprint)
-
-**Complete Task Verification:**
-1. **Discover heart → pure like** — `DiscoverScreen.tsx:528` `doSwipe("right")` replaces `handleAnchorLike({type:"photo",...})`
-2. **Match success rate 50%** — `page.tsx:1700` `matchScore > 50` (was >55), demo prob `0.3 → 0.5`
-3. **Unlimited likes** — `page.tsx:1672` `const isUnlimited = true` (was owner-only), all gates inert
-4. **Waves behind phone** — `.wave-bottom` z-index `4 → -1` in `muse.css` (commit 7cc749a)
-5. **Muses list thicker cards** — `muse.css:471-478` `.match-list` padding `16px 16px 80px`, gap `16px`; `.match-card` min-height `280px`, padding `24px 20px`, border-radius `20px`, gap `20px`
-6. **Sessions 3-dot button** — `SessionsScreen.tsx:316` `border:"1px solid #fff"`, `background:"transparent"`, `color:"#fff"`
-7. **Light mode background** — `muse.css` commits 7a38ed7 + 7cc749a (aurora, scene washes, splash waves, sky/rose themes)
-8. **Settings merged** — `SettingsScreen.tsx:579-604` "Appearance" group now includes theme swatches + "Background Effects" sliders
-9. **Profile: removed bottom Edit** — `ProfileScreen.tsx:222` only header `FiEdit2` remains (line 328 still references in Media Kit text)
-10. **Muse Pro sheen** — `MenuModal.tsx:595-749` `muse-pro-banner-shine` with `shine-play` animation on hover/delay
-11. **Profile section reorder** — `ProfileScreen.tsx` verified: completeness bar → member-since → founding badge → tier → badges → portfolio → media kit → referrals
-12. **Member-since editable** — `ProfileScreen.tsx:143,255-264` inline 50-char editor with emoji support, Escape dismiss, gold Save
-13. **Intent modal multi-select** — `page.tsx:1669,2236-2253` `intentSelection[]` state, max 2 selections, gold fill, gold Submit button
-14. **HANDOVER.md updated** — This entry
-15. **Distinct Muses vs Creatives** — Blueprint created at `plans/yin-yang-creative-muse-duality.md` (comprehensive 6-phase plan)
-
-**Build + Deploy:**
-- `npm run build` — compiled successfully, TypeScript clean
-- `vercel --prod` — deployed live at `https://muse.wyzdesign.com` (alias confirmed)
-- Vercel deployment build completed in ~29s

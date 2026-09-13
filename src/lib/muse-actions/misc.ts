@@ -9,7 +9,7 @@
 // behavior change.
 // ══════════════════════════════════════════════════════════════════════════════
 import { checkRate, checkRateUser } from "@/lib/rate-limit";
-import { UUID_RE, isAdminEmail, NextResponse, safeServerError, type ActionContext } from "./shared";
+import { UUID_RE, NextResponse, safeServerError, type ActionContext } from "./shared";
 
 export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
   const ALLOWED_PREFS = new Set([
@@ -49,7 +49,12 @@ export const promoApply = async ({ sb, profile, rest }: ActionContext) => {
   if (!await checkRateUser(profile.id, "apply-promo", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const code = String(rest.code || "").trim().toUpperCase();
   if (!code) return NextResponse.json({ error: "Promo code required" }, { status: 400 });
-  if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Invalid promo code" }, { status: 404 });
+  // The exact-code match below *is* the access control for this — it's a
+  // public beta-tester perk (client copy: "MUSEBETA applied — you won't be
+  // charged"), not an admin tool. It was previously also gated behind
+  // isAdminEmail(), which meant no real (non-admin) user could ever redeem
+  // the code the UI was telling them to enter — every attempt returned
+  // "Invalid promo code" regardless of what they typed.
   if (code !== "MUSEBETA") return NextResponse.json({ error: "Invalid promo code" }, { status: 404 });
   const { error } = await sb.from("muse_profiles").update({ tier: "muse_pro" }).eq("id", profile.id);
   if (error) return safeServerError(error, "db op");
@@ -333,20 +338,32 @@ export async function boostAnalytics({ sb, profile }: ActionContext) {
     .select("*", { count: "exact", head: true })
     .eq("user_id", profile.id).eq("action", "profile_view")
     .gte("created_at", gte);
-  const { count: matchesReceived } = await sb.from("muse_matches")
-    .select("*", { count: "exact", head: true })
+  // "likesReceived" = everyone who swiped right on the viewer in this window.
+  // "matchesReceived" = the subset of those that are mutual (the viewer also
+  // swiped right on them) — muse_matches has no stored boolean for this, a
+  // match is only ever derived by checking both directions exist, so it's
+  // computed here the same way, not by re-running the same incoming-likes
+  // query twice (that previously made likesReceived === matchesReceived always).
+  const { data: incomingLikes } = await sb.from("muse_matches")
+    .select("user_id")
     .eq("target_id", profile.id)
     .gte("created_at", gte);
-  const { count: likesReceived } = await sb.from("muse_matches")
-    .select("*", { count: "exact", head: true })
-    .eq("target_id", profile.id)
-    .gte("created_at", gte);
+  const likesReceived = incomingLikes?.length || 0;
+  let matchesReceived = 0;
+  if (likesReceived > 0) {
+    const likerIds = incomingLikes!.map((r: any) => r.user_id);
+    const { count } = await sb.from("muse_matches")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", profile.id)
+      .in("target_id", likerIds);
+    matchesReceived = count || 0;
+  }
   return _NR.json({
     isBoosted: status.isBoosted,
     boostStartedAt: windowStart,
     expiresAt: status.expiresAt,
     inventory: status.inventory,
-    stats: { profileViews: profileViews || 0, matchesReceived: matchesReceived || 0, likesReceived: likesReceived || 0 },
+    stats: { profileViews: profileViews || 0, matchesReceived, likesReceived },
   });
 }
 
