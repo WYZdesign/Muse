@@ -231,8 +231,27 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
           </div>
         )}
 
-        {/* Quest List */}
-        <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "14px 16px 52px", display: "flex", flexDirection: "column", gap: 10, WebkitOverflowScrolling: "touch" }}>
+        {/* Quest List.
+            display:block (not flex+flexDirection:column+gap) is deliberate: each
+            quest row below grows on click (tap-to-expand shows a description
+            div). When this list was a column flexbox, the rows are flex items
+            whose height is resolved via flex-basis:auto content-sizing — and
+            Chromium has a layout-caching quirk where a flex item's very FIRST
+            content-driven height change (min-height:72 -> ~141px once the
+            description mounts) doesn't reliably invalidate, so the row's
+            chevron flips (React state is correct) but the row visually stays
+            clamped at its 72px min-height with the description clipped by
+            overflow:hidden — confirmed live via DOM inspection (scrollHeight
+            141 vs actual rendered height stuck at 72). A second toggle (or
+            forcing a fresh block layout) always resolved correctly, which is
+            what pinned this down to flex-item sizing rather than the click
+            handler or the conditional render, both of which were already
+            correct. Plain block layout has no such caching path — auto height
+            for an overflow:hidden block always includes in-flow children
+            directly — so switching here sidesteps the bug outright. Spacing
+            between rows moves from `gap` (flex/grid only) to marginBottom on
+            each row below. */}
+        <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "14px 16px 52px", display: "block", WebkitOverflowScrolling: "touch" }}>
           {visible.length === 0 && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, textAlign: "center", gap: 12 }}>
               <div style={{ fontSize: 36 }}>📋</div>
@@ -256,6 +275,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
                   maxWidth: "100%",
                   minWidth: 0,
                   minHeight: 72,
+                  marginBottom: 10, // replaces the list container's old `gap: 10`
                   boxSizing: "border-box",
                   borderRadius: 14,
                   overflow: "hidden",
