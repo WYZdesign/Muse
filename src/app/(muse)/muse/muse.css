@@ -1315,7 +1315,7 @@ img{background-color:var(--card-bg)}
 [data-theme="nebula"] .scene{background:linear-gradient(180deg,#0a0618 0%,#10082a 40%,#0e0a24 70%,#0a0618 100%)}
 [data-theme="deepsea"] .scene{background:linear-gradient(180deg,#040a14 0%,#061220 40%,#081828 70%,#040a14 100%)}
 [data-theme="lasunset"] .scene{background:linear-gradient(180deg,var(--bg) 0%,#1a0a18 40%,#12081e 70%,var(--bg) 100%)}
-[data-theme="sunrise"] .phone{background:rgba(255,248,240,0.55)}
+[data-theme="sunrise"] .phone{background:rgba(255,248,240,calc(0.55 * var(--scene-opacity, 1)))}
 /* Light-theme surfaces (sunrise/daylight/sky/rose): the dark-frame, dark-panel, and
    dark-input defaults make every light theme look "broken/dark" on those surfaces.
    This consolidates the light treatment for all four so sky/rose/daylight render light
@@ -1346,7 +1346,7 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) select.inp option{background:#FFFDF8;color:#2F2A24}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .card-hero-type{color:var(--gold);text-shadow:none}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .card-hero-name{text-shadow:0 1px 4px rgba(0,0,0,0.2);filter:none}
-@media(max-width:767px){[data-theme="sunrise"] .phone{background:rgba(255,248,240,0.92)}}
+@media(max-width:767px){[data-theme="sunrise"] .phone{background:rgba(255,248,240,calc(0.92 * var(--scene-opacity, 1)))}}
 [data-theme="sunrise"] .swipe-card{background:#FFF8F0;border:1px solid rgba(0,0,0,0.08);box-shadow:0 4px 24px rgba(0,0,0,0.06)}
 [data-theme="sunrise"] .swipe-card img{background:#F5EDE3}
 [data-theme="sunrise"] .swipe-card .card-details{background:#FFF8F0;box-shadow:0 -8px 32px rgba(0,0,0,0.08)}
@@ -1389,8 +1389,8 @@ img{background-color:var(--card-bg)}
    lavender. These make the frame, backdrop, cards, nav, and panels follow the
    pastel palette (mirrors the sunrise light-mode treatment, pastel-tuned). */
 [data-theme="daylight"] .scene{background:linear-gradient(180deg,#FFF6E7 0%,#FFE9F0 42%,#EBD9FF 72%,#FFF6E7 100%)}
-[data-theme="daylight"] .phone{background:rgba(255,246,231,0.6)}
-@media(max-width:767px){[data-theme="daylight"] .phone{background:rgba(255,246,231,0.94)}}
+[data-theme="daylight"] .phone{background:rgba(255,246,231,calc(0.6 * var(--scene-opacity, 1)))}
+@media(max-width:767px){[data-theme="daylight"] .phone{background:rgba(255,246,231,calc(0.94 * var(--scene-opacity, 1)))}}
 [data-theme="daylight"] .swipe-card{background:#FFFBF4}
 [data-theme="daylight"] .swipe-card img{background:#FBF0E0}
 [data-theme="daylight"] .swipe-card .card-details{background:#FFFBF4;box-shadow:0 -8px 32px rgba(120,90,60,0.12)}
@@ -1423,8 +1423,8 @@ img{background-color:var(--card-bg)}
 
 /* ═══ SKY LIGHT-MODE OVERRIDES ═══ */
 [data-theme="sky"] .scene{background:linear-gradient(180deg,#EFF7FC 0%,#D6E8F5 42%,#C5DEF0 72%,#EFF7FC 100%)}
-[data-theme="sky"] .phone{background:rgba(239,247,252,0.6)}
-@media(max-width:767px){[data-theme="sky"] .phone{background:rgba(239,247,252,0.94)}}
+[data-theme="sky"] .phone{background:rgba(239,247,252,calc(0.6 * var(--scene-opacity, 1)))}
+@media(max-width:767px){[data-theme="sky"] .phone{background:rgba(239,247,252,calc(0.94 * var(--scene-opacity, 1)))}}
 [data-theme="sky"] .swipe-card{background:#F6FBFF;border:1px solid rgba(22,34,46,0.08);box-shadow:0 4px 24px rgba(22,34,46,0.06)}
 [data-theme="sky"] .swipe-card img{background:#E4EFF8}
 [data-theme="sky"] .swipe-card .card-details{background:#F6FBFF;box-shadow:0 -8px 32px rgba(22,34,46,0.08)}
@@ -1457,8 +1457,8 @@ img{background-color:var(--card-bg)}
 
 /* ═══ ROSE LIGHT-MODE OVERRIDES ═══ */
 [data-theme="rose"] .scene{background:linear-gradient(180deg,#FCF1F4 0%,#F5DCE4 42%,#EDD0DC 72%,#FCF1F4 100%)}
-[data-theme="rose"] .phone{background:rgba(252,241,244,0.6)}
-@media(max-width:767px){[data-theme="rose"] .phone{background:rgba(252,241,244,0.94)}}
+[data-theme="rose"] .phone{background:rgba(252,241,244,calc(0.6 * var(--scene-opacity, 1)))}
+@media(max-width:767px){[data-theme="rose"] .phone{background:rgba(252,241,244,calc(0.94 * var(--scene-opacity, 1)))}}
 [data-theme="rose"] .swipe-card{background:#FEF7F9;border:1px solid rgba(42,26,34,0.08);box-shadow:0 4px 24px rgba(42,26,34,0.06)}
 [data-theme="rose"] .swipe-card img{background:#F5E4EA}
 [data-theme="rose"] .swipe-card .card-details{background:#FEF7F9;box-shadow:0 -8px 32px rgba(42,26,34,0.08)}
@@ -1527,6 +1527,16 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .conn-tab{color:rgba(0,0,0,0.6)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .conn-tab.active{color:#1A1612;border-bottom-color:rgba(0,0,0,0.3)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-card-grid .match-info{background:var(--hero-gradient)}
+/* .match-card-grid's name/type/location text was designed for the dark
+   overlay above — --hero-gradient flips that overlay to a light cream/pastel
+   wash in light themes (previous rule), but this text stayed hardcoded
+   white/#FFD700 with no matching flip, so it went low-contrast on light
+   themes. The swipe-card version of this same overlay (.card-hero-name/
+   .card-hero-type/.card-hero-loc, ~40 lines up) already gets this exact
+   treatment — applying the same pattern here. */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-card-grid .match-name{color:var(--text);text-shadow:none}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-card-grid .match-type{color:var(--gold);-webkit-text-fill-color:var(--gold);text-shadow:none}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-card-grid .match-loc-dist{color:var(--text2);text-shadow:none}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-card-grid .match-time{background:var(--surface)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-grid-expand{border-top-color:var(--border-med)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-grid-bio{color:var(--text2)}
