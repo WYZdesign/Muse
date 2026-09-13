@@ -334,6 +334,29 @@ export const SettingsScreen = memo(function SettingsScreen({
     return () => { cancelled = true; };
   }, [showNotificationsSettings, apiFetch, setNotifPrefs]);
 
+  // Blocked users: the `blockedUsers` prop is just raw IDs (also used for
+  // discovery filtering + optimistic block/unblock elsewhere), so it can't
+  // show a name. Fetch the enriched {id,name,avatar} list separately when
+  // this sub-page opens, keyed by id, and fall back to the raw id if a row
+  // hasn't resolved yet (e.g. a user who deleted their account).
+  const [blockedProfiles, setBlockedProfiles] = useState<Record<string, { name: string; avatar?: string }>>({});
+  useEffect(() => {
+    if (!showBlockedUsers || !apiFetch) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "blocked-users" }) });
+        const d = await r.json();
+        if (!cancelled && Array.isArray(d?.blocked)) {
+          const map: Record<string, { name: string; avatar?: string }> = {};
+          d.blocked.forEach((p: any) => { if (p?.id) map[p.id] = { name: p.name, avatar: p.avatar }; });
+          setBlockedProfiles(map);
+        }
+      } catch { /* non-fatal — falls back to showing raw ids below */ }
+    })();
+    return () => { cancelled = true; };
+  }, [showBlockedUsers, apiFetch]);
+
   const updateNotifPref = (key: string) => {
     setNotifPrefs(prev => {
       const next = { ...prev, [key]: !prev[key] };
@@ -806,7 +829,10 @@ export const SettingsScreen = memo(function SettingsScreen({
           ) : (
             blockedUsers.map(uid => (
               <div key={uid} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border-subtle)" }}>
-                <span style={{ fontSize: 14, color: "var(--text)" }}>{uid}</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "var(--text)" }}>
+                  {blockedProfiles[uid]?.avatar && <img src={blockedProfiles[uid].avatar} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
+                  {blockedProfiles[uid]?.name || uid}
+                </span>
                 <button className="btn btn-outline" style={{ padding: "4px 12px", fontSize: 12 }} onClick={() => { setBlockedUsers(blockedUsers.filter(b => b !== uid)); if (apiFetch) { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unblock", target_id: uid }) }).catch(() => {}); } }}>Unblock</button>
               </div>
             ))

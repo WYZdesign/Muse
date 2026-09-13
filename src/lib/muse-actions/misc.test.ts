@@ -36,6 +36,20 @@ describe("misc actions", () => {
     expect((r as Response).status).toBe(400);
   });
 
+  it("promoApply rejects an unknown code (404)", async () => {
+    const r = await promoApply(ctx({ code: "NOTREAL" }, null));
+    expect((r as Response).status).toBe(404);
+  });
+
+  it("promoApply lets a regular (non-admin) user redeem MUSEBETA — regression for the audit fix that removed the isAdminEmail gate this was previously (and wrongly) hidden behind", async () => {
+    // ctx()'s profile has no email at all, so this would fail an admin check
+    // if one were still present.
+    const r = await promoApply(ctx({ code: "musebeta" }, null));
+    expect((r as Response).status).toBe(200);
+    const body = await (r as Response).json();
+    expect(body.tier).toBe("muse_pro");
+  });
+
   it("preferencesSave accepts valid prefs (200)", async () => {
     const r = await preferencesSave(ctx({ ageMin: 18, distance: 50 }, null));
     expect((r as Response).status).toBe(200);
