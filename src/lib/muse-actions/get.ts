@@ -552,16 +552,25 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "profile-completion" && user) {
-      // Audit fix: this select included media_kit_url, which the breakdown
-      // below never actually reads — but a schema mismatch on that one
-      // column (e.g. its migration not yet applied) fails the WHOLE select,
-      // and with no `error` check that silently fell through to `!p` and
-      // showed every user "0%" complete regardless of their real profile.
-      // Confirmed live: this route was returning {completion:0,breakdown:{}}
-      // for a fully-filled-out profile. Dropped the unused column and added
-      // error logging so a future failure here is visible instead of silent.
+      // Audit fix (round 2): the previous fix here dropped media_kit_url,
+      // but this select ALSO included `photos` — a column that doesn't
+      // exist on muse_profiles in production (confirmed live: `type=export`,
+      // which does select("*"), returns a row with no `photos` key at all;
+      // the repo's own sql/muse_complete_schema.sql still has this as an
+      // `ADD COLUMN IF NOT EXISTS`, so the migration was apparently never
+      // run against prod). Same failure mode as media_kit_url: selecting a
+      // nonexistent column fails the whole query, `p` came back null, and
+      // every user showed "0%" regardless of their real profile — confirmed
+      // this was still happening live even after the media_kit_url fix
+      // shipped. Dropped `photos` from the select too. The app doesn't
+      // actually write muse_profiles.photos anywhere (it's not in
+      // ALLOWED_PROFILE_FIELDS) — real per-user photos live in the albums
+      // system (muse_albums/muse_album_photos, see the `album-photos`
+      // handler below), so the "photos" completion criterion now counts
+      // photos across the user's own albums instead of reading the phantom
+      // column.
       const { data: p, error: pErr } = await sb.from("muse_profiles")
-        .select("id, name, bio, styles, looking, avatar, photos, type, age_verified, zodiac, chinese, mbti, life_path")
+        .select("id, name, bio, styles, looking, avatar, type, age_verified, zodiac, chinese, mbti, life_path")
         .eq("id", profileId).maybeSingle();
       if (pErr) console.error("[profile-completion] query failed:", pErr.message);
       if (!p) return NextResponse.json({ completion: 0, breakdown: {} });
@@ -569,6 +578,14 @@ export async function GET(req: NextRequest) {
         .select("*", { count: "exact", head: true }).eq("user_id", profileId);
       const { count: totalPrompts } = await sb.from("muse_prompt_bank")
         .select("*", { count: "exact", head: true }).eq("active", true);
+      const { data: myAlbums } = await sb.from("muse_albums").select("id").eq("profile_id", profileId);
+      const myAlbumIds = (myAlbums || []).map((a: any) => a.id);
+      let myPhotoCount = 0;
+      if (myAlbumIds.length) {
+        const { count: pc } = await sb.from("muse_album_photos")
+          .select("id", { count: "exact", head: true }).in("album_id", myAlbumIds);
+        myPhotoCount = pc || 0;
+      }
       const breakdown: Record<string, { done: boolean; weight: number }> = {
         avatar: { done: !!(p as any).avatar, weight: 15 },
         bio: { done: !!((p as any).bio && (p as any).bio.length >= 20), weight: 15 },
@@ -577,7 +594,7 @@ export async function GET(req: NextRequest) {
         type: { done: !!(p as any).type, weight: 10 },
         prompts: { done: (promptCount || 0) >= 3, weight: 15 },
         verification: { done: !!(p as any).age_verified, weight: 10 },
-        photos: { done: !!(p as any).photos && (p as any as any).photos.length >= 2, weight: 10 },
+        photos: { done: myPhotoCount >= 2, weight: 10 },
         personality: { done: !!((p as any).zodiac || (p as any).chinese || (p as any).mbti || (p as any).life_path), weight: 5 },
       };
       let totalWeight = 0;
