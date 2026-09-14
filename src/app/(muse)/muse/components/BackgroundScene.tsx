@@ -15,8 +15,15 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
   const cometRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
 
+  // Audit fix: duration/delay were a deterministic function of index (i*3.7%6,
+  // i*1.9%10) — visually varied star-to-star, but the same fixed pattern
+  // every load and, since it's a smooth linear function of i, still reads as
+  // a subtle repeating rhythm across the field rather than truly random
+  // twinkling. Math.random() here matches the pattern already used for the
+  // fizzy-bubbles/particles fields below (client-only "use client" component,
+  // computed once on mount — no SSR hydration mismatch risk).
   const starPos = useMemo(() => Array.from({length:39}, (_,i) => ({
-    l:`${(i*7.3+3.1)%100}%`, t:`${(i*11.7+5.8)%35}%`, d:`${2+(i*3.7)%6}s`, dl:`${(i*1.9)%10}s`
+    l:`${(i*7.3+3.1)%100}%`, t:`${(i*11.7+5.8)%35}%`, d:`${2+Math.random()*6}s`, dl:`${Math.random()*10}s`
   })), []);
 
   const spPos = useMemo(() => Array.from({length:7}, (_,i) => ({
