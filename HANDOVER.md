@@ -1836,3 +1836,30 @@ Also spot-checked `discover-count` vs `type=profiles` again post-`63b6e60`: 8 re
 **Not re-verified with a live screenshot this round** — no dev server or deployed URL was available in this segment to re-run the visual sweep against. The fix follows directly from the confirmed root cause and CSS structure, but flagging this honestly rather than claiming a live re-check I didn't do. Worth a quick visual confirm next round if convenient.
 
 `tsc --noEmit` and `vitest run` (340/340) clean. Delivered as `round17-verification-banner-fix.bundle`.
+
+---
+
+## WYZMIND — Migration file created for missing columns (2026-09-14)
+
+**Created:** `sql/MUSE_ADD_MISSING_COLUMNS_20260914.sql`
+
+This migration adds the 3 columns that have NO migration at all:
+- `nsfw BOOLEAN DEFAULT false` — NSFW profile flag
+- `verified BOOLEAN DEFAULT false` — identity verification status
+- `collabs INTEGER DEFAULT 0` — collaboration count
+
+The other 4 columns (`photos`, `embedding`, `embedding_model`, `media_kit_url`) already have migrations in existing SQL files but were never run against prod.
+
+**To apply all 7 missing columns:**
+1. Run `sql/muse_complete_schema.sql` (adds `photos`)
+2. Run `sql/MUSE_OPENROUTER_AI_20260813.sql` (adds `embedding`, `embedding_model`)
+3. Run `sql/MUSE_MEDIA_KIT_20260906.sql` (adds `media_kit_url`)
+4. Run `sql/MUSE_ADD_MISSING_COLUMNS_20260914.sql` (adds `nsfw`, `verified`, `collabs`)
+
+**After running, verify:**
+```sql
+SELECT column_name FROM information_schema.columns 
+WHERE table_name='muse_profiles' 
+AND column_name IN ('nsfw','verified','collabs','photos','embedding','embedding_model','media_kit_url')
+ORDER BY column_name;
+```
