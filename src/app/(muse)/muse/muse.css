@@ -2312,3 +2312,56 @@ img{background-color:var(--card-bg)}
 .hsc-arrow.left{left:-2px}
 .hsc-arrow.right{right:-2px}
 .hsc-arrow.hidden{display:none}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LIGHT MODE GLOBAL FIXES — dark borders/outlines on ALL interactive elements
+   Ensures visibility across all light themes (sunrise, daylight, sky, rose)
+   ══════════════════════════════════════════════════════════════════════════ */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .btn-gold,
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .btn-outline,
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .btn,
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) button[class*="btn"]{
+  border-color:var(--border-strong);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.12)
+}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .btn-outline{
+  border:2px solid var(--border-strong);background:transparent;color:var(--text)
+}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .chip,
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .badge,
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) [class*="badge"]{
+  border:1.5px solid var(--border-med);color:var(--text);background:var(--badge-bg)
+}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .chip.sel{
+  border-color:var(--gold);background:var(--gold);color:#fff
+}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .inp,
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) input,
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) textarea,
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) select{
+  border:1px solid var(--input-border);background:var(--input-bg);color:var(--text)
+}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .modal,
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .modal-content,
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) [class*="modal"],
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) [class*="popup"],
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) [class*="drawer"],
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) [class*="panel"]{
+  background:var(--panel-bg-solid);color:var(--text);border:1px solid var(--border-med)
+}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .hamburger-item{
+  border:1px solid var(--border-subtle);background:var(--glass)
+}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .hdr-btn{
+  border:1px solid var(--border-subtle);background:var(--glass);color:var(--text)
+}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .nav-item{
+  color:var(--muted)
+}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .nav-item.active{
+  color:var(--gold)
+}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) [class*="flame"],
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) [class*="streak"] svg,
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) [class*="quest"] svg{
+  filter:brightness(0.8) saturate(1.2)
+}
