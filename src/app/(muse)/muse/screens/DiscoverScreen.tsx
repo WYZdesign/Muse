@@ -545,9 +545,18 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                   <button className="btn btn-gold" onClick={() => { setCurrentIdx(0); }}>Reset</button>
                 </EmptyState>
               )}
+              {/* Audit fix: this used to be a sibling of .card-stack (i.e. inside
+                  .discover-wrap, which also contains .hdr above the card). Its
+                  position:absolute top:8/left:12 was meant to read as "top-left
+                  of the card deck" but actually anchored to .discover-wrap's box,
+                  which starts at the header — so the badge rendered on top of the
+                  "Discover" logo text, not the card. Moved inside .card-stack
+                  (which already has position:relative) so top:8/left:12 anchors
+                  to the card itself, matching what it always looked like it was
+                  supposed to do. */}
+              {isUnlimited && showUnlimitedBadge && <div className="limit-bar" style={{ background: "rgba(10,6,18,0.55)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 99, padding: "6px 10px 6px 16px", marginTop: 0, position: "absolute", top: 8, left: 12, zIndex: 20, backdropFilter: "blur(12px)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", gap: 8 }}><div style={{ fontSize: 12, fontWeight: 700, color: "var(--gold)", letterSpacing: 0.5 }}>∞ Unlimited</div><button onClick={(e) => { e.stopPropagation(); setShowUnlimitedBadge(false); }} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 13, padding: 0, lineHeight: 1 }}>✕</button></div>}
             </div>
             {!isUnlimited && (dailyLikes < 10 || superLikes < 3) && <div className="limit-bars">{dailyLikes < 10 && <div className="limit-bar"><div className="limit-dots">{Array.from({ length: 10 }, (_, i) => <div key={i} className={"limit-dot" + (i < dailyLikes ? " filled" : "")} />)}</div><div className="limit-text">{dailyLikes} likes left</div></div>}{superLikes < 3 && <div className="limit-bar"><div className="limit-dots">{Array.from({ length: 3 }, (_, i) => <div key={i} className={"limit-dot" + (i < superLikes ? " super-filled" : "")} />)}</div><div className="limit-text">{superLikes} super likes left</div></div>}</div>}
-            {isUnlimited && showUnlimitedBadge && <div className="limit-bar" style={{ background: "rgba(10,6,18,0.55)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 99, padding: "6px 10px 6px 16px", marginTop: 0, position: "absolute", top: 8, left: 12, zIndex: 20, backdropFilter: "blur(12px)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", gap: 8 }}><div style={{ fontSize: 12, fontWeight: 700, color: "var(--gold)", letterSpacing: 0.5 }}>∞ Unlimited</div><button onClick={(e) => { e.stopPropagation(); setShowUnlimitedBadge(false); }} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 13, padding: 0, lineHeight: 1 }}>✕</button></div>}
           </>
         )}
       </div>
