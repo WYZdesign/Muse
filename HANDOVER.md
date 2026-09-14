@@ -1718,4 +1718,72 @@ While sweeping the above, if you see anything that looks wrong, broken, inconsis
 
 **Deliver as usual:** bundle to `_to_delete/`, tsc/vitest clean, explain what you found and why.
 
+---
+
+## TORREE'S SPECIFIC REQUESTS — UX improvements needed (2026-09-14)
+
+### 4. SESSIONS PAGE — Card tap should expand or lightbox
+
+**Current behavior:** Tapping a session card on the Sessions page does nothing (or navigates somewhere unclear).
+
+**Desired behavior:** Tapping a session card should either:
+- **Expand the card inline** to show full details (description, requirements, pricing, duration, etc.)
+- **Open a lightbox/modal popup** with the full collab listing
+
+**Details to show:**
+- Full session/collab description
+- Requirements (what the Creative needs to bring, preparation, etc.)
+- Pricing and duration
+- Any sizing/preference requirements
+- Application status (if already applied)
+- Apply/Book button
+
+### 5. SESSIONS PAGE — Apply button should have a mini-form
+
+**Current behavior:** Tapping "Apply" immediately applies with no input.
+
+**Desired behavior:** Tapping "Apply" should open a brief form (no more than 3 questions) for:
+- Sizing/preferences (if relevant to the session)
+- Any preparation or special requirements
+- A short message to the host
+
+**NOT a full application** — just enough to give the host context. Keep it quick.
+
+### 6. SESSIONS PAGE — Differentiate "Apply" vs "Book" buttons
+
+**Current confusion:** Both buttons exist but their purpose isn't clear.
+
+**Desired differentiation:**
+- **"Apply"** = Free sessions / briefs / open calls. The Creative applies, the host reviews and accepts. No payment.
+- **"Book"** = Paid sessions. The Creative books directly, payment happens immediately. No approval needed.
+
+**Visual differentiation:**
+- "Apply" should be a secondary/outline style button
+- "Book" should be a primary/gold filled button
+- Each should have a brief tooltip or subtitle explaining what it does (e.g., "Apply to be considered" vs "Book now — payment required")
+
+### 7. MUSES PAGE — List view swipe only from edges
+
+**Current behavior:** Swiping from anywhere on a match card triggers the swipe action (accept/reject).
+
+**Desired behavior:** In **list view only**, swiping should only trigger from the **outer 1/3 of each side** of the card. The center 2/3 should be tappable to view the profile.
+
+**Why:** Users accidentally swipe when trying to tap the card to view details. Edge-swiping prevents accidental rejections.
+
+**Note:** Grid view should keep the current tap-to-view behavior (no swiping in grid).
+
+### 8. PROFILE PAGE — Image should fill the halo
+
+**Current behavior:** The profile image is centered inside the halo ring, with a gap between the image edge and the halo inner edge.
+
+**Desired behavior:** The profile image should **fill the inside of the halo** completely — the image edge should touch the inner edge of the halo ring. No gap.
+
+**Visual effect:** The halo should look like it's framing the image, not floating around it.
+
+---
+
+**Priority order:** Items 4-6 (Sessions UX) > Item 8 (Profile halo) > Item 7 (Muses swipe)
+
+**Deliver as usual:** bundle to `_to_delete/`, tsc/vitest clean, explain what you changed and why.
+
 
