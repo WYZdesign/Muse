@@ -340,7 +340,10 @@ export const MusesScreen = memo(function MusesScreen({
                 // saw the same locked/blurred/upsell state as a free user.
                 const unlocked = isPaidTier(currentUser.tier);
                 return (
-                <div key={p.id} className="muse-likes-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!unlocked) { setShowLikesUpsell(true); } else { setViewProfile(p); } } }} style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "3/4", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }} onClick={() => { if (!unlocked) { setShowLikesUpsell(true); } else { setViewProfile(p); } }}>
+                // Audit fix: matched to the Matches-grid card's aspect-ratio fix
+                // (3/4 -> 2/3) — same "card too short, crops most of the profile
+                // photo under object-fit:cover" issue on this grid.
+                <div key={p.id} className="muse-likes-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!unlocked) { setShowLikesUpsell(true); } else { setViewProfile(p); } } }} style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "2/3", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }} onClick={() => { if (!unlocked) { setShowLikesUpsell(true); } else { setViewProfile(p); } }}>
                   <Image loading="lazy" src={p.img} alt={p.name} fill sizes="(max-width: 600px) 50vw, 300px" style={{ objectFit: "cover", filter: !unlocked ? "blur(4px)" : undefined }} />
                   <div className="muse-likes-info" style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 10px", background: "linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.6) 60%,transparent 100%)" }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{p.name}</div>
