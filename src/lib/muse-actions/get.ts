@@ -552,9 +552,18 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "profile-completion" && user) {
-      const { data: p } = await sb.from("muse_profiles")
-        .select("id, name, bio, styles, looking, avatar, photos, type, age_verified, media_kit_url, zodiac, chinese, mbti, life_path")
+      // Audit fix: this select included media_kit_url, which the breakdown
+      // below never actually reads — but a schema mismatch on that one
+      // column (e.g. its migration not yet applied) fails the WHOLE select,
+      // and with no `error` check that silently fell through to `!p` and
+      // showed every user "0%" complete regardless of their real profile.
+      // Confirmed live: this route was returning {completion:0,breakdown:{}}
+      // for a fully-filled-out profile. Dropped the unused column and added
+      // error logging so a future failure here is visible instead of silent.
+      const { data: p, error: pErr } = await sb.from("muse_profiles")
+        .select("id, name, bio, styles, looking, avatar, photos, type, age_verified, zodiac, chinese, mbti, life_path")
         .eq("id", profileId).maybeSingle();
+      if (pErr) console.error("[profile-completion] query failed:", pErr.message);
       if (!p) return NextResponse.json({ completion: 0, breakdown: {} });
       const { count: promptCount } = await sb.from("muse_prompt_responses")
         .select("*", { count: "exact", head: true }).eq("user_id", profileId);
