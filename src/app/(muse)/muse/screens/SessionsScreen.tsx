@@ -4,6 +4,7 @@ import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiBookmark, FiSearch, FiCompass, FiCalendar, FiInbox, FiEye } from "react-icons/fi";
 import Nav from "../components/Nav";
+import { analytics } from "../lib/analytics";
 import { BADGE_COLORS } from "../components/badgeColors";
 import { EmptyState } from "../components/EmptyState";
 import { sessionTier } from "../components/sessionTiers";
@@ -244,6 +245,7 @@ export const SessionsScreen = memo(function SessionsScreen({
     try {
       const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "respond-booking", bookingId, response }) });
       if (!r.ok) throw new Error("failed");
+      analytics.bookingRespond(bookingId, response);
       showToast(response === "accept" ? "Booking accepted — pre-shoot check-in sent" : "Booking declined");
       refreshBookings();
     } catch { showToast("Failed to respond"); }
@@ -253,6 +255,7 @@ export const SessionsScreen = memo(function SessionsScreen({
     try {
       const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "complete-booking", bookingId }) });
       if (!r.ok) throw new Error("failed");
+      analytics.bookingComplete(bookingId);
       showToast("Shoot marked complete");
       refreshBookings();
     } catch { showToast("Failed to complete"); }

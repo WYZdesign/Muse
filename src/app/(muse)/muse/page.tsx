@@ -15,6 +15,7 @@ import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
 import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, setRefreshToken, getRefreshToken, clearRefreshToken, QUOTA_MSG } from "./lib/safe-storage";
 import { getAccessToken, authFetch } from "./lib/api";
+import { analytics, setAnalyticsScreen, setAnalyticsUser, initAnalyticsSession } from "./lib/analytics";
 import { uid } from "./lib/uid";
 import { getProfileShareUrl, getPostShareUrl, getMuseUrl } from "@/lib/urls";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
@@ -784,6 +785,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           if (d.success && d.user) {
             const userObj = { id: d.user.id, email: d.user.email, profile: d.profile };
             setAuthUser(userObj);
+            setAnalyticsUser(d.profile?.id || d.user.id);
             if (pendingRefresh) setRefreshToken(pendingRefresh);
             safeSetItem("muse_user", JSON.stringify({ access_token: pendingToken, refresh_token: pendingRefresh, user: userObj }));
             ensureMusePushRegistered();
@@ -1008,6 +1010,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
     try { sessionStorage.setItem("muse_loaded", "1"); } catch {}
     loadState();
+    initAnalyticsSession();
     setHydrated(true);
     try { window.dispatchEvent(new CustomEvent("muse:hydrated")); } catch {}
 
@@ -1455,11 +1458,6 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
   }, []);
 
   const getReferralTier = (c:number) => c>=50?{tier:"Platinum",discount:20,perks:"20% off all services",nextThreshold:null}:c>=20?{tier:"Gold",discount:15,perks:"15% off all services",nextThreshold:50}:c>=5?{tier:"Silver",discount:10,perks:"10% off all services",nextThreshold:20}:c>=1?{tier:"Bronze",discount:0,perks:"Exclusive badge",nextThreshold:5}:{tier:"None",discount:0,perks:"Invite friends to earn",nextThreshold:1};
-  const trackEvent = (event: string, data?: Record<string, unknown>) => {
-    try {
-      authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "track-event", name: event, props: data || {} }), keepalive: true }).catch(() => {});
-    } catch {}
-  };
   const checkProfileBadges = (stats:any, createdAt:number):{name:string;desc:string;icon:string;color:string}[] => {
     const b:{name:string;desc:string;icon:string;color:string}[] = [];
     if (createdAt && Date.now()-createdAt > 31536000000) b.push({name:"Full Moon",icon:"🌕",color:"#C0C0FF",desc:"1 year on Muse"});
@@ -1647,14 +1645,14 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       }
       return s;
     });
-    trackEvent("screen_view", { screen: s });
+    analytics.screenView(s);
     try { window.scrollTo({ top: 0, behavior: "instant" }); } catch {}
   }, []);
   const goBack = useCallback(() => {
     const prev = screenHistoryRef.current.pop();
     const dest = prev && prev !== "auth" ? prev : "discover";
     setScreen(dest);
-    trackEvent("screen_view", { screen: dest, back: true });
+    analytics.screenView(dest);
     try { window.scrollTo({ top: 0, behavior: "instant" }); } catch {}
   }, []);
 
@@ -1725,7 +1723,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       }
       setScreen(authMode === "signup" ? "onboard" : "discover");
       if (authMode === "signup") setObStep(0);
-      trackEvent(authMode === "signup" ? "muse_signup" : "muse_login", { email: authEmail?.slice(0,3) + "***" });
+      analytics[authMode === "signup" ? "signup" : "login"]("email");
       flash("#FFD700");
     } catch { showToast({ msg: "Login failed — check your credentials", type: "error" }); }
     setAuthLoading(false);
@@ -1756,7 +1754,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     const p = filteredProfiles[currentIdx];
     if (!p) return;
     if (!isUnlimited && dir === "super" && superLikes <= 0) { setUpsell({ feature: "More Super Likes", reason: "You're out of super likes for today. Muse Pro's unlimited likes means you're never stuck waiting for a reset.", icon: "💜" }); return; }
-    trackEvent("swipe", { direction: dir, target_type: p.type });
+    analytics.discoverSwipe(dir as "left" | "right" | "super", p.id, p.type);
     if (dir === "right" || dir === "super") {
       if (!userDefaultIntent) { setIntentProfile(p); setIntentSelection([]); setShowIntentPicker(true); swipeLocked.current = false; return; }
       const intent = dir === "super" ? "super" : userDefaultIntent;
@@ -1780,7 +1778,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             setShowConfetti(true);
             setTimeout(() => setShowConfetti(false), 1500);
             setExpandedMatchId(String(newMatch.id));
-            trackEvent("muse_match", { name: p.name, type: p.type });
+            analytics.discoverMatch(p.id, p.type);
             setActivityFeed(prev => [{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
             flash("#FFD700");
           }, 450);
@@ -2040,7 +2038,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       showToast({ msg: "Message couldn't be sent", type: "error" });
       return;
     }
-    trackEvent("message_sent", { has_match: true });
+    analytics.messageSend(chatTarget?.id || "", false);
     trackQuest("send_message", "first_message");
     // Show typing + simulated reply only in demo mode (no real remote partner).
     if (!DEMO_MODE) return;
@@ -2074,7 +2072,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       showToast("Image couldn't be sent");
       return;
     }
-    trackEvent("message_image_sent", { has_match: true });
+    analytics.messageSend(chatTarget?.id || "", true);
     if (!DEMO_MODE) return;
     setTypingTarget(Number(chatTarget.id));
     setTimeout(() => {
