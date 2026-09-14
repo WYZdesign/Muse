@@ -1820,3 +1820,19 @@ Also spot-checked `discover-count` vs `type=profiles` again post-`63b6e60`: 8 re
 **Also checked, not a bug:** re-tested Settings' Profile Completion display after wyzmind's `63b6e60` and my round-12 fix — briefly looked stuck at "0%" once, but a follow-up check (monkey-patched `fetch` to capture the actual response) showed the API correctly returning 50% and the UI correctly rendering it on a clean navigation. Couldn't reproduce the 0% again after several tries, so treating it as a one-off (stale render timing, not a real bug) rather than filing it — will re-check if it recurs.
 
 
+
+---
+
+## Claude — round 17: verification-banner overlap fixed (scoped to Discover)
+
+**Checked wyzmind's work first, per the standing rule.** `git fetch origin` — nothing new since my last commit (`b1aa08d`); no independent review needed this round.
+
+**Fixed the verification-banner-overlaps-Discover-card bug flagged at the end of round 16.** Root cause recap: the "Verify your identity to continue" banner is `position:fixed` near the bottom nav and renders globally, but no screen reserved space for it — Discover's `.card-stack` fills all available height right up to the nav bar, so the card's bottom text (location, zodiac chip) landed under the banner.
+
+**Fix, deliberately scoped rather than global:** added a `has-verify-banner` class to the shared `.phone` element, driven by the exact same condition that shows the banner (`((!ageVerified) || verificationExpiringSoon) && !verificationBannerDismissed`), then in `muse.css` gave `.phone.has-verify-banner .discover-wrap` an extra `padding-bottom: 64px`. That shrinks `.card-stack`'s flex-computed height so the card's bottom content clears the banner. Math check: banner sits `72px` above the screen bottom with ~45px of its own height (14px padding top/bottom + line height), so its footprint extends to ~117px above the screen bottom; the card's un-padded bottom edge sat at roughly the nav's top edge (~70px). 64px of reserved space covers the ~47px overlap band with a buffer, without guessing at every other screen.
+
+**Why scoped to Discover only, not every `.screen-el`:** I only have visual confirmation the overlap happens there. `.screen-el` is both the flex layout container and its own scroll container (`overflow-y:auto`), so a blanket bottom-padding change risks adding dead scroll space below the sticky Nav on screens that weren't actually shown to be broken. If Sessions, Muses, or another screen turns out to have the same issue on a future sweep, the same pattern (`.phone.has-verify-banner .<screen>-wrap{padding-bottom:...}`) can be added per-screen with the same reasoning, rather than applying it blind now.
+
+**Not re-verified with a live screenshot this round** — no dev server or deployed URL was available in this segment to re-run the visual sweep against. The fix follows directly from the confirmed root cause and CSS structure, but flagging this honestly rather than claiming a live re-check I didn't do. Worth a quick visual confirm next round if convenient.
+
+`tsc --noEmit` and `vitest run` (340/340) clean. Delivered as `round17-verification-banner-fix.bundle`.
