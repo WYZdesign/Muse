@@ -1740,12 +1740,12 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sky"],[data-theme="rose"]) .splash-ocean-tide .wave-path-2{fill:rgba(140,165,205,0.2)}
 :is([data-theme="sky"],[data-theme="rose"]) .splash-ocean-tide .wave-path-3{fill:rgba(150,170,210,0.13)}
 /* Bottom waves: lighter pastel fills for light themes */
-:is([data-theme="sunrise"],[data-theme="daylight"]) .wave-bottom .wave-path-1{fill:rgba(180,150,100,0.22)}
-:is([data-theme="sunrise"],[data-theme="daylight"]) .wave-bottom .wave-path-2{fill:rgba(190,160,110,0.15)}
-:is([data-theme="sunrise"],[data-theme="daylight"]) .wave-bottom .wave-path-3{fill:rgba(200,170,120,0.09)}
-:is([data-theme="sky"],[data-theme="rose"]) .wave-bottom .wave-path-1{fill:rgba(130,160,200,0.2)}
-:is([data-theme="sky"],[data-theme="rose"]) .wave-bottom .wave-path-2{fill:rgba(140,165,205,0.14)}
-:is([data-theme="sky"],[data-theme="rose"]) .wave-bottom .wave-path-3{fill:rgba(150,170,210,0.08)}
+:is([data-theme="sunrise"],[data-theme="daylight"]) .wave-bottom .wave-path-1{fill:rgba(180,150,100,0.45)}
+:is([data-theme="sunrise"],[data-theme="daylight"]) .wave-bottom .wave-path-2{fill:rgba(190,160,110,0.32)}
+:is([data-theme="sunrise"],[data-theme="daylight"]) .wave-bottom .wave-path-3{fill:rgba(200,170,120,0.22)}
+:is([data-theme="sky"],[data-theme="rose"]) .wave-bottom .wave-path-1{fill:rgba(130,160,200,0.40)}
+:is([data-theme="sky"],[data-theme="rose"]) .wave-bottom .wave-path-2{fill:rgba(140,165,205,0.28)}
+:is([data-theme="sky"],[data-theme="rose"]) .wave-bottom .wave-path-3{fill:rgba(150,170,210,0.18)}
 
 /* ═══ NAV ICON HUE SHIFT ═══ */
 @keyframes gradientShift{0%{background-position:0% 50%}20%{background-position:34% 72%}40%{background-position:70% 26%}60%{background-position:100% 64%}80%{background-position:52% 16%}100%{background-position:0% 50%}}
@@ -2267,15 +2267,15 @@ img{background-color:var(--card-bg)}
    The three layers use mismatched, low-frequency bezier curves so they read as
    real, uneven tides rather than a repeating synthwave pattern.
    ══════════════════════════════════════════════════════════════════════════ */
-.wave-bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100vw);height:15.95%;z-index:1;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s ease}
+.wave-bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100vw);height:24%;z-index:1;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s ease}
 .wave-bottom.show{opacity:1}
 .wave-bottom svg{position:absolute;bottom:0;left:0;width:240%;height:100%;animation:waveDrift 14s ease-in-out infinite}
-.wave-bottom svg:nth-child(2){animation-duration:20s;animation-delay:-6s;opacity:.55}
-.wave-bottom svg:nth-child(3){animation-duration:28s;animation-delay:-13s;opacity:.35}
+.wave-bottom svg:nth-child(2){animation-duration:20s;animation-delay:-6s;opacity:.7}
+.wave-bottom svg:nth-child(3){animation-duration:28s;animation-delay:-13s;opacity:.5}
 @keyframes waveDrift{0%{transform:translateX(0) translateY(0) scaleX(1)}20%{transform:translateX(-6%) translateY(-3px) scaleX(1.02)}40%{transform:translateX(-14%) translateY(5px) scaleX(0.98)}60%{transform:translateX(-8%) translateY(-4px) scaleX(1.01)}80%{transform:translateX(-2%) translateY(2px) scaleX(0.99)}100%{transform:translateX(0) translateY(0) scaleX(1)}}
-.wave-bottom .wave-path-1{fill:rgba(135,206,235,0.30)}
-.wave-bottom .wave-path-2{fill:rgba(100,181,246,0.20)}
-.wave-bottom .wave-path-3{fill:rgba(80,160,230,0.12)}
+.wave-bottom .wave-path-1{fill:rgba(135,206,235,0.55)}
+.wave-bottom .wave-path-2{fill:rgba(100,181,246,0.40)}
+.wave-bottom .wave-path-3{fill:rgba(80,160,230,0.28)}
 
 /* ══════════════════════════════════════════════════════════════════════════
    MUSE PRO BANNER — BUTTERY CINEMATIC SHEEN
