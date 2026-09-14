@@ -9,18 +9,22 @@ vi.mock("@/lib/supabase", () => ({
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: any[]) => ({ subject: a[1] || "" }) }));
 vi.mock("@/lib/muse-actions/shared", () => ({ isAgeVerificationCurrent: () => (globalThis as any).__ageVerified ?? false }));
-vi.mock("stripe", () => ({
-  default: function () {
-    return {
-      identity: {
-        verificationSessions: {
-          create: async () => ({ id: "vs_1", client_secret: "cs_1", url: "https://stripe.test/vs_1" }),
-          retrieve: async () => ({ status: "verified", verified_outputs: {} }),
+class FakeStripeError extends Error {}
+function FakeStripe(this: any) {
+  return {
+    identity: {
+      verificationSessions: {
+        create: async () => {
+          if ((globalThis as any).__stripeCreateError) throw (globalThis as any).__stripeCreateError;
+          return { id: "vs_1", client_secret: "cs_1", url: "https://stripe.test/vs_1" };
         },
+        retrieve: async () => ({ status: "verified", verified_outputs: {} }),
       },
-    };
-  },
-}));
+    },
+  };
+}
+(FakeStripe as any).errors = { StripeError: FakeStripeError };
+vi.mock("stripe", () => ({ default: FakeStripe }));
 
 import { POST } from "@/app/api/muse/verification/route";
 
@@ -58,6 +62,7 @@ beforeEach(() => {
   process.env.STRIPE_SECRET_KEY = "sk_test_fake";
   (globalThis as any).__authUser = { data: { user: { id: "u1" } } };
   (globalThis as any).__ageVerified = false;
+  (globalThis as any).__stripeCreateError = null;
   state.tables = {};
   state.updates = [];
 });
@@ -98,5 +103,28 @@ describe("verification route", () => {
     expect(r.status).toBe(200);
     const body = await r.json();
     expect(body.status).toBe("not_started");
+  });
+
+  // A bare "Verification failed" for every possible server-side failure was
+  // undebuggable from the client — this was live-reproduced against prod
+  // (a 500 with no further detail) while auditing Torreé's "invalid token"
+  // reports. Stripe's own error messages are meant to be shown to API
+  // callers, so surface them instead of masking every failure the same way.
+  it("surfaces the underlying Stripe error message instead of a bare generic one", async () => {
+    state.tables.muse_profiles = { id: "p1" };
+    (globalThis as any).__stripeCreateError = new FakeStripeError("Expired API Key provided");
+    const r = await POST(req({ action: "create-verification-session" }));
+    expect(r.status).toBe(500);
+    const body = await r.json();
+    expect(body.error).toBe("Verification failed: Expired API Key provided");
+  });
+
+  it("falls back to the generic message for a non-Stripe error", async () => {
+    state.tables.muse_profiles = { id: "p1" };
+    (globalThis as any).__stripeCreateError = new Error("some unrelated failure");
+    const r = await POST(req({ action: "create-verification-session" }));
+    expect(r.status).toBe(500);
+    const body = await r.json();
+    expect(body.error).toBe("Verification failed");
   });
 });

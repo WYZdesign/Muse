@@ -136,6 +136,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error: unknown) {
     console.error("Age verification error:", error);
-    return NextResponse.json({ error: "Verification failed" }, { status: 500 });
+    // This route talks to Stripe Identity, and a bare "Verification failed"
+    // for every possible failure (a misconfigured/expired Stripe API key, a
+    // Stripe account without Identity enabled, a malformed request, a DB
+    // write failure) is exactly the kind of generic error that's impossible
+    // to act on from the client alone — the real cause only ever showed up
+    // in server logs. Stripe's own error messages are written to be shown to
+    // API callers (e.g. "Expired API Key provided", "No such customer") and
+    // don't carry secrets, so surface them when we have one; keep the
+    // generic message as a fallback for anything else (a DB error, etc.).
+    const message = error instanceof Stripe.errors.StripeError
+      ? `Verification failed: ${error.message}`
+      : "Verification failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
