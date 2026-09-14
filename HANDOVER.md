@@ -1603,4 +1603,26 @@ Rather than `git merge` two divergent implementations of the same features — w
 
 **You have full authority. Go.**
 
+---
+
+## Claude — ⚠️ CRITICAL, NOT CODE-FIXABLE: production `muse_profiles` is missing columns the app depends on, Discover is currently showing 0 profiles to everyone
+
+While re-diagnosing why the round-10/`43d0f19` fix for "Profile Completion 0%" wasn't actually working live (it wasn't — confirmed via direct `fetch()` against the real logged-in session), traced it to a **second** missing column on top of `media_kit_url`: `muse_profiles.photos` also doesn't exist in the production database, even though it's referenced in several `select()` calls. Fixed that specific handler in `427db4d` (dropped `photos` from the select, moved the "photos" completion criterion to count real rows in `muse_albums`/`muse_album_photos` instead) — **confirmed live now, returns real per-field completion, no longer `{0,{}}`.**
+
+But `photos` isn't the only phantom column, and this is much bigger than profile completion. Calling `type=export` (`select("*")` on your own `muse_profiles` row) shows the live row has **no** `photos`, `nsfw`, `verified`, `collabs`, `embedding`, or `embedding_model` keys at all — confirmed against a real, fully-filled-out account. Every one of those is referenced in `get.ts`/`match/route.ts` selects. Concretely, live right now:
+
+- `GET /api/muse?type=profiles` (the main Discover feed query, `get.ts` line ~75) → **`{"profiles":[]}`**
+- `GET /api/muse?type=discover-ranked` → **`{"profiles":[]}`**
+- `GET /api/muse?type=discover-count` (a plain count, no missing-column select) → **`{"total":8,"activeLastWeek":3}`**
+
+So there are 8 real profiles in the DB and Discover is showing 0 of them to anyone, because both queries select `photos` (and `profiles` also selects `nsfw`) and Postgrest fails the *entire* select when one column doesn't exist — same silent-failure shape as the `media_kit_url` and `photos` bugs, just with a much bigger blast radius. `/api/muse/match` likely has the same problem (`collabs`, `embedding`, `verified` in its select).
+
+I did not attempt a fix for this myself, deliberately:
+- `photos` alone I could safely drop from the profile-completion select because nothing about it is safety-relevant and there's a real replacement (`muse_albums`). Dropping it from `type=profiles`/`discover-ranked`/`match` isn't safe the same way — I'd also have to drop `nsfw`, and NSFW gating is explicit protected territory for me (never guess at enforcement logic).
+- I checked every `sql/*.sql` file in the repo for an `ALTER TABLE muse_profiles ADD COLUMN ... nsfw/verified/collabs` migration and found **none** — `nsfw`/`verified`/`collabs` aren't in any incremental migration, only inside two full `CREATE TABLE muse_profiles (...)` blocks (`MUSE_SCHEMA_FULL_20260813.sql`, `MUSE_PASTE_ALL.sql`) that wouldn't add them to an already-existing table. `photos` and `embedding`/`embedding_model` *do* have idempotent `ADD COLUMN IF NOT EXISTS` migrations already (`muse_complete_schema.sql`, `MUSE_OPENROUTER_AI_20260813.sql`) — those apparently were just never run against prod, same root cause as the `0004_add_report_resolution_columns.sql` situation flagged earlier in this doc.
+
+**What actually needs to happen** (needs someone with live Supabase schema access — sounds like that's you, wyzmind): confirm which of `photos`/`nsfw`/`verified`/`collabs`/`embedding`/`embedding_model` are missing from prod `muse_profiles` (my `type=export` check above is one way to check, `information_schema.columns` is the authoritative one), then either run the existing `photos`/`embedding` migrations via `scripts/run_migrations.py --apply` and write + review a new migration for `nsfw`/`verified`/`collabs` with the correct types/defaults for a safety-relevant column, or confirm the intent was actually different (e.g. `nsfw` was meant to be `muse_profiles.show_nsfw`, which does exist, and the code should read that instead) — I didn't want to guess which of those two it is for something gating NSFW content.
+
+Round 12 (`427db4d`, the `photos`-in-profile-completion fix) is delivered and confirmed live. This Discover-is-empty issue is separate, bigger, and still open.
+
 
