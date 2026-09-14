@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabase, getUserScopedClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 
 // ═══ MFA / 2FA (Supabase Auth TOTP) ═══
@@ -28,9 +28,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 
-    const client = supabase;
-    const { data: user, error: authErr } = await client.auth.getUser(token);
+    const { data: user, error: authErr } = await supabase.auth.getUser(token);
     if (authErr || !user.user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    // auth.mfa.* calls act on the client's CURRENT SESSION, not the token
+    // passed to getUser() above — must be a client scoped to this request's
+    // token, or these silently run as the anon key. See getUserScopedClient.
+    const client = getUserScopedClient(token);
 
   if (type === "mfa-factors") {
     const { data: factors, error } = await client.auth.mfa.listFactors();
@@ -75,9 +78,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Too many verification attempts" }, { status: 429 });
     }
 
-    const client = supabase;
-    const { data: user, error: authErr } = await client.auth.getUser(token);
+    const { data: user, error: authErr } = await supabase.auth.getUser(token);
     if (authErr || !user.user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    // See the matching comment in GET: mfa.* calls need a client scoped to
+    // this request's token, not the shared singleton.
+    const client = getUserScopedClient(token);
 
   const action = String(body.action || "");
   if (!MFA_ACTIONS.has(action)) return NextResponse.json({ error: "Unknown action" }, { status: 400 });

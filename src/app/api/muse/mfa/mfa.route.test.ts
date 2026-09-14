@@ -1,6 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
+// auth.getUser(token) is checked against the plain `supabase` singleton
+// (it's stateless — takes the token explicitly); auth.mfa.* calls need a
+// per-request client scoped to the caller's token (see getUserScopedClient
+// in src/lib/supabase.ts — this is what the "invalid claim: missing sub
+// claim" bug fix added). Both mocks share the same __mfa state so tests
+// don't care which client shape actually made the call.
+const __mfa = vi.hoisted(() => ({
+  listFactors: async () => (globalThis as any).__factors || { data: { totp: [] } },
+  enroll: async (opts: any) => (globalThis as any).__enrollResult || { data: { id: "f1", type: "totp", totp: { secret: "s1", qr_code: "otpauth://..." } } },
+  challenge: async (opts: any) => (globalThis as any).__challengeResult || { data: { id: "ch1" } },
+  verify: async (opts: any) => (globalThis as any).__verifyResult || { data: {} },
+  unenroll: async (opts: any) => (globalThis as any).__unenrollResult || { data: {} },
+}));
 vi.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {
@@ -8,15 +21,10 @@ vi.mock("@/lib/supabase", () => ({
         if (!token) return { data: { user: null }, error: { message: "No token" } };
         return (globalThis as any).__authUser || { data: { user: null }, error: { message: "Invalid" } };
       },
-      mfa: {
-        listFactors: async () => (globalThis as any).__factors || { data: { totp: [] } },
-        enroll: async (opts: any) => (globalThis as any).__enrollResult || { data: { id: "f1", type: "totp", totp: { secret: "s1", qr_code: "otpauth://..." } } },
-        challenge: async (opts: any) => (globalThis as any).__challengeResult || { data: { id: "ch1" } },
-        verify: async (opts: any) => (globalThis as any).__verifyResult || { data: {} },
-        unenroll: async (opts: any) => (globalThis as any).__unenrollResult || { data: {} },
-      },
+      mfa: __mfa,
     },
   },
+  getUserScopedClient: (_token: string) => ({ auth: { mfa: __mfa } }),
 }));
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, clientIp: () => "10.0.0.1" }));
 
