@@ -2351,7 +2351,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         </div>
       ) : (
 <div className={"phone-wrap"+((screen==="subscription"||screen==="settings"||screen==="analytics")?" phone-wrap-standalone-hidden":"")}>
-<div className="phone" id="muse-app">
+<div className={"phone"+(((!ageVerified) || verificationExpiringSoon) && !verificationBannerDismissed ? " has-verify-banner" : "")} id="muse-app">
 <div className="notch" />
 
 {/* ═══ VERIFICATION EXPIRY BANNER ═══ */}
