@@ -253,9 +253,11 @@ export const DiscoverScreen = memo(function DiscoverScreen({
               <div style={{ display: "flex", alignItems: "center", gap: 6, animation: "fadeIn .2s ease" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 2, background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: "3px 5px 3px 14px", flex: 1, minWidth: 0 }}>
                   <input className="inp" placeholder="Name, style, type, or city..." value={discoverSearch} onChange={e => setDiscoverSearch(e.target.value)} autoFocus style={{ margin: 0, padding: "8px 0", fontSize: 14, flex: 1, minWidth: 0, border: "none", background: "transparent", boxShadow: "none" }} />
-                  <button className="hdr-btn" aria-label="Search" title="Search" style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0 }} onClick={() => { (document.activeElement as HTMLElement)?.blur?.(); }}>
-                    <FiSearch size={15} />
-                  </button>
+                  {/* M7: this used to render a second, purely decorative search-icon
+                      button here (it only blurred the input, didn't search or close
+                      anything) alongside the real toggle button above — two magnifying
+                      glasses on screen at once. Removed; the header button above already
+                      handles open/close. */}
                   {discoverSearch.trim() && (
                     <button className="hdr-btn" aria-label="Clear search" title="Clear" style={{ width: 26, height: 26, borderRadius: "50%", flexShrink: 0, fontSize: 10 }} onClick={() => setDiscoverSearch("")}>
                       <FiX size={13} />
@@ -344,6 +346,15 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>Tap to reveal</div>
                               </button>
                             )}
+                            {/* M6: moved here from inside .card-hero-info (was bottom-of-card,
+                                now top-left per Torreé's request) — absolutely positioned over
+                                the hero photo instead of stacked in the info flex column. */}
+                            {(() => {
+                              const ms = Number((profile as any).matchScore || 0);
+                              return ms >= 15 && !cardScrolled ? (
+                                <div className="card-match-topleft" style={{ background: "rgba(255,215,0,0.16)", border: "1px solid rgba(255,215,0,0.4)", color: "var(--gold)", fontWeight: 800 }}>✦ {ms}% match</div>
+                              ) : null;
+                            })()}
                             <div className="card-shine" />
                             <div className="card-gradient" />
                             <div className="card-border" />
@@ -354,12 +365,6 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               {profile.verified && <span className="card-verified-mark">✓</span>}
                               {profile.online && <span className="card-online-dot" />}
                             </div>
-                            {(() => {
-                              const ms = Number((profile as any).matchScore || 0);
-                              return ms >= 15 ? (
-                                <div className="card-hero-badge" style={{ background: "rgba(255,215,0,0.16)", border: "1px solid rgba(255,215,0,0.4)", color: "var(--gold)", fontWeight: 800 }}>✦ {ms}% match</div>
-                              ) : null;
-                            })()}
                             {!!(profile as any).boosted && (
                               <div className="card-hero-badge" style={{ background: "linear-gradient(135deg, rgba(255,215,0,0.28), rgba(233,30,99,0.28))", border: "1px solid rgba(255,215,0,0.55)", color: "#fff", fontWeight: 800, letterSpacing: 0.04 }}>⚡ BOOSTED</div>
                             )}

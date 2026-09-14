@@ -57,56 +57,56 @@ export default function PromptBankModal({ prompts, responses, onSaveResponse, on
 
   const choiceStyle = (selected: boolean): React.CSSProperties => ({
     padding: "10px 14px", borderRadius: 10, cursor: "pointer",
-    background: selected ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)",
-    border: `1px solid ${selected ? "rgba(255,215,0,0.4)" : "rgba(255,255,255,0.08)"}`,
-    color: selected ? "#ffd700" : "#f5f0ff", fontSize: 13, transition: "all 0.2s",
+    background: selected ? "rgba(255,215,0,0.12)" : "var(--surface)",
+    border: `1px solid ${selected ? "var(--gold)" : "var(--border-subtle)"}`,
+    color: selected ? "var(--gold)" : "var(--text)", fontSize: 13, transition: "all 0.2s",
   });
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)" }}>
       <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 28, maxWidth: 520, width: "90%", maxHeight: "85vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: "#ffd700" }}>✨ Profile Prompts</h2>
-          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 20, cursor: "pointer" }}>✕</button>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>✨ Profile Prompts</h2>
+          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
 
         {/* Progress bar */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 6 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>
             <span>{answered} of {filtered.length} answered</span>
             <span>{pct}% complete</span>
           </div>
-          <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.1)" }}>
-            <div style={{ height: "100%", width: `${pct}%`, borderRadius: 2, background: "linear-gradient(90deg, #ffd700, #ff8c00)", transition: "width 0.3s" }} />
+          <div style={{ height: 4, borderRadius: 2, background: "var(--border-med)" }}>
+            <div style={{ height: "100%", width: `${pct}%`, borderRadius: 2, background: "linear-gradient(90deg, var(--gold), var(--amber))", transition: "width 0.3s" }} />
           </div>
         </div>
 
         {/* Category filter */}
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 16 }}>
-          <button onClick={() => { setFilterCategory("all"); setCurrentIdx(0); }} style={{ padding: "5px 12px", borderRadius: 6, background: filterCategory === "all" ? "rgba(255,215,0,0.15)" : "rgba(255,255,255,0.04)", border: "none", color: filterCategory === "all" ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 11, cursor: "pointer" }}>All</button>
+          <button onClick={() => { setFilterCategory("all"); setCurrentIdx(0); }} style={{ padding: "5px 12px", borderRadius: 6, background: filterCategory === "all" ? "rgba(255,215,0,0.15)" : "var(--surface)", border: "none", color: filterCategory === "all" ? "var(--gold)" : "var(--muted)", fontSize: 11, cursor: "pointer" }}>All</button>
           {categories.map(cat => (
-            <button key={cat} onClick={() => { setFilterCategory(cat); setCurrentIdx(0); }} style={{ padding: "5px 12px", borderRadius: 6, background: filterCategory === cat ? "rgba(255,215,0,0.15)" : "rgba(255,255,255,0.04)", border: "none", color: filterCategory === cat ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 11, cursor: "pointer", textTransform: "capitalize" }}>{cat}</button>
+            <button key={cat} onClick={() => { setFilterCategory(cat); setCurrentIdx(0); }} style={{ padding: "5px 12px", borderRadius: 6, background: filterCategory === cat ? "rgba(255,215,0,0.15)" : "var(--surface)", border: "none", color: filterCategory === cat ? "var(--gold)" : "var(--muted)", fontSize: 11, cursor: "pointer", textTransform: "capitalize" }}>{cat}</button>
           ))}
         </div>
 
         {current ? (
           <div>
             {/* Prompt */}
-            <div style={{ padding: 16, background: "rgba(255,255,255,0.04)", borderRadius: 12, marginBottom: 16, borderLeft: "3px solid #ffd700" }}>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 6, textTransform: "capitalize" }}>{current.category}</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f0ff", lineHeight: 1.5 }}>{current.prompt_text}</div>
+            <div style={{ padding: 16, background: "var(--surface)", borderRadius: 12, marginBottom: 16, borderLeft: "3px solid var(--gold)" }}>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6, textTransform: "capitalize" }}>{current.category}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", lineHeight: 1.5 }}>{current.prompt_text}</div>
             </div>
 
             {/* Existing response */}
             {existingResponse && (
-              <div style={{ padding: 10, background: "rgba(78,205,196,0.08)", borderRadius: 8, marginBottom: 12, fontSize: 12, color: "#4ecdc4" }}>
+              <div style={{ padding: 10, background: "rgba(78,205,196,0.08)", borderRadius: 8, marginBottom: 12, fontSize: 12, color: "var(--mint)" }}>
                 ✓ Your answer: {existingResponse.response_text || existingResponse.response_choices?.join(", ") || "—"}
               </div>
             )}
 
             {/* Response input */}
             {current.prompt_type === "text" ? (
-              <textarea value={textInput} onChange={e => setTextInput(e.target.value)} placeholder="Type your answer..." rows={4} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 14, resize: "vertical", lineHeight: 1.5 }} />
+              <textarea value={textInput} onChange={e => setTextInput(e.target.value)} placeholder="Type your answer..." rows={4} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text)", fontSize: 14, resize: "vertical", lineHeight: 1.5 }} />
             ) : current.prompt_type === "single_choice" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {current.choices.map(choice => (
@@ -123,9 +123,9 @@ export default function PromptBankModal({ prompts, responses, onSaveResponse, on
 
             {/* Navigation */}
             <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setCurrentIdx(i => Math.max(0, i - 1))} disabled={currentIdx === 0} style={{ padding: "10px 16px", borderRadius: 10, background: "rgba(255,255,255,0.08)", border: "none", color: "#f5f0ff", fontSize: 13, cursor: currentIdx === 0 ? "default" : "pointer", opacity: currentIdx === 0 ? 0.4 : 1 }}>← Prev</button>
+              <button onClick={() => setCurrentIdx(i => Math.max(0, i - 1))} disabled={currentIdx === 0} style={{ padding: "10px 16px", borderRadius: 10, background: "var(--surface-hover)", border: "none", color: "var(--text)", fontSize: 13, cursor: currentIdx === 0 ? "default" : "pointer", opacity: currentIdx === 0 ? 0.4 : 1 }}>← Prev</button>
               <div style={{ flex: 1 }} />
-              <button onClick={handleSave} disabled={loading} style={{ padding: "10px 24px", borderRadius: 10, background: "linear-gradient(135deg, #ffd700, #ff8c00)", border: "none", color: "#0a0612", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              <button onClick={handleSave} disabled={loading} style={{ padding: "10px 24px", borderRadius: 10, background: "linear-gradient(135deg, var(--gold), var(--amber))", border: "none", color: "var(--bg)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                 {loading ? "Saving..." : currentIdx < filtered.length - 1 ? "Save & Next →" : "Save"}
               </button>
             </div>
@@ -133,12 +133,12 @@ export default function PromptBankModal({ prompts, responses, onSaveResponse, on
             {/* Dots */}
             <div style={{ display: "flex", gap: 4, justifyContent: "center", marginTop: 16, flexWrap: "wrap" }}>
               {filtered.map((_, i) => (
-                <div key={i} role="button" aria-label={`Question ${i + 1}`} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCurrentIdx(i); } }} onClick={() => setCurrentIdx(i)} style={{ width: 8, height: 8, borderRadius: 4, background: i === currentIdx ? "#ffd700" : responseMap.has(filtered[i].id) ? "#4ecdc4" : "rgba(255,255,255,0.15)", cursor: "pointer", transition: "all 0.2s" }} />
+                <div key={i} role="button" aria-label={`Question ${i + 1}`} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCurrentIdx(i); } }} onClick={() => setCurrentIdx(i)} style={{ width: 8, height: 8, borderRadius: 4, background: i === currentIdx ? "var(--gold)" : responseMap.has(filtered[i].id) ? "var(--mint)" : "var(--border-med)", cursor: "pointer", transition: "all 0.2s" }} />
               ))}
             </div>
           </div>
         ) : (
-          <div style={{ textAlign: "center", padding: 40, color: "rgba(255,255,255,0.4)" }}>
+          <div style={{ textAlign: "center", padding: 40, color: "var(--muted)" }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>✨</div>
             <div>No prompts available yet</div>
           </div>

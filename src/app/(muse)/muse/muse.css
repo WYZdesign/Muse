@@ -301,7 +301,8 @@ a{color:inherit;text-decoration:none}
 .hamburger-close:hover{background:rgba(255,255,255,0.06);color:var(--gold)}
 .hamburger-bell{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));right:12px;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);cursor:pointer;font-size:16px;transition:all .2s;z-index:1;animation:floatySmall 4s ease-in-out infinite}
 .hamburger-bell:hover{background:rgba(255,255,255,0.12);color:var(--gold)}
-.hamburger-bell-dot{position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:8px;background:var(--coral);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;border:1.5px solid rgba(10,6,18,0.9)}
+/* M15: plain red dot, no stroke, no number badge (was a numbered pill with a border). */
+.hamburger-bell-dot{position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;background:var(--coral);border:none}
 /* white-space:nowrap + width:max-content: without these, this is an absolutely
    positioned block with no explicit width, so its shrink-to-fit width gets computed
    against the panel's available space and can wrap ("Your Profile" was breaking onto
@@ -432,6 +433,12 @@ textarea.inp{resize:none}
    touching nav OR the content. Verified live (browser-injected, before
    committing) on Discover/chips, Muses/Chat input+send, and Feed. */
 .phone.has-verify-banner .screen-el.active .nav{margin-top:88px}
+/* M11: verify-now banner slides up from the bottom nav on show, and slides
+   back down on dismiss instead of popping in/out instantly. */
+.verify-banner{animation:verifyBannerIn .32s cubic-bezier(.22,1,.36,1)}
+.verify-banner-closing{animation:verifyBannerOut .32s cubic-bezier(.4,0,1,1) forwards}
+@keyframes verifyBannerIn{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:0.85}}
+@keyframes verifyBannerOut{from{transform:translateY(0);opacity:0.85}to{transform:translateY(100%);opacity:0}}
 .card-stack{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0;padding:0}
 .swipe-card:active{cursor:grabbing}
 .swipe-card img{width:100%;height:100%;object-fit:cover;object-position:center;background:var(--bg)}
@@ -1155,6 +1162,9 @@ img{background-color:var(--card-bg)}
 .card-hero-loc span{white-space:nowrap}
 .card-hero-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;padding-right:76px}
 .card-hero-badge{align-self:flex-start;padding:3px 9px;border-radius:99px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
+/* M6: match% badge moved to top-left of the card, overlaid on the hero photo
+   instead of stacked with the other badges at the bottom. */
+.card-match-topleft{position:absolute;top:12px;left:12px;z-index:4;padding:4px 10px;border-radius:99px;font-size:11px;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.5);backdrop-filter:blur(6px)}
 
 /* ═══ SEARCH ═══ */
 .search-wrap{padding:0 20px 10px}
@@ -1319,7 +1329,12 @@ img{background-color:var(--card-bg)}
    the light background and stays legible. Each theme defines the full variable
    set so cards, panels, inputs and borders adapt together. */
 [data-theme="sunrise"]{--gold:#B07D1A;--coral:#B85A38;--pink:#B07A62;--lavender:#5E7A5E;--mint:#8A7A28;--theme-gold:#B07D1A;--theme-accent:#B85A38;--theme-glow:rgba(184,90,56,0.18);--theme-bg-tint:rgba(176,125,26,0.08);--theme-border:rgba(184,90,56,0.24);--bg:#FBF3E6;--surface:rgba(0,0,0,0.04);--glass:rgba(0,0,0,0.06);--text:#1A1612;--text2:rgba(26,22,18,0.82);--muted:rgba(26,22,18,0.6);--card-bg:#FEFAF3;--panel-bg:rgba(251,243,230,0.96);--panel-bg-solid:#FBF3E6;--border-subtle:rgba(26,22,18,0.09);--border-med:rgba(26,22,18,0.14);--border-strong:rgba(26,22,18,0.2);--surface-hover:rgba(26,22,18,0.06);--surface-active:rgba(26,22,18,0.1);--input-bg:rgba(0,0,0,0.04);--input-border:rgba(26,22,18,0.16);--hero-gradient:linear-gradient(to top,rgba(251,243,230,0.96) 0%,rgba(251,243,230,0.7) 50%,transparent 100%);--chat-header-bg:rgba(251,243,230,0.88);--chat-input-bg:rgba(251,243,230,0.96);--badge-bg:rgba(26,22,18,0.08);--badge-text:#1A1612;--scrollbar:rgba(26,22,18,0.2)}
-[data-theme="daylight"]{--gold:#B8861E;--coral:#B8623E;--pink:#A87878;--lavender:#7A5EA8;--mint:#7E7E2E;--peach:#BC8C5C;--cream:#FDF5E4;--sun:#B08A30;--theme-gold:#B8861E;--theme-accent:#7A5EA8;--theme-glow:rgba(122,94,168,0.16);--theme-bg-tint:rgba(184,134,30,0.07);--theme-border:rgba(122,94,168,0.24);--bg:#FDF5E4;--surface:rgba(0,0,0,0.04);--glass:rgba(0,0,0,0.06);--text:#2A2418;--text2:rgba(42,36,24,0.82);--muted:rgba(42,36,24,0.6);--card-bg:#FFFBF2;--panel-bg:rgba(253,245,228,0.96);--panel-bg-solid:#FDF5E4;--border-subtle:rgba(42,36,24,0.09);--border-med:rgba(42,36,24,0.14);--border-strong:rgba(42,36,24,0.2);--surface-hover:rgba(42,36,24,0.06);--surface-active:rgba(42,36,24,0.1);--input-bg:rgba(0,0,0,0.04);--input-border:rgba(42,36,24,0.16);--hero-gradient:linear-gradient(to top,rgba(253,245,228,0.96) 0%,rgba(253,245,228,0.7) 50%,transparent 100%);--chat-header-bg:rgba(253,245,228,0.88);--chat-input-bg:rgba(253,245,228,0.96);--badge-bg:rgba(42,36,24,0.08);--badge-text:#2A2418;--scrollbar:rgba(42,36,24,0.2)}
+/* M4: was nearly a re-skin of sunrise (bg #FDF5E4 vs #FBF3E6, gold #B8861E vs
+   #B07D1A — barely distinguishable warm creams). Daylight is now its own
+   distinct look: crisp, cool, bright neutral daylight (blue-white bg, cool
+   slate text, a true blue-lavender and green-mint) instead of another warm
+   dawn palette — sunrise keeps the warm amber/terracotta/cream identity. */
+[data-theme="daylight"]{--gold:#C99A2E;--coral:#D9814E;--pink:#C48B95;--lavender:#6B7FBF;--mint:#3E9E76;--peach:#E0A97A;--cream:#F6F9FC;--sun:#C99A2E;--theme-gold:#C99A2E;--theme-accent:#6B7FBF;--theme-glow:rgba(107,127,191,0.16);--theme-bg-tint:rgba(201,154,46,0.06);--theme-border:rgba(107,127,191,0.22);--bg:#F6F9FC;--surface:rgba(20,30,45,0.04);--glass:rgba(20,30,45,0.06);--text:#182230;--text2:rgba(24,34,48,0.78);--muted:rgba(24,34,48,0.55);--card-bg:#FFFFFF;--panel-bg:rgba(246,249,252,0.97);--panel-bg-solid:#F6F9FC;--border-subtle:rgba(24,34,48,0.08);--border-med:rgba(24,34,48,0.13);--border-strong:rgba(24,34,48,0.19);--surface-hover:rgba(24,34,48,0.06);--surface-active:rgba(24,34,48,0.1);--input-bg:rgba(20,30,45,0.04);--input-border:rgba(24,34,48,0.15);--hero-gradient:linear-gradient(to top,rgba(246,249,252,0.97) 0%,rgba(246,249,252,0.7) 50%,transparent 100%);--chat-header-bg:rgba(246,249,252,0.9);--chat-input-bg:rgba(246,249,252,0.97);--badge-bg:rgba(24,34,48,0.07);--badge-text:#182230;--scrollbar:rgba(24,34,48,0.2)}
 [data-theme="sky"]{--gold:#2E6E96;--coral:#34789C;--pink:#4E7A98;--lavender:#5A5EA0;--mint:#34807C;--peach:#4E86A8;--cream:#EFF7FC;--sun:#4A82A8;--theme-gold:#2E6E96;--theme-accent:#5A5EA0;--theme-glow:rgba(90,94,160,0.16);--theme-bg-tint:rgba(46,110,150,0.08);--theme-border:rgba(90,94,160,0.24);--bg:#EFF7FC;--surface:rgba(0,0,0,0.04);--glass:rgba(0,0,0,0.06);--text:#16222E;--text2:rgba(22,34,46,0.92);--muted:rgba(22,34,46,0.7);--card-bg:#F6FBFF;--panel-bg:rgba(239,247,252,0.96);--panel-bg-solid:#EFF7FC;--border-subtle:rgba(22,34,46,0.09);--border-med:rgba(22,34,46,0.14);--border-strong:rgba(22,34,46,0.2);--surface-hover:rgba(22,34,46,0.06);--surface-active:rgba(22,34,46,0.1);--input-bg:rgba(0,0,0,0.04);--input-border:rgba(22,34,46,0.16);--hero-gradient:linear-gradient(to top,rgba(239,247,252,0.96) 0%,rgba(239,247,252,0.7) 50%,transparent 100%);--chat-header-bg:rgba(239,247,252,0.88);--chat-input-bg:rgba(239,247,252,0.96);--badge-bg:rgba(22,34,46,0.08);--badge-text:#16222E;--scrollbar:rgba(22,34,46,0.2)}
 [data-theme="rose"]{--gold:#A8526A;--coral:#B86262;--pink:#A87A88;--lavender:#8A5EA0;--mint:#8A8A80;--peach:#BC8E98;--cream:#FCF1F4;--sun:#B07A88;--theme-gold:#A8526A;--theme-accent:#8A5EA0;--theme-glow:rgba(138,94,160,0.16);--theme-bg-tint:rgba(168,82,106,0.08);--theme-border:rgba(138,94,160,0.26);--bg:#FCF1F4;--surface:rgba(0,0,0,0.04);--glass:rgba(0,0,0,0.06);--text:#2A1A22;--text2:rgba(42,26,34,0.92);--muted:rgba(42,26,34,0.7);--card-bg:#FEF7F9;--panel-bg:rgba(252,241,244,0.96);--panel-bg-solid:#FCF1F4;--border-subtle:rgba(42,26,34,0.09);--border-med:rgba(42,26,34,0.14);--border-strong:rgba(42,26,34,0.2);--surface-hover:rgba(42,26,34,0.06);--surface-active:rgba(42,26,34,0.1);--input-bg:rgba(0,0,0,0.04);--input-border:rgba(42,26,34,0.16);--hero-gradient:linear-gradient(to top,rgba(252,241,244,0.96) 0%,rgba(252,241,244,0.7) 50%,transparent 100%);--chat-header-bg:rgba(252,241,244,0.88);--chat-input-bg:rgba(252,241,244,0.96);--badge-bg:rgba(42,26,34,0.08);--badge-text:#2A1A22;--scrollbar:rgba(42,26,34,0.2)}
 
@@ -1598,6 +1613,11 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-card-grid .match-time{background:var(--surface)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-grid-expand{border-top-color:var(--border-med)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-grid-bio{color:var(--text2)}
+/* H8: .streak-widget's border/bg was a near-0-alpha gold tint (rgba(255,215,0,0.04/0.12))
+   designed against the dark theme's near-black background — on a light page it reads as
+   no border at all, and the flame icon effectively disappeared into the module. Give it a
+   visible border + a slightly stronger tint on light themes, same pattern as other cards. */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .streak-widget{background:var(--surface);border-color:var(--border-med)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-expand-meta span{background:var(--surface)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-card-expanded{background:var(--surface);border-left-color:var(--gold)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-subtitle{color:var(--text2)}
@@ -1846,7 +1866,9 @@ img{background-color:var(--card-bg)}
 
 /* ═══ SWIPE CARD HERO (v2 rework) ═══ */
 .card-hero-info{position:absolute;bottom:0;left:0;right:0;padding:24px 20px 16px;background:linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.7) 50%,transparent 100%);z-index:4;pointer-events:none;transition:opacity .3s ease,transform .3s ease}
-.card-hero-info.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
+/* M5: was opacity:0 (fully hidden) on scroll — spec asks for it to dim to
+   85% (stay present, recede slightly), not disappear. */
+.card-hero-info.hidden{opacity:0.85;pointer-events:none}
 .card-hero-name{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:800;color:#fff;font-family:"Playfair Display",serif;font-style:italic;text-shadow:0 1px 4px rgba(0,0,0,0.4),0 2px 12px rgba(0,0,0,0.3),0 0 20px rgba(10,6,18,0.5);filter:drop-shadow(0 1px 6px rgba(0,0,0,0.3))}
 .card-verified-mark{font-size:18px;color:var(--gold)}
 .card-hero-type{font-family:"Playfair Display",serif;font-style:italic;font-size:18px;font-weight:600;color:var(--gold);margin:4px 0 4px;text-shadow:none}

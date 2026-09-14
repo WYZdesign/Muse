@@ -54,7 +54,7 @@ export default function ConnectPanel({ onClose }: Props) {
 
   if (loading) return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(5,3,10,0.85)" }}>
-      <div style={{ color: "#f5f0ff", fontSize: 14 }}>Loading...</div>
+      <div style={{ color: "var(--text)", fontSize: 14 }}>Loading...</div>
     </div>
   );
 
@@ -64,8 +64,8 @@ export default function ConnectPanel({ onClose }: Props) {
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)" }}>
       <div style={{ background: "var(--card-bg)", border: "1px solid var(--gold)", borderRadius: 20, padding: 28, maxWidth: 480, width: "90%", maxHeight: "85vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: "#ffd700" }}>💰 Marketplace Payments</h2>
-          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 20, cursor: "pointer" }}>✕</button>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>💰 Marketplace Payments</h2>
+          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
 
         {isComplete ? (
@@ -73,28 +73,28 @@ export default function ConnectPanel({ onClose }: Props) {
             {/* Connected & Active */}
             <div style={{ padding: 16, background: "rgba(78,205,196,0.08)", borderRadius: 12, marginBottom: 16, borderLeft: "3px solid #4ecdc4" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#4ecdc4", marginBottom: 4 }}>✓ Connected to Stripe</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
+              <div style={{ fontSize: 12, color: "var(--text2)" }}>
                 You can receive payments for bookings. Muse charges a 5% marketplace fee on transactions.
               </div>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
-              <div style={{ padding: 12, background: "rgba(255,255,255,0.04)", borderRadius: 10, textAlign: "center" }}>
+              <div style={{ padding: 12, background: "var(--surface)", borderRadius: 10, textAlign: "center" }}>
                 <div style={{ fontSize: 18, fontWeight: 800, color: status?.chargesEnabled ? "#4ecdc4" : "#ff6b6b" }}>
                   {status?.chargesEnabled ? "✓" : "✗"}
                 </div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Charges Enabled</div>
+                <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>Charges Enabled</div>
               </div>
-              <div style={{ padding: 12, background: "rgba(255,255,255,0.04)", borderRadius: 10, textAlign: "center" }}>
+              <div style={{ padding: 12, background: "var(--surface)", borderRadius: 10, textAlign: "center" }}>
                 <div style={{ fontSize: 18, fontWeight: 800, color: status?.payoutsEnabled ? "#4ecdc4" : "#ff6b6b" }}>
                   {status?.payoutsEnabled ? "✓" : "✗"}
                 </div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Payouts Enabled</div>
+                <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>Payouts Enabled</div>
               </div>
             </div>
 
-            <div style={{ padding: 12, background: "rgba(255,215,0,0.06)", borderRadius: 10, fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
-              <strong style={{ color: "#ffd700" }}>How it works:</strong><br/>
+            <div style={{ padding: 12, background: "rgba(255,215,0,0.06)", borderRadius: 10, fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
+              <strong style={{ color: "var(--gold)" }}>How it works:</strong><br/>
               • Clients pay you through Muse bookings<br/>
               • Muse takes 5% marketplace fee<br/>
               • You receive 95% via Stripe payouts<br/>
@@ -105,10 +105,10 @@ export default function ConnectPanel({ onClose }: Props) {
           <div>
             {/* Not connected */}
             <div style={{ padding: 16, background: "rgba(255,215,0,0.06)", borderRadius: 12, marginBottom: 16, borderLeft: "3px solid #ffd700" }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#ffd700", marginBottom: 4 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginBottom: 4 }}>
                 {status?.connected ? "⚠️ Onboarding Incomplete" : "Not Connected"}
               </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
+              <div style={{ fontSize: 12, color: "var(--text2)" }}>
                 {status?.connected
                   ? "Your Stripe account needs additional information to start receiving payments."
                   : "Connect your Stripe account to receive payments for bookings and collaborations."
@@ -116,8 +116,8 @@ export default function ConnectPanel({ onClose }: Props) {
               </div>
             </div>
 
-            <div style={{ padding: 12, background: "rgba(255,255,255,0.04)", borderRadius: 10, marginBottom: 16, fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
-              <strong style={{ color: "#f5f0ff" }}>What you need:</strong><br/>
+            <div style={{ padding: 12, background: "var(--surface)", borderRadius: 10, marginBottom: 16, fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
+              <strong style={{ color: "var(--text)" }}>What you need:</strong><br/>
               • Full legal name<br/>
               • Email address<br/>
               • Bank account for payouts<br/>
@@ -126,8 +126,8 @@ export default function ConnectPanel({ onClose }: Props) {
 
             <button onClick={startOnboarding} disabled={connecting} style={{
               width: "100%", padding: "14px 24px", borderRadius: 12,
-              background: connecting ? "rgba(255,215,0,0.3)" : "linear-gradient(135deg, #ffd700, #ff8c00)",
-              border: "none", color: "#0a0612", fontSize: 14, fontWeight: 700, cursor: connecting ? "default" : "pointer",
+              background: connecting ? "rgba(255,215,0,0.3)" : "linear-gradient(135deg, var(--gold), var(--amber))",
+              border: "none", color: "var(--bg)", fontSize: 14, fontWeight: 700, cursor: connecting ? "default" : "pointer",
             }}>
               {connecting ? "Connecting..." : status?.connected ? "Complete Onboarding" : "Connect with Stripe"}
             </button>
