@@ -1212,8 +1212,30 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
   // re-binding on screen change. The waves fade in (CSS .show) ~40px from the
   // bottom; the active screen is found via the live DOM so this keeps working
   // for every screen without a per-screen listener.
-  // Show subtle wave gradient at the bottom of the active swipe card — always
-  // visible as a decorative accent (not scroll-dependent).
+  // Show waves at bottom of ANY screen when scrolled near the bottom.
+  const waveShowRef = useRef(false);
+  useEffect(() => {
+    const wave = document.querySelector(".wave-bottom");
+    const check = () => {
+      const p = document.querySelector('.screen-el.active');
+      if (!p || !wave) return;
+      const scroller = (p as HTMLElement).scrollTop !== undefined ? (p as HTMLElement) : p.querySelector<HTMLElement>('[style*="overflow"],.conn-scroll,.profile-scroll,.settings-scroll,.portfolio-scroll,.match-list');
+      const el: HTMLElement | null = scroller || p as HTMLElement;
+      const near = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+      if (near !== waveShowRef.current) {
+        waveShowRef.current = near;
+        wave.classList.toggle("show", near);
+      }
+    };
+    const scroller = document.querySelector(".screen-el.active");
+    if (scroller) {
+      scroller.addEventListener("scroll", check, { passive: true });
+      check();
+    }
+    return () => { if (scroller) scroller.removeEventListener("scroll", check); };
+  }, [screen]);
+
+  // Also always show waves on the swipe card (Discover) as a gradient accent
   useEffect(() => {
     const addWaves = () => {
       document.querySelectorAll('.swipe-card.top-card').forEach(c => c.classList.add('waves-visible'));
@@ -2229,13 +2251,13 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       <BackgroundScene flash={screenFlash} />
       <div className="wave-bottom">
         <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
-          <path className="wave-path-1" d="M0,90 C120,130 260,60 420,86 C560,108 640,40 800,84 C950,124 1060,58 1200,88 C1300,108 1370,72 1440,92 L1440,160 L0,160 Z" />
+          <path className="wave-path-1" d="M0,100 C180,70 360,130 540,95 C720,60 900,125 1080,90 C1200,70 1340,110 1440,95 L1440,160 L0,160 Z" />
         </svg>
         <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
-          <path className="wave-path-2" d="M0,110 C150,70 300,130 470,96 C620,68 760,128 930,102 C1060,82 1180,124 1300,98 C1360,86 1400,108 1440,100 L1440,160 L0,160 Z" />
+          <path className="wave-path-2" d="M0,115 C200,80 400,135 600,100 C800,65 1000,130 1200,95 C1340,75 1400,110 1440,100 L1440,160 L0,160 Z" />
         </svg>
         <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
-          <path className="wave-path-3" d="M0,72 C170,116 340,58 520,92 C660,118 820,66 980,96 C1120,120 1240,74 1360,96 L1440,108 L1440,160 L0,160 Z" />
+          <path className="wave-path-3" d="M0,85 C220,120 440,65 660,100 C880,135 1100,70 1320,100 L1440,110 L1440,160 L0,160 Z" />
         </svg>
       </div>
       {showMatchOverlay && (
