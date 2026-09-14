@@ -1154,7 +1154,7 @@ img{background-color:var(--card-bg)}
 .card-hero-loc{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;font-size:13.5px;font-weight:800;color:#D4A5FF;text-shadow:0 1px 6px rgba(212,165,255,0.3),0 2px 12px rgba(0,0,0,0.5);opacity:0.7}
 .card-hero-loc span{white-space:nowrap}
 .card-hero-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;padding-right:76px}
-.card-hero-badge{padding:3px 9px;border-radius:99px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
+.card-hero-badge{align-self:flex-start;padding:3px 9px;border-radius:99px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
 
 /* ═══ SEARCH ═══ */
 .search-wrap{padding:0 20px 10px}
@@ -2324,7 +2324,14 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .btn-gold,
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .btn-outline,
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .btn,
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) button[class*="btn"]{
+/* button[class*="btn"] is a substring match and also catches the Discover
+   card's floating radial action buttons (.match-radial-btn.btn-nope/-super/
+   -like/-note/-rewind) — those are round icon buttons that sit on their own
+   colored/gradient circle, not on the page background, and always need
+   white/colored icon text regardless of theme. Forcing them to var(--text)
+   (dark navy) turned the Nope (✕) button into dark-on-near-black and made
+   it illegible in every light theme — excluded here. */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) button[class*="btn"]:not(.match-radial-btn){
   border-color:var(--border-strong);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.12)
 }
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .btn-outline{
@@ -2334,6 +2341,15 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .badge,
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) [class*="badge"]{
   border:1.5px solid var(--border-med);color:var(--text);background:var(--badge-bg)
+}
+/* [class*="badge"] above is a substring match and also catches plural
+   container/wrapper classes that merely contain the word "badge" as part
+   of their name (.card-hero-badges, .match-badges) rather than being a
+   badge chip themselves — undo the box styling on those containers so
+   only the individual chips inside them get the light-theme border/bg. */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .card-hero-badges,
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .match-badges{
+  border:none;background:none
 }
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .chip.sel{
   border-color:var(--gold);background:var(--gold);color:#fff
