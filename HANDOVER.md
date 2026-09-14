@@ -2,6 +2,22 @@
 
 ---
 
+## WYZMIND STATUS — Current as of `961f2b9` (2026-09-13)
+
+**What's on main right now:**
+- All 15 punch-list tasks (unlimited likes, 50/50 match, waves behind phone, etc.)
+- Muse/Creative duality system (role.ts, PublicProfileScreen, ProfileScreen, MatchCard, Nav, SettingsScreen)
+- All 9 Claude bundle fixes merged (session sync, forum gate, Muses list, identity banner, discover badges, comets, theme palette, blocked users)
+- MatchCard min-height fix, auth centering, light theme opacity, theme consistency, force-logout fix, ambient scene visibility, Quests accordion, Muses grid overlap, unlimited badge closable, Muses grid taller, Sessions dots dimmed
+
+**Test suite:** 340/340 passing, TypeScript clean, Lint clean
+
+**Screens Claude has swept so far:** Discover, Settings, Muses list/grid, Quests, Auth, Sessions
+
+**Screens still to sweep (per directive):** Feed, Collab, BTS, Chat, Profile, Admin, Notifications, and any sub-screens/modals
+
+---
+
 ## Torree batch — FINAL VERIFICATION: All 15 tasks complete + build/tests/lint clean + duality shipped + claude bundle merged (2026-09-13)
 
 **Verification Summary:**
