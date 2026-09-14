@@ -1653,4 +1653,69 @@ I didn't call `update-profile` myself to confirm end-to-end (that's an actual ac
 
 Same fix path as the rest of this: someone with schema access needs to add the missing columns (`photos`, `nsfw`, `verified`, `collabs`, `embedding`, `embedding_model`, `media_kit_url`) — `media_kit_url` and `photos`/`embedding` already have idempotent `ADD COLUMN IF NOT EXISTS` migrations sitting unrun in `sql/`; `nsfw`/`verified`/`collabs` still have none and need one written, and `nsfw` specifically needs a real decision (new boolean column vs. repointing the code at the existing `show_nsfw`) since it's content-gating, not a decision I'll make by guessing. This is the highest-priority open item from this whole session — it's not a cosmetic bug, it's the core "edit your profile" flow being non-functional in production.
 
+---
+
+## NEW INVESTIGATION AREAS — Full audit requested by Torree (2026-09-14)
+
+### 1. LIGHT MODE THEMES — Full visual sweep
+
+**What to investigate:** Every screen in light mode. Previous rounds fixed some light-mode issues (stars, comets, ambient orbs, background opacity, text contrast), but a full sweep is needed.
+
+**Specific areas to check:**
+- **Splash screen** — waves, comet, stars in all light themes (sunrise, default, etc.)
+- **Discover screen** — card text contrast, badge visibility, filter pills, match-fab button
+- **Muses screen** — grid card text, list card text, role badges, search bar
+- **Profile screen** — stats row, section headers, edit button, photo gallery
+- **Settings screen** — all sections, theme swatches, toggles, modals
+- **Chat/Messages** — message bubbles, input field, timestamps, sender names
+- **Sessions/Bookings** — card text, status badges, buttons
+- **Collab/Briefs** — brief cards, application status, buttons
+- **Feed** — post text, like/comment buttons, author names
+- **Notifications** — notification text, timestamps, icons
+- **Quests** — progress bars, reward text, completion badges
+- **Admin panel** — if accessible, all admin interfaces
+- **Any modals/drawers/overlays** — hamburger menu, lightbox, age gate, disclosure forms
+
+**What to look for:**
+- Hardcoded colors that should be theme tokens (`var(--text)`, `var(--bg)`, `var(--accent)`, etc.)
+- Text that's invisible or low-contrast against light backgrounds
+- Buttons/inputs that are invisible or blend into the background
+- Borders/outlines that disappear in light mode
+- Icons that are invisible (white-on-white or dark-on-dark)
+- Shadows that don't work in light mode
+- Any element that looks correct in dark mode but broken in light mode
+
+### 2. BOOKING A SESSION — End-to-end flow audit
+
+**What to investigate:** The complete flow from "I want to book a session" to "session is confirmed and both parties see it."
+
+**Flow steps to trace:**
+1. **Discovery** — User finds a Creative/Muse they want to book (Discover screen, Muses list, profile view)
+2. **Session listing** — User views available sessions/pricing on the profile
+3. **Booking initiation** — User clicks "Book" or "Request Session"
+4. **Age verification gate** — If paid session, does the age verification check fire correctly? (We just fixed the 500 error — verify the flow works end-to-end now)
+5. **Disclosure form** — The NSFW/payment keyword detection + disclosure form flow
+6. **Payment** — Stripe checkout integration (don't test real payments, but trace the code path)
+7. **Booking confirmation** — What happens after payment? Database writes? Notifications?
+8. **Session management** — Both parties can see the booking in their Sessions tab
+9. **Check-in/check-out** — The checkin flow and fund release
+10. **Cancellation** — Cancel flow and refund logic
+11. **Reviews** — Post-session review flow
+
+**What to look for:**
+- Missing error handling (any path that could 500 or crash silently)
+- Race conditions (double-booking, payment captured but booking not created)
+- State inconsistencies (booking exists in Stripe but not in DB, or vice versa)
+- Missing notifications (one party books but the other doesn't see it)
+- Edge cases (booking when already booked, booking yourself, booking when suspended)
+- The age verification gate — does it actually block paid sessions correctly after our fix?
+- Fund release — does checkin actually release funds? What happens on timeout?
+- Cancellation — does it actually refund? What about partial completion?
+
+### 3. ANYTHING ELSE THAT LOOKS SUSPICIOUS
+
+While sweeping the above, if you see anything that looks wrong, broken, inconsistent, or "good enough" — fix it. Don't limit yourself to just these two areas.
+
+**Deliver as usual:** bundle to `_to_delete/`, tsc/vitest clean, explain what you found and why.
+
 
