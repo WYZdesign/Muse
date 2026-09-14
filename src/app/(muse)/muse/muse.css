@@ -409,12 +409,29 @@ textarea.inp{resize:none}
 .auth-social-btn{width:100%;padding:14px;border-radius:14px;background:var(--glass);border:1.5px solid rgba(255,255,255,0.08);font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;justify-content:center;gap:10px;transition:all .3s}
 .auth-social-btn:hover{border-color:rgba(255,215,0,0.2);background:rgba(255,255,255,0.08)}
 .discover-wrap{flex:1;display:flex;flex-direction:column;height:100%;overflow:hidden;position:relative}
-/* When the verification-expiry banner is floating over the bottom nav
-   (see .phone.has-verify-banner, set in page.tsx), reserve extra space so
-   the card's bottom text/chips don't sit underneath it. Scoped to Discover
-   only — the one screen confirmed overlapping via visual sweep — rather
-   than a blanket change to every .screen-el. */
-.phone.has-verify-banner .discover-wrap{padding-bottom:64px}
+/* Round 17 originally scoped this fix to .discover-wrap alone, reasoning
+   that Discover was the only screen confirmed overlapping via visual
+   sweep. A follow-up live sweep (round 18) found the same
+   position:fixed verification banner also covers Feed's bottom post,
+   Muses' bottom match card, Collab's bottom brief, BTS's bottom post —
+   and, worst of all, Chat's message input + send button are completely
+   hidden underneath it, not just visually clipped (users couldn't see
+   what they typed or reach Send). Not scoped to one screen, so this
+   needs a fix that works for every active .screen-el.
+   First attempt: padding-bottom directly on .screen-el.active. Rejected
+   after live-testing — .nav is position:sticky;bottom:0, and since
+   nothing here is actually scrolled, sticky's resting spot is just its
+   normal flex position; adding padding-bottom shrinks the flex:1
+   content above it, which drags nav itself up into the banner's
+   territory — trading a content-overlap bug for a nav-overlap bug.
+   Fix that actually holds: push the gap in with margin-top on .nav
+   instead. .nav keeps its own fixed height and sticky:bottom:0, so its
+   own box still ends flush with the true bottom of the screen — the
+   margin only asks the flex:1 content sibling above it to stop 88px
+   earlier, opening a gap that the floating banner occupies without
+   touching nav OR the content. Verified live (browser-injected, before
+   committing) on Discover/chips, Muses/Chat input+send, and Feed. */
+.phone.has-verify-banner .screen-el.active .nav{margin-top:88px}
 .card-stack{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0;padding:0}
 .swipe-card:active{cursor:grabbing}
 .swipe-card img{width:100%;height:100%;object-fit:cover;object-position:center;background:var(--bg)}
