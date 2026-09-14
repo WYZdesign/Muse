@@ -2429,7 +2429,6 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                     <div className="hero-text" style={{textAlign:"center"}}>Find your Muse</div>
                     <div className="hero-sub">Where creatives find <em>real connections</em> for professional collaboration</div>
                     <NonDatingDisclaimer />
-                    <NonDatingDisclaimer />
                     <button className="btn btn-gold" onClick={()=>setObStep(1)}>Get Started</button>
                   </div>
                 )}
