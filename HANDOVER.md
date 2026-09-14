@@ -1,3 +1,7 @@
+## Torree — INSTRUCTION FOR CLAUDE SESSIONS: Sweep ALL screens to the fullest extent. No stopping early. See end of file for full directive.
+
+---
+
 ## Torree batch — FINAL VERIFICATION: All 15 tasks complete + build/tests/lint clean + duality shipped + claude bundle merged (2026-09-13)
 
 **Verification Summary:**
@@ -1544,5 +1548,43 @@ Rather than `git merge` two divergent implementations of the same features — w
 `tsc --noEmit` clean, 285/285 vitest passing after the full reconciliation. `claude-audit-fixes-v4` is a clean fast-forward of wyzmind's current `main` (verified with `git merge-base --is-ancestor`) — no conflicts waiting on his end, safe to fast-forward `main` straight to it. Delivered via the usual bundle workflow, confirmed landed.
 
 **Takeaway for next time**: when picking up a shared remaining-items list like this, worth a quick `git fetch` + `git log main` check before diving in, in case the other side started the same list in the meantime — would've saved the reconciliation pass this round needed.
+
+---
+
+## DIRECTIVE FROM TORREE — FULL SCREEN SWEEP (2026-09-13)
+
+**Instruction:** Sweep EVERY screen in the app to the fullest extent and then some. Do not stop early. Do not cherry-pick easy wins.
+
+**Screens to sweep (non-exhaustive — use judgment to find more):**
+- Feed / FeedScreen
+- Collab / CollabScreen
+- BTS / BTS screen
+- Sessions / SessionsScreen
+- Profile / ProfileScreen
+- Chat / ChatScreen
+- Discover / DiscoverScreen
+- Muses / MusesScreen
+- Settings / SettingsScreen
+- Quests / QuestPanel
+- Notifications / NotificationsScreen
+- Admin / AdminPanel
+- Any sub-screens, modals, drawers, or overlays reachable from these
+
+**What to look for:**
+- Layout bugs (overlap, clipping, truncation, wrong spacing)
+- Theme inconsistencies (hardcoded colors that should be theme tokens)
+- Light-mode legibility issues (text contrast, opacity, visibility)
+- Broken interactions (buttons that don't work, navigation that fails)
+- Missing states (empty states, loading states, error states)
+- Accessibility issues (contrast, tap targets, semantic HTML)
+- Any "good enough" code that should be "actually correct"
+
+**Process:**
+1. Sweep each screen visually and logically
+2. Fix everything you find — no half-measures
+3. Bundle each batch of fixes
+4. Deliver to `_to_delete/` folder
+
+**You have full authority. Go.**
 
 
