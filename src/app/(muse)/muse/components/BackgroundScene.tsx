@@ -179,27 +179,26 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
 
   return (
     <>
-      {/* Base canvas color behind .scene. Was hardcoded to the dark-theme navy
-          regardless of theme, so light themes flashed to a dark navy backdrop
-          whenever Background opacity was turned down (since .scene itself also
-          fades with --scene-opacity) — instead of a light backdrop matching
-          the active light theme, breaking the "see sprites on a light ground"
-          behavior light mode is supposed to mirror from dark mode. */}
       <div style={{ position: "fixed", inset: 0, zIndex: -1, background: "var(--bg, #0a0612)" } as React.CSSProperties} />
       <div className="scene" style={{ opacity: "var(--scene-opacity, 1)" } as React.CSSProperties} />
-      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", opacity: "var(--sprite-opacity, 1)" } as React.CSSProperties}>
+      {/* Always-visible ambient layer — aurora, nebulas, orbs stay vibrant
+          even when sprites/animations slider is at 0%. */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none" } as React.CSSProperties}>
         <div className="scene-orb orb-coral" />
         <div className="scene-orb orb-gold" />
         <div className="scene-orb orb-pink" />
+        <div className="nebula-fog nf-1" /><div className="nebula-fog nf-2" /><div className="nebula-fog nf-3" /><div className="nebula-fog nf-4" /><div className="nebula-fog nf-5" /><div className="nebula-fog nf-6" /><div className="nebula-fog nf-7" /><div className="nebula-fog nf-8" /><div className="nebula-fog nf-9" /><div className="nebula-fog nf-10" />
+        <div className="aurora-strip aurora-s1" /><div className="aurora-strip aurora-s2" />
+        <div className="aurora-strip aurora-s3" />
+      </div>
+      {/* Sprite layer — fades with --sprite-opacity slider */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", opacity: "var(--sprite-opacity, 1)" } as React.CSSProperties}>
         <div className="star-field">
           {starPos.map((s,i) => (
             <div key={i} className={"star"+(i%5===0?" bright":"")+(i%8===0?" warm":"")+(i%13===0?" blue":"")+(i%17===0?" gold":"")} style={{left:s.l,top:s.t,animationDuration:s.d,animationDelay:s.dl}} />
           ))}
         </div>
         <canvas className="comet-field" ref={cometRef} />
-        <div className="nebula-fog nf-1" /><div className="nebula-fog nf-2" /><div className="nebula-fog nf-3" /><div className="nebula-fog nf-4" /><div className="nebula-fog nf-5" /><div className="nebula-fog nf-6" /><div className="nebula-fog nf-7" /><div className="nebula-fog nf-8" /><div className="nebula-fog nf-9" /><div className="nebula-fog nf-10" />
-        <div className="aurora-strip aurora-s1" /><div className="aurora-strip aurora-s2" />
-        <div className="aurora-strip aurora-s3" />
         <div className="sparkle-field">
           {spPos.map((s,i) => (
             <div key={i} className="sparkle-particle" style={{left:s.l,top:s.t,animationDuration:s.d,animationDelay:s.dl,color:s.c,background:s.c}} />
