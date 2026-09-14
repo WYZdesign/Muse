@@ -42,6 +42,7 @@ export interface ProfileScreenProps {
   testLevels?: Record<string, number>;
   showNsfw?: boolean;
   setShowNsfw?: (v: boolean) => void;
+  setShowAgeVerification?: (v: boolean) => void;
   matchStreak?: number;
   userTier?: string;
   portfolioTab?: "all" | "portrait" | "landscape" | "sets";
@@ -105,6 +106,7 @@ export const ProfileScreen = memo(function ProfileScreen({
   testLevels = {},
   showNsfw = false,
   setShowNsfw = () => {},
+  setShowAgeVerification = () => {},
   matchStreak = 0,
   userTier = "free",
   portfolioTab = "all",
@@ -339,7 +341,10 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div className="section">
           <div className="avail-row">
             <div><div className="section-title">Show NSFW</div><div className="avail-sub">Fine art, figure, body art</div></div>
-            <div role="switch" aria-checked={showNsfw} tabIndex={0} className={"toggle" + (showNsfw ? " on" : "")} onClick={() => setShowNsfw(!showNsfw)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowNsfw(!showNsfw); } }}><div className="toggle-dot" /></div>
+            {/* NSFW must go through age verification before being enabled — mirrors
+                SettingsScreen's "NSFW Content" toggle. Previously this toggle flipped
+                showNsfw directly, bypassing the age gate entirely (C4). */}
+            <div role="switch" aria-checked={showNsfw} tabIndex={0} className={"toggle" + (showNsfw ? " on" : "")} onClick={() => { if (!showNsfw) { setShowAgeVerification(true); } else { setShowNsfw(false); } }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!showNsfw) { setShowAgeVerification(true); } else { setShowNsfw(false); } } }}><div className="toggle-dot" /></div>
           </div>
         </div>
         <div className="section">

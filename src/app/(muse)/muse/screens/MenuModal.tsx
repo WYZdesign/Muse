@@ -660,7 +660,8 @@ export const MenuModal = memo(function MenuModal({
                 indicators in the app used different shapes (dot vs. pill)
                 for the same underlying unreadCount, which reads as an
                 inconsistent visual language for "you have unread items". */}
-            {unreadCount ? <span className="hamburger-bell-dot">{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
+            {/* M15: plain red dot only — no stroke, no unread count number. */}
+            {unreadCount ? <span className="hamburger-bell-dot" aria-label={`${unreadCount > 99 ? "99+" : unreadCount} unread notifications`} /> : null}
           </button>
         )}
         {!hamburgerScreen && <div className="hamburger-menu-title" style={{ display: "none" }}>Menu</div>}

@@ -114,10 +114,10 @@ export function BadgeInfoModal({ info, onClose }: { info: BadgeInfo | null; onCl
   if (!info) return null;
   return (
     <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={onClose}>
-      <div style={{ background: "#1a0a2e", border: `1px solid ${info.color}40`, borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ background: "var(--panel-bg)", border: `1px solid ${info.color}40`, borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
           <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, background: `${info.color}20`, border: `1px solid ${info.color}40`, color: info.color, flexShrink: 0 }}>{info.icon}</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{info.name}</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)" }}>{info.name}</div>
         </div>
         <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6 }}>{info.desc}</div>
         <button onClick={onClose} style={{ marginTop: 18, width: "100%", padding: "12px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))", color: "var(--gold)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Got it</button>

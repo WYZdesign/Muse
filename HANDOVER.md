@@ -1933,3 +1933,53 @@ Not a code round — flagging for awareness only, since wyzmind checks this log.
 One thing worth carrying into the rest of the light-mode/UX work: the audit flags, independently, the same dating-app-visual-language risk `MUSE_CLAUDE_CRITIQUE.md` already named (swipe cards + %-match badge + heart/nope buttons + zodiac badges reads as dating-app energy to an outside eye) — this keeps showing up from every angle (internal critique doc, competitive UX report, and now this audit), so it's probably worth an explicit product decision at some point rather than continuing to accumulate as a background note across docs.
 
 No code changes, no test run needed for this entry.
+
+---
+
+## Claude — round 21: full audit of Torreé's 41-item task list vs. actual code, fixed 13
+
+Torreé asked me directly to check whether wyzmind had finished everything on the comprehensive task list she wrote on 2026-09-14 (`plans/TORREE_FULL_TASK_LIST.md`), fix whatever wasn't done, and verify live via the Chrome extension. **Checked wyzmind's work first**, as always — since the list was written, wyzmind's only commits touching it were `24413da` (nsfw/verified column restore) and a run of wave/star/nebula commits (`d8c2e28`→`0ce575d`, then `2f6af7d` mid-round fixing waves on *all* screens, not just Discover — picked up cleanly by a rebase, no conflicts). Everything else on the list had no corresponding commit.
+
+Rather than trust commit messages, I had a subagent read the actual current code for all 41 items and report DONE / PARTIAL / NOT DONE / NEEDS LIVE CHECK with file:line evidence. Full result below. I then fixed the scoped, genuine bugs myself this round (see the commit right before this entry for the technical detail on each) and am leaving the larger feature-build items for wyzmind rather than shipping shallow fakes of them.
+
+**CRITICAL**
+- C1 (age verification "invalid token") — PARTIAL, mostly already fixed by earlier rounds' session-expiry handling + round-19's Stripe error surfacing; the underlying live 500 still needs a real repro with the improved error message, or Vercel logs.
+- C2 (2FA "invalid token") — DONE, same root cause as C1, already fixed.
+- C3 (Stripe Connect "unauthorized") — PARTIAL, the actual Connect route is already gated the same safe way as C1/C2 but was never specifically live-tested.
+- **C4 (NSFW toggle bypasses age-gate) — FIXED this round.** `ProfileScreen.tsx`'s own NSFW toggle flipped the flag directly, completely skipping the verification modal `SettingsScreen.tsx`'s identical toggle already goes through.
+
+**HIGH — light mode**
+- H1/H2 (buttons/badges dark-border coverage) — PARTIAL, broad CSS coverage exists but several components bypass it with inline hardcoded colors (see H3-H7).
+- **H3-H7 (Prompt Bank, Safety Center, badge popups, chat 3-dot menu, Stripe/Connect modal all illegible on light mode) — FIXED this round.** All five hardcoded white text (`#f5f0ff`, `#fff`, `rgba(255,255,255,*)`) and/or a dark `#1a0a2e` panel background instead of the theme CSS variables every other themed component uses. Swapped to `var(--text)`/`var(--surface)`/`var(--panel-bg)`/etc.
+- **H8 (streak widget no light-mode border) — FIXED this round.** Its border/bg was a near-0-alpha gold tint tuned for the dark theme's near-black background.
+- H9 (quests flame not always visible) — NEEDS LIVE CHECK, code looks theme-aware in both collapsed/expanded states; couldn't get a clean live repro this round (see note below on the tab going unresponsive).
+
+**MEDIUM**
+- M1 (waves on every page) — now being actively worked by wyzmind (`2f6af7d`, mid-round as I was finishing this pass).
+- M2/M3 (stars, nebula/aurora) — DONE, already shipped by wyzmind.
+- **M4 (sunrise/daylight too similar) — FIXED this round.** Daylight is now its own cool/bright/blue-white identity instead of a second warm-dawn palette.
+- **M5 (profile info should dim to 85%, not vanish, on scroll) — FIXED this round.**
+- **M6 (move match% badge to top-left) — FIXED this round.**
+- **M7 (redundant search button) — FIXED this round.** Two magnifying-glass icons were rendering at once when search was open; one was purely decorative (just blurred focus, did nothing else).
+- M8 (map studio markers) — DONE, already shipped.
+- M9/M10 (constellations, birds on splash) — NOT DONE, not attempted this round (net-new decorative feature, not a bug fix).
+- **M11 (verify-now banner slide animation) — FIXED this round.**
+- M12 (image dimension/format handling on upload) — NOT DONE, no resize/reformat pipeline exists; real feature work, not attempted this round.
+- M13 (filter bar arrows) — NEEDS LIVE CHECK.
+- M14 (BTS scroll bar styling) — NOT DONE, scrollbar is currently fully hidden, contradicts "tight, dark-stroked" ask; not attempted this round.
+- **M15 (bell notification: dot only, no number/stroke) — FIXED this round.**
+- M16/M17 (gradient fill, viewport filling) — DONE/looks complete from code, worth a live spot-check.
+
+**LOW**
+- L1/L2 (personality/creative profile popup enhancements) — NOT DONE, real feature work (external test links, admin-moderated custom options).
+- L3/L4/L5 (Portfolio/Availability/Rate settings) — NOT DONE, literal `showToast("...coming soon")` stubs. Left honest rather than faking a shallow UI with no backend.
+- L6 (connected accounts) — DONE, code-complete (depends on OAuth env vars actually being configured, not verifiable statically).
+- L7 (legal buttons as popups) — DONE, already shipped.
+- L8 (Apply=free/approval vs. Book=paid/instant differentiation) — NOT DONE, both currently go through the same pending→accept→pay flow; HANDOVER already documents this was a deliberate prior deferral.
+- L9 (admin panel expansion) — PARTIAL, real active capabilities already exist (suspend/ban, resolve reports/strikes, refunds, an AI query tool) but no broader logistical/bulk tooling.
+- L10 (Muse Oracle) — DONE, real RAG+LLM assistant exists for both users and admins (`askMuseAI`), separate from an unrelated simpler "Studio Oracle" FAQ bot — don't confuse the two.
+- L11 (admin panel title) — NOT DONE, currently says "Muse — Admin Dashboard" / "🛡️ Community Safety" instead of plain "ADMIN PANEL".
+
+**Live Chrome verification — partial.** Started re-checking the live production app (confirmed the pre-fix badge-box/match-bar/stray-"0" bugs were real before round 20, per earlier rounds) but hit the same "renderer may be frozen/unresponsive" symptom on `javascript_tool` that's shown up before on this tab, right as Torreé reported her own phone/browser feeling unresponsive at the same time — flagged to her directly rather than assumed to be my tooling. Recommend a fresh live pass once that's confirmed resolved and this round's fixes are deployed, since none of what's fixed here is live yet (no push access, delivered as `round21-torree-task-list-fixes.bundle`).
+
+`tsc --noEmit` and `vitest run` (342/342) clean post-rebase onto wyzmind's `2f6af7d`.

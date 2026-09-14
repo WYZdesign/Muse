@@ -108,21 +108,21 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
     try { await onSaveSafetyProfile(sp); } finally { setLoading(false); }
   };
 
-  const inputStyle: React.CSSProperties = { width: "100%", padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 13 };
-  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 4, display: "block" };
+  const inputStyle: React.CSSProperties = { width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--surface)", border: "1px solid var(--border-med)", color: "var(--text)", fontSize: 13 };
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "var(--text2)", marginBottom: 4, display: "block" };
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)" }}>
       <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 28, maxWidth: 520, width: "90%", maxHeight: "85vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: "#ffd700" }}>🛡️ Safety Center</h2>
-          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 20, cursor: "pointer" }}>✕</button>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>🛡️ Safety Center</h2>
+          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: 3 }}>
+        <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "var(--surface)", borderRadius: 10, padding: 3 }}>
           {[["checkins", `Check-ins (${pending.length})`], ["safety", "Safety Profile"], ["share", "Share Details"], ["account", "Strikes & Disclosures"]].map(([key, label]) => (
-            <button key={key} onClick={() => { setTab(key as any); if (key === "account") loadAccount(); }} style={{ flex: 1, padding: "8px 0", borderRadius: 8, background: tab === key ? "rgba(255,215,0,0.15)" : "transparent", border: "none", color: tab === key ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
+            <button key={key} onClick={() => { setTab(key as any); if (key === "account") loadAccount(); }} style={{ flex: 1, padding: "8px 0", borderRadius: 8, background: tab === key ? "rgba(255,215,0,0.15)" : "transparent", border: "none", color: tab === key ? "var(--gold)" : "var(--muted)", fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
               {label}
             </button>
           ))}
@@ -131,12 +131,12 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
         {/* CHECK-INS TAB */}
         {tab === "checkins" && (
           <div>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: "var(--text2)", marginBottom: 16 }}>
               Confirm your shoot details 24 hours before. This is your chance to verify everything matches what was disclosed.
             </p>
 
             {pending.length === 0 && (
-              <div style={{ textAlign: "center", padding: 30, color: "rgba(255,255,255,0.4)" }}>
+              <div style={{ textAlign: "center", padding: 30, color: "var(--muted)" }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
                 <div style={{ fontSize: 13 }}>No pending check-ins</div>
               </div>
@@ -144,16 +144,16 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
 
             {pending.map(c => (
               <div key={c.id} style={{ padding: 16, background: "rgba(255,215,0,0.04)", borderRadius: 12, border: "1px solid rgba(255,215,0,0.12)", marginBottom: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#ffd700", marginBottom: 6 }}>Pre-Shoot Check-in</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 4, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginBottom: 6 }}>Pre-Shoot Check-in</div>
+                <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 4, lineHeight: 1.5 }}>
                   Please confirm: Is everything still as originally disclosed? Same date, time, location, and content boundaries?
                 </div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 12 }}>
                   {new Date(c.created_at).toLocaleDateString()}. Booking status: {c.booking_id?.status || "active"}
                 </div>
 
-                <div style={{ padding: 10, background: "rgba(255,255,255,0.03)", borderRadius: 8, marginBottom: 12, fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
-                  <strong>Reminder:</strong> If anything has changed from the original disclosure (location, time, content boundaries, who will be present), <span style={{ color: "#ffd700" }}>do not confirm</span>. Instead, cancel and re-disclose.
+                <div style={{ padding: 10, background: "var(--surface)", borderRadius: 8, marginBottom: 12, fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
+                  <strong>Reminder:</strong> If anything has changed from the original disclosure (location, time, content boundaries, who will be present), <span style={{ color: "var(--gold)" }}>do not confirm</span>. Instead, cancel and re-disclose.
                 </div>
 
                 <div style={{ display: "flex", gap: 8 }}>
@@ -169,11 +169,11 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
 
             {completed.length > 0 && (
               <div style={{ marginTop: 20 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>Past Check-ins</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text2)", marginBottom: 8 }}>Past Check-ins</div>
                 {completed.slice(0, 5).map(c => (
-                  <div key={c.id} style={{ padding: "8px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 12, display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "rgba(255,255,255,0.6)" }}>{c.checkin_type.replace(/_/g, " ")}</span>
-                    <span style={{ color: c.status === "confirmed" ? "#4ecdc4" : c.status === "cancelled" ? "#ff6b6b" : "rgba(255,255,255,0.4)" }}>{c.status}</span>
+                  <div key={c.id} style={{ padding: "8px 12px", borderBottom: "1px solid var(--border-subtle)", fontSize: 12, display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "var(--text2)" }}>{c.checkin_type.replace(/_/g, " ")}</span>
+                    <span style={{ color: c.status === "confirmed" ? "#4ecdc4" : c.status === "cancelled" ? "#ff6b6b" : "var(--muted)" }}>{c.status}</span>
                   </div>
                 ))}
               </div>
@@ -184,11 +184,11 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
         {/* SAFETY PROFILE TAB */}
         {tab === "safety" && (
           <div>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: "var(--text2)", marginBottom: 16 }}>
               Add emergency contacts and a trusted friend. You can share shoot details with them before meeting someone new.
             </p>
 
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#ffd700", marginBottom: 10 }}>Emergency Contact</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginBottom: 10 }}>Emergency Contact</div>
             <div style={{ marginBottom: 10 }}>
               <label style={labelStyle}>Name</label>
               <input value={sp.emergency_contact_name} onChange={e => setSp(p => ({ ...p, emergency_contact_name: e.target.value }))} style={inputStyle} placeholder="Full name" />
@@ -204,8 +204,8 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
               </div>
             </div>
 
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#ffd700", marginBottom: 10, marginTop: 20 }}>Trusted Friend</div>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginBottom: 10, marginTop: 20 }}>Trusted Friend</div>
+            <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10 }}>
               This person receives your shoot details (location, disclosure, contact info) before any meetup.
             </p>
             <div style={{ marginBottom: 10 }}>
@@ -224,14 +224,14 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
             </div>
 
             <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "rgba(255,215,0,0.06)", borderRadius: 8, border: "1px solid rgba(255,215,0,0.15)", cursor: "pointer", marginTop: 16, marginBottom: 20 }}>
-              <input type="checkbox" checked={sp.auto_share_enabled} onChange={e => setSp(p => ({ ...p, auto_share_enabled: e.target.checked }))} style={{ accentColor: "#ffd700", width: 16, height: 16 }} />
+              <input type="checkbox" checked={sp.auto_share_enabled} onChange={e => setSp(p => ({ ...p, auto_share_enabled: e.target.checked }))} style={{ accentColor: "var(--gold)", width: 16, height: 16 }} />
               <div>
-                <div style={{ fontSize: 12, color: "#f5f0ff", fontWeight: 600 }}>Auto-share with trusted friend</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Automatically send shoot details when you confirm a booking</div>
+                <div style={{ fontSize: 12, color: "var(--text)", fontWeight: 600 }}>Auto-share with trusted friend</div>
+                <div style={{ fontSize: 11, color: "var(--muted)" }}>Automatically send shoot details when you confirm a booking</div>
               </div>
             </label>
 
-            <button onClick={handleSaveProfile} disabled={loading} style={{ width: "100%", padding: "10px 0", borderRadius: 12, background: "linear-gradient(135deg, #ffd700, #ff8c00)", border: "none", color: "#0a0612", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            <button onClick={handleSaveProfile} disabled={loading} style={{ width: "100%", padding: "10px 0", borderRadius: 12, background: "linear-gradient(135deg, var(--gold), var(--amber))", border: "none", color: "var(--bg)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
               {loading ? "Saving..." : "Save Safety Profile"}
             </button>
           </div>
@@ -240,13 +240,13 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
         {/* SHARE DETAILS TAB */}
         {tab === "share" && (
           <div>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: "var(--text2)", marginBottom: 16 }}>
               Share your shoot details with someone you trust. They&apos;ll receive the disclosure, location, and contact information.
             </p>
 
-            <div style={{ padding: 16, background: "rgba(255,255,255,0.03)", borderRadius: 12, marginBottom: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#f5f0ff", marginBottom: 8 }}>What gets shared:</div>
-              <ul style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.8, paddingLeft: 16, margin: 0 }}>
+            <div style={{ padding: 16, background: "var(--surface)", borderRadius: 12, marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>What gets shared:</div>
+              <ul style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.8, paddingLeft: 16, margin: 0 }}>
                 <li>Shoot date, time, and duration</li>
                 <li>Location (address or area)</li>
                 <li>Disclosure terms (content type, boundaries)</li>
@@ -262,14 +262,14 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
               <button disabled={sharing !== null} onClick={() => handleShare("email")} style={{ flex: 1, padding: "12px 0", borderRadius: 10, background: "rgba(100,149,237,0.15)", border: "1px solid rgba(100,149,237,0.3)", color: "#6495ed", fontSize: 12, fontWeight: 600, cursor: sharing !== null ? "default" : "pointer", opacity: sharing !== null && sharing !== "email" ? 0.5 : 1 }}>
                 📧 {sharing === "email" ? "Sharing…" : "Send via Email"}
               </button>
-              <button disabled={sharing !== null} onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/muse?safetyShare=${shareBookingId}`).catch(() => {}); handleShare("link"); }} style={{ flex: 1, padding: "12px 0", borderRadius: 10, background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "#ffd700", fontSize: 12, fontWeight: 600, cursor: sharing !== null ? "default" : "pointer", opacity: sharing !== null && sharing !== "link" ? 0.5 : 1 }}>
+              <button disabled={sharing !== null} onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/muse?safetyShare=${shareBookingId}`).catch(() => {}); handleShare("link"); }} style={{ flex: 1, padding: "12px 0", borderRadius: 10, background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)", fontSize: 12, fontWeight: 600, cursor: sharing !== null ? "default" : "pointer", opacity: sharing !== null && sharing !== "link" ? 0.5 : 1 }}>
                 🔗 {sharing === "link" ? "Copying…" : "Copy Link"}
               </button>
             </div>
 
             <div style={{ padding: 14, background: "rgba(78,205,196,0.06)", borderRadius: 10, border: "1px solid rgba(78,205,196,0.15)" }}>
               <div style={{ fontSize: 12, color: "#4ecdc4", fontWeight: 700, marginBottom: 6 }}>💡 Safety Tip</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+              <div style={{ fontSize: 11, color: "var(--text2)", lineHeight: 1.6 }}>
                 The easiest and most protective thing you can do is make it simple to back out. If something feels off, trust your instincts. You can cancel anytime without explanation. No shoot is worth compromising your comfort.
               </div>
             </div>
@@ -279,19 +279,19 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
         {/* STRIKES & DISCLOSURES TAB */}
         {tab === "account" && (
           <div>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: "var(--text2)", marginBottom: 16 }}>
               Your account standing: any moderation strikes on your account, and the disclosures you&apos;ve been part of.
             </p>
 
             {accountMsg && <div style={{ padding: 10, marginBottom: 12, borderRadius: 8, background: "rgba(255,100,100,0.1)", border: "1px solid rgba(255,100,100,0.25)", fontSize: 12, color: "#ff8a80" }}>{accountMsg}</div>}
 
-            {!accountLoaded && <div style={{ textAlign: "center", padding: 20, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Loading…</div>}
+            {!accountLoaded && <div style={{ textAlign: "center", padding: 20, fontSize: 12, color: "var(--muted)" }}>Loading…</div>}
 
             {accountLoaded && (
               <>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#ffd700", marginBottom: 8 }}>Moderation Strikes</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginBottom: 8 }}>Moderation Strikes</div>
                 {strikes.length === 0 && (
-                  <div style={{ padding: 12, background: "rgba(255,255,255,0.03)", borderRadius: 8, fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
+                  <div style={{ padding: 12, background: "var(--surface)", borderRadius: 8, fontSize: 12, color: "var(--text2)", marginBottom: 16 }}>
                     ✓ No strikes — your account is in good standing.
                   </div>
                 )}
@@ -299,9 +299,9 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
                   <div key={s.id} style={{ padding: 12, background: "rgba(255,100,100,0.05)", borderRadius: 8, border: "1px solid rgba(255,100,100,0.15)", marginBottom: 10, fontSize: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                       <span style={{ fontWeight: 700, color: "#ff8a80", textTransform: "capitalize" }}>{s.severity}</span>
-                      <span style={{ color: "rgba(255,255,255,0.4)" }}>{new Date(s.created_at).toLocaleDateString()}</span>
+                      <span style={{ color: "var(--muted)" }}>{new Date(s.created_at).toLocaleDateString()}</span>
                     </div>
-                    <div style={{ color: "rgba(255,255,255,0.6)", marginBottom: 4 }}>{s.reason}</div>
+                    <div style={{ color: "var(--text2)", marginBottom: 4 }}>{s.reason}</div>
                     {s.suspension_ends_at && <div style={{ fontSize: 11, color: "#ff8a80" }}>Suspended until {new Date(s.suspension_ends_at).toLocaleDateString()}</div>}
                     {s.appeal_status === "none" && (
                       <div style={{ marginTop: 8 }}>
@@ -310,7 +310,7 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
                           onChange={e => setAppealText(e.target.value)}
                           placeholder="Explain why this strike should be reconsidered…"
                           rows={3}
-                          style={{ width: "100%", padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 12, resize: "none" }}
+                          style={{ width: "100%", padding: "8px 10px", borderRadius: 8, background: "var(--surface)", border: "1px solid var(--border-med)", color: "var(--text)", fontSize: 12, resize: "none" }}
                         />
                         <button
                           disabled={appealingId !== null || !appealText.trim()}
@@ -320,30 +320,30 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
                             setAppealingId(null);
                             if (ok) { setAppealText(""); setStrikes(prev => prev.map(x => x.id === s.id ? { ...x, appeal_status: "pending", appeal_text: appealText.trim() } : x)); }
                           }}
-                          style={{ marginTop: 6, padding: "6px 12px", borderRadius: 8, background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "#ffd700", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+                          style={{ marginTop: 6, padding: "6px 12px", borderRadius: 8, background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
                         >
                           {appealingId === s.id ? "Submitting…" : "Appeal Strike"}
                         </button>
                       </div>
                     )}
-                    {s.appeal_status === "pending" && <div style={{ marginTop: 6, fontSize: 11, color: "#ffd700" }}>Appeal pending review</div>}
+                    {s.appeal_status === "pending" && <div style={{ marginTop: 6, fontSize: 11, color: "var(--gold)" }}>Appeal pending review</div>}
                     {s.appeal_status === "upheld" && <div style={{ marginTop: 6, fontSize: 11, color: "#ff8a80" }}>Appeal upheld — strike stands</div>}
                     {s.appeal_status === "overturned" && <div style={{ marginTop: 6, fontSize: 11, color: "#78ff96" }}>Appeal overturned — downgraded to warning</div>}
                   </div>
                 ))}
 
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#ffd700", margin: "16px 0 8px" }}>Disclosures</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", margin: "16px 0 8px" }}>Disclosures</div>
                 {disclosures.length === 0 && (
-                  <div style={{ padding: 12, background: "rgba(255,255,255,0.03)", borderRadius: 8, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+                  <div style={{ padding: 12, background: "var(--surface)", borderRadius: 8, fontSize: 12, color: "var(--text2)" }}>
                     No disclosures yet.
                   </div>
                 )}
                 {disclosures.map(d => (
-                  <div key={d.id} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 8, borderBottom: "1px solid rgba(255,255,255,0.05)", marginBottom: 6, fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ color: "rgba(255,255,255,0.7)" }}>
+                  <div key={d.id} style={{ padding: "10px 12px", background: "var(--surface)", borderRadius: 8, borderBottom: "1px solid var(--border-subtle)", marginBottom: 6, fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ color: "var(--text2)" }}>
                       {d.proposer_id?.name || "You"} ↔ {d.responder_id?.name || "Creative"}
                     </span>
-                    <span style={{ color: d.status === "confirmed" ? "#4ecdc4" : d.status === "rejected" ? "#ff8a80" : "rgba(255,255,255,0.4)", textTransform: "capitalize" }}>{d.status}</span>
+                    <span style={{ color: d.status === "confirmed" ? "#4ecdc4" : d.status === "rejected" ? "#ff8a80" : "var(--muted)", textTransform: "capitalize" }}>{d.status}</span>
                   </div>
                 ))}
               </>
