@@ -1212,26 +1212,16 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
   // re-binding on screen change. The waves fade in (CSS .show) ~40px from the
   // bottom; the active screen is found via the live DOM so this keeps working
   // for every screen without a per-screen listener.
-  const waveShowRef = useRef(false);
+  // Show subtle wave gradient at the bottom of the active swipe card — always
+  // visible as a decorative accent (not scroll-dependent).
   useEffect(() => {
-    const wave = document.querySelector(".wave-bottom");
-    const check = () => {
-      const p = document.querySelector('.screen-el.active');
-      if (!p || !wave) return;
-      const scroller = (p as HTMLElement).scrollTop !== undefined ? (p as HTMLElement) : p.querySelector<HTMLElement>('[style*="overflow"],.conn-scroll,.profile-scroll,.settings-scroll,.portfolio-scroll,.match-list');
-      const el: HTMLElement | null = scroller || p as HTMLElement;
-      const near = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
-      if (near !== waveShowRef.current) {
-        waveShowRef.current = near;
-        wave.classList.toggle("show", near);
-      }
+    const addWaves = () => {
+      document.querySelectorAll('.swipe-card.top-card').forEach(c => c.classList.add('waves-visible'));
     };
-    const scroller = document.querySelector(".screen-el.active");
-    if (scroller) {
-      scroller.addEventListener("scroll", check, { passive: true });
-      check();
-    }
-    return () => { if (scroller) scroller.removeEventListener("scroll", check); };
+    addWaves();
+    const obs = new MutationObserver(addWaves);
+    obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
   }, [screen]);
 
 
