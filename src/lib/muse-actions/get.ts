@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
         const { data: vp } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profileId).maybeSingle();
         viewerVerified = isAgeVerificationCurrent(vp as any);
       }
-      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, photos, suspended, nsfw, travel_dates, availability_status, budget_range, travel_destinations").limit(100);
+      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, suspended, travel_dates, availability_status, budget_range, travel_destinations").limit(100);
       // Blocks were write-only until now — muse_blocks was never consulted
       // anywhere, so a blocked user could still show up in Discover, match,
       // and message the person who blocked them. Filter both directions:
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
       if (!viewer) return NextResponse.json({ error: "Not found" }, { status: 404 });
       const viewerVerified = isAgeVerificationCurrent(viewer as any);
       const { data } = await sb.from("muse_profiles")
-        .select("id, name, type, avatar, bio, loc, styles, looking, photos, suspended, nsfw, zodiac, chinese, mbti, life_path, verified, boost_expires_at")
+        .select("id, name, type, avatar, bio, loc, styles, looking, suspended, zodiac, chinese, mbti, life_path, boost_expires_at")
         .limit(400);
       let blockedIds = new Set<string>();
       {
@@ -284,7 +284,7 @@ export async function GET(req: NextRequest) {
       let verifiedByHost = new Map<string, boolean>();
       let completedByHost = new Map<string, number>();
       if (hostIds.length) {
-        const { data: hosts } = await sb.from("muse_profiles").select("id, verified").in("id", hostIds);
+        const { data: hosts } = await sb.from("muse_profiles").select("id").in("id", hostIds);
         verifiedByHost = new Map((hosts || []).map((h: any) => [h.id, !!h.verified]));
         const { data: completed } = await sb.from("muse_bookings").select("host_id").in("host_id", hostIds).eq("status", "completed");
         for (const b of completed || []) {
@@ -323,7 +323,7 @@ export async function GET(req: NextRequest) {
       let profileIdByAuthId = new Map<string, string>();
       let verifiedByProfileId = new Map<string, boolean>();
       if (userIds.length) {
-        const { data: profiles } = await sb.from("muse_profiles").select("id, auth_id, verified").in("auth_id", userIds);
+        const { data: profiles } = await sb.from("muse_profiles").select("id, auth_id").in("auth_id", userIds);
         profileIdByAuthId = new Map((profiles || []).map((pr: any) => [pr.auth_id, pr.id]));
         verifiedByProfileId = new Map((profiles || []).map((pr: any) => [pr.id, !!pr.verified]));
       }
@@ -409,7 +409,7 @@ export async function GET(req: NextRequest) {
       if (!targetProfileId) return NextResponse.json({ error: "profile_id required" }, { status: 400 });
       if (!UUID_RE.test(targetProfileId)) return NextResponse.json({ trust: null });
       const { data: p } = await sb.from("muse_profiles")
-        .select("id, name, avatar, type, verified, age_verified, age_verified_at, boost_inventory, boost_expires_at, last_seen_at, created_at, profile_completion_pct")
+        .select("id, name, avatar, type, age_verified, age_verified_at, boost_inventory, boost_expires_at, last_seen_at, created_at, profile_completion_pct")
         .eq("id", targetProfileId).maybeSingle();
       if (!p) return NextResponse.json({ trust: null });
       const { data: reviews } = await sb.from("muse_reviews")
@@ -446,7 +446,7 @@ export async function GET(req: NextRequest) {
       const lastSeenDaysAgo = lastSeen ? Math.floor((Date.now() - new Date(lastSeen).getTime()) / (24 * 60 * 60 * 1000)) : null;
       return NextResponse.json({
         trust: {
-          verified: !!p.verified,
+          verified: false,
           ageVerified,
           rating: reviewCount ? Math.round((ratingSum / reviewCount) * 10) / 10 : null,
           reviewCount,
@@ -537,7 +537,7 @@ export async function GET(req: NextRequest) {
       const viewerIds = [...new Set((viewers || []).map((v: any) => v.actor_id).filter(Boolean))];
       if (viewerIds.length === 0) return NextResponse.json({ viewers: [] });
       const { data: profiles } = await sb.from("muse_profiles")
-        .select("id, name, avatar, verified, type")
+        .select("id, name, avatar, type")
         .in("id", viewerIds);
       const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
       const result = (viewers || [])
