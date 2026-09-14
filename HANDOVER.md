@@ -1786,4 +1786,23 @@ While sweeping the above, if you see anything that looks wrong, broken, inconsis
 
 **Deliver as usual:** bundle to `_to_delete/`, tsc/vitest clean, explain what you changed and why.
 
+---
+
+## Claude — shipped items 4, 5, 7, 8; item 6 deliberately held; two things found while reviewing wyzmind's `63b6e60` quick-fix
+
+**Shipped** (this round's bundle, `tsc`/`vitest` clean):
+- **Item 4** — tapping a session card now opens a full-detail modal (description, skills, location/date, Book button) instead of doing nothing.
+- **Item 5** — the Book button now opens a 3-field mini-form (sizing/prefs, prep requirements, a note) before sending the request. Folded the note into the *existing* notification/email text rather than adding a `muse_bookings` note column — given everything this session has found about assumed columns, I didn't want to add another one without it actually being confirmed live first.
+- **Item 7** — Muses list-view swipe now only arms from the outer 1/3 of a card on either side; center 2/3 falls through to tap-to-view-profile untouched.
+- **Item 8** — Profile avatar resized 100px → 128px to fill `.profile-ring-large`'s ~127px inner hole, no more visible gap.
+
+**Item 6 held back, on purpose.** Torreé's ask was "Apply = free, approval-based, no payment" vs. "Book = paid, instant, no approval." I checked: every session listing right now — free or with a stated rate, doesn't matter — goes through the exact same flow (`sessionBook` → `status: "pending"` → host has to Accept in the Requests tab → *then* the Pay button appears). There's no existing "skip approval and charge immediately" path anywhere in the code. Building item 6 for real means adding one — new server logic that creates a Stripe checkout straight off the Book click for some sessions and skips the accept step entirely. That's booking/escrow behavior, which is exactly the territory I've been told to observe-and-flag rather than guess at. Left it out rather than invent the business rule for which sessions qualify (a rate of "$0"? a host-set toggle? text-matching "TFP"/"free" in the rate field?) — that's a product decision, not something I should infer. Happy to build it the moment there's a real answer to "which listings are Apply vs Book, and does Book really skip host approval."
+
+**Found while reviewing `63b6e60`** (Torreé's own quick-fix that stripped `photos`/`nsfw`/`verified`/`media_kit_url`/`collabs` out of the broken selects to unblock Discover/Edit Profile/age verification — confirmed live, Discover now returns real profiles again, nice fix):
+
+1. **NSFW gating in Discover is now dead code, not just disabled.** `get.ts`'s `type=profiles`/`discover-ranked` still has `if (p.nsfw && !viewerVerified) return false` and a second `if (p.nsfw && !viewerVerified) strip photos` — but `p.nsfw` can never be anything but `undefined` now that `nsfw` was dropped from the select, so both checks are permanently false. Practically low-risk *today* since the same missing column means nothing can actually have `nsfw` set to `true` in the first place (the write path was broken too) — but the moment that column comes back and someone flags a profile NSFW, this filter won't do anything unless it's also un-stubbed. Not fixing it myself since it's the exact protected-territory line (NSFW/age-gating enforcement) — flagging so whoever restores the column also restores this check.
+2. **New, unrelated bug**: querying `muse_albums` through PostgREST (RLS-enforced path, not the server's service-role client) returns a 500: `"infinite recursion detected in policy for relation \"muse_albums\""` (Postgres `42P17`). Currently dormant — grepped the whole frontend and found no client-side code that queries `muse_albums`/`muse_album_photos` directly, everything goes through `get.ts`'s service-role client which bypasses RLS — so it's not biting anyone today. Will bite the first time anything (a Realtime subscription, a future direct client query) relies on that table's RLS. Noting it now while it's cheap to fix, rather than after it's a live incident.
+
+Also spot-checked `discover-count` vs `type=profiles` again post-`63b6e60`: 8 real profiles in the DB, `type=profiles` now actually returns them (was 0 before the quick-fix) — confirms the quick-fix is working as intended for the main symptom.
+
 
