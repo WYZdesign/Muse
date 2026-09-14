@@ -2046,7 +2046,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       showToast({ msg: "Message couldn't be sent", type: "error" });
       return;
     }
-    analytics.messageSend(chatTarget?.id || "", false);
+    analytics.messageSend(String(chatTarget?.id || ""), false);
     trackQuest("send_message", "first_message");
     // Show typing + simulated reply only in demo mode (no real remote partner).
     if (!DEMO_MODE) return;
@@ -2080,7 +2080,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       showToast("Image couldn't be sent");
       return;
     }
-    analytics.messageSend(chatTarget?.id || "", true);
+    analytics.messageSend(String(chatTarget?.id || ""), true);
     if (!DEMO_MODE) return;
     setTypingTarget(Number(chatTarget.id));
     setTimeout(() => {
