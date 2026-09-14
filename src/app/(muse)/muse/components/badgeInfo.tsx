@@ -86,7 +86,7 @@ export const STYLE_FULL: Record<string, string> = {
   Fashion: "Work centered on clothing, style, and the runway.",
   Experimental: "Unconventional, boundary-pushing approaches to image and film.",
   Dark: "Moody, dramatic, low-key visuals with strong contrast.",
-  Dreamy: "Soft, ethereal, romantic visuals with hazy light.",
+  Dreamy: "Soft, ethereal visuals with hazy light.",
   Bold: "High-impact, saturated, unapologetically striking images.",
   Vintage: "Retro, film-inspired visuals with a warm, nostalgic feel.",
   Abstract: "Art focused on form, color, and texture rather than a subject.",

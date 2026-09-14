@@ -23,6 +23,7 @@ import { STRINGS } from "@/lib/strings";
 import DisclosureModal from "./components/DisclosureModal";
 import AgeVerificationModal from "./components/AgeVerificationModal";
 import UpsellModal from "./components/UpsellModal";
+import NonDatingDisclaimer from "./components/NonDatingDisclaimer";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon } from "./components/traitIcons";
 import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "./components/badgeInfo";
 import { useChatState } from "./hooks/useChatState";
@@ -2053,7 +2054,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     setTypingTarget(Number(chatTarget.id));
     setTimeout(() => {
       setTypingTarget(null);
-      const replies = ["That resonates with me ✨","I'd love to collaborate on that","Let's make it happen, when are you free?","This is exactly what I've been wanting","The energy is right, let's create","Real connections make the best art","You get it. Most people don't.","I've been thinking about this for months","Say less, I'm already visualizing it","This is a great opportunity. Let's not waste it."];
+      const replies = ["Great vision, let's work on this","I'm available — tell me more about the project","This is exactly what I'm looking for","Let's make something great together","This aligns with what I do best","I'd be glad to bring this to life","Can we schedule a call to discuss?","I've been looking for something like this","Ready when you are — let's create","This is the right fit for my portfolio"];
       const reply = { from: "them" as const, text: replies[~~(Math.random() * replies.length)], time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
       setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, reply] } : prev);
       setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, reply] } : m));
@@ -2426,8 +2427,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                     <div className="sparkle" style={{bottom:"30%",left:"15%",fontSize:20}}>✦</div>
                     <div className="sparkle" style={{bottom:"15%",right:"6%",fontSize:16}}>✧</div>
                     <div className="hero-text" style={{textAlign:"center"}}>Find your Muse</div>
-                    <div className="hero-sub">Where creatives find <em>real connections</em></div>
-                    <div className="hero-quote">"Creativity craves connection"</div>
+                    <div className="hero-sub">Where creatives find <em>real connections</em> for professional collaboration</div>
+                    <NonDatingDisclaimer />
+                    <NonDatingDisclaimer />
                     <button className="btn btn-gold" onClick={()=>setObStep(1)}>Get Started</button>
                   </div>
                 )}

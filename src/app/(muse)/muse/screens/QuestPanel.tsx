@@ -41,7 +41,7 @@ function deriveQuestDescription(q: any): string {
   if (desc) return desc;
   const t = String(q?.title || "").toLowerCase();
   if (t.includes("login") || t.includes("log in") || t.includes("check in")) return "Log in to Muse today";
-  if (t.includes("like")) return "Like a post to show some love";
+  if (t.includes("like")) return "Like a post to show support";
   if (t.includes("comment") || t.includes("reply")) return "Leave a comment on a post";
   if (t.includes("post") || t.includes("share") || t.includes("upload")) return "Share something with the community";
   if (t.includes("follow") || t.includes("connect") || t.includes("friend")) return "Connect with other creatives";

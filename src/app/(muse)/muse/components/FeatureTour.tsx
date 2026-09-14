@@ -119,7 +119,7 @@ const ALL_PAGES: TourPage[] = [
     to: "#1E90FF",
     screen: "network",
     highlight: "Book · Forum · Tips",
-    steps: ["Browse verified professionals", "Book a session or ask in the forum", "Leave tips for creators you love"],
+    steps: ["Browse verified professionals", "Book a session or ask in the forum", "Leave tips for creators you appreciate"],
   },
   {
     id: "profile",
