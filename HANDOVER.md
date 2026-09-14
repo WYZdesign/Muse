@@ -1625,4 +1625,32 @@ I did not attempt a fix for this myself, deliberately:
 
 Round 12 (`427db4d`, the `photos`-in-profile-completion fix) is delivered and confirmed live. This Discover-is-empty issue is separate, bigger, and still open.
 
+## Claude — follow-up, confirmed with the raw Postgres error, and found the worst consequence: **Edit Profile is completely broken app-wide right now**
+
+Went back to nail down exactly which columns are missing (not just infer it from empty responses) by hitting PostgREST directly with the site's own public anon key (pulled from the client JS bundle — no credentials of mine involved, this key is already shipped to every browser) and requesting each suspect column individually. Got the definitive Postgres error for all six:
+
+```
+column muse_profiles.photos does not exist       (42703)
+column muse_profiles.nsfw does not exist          (42703)
+column muse_profiles.verified does not exist      (42703)
+column muse_profiles.collabs does not exist       (42703)
+column muse_profiles.embedding does not exist     (42703)
+column muse_profiles.embedding_model does not exist (42703)
+column muse_profiles.media_kit_url does not exist (42703)  ← yes, still missing too
+```
+For contrast, `suspended`, `show_nsfw`, `age_verified`, and `tier` all come back fine — so this isn't RLS or a typo on my part, it's specifically these seven columns.
+
+**The one that matters most: `saveProfileEdits()` in `page.tsx` (the "Edit Profile" modal used app-wide) unconditionally sends both `nsfw` and `media_kit_url` in *every single save*** — not just when the user touches those fields:
+```
+nsfw: nsfwValue,
+media_kit_url: editMediaKit.trim(),
+```
+This hits `action: "update-profile"` in `src/app/api/muse/auth/route.ts`, which does a single `sb.from("muse_profiles").update(updates)...` with whatever fields were sent. Supabase/PostgREST fails an `update()` atomically if *any* assigned column doesn't exist — so this isn't just "the NSFW toggle doesn't save," it's **every field in the save fails together**: name, bio, location, avatar, type, "looking for." Anyone editing their profile right now gets nothing persisted.
+
+This particular handler does check `error` and return it (`update-profile` isn't a silent-swallow bug like the `get.ts` ones were) — so the client's `catch` does fire and shows a "Failed to save — try again" toast. But `page.tsx` closes the Edit Profile modal and optimistically updates local state **before** the network call resolves, so the user sees their edit "take" immediately and the modal close; the failure toast comes a beat later and is easy to miss, and a refresh silently reverts everything since nothing was actually written.
+
+I didn't call `update-profile` myself to confirm end-to-end (that's an actual account-settings write, wanted your/Torreé's go-ahead rather than firing it blind) — but the mechanism above is airtight from the code + the direct Postgres proof, and it explains a plausible parallel symptom worth asking Torreé about: intermittent "my profile edits aren't saving" reports, if there have been any.
+
+Same fix path as the rest of this: someone with schema access needs to add the missing columns (`photos`, `nsfw`, `verified`, `collabs`, `embedding`, `embedding_model`, `media_kit_url`) — `media_kit_url` and `photos`/`embedding` already have idempotent `ADD COLUMN IF NOT EXISTS` migrations sitting unrun in `sql/`; `nsfw`/`verified`/`collabs` still have none and need one written, and `nsfw` specifically needs a real decision (new boolean column vs. repointing the code at the existing `show_nsfw`) since it's content-gating, not a decision I'll make by guessing. This is the highest-priority open item from this whole session — it's not a cosmetic bug, it's the core "edit your profile" flow being non-functional in production.
+
 
