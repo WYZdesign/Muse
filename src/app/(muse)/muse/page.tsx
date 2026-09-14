@@ -1299,6 +1299,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     return () => window.removeEventListener("muse:toast", onToast);
   }, [showToast]);
 
+
   // Login quests + claimables badge — runs once authed+bootstrapped. Must live
   // AFTER trackQuest's declaration. Login counts once per calendar day so
   // daily/streak quests stay accurate across refreshes.
@@ -1377,7 +1378,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     } catch {}
   }, [bootstrapped, authUser]);
 
-  const doLogout = useCallback(async () => {
+  const doLogout = useCallback(async (message: string = "Logged out") => {
     try { await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "logout" }) }); } catch(e) {}
     // Kill the CLIENT-side supabase session too — without this, the persisted
     // supabase-js session survives and silently re-logs the user on next load
@@ -1386,12 +1387,36 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     clearRefreshToken();
     const keys = ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium","muse_referral_code","muse_open_count","muse_hide_premium"];
     keys.forEach(k => { try { safeRemoveItem(k); } catch {} });
-    setAuthUser(null); setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free", foundingTier:"", proExpiresAt:"" })); setUserTier("free"); setScreen("auth"); screenHistoryRef.current = []; showToast("Logged out");
+    setAuthUser(null); setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free", foundingTier:"", proExpiresAt:"" })); setUserTier("free"); setScreen("auth"); screenHistoryRef.current = []; showToast(message);
   }, [showToast]);
 
   const doLogoutFull = useCallback(async () => {
     await doLogout(); setHamburgerScreen(""); setShowHamburger(false);
   }, [doLogout]);
+
+  // authFetch (lib/api.ts) dispatches this when a request 401s, the user HAD
+  // a token, and a refresh attempt still couldn't produce a usable one — the
+  // session is genuinely dead (e.g. an expired access token surviving in
+  // localStorage while sessionStorage's refresh token is gone). Without this,
+  // every caller just shows its own generic "X failed" toast with no hint
+  // that re-login is what's actually needed (found via Sessions' "Book
+  // Session", but authFetch is used for every authenticated action, so it
+  // isn't Sessions-specific). Multiple in-flight requests can all 401 at
+  // once, so guard against logging out more than once per dead session.
+  const sessionExpiredHandledRef = useRef(false);
+  useEffect(() => {
+    const onSessionExpired = () => {
+      if (sessionExpiredHandledRef.current) return;
+      sessionExpiredHandledRef.current = true;
+      doLogout("Your session expired — please log in again");
+    };
+    window.addEventListener("muse:session-expired", onSessionExpired);
+    return () => window.removeEventListener("muse:session-expired", onSessionExpired);
+  }, [doLogout]);
+  // Re-arm the guard above on every fresh login, so a session that expires,
+  // gets logged out, and is then logged back into (same tab) still gets the
+  // clear "please log in again" handling if THAT session later expires too.
+  useEffect(() => { if (authUser) sessionExpiredHandledRef.current = false; }, [authUser]);
 
   const uploadImage = useCallback(async (file: File, folder: string): Promise<string | null> => {
     try {

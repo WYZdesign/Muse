@@ -62,6 +62,17 @@ export async function authFetch(url: string, options: RequestInit = {}): Promise
     if (newToken && newToken !== token) {
       headers.set("Authorization", `Bearer ${newToken}`);
       res = await fetch(url, { ...options, headers });
+    } else if (token) {
+      // We HAD a token (the user believed they were logged in) but neither
+      // the original request nor a refresh attempt worked — the session is
+      // truly dead (expired access token + no usable refresh token, e.g.
+      // sessionStorage lost the refresh token while localStorage kept a
+      // stale access token around). Every caller up the stack was about to
+      // silently show its own generic "X failed" toast with zero indication
+      // that re-login is what's actually needed. Surface it once, globally,
+      // instead — page.tsx listens for this and logs the user out cleanly
+      // with a clear message rather than leaving them retrying a dead session.
+      try { window.dispatchEvent(new CustomEvent("muse:session-expired")); } catch {}
     }
   }
   return res;

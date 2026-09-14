@@ -767,7 +767,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             </div>
           </div>
 
-          <button className="btn btn-outline" style={{ width: "100%", marginBottom: 20 }} onClick={doLogout}>Log Out</button>
+          <button className="btn btn-outline" style={{ width: "100%", marginBottom: 20 }} onClick={() => doLogout()}>Log Out</button>
         </div>
       </div>
 
