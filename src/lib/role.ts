@@ -127,9 +127,15 @@ export function roleSpecific<T>(role: MuseRole, museValue: T, creativeValue: T):
   return role === "muse" ? museValue : creativeValue;
 }
 
-/** Badge text for a role. */
+/** Badge text for a role.
+ * Audit fix: this used to embed its own glyph ("✦ Muse" / "★ Creative"), but
+ * every call site except MatchCard's already renders a proper icon
+ * (FiBriefcase/FiZap) immediately before this text — in a narrow pill that
+ * read as two mismatched icons stacked above the word instead of one icon
+ * beside it. Plain text now; the existing icon at each call site is the
+ * single icon. */
 export function roleBadgeText(role: MuseRole): string {
-  return role === "muse" ? "✦ Muse" : "★ Creative";
+  return role === "muse" ? "Muse" : "Creative";
 }
 
 /** Profile section labels differ by role. */
