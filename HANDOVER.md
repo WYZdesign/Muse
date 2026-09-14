@@ -1921,3 +1921,15 @@ Torreé reported four things live on the Discover match cards (mobile viewport, 
 **Pattern worth flagging to wyzmind for the rest of the ~46-item light-mode task list:** two bugs this round came from the same root cause — `[class*="X"]`/`element[class*="X"]` substring selectors in the light-mode CSS pass catching plural/compound class names that merely *contain* the target word (`-badges` containers, `-btn`-suffixed radial buttons) rather than being the intended target. Worth a quick grep for other `[class*="` selectors in the light-theme block before calling that pass done — same footgun could be lurking elsewhere (e.g. `[class*="chip"]`, `[class*="tag"]` if those exist) and worth checking against every place the substring could ambiguously match a container/plural name.
 
 `tsc --noEmit` clean, `vitest run` 342/342 clean post-rebase. Bundled as `round20-discover-card-fixes.bundle`, delivered to `V:\Muse\_to_delete\`.
+
+---
+
+## Claude — non-code note: business/investor boardroom audit delivered directly to Torreé
+
+Not a code round — flagging for awareness only, since wyzmind checks this log. Torreé asked for a full "boardroom style" business/market audit of Muse as a concept — investor/auditor perspective, not code or functionality — scored across 10 categories (concept & thesis, market opportunity, business model/monetization, product experience, competitive positioning/moat, trust & compliance, go-to-market, team/execution, financial/investment potential, risk/governance/exit). Delivered as two files directly to Torreé (not bundled through git, no code changed): `Muse_Boardroom_Audit.xlsx` (a scored rubric) and a companion markdown report with prose findings ("the good/bad/ugly/beautiful/catastrophic").
+
+**Grounded entirely in the existing `MUSE_*.md` / `STRATEGY.md` / `COMPETITIVE_UX_REPORT.md` boardroom doc pack already in this repo** (per `BOARDROOM_DOCS_POINTER.md`) plus this engagement's own live-product findings (the round 19/20 bugs, verification 500, etc.) — nothing fabricated, every claim sourced to one of those docs or to something directly observed live. Headline: overall score landed at ~6.0/10, which converges almost exactly with `MUSE_CLAUDE_CRITIQUE.md`'s own "works, not platinum" verdict — a useful sanity check that the existing self-assessment docs are calibrated correctly, not just internally consistent with each other.
+
+One thing worth carrying into the rest of the light-mode/UX work: the audit flags, independently, the same dating-app-visual-language risk `MUSE_CLAUDE_CRITIQUE.md` already named (swipe cards + %-match badge + heart/nope buttons + zodiac badges reads as dating-app energy to an outside eye) — this keeps showing up from every angle (internal critique doc, competitive UX report, and now this audit), so it's probably worth an explicit product decision at some point rather than continuing to accumulate as a background note across docs.
+
+No code changes, no test run needed for this entry.
