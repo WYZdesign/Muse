@@ -296,8 +296,17 @@ export const SettingsScreen = memo(function SettingsScreen({
   const userRole: MuseRole = getMuseRole({ audience: currentUser?.audience, type: currentUser?.type || obData?.type });
   const isMuseProfile = userRole === "muse";
 
-  // Profile completion state
-  const [completionPct, setCompletionPct] = useState(0);
+  // Profile completion state. Starts at `null` (not 0) — Settings is
+  // conditionally rendered (unmounts/remounts on every navigation away and
+  // back, unlike the always-mounted .screen-el screens), so this state
+  // resets on every visit and the fetch below is genuinely async. With an
+  // initial 0 the UI flashed a false "Profile Completion 0%" on every visit
+  // until the fetch resolved — alarming for a user whose real completion is
+  // 50%+, and the exact "flaky 0%" symptom flagged (but not reproduced) a
+  // few rounds back. It wasn't flaky at all: it was a guaranteed loading-
+  // state flash that just depended on how fast you looked. `null` lets the
+  // render below skip showing the block at all until real data is in.
+  const [completionPct, setCompletionPct] = useState<number | null>(null);
   const [completionBreakdown, setCompletionBreakdown] = useState<Record<string, { done: boolean; weight: number }>>({});
   const [showCompletionDetails, setShowCompletionDetails] = useState(false);
 
@@ -559,7 +568,7 @@ export const SettingsScreen = memo(function SettingsScreen({
 
           <div className="settings-group">
             <div className="settings-group-title">Account</div>
-            {completionPct < 100 && (
+            {completionPct !== null && completionPct < 100 && (
               <div
                 role="button"
                 tabIndex={0}
