@@ -102,11 +102,26 @@ export const MusesScreen = memo(function MusesScreen({
   const touchStartX = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Swipe gesture support for list view (unmatch/report)
+  // Swipe gesture support for list view (unmatch/report).
+  // Torreé audit fix: a swipe used to start from anywhere on the card, so
+  // tapping the middle to open a profile — if the finger drifted even
+  // slightly horizontally, which happens easily on a touch screen — could
+  // register as an accidental unmatch/block swipe. Now only a touch that
+  // *starts* in the outer 1/3 of the card on either side arms the swipe
+  // gesture; a touch starting in the center 2/3 never sets touchStartX, so
+  // handleTouchMove/handleTouchEnd's existing `=== null` guards skip it
+  // entirely and the tap falls through to MatchCard's own onClick (open
+  // profile) untouched. Grid view already never enters this at all (guarded
+  // by matchesView !== "list" below), so it's unaffected.
+  const EDGE_SWIPE_FRACTION = 1 / 3;
   const handleTouchStart = (e: React.TouchEvent) => {
     if (matchesView !== "list") return;
     const cardEl = e.currentTarget.querySelector<HTMLElement>(".match-card");
     if (!cardEl) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const relativeX = e.touches[0].clientX - rect.left;
+    const inEdgeZone = rect.width > 0 && (relativeX < rect.width * EDGE_SWIPE_FRACTION || relativeX > rect.width * (1 - EDGE_SWIPE_FRACTION));
+    if (!inEdgeZone) return;
     touchStartX.current = e.touches[0].clientX;
     setSwipeInfo({ id: e.currentTarget.getAttribute("data-card-id") || "", startX: e.touches[0].clientX, diff: 0 });
   };

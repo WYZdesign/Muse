@@ -241,7 +241,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         )}
         <div className="profile-top">
           <div className="profile-avatar-wrap">
-            <Image loading="lazy" src={currentUser.avatar} alt={currentUser.name} width={100} height={100} className="profile-avatar" onError={handleImgError} />
+            <Image loading="lazy" src={currentUser.avatar} alt={currentUser.name} width={128} height={128} className="profile-avatar" onError={handleImgError} />
             {/* Hoolah-hoop: halo (.profile-ring) is the CSS-default 115px (Session 85:
                 a "decrease the halo" ask turned out to mean the ring's line thickness,
                 not diameter — see the .profile-ring comment in muse.css; diameter here

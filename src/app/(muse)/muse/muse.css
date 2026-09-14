@@ -592,7 +592,17 @@ img{background-color:var(--card-bg)}
    back-and-forth stutter the ring's old orbitSpin had — I'd only fixed the ring
    overlay, not the avatar underneath it. Sizing (104px ring / 100px avatar) is
    tighter than my first pass and confirmed non-touching via live screenshot. */
-.profile-avatar{width:100px;height:100px;box-sizing:border-box;border-radius:50%;object-fit:cover;background-color:var(--bg);animation:avatarEccentric 6s linear infinite}
+/* Audit fix: Torreé asked for the image to fill the halo with no gap — this was
+   deliberately sized non-touching in a prior session (see note above), but that's
+   now superseded by an explicit new ask. The ring here is .profile-ring-large
+   (138px outer, see muse.css), whose mask leaves visible ring only in the outer
+   ~5.5px band — i.e. a ~127px hole. Sized the avatar to 128px so its edge tucks
+   just under the ring's inner edge (a hair of intentional overlap, not 127px on
+   the nose, so no 1px antialiasing seam shows between image and ring on any
+   display density). Only used on ProfileScreen with profile-ring-large, so this
+   doesn't touch any other halo/avatar pairing (MatchCard, MenuModal, etc. use
+   their own classes). */
+.profile-avatar{width:128px;height:128px;box-sizing:border-box;border-radius:50%;object-fit:cover;background-color:var(--bg);animation:avatarEccentric 6s linear infinite}
 /* Torreé's Session 84 ask: halo band trimmed thinner (was a 3.7px band, now ~2.2px)
    so it reads as a delicate halo rather than a thick ring, especially now that
    avatar-orbit sits clearly outside it (see .orbit-outer) instead of fusing with it.

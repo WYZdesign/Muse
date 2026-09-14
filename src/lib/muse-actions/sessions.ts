@@ -19,8 +19,15 @@ import { UUID_RE, emailProfile, NextResponse, safeServerError, isAgeVerification
 
 export const sessionBook = async ({ sb, profile, rest }: ActionContext) => {
   if (!await checkRateUser(profile.id, "book-session", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-  const { sessionId } = rest;
+  const { sessionId, note } = rest;
   if (!sessionId) return NextResponse.json({ error: "sessionId required" }, { status: 400 });
+  // Audit fix: the "Book" mini-form on SessionsScreen collects sizing/prep
+  // notes + a message to the host, but had nowhere to go — muse_bookings has
+  // no note-style column (and this whole audit has been about the cost of
+  // assuming a column exists without checking), so it's folded into the
+  // existing free-text notification body the host already gets instead of a
+  // new column.
+  const bookerNote = sanitizeText(String(note || ""), 300);
   const { data: booker } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profile.id).maybeSingle();
   if (!isAgeVerificationCurrent(booker as any)) {
     return NextResponse.json({ error: "Identity verification required", code: "VERIFICATION_REQUIRED" }, { status: 403 });
@@ -38,8 +45,9 @@ export const sessionBook = async ({ sb, profile, rest }: ActionContext) => {
     { session_id: sessionId, user_id: profile.id, user_name: profile.name, user_avatar: profile.avatar, host_id: effectiveHostId, status: "pending" },
     { onConflict: "session_id,user_id", ignoreDuplicates: true }
   );
-  await sb.from("muse_notifications").insert({ user_id: effectiveHostId || profile.id, from_id: profile.id, type: "booking", body: `${profile.name} requested to book a session`, read: false });
-  if (effectiveHostId) await emailProfile(sb, effectiveHostId, "New booking request ✦", "Someone wants to book you", `${profile.name} requested to book one of your sessions.`, "Review booking", "https://muse.wyzdesign.com/muse");
+  const notifBody = bookerNote ? `${profile.name} requested to book a session — ${bookerNote}` : `${profile.name} requested to book a session`;
+  await sb.from("muse_notifications").insert({ user_id: effectiveHostId || profile.id, from_id: profile.id, type: "booking", body: notifBody, read: false });
+  if (effectiveHostId) await emailProfile(sb, effectiveHostId, "New booking request ✦", "Someone wants to book you", bookerNote ? `${profile.name} requested to book one of your sessions. Their note: ${bookerNote}` : `${profile.name} requested to book one of your sessions.`, "Review booking", "https://muse.wyzdesign.com/muse");
   await bumpQuest(sb, profile.id, "book_session");
   return NextResponse.json({ success: true });
 };

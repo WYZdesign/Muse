@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useState, useEffect, useRef } from "react";
+import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiBookmark, FiSearch, FiCompass, FiCalendar, FiInbox, FiEye } from "react-icons/fi";
 import Nav from "../components/Nav";
@@ -105,9 +105,21 @@ export const SessionsScreen = memo(function SessionsScreen({
   savedSessionIds = [],
   setSavedSessionIds = () => {},
 }: SessionsScreenProps) {
-  const bookBtnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
+  // Torreé audit items 4-5: tapping a session card opens a full-detail modal
+  // instead of doing nothing, and the book button opens a brief 3-field form
+  // (sizing/prep + a note to the host) instead of booking instantly with no
+  // context. Both are pure UI/request-payload additions — the actual booking
+  // action (sessionBook, muse_bookings insert, host accept/decline, payment)
+  // is untouched; the note is folded into the existing notification text
+  // sent to the host rather than a new muse_bookings column, since that
+  // column doesn't exist and this session's whole audit has been about the
+  // cost of assuming one does.
+  const [detailSession, setDetailSession] = useState<any>(null);
+  const [bookFormTarget, setBookFormTarget] = useState<any>(null);
+  const [bookForm, setBookForm] = useState({ sizing: "", requirements: "", message: "" });
+  const [bookSubmitting, setBookSubmitting] = useState(false);
   const [newSession, setNewSession] = useState({ title: "", description: "", type: "Photoshoot", rate: "", duration: "60 min", date: "", location: "" });
   const [creating, setCreating] = useState(false);
 
@@ -142,10 +154,6 @@ export const SessionsScreen = memo(function SessionsScreen({
     return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => {
-    return () => { if (bookBtnTimeoutRef.current) clearTimeout(bookBtnTimeoutRef.current); };
-  }, []);
-
   const connectStripe = async () => {
     try {
       const r = await authFetch("/api/muse/connect", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-account" }) });
@@ -163,6 +171,35 @@ export const SessionsScreen = memo(function SessionsScreen({
       else { showToast(j.error || "Couldn't file request"); }
     } catch { showToast("Couldn't file request"); }
   };
+  const doBookSession = async (s: any, note?: { sizing: string; requirements: string; message: string }) => {
+    try {
+      // Best-effort availability probe (fire-and-forget — never
+      // blocks or gates the booking action below).
+      try {
+        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "host-availability", sessionId: s.id }) })
+          .then(r => r.json())
+          .then(d => console.log("[host-availability]", s.id, Array.isArray(d?.slots) ? d.slots.length : 0))
+          .catch(() => {});
+      } catch {}
+      const noteText = note ? [note.sizing && `Sizing/prefs: ${note.sizing}`, note.requirements && `Requirements: ${note.requirements}`, note.message && `Note: ${note.message}`].filter(Boolean).join(" · ") : "";
+      const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "book-session", sessionId: s.id, note: noteText }) });
+      if (r.status === 403) {
+        const d = await r.json().catch(() => ({}));
+        if (d.code === "VERIFICATION_REQUIRED") {
+          setShowAgeVerification(true);
+          showToast("Verify your identity to book paid sessions");
+          return false;
+        }
+      }
+      if (!r.ok) throw new Error("failed");
+      showToast("Session request sent to " + s.name + "!");
+      return true;
+    } catch {
+      showToast("Failed to book session");
+      return false;
+    }
+  };
+
   const submitSession = async () => {
     if (!newSession.title.trim()) { showToast("Title is required"); return; }
     setCreating(true);
@@ -319,15 +356,20 @@ export const SessionsScreen = memo(function SessionsScreen({
                     Bookmark — both var(--text2)) below it. Matched to the same pattern
                     CommunityScreen's identical report button already uses. */}
                 <button aria-label="Report session" title="Report" onClick={() => { setReportTarget({ id: s.id, type: "session", name: s.name || "session" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "var(--card-bg)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
-                <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0 }}>
+                {/* Torreé audit item 4: tapping the card (image + name/meta/skills
+                    area) opens the full-detail modal. Deliberately excludes the
+                    button row below — those buttons keep their own actions
+                    (toggle/book/view profile/save) rather than also opening the
+                    modal underneath the tap. */}
+                <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0, cursor: "pointer" }} onClick={() => setDetailSession(s)} role="button" tabIndex={0} aria-label={`View details for ${s.name}`} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDetailSession(s); } }}>
                   {s.img && (
                     <Image src={s.img} alt={s.name} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
                   )}
                 </div>
                 <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <div className="conn-name" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  <div className="conn-name" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", cursor: "pointer" }} onClick={() => setDetailSession(s)}>
                     {s.name}
-                    {s.hostVerified && <span className="card-verified-mark" style={{ fontSize: 13, cursor: "pointer" }} title="Identity verified" role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: "Verified Host", desc: "Identity verified by Muse — we confirmed this host's government ID and credentials.", icon: "✓", color: "#FFD700" })} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { setBadgeInfo({ name: "Verified Host", desc: "Identity verified by Muse — we confirmed this host's government ID and credentials.", icon: "✓", color: "#FFD700" }); } }}>✓</span>}
+                    {s.hostVerified && <span className="card-verified-mark" style={{ fontSize: 13, cursor: "pointer" }} title="Identity verified" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Verified Host", desc: "Identity verified by Muse — we confirmed this host's government ID and credentials.", icon: "✓", color: "#FFD700" }); }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setBadgeInfo({ name: "Verified Host", desc: "Identity verified by Muse — we confirmed this host's government ID and credentials.", icon: "✓", color: "#FFD700" }); } }}>✓</span>}
                     {(() => {
                       const tier = sessionTier(s);
                       if (!tier) return null;
@@ -336,18 +378,18 @@ export const SessionsScreen = memo(function SessionsScreen({
                           role="button"
                           tabIndex={0}
                           title={`${tier.minSessions}+ completed sessions and a ${tier.minRating}+ average rating`}
-                          onClick={() => setBadgeInfo({ name: tier.label, desc: tier.key === "elite" ? "Muse's top tier — 25+ completed sessions and a 4.8+ average rating, among the most trusted hosts on Muse." : tier.key === "top" ? "Top Rated — 10+ completed sessions and a 4.5+ average rating, a proven and reliable host." : "Rising Muse — 3+ completed sessions and a 4.0+ average rating, building a strong track record.", icon: tier.icon, color: tier.color })}
+                          onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: tier.label, desc: tier.key === "elite" ? "Muse's top tier — 25+ completed sessions and a 4.8+ average rating, among the most trusted hosts on Muse." : tier.key === "top" ? "Top Rated — 10+ completed sessions and a 4.5+ average rating, a proven and reliable host." : "Rising Muse — 3+ completed sessions and a 4.0+ average rating, building a strong track record.", icon: tier.icon, color: tier.color }); }}
                           style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.3, padding: "2px 7px", borderRadius: 20, background: tier.bg, border: `1px solid ${tier.border}`, color: tier.color, textTransform: "uppercase", cursor: "pointer" }}
                         >{tier.icon} {tier.label}</span>
                       );
                     })()}
                   </div>
-                  <div className="conn-meta" style={{ fontSize: 12 }}>{s.type} · {s.rate} · ★ {s.rating}</div>
+                  <div className="conn-meta" style={{ fontSize: 12, cursor: "pointer" }} onClick={() => setDetailSession(s)}>{s.type} · {s.rate} · ★ {s.rating}</div>
                   {!!s.hostCompletedSessions && (
                     <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{s.hostCompletedSessions} session{s.hostCompletedSessions === 1 ? "" : "s"} completed</div>
                   )}
                   <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
-                    {(s.skills || []).map((sk: string) => <span key={sk} className="conn-tag" role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: sk, desc: `A skill covered in this session — what you'll work on or learn.`, icon: "🛠", color: "#90caf9" })} style={{ fontSize: 10, padding: "3px 8px", cursor: "pointer" }}>{sk}</span>)}
+                    {(s.skills || []).map((sk: string) => <span key={sk} className="conn-tag" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: sk, desc: `A skill covered in this session — what you'll work on or learn.`, icon: "🛠", color: "#90caf9" }); }} style={{ fontSize: 10, padding: "3px 8px", cursor: "pointer" }}>{sk}</span>)}
                   </div>
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                     {isHostOwned(s) && (
@@ -363,37 +405,8 @@ export const SessionsScreen = memo(function SessionsScreen({
                     <button
                       className="btn btn-gold"
                       style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap" }}
-                      onClick={async (e) => {
-                        const btn = e.currentTarget;
-                        if (btn.disabled) return;
-                        btn.disabled = true;
-                        try {
-                          // Best-effort availability probe (fire-and-forget — never
-                          // blocks or gates the booking action below).
-                          try {
-                            apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "host-availability", sessionId: s.id }) })
-                              .then(r => r.json())
-                              .then(d => console.log("[host-availability]", s.id, Array.isArray(d?.slots) ? d.slots.length : 0))
-                              .catch(() => {});
-                          } catch {}
-                          const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "book-session", sessionId: s.id }) });
-                          if (r.status === 403) {
-                            const d = await r.json().catch(() => ({}));
-                            if (d.code === "VERIFICATION_REQUIRED") {
-                              setShowAgeVerification(true);
-                              showToast("Verify your identity to book paid sessions");
-                              return;
-                            }
-                          }
-                          if (!r.ok) throw new Error("failed");
-                          showToast("Session request sent to " + s.name + "!");
-                        } catch {
-                          showToast("Failed to book session");
-                        } finally {
-                          if (bookBtnTimeoutRef.current) clearTimeout(bookBtnTimeoutRef.current);
-                          bookBtnTimeoutRef.current = setTimeout(() => { btn.disabled = false; }, 2000);
-                        }
-                      }}
+                      title="Book now — a request is sent to the host to confirm"
+                      onClick={() => { setBookForm({ sizing: "", requirements: "", message: "" }); setBookFormTarget(s); }}
                     >
                       {s.available ? "Book Session" : "Waitlist"}
                     </button>
@@ -594,6 +607,76 @@ export const SessionsScreen = memo(function SessionsScreen({
               <input className="inp" placeholder="Location" value={newSession.location} onChange={e => setNewSession(p => ({ ...p, location: e.target.value }))} style={{ flex: 1 }} />
             </div>
             <button className="btn btn-gold" style={{ width: "100%", marginTop: 12, fontWeight: 700 }} onClick={submitSession} disabled={creating}>{creating ? "Listing..." : "List Session"}</button>
+          </div>
+        </div>
+      )}
+      {detailSession && (
+        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setDetailSession(null)}>
+          <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 440, width: "90%", padding: 20, maxHeight: "80vh", overflowY: "auto" }}>
+            {detailSession.img && (
+              <div style={{ position: "relative", width: "100%", height: 160, borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
+                <Image src={detailSession.img} alt={detailSession.name} fill sizes="90vw" style={{ objectFit: "cover" }} onError={handleImgError} />
+              </div>
+            )}
+            <div className="modal-title" style={{ marginBottom: 4, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              {detailSession.name}
+              {detailSession.hostVerified && <span style={{ fontSize: 13 }} title="Identity verified">✓</span>}
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 10 }}>{detailSession.type} · {detailSession.rate} · ★ {detailSession.rating}{detailSession.duration ? ` · ${detailSession.duration}` : ""}</div>
+            {detailSession.description ? (
+              <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5, marginBottom: 12 }}>{detailSession.description}</div>
+            ) : (
+              <div style={{ fontSize: 12.5, color: "var(--muted)", fontStyle: "italic", marginBottom: 12 }}>No description provided by the host yet.</div>
+            )}
+            {!!(detailSession.skills || []).length && (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text2)", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 6 }}>What this covers</div>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
+                  {(detailSession.skills || []).map((sk: string) => <span key={sk} className="conn-tag" style={{ fontSize: 10, padding: "3px 8px" }}>{sk}</span>)}
+                </div>
+              </>
+            )}
+            {detailSession.location && (
+              <div style={{ fontSize: 12.5, color: "var(--text2)", marginBottom: 4 }}>📍 {detailSession.location}</div>
+            )}
+            {detailSession.date && (
+              <div style={{ fontSize: 12.5, color: "var(--text2)", marginBottom: 12 }}>📅 {detailSession.date}</div>
+            )}
+            {isHostOwned(detailSession) ? (
+              <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", padding: "10px 0" }}>This is your own listing.</div>
+            ) : (
+              <button className="btn btn-gold" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => { const s = detailSession; setDetailSession(null); setBookForm({ sizing: "", requirements: "", message: "" }); setBookFormTarget(s); }}>
+                {detailSession.available ? "Book Session" : "Join Waitlist"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {bookFormTarget && (
+        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => { if (!bookSubmitting) setBookFormTarget(null); }}>
+          <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, width: "90%", padding: 20 }}>
+            <div className="modal-title" style={{ marginBottom: 4 }}>{bookFormTarget.available ? "Book" : "Join Waitlist for"} {bookFormTarget.name}</div>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>A quick note for the host — sizing/prep and anything they should know before accepting.</div>
+            <input className="inp" placeholder="Sizing / preferences (optional)" value={bookForm.sizing} onChange={e => setBookForm(p => ({ ...p, sizing: e.target.value.slice(0, 100) }))} style={{ marginBottom: 8 }} />
+            <input className="inp" placeholder="Prep / special requirements (optional)" value={bookForm.requirements} onChange={e => setBookForm(p => ({ ...p, requirements: e.target.value.slice(0, 100) }))} style={{ marginBottom: 8 }} />
+            <textarea className="inp" placeholder="A short message to the host (optional)" rows={2} value={bookForm.message} onChange={e => setBookForm(p => ({ ...p, message: e.target.value.slice(0, 200) }))} style={{ resize: "none", marginBottom: 12 }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setBookFormTarget(null)} disabled={bookSubmitting}>{STRINGS.cancel}</button>
+              <button
+                className="btn btn-gold"
+                style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 700, borderRadius: 12 }}
+                disabled={bookSubmitting}
+                onClick={async () => {
+                  if (bookSubmitting) return;
+                  setBookSubmitting(true);
+                  const ok = await doBookSession(bookFormTarget, bookForm);
+                  setBookSubmitting(false);
+                  if (ok) setBookFormTarget(null);
+                }}
+              >
+                {bookSubmitting ? "Sending..." : (bookFormTarget.available ? "Send Request" : "Join Waitlist")}
+              </button>
+            </div>
           </div>
         </div>
       )}
