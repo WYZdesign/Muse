@@ -355,7 +355,18 @@ export const MusesScreen = memo(function MusesScreen({
           )}
         </div>
       ) : (
-        <div className="match-list" style={matchesView === "grid" ? { flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "repeat(2,1fr)", gridAutoFlow: "row", gridAutoRows: "auto", columnGap: 14, rowGap: 14, alignContent: "flex-start", overflowY: "auto", padding: "14px 14px 112px", boxSizing: "border-box" } : { flex: 1, display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "flex-start", overflowY: "auto", padding: "0 16px 80px", gap: 10 }}>
+        // Grid mode: gridAutoRows was "auto", which left every row's height
+        // collapsed to well under a card's real ~305px content height,
+        // making consecutive rows overlap and hiding each card's bottom
+        // name/type/location overlay underneath the next row's card. Same
+        // "container fails to size to dynamically taller content" bug
+        // family as the Quests accordion fix earlier this session, just via
+        // CSS Grid auto-row sizing instead of flex-basis:auto. Confirmed
+        // live: switching to max-content resolves every row to its correct
+        // height immediately, with no other visual change (no minmax or
+        // flexible tracks are involved, so auto and max-content should have
+        // behaved identically here).
+        <div className="match-list" style={matchesView === "grid" ? { flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "repeat(2,1fr)", gridAutoFlow: "row", gridAutoRows: "max-content", columnGap: 14, rowGap: 14, alignContent: "flex-start", overflowY: "auto", padding: "14px 14px 112px", boxSizing: "border-box" } : { flex: 1, display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "flex-start", overflowY: "auto", padding: "0 16px 80px", gap: 10 }}>
           {matches.length === 0 && (
             <EmptyState icon="✦" title="No Muses yet" sub="Swipe right on creatives in Discover to ignite new collaborations.">
               <button className="btn btn-gold" style={{ padding: "10px 24px", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => showScreen("discover")}>Start Discovering</button>
