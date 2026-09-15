@@ -789,7 +789,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     // skip the redundant setSession calls in the failure branches below.
     if (fromAuthStateChange) {
       // We already are in the chain triggered by authStateChange; we must not call setSession
-      // here, which would cause an infinite loop.
+      // here, which would cause an infinite loop. Return early.
+      return;
     }
     // Refresh the session first — access tokens expire after 1hr, but refresh tokens
     // can silently fail (revoked, expired, etc). We try to get a fresh token before
