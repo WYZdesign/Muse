@@ -2,6 +2,46 @@
 
 import { safeGetItem, safeSetItem, getRefreshToken, setRefreshToken, clearRefreshToken } from "./safe-storage";
 
+/**
+ * fetch() with no timeout at all — which every call site in this app used
+ * to be — hangs forever on a stuck connection (server accepted the socket
+ * but never responds, a proxy holds it open, etc.). That's the same class
+ * of bug as the MutationObserver freeze (something that should finish
+ * never does, with nothing forcing it to give up), just at the network
+ * layer instead of the render layer: a "Loading..." spinner stuck forever
+ * instead of a frozen tab. One call site (Discover) had its own ad-hoc 30s
+ * timeout added for exactly this reason — this makes that the default
+ * everywhere, once, instead of relying on every future call site to
+ * remember to add its own. Callers that already wrap apiFetch/authFetch in
+ * try/catch (every one checked in this codebase does) get this for free:
+ * a timeout rejects the fetch with an AbortError, which lands in their
+ * existing catch block, same as any other network failure.
+ */
+function withTimeout(options: RequestInit, timeoutMs: number): { options: RequestInit; cancel: () => void } {
+  if (options.signal) return { options, cancel: () => {} }; // caller supplied their own — don't override it
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return { options: { ...options, signal: controller.signal }, cancel: () => clearTimeout(timer) };
+}
+
+const DEFAULT_FETCH_TIMEOUT_MS = 15000;
+
+/**
+ * Same timeout protection as authFetch, for the handful of call sites that
+ * don't need auth (login/signup itself, password reset, public reads) and
+ * so can't go through authFetch — routing an unauthenticated call through
+ * authFetch would be harmless (it just skips setting an Authorization
+ * header) but would also silently pull in the 401-refresh-and-retry dance,
+ * which is misleading to read at a call site that was never authenticated
+ * in the first place. This is the plain version: fetch + timeout, nothing
+ * else.
+ */
+export async function fetchWithTimeout(url: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<Response> {
+  const { timeoutMs = DEFAULT_FETCH_TIMEOUT_MS, ...rest } = options;
+  const { options: opts, cancel } = withTimeout(rest, timeoutMs);
+  try { return await fetch(url, opts); } finally { cancel(); }
+}
+
 export function getAccessToken(): string {
   if (typeof window === "undefined") return "";
   try { return JSON.parse(safeGetItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
@@ -20,11 +60,15 @@ async function refreshAccessToken(): Promise<string> {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
       if (!supabaseUrl || !supabaseKey) return "";
-      const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+      const { options, cancel } = withTimeout({
         method: "POST",
         headers: { "Content-Type": "application/json", apikey: supabaseKey },
         body: JSON.stringify({ refresh_token: refreshToken }),
-      });
+      }, DEFAULT_FETCH_TIMEOUT_MS);
+      let res: Response;
+      try {
+        res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=refresh_token`, options);
+      } finally { cancel(); }
       if (!res.ok) { clearRefreshToken(); return ""; }
       const data = await res.json();
       if (data.access_token) {
@@ -46,22 +90,26 @@ async function refreshAccessToken(): Promise<string> {
   try { return await _refreshPromise; } finally { _refreshPromise = null; }
 }
 
-export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+export async function authFetch(url: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<Response> {
+  const { timeoutMs = DEFAULT_FETCH_TIMEOUT_MS, ...rest } = options;
   const token = getAccessToken();
-  const headers = new Headers(options.headers);
+  const headers = new Headers(rest.headers);
   if (token) headers.set("Authorization", `Bearer ${token}`);
   // Only set Content-Type for string bodies (JSON). For FormData / Blob /
   // ArrayBuffer bodies, the browser must set the multipart boundary itself —
   // forcing application/json here corrupts the request and breaks uploads.
-  if (!headers.has("Content-Type") && typeof options.body === "string") headers.set("Content-Type", "application/json");
-  let res = await fetch(url, { ...options, headers });
+  if (!headers.has("Content-Type") && typeof rest.body === "string") headers.set("Content-Type", "application/json");
+  let attempt = withTimeout({ ...rest, headers }, timeoutMs);
+  let res: Response;
+  try { res = await fetch(url, attempt.options); } finally { attempt.cancel(); }
 
   // If 401, try refreshing the token once and retry
   if (res.status === 401) {
     const newToken = await refreshAccessToken();
     if (newToken && newToken !== token) {
       headers.set("Authorization", `Bearer ${newToken}`);
-      res = await fetch(url, { ...options, headers });
+      attempt = withTimeout({ ...rest, headers }, timeoutMs);
+      try { res = await fetch(url, attempt.options); } finally { attempt.cancel(); }
     } else if (token) {
       // We HAD a token (the user believed they were logged in) but neither
       // the original request nor a refresh attempt worked — the session is

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { fetchWithTimeout } from "../lib/api";
 
 interface ChatMsg {
   role: "user" | "assistant";
@@ -57,10 +58,16 @@ export default function SupportChat({ open, onClose }: { open: boolean; onClose:
     setMessages((m) => [...m, { role: "user", text: question }]);
     setLoading(true);
     try {
-      const r = await fetch("/api/muse/support", {
+      // Longer timeout than the default — this hits an LLM backend, which
+      // can legitimately take longer than a normal API call. Was a bare
+      // fetch() with no timeout at all; the finally block below already
+      // clears loading on any rejection, so a timeout now resolves into
+      // "Something went wrong" instead of a spinner stuck forever.
+      const r = await fetchWithTimeout("/api/muse/support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question }),
+        timeoutMs: 30000,
       });
       const d = await r.json();
       const text = d.answer || "I'm not sure about that one. Try rephrasing, or email info@wyzdesign.com and we'll sort you out.";

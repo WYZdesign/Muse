@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
+import { fetchWithTimeout } from "../lib/api";
 
 type Props = {
   photos: string[];
@@ -75,7 +76,7 @@ export default function Lightbox({ photos, idx, onClose, onNavigate, onError }: 
   const handleDownload = async () => {
     const url = photos[idx];
     try {
-      const res = await fetch(url);
+      const res = await fetchWithTimeout(url);
       const blob = await res.blob();
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
