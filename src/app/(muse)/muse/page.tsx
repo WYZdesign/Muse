@@ -387,6 +387,21 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const loadStateRef = useRef(false);
   const sessionAppliedRef = useRef(false);
+  // Guards against a real production hang: applySession() calls
+  // supabase.auth.setSession() to keep the SDK's own session in sync (see
+  // that function's comments), but setSession() itself fires the
+  // onAuthStateChange "SIGNED_IN" listener below — which used to call
+  // applySession() again unconditionally. If refreshSession() inside
+  // applySession keeps failing with the same (e.g. already-rotated) refresh
+  // token, every retry calls setSession() again, which re-fires SIGNED_IN,
+  // which calls applySession() again — an unbounded loop with no thrown
+  // error (every step is inside a .catch(()=>{})), pegging the main thread
+  // and freezing the tab. Set right before each of applySession's own
+  // internal setSession() calls; the listener below checks and clears it so
+  // that specific self-triggered SIGNED_IN echo doesn't re-enter
+  // applySession. A real external SIGNED_IN (actual login, OAuth) never
+  // sets this, so it's unaffected.
+  const syncingSdkSessionRef = useRef(false);
   const shuffleSeed = useRef(Math.floor(Math.random() * 100000));
   const matchSwipeRef = useRef<{id:string;startX:number;el:HTMLElement|null}>({id:"",startX:0,el:null});
   const [matchSwiping, setMatchSwiping] = useState<{id:string;offset:number} | null>(null);
@@ -952,10 +967,49 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           }
         });
     };
+    // Sync the SDK's own client-side session without re-entering applySession:
+    // setSession() fires the onAuthStateChange "SIGNED_IN" listener, which
+    // would otherwise call applySession() again — and if refreshSession()
+    // above keeps failing with the same dead refresh token, that becomes an
+    // unbounded setSession -> SIGNED_IN -> applySession -> setSession loop
+    // that never throws (see syncingSdkSessionRef's declaration comment).
+    // The listener clears the flag itself once it sees the echoed event;
+    // this timeout is just a safety net in case that event never fires at
+    // all (e.g. the call rejects before emitting anything).
+    const syncSdkSession = (token: string, refresh: string) => {
+      syncingSdkSessionRef.current = true;
+      setTimeout(() => { syncingSdkSessionRef.current = false; }, 5000);
+      supabase.auth.setSession({ access_token: token, refresh_token: refresh }).catch(() => {});
+    };
     // If we have a refresh token, try to get a fresh session first
+    // A definitively dead refresh token (already rotated/consumed, revoked,
+    // or genuinely expired — GoTrue's "invalid_grant" / "Refresh Token Not
+    // Found" family of errors) is not a transient hiccup worth retrying: on
+    // top of our own logic, the SDK's autoRefreshToken background timer
+    // (src/lib/supabase.ts) will keep retrying the SAME dead token on its
+    // own schedule for as long as it holds one, independent of anything
+    // here — confirmed live (a stale token produces a steady drip of
+    // internal supabase-js refresh calls for the rest of the session).
+    // Recognize this case and log out cleanly instead of feeding the SDK a
+    // token we already know will never work.
+    const isDeadRefreshTokenError = (err: unknown): boolean => {
+      const msg = String((err as any)?.message || err || "").toLowerCase();
+      return msg.includes("refresh_token_not_found") || msg.includes("invalid_grant") || msg.includes("invalid refresh token") || msg.includes("refresh token not found") || msg.includes("already used");
+    };
+    const cleanLogoutDeadToken = () => {
+      try { safeRemoveItem("muse_user"); } catch {}
+      try { clearRefreshToken(); } catch {}
+      // scope:'local' clears the SDK's own in-memory/persisted session and
+      // cancels its autoRefreshToken timer without a network round-trip —
+      // exactly what's needed here since the token is already known-dead.
+      try { supabase.auth.signOut({ scope: "local" }).catch(() => {}); } catch {}
+      setAuthUser(null);
+      setScreen("auth");
+      try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
+    };
     if (pendingRefresh) {
       supabase.auth.refreshSession({ refresh_token: pendingRefresh })
-        .then(({ data: { session } }) => {
+        .then(({ data: { session }, error }) => {
           if (session?.access_token) {
             pendingToken = session.access_token;
             pendingRefresh = session.refresh_token || pendingRefresh;
@@ -963,6 +1017,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             safeSetItem("muse_user", JSON.stringify({ access_token: pendingToken, refresh_token: pendingRefresh }));
             setRefreshToken(pendingRefresh);
             doSessionCheck();
+          } else if (isDeadRefreshTokenError(error)) {
+            cleanLogoutDeadToken();
           } else {
             // Refresh failed, fall back to original token. The SDK's own
             // session was never set in this branch (refreshSession() only
@@ -973,19 +1029,34 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             // to tell the SDK apart from "logged out" (see doLogout's
             // signOut() comment — it depends on the SDK actually holding a
             // session to have anything to clear).
-            supabase.auth.setSession({ access_token: pendingToken, refresh_token: pendingRefresh }).catch(() => {});
+            //
+            // Deliberately pass "" for the refresh token here, NOT
+            // pendingRefresh: we just learned pendingRefresh doesn't work.
+            // The SDK (createClient with autoRefreshToken: true, see
+            // src/lib/supabase.ts) schedules its OWN internal background
+            // refresh using whatever refresh token setSession() hands it —
+            // re-arming it with the same dead token here just makes the SDK
+            // independently retry-and-fail on its own timer forever, on top
+            // of (and regardless of) our own retry logic above. Access token
+            // alone is enough for realtime/RLS; there's nothing usable to
+            // refresh with, so don't hand the SDK a token we know is dead.
+            syncSdkSession(pendingToken, "");
             doSessionCheck();
           }
         })
-        .catch(() => {
+        .catch((err) => {
+          if (isDeadRefreshTokenError(err)) {
+            cleanLogoutDeadToken();
+            return;
+          }
           // Refresh failed, fall back to original token — same reasoning as above.
-          supabase.auth.setSession({ access_token: pendingToken, refresh_token: pendingRefresh }).catch(() => {});
+          syncSdkSession(pendingToken, "");
           doSessionCheck();
         });
     } else {
       // No refresh token — still give the SDK the access token so its own
       // session state matches what we're actually treating as logged in.
-      supabase.auth.setSession({ access_token: pendingToken, refresh_token: pendingRefresh }).catch(() => {});
+      syncSdkSession(pendingToken, pendingRefresh);
       doSessionCheck();
     }
   }, []);
@@ -1129,6 +1200,15 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     // Listen for auth state changes (OAuth completion)
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.access_token) {
+        // This SIGNED_IN is the echo of applySession's own internal
+        // setSession() call (see syncingSdkSessionRef's declaration comment)
+        // — applySession already ran doSessionCheck() for this exact token,
+        // so re-entering it here would loop forever whenever the refresh
+        // token keeps failing. Swallow it once and move on.
+        if (syncingSdkSessionRef.current) {
+          syncingSdkSessionRef.current = false;
+          return;
+        }
         if (sessionAppliedRef.current) {
           sessionAppliedRef.current = false;
         }
