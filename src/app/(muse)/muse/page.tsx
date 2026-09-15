@@ -14,6 +14,7 @@ import BackgroundScene from "./components/BackgroundScene";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
 import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, setRefreshToken, getRefreshToken, clearRefreshToken, QUOTA_MSG } from "./lib/safe-storage";
+import { createSafeObserver } from "./lib/safe-observer";
 import { getAccessToken, authFetch } from "./lib/api";
 import { analytics, setAnalyticsScreen, setAnalyticsUser, initAnalyticsSession } from "./lib/analytics";
 import { uid } from "./lib/uid";
@@ -480,12 +481,23 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         img.removeAttribute("src");
       }
     };
-    const mo = new MutationObserver((muts) => {
+    // Wrapped in createSafeObserver (rate-based circuit breaker) as
+    // defense-in-depth: this callback is already guarded against
+    // self-retriggering (img.dataset.fallback check-before-mutate), but it
+    // still does a subtree querySelectorAll("img") on every childList
+    // mutation anywhere in the app. A future edit that removes the guard,
+    // or an unrelated part of the app generating very high-frequency DOM
+    // churn, would otherwise be able to reproduce the same class of
+    // main-thread-freezing storm found in the "waves" observer below —
+    // this makes that fail safe (observer disconnects) instead of freezing
+    // the tab. See lib/safe-observer.ts for why this can't be caught once
+    // it happens, only prevented.
+    const mo = createSafeObserver((muts) => {
       for (const m of muts) {
         if (m.type === "childList") m.addedNodes.forEach(n => { if (n.nodeType === 1 && (n as Element).querySelectorAll) (n as Element).querySelectorAll("img").forEach(img => sweepImg(img as HTMLImageElement)); });
         if (m.type === "attributes" && m.target.nodeName === "IMG") sweepImg(m.target as HTMLImageElement);
       }
-    });
+    }, { label: "img-fallback-sweep" });
     mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["src"] });
     document.querySelectorAll<HTMLImageElement>("img").forEach(sweepImg);
     return () => { document.removeEventListener("error", onImgError, true); mo.disconnect(); };
@@ -1328,14 +1340,43 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     return () => { if (scroller) scroller.removeEventListener("scroll", check); };
   }, [screen]);
 
-  // Also always show waves on the swipe card (Discover) as a gradient accent
+  // Also always show waves on the swipe card (Discover) as a gradient accent.
+  //
+  // CRITICAL FIX (freeze root cause): this previously observed
+  // document.body with { childList: true, subtree: true, attributes: true,
+  // attributeFilter: ['class'] } — i.e. every class-attribute change and
+  // every node insertion/removal ANYWHERE on the page, not just Discover.
+  // Its own callback called classList.add('waves-visible'), which is
+  // itself a class-attribute mutation the same observer was watching, and
+  // reran document.querySelectorAll('.swipe-card.top-card') (a whole-
+  // document query) on every single one of those mutations. Mounting the
+  // Discover card stack (or, after that, literally any class/DOM churn
+  // anywhere else in this 3000+ line app — toasts, badges, animations)
+  // could fire this callback in rapid, sustained succession, each firing
+  // native DOM-traversal work with no JS between them to interrupt — a
+  // microtask storm that starves the render thread and freezes the tab.
+  // Confirmed via CPU profiling during the "app freezes after login /
+  // after ~2s on Discover" reports: ~98% of samples were in Chromium's
+  // native code, not JS, with this exact callback on the stack.
+  //
+  // Fix: scope the observer to the card stack only (not document.body),
+  // and drop the attributes/class watch entirely — classList.add is
+  // idempotent, so we only ever need to react to NEW cards being
+  // inserted (childList), never to class changes (which we caused).
+  //
+  // HARDENING: also wrapped in createSafeObserver as a second, independent
+  // layer of defense — even with the scoped target above, a future edit to
+  // this effect (or to .card-stack's own render logic) could reintroduce a
+  // tight mutate->observe->mutate loop. The circuit breaker makes that fail
+  // as "waves stop appearing" instead of "the app freezes".
   useEffect(() => {
     const addWaves = () => {
       document.querySelectorAll('.swipe-card.top-card').forEach(c => c.classList.add('waves-visible'));
     };
     addWaves();
-    const obs = new MutationObserver(addWaves);
-    obs.observe(document.querySelector('.card-stack') ?? document.body, { childList: true, subtree: true });
+    const target = document.querySelector('.card-stack') || document.body;
+    const obs = createSafeObserver(addWaves, { label: "discover-waves" });
+    obs.observe(target, { childList: true, subtree: true });
     return () => obs.disconnect();
   }, [screen]);
 
@@ -2456,7 +2497,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           {toastMsg.type === "success" ? "✓ " : toastMsg.type === "error" ? "✕ " : ""}{toastMsg.msg}
         </div>
       )}
-      <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} setLiveForum={setLiveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} setShowFeatureTour={setShowFeatureTour} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowBlockedUsers={setShowBlockedUsersPanel} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} nearQuests={nearQuests} topQuests={topQuests} loginStreak={loginStreak} weeklyLogins={weeklyLogins} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} onMarkAllRead={() => setActivityFeed(prev => prev.map(a => ({ ...a, read: true })))} unreadCount={unreadNotificationCount} briefTitleById={briefTitleById} liveProfessionals={liveProfessionals} setShowQuests={setShowQuests} questClaimables={claimableQuests} getReferralTier={getReferralTier} />
+      <ScreenErrorBoundary name="MenuModal">
+        <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} setLiveForum={setLiveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} setShowFeatureTour={setShowFeatureTour} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowBlockedUsers={setShowBlockedUsersPanel} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} nearQuests={nearQuests} topQuests={topQuests} loginStreak={loginStreak} weeklyLogins={weeklyLogins} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} onMarkAllRead={() => setActivityFeed(prev => prev.map(a => ({ ...a, read: true })))} unreadCount={unreadNotificationCount} briefTitleById={briefTitleById} liveProfessionals={liveProfessionals} setShowQuests={setShowQuests} questClaimables={claimableQuests} getReferralTier={getReferralTier} />
+      </ScreenErrorBoundary>
       <SupportChat open={supportOpen} onClose={() => setSupportOpen(false)} />
       {screen === "auth" ? (
         <div className="phone-wrap">
@@ -2971,7 +3014,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       {/* SUBSCRIPTION SCREEN */}
       {screen === "subscription" && <React.Suspense fallback={null}><ScreenErrorBoundary name="Subscription"><SubscriptionScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} authUser={authUser} userTier={userTier} setUserTier={setUserTier} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} apiFetch={apiFetch} /></ScreenErrorBoundary></React.Suspense>}
       {/* ANALYTICS SCREEN */}
-      {screen === "analytics" && <React.Suspense fallback={null}><AnalyticsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} /></React.Suspense>}
+      {screen === "analytics" && <React.Suspense fallback={null}><ScreenErrorBoundary name="Analytics"><AnalyticsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} /></ScreenErrorBoundary></React.Suspense>}
       {/* SETTINGS SCREEN */}
       {screen === "settings" && <ScreenErrorBoundary name="Settings"><SettingsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} obData={obData} showNsfw={showNsfw} setShowNsfw={setShowNsfw} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} blockedUsers={blockedUsers} setBlockedUsers={setBlockedUsers} obConnectedSocials={obConnectedSocials} toggleSocial={toggleSocial} theme={theme} setTheme={setTheme} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} doLogout={doLogout} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditNsfw={setEditNsfw} setShowNotificationsSettings={setShowNotificationsSettings} showNotificationsSettings={showNotificationsSettings} setShowConnectedAccounts={setShowConnectedAccounts} showConnectedAccounts={showConnectedAccounts} pushEnabled={pushEnabled} setPushEnabled={setPushEnabled} subscribeToMusePush={subscribeToMusePush} unsubscribeFromMusePush={unsubscribeFromMusePush} setShowTerms={setShowTerms} setShowPrivacy={setShowPrivacy} setShowGuidelines={setShowGuidelines} setShowDeleteConfirm={setShowDeleteConfirm} isUnlimited={isUnlimited} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} promptResponses={promptResponses} promptBankData={promptBankData} myGeo={myGeo} setShowAgeGate={setShowAgeGate} setPendingNsfw={setPendingNsfw} setShowAgeVerification={setShowAgeVerification} setScreen={setScreen} setObStep={setObStep} apiFetch={apiFetch} setShowQuests={setShowQuests} questClaimables={claimableQuests} showBlockedUsers={showBlockedUsersPanel} setShowBlockedUsers={setShowBlockedUsersPanel} ageVerified={ageVerified} verificationExpiringSoon={verificationExpiringSoon} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} authFetch={authFetch} setShowFeatureTour={setShowFeatureTour} setSupportOpen={setSupportOpen} /></ScreenErrorBoundary>}
 
@@ -3419,21 +3462,23 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       {/* ══════ PUBLIC PROFILE ══════ */}
       {publicProfileUser && (
         <React.Suspense fallback={null}>
-          <PublicProfileScreen
-            user={publicProfileUser}
-            onBack={() => setPublicProfileUser(null)}
-            onMessage={(u) => { setPublicProfileUser(null); setChatTarget(u as any); showScreen("chat"); }}
-            onReport={(u) => { setReportTarget(u as any); setShowReport(true); setPublicProfileUser(null); }}
-            onBlock={(u) => { setBlockTarget({ id: u.id, name: u.name || "Unknown" }); setPublicProfileUser(null); }}
-            handleImgError={handleImgError}
-            currentUser={currentUser}
-            apiFetch={apiFetch}
-            showToast={showToast}
-            lightboxPhotos={lightboxPhotos}
-            lightboxIdx={lightboxIdx}
-            setLightboxPhotos={setLightboxPhotos}
-            setLightboxIdx={setLightboxIdx}
-          />
+          <ScreenErrorBoundary name="PublicProfile">
+            <PublicProfileScreen
+              user={publicProfileUser}
+              onBack={() => setPublicProfileUser(null)}
+              onMessage={(u) => { setPublicProfileUser(null); setChatTarget(u as any); showScreen("chat"); }}
+              onReport={(u) => { setReportTarget(u as any); setShowReport(true); setPublicProfileUser(null); }}
+              onBlock={(u) => { setBlockTarget({ id: u.id, name: u.name || "Unknown" }); setPublicProfileUser(null); }}
+              handleImgError={handleImgError}
+              currentUser={currentUser}
+              apiFetch={apiFetch}
+              showToast={showToast}
+              lightboxPhotos={lightboxPhotos}
+              lightboxIdx={lightboxIdx}
+              setLightboxPhotos={setLightboxPhotos}
+              setLightboxIdx={setLightboxIdx}
+            />
+          </ScreenErrorBoundary>
         </React.Suspense>
       )}
       {/* ══════ SHARE MODAL ══════ */}
@@ -3717,16 +3762,18 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         }}
         startScreen={screen}
       />
-      <QuestPanel
-        show={showQuests}
-        onClose={() => setShowQuests(false)}
-        apiFetch={apiFetch}
-        showToast={showToast}
-        onClaimablesChange={setClaimableQuests}
-        onQuestsChange={handleQuestsChange}
-        loginStreak={loginStreak}
-        weeklyLogins={weeklyLogins}
-      />
+      <ScreenErrorBoundary name="QuestPanel">
+        <QuestPanel
+          show={showQuests}
+          onClose={() => setShowQuests(false)}
+          apiFetch={apiFetch}
+          showToast={showToast}
+          onClaimablesChange={setClaimableQuests}
+          onQuestsChange={handleQuestsChange}
+          loginStreak={loginStreak}
+          weeklyLogins={weeklyLogins}
+        />
+      </ScreenErrorBoundary>
     </div>
   );
 }

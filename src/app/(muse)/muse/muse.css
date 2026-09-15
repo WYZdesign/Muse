@@ -433,12 +433,19 @@ textarea.inp{resize:none}
    touching nav OR the content. Verified live (browser-injected, before
    committing) on Discover/chips, Muses/Chat input+send, and Feed. */
 .phone.has-verify-banner .screen-el.active .nav{margin-top:88px}
-/* M11: verify-now banner slides up from the bottom nav on show, and slides
-   back down on dismiss instead of popping in/out instantly. */
+/* M11: verify-now banner is attached to the top of the bottom nav bar
+   (it's already positioned at bottom: calc(72px + safe-area), flush with
+   the nav's top edge — see the inline style in page.tsx). It slides up
+   from behind the nav on show and back down behind it on dismiss, instead
+   of popping in/out instantly. The slide distance is 88px (not 100%) to
+   match the exact nav+gap offset used above by .has-verify-banner — that
+   way the banner visibly emerges from behind the nav bar's top edge
+   rather than jumping in from an arbitrary distance tied to its own
+   (variable, text-dependent) height. */
 .verify-banner{animation:verifyBannerIn .32s cubic-bezier(.22,1,.36,1)}
 .verify-banner-closing{animation:verifyBannerOut .32s cubic-bezier(.4,0,1,1) forwards}
-@keyframes verifyBannerIn{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:0.85}}
-@keyframes verifyBannerOut{from{transform:translateY(0);opacity:0.85}to{transform:translateY(100%);opacity:0}}
+@keyframes verifyBannerIn{from{transform:translateY(88px);opacity:0}to{transform:translateY(0);opacity:0.85}}
+@keyframes verifyBannerOut{from{transform:translateY(0);opacity:0.85}to{transform:translateY(88px);opacity:0}}
 .card-stack{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0;padding:0}
 .swipe-card:active{cursor:grabbing}
 .swipe-card img{width:100%;height:100%;object-fit:cover;object-position:center;background:var(--bg)}
