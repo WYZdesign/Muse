@@ -2,6 +2,18 @@
 
 ---
 
+## 🔴 CRITICAL — App was frozen in production (2026-09-14). FIXED. Verify.
+
+**Two critical bugs shipped as `round25-CRITICAL-double-fix.bundle`** (merged + deployed + live at `a6c48e0`, verified `DEPLOY IS LIVE ✅`):
+
+1. **Session-refresh infinite loop** — `applySession()` in `page.tsx` called `supabase.auth.setSession()` from its failure branch, which re-triggered the `onAuthStateChange` listener → `applySession()` → `refreshSession()` fails → `setSession()` → ... forever. Triggered by any stale/rotated refresh token (Supabase rotates on each use). Symptom: page hangs after splash, unresponsive even to Chrome's devtools. Fixed with a re-entrancy guard (`fromAuthStateChange` param + early-return in the failure branches).
+
+2. **Rules-of-Hooks violation** — `React.useEffect()` was called inside `loadState`'s async body (only fires past `if (!raw) return`, i.e. every returning user with persisted state). Guaranteed "Invalid hook call" crash right after auth. Hoisted to a top-level `useEffect` after `showToast`'s declaration.
+
+Both verified: `tsc --noEmit` clean, 342/342 tests pass. wyzmind's earlier `dd1956f` "fix" for bug #1 was a no-op (empty `if` block, param never passed) — do not trust that commit.
+
+---
+
 ## WYZMIND STATUS — Current as of `18605df` (2026-09-14)
 
 **What's on main right now:**
