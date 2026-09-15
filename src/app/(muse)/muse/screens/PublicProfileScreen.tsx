@@ -196,8 +196,15 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
           return (
             <>
               <Image loading="lazy" src={curPhoto || ""} alt={displayName} fill sizes="(max-width: 600px) 100vw, 400px" style={{ objectFit: "cover" }} onError={handleImgError} />
-              {/* Halo ring */}
-              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 156, height: 156, borderRadius: "50%", border: "2px solid rgba(255,215,0,0.25)", boxShadow: "0 0 30px rgba(255,215,0,0.15), inset 0 0 20px rgba(255,215,0,0.08)", animation: "spin 8s linear infinite", pointerEvents: "none" }} />
+              {/* 2026-09-15: removed the decorative "halo ring" that used to sit here —
+                  a slowly-spinning 156px gold circle absolutely centered on the ENTIRE
+                  hero photo (not on an avatar or any specific element), so on a normal
+                  portrait photo it landed squarely over the subject's face on every
+                  single profile, unconditionally. Torreé flagged this as "the weird
+                  circle that appears whenever you view a full profile" — it wasn't
+                  gated behind verified/premium/boosted or anything else, so there was
+                  no reading of it as an intentional badge; it just looked like a
+                  rendering artifact. */}
               {/* Gradient overlay */}
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 20px 20px", background: "linear-gradient(to top,rgba(10,6,18,0.97) 0%,rgba(10,6,18,0.7) 50%,transparent 100%)", pointerEvents: "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>

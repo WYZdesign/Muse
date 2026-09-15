@@ -360,8 +360,22 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 the hero photo instead of stacked in the info flex column. */}
                             {(() => {
                               const ms = Number((profile as any).matchScore || 0);
+                              const reasons = (profile as any).matchReasons || [];
+                              // 2026-09-15: simplified from "✦ 92% match" to a bare
+                              // "92%" per Torreé's decluttering ask, and made tappable
+                              // — opens the existing "why this match?" popover (below,
+                              // previously only reachable via a small info icon buried
+                              // in the scrolled-down profile details) right from the card
+                              // front, with a link through to the general matching guide.
                               return ms >= 15 && !cardScrolled ? (
-                                <div className="card-match-topleft" style={{ background: "rgba(255,215,0,0.16)", border: "1px solid rgba(255,215,0,0.4)", color: "var(--gold)", fontWeight: 800 }}>✦ {ms}% match</div>
+                                <button
+                                  type="button"
+                                  className="card-match-topleft"
+                                  style={{ background: "rgba(255,215,0,0.16)", border: "1px solid rgba(255,215,0,0.4)", color: "var(--gold)", fontWeight: 800, cursor: "pointer", fontFamily: "inherit", lineHeight: "normal" }}
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => { e.stopPropagation(); setWhyInfo({ score: ms, reasons }); }}
+                                  aria-label={`${ms}% match — why?`}
+                                >{ms}%</button>
                               ) : null;
                             })()}
                             <div className="card-shine" />
@@ -390,13 +404,32 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 return null;
                               })()}
                             </div>
-                            <div className="card-hero-badges">
-                              {(profile as any).zodiac && <span className="card-hero-badge">{ZODIAC_GLYPH[(profile as any).zodiac] || "✦"} {(profile as any).zodiac}</span>}
-                              {(profile as any).mbti && <span className="card-hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MbtiIcon code={(profile as any).mbti} size={11} /> {(profile as any).mbti}</span>}
-                              {!!(profile as any).lifePath && <span className="card-hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><LifePathIcon n={Number((profile as any).lifePath)} size={11} /> LP {(profile as any).lifePath}</span>}
-                              {(profile as any).chinese && <span className="card-hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><ChineseZodiacIcon animal={(profile as any).chinese} size={11} /> {(profile as any).chinese}</span>}
-                              {(profile as any).skills?.slice(0, 2).map((s: string) => <span key={s} className="card-hero-badge">{s}</span>)}
-                            </div>
+                            {(() => {
+                              // 2026-09-15: decluttering pass (Torreé: "discover page seems
+                              // cluttered"). Up to 6 badges (2 skills + zodiac + MBTI + life
+                              // path + Chinese zodiac) used to render in one row on the card
+                              // front — every profile front-loaded with a wall of small pills.
+                              // Skills are the most professionally relevant to a creative-
+                              // collab platform, so they lead; the rest fill up to a hard cap
+                              // of 3 visible badges, with a "+N" pill for the remainder
+                              // (tapping it, like everything else on the card front, just
+                              // scrolls into the full profile details where all of this
+                              // already lives in full).
+                              const all: React.ReactNode[] = [];
+                              (profile as any).skills?.slice(0, 2).forEach((s: string) => all.push(<span key={"sk-" + s} className="card-hero-badge">{s}</span>));
+                              if ((profile as any).zodiac) all.push(<span key="zo" className="card-hero-badge">{ZODIAC_GLYPH[(profile as any).zodiac] || "✦"} {(profile as any).zodiac}</span>);
+                              if ((profile as any).mbti) all.push(<span key="mb" className="card-hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MbtiIcon code={(profile as any).mbti} size={11} /> {(profile as any).mbti}</span>);
+                              if ((profile as any).lifePath) all.push(<span key="lp" className="card-hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><LifePathIcon n={Number((profile as any).lifePath)} size={11} /> LP {(profile as any).lifePath}</span>);
+                              if ((profile as any).chinese) all.push(<span key="cn" className="card-hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><ChineseZodiacIcon animal={(profile as any).chinese} size={11} /> {(profile as any).chinese}</span>);
+                              const shown = all.slice(0, 3);
+                              const overflow = all.length - shown.length;
+                              return (
+                                <div className="card-hero-badges">
+                                  {shown}
+                                  {overflow > 0 && <span className="card-hero-badge" style={{ opacity: 0.7 }}>+{overflow}</span>}
+                                </div>
+                              );
+                            })()}
                           </div>
                           {isTop && (
                             <>
@@ -568,7 +601,9 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                   (which already has position:relative) so top:8/left:12 anchors
                   to the card itself, matching what it always looked like it was
                   supposed to do. */}
-              {isUnlimited && showUnlimitedBadge && <div className="limit-bar" style={{ background: "rgba(10,6,18,0.55)", border: "1px solid rgba(255,215,0,0.15)", borderRadius: 99, padding: "6px 10px 6px 16px", marginTop: 0, position: "absolute", top: 8, left: 12, zIndex: 20, backdropFilter: "blur(12px)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", gap: 8 }}><div style={{ fontSize: 12, fontWeight: 700, color: "var(--gold)", letterSpacing: 0.5 }}>∞ Unlimited</div><button onClick={(e) => { e.stopPropagation(); setShowUnlimitedBadge(false); }} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 13, padding: 0, lineHeight: 1 }}>✕</button></div>}
+              {/* 2026-09-15: dropped the dismissible "∞ Unlimited" pill per
+                  Torreé's ask — unlimited likes just works (isUnlimited is
+                  unconditionally true), no need to announce it on every card. */}
             </div>
             {!isUnlimited && (dailyLikes < 10 || superLikes < 3) && <div className="limit-bars">{dailyLikes < 10 && <div className="limit-bar"><div className="limit-dots">{Array.from({ length: 10 }, (_, i) => <div key={i} className={"limit-dot" + (i < dailyLikes ? " filled" : "")} />)}</div><div className="limit-text">{dailyLikes} likes left</div></div>}{superLikes < 3 && <div className="limit-bar"><div className="limit-dots">{Array.from({ length: 3 }, (_, i) => <div key={i} className={"limit-dot" + (i < superLikes ? " super-filled" : "")} />)}</div><div className="limit-text">{superLikes} super likes left</div></div>}</div>}
           </>
@@ -639,6 +674,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
               ))}
             </ul>
             <button onClick={() => setWhyInfo(null)} style={{ marginTop: 18, width: "100%", padding: "12px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))", color: "var(--gold)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Got it</button>
+            <button onClick={() => { setWhyInfo(null); showScreen("matchGuide"); }} style={{ marginTop: 8, width: "100%", padding: "10px 0", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "none", color: "var(--text2)", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>See the full matching breakdown →</button>
           </div>
         </div>
       )}
