@@ -9,6 +9,7 @@ import type { Screen } from "../components/types";
 import { BEHIND_CAMERA, IN_FRONT_CAMERA, AESTHETICS, lookingForOptions } from "../components/types";
 import { STRINGS } from "@/lib/strings";
 import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
+import NonDatingDisclaimer from "../components/NonDatingDisclaimer";
 
 const SUPPORT_EMAIL = "info@wyzdesign.com";
 
@@ -532,6 +533,7 @@ export const SettingsScreen = memo(function SettingsScreen({
           </div>
         </div>
         <div className="settings-scroll">
+          <NonDatingDisclaimer />
           {/* Audit fix (2026-09-08): the Menu's "Settings" card used to open
               a separate, older inline settings tab instead of this
               full-page screen — this section (age range, distance, gender)

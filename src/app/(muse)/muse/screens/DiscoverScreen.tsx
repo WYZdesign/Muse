@@ -14,6 +14,7 @@ import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../ho
 import { attachSpatialDepth } from "../hooks/useSpatialDepth";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, CONN_FULL } from "../components/badgeInfo";
+import NonDatingDisclaimer from "../components/NonDatingDisclaimer";
 import Lightbox from "../components/Lightbox";
 import MuseSpark from "../components/MuseSpark";
 
@@ -278,6 +279,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
             )}
           </div>
         </div>
+        <NonDatingDisclaimer compact />
         {mapView && <MuseMap filteredProfiles={filteredProfiles as any} myGeo={myGeo ? { lat: myGeo.lat, lng: myGeo.long } : undefined} onClose={() => setMapView(false)} />}
         {!mapView && (
           <>
