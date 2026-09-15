@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useState, useEffect } from "react";
+import React, { memo, useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { FiSearch, FiSettings, FiCompass, FiZap, FiCamera, FiX, FiChevronRight, FiFilter, FiInfo } from "react-icons/fi";
 import Nav from "../components/Nav";
@@ -211,24 +211,31 @@ export const DiscoverScreen = memo(function DiscoverScreen({
     } catch { /* non-fatal */ }
   };
 
+  const spatialCleanupRef = useRef<(() => void) | null>(null);
+
+  // Flat tilt effect (runs immediately, cancelled when depth upgrade takes over)
   useEffect(() => {
     if (screen !== "discover") return;
-    return createSpatialScene(
+    spatialCleanupRef.current = createSpatialScene(
       ".swipe-card.top-card",
       ".card-hero img",
       ".card-hero-info",
       { imgShift: 15, imgRotate: 18, infoShift: 15, containerShift: 8, scale: 1.12 }
     );
+    return () => {
+      spatialCleanupRef.current?.();
+      spatialCleanupRef.current = null;
+    };
   }, [screen]);
 
-  // True depth-aware upgrade (real depth map, or in-browser segmentation
-  // fallback) layered on top of the flat tilt above — see useSpatialDepth.ts.
-  // Re-attaches per top-card change since (unlike createSpatialScene, which
-  // re-polls the DOM every frame) this builds its layers once per photo.
+  // True depth-aware upgrade — cancels flat tilt when it takes over
   useEffect(() => {
     if (screen !== "discover") return;
     let detach: (() => void) | null = null;
     const t = setTimeout(() => {
+      // Cancel flat tilt RAF before starting depth upgrade
+      spatialCleanupRef.current?.();
+      spatialCleanupRef.current = null;
       detach = attachSpatialDepth(".swipe-card.top-card", ".card-hero img");
     }, 50);
     return () => {
