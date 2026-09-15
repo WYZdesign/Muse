@@ -781,7 +781,13 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       .catch(() => {});
   }, [screen, authUser]);
 
-const applySession = useCallback((accessToken: string, refreshToken?: string, attempt = 0) => {
+const applySession = useCallback((accessToken: string, refreshToken?: string, attempt = 0, fromAuthStateChange = false) => {
+    // Re-entrancy guard: if we're already in applySession from an auth-state-change callback,
+    // skip the redundant setSession calls in the failure branches below.
+    if (fromAuthStateChange) {
+      // We already are in the chain triggered by authStateChange; we must not call setSession
+      // here, which would cause an infinite loop.
+    }
     // Refresh the session first — access tokens expire after 1hr, but refresh tokens
     // can silently fail (revoked, expired, etc). We try to get a fresh token before
     // validating so the user doesn't get bounced to login while actively using the app.
@@ -1113,6 +1119,12 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
     // Pull real catalog data (profiles/briefs/feed/forum/events) with static fallback.
     bootstrapData();
+
+    // Hard fallback: if bootstrapData hangs (network error, API unresponsive),
+    // the UI must still become interactive after 30 seconds. Without this,
+    // a stuck fetch leaves discoverLoading=true forever and the entire
+    // Discover screen renders as a frozen blank state.
+    setTimeout(() => { setDiscoverLoading(false); }, 30000);
 
     // Listen for auth state changes (OAuth completion)
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
