@@ -1328,14 +1328,37 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     return () => { if (scroller) scroller.removeEventListener("scroll", check); };
   }, [screen]);
 
-  // Also always show waves on the swipe card (Discover) as a gradient accent
+  // Also always show waves on the swipe card (Discover) as a gradient accent.
+  //
+  // CRITICAL FIX (freeze root cause): this previously observed
+  // document.body with { childList: true, subtree: true, attributes: true,
+  // attributeFilter: ['class'] } — i.e. every class-attribute change and
+  // every node insertion/removal ANYWHERE on the page, not just Discover.
+  // Its own callback called classList.add('waves-visible'), which is
+  // itself a class-attribute mutation the same observer was watching, and
+  // reran document.querySelectorAll('.swipe-card.top-card') (a whole-
+  // document query) on every single one of those mutations. Mounting the
+  // Discover card stack (or, after that, literally any class/DOM churn
+  // anywhere else in this 3000+ line app — toasts, badges, animations)
+  // could fire this callback in rapid, sustained succession, each firing
+  // native DOM-traversal work with no JS between them to interrupt — a
+  // microtask storm that starves the render thread and freezes the tab.
+  // Confirmed via CPU profiling during the "app freezes after login /
+  // after ~2s on Discover" reports: ~98% of samples were in Chromium's
+  // native code, not JS, with this exact callback on the stack.
+  //
+  // Fix: scope the observer to the card stack only (not document.body),
+  // and drop the attributes/class watch entirely — classList.add is
+  // idempotent, so we only ever need to react to NEW cards being
+  // inserted (childList), never to class changes (which we caused).
   useEffect(() => {
     const addWaves = () => {
       document.querySelectorAll('.swipe-card.top-card').forEach(c => c.classList.add('waves-visible'));
     };
     addWaves();
+    const target = document.querySelector('.card-stack') || document.body;
     const obs = new MutationObserver(addWaves);
-    obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    obs.observe(target, { childList: true, subtree: true });
     return () => obs.disconnect();
   }, [screen]);
 
