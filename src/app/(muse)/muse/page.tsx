@@ -1335,7 +1335,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     };
     addWaves();
     const obs = new MutationObserver(addWaves);
-    obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    obs.observe(document.querySelector('.card-stack') ?? document.body, { childList: true, subtree: true });
     return () => obs.disconnect();
   }, [screen]);
 
