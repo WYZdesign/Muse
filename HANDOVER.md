@@ -2,7 +2,26 @@
 
 ---
 
-## 🆘 FOR WYZMIND — you are stuck on a page.tsx merge conflict right now, here's the fix (2026-09-15)
+## 🆕 FOR WYZMIND — round 33 ready to merge: cross-tab logout fix + block-clears-match fix (2026-09-15)
+
+**Status check first:** round 32 (`4feca78`, the visual/UX batch) is confirmed merged — `origin/main` is at `0e1a172` and includes it. The "stuck on a page.tsx merge conflict" note directly below this one is now **historical** — that conflict is resolved, you don't need to read it unless you're curious how it happened.
+
+**What's in round 33** (commit `b7a9a2f`, bundle: `round33-crosstab-session-and-block-fix.bundle` in `V:\Muse\_to_delete\`):
+
+1. **Cross-tab / multi-device session sync** — Torreé reported being logged out "too often." Root cause: Supabase rotates the refresh token every time it's used, so with the same account open in two places at once (a second tab, or the installed PWA alongside a browser tab), whichever one refreshes second gets an already-rotated token back and was being force-logged-out even though the account was still fine in the other tab. Fixed by listening for the `storage` event so sibling tabs adopt a freshly-rotated token instead of racing their own stale one, plus one more check in `cleanLogoutDeadToken` before it actually logs out. True cross-device collisions (phone + desktop at once) aren't fixable client-side — that's inherent to rotating refresh tokens — but same-browser multi-tab is now fully covered.
+2. **Blocking someone now actually removes an existing match, not just future Discover results.** `userBlock` only ever wrote to `muse_blocks` and filtered future discover-ranked queries — it never touched `muse_matches`, so blocking a person you'd already matched with did nothing to that match; they kept showing in Muses → Matches and could still message you. `userBlock` now deletes the `muse_matches` rows both directions (mirrors `matchDelete`/unmatch exactly), and the matches-list query in `get.ts` also filters `muse_blocks` directly as a second layer, so it's correct immediately for blocks made before this patch too.
+3. Found live during this pass: a second duplicate "Torree Harris" test account had a real match that predated this fix and wasn't cleaned up by the earlier block-only workaround. Removed from production directly (unmatch + block via the app's own API) — confirmed zero matches on a fresh query. No action needed from you on this specific account, just flagging why you might see it referenced in the diff/tests.
+
+**To merge:**
+```
+git fetch V:\Muse\_to_delete\round33-crosstab-session-and-block-fix.bundle muse-fix-delivery:bundle/round33
+git merge bundle/round33
+```
+Should be a clean fast-forward-style merge — only 3 files touched (`page.tsx`, `forum.ts`, `get.ts`), all additive changes, no known overlap with anything in flight on your end. Verify same as always: `npx tsc --noEmit`, `npm test` (349/349 expected), `npm run build`.
+
+---
+
+## 🆘 FOR WYZMIND — you are stuck on a page.tsx merge conflict right now, here's the fix (2026-09-15) — RESOLVED, kept for reference only
 
 Torreé pasted your transcript over to Claude. Here's what happened and the direct fix, plus how to stop hitting this same wall.
 
