@@ -739,18 +739,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       // flag so a stale persisted value from before the flag existed can't restore
       // straight into a screen the menu no longer offers a way to reach.
       const VALID_SCREENS = ["onboard","discover","connections","matches","chat","briefs","sessions","network","portfolio","bts","profile","settings","subscription","codex","studios","analytics", ...(MUSE_CLOSED_BETA_HIDE_SOCIAL ? [] : ["community"])];
-
-  // Check for OAuth callback on mount
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const connected = params.get("connected");
-    if (connected) {
-      setObConnectedSocials(prev => ({ ...prev, [connected]: true }));
-      showToast(`${connected.charAt(0).toUpperCase() + connected.slice(1)} connected!`);
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [showToast]);
       if (d.screen && VALID_SCREENS.includes(d.screen)) {
         // Chat requires a chatTarget to render (screen-el guards on chatTarget);
         // chatTarget is now persisted, but fallback to matches if somehow missing.
@@ -1353,6 +1341,21 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
 
   const showToast = useCallback((msg: string | { msg: string; onTap?: () => void; type?: ToastType }) => { const t = typeof msg === "string" ? { msg } : msg; setToastMsg(t); setTimeout(() => setToastMsg(null), 3000); }, []);
+
+  // Check for OAuth callback on mount. Was previously (incorrectly) a React.useEffect
+  // call nested inside loadState's async body — a Rules-of-Hooks violation that threw
+  // "Invalid hook call" any time a returning user had persisted state, i.e. almost
+  // every real login/reload. Hoisted to a proper top-level effect.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("connected");
+    if (connected) {
+      setObConnectedSocials(prev => ({ ...prev, [connected]: true }));
+      showToast(`${connected.charAt(0).toUpperCase() + connected.slice(1)} connected!`);
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [showToast]);
 
   // Onboarding multi-select toggle with a hard cap. Toggling off always works;
   // adding beyond the cap is ignored and surfaces a toast instead.
