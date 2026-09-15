@@ -2,15 +2,18 @@
 
 ---
 
-## WYZMIND STATUS — Current as of `961f2b9` (2026-09-13)
+## WYZMIND STATUS — Current as of `18605df` (2026-09-14)
 
 **What's on main right now:**
 - All 15 punch-list tasks (unlimited likes, 50/50 match, waves behind phone, etc.)
 - Muse/Creative duality system (role.ts, PublicProfileScreen, ProfileScreen, MatchCard, Nav, SettingsScreen)
 - All 9 Claude bundle fixes merged (session sync, forum gate, Muses list, identity banner, discover badges, comets, theme palette, blocked users)
 - MatchCard min-height fix, auth centering, light theme opacity, theme consistency, force-logout fix, ambient scene visibility, Quests accordion, Muses grid overlap, unlimited badge closable, Muses grid taller, Sessions dots dimmed
+- **Full analytics instrumentation** — new `lib/analytics.ts` module with track() function + analytics.* wrappers covering auth (signup/login/logout), onboarding (start/step/complete/personality/photo), discover (view/swipe/match/profile-tap/save), messaging (message-send), sessions (booking-respond/complete/cancel/pay/review), search, social connections, community events, monetization, quests, navigation, safety (report/block/unmatch/verification)
+- **Non-dating disclaimers** — new `NonDatingDisclaimer.tsx` component integrated on onboarding (step 0), Settings, and Discover screens. Removed romance/love/intimate language from FeatureTour ("creators you love" → "appreciate"), badgeInfo ("romantic visuals" → removed), QuestPanel ("show some love" → "show support"), Settings ("Why would you love it?" → "What problem does it solve?", "we love it!" → "we appreciate it!"), CommunityScreen ("Intimate" → "Small"), types.ts ("love for cinematic storytelling" → "passion"), and page.tsx quick-replies (removed dating-flavored responses like "That resonates with me ✨", replaced with professional collaboration language). Onboarding hero copy updated from "real connections" → "professional collaboration" + disclaimer banner.
+- **Removed dating/romance language** across all user-facing copy (see above)
 
-**Test suite:** 340/340 passing, TypeScript clean, Lint clean
+**Test suite:** 342/342 passing, TypeScript clean, Lint clean
 
 **Screens Claude has swept so far:** Discover, Settings, Muses list/grid, Quests, Auth, Sessions
 
