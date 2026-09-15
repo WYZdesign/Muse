@@ -15,7 +15,7 @@ import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
 import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, setRefreshToken, getRefreshToken, clearRefreshToken, QUOTA_MSG } from "./lib/safe-storage";
 import { createSafeObserver } from "./lib/safe-observer";
-import { getAccessToken, authFetch } from "./lib/api";
+import { getAccessToken, authFetch, fetchWithTimeout } from "./lib/api";
 import { analytics, setAnalyticsScreen, setAnalyticsUser, initAnalyticsSession } from "./lib/analytics";
 import { uid } from "./lib/uid";
 import { getProfileShareUrl, getPostShareUrl, getMuseUrl } from "@/lib/urls";
@@ -543,7 +543,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`/api/muse?type=reviews&profile_id=${encodeURIComponent(viewProfile.id)}`);
+        const res = await fetchWithTimeout(`/api/muse?type=reviews&profile_id=${encodeURIComponent(viewProfile.id)}`);
         const d = await res.json();
         if (!cancelled) setViewProfileReviews(d.reviews || []);
       } catch { if (!cancelled) setViewProfileReviews([]); }
@@ -1584,7 +1584,10 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       const fd = new FormData();
       fd.append("file", file);
       fd.append("folder", folder);
-      const r = await authFetch("/api/muse/upload", { method: "POST", body: fd });
+      // File uploads legitimately take longer than the 15s default on a
+      // slow connection — give this call site more room before the
+      // shared authFetch timeout would abort it.
+      const r = await authFetch("/api/muse/upload", { method: "POST", body: fd, timeoutMs: 60000 });
       const j = await r.json();
       if (j.success && j.url) {
         if (folder === "portfolio") trackQuest("upload_photo");
@@ -1841,7 +1844,14 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     if (Object.keys(e).length) { setFormErrors(e); return; }
     setAuthLoading(true);
     try {
-      const r = await fetch("/api/muse/auth", {
+      // Was a bare fetch() with no timeout — a hung request here (the
+      // server accepts the connection but never responds) left authLoading
+      // stuck true forever: the Log In button stays on "Loading..."
+      // indefinitely with no way out except a manual reload. Matches the
+      // exact shape of the earliest "froze after clicking Log In" reports
+      // from this engagement. fetchWithTimeout aborts and rejects into the
+      // existing catch block below instead.
+      const r = await fetchWithTimeout("/api/muse/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

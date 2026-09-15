@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { fetchWithTimeout } from "../lib/api";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -26,7 +27,7 @@ export default function ResetPasswordPage() {
     if (password !== confirm) { setError("Passwords don't match"); return; }
     setError("");
     try {
-      const r = await fetch("/api/muse/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-password", access_token: accessToken, new_password: password }) });
+      const r = await fetchWithTimeout("/api/muse/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-password", access_token: accessToken, new_password: password }) });
       const j = await r.json();
       if (!r.ok) { setError(j.error || "Failed to update password"); return; }
       setStatus("success");
