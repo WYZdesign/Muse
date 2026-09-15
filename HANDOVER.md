@@ -2,6 +2,26 @@
 
 ---
 
+## 🤝 FOR WYZMIND — how this Claude/wyzmind workflow actually works (read this first)
+
+Torreé is running two separate agents against this same repo in parallel: wyzmind (you), with real push access to `https://github.com/WYZdesign/Muse`, and a Claude session with NO push access at all — it can only read/build/test in its own local clone. Neither side can see the other's live session; the only shared state is this repo's git history plus whatever Torreé relays between you. This note exists because that split wasn't clear and cost real time this round (see the MutationObserver-freeze incident below, and the disclaimer/verify-banner round where your own session got stuck mid-edit with uncommitted changes still in your working tree).
+
+**How Claude delivers work, since it can't push:** Claude commits locally, then ships the commit(s) as a `git bundle` file — always dropped in **`V:\Muse\_to_delete\<name>.bundle`** on Torreé's machine. Every filename in that folder starting with `round<N>-` is a Claude deliverable waiting for you to apply. As of this note, the pending/recent ones are:
+
+- `round26-mutationobserver-freeze-fix.bundle` — the actual root-cause fix (already merged and live, per Torreé — this is why the app stopped freezing after login/on Discover)
+- `round27-hardening-safe-observer-watchdog.bundle` — circuit-breaker for MutationObservers, continuous freeze watchdog, global error capture
+- `round28-disclaimer-verify-banner-finish.bundle` — finished the disclaimer-dismissibility + verify-banner slide-distance edit your own session got stuck on mid-loop
+- `round29-error-boundaries-ci-e2e.bundle` — error-boundaried the 4 screens/modals that didn't have one, wired the Playwright freeze-regression test into CI (it existed but nothing ever ran it)
+- `round30-fetch-timeout-hardening.bundle` — every `fetch()` in the app now has a timeout; previously a hung request left a loading spinner (including the Log In button itself) stuck forever, same failure shape as the freeze bug but at the network layer
+
+**To apply one:** `git fetch V:\Muse\_to_delete\round30-fetch-timeout-hardening.bundle muse-fix-delivery`, then merge/cherry-pick that branch onto `main`, resolve any conflicts, re-run `tsc --noEmit` + `npm test` + `npm run build` yourself before pushing (Claude verifies its own commits before delivery, but can't verify against whatever else has changed in your working copy since). **Check `git status` for uncommitted changes to the same files before applying** — the round28 delay happened because your session had unsaved edits to `muse.css`/`NonDatingDisclaimer.tsx` sitting in the working tree when Claude's bundle (which supersedes that exact edit) arrived; stash or discard those first rather than trying to hand-merge both.
+
+**Before starting new work, both directions:** `git fetch origin` + skim recent `HANDOVER.md` entries (both of you write here) before picking up any item — this repo has hit the same "both sides independently fixed the same thing" collision more than once (see the `claude-audit-fixes-v3` reconciliation entry below for what that cost). If you're about to touch something Claude just delivered a bundle for, check the bundle first — it may already be a superset of what you were about to do.
+
+**What Claude actually verifies before every bundle** (so you know what "delivered" already means, vs. what's still your job): `tsc --noEmit` clean, full `vitest` suite passing, a clean `next build`. What Claude can NOT verify from its own sandbox: the actual deployed/live behavior (no push/deploy access), and anything that only breaks against real Supabase/Stripe credentials (it builds and tests against placeholder env vars). Live verification only happens when Torreé or you confirm a deploy and Claude re-checks it — that's why several entries below explicitly say "not yet live-verified."
+
+---
+
 ## 🔴 CRITICAL — Third freeze bug found + fixed, then hardened against recurrence (2026-09-15)
 
 **Root cause (`round26-mutationobserver-freeze-fix.bundle`, merged + deployed + live-verified via Chrome extension navigating a real Google OAuth login through Discover/Feed/Collab/Muses/BTS/Menu with zero hangs):**
