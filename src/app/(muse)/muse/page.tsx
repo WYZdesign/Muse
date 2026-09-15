@@ -116,7 +116,7 @@ export default function MusePageWrapper() {
   return <ErrorBoundary><MusePage /></ErrorBoundary>;
 }
 
-import { viewerSide, viewerSideOf } from "@/lib/role";
+import { viewerSide, viewerSideOf, getMuseRole, type MuseRole } from "@/lib/role";
 
 // Deterministic per-user gradient-initials avatar (data URI, no network) —
 // used when a live profile has no uploaded photo, so Discover cards never
@@ -1753,7 +1753,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
   const [upsell, setUpsell] = useState<{ feature: string; reason: string; icon?: string } | null>(null);
   const closeUpsell = useCallback(() => setUpsell(null), []);
 
-  const doSwipe = useCallback((dir: "left" | "right" | "super") => {
+  const doSwipe = useCallback((dir: "left" | "right" | "super", intentOverride?: string) => {
     if (swipeLocked.current) return;
     swipeLocked.current = true;
     setTimeout(() => { swipeLocked.current = false; }, 500);
@@ -1765,8 +1765,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     if (!isUnlimited && dir === "super" && superLikes <= 0) { setUpsell({ feature: "More Super Likes", reason: "You're out of super likes for today. Muse Pro's unlimited likes means you're never stuck waiting for a reset.", icon: "💜" }); return; }
     analytics.discoverSwipe(dir as "left" | "right" | "super", p.id, p.type);
     if (dir === "right" || dir === "super") {
-      if (!userDefaultIntent) { setIntentProfile(p); setIntentSelection([]); setShowIntentPicker(true); swipeLocked.current = false; return; }
-      const intent = dir === "super" ? "super" : userDefaultIntent;
+      const effectiveIntent = intentOverride || userDefaultIntent;
+      if (!effectiveIntent) { setIntentProfile(p); setIntentSelection([]); setShowIntentPicker(true); swipeLocked.current = false; return; }
+      const intent = dir === "super" ? "super" : effectiveIntent;
       const matchScore = (p as any).matchScore ?? calcMatch({ styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath }, p);
       // Every right-swipe is a real like — the backend `match` action always
       // fires (creating a muse_matches row + notifying the target). `isMatch`
@@ -2300,14 +2301,19 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               <div style={{fontSize:16,fontWeight:700,color:"var(--text)"}}>{intentProfile.name}</div>
               <div style={{fontSize:12,color:"var(--muted)"}}>{intentProfile.type}</div>
             </div>
-            <div style={{fontSize:13,color:"var(--text2)",textAlign:"center",marginBottom:16}}>What's your intent with {intentProfile.name.split(" ")[0]}?</div>
+            <div style={{fontSize:13,color:"var(--text2)",textAlign:"center",marginBottom:16}}>What's your intent with {intentProfile.name.split(" ")[0]}? <span style={{opacity:0.7}}>(up to 2)</span></div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {[
+              {(getMuseRole({ audience: (currentUser as any)?.audience, type: currentUser?.type || obData?.type }) === "muse" ? [
+                {icon:"📌",label:"Book / Hire",desc:"Bring them onto a project you're casting or producing",intent:"hire"},
+                {icon:"🤝",label:"Collaborate",desc:"Work together on a project",intent:"collab"},
+                {icon:"📁",label:"Scout for Future Work",desc:"Keep them in mind for upcoming briefs",intent:"scout"},
+                {icon:"🔗",label:"Connect",desc:"Grow your industry network",intent:"connect"},
+              ] : [
                 {icon:"🤝",label:"Collaborate",desc:"Work together on a project",intent:"collab"},
                 {icon:"💼",label:"Hire / Commission",desc:"Professional paid work",intent:"hire"},
                 {icon:"🔗",label:"Connect",desc:"Grow your creative network",intent:"connect"},
                 {icon:"👁️",label:"Inspired By",desc:"Your work inspires me",intent:"inspire"},
-              ].map(({icon,label,desc,intent})=>(
+              ]).map(({icon,label,desc,intent})=>(
                 <button key={intent} className={`intent-btn ${intentSelection.includes(intent) ? "selected" : ""}`} onClick={(e)=>{
                   e.stopPropagation();
                   if (intentSelection.length >= 2 && !intentSelection.includes(intent)) return;
@@ -2325,7 +2331,14 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               ))}
             </div>
             {intentSelection.length > 0 && (
-              <button className="intent-submit" onClick={()=>{setUserDefaultIntent(intentSelection[0]);setShowIntentPicker(false);setIntentProfile(null);setIntentSelection([]);doSwipe("right")}} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"var(--gold)",color:"var(--text)",fontSize:12,cursor:"pointer",fontWeight:600}}>Submit {intentSelection.length} intent{(intentSelection.length > 1 ? "s" : "")}</button>
+              <button className="intent-submit" onClick={()=>{
+                const chosenIntent = intentSelection.join("+");
+                setUserDefaultIntent(chosenIntent);
+                setShowIntentPicker(false);
+                setIntentProfile(null);
+                setIntentSelection([]);
+                doSwipe("right", chosenIntent);
+              }} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"var(--gold)",color:"var(--text)",fontSize:12,cursor:"pointer",fontWeight:600}}>Submit {intentSelection.length} intent{(intentSelection.length > 1 ? "s" : "")}</button>
             )}
             <button className="intent-skip" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null);setIntentSelection([]);setUserDefaultIntent("");doSwipe("left")}} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"none",color:"var(--muted)",fontSize:12,cursor:"pointer"}}>Skip this profile</button>
           </div>
