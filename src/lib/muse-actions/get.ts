@@ -155,11 +155,23 @@ export async function GET(req: NextRequest) {
         viewerVerified = isAgeVerificationCurrent(vp as any);
       }
       const { data } = await sb.from("muse_matches").select("id, user_id, target_id(id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path, last_seen_at, nsfw)").eq("user_id", profileId);
-      const gated = (data || []).map((m: any) => {
-        const t = m.target_id;
-        if (t?.nsfw && !viewerVerified) return { ...m, target_id: { ...t, avatar: undefined } };
-        return m;
-      });
+      // Same gap the comment above "profiles"/"discover-ranked" describes:
+      // blocking someone stops them appearing in future Discover results but
+      // never hid an EXISTING match — a blocked person you'd already matched
+      // with kept showing up right here in Muses > Matches. userBlock now
+      // also deletes the underlying muse_matches rows going forward, but that
+      // only helps for blocks that happen after this fix ships; filter here
+      // too so it's correct immediately, including for any block action that
+      // predates this patch and left an orphaned match row behind.
+      const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+      const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+      const gated = (data || [])
+        .filter((m: any) => !blockedIds.has(String(m.target_id?.id)))
+        .map((m: any) => {
+          const t = m.target_id;
+          if (t?.nsfw && !viewerVerified) return { ...m, target_id: { ...t, avatar: undefined } };
+          return m;
+        });
       return NextResponse.json({ matches: gated });
     }
 

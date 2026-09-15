@@ -224,6 +224,14 @@ export const userBlock = async ({ sb, profile, rest }: ActionContext) => {
     { user_id: profile.id, target_id },
     { onConflict: "user_id,target_id", ignoreDuplicates: true }
   );
+  // Blocking only ever filtered future discover-ranked results — an existing
+  // match with that person was left completely untouched, so blocking someone
+  // you'd already matched with did nothing about it: they kept showing in
+  // Muses > Matches and could still message you. Mirror matchDelete's cleanup
+  // here so Block always means "make this person go away," not just "stop
+  // showing them to me going forward." Both directions, same as unmatch.
+  await sb.from("muse_matches").delete().eq("user_id", profile.id).eq("target_id", target_id);
+  await sb.from("muse_matches").delete().eq("user_id", target_id).eq("target_id", profile.id);
   return NextResponse.json({ success: true });
 };
 

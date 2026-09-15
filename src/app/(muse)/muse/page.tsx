@@ -999,6 +999,30 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       return msg.includes("refresh_token_not_found") || msg.includes("invalid_grant") || msg.includes("invalid refresh token") || msg.includes("refresh token not found") || msg.includes("already used");
     };
     const cleanLogoutDeadToken = () => {
+      // Multi-tab/multi-device guard: Supabase rotates the refresh token on
+      // every use, so if the SAME account is open in another tab (or the
+      // installed PWA alongside a browser tab) and that tab refreshed first,
+      // OUR refresh token is now "already used" even though the account is
+      // still very much logged in — just somewhere else. Before nuking this
+      // tab's session, check whether muse_user in localStorage already holds
+      // a newer token than the one we just tried (another tab's TOKEN_REFRESHED
+      // handler writes there — see below) and silently adopt it instead of
+      // bouncing to the auth screen. This is the fix for "logs me out too
+      // often" when the account is open in more than one place at once.
+      try {
+        const raw = safeGetItem("muse_user");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.access_token && parsed.access_token !== pendingToken) {
+            pendingToken = parsed.access_token;
+            pendingRefresh = parsed.refresh_token || "";
+            if (pendingRefresh) setRefreshToken(pendingRefresh);
+            syncSdkSession(pendingToken, pendingRefresh);
+            doSessionCheck();
+            return;
+          }
+        }
+      } catch {}
       try { safeRemoveItem("muse_user"); } catch {}
       try { clearRefreshToken(); } catch {}
       // scope:'local' clears the SDK's own in-memory/persisted session and
@@ -1239,6 +1263,32 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     });
     return () => { authListener?.subscription?.unsubscribe(); };
   }, []);
+
+  // Cross-tab session sync: when the SAME browser has this account open in
+  // more than one tab (or the installed PWA running alongside a regular
+  // browser tab), each tab refreshes its access token on its own 1hr timer.
+  // Supabase rotates the refresh token on every use, so whichever tab
+  // refreshes second gets an "already used" error on a token another tab
+  // already rotated away — previously that read as a dead session and force-
+  // logged that tab out even though the account was still perfectly logged
+  // in next door. The `storage` event fires in every OTHER tab the instant
+  // one tab's TOKEN_REFRESHED handler (above) writes the new tokens to
+  // muse_user, so listening for it lets every other tab adopt the fresh
+  // token proactively instead of racing its own stale one and losing.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== "muse_user" || !e.newValue) return;
+      try {
+        const parsed = JSON.parse(e.newValue);
+        if (parsed?.access_token) {
+          if (parsed.refresh_token) setRefreshToken(parsed.refresh_token);
+          applySession(parsed.access_token, parsed.refresh_token || "");
+        }
+      } catch {}
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [applySession]);
   useEffect(() => { const t = setTimeout(saveState, 4000); return () => clearTimeout(t); }, [saveState]);
 
   useEffect(() => {
