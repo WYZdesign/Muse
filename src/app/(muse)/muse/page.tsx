@@ -14,6 +14,7 @@ import BackgroundScene from "./components/BackgroundScene";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
 import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, setRefreshToken, getRefreshToken, clearRefreshToken, QUOTA_MSG } from "./lib/safe-storage";
+import { createSafeObserver } from "./lib/safe-observer";
 import { getAccessToken, authFetch } from "./lib/api";
 import { analytics, setAnalyticsScreen, setAnalyticsUser, initAnalyticsSession } from "./lib/analytics";
 import { uid } from "./lib/uid";
@@ -480,12 +481,23 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         img.removeAttribute("src");
       }
     };
-    const mo = new MutationObserver((muts) => {
+    // Wrapped in createSafeObserver (rate-based circuit breaker) as
+    // defense-in-depth: this callback is already guarded against
+    // self-retriggering (img.dataset.fallback check-before-mutate), but it
+    // still does a subtree querySelectorAll("img") on every childList
+    // mutation anywhere in the app. A future edit that removes the guard,
+    // or an unrelated part of the app generating very high-frequency DOM
+    // churn, would otherwise be able to reproduce the same class of
+    // main-thread-freezing storm found in the "waves" observer below —
+    // this makes that fail safe (observer disconnects) instead of freezing
+    // the tab. See lib/safe-observer.ts for why this can't be caught once
+    // it happens, only prevented.
+    const mo = createSafeObserver((muts) => {
       for (const m of muts) {
         if (m.type === "childList") m.addedNodes.forEach(n => { if (n.nodeType === 1 && (n as Element).querySelectorAll) (n as Element).querySelectorAll("img").forEach(img => sweepImg(img as HTMLImageElement)); });
         if (m.type === "attributes" && m.target.nodeName === "IMG") sweepImg(m.target as HTMLImageElement);
       }
-    });
+    }, { label: "img-fallback-sweep" });
     mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["src"] });
     document.querySelectorAll<HTMLImageElement>("img").forEach(sweepImg);
     return () => { document.removeEventListener("error", onImgError, true); mo.disconnect(); };
@@ -1351,13 +1363,19 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
   // and drop the attributes/class watch entirely — classList.add is
   // idempotent, so we only ever need to react to NEW cards being
   // inserted (childList), never to class changes (which we caused).
+  //
+  // HARDENING: also wrapped in createSafeObserver as a second, independent
+  // layer of defense — even with the scoped target above, a future edit to
+  // this effect (or to .card-stack's own render logic) could reintroduce a
+  // tight mutate->observe->mutate loop. The circuit breaker makes that fail
+  // as "waves stop appearing" instead of "the app freezes".
   useEffect(() => {
     const addWaves = () => {
       document.querySelectorAll('.swipe-card.top-card').forEach(c => c.classList.add('waves-visible'));
     };
     addWaves();
     const target = document.querySelector('.card-stack') || document.body;
-    const obs = new MutationObserver(addWaves);
+    const obs = createSafeObserver(addWaves, { label: "discover-waves" });
     obs.observe(target, { childList: true, subtree: true });
     return () => obs.disconnect();
   }, [screen]);

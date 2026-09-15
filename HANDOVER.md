@@ -2,6 +2,28 @@
 
 ---
 
+## 🔴 CRITICAL — Third freeze bug found + fixed, then hardened against recurrence (2026-09-15)
+
+**Root cause (`round26-mutationobserver-freeze-fix.bundle`, merged + deployed + live-verified via Chrome extension navigating a real Google OAuth login through Discover/Feed/Collab/Muses/BTS/Menu with zero hangs):**
+
+The "shows waves on the swipe card" effect (`page.tsx`, Discover) observed `document.body` with `{ childList: true, subtree: true, attributes: true, attributeFilter: ['class'] }`. Its own callback called `classList.add('waves-visible')` — itself a class mutation the same observer watched — and reran a whole-document `querySelectorAll` on every firing. Any class/DOM churn *anywhere* in the app (not just Discover — toasts, badges, animations) could retrigger it in rapid succession with nothing between firings to let the thread breathe: a native-code microtask storm, zero thrown errors, invisible to normal error monitoring. Matches every prior report: "freezes after login", "froze ~2s into Discover", "black screen".
+
+Found via CPU profiling during a live repro (CDP-based profiling itself got blocked by the same hang — `Profiler.stop` timed out on the wedged renderer — so V8's file-based `--js-flags=--prof` sampler was used instead, independent of the blocked event loop): ~98% of samples in Chromium native code, this exact callback on the stack.
+
+Fix: scope the observer to `.card-stack` instead of `document.body`, drop the `attributes`/`class` watch entirely (`classList.add` is idempotent — only new-node insertion needs watching).
+
+**Hardening added on top of the fix (same bundle), so this class of bug can't reproduce and any future hang is at least visible:**
+
+1. **`lib/safe-observer.ts`** — `createSafeObserver()`, a drop-in `MutationObserver` replacement with a rate-based circuit breaker (default: trips + auto-disconnects if a callback fires >40 times in a 500ms rolling window, logs `console.error`, dispatches `muse:observer-tripped`). Both MutationObservers in `page.tsx` (the waves one above, and the separate img-fallback sweep) now go through it — every `new MutationObserver` in the codebase does (`grep -rn "new MutationObserver" src` returns only the wrapper itself). A regressed/careless future observer degrades to "one feature stops updating" instead of freezing the tab. Unit-tested in `lib/safe-observer.test.ts` (3 tests: normal forwarding, trip-and-disconnect, observe() is a no-op once tripped).
+2. **Continuous post-render heartbeat** in `src/app/layout.tsx`'s inline boot watchdog (previously a one-shot "did React render within 8s" check — never looked again after that, so a freeze at second 4 was invisible to it). Now an rAF-driven heartbeat checked every 3s; if stale >12s while the tab is visible, triggers the same recover-and-reload-once-per-session path the existing blank-screen watchdog used. **Honest caveat, documented inline**: a true self-feeding microtask storm (like the bug above) blocks *everything* on the main thread including this watchdog's own timers — no in-page JS can detect or recover from that live. What this catches is the broader "hung but not fully wedged" class (a slow-but-finite loop, a stuck await, a deadlocked state update). The circuit breaker in (1) is the actual prevention for the unrecoverable case; this heartbeat is the safety net for everything else.
+3. **Prior-session hang visibility**: `recover()` now writes a timestamped marker to `localStorage` before reloading; on next boot that marker is read, cleared, and reported via `navigator.sendBeacon` to `/api/muse` (`track-error`, reused from the existing `ErrorBoundary` reporting path) — so even a hang the user "fixed" by force-closing/reloading an unresponsive tab (i.e. the in-page recovery never got to run) shows up in `muse_events_log` on the next load.
+4. **Global `window.onerror` / `unhandledrejection` handlers**, also reported via `sendBeacon` → `/api/muse` `track-error`. Previously only errors thrown *during React render* were caught (by `ErrorBoundary`) — an error in an event handler, a timer callback, or an unhandled promise rejection failed completely silently. Same rate-limited `track-error` action already used by `ErrorBoundary`, so no new backend surface.
+5. **Playwright regression spec** — `tests/discover-freeze.spec.ts`: loads `/muse`, forces 300 rapid DOM mutations (simulating toasts/badges/animations churning elsewhere while Discover is mounted — the exact trigger condition), then asserts the page still round-trips a trivial `page.evaluate()` in under 2s with zero `pageerror`s. Verified locally against a production build (`next build && next start`) before delivery: 14ms round-trip, zero errors.
+
+Verified end-to-end before delivery: `tsc --noEmit` clean, vitest 345/345 (3 new), clean production build, rebased onto latest `origin/main`, and the Playwright churn spec passed locally. Then verified live on `muse.wyzdesign.com` after wyzmind's deploy: real Google OAuth login → Discover → Feed → Collab → Muses → BTS → Menu → back to Discover with rapid card-cycling, all via the Chrome extension, zero hangs, console clean bar one benign ad-blocker-related warning.
+
+---
+
 ## 🔴 CRITICAL — App was frozen in production (2026-09-14). FIXED. Verify.
 
 **Two critical bugs shipped as `round25-CRITICAL-double-fix.bundle`** (merged + deployed + live at `a6c48e0`, verified `DEPLOY IS LIVE ✅`):
