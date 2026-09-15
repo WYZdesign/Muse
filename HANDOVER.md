@@ -2,6 +2,54 @@
 
 ---
 
+## 🆘 FOR WYZMIND — you are stuck on a page.tsx merge conflict right now, here's the fix (2026-09-15)
+
+Torreé pasted your transcript over to Claude. Here's what happened and the direct fix, plus how to stop hitting this same wall.
+
+**The mistake that caused the conflict spiral:** you fetched `bundle/round29` AND `bundle/round30` as separate branches and tried to merge them one at a time. Don't — **`round30-fetch-timeout-hardening.bundle` already contains every commit from round26 through round30 in one linear chain** (verified: `git bundle verify round30-fetch-timeout-hardening.bundle` shows its only requirement is `origin/main` at `2c40a4a`, nothing else). Merging round29 first was redundant work that produced a conflict you didn't need to resolve, since round30's merge will hit the exact same conflict anyway. **Stop, don't try to finish the round29 merge:**
+
+```
+git merge --abort
+git branch -D bundle/round29    # optional cleanup, not required
+```
+
+Then do the whole thing in **one** merge:
+
+```
+git fetch V:\Muse\_to_delete\round30-fetch-timeout-hardening.bundle muse-fix-delivery:bundle/round30
+git merge bundle/round30
+```
+
+That will hit one `page.tsx` conflict (your own `facc184` MutationObserver scope-fix overlaps with Claude's more thorough version of the same fix — circuit breaker + watchdog + the same scoping change). To resolve it:
+
+1. `git status` — confirms `page.tsx` is the only conflicted file (everything else should auto-merge clean).
+2. Find every conflict marker in one shot instead of hunting blind: `Select-String -Pattern "^<<<<<<<|^=======|^>>>>>>>" -Path src\app\(muse)\muse\page.tsx` (this is the PowerShell equivalent of `grep -n`; see cheatsheet below).
+3. Open the file in VS Code — its merge-conflict UI ("Accept Incoming", "Accept Current", "Accept Both") is far less error-prone than hand-editing markers. `code src\app\(muse)\muse\page.tsx`.
+4. In each hunk, **take the incoming (Claude) side** for the MutationObserver blocks specifically — Claude's version wraps the same fix in `createSafeObserver()` (circuit breaker), which is a strict superset of a plain scope fix. If any hunk touches something `facc184` changed that Claude's chain doesn't (unlikely if it was scoped to the same observer, but check), keep that piece manually rather than discarding it.
+5. `git add src\app\(muse)\muse\page.tsx`, verify no other files still show conflict markers, then `git commit` (no `--no-edit` needed, just accept the default merge commit message).
+6. Verify before pushing: `npx tsc --noEmit`, `npm test`, `npm run build` — all three, in that order, same as Claude does before every bundle.
+
+**PowerShell equivalents for the Unix commands that don't exist on Windows** (this is what actually stalled your session):
+
+| Unix | PowerShell |
+|---|---|
+| `grep -n "pattern" file` | `Select-String -Pattern "pattern" -Path file` |
+| `tail -n 50 file` | `Get-Content file -Tail 50` |
+| `head -n 50 file` | `Get-Content file -TotalCount 50` |
+| `cat file` | `Get-Content file` |
+| `cmd > /dev/null` | `cmd \| Out-Null` |
+| `cmd 2>&1 \| tail -20` | `cmd 2>&1 \| Select-Object -Last 20` |
+
+**General advice so this doesn't repeat — iteration hygiene:**
+
+- **If you've re-read or re-edited the same 10 lines more than ~3 times without a successful build/test in between, stop and change approach** — that's the exact shape of the stuck loop Torreé flagged earlier this round (the disclaimer/verify-banner edit). Don't keep retrying the same mental model; either try a genuinely different fix or ask Torreé to relay the question to Claude.
+- **Prefer one clean merge over several incremental ones** when bundles are sequential (check `git log --oneline bundle/roundN` — if roundN's history already contains round(N-1)'s commits, you only need the highest N).
+- **Always `git status` before merging** — uncommitted WIP on a file a bundle also touches is the #1 cause of conflicts here (see round28 note below). Stash or commit your own work first.
+- **A failed automated merge with unfamiliar tooling errors is a signal to switch tools, not push harder** — VS Code's built-in merge UI, or even `git mergetool`, beats hand-parsing `<<<<<<<` markers via commands that may not exist in your shell.
+- **When genuinely stuck for more than a few minutes, say so plainly to Torreé** rather than continuing to retry — a one-line "stuck on X, tried Y and Z" gets unblocked far faster than silent looping, and it's exactly what surfaces the issue to Claude so a pre-resolved bundle can be shipped instead (like this one).
+
+---
+
 ## 🤝 FOR WYZMIND — how this Claude/wyzmind workflow actually works (read this first)
 
 Torreé is running two separate agents against this same repo in parallel: wyzmind (you), with real push access to `https://github.com/WYZdesign/Muse`, and a Claude session with NO push access at all — it can only read/build/test in its own local clone. Neither side can see the other's live session; the only shared state is this repo's git history plus whatever Torreé relays between you. This note exists because that split wasn't clear and cost real time this round (see the MutationObserver-freeze incident below, and the disclaimer/verify-banner round where your own session got stuck mid-edit with uncommitted changes still in your working tree).
