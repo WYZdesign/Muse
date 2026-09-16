@@ -512,7 +512,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 lighter/darker shades) for its sub-options below — Skills (pink)
                 and Looking (teal) already used one consistent hue for their
                 sub-options, so their pill gradient now matches that hue too. */}
-            <HScroll gap={6} style={{ marginBottom: 10, alignItems: "center", paddingBottom: 2, paddingTop: 10 }}>
+            <div style={{ display: "flex", gap: 6, marginBottom: 10, alignItems: "center", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: 2 }}>
               {([
                 { key: "experience", label: "Experience", active: proExp !== "all", grad: "linear-gradient(135deg,#90CAF9,#42A5F5)" },
                 { key: "sort", label: "Sort", active: proSort !== "match", grad: "linear-gradient(135deg,var(--gold),var(--amber))" },
@@ -524,7 +524,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                   key={f.key}
                   type="button"
                   onClick={() => setFilterSections(s => ({ ...s, [f.key]: !s[f.key] }))}
-                  style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: f.active ? "var(--text)" : "var(--text)", background: f.active ? f.grad : "rgba(255,255,255,0.06)", border: f.active ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "6px 14px", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
+                  style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: f.active ? "#0a0612" : "var(--text)", background: f.active ? f.grad : "rgba(255,255,255,0.06)", border: f.active ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "6px 14px", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
                 >
                   {f.label}{f.active ? " ✓" : ""}
                 </button>

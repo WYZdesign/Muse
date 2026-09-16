@@ -8,9 +8,7 @@ import type { Screen, Match } from "../components/types";
 import { isPaidTier } from "../components/subscriptionTiers";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 import Lightbox from "../components/Lightbox";
-import SelfDiscoveryModal from "../components/SelfDiscoveryModal";
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
-import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
 
 export interface ProfileScreenProps {
   screen: Screen;
@@ -142,14 +140,6 @@ export const ProfileScreen = memo(function ProfileScreen({
   // (Discover's swipe cards) already made them tappable for a detail
   // popover. Reusing that exact pattern here.
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
-  const [showSelfDiscovery, setShowSelfDiscovery] = useState(false);
-  const [memberSinceNote, setMemberSinceNote] = useState("");
-  const [showMemberSinceEditor, setShowMemberSinceEditor] = useState(false);
-  const [memberSinceEditorValue, setMemberSinceEditorValue] = useState("");
-
-  // Role detection — determines which profile variant to render
-  const userRole: MuseRole = getMuseRole({ audience: currentUser?.audience, type: currentUser?.type || obData?.type });
-  const isMuseProfile = userRole === "muse";
 
   useEffect(() => {
     const fetchReferralData = async () => {
@@ -622,15 +612,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         />
       )}
       <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
-      <SelfDiscoveryModal
-        open={showSelfDiscovery}
-        onClose={() => setShowSelfDiscovery(false)}
-        obData={obData}
-        onSaved={(k, v) => setObData((d: any) => ({ ...d, [k]: v }))}
-        apiFetch={apiFetch}
-        showToast={showToast}
-      />
-      <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} role={userRole} />
+      <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );
 });

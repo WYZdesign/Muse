@@ -72,12 +72,11 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
           new w.mapboxgl.Marker({ element: el })
             .setLngLat([building.geo.long, building.geo.lat])
             .setPopup(new w.mapboxgl.Popup({ offset: 25 }).setHTML(
-              `<strong>${profile.name} — ${building.label}</strong><br/>${building.address || ""}<br/>${building.studios.length} stage${building.studios.length === 1 ? "" : "s"} · from ${building.studios.reduce((min, s) => (parseFloat(s.price.replace(/[^0-9.]/g, "")) < parseFloat(min.replace(/[^0-9.]/g, "")) ? s.price : min), building.studios[0]?.price || "")}<br/><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(building.address || `${profile.name} ${building.label}`)}" target="_blank" rel="noopener noreferrer" style="color:#FFD700;font-weight:700;text-decoration:underline">Open in Maps</a>`
+              `<strong>${profile.name} — ${building.label}</strong><br/>${building.address || ""}<br/>${building.studios.length} stage${building.studios.length === 1 ? "" : "s"} · from ${building.studios.reduce((min, s) => (parseFloat(s.price.replace(/[^0-9.]/g, "")) < parseFloat(min.replace(/[^0-9.]/g, "")) ? s.price : min), building.studios[0]?.price || "")}`
             ))
             .addTo(map);
         }
       }
-      } catch (err) { setLoadError(true); console.error("Map failed to initialize", err); }
     };
     if (w.mapboxgl) {
       init();

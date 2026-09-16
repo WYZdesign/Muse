@@ -139,8 +139,8 @@ export const OTHER_STUDIOS: StudioProfile[] = [
     ],
     buildings: [
       { id: "apex-1", label: "Downtown LA", phone: "213-255-5000", hours: "Self-service hourly", emoji: "🏙️", address: "1024 S Santee St, Los Angeles, CA 90015", geo: { lat: 34.038586, long: -118.255273 }, studios: [
-        { id: "apex-set-1", name: "Apex Multi-Set", feature: "Multiple sets · cyc walls · integrated lighting & grip", slug: "multi-set", price: "$44.99" },
-        { id: "apex-cyc", name: "Cyc Wall Studio", feature: "Versatile white/black cyc — close to FD's setup", slug: "cyc", price: "$39.99" },
+        { id: "apex-set-1", name: "Apex Multi-Set", feature: "Multiple sets · cyc walls · integrated lighting & grip", slug: "multi-set", price: "Priced hourly" },
+        { id: "apex-cyc", name: "Cyc Wall Studio", feature: "Versatile white/black cyc — close to FD's setup", slug: "cyc", price: "Priced hourly" },
       ] },
     ],
   },
@@ -163,8 +163,8 @@ export const OTHER_STUDIOS: StudioProfile[] = [
     ],
     buildings: [
       { id: "hubble-1", label: "Arts District", phone: "213-555-0168", hours: "Self-service hourly", emoji: "🎨", address: "545 S Clarence St, Los Angeles, CA 90033", geo: { lat: 34.039807, long: -118.223324 }, studios: [
-        { id: "hubble-mod", name: "Modular Space", feature: "Fashion / portrait / commercial · flexible setup", slug: "modular", price: "$49.99" },
-        { id: "hubble-boutique", name: "Boutique Stage", feature: "Self-service hourly · customizable", slug: "boutique", price: "$44.99" },
+        { id: "hubble-mod", name: "Modular Space", feature: "Fashion / portrait / commercial · flexible setup", slug: "modular", price: "Priced hourly" },
+        { id: "hubble-boutique", name: "Boutique Stage", feature: "Self-service hourly · customizable", slug: "boutique", price: "Priced hourly" },
       ] },
     ],
   },

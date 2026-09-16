@@ -90,8 +90,16 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
             <div className="sub-title">Unlock Your Potential</div>
             <div className="sub-subtitle">Choose the plan for your creative journey</div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 18 }}>
-            <input className="inp" placeholder="Promo code" value={promo} onChange={e => { setPromo(e.target.value); setPromoApplied(false); }} style={{ width: "100%", textTransform: "uppercase", letterSpacing: 1, marginBottom: 0 }} />
+          {/* Audit fix (2026-09-08, wyzmind's Torreé batch item 9): this row had
+              gap:8 between the promo input and the Apply button (Torreé called it
+              "too wide" — tightened to 6) and only marginBottom:8 below the whole
+              row. The very next element down is either the promoApplied banner or
+              straight into the first .tier-card, and .tier-card.current has a
+              0 0 30px glow box-shadow — with only 8px of clearance that glow
+              visibly bled up into/behind the Apply button. Bumped clearance to 20px
+              so the glow has room. */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
+            <input className="inp" placeholder="Promo code" value={promo} onChange={e => { setPromo(e.target.value); setPromoApplied(false); }} style={{ width: "100%", textTransform: "uppercase", letterSpacing: 1 }} />
             <button className="btn btn-outline" style={{ width: "100%", padding: "10px 16px", opacity: applyingPromo ? 0.6 : 1 }} disabled={applyingPromo} onClick={async () => {
               const p = promo.trim().toUpperCase();
               if (!p) { showToast("Enter a promo code first"); return; }

@@ -16,7 +16,11 @@ import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../comp
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, CONN_FULL } from "../components/badgeInfo";
 import NonDatingDisclaimer from "../components/NonDatingDisclaimer";
 import Lightbox from "../components/Lightbox";
-import MuseSpark from "../components/MuseSpark";
+// Tag description maps + the tap-to-detail popover, shared across every
+// screen that shows these badges (extracted from here — Discover was the
+// original home of this pattern — into badgeInfo.tsx so Muses/Profile can
+// reuse the exact same maps and modal instead of drifting copies).
+import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, CONN_FULL, BadgeInfoModal } from "../components/badgeInfo";
 
 export interface DiscoverScreenProps {
   screen: Screen;
@@ -570,7 +574,14 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                           </div>
                           {isTop && <div className={"match-fab-blur" + (showMatchMenu ? " open" : "")} aria-hidden="true" />}
                           {isTop && (
-                            <div className={"match-fab" + (cardScrolled ? " hidden" : "")}>
+                            <>
+                              {/* Audit fix (Torreé batch Part B item 2): blur only the card
+                                  content behind the "M" expand button's radial menu while
+                                  it's open (not the whole screen), fading back out fast on
+                                  collapse — see .match-fab-scrim in muse.css. Also doubles
+                                  as a tap-outside-to-close target for the radial menu. */}
+                              <div className={"match-fab-scrim" + (showMatchMenu ? " open" : "")} onClick={() => setShowMatchMenu(false)} aria-hidden="true" />
+                              <div className={"match-fab" + (cardScrolled ? " hidden" : "")}>
                               <button className={"match-fab-btn" + (showMatchMenu ? " open" : "")} onClick={() => setShowMatchMenu(v => !v)} aria-label="Match actions" style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>{showMatchMenu ? <FiCamera size={28} /> : "M"}</button>
                               <div className={"match-radial" + (showMatchMenu ? " open" : "")}>
                                 <button className="match-radial-btn btn-rewind" style={{ left: -110, top: 7 }} onClick={doRewind} aria-label="Rewind">↺</button>
@@ -579,7 +590,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 <button className="match-radial-btn btn-like" style={{ left: -40, top: -106, width: 44, height: 44, flexDirection: "column", fontSize: 16, lineHeight: 1 }} onClick={() => doSwipe("right")} aria-label="Like this match"><span aria-hidden="true" style={{ fontSize: 18 }}>♥</span></button>
                                 <button className="match-radial-btn btn-note" style={{ left: 7, top: -110 }} onClick={() => doLikeWithNote()} aria-label="Like + Note">✎</button>
                               </div>
-                            </div>
+                              </div>
+                            </>
                           )}
                         </>
                       );
@@ -645,18 +657,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
         />
       )}
       {/* Badge info popover */}
-      {badgeInfo && (
-        <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setBadgeInfo(null)}>
-          <div style={{ background: "#1a0a2e", border: `1px solid ${badgeInfo.color}40`, borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-              <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, background: `${badgeInfo.color}20`, border: `1px solid ${badgeInfo.color}40`, color: badgeInfo.color, flexShrink: 0 }}>{badgeInfo.icon}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{badgeInfo.name}</div>
-            </div>
-            <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6 }}>{badgeInfo.desc}</div>
-            <button onClick={() => setBadgeInfo(null)} style={{ marginTop: 18, width: "100%", padding: "12px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))", color: "var(--gold)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Got it</button>
-          </div>
-        </div>
-      )}
+      <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
       {/* Why this match? popover — traces the score back to the real calcMatch factors */}
       {whyInfo && (
         <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setWhyInfo(null)}>
