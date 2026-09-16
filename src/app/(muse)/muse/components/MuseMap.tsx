@@ -8,6 +8,7 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const [loadError, setLoadError] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({ zoom: 0, lat: 0, lng: 0 });
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -116,6 +117,9 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
         map.resize();
         map.fitBounds(bounds, { padding: 64, maxZoom: myGeo ? 11 : 10, duration: 0 });
       }
+      // Live zoom/coordinate readout for debugging marker placement
+      map.on('move', () => { const z = map.getZoom(); const c = map.getCenter(); setDebugInfo({ zoom: z, lat: c.lat, lng: c.lng }); });
+      setDebugInfo({ zoom: map.getZoom(), lat: map.getCenter().lat, lng: map.getCenter().lng });
       } catch (err) { setLoadError(true); console.error("Map failed to initialize", err); }
     };
     if (w.mapboxgl) {
@@ -158,6 +162,11 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
       </div>
       <div ref={containerRef} style={{ position: "absolute", inset: 0, touchAction: "none" }} />
       <div style={{ position: "absolute", bottom: 24, left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.55)", fontSize: 12, zIndex: 2, pointerEvents: "none" }}>Tap a marker to see creative studios nearby</div>
+      <div style={{ position: "absolute", top: 72, right: 16, zIndex: 2, background: "rgba(10,6,18,0.85)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "8px 10px", fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.7)", backdropFilter: "blur(8px)", pointerEvents: "none", whiteSpace: "nowrap" }}>
+        <div>Zoom: {Math.round(debugInfo.zoom * 100) / 100}% ({Math.round(debugInfo.zoom * 10) / 10})</div>
+        <div>Lat: {debugInfo.lat.toFixed(4)}</div>
+        <div>Lng: {debugInfo.lng.toFixed(4)}</div>
+      </div>
     </div>
   );
 }

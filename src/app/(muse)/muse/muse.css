@@ -2402,6 +2402,9 @@ img{background-color:var(--card-bg)}
    real, uneven tides rather than a repeating synthwave pattern.
    ══════════════════════════════════════════════════════════════════════════ */
 .wave-bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100vw);height:22%;z-index:90;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s ease}
+@media (min-width: 768px) {
+  .wave-bottom{width:100vw;min-width:100%;transform:translateX(-50%)}
+}
 .wave-bottom.show{opacity:1}
 .wave-bottom svg{position:absolute;bottom:0;left:0;width:240%;height:100%;animation:waveDrift 14s ease-in-out infinite}
 .wave-bottom svg:nth-child(2){animation-duration:20s;animation-delay:-6s;opacity:.7}
