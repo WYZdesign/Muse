@@ -464,7 +464,6 @@ export interface MenuModalProps {
   commentText: string;
   setCommentText: (v: string) => void;
   setSupportOpen: (v: boolean) => void;
-  setShowFeatureTour?: (v: boolean) => void;
   doLogoutFull: () => void;
   discoveryPrefs: any;
   setDiscoveryPrefs: React.Dispatch<React.SetStateAction<any>>;
@@ -543,7 +542,6 @@ export const MenuModal = memo(function MenuModal({
   commentText,
   setCommentText,
   setSupportOpen,
-  setShowFeatureTour,
   doLogoutFull,
   discoveryPrefs,
   setDiscoveryPrefs,

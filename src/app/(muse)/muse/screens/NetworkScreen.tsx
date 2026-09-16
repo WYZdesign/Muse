@@ -53,6 +53,11 @@ export interface NetworkScreenProps {
   savedProfileIds?: (string | number)[];
   setSavedProfileIds?: React.Dispatch<React.SetStateAction<(string | number)[]>>;
   demo?: boolean;
+  /** Fires whenever the internal pros/forum tab changes, so page.tsx can
+   *  show the Forum's own first-visit tutorial the first time someone
+   *  opens that tab (Forum isn't a top-level `screen`, so it can't be
+   *  caught the same way the other per-screen tutorials are). */
+  onTabChange?: (tab: "pros" | "forum") => void;
 }
 
 const SKILL_COLORS = [
@@ -112,6 +117,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   savedProfileIds = [],
   setSavedProfileIds = () => {},
   demo = false,
+  onTabChange,
 }: NetworkScreenProps) {
   // Save/bookmark toggle — same client+server pattern as Briefs' savedBriefs.
   const toggleSaveProfessional = (id: string | number) => {
@@ -127,6 +133,11 @@ export const NetworkScreen = memo(function NetworkScreen({
   // a stale FeatureTour link etc. could land a user on a tab with no
   // visible way back to it.
   useEffect(() => { if (openTab && !(MUSE_CLOSED_BETA_HIDE_SOCIAL && openTab === "forum")) setNetTab(openTab); }, [openTab]);
+
+  // Let page.tsx know when Forum is actually opened, so it can trigger the
+  // Forum tutorial the first time — Forum lives as a tab here, not as its
+  // own top-level `screen`.
+  useEffect(() => { if (netTab === "forum") onTabChange?.("forum"); }, [netTab, onTabChange]);
 
   useEffect(() => {
     if (screen !== "connections" && screen !== "community") return;

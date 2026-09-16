@@ -8,6 +8,7 @@ import { mfaStatus, mfaEnroll, mfaVerify, mfaUnenroll } from "../lib/api";
 import type { Screen } from "../components/types";
 import { BEHIND_CAMERA, IN_FRONT_CAMERA, AESTHETICS, lookingForOptions } from "../components/types";
 import { STRINGS } from "@/lib/strings";
+import { clearAllPageTourFlags } from "../components/pageTourContent";
 import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
 import { isPaidTier } from "../components/subscriptionTiers";
 
@@ -103,7 +104,6 @@ export interface SettingsScreenProps {
   userTier?: string;
   setUpsell?: (v: { feature: string; reason: string; icon?: string } | null) => void;
   authFetch?: (url: string, opts?: any) => Promise<any>;
-  setShowFeatureTour?: (v: boolean) => void;
   setSupportOpen?: (v: boolean) => void;
 }
 
@@ -277,7 +277,6 @@ export const SettingsScreen = memo(function SettingsScreen({
   userTier = "free",
   setUpsell,
   authFetch,
-  setShowFeatureTour,
   setSupportOpen,
 }: SettingsScreenProps) {
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -826,7 +825,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               </div>
             ))}
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
-              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => setShowFeatureTour?.(true)}>App Walkthrough</button>
+              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { clearAllPageTourFlags(); showToast("Tutorials reset — you'll see them again as you explore"); }}>Replay Tutorials</button>
               <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => showScreen("codex")}>Glossary + Codex</button>
               <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => setSupportOpen?.(true)}>Help Guide</button>
               {!showIdeaForm ? (

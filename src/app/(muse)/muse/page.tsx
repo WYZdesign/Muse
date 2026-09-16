@@ -35,7 +35,8 @@ import { useAuthOnboardingState } from "./hooks/useAuthOnboardingState";
 import { useDiscoverState } from "./hooks/useDiscoverState";
 import { requestMotionPermission } from "./hooks/useDeviceTilt";
 import SupportChat from "./components/SupportChat";
-import FeatureTour from "./components/FeatureTour";
+import PageTour from "./components/PageTour";
+import { PAGE_TOURS, SCREEN_TRIGGERED_TOUR_IDS, tourSeenKey, type TourScreenId } from "./components/pageTourContent";
 import { ScreenErrorBoundary } from "./components/ScreenErrorBoundary";
 import { DiscoverScreen } from "./screens/DiscoverScreen";
 import { FeedScreen } from "./screens/FeedScreen";
@@ -251,12 +252,14 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     showPaymentHistory, setShowPaymentHistory,
     showQuests, setShowQuests,
     showDailyLogin, setShowDailyLogin,
-    showFeatureTour, setShowFeatureTour,
     showAgeGate, setShowAgeGate,
     showIntentPicker, setShowIntentPicker,
     showStories, setShowStories,
     showEmojiPicker, setShowEmojiPicker,
   } = useModalVisibility();
+  // Which screen's first-visit tutorial (if any) is currently open — see
+  // the "Per-page tutorials" effect below.
+  const [activePageTour, setActivePageTour] = useState<TourScreenId | null>(null);
   const [pendingNsfw, setPendingNsfw] = useState(false);
   const [userTier, setUserTier] = useState<string>("free");
   const [liveProfessionals, setLiveProfessionals] = useState<any[] | null>(null);
@@ -1593,21 +1596,32 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       .catch(() => {});
   }, [bootstrapped, authUser, trackQuest, apiFetch]);
 
-  // Auto-fires the feature tour exactly once per browser (tracked via
-  // localStorage, same pattern as the old muse_tutorials_seen flag). Waits
-  // for the daily-login streak popup to close first if it's showing, so
-  // the two full-screen modals never stack on top of each other.
-  const tourBootRef = useRef(false);
-  useEffect(() => {
-    if (!bootstrapped || !authUser || tourBootRef.current) return;
+  // Per-page tutorials: each major screen gets its own small lightbox the
+  // first time this browser ever opens it (tracked one localStorage flag
+  // per screen, muse_tour_seen_<screen>, same safeGetItem/safeSetItem
+  // pattern as the old single muse_feature_tour_seen flag it replaces).
+  // Only one page tour is ever open at once, tracked here rather than as a
+  // showX boolean per screen.
+  const pageTourShownRef = useRef<Set<string>>(new Set());
+  const maybeShowPageTour = useCallback((id: TourScreenId) => {
+    if (activePageTour) return;
+    if (pageTourShownRef.current.has(id)) return;
+    // Same defensive pattern the old trigger used with showDailyLogin —
+    // never stack a page tour on top of another full-screen modal.
+    if (showDailyLogin || showAgeVerification || showAgeGate || showQuests || showStories || showHamburger) return;
+    pageTourShownRef.current.add(id);
     let seen = "";
-    try { seen = safeGetItem("muse_feature_tour_seen") || ""; } catch {}
-    if (seen) { tourBootRef.current = true; return; }
-    if (showDailyLogin) return;
-    tourBootRef.current = true;
-    const t = setTimeout(() => setShowFeatureTour(true), 1200);
+    try { seen = safeGetItem(tourSeenKey(id)) || ""; } catch {}
+    if (seen) return;
+    setActivePageTour(id);
+  }, [activePageTour, showDailyLogin, showAgeVerification, showAgeGate, showQuests, showStories, showHamburger]);
+
+  useEffect(() => {
+    if (!bootstrapped || !authUser) return;
+    if (!(SCREEN_TRIGGERED_TOUR_IDS as string[]).includes(screen)) return;
+    const t = setTimeout(() => maybeShowPageTour(screen as TourScreenId), 600);
     return () => clearTimeout(t);
-  }, [bootstrapped, authUser, showDailyLogin]);
+  }, [screen, bootstrapped, authUser, maybeShowPageTour]);
 
   useEffect(() => {
     if (!bootstrapped || !authUser) return;
@@ -2604,7 +2618,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         </div>
       )}
       <ScreenErrorBoundary name="MenuModal">
-        <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} setLiveForum={setLiveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} setShowFeatureTour={setShowFeatureTour} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowBlockedUsers={setShowBlockedUsersPanel} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} nearQuests={nearQuests} topQuests={topQuests} loginStreak={loginStreak} weeklyLogins={weeklyLogins} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} onMarkAllRead={() => setActivityFeed(prev => prev.map(a => ({ ...a, read: true })))} unreadCount={unreadNotificationCount} briefTitleById={briefTitleById} liveProfessionals={liveProfessionals} setShowQuests={setShowQuests} questClaimables={claimableQuests} getReferralTier={getReferralTier} />
+        <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} setLiveForum={setLiveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowBlockedUsers={setShowBlockedUsersPanel} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} nearQuests={nearQuests} topQuests={topQuests} loginStreak={loginStreak} weeklyLogins={weeklyLogins} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} onMarkAllRead={() => setActivityFeed(prev => prev.map(a => ({ ...a, read: true })))} unreadCount={unreadNotificationCount} briefTitleById={briefTitleById} liveProfessionals={liveProfessionals} setShowQuests={setShowQuests} questClaimables={claimableQuests} getReferralTier={getReferralTier} />
       </ScreenErrorBoundary>
       <SupportChat open={supportOpen} onClose={() => setSupportOpen(false)} />
       {screen === "auth" ? (
@@ -3105,7 +3119,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             </ScreenErrorBoundary>
 
             <ScreenErrorBoundary name="Network">
-            <NetworkScreen screen={screen} showScreen={showScreen} goBack={goBack} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} setLiveForum={setLiveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} setShowReport={setShowReport} setReportTarget={setReportTarget} liveProfessionals={liveProfessionals} openTab={_networkOpenTab} savedProfileIds={savedProfileIds} setSavedProfileIds={setSavedProfileIds} demo={DEMO_MODE} />
+            <NetworkScreen screen={screen} showScreen={showScreen} goBack={goBack} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} setLiveForum={setLiveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} setShowReport={setShowReport} setReportTarget={setReportTarget} liveProfessionals={liveProfessionals} openTab={_networkOpenTab} savedProfileIds={savedProfileIds} setSavedProfileIds={setSavedProfileIds} demo={DEMO_MODE} onTabChange={tab => { if (tab === "forum") maybeShowPageTour("forum"); }} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Portfolio">
             <React.Suspense fallback={null}><PortfolioScreen screen={screen} showScreen={showScreen} goBack={goBack} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} /></React.Suspense>
@@ -3125,7 +3139,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       {screen === "analytics" && <React.Suspense fallback={null}><ScreenErrorBoundary name="Analytics"><AnalyticsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} /></ScreenErrorBoundary></React.Suspense>}
       {screen === "matchGuide" && <React.Suspense fallback={null}><ScreenErrorBoundary name="MatchGuide"><MatchGuideScreen screen={screen} showScreen={showScreen} goBack={goBack} /></ScreenErrorBoundary></React.Suspense>}
       {/* SETTINGS SCREEN */}
-      {screen === "settings" && <ScreenErrorBoundary name="Settings"><SettingsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} obData={obData} showNsfw={showNsfw} setShowNsfw={setShowNsfw} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} blockedUsers={blockedUsers} setBlockedUsers={setBlockedUsers} obConnectedSocials={obConnectedSocials} toggleSocial={toggleSocial} theme={theme} setTheme={setTheme} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} doLogout={doLogout} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditNsfw={setEditNsfw} setShowNotificationsSettings={setShowNotificationsSettings} showNotificationsSettings={showNotificationsSettings} setShowConnectedAccounts={setShowConnectedAccounts} showConnectedAccounts={showConnectedAccounts} pushEnabled={pushEnabled} setPushEnabled={setPushEnabled} subscribeToMusePush={subscribeToMusePush} unsubscribeFromMusePush={unsubscribeFromMusePush} setShowTerms={setShowTerms} setShowPrivacy={setShowPrivacy} setShowGuidelines={setShowGuidelines} setShowDeleteConfirm={setShowDeleteConfirm} isUnlimited={isUnlimited} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} promptResponses={promptResponses} promptBankData={promptBankData} myGeo={myGeo} setShowAgeGate={setShowAgeGate} setPendingNsfw={setPendingNsfw} setShowAgeVerification={setShowAgeVerification} setScreen={setScreen} setObStep={setObStep} apiFetch={apiFetch} setShowQuests={setShowQuests} questClaimables={claimableQuests} showBlockedUsers={showBlockedUsersPanel} setShowBlockedUsers={setShowBlockedUsersPanel} ageVerified={ageVerified} verificationExpiringSoon={verificationExpiringSoon} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} showZodiac={showZodiac} setShowZodiac={setShowZodiac} showAge={showAge} setShowAge={setShowAge} showMbti={showMbti} setShowMbti={setShowMbti} showLifePath={showLifePath} setShowLifePath={setShowLifePath} showChinese={showChinese} setShowChinese={setShowChinese} showMatchPercent={showMatchPercent} setShowMatchPercent={setShowMatchPercent} userTier={userTier} setUpsell={setUpsell} authFetch={authFetch} setShowFeatureTour={setShowFeatureTour} setSupportOpen={setSupportOpen} /></ScreenErrorBoundary>}
+      {screen === "settings" && <ScreenErrorBoundary name="Settings"><SettingsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} obData={obData} showNsfw={showNsfw} setShowNsfw={setShowNsfw} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} blockedUsers={blockedUsers} setBlockedUsers={setBlockedUsers} obConnectedSocials={obConnectedSocials} toggleSocial={toggleSocial} theme={theme} setTheme={setTheme} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} doLogout={doLogout} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditNsfw={setEditNsfw} setShowNotificationsSettings={setShowNotificationsSettings} showNotificationsSettings={showNotificationsSettings} setShowConnectedAccounts={setShowConnectedAccounts} showConnectedAccounts={showConnectedAccounts} pushEnabled={pushEnabled} setPushEnabled={setPushEnabled} subscribeToMusePush={subscribeToMusePush} unsubscribeFromMusePush={unsubscribeFromMusePush} setShowTerms={setShowTerms} setShowPrivacy={setShowPrivacy} setShowGuidelines={setShowGuidelines} setShowDeleteConfirm={setShowDeleteConfirm} isUnlimited={isUnlimited} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} promptResponses={promptResponses} promptBankData={promptBankData} myGeo={myGeo} setShowAgeGate={setShowAgeGate} setPendingNsfw={setPendingNsfw} setShowAgeVerification={setShowAgeVerification} setScreen={setScreen} setObStep={setObStep} apiFetch={apiFetch} setShowQuests={setShowQuests} questClaimables={claimableQuests} showBlockedUsers={showBlockedUsersPanel} setShowBlockedUsers={setShowBlockedUsersPanel} ageVerified={ageVerified} verificationExpiringSoon={verificationExpiringSoon} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} showZodiac={showZodiac} setShowZodiac={setShowZodiac} showAge={showAge} setShowAge={setShowAge} showMbti={showMbti} setShowMbti={setShowMbti} showLifePath={showLifePath} setShowLifePath={setShowLifePath} showChinese={showChinese} setShowChinese={setShowChinese} showMatchPercent={showMatchPercent} setShowMatchPercent={setShowMatchPercent} userTier={userTier} setUpsell={setUpsell} authFetch={authFetch} setSupportOpen={setSupportOpen} /></ScreenErrorBoundary>}
 
       {/* REPORT MODAL */}
       {showReport && (
@@ -3863,14 +3877,23 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           </div>
         </div>
       )}
-      <FeatureTour
-        open={showFeatureTour}
-        onClose={() => {
-          setShowFeatureTour(false);
-          try { safeSetItem("muse_feature_tour_seen", "1"); } catch {}
-        }}
-        startScreen={screen}
-      />
+      {activePageTour && (
+        <PageTour
+          open
+          onClose={() => {
+            try { safeSetItem(tourSeenKey(activePageTour), "1"); } catch {}
+            setActivePageTour(null);
+          }}
+          icon={PAGE_TOURS[activePageTour].icon}
+          from={PAGE_TOURS[activePageTour].from}
+          to={PAGE_TOURS[activePageTour].to}
+          slides={PAGE_TOURS[activePageTour].slides}
+          orbitCount={PAGE_TOURS[activePageTour].orbitCount}
+          sparkCount={PAGE_TOURS[activePageTour].sparkCount}
+          ringStyle={PAGE_TOURS[activePageTour].ringStyle}
+          ariaLabel={PAGE_TOURS[activePageTour].ariaLabel}
+        />
+      )}
       <ScreenErrorBoundary name="QuestPanel">
         <QuestPanel
           show={showQuests}

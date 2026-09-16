@@ -37,7 +37,6 @@ export function useModalVisibility() {
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   const [showQuests, setShowQuests] = useState(false);
   const [showDailyLogin, setShowDailyLogin] = useState(false);
-  const [showFeatureTour, setShowFeatureTour] = useState(false);
   const [showAgeGate, setShowAgeGate] = useState(false);
   const [showIntentPicker, setShowIntentPicker] = useState(false);
   const [showStories, setShowStories] = useState(false);
@@ -68,7 +67,6 @@ export function useModalVisibility() {
     showPaymentHistory, setShowPaymentHistory,
     showQuests, setShowQuests,
     showDailyLogin, setShowDailyLogin,
-    showFeatureTour, setShowFeatureTour,
     showAgeGate, setShowAgeGate,
     showIntentPicker, setShowIntentPicker,
     showStories, setShowStories,
