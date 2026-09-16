@@ -460,20 +460,41 @@ export const promptResponsesGet = async ({ sb, profile }: ActionContext) => {
   return NextResponse.json({ responses: data || [] });
 };
 
-// Host availability — the occupied slots (confirmed/pending bookings) for a
-// session, so the UI can render a real availability calendar and prevent
-// double-booking a time slot that's already taken.
+// Host availability signal — a coarse "how busy is this host right now"
+// readout for the person about to book a session, so they're not booking
+// blind into a host with a full plate.
+//
+// Audit fix (2026-09-16): this previously ignored `sessionId` entirely and
+// queried `muse_bookings` filtered by `host_id: profile.id` — i.e. the
+// CALLING user's own bookings-as-a-host, not the target session's actual
+// host. For the common case (a client checking a host they don't host
+// sessions themselves) that returned an empty/irrelevant result every
+// time, and the frontend caller (SessionsScreen's doBookSession)
+// discarded the response into a console.log either way, so the whole
+// probe was a no-op end to end. Fixed both ends: this now looks up the
+// session's real host_id first, then counts THAT host's active bookings;
+// SessionsScreen now surfaces the count instead of logging it.
+//
+// Also renamed the response field from the previous `slots` to
+// `activeBookingCount` — `muse_sessions.date`/`muse_bookings` have no
+// start/end-time columns (see sql/MUSE_SCHEMA_FULL_20260813.sql), so
+// there's no actual time-of-day slot data to return; a literal calendar
+// with real time slots and double-booking prevention would need a schema
+// change (structured start_at/end_at columns) and is out of scope here —
+// this stays a coarse "N active bookings" signal, which is what the
+// existing schema can honestly support.
 export const hostAvailability = async ({ sb, profile, rest }: ActionContext) => {
   const { sessionId } = rest;
-  // Session-or-owner-agnostic: return the requesting user's own confirmed/pending
-  // bookings as the availability signal. Requires auth only, no admin.
-  const { data: slots } = await sb.from("muse_bookings")
-    .select("id, session_id, status, confirmed_at, created_at, completed_at")
-    .eq("host_id", profile.id)
+  if (!sessionId) return NextResponse.json({ error: "sessionId required" }, { status: 400 });
+  const { data: session } = await sb.from("muse_sessions").select("id, host_id").eq("id", sessionId).maybeSingle();
+  if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  const { data: activeBookings, count } = await sb.from("muse_bookings")
+    .select("id, session_id, status, created_at", { count: "exact" })
+    .eq("host_id", session.host_id)
     .in("status", ["pending", "confirmed"])
     .order("created_at", { ascending: false })
     .limit(50);
-  return NextResponse.json({ slots: slots || [] });
+  return NextResponse.json({ activeBookingCount: count ?? (activeBookings || []).length, activeBookings: activeBookings || [] });
 };
 
 // Toggle a session's availability (a host marks it open or closed).

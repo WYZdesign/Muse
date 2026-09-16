@@ -174,12 +174,22 @@ export const SessionsScreen = memo(function SessionsScreen({
   };
   const doBookSession = async (s: any, note?: { sizing: string; requirements: string; message: string }) => {
     try {
-      // Best-effort availability probe (fire-and-forget — never
-      // blocks or gates the booking action below).
+      // Best-effort availability probe (fire-and-forget — never blocks or
+      // gates the booking action below). Torreé audit (2026-09-16): this
+      // used to fetch the host's active-booking count and then just
+      // console.log it — never actually shown to the user. Now surfaces
+      // it as a heads-up toast right before the booking request goes out,
+      // so someone booking a busy host at least knows that going in. It's
+      // deliberately informational only, not a blocker: the schema has no
+      // real time-slot data (see hostAvailability's comment), so this is
+      // a coarse signal, not a guarantee the specific date/time is free.
       try {
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "host-availability", sessionId: s.id }) })
           .then(r => r.json())
-          .then(d => console.log("[host-availability]", s.id, Array.isArray(d?.slots) ? d.slots.length : 0))
+          .then(d => {
+            const n = Number(d?.activeBookingCount || 0);
+            if (n >= 3) showToast(`Heads up — ${s.name || "this host"} has ${n} active bookings right now, response may take a bit longer`);
+          })
           .catch(() => {});
       } catch {}
       const noteText = note ? [note.sizing && `Sizing/prefs: ${note.sizing}`, note.requirements && `Requirements: ${note.requirements}`, note.message && `Note: ${note.message}`].filter(Boolean).join(" · ") : "";

@@ -7,6 +7,7 @@ import type { Screen } from "../components/types";
 import { TIERS, TIERS_BY_SIDE } from "../components/types";
 import { viewerSideOf } from "@/lib/role";
 import { startSubscriptionCheckout, startBoostCheckout } from "../lib/api";
+import { safeSetItem } from "../lib/safe-storage";
 
 export interface SubscriptionScreenProps {
   screen: Screen;
@@ -202,8 +203,15 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
           <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 12, fontWeight: 700, borderRadius: 12, borderColor: "rgba(255,215,0,0.3)", color: "var(--gold)" }} disabled={buyingBoost} onClick={async () => {
             if (buyingBoost) return;
             setBuyingBoost(true);
-            const url = await startBoostCheckout(1, boostDuration, showToast);
-            if (url) { window.location.href = url; }
+            const result = await startBoostCheckout(1, boostDuration, showToast);
+            if (result) {
+              // Persist the purchaseId across the full-page Stripe redirect —
+              // page.tsx reads this on return (?boost=success) and calls
+              // boost-purchase-complete, which is what actually grants the
+              // boost credits (the webhook only marks the purchase "paid").
+              if (result.purchaseId) { try { safeSetItem("muse_pending_boost_purchase", result.purchaseId); } catch {} }
+              window.location.href = result.url;
+            }
             setBuyingBoost(false);
           }}>{buyingBoost ? "Opening checkout..." : `Buy Boost — $${BOOST_PRICE_MAP[boostDuration]}`}</button>
         </div>

@@ -1186,7 +1186,18 @@ img{background-color:var(--card-bg)}
    Horizontal chip/tab rows scroll by swipe/touch only. The visible gold
    scrollbar was removed entirely (it sat under active-tab underlines and
    swallowed taps); the HScroll component's ‹ › arrows are the scroll cue
-   instead, so no browser scrollbar and no edge-fade mask anywhere. */
+   instead, so no browser scrollbar anywhere. Edge-fade mask (Torreé
+   audit, 2026-09-16): every horizontal-scroll row below now fades its
+   left/right edges to transparent instead of hard-stopping — this was
+   previously deliberately omitted ("no mask anywhere") in favor of the
+   HScroll arrows alone, but Torreé specifically asked for the fade back,
+   for every horizontal scroll bar app-wide, not just where a background
+   happens to be visible (filter-scroll-row's shadow-bar background was
+   the one that made the hard edge most visible, but the mask applies
+   uniformly so any row's background — current or future — inherits the
+   same soft edge). The mask fades content too, not just background; at
+   this fade width (18px) that reads as a scroll affordance, the same way
+   the HScroll arrows do, rather than clipping real content. */
 .filter-scroll-row{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:6px;position:relative;background:rgba(0,0,0,0.02)}
 .filter-scroll-row::-webkit-scrollbar{display:none;width:0;height:0}
 .filter-chip{flex-shrink:0;white-space:nowrap;font-family:inherit}
@@ -1196,9 +1207,22 @@ img{background-color:var(--card-bg)}
 .chip-scroll::-webkit-scrollbar,.conn-tabs::-webkit-scrollbar,.quest-filters::-webkit-scrollbar,.pro-skill-row::-webkit-scrollbar,.quick-replies::-webkit-scrollbar,.moments-story-row::-webkit-scrollbar,.moments-tab-row::-webkit-scrollbar,.album-tabs::-webkit-scrollbar,.bts-cat-row::-webkit-scrollbar,.icebreaker-row::-webkit-scrollbar,.filter-scroll-row::-webkit-scrollbar{display:none;width:0;height:0}
 .chip-scroll::-webkit-scrollbar-button,.conn-tabs::-webkit-scrollbar-button,.quest-filters::-webkit-scrollbar-button,.pro-skill-row::-webkit-scrollbar-button,.quick-replies::-webkit-scrollbar-button,.moments-story-row::-webkit-scrollbar-button,.moments-tab-row::-webkit-scrollbar-button,.album-tabs::-webkit-scrollbar-button,.bts-cat-row::-webkit-scrollbar-button,.icebreaker-row::-webkit-scrollbar-button{display:none;width:0;height:0}
 
+/* Every horizontal-scroll row app-wide fades its edges instead of hard-
+   stopping — background AND content both fade, which is what reads as a
+   soft edge rather than a clipped one. Works identically in every theme
+   since it's an alpha mask, not a fixed color. .hsc-fade is the class the
+   shared HScroll component (components/HScroll.tsx) applies to its
+   scrolling element — that component still layers its own ‹ › nudge
+   arrows on top as an additional affordance, they're not mutually
+   exclusive with the fade. .chips and the generic inline-style selector
+   below catch every remaining ad-hoc horizontal-scroll row that isn't
+   one of the named classes above. */
+.chip-scroll,.conn-tabs,.quest-filters,.pro-skill-row,.quick-replies,.moments-story-row,.moments-tab-row,.album-tabs,.bts-cat-row,.icebreaker-row,.filter-scroll-row,.conn-tab-sub-scroll,.hsc-fade,.chips{-webkit-mask-image:linear-gradient(to right,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);mask-image:linear-gradient(to right,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%)}
+
 /* Any inline horizontally-scrolling container: hide its scrollbar too (no
-   forced gold thumb, no mask — the HScroll arrows are the cue). */
-[style*="overflowX: auto"],[style*="overflow-x: auto"]{scrollbar-width:none!important;-ms-overflow-style:none!important}
+   forced gold thumb — the HScroll arrows remain the primary cue there),
+   and give it the same edge-fade mask as every named scroll row above. */
+[style*="overflowX: auto"],[style*="overflow-x: auto"]{scrollbar-width:none!important;-ms-overflow-style:none!important;-webkit-mask-image:linear-gradient(to right,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%)!important;mask-image:linear-gradient(to right,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%)!important}
 [style*="overflowX: auto"]::-webkit-scrollbar,[style*="overflow-x: auto"]::-webkit-scrollbar{display:none;width:0;height:0}
 [style*="overflowX: auto"]::-webkit-scrollbar-button,[style*="overflow-x: auto"]::-webkit-scrollbar-button{display:none;width:0;height:0}
 

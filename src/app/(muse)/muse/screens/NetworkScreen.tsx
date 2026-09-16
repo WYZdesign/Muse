@@ -1148,6 +1148,43 @@ export const NetworkScreen = memo(function NetworkScreen({
                       >
                         <FiFlag size={12} /> Report
                       </button>
+                      {/* Torreé audit (2026-09-16): forum-post-pin was already built and
+                          registered server-side (author-or-admin, toggles) but had no
+                          caller anywhere — the "📌 Pinned" badge above could never
+                          actually appear. Author-gated here client-side to match the
+                          server's own check (isAuthor || isAdmin) — an admin pinning
+                          someone else's post is a moderation action that belongs in the
+                          admin panel, not inline in the public feed, so that half is left
+                          for a future ModerationPanel pass rather than exposing a button
+                          here that 403s for everyone but the post's own author. */}
+                      {post.author === currentUser?.name && (
+                        <button
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: post.pinned ? "var(--gold)" : "var(--text2)",
+                            fontSize: 11,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            cursor: "pointer",
+                          }}
+                          onClick={async () => {
+                            try {
+                              const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum-post-pin", postId: post.id }) });
+                              const d = await r.json();
+                              if (d.success) {
+                                setForumPosts((prev) => prev.map((p) => p.id === post.id ? { ...p, pinned: d.pinned } : p));
+                                showToast(d.pinned ? "Post pinned" : "Post unpinned");
+                              } else {
+                                showToast(d.error || "Couldn't update pin");
+                              }
+                            } catch { showToast("Couldn't update pin"); }
+                          }}
+                        >
+                          📌 {post.pinned ? "Unpin" : "Pin"}
+                        </button>
+                      )}
                     </div>
 
                     {expandedPostId === post.id && (

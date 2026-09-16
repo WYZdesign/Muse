@@ -275,7 +275,11 @@ export const MusesScreen = memo(function MusesScreen({
               line in this 3-way flex:1 tab bar (it's the longest of the three
               labels sharing equal width with "Matches (N)" and "Inbox").
               Shortened to fit on one line, same as the other two tabs. */}
-          <span>✦ Interested</span>
+          {/* Torreé audit (2026-09-16): dropped the ✦ spark icon from this
+              tab label — kept elsewhere (e.g. the card badge below) where
+              it's paired with a colored pill background it reads against;
+              here on a plain tab it was just visual noise next to the text. */}
+          <span>Interested</span>
           {likedBy.length > 0 && (
             <span style={{ padding: "2px 7px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 11, fontWeight: 800, color: "#fff" }}>{likedBy.length}</span>
           )}

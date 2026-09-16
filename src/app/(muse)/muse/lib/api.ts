@@ -146,15 +146,19 @@ export async function startSubscriptionCheckout(plan: string, email?: string, sh
 }
 
 // One-off boost purchase via /api/muse/connect (create-boost-checkout).
-// Returns the Stripe redirect URL, or null with a toast on failure.
-export async function startBoostCheckout(quantity: number, duration: string, showToast?: (msg: string) => void): Promise<string | null> {
+// Returns the Stripe redirect URL and purchaseId, or null with a toast on
+// failure. The caller must hang on to purchaseId (e.g. persist it before
+// navigating away to Stripe) and pass it to boost-purchase-complete on
+// return — the webhook only marks the purchase row "paid"; nothing grants
+// the boost credits until boost-purchase-complete is called with this id.
+export async function startBoostCheckout(quantity: number, duration: string, showToast?: (msg: string) => void): Promise<{ url: string; purchaseId: string | null } | null> {
   try {
     const r = await authFetch("/api/muse/connect", {
       method: "POST",
       body: JSON.stringify({ action: "create-boost-checkout", quantity, duration }),
     });
     const d = await r.json();
-    if (d.url) return d.url;
+    if (d.url) return { url: d.url, purchaseId: d.purchaseId ?? null };
     showToast?.(d.error || "Boost purchase unavailable, try again later");
     return null;
   } catch {

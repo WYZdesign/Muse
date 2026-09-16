@@ -1213,6 +1213,31 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     if (paymentResult === "success") showToast("Payment successful! Your session is booked. 🎉");
     else if (paymentResult === "cancelled") showToast("Payment cancelled");
 
+    // Handle boost-checkout return (create-boost-checkout success_url/cancel_url).
+    // The webhook only marks the purchase row "paid" — boost-purchase-complete
+    // is what actually grants the credits, so it must be called here with the
+    // purchaseId stashed before the redirect (see SubscriptionScreen buy-boost).
+    const boostResult = params.get("boost");
+    if (boostResult === "success") {
+      const pendingBoostId = safeGetItem("muse_pending_boost_purchase");
+      if (pendingBoostId) {
+        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "boost-purchase-complete", purchaseId: pendingBoostId }) })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.success) showToast("Boost credit added! ⚡");
+            else if (d?.code === "NOT_PAID") showToast("Payment still processing — your boost will appear shortly");
+            else showToast(d?.error || "Couldn't confirm boost purchase — contact support if you were charged");
+          })
+          .catch(() => showToast("Couldn't confirm boost purchase — contact support if you were charged"))
+          .finally(() => { try { safeRemoveItem("muse_pending_boost_purchase"); } catch {} });
+      } else {
+        showToast("Boost purchase successful! ⚡");
+      }
+    } else if (boostResult === "cancelled") {
+      try { safeRemoveItem("muse_pending_boost_purchase"); } catch {}
+      showToast("Boost purchase cancelled");
+    }
+
     // Handle referral code from URL
     const refCode = params.get("ref");
     if (refCode) {
