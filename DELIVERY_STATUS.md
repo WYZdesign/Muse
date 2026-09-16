@@ -48,13 +48,16 @@ It needs the bundle file moved to this path, or a fresh copy re-delivered.**
 | `round37-sessions-search-scrolltop-matchpct-customrole.bundle` | `fee7f51` | Sessions button transparency, search-focus opacity, sessions tab color match, scroll-to-top nav, comprehensive match% badges, custom "Other" role/style + moderation queue |
 | `round38-themes-wave-distinctness.bundle` | `fee7f51` (carries round 37's commits too — merging this one covers both) | 2 more dark themes (Cinder, Boreal) + 2 more light themes (Meadow, Frost), splash wave visual-distinctness fix |
 
-**As of the last time this file was updated, NEITHER bundle has been
-confirmed present in `V:\Muse\_to_delete\`.** The Claude session that built
-them tried repeatedly to place them there itself (`device_commit_files`) and
-got "device not connected" every time. They were delivered as file downloads
-in that Claude conversation instead — Torreé needs to save them from there
-into `V:\Muse\_to_delete\` manually, or reconnect that session so it can
-place them directly.
+**Update 2026-09-16 21:09 UTC: both bundle files are now confirmed physically
+present at `V:\Muse\_to_delete\round37-...bundle` and `V:\Muse\_to_delete\
+round38-...bundle`** — written directly via the device bridge once Torreé
+reopened the Claude desktop app (earlier attempts failed with "device not
+connected" because the app wasn't running; that was the actual root cause
+of wyzmind's confusion, not missing/lost work). **They still need to be
+merged** — presence in `_to_delete\` is not the same as being in the
+commit history. Run the merge commands below, then update the "Confirmed
+merged" SHA at the top of this file and delete these two rows in the same
+commit as the merge.
 
 **To merge once the files are actually present:**
 ```
