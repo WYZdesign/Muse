@@ -16,9 +16,9 @@ const SUPPORT_EMAIL = "info@wyzdesign.com";
 
 // See the theme-grid audit-fix comment below — unique 3-letter labels so no
 // two theme swatches read the same.
-const THEME_ABBR: Record<string, string> = { lasunset: "SUNSET", deepspace: "SPACE", nebula: "NEBULA", deepsea: "DEEPSEA", sunrise: "SUNRISE", daylight: "DAY", sky: "SKY", rose: "ROSE" };
-const DARK_THEMES = ["lasunset", "deepspace", "nebula", "deepsea"] as const;
-const LIGHT_THEMES = ["sunrise", "daylight", "sky", "rose"] as const;
+const THEME_ABBR: Record<string, string> = { lasunset: "SUNSET", deepspace: "SPACE", nebula: "NEBULA", deepsea: "DEEPSEA", cinder: "CINDER", boreal: "BOREAL", sunrise: "SUNRISE", daylight: "DAY", sky: "SKY", rose: "ROSE", meadow: "MEADOW", frost: "FROST" };
+const DARK_THEMES = ["lasunset", "deepspace", "nebula", "deepsea", "cinder", "boreal"] as const;
+const LIGHT_THEMES = ["sunrise", "daylight", "sky", "rose", "meadow", "frost"] as const;
 
 export interface SettingsScreenProps {
   screen: Screen;

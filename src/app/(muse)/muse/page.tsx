@@ -325,7 +325,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
   const [showStory, setShowStory] = useState<number|null>(null);
-  const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"deepsea"|"sunrise"|"daylight"|"sky"|"rose">("lasunset");
+  const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"deepsea"|"cinder"|"boreal"|"sunrise"|"daylight"|"sky"|"rose"|"meadow"|"frost">("lasunset");
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
   const [serverNotifCount, setServerNotifCount] = useState(0);
   const [discoveryPrefs, setDiscoveryPrefs] = useState<{ageMin:number;ageMax:number;distance:number;gender:string}>({ageMin:18,ageMax:50,distance:50,gender:"all"});
@@ -761,7 +761,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       }
       if (d.stories && d.stories.length) setStories(d.stories);
       else setStories(DEMO_MOMENTS);
-      if (d.theme) setTheme((["lasunset","deepspace","nebula","deepsea","sunrise","daylight","sky","rose"].includes(d.theme) ? d.theme : "lasunset"));
+      if (d.theme) setTheme((["lasunset","deepspace","nebula","deepsea","cinder","boreal","sunrise","daylight","sky","rose","meadow","frost"].includes(d.theme) ? d.theme : "lasunset"));
       if (d.activityFeed) setActivityFeed(d.activityFeed);
       if (d.discoveryPrefs) setDiscoveryPrefs(d.discoveryPrefs);
       if (d.chatImages) setChatImages(d.chatImages);
@@ -2549,15 +2549,27 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       
       {swipeDir && <SwipeParticles active dir={swipeDir} />}
       <BackgroundScene flash={screenFlash} />
+      {/* Torreé audit (2026-09-16): the three layers previously shared nearly
+          the same baseline (85/100/115, a 30px band), the same wavelength
+          (~180-220px per crest), and similar amplitude — stacked with
+          decreasing opacity that reads as one wave traced three times
+          ("stacked pringles chips") rather than three distinct bodies of
+          water at different depths. Now each layer has its own baseline
+          band, crest frequency and amplitude: layer 1 is a few big, slow,
+          far-reaching swells sitting highest; layer 2 is mid-frequency
+          chop sitting lower and further back; layer 3 is small, tight
+          ripples hugging the bottom, furthest back. The bands only lightly
+          overlap, so depth reads clearly even before the drift animation
+          (staggered durations/delays, unchanged) adds motion parallax. */}
       <div className="wave-bottom">
         <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
-          <path className="wave-path-1" d="M0,100 C180,70 360,130 540,95 C720,60 900,125 1080,90 C1200,70 1340,110 1440,95 L1440,160 L0,160 Z" />
+          <path className="wave-path-1" d="M0,95 C240,45 480,135 720,85 C960,35 1200,120 1440,70 L1440,160 L0,160 Z" />
         </svg>
         <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
-          <path className="wave-path-2" d="M0,115 C200,80 400,135 600,100 C800,65 1000,130 1200,95 C1340,75 1400,110 1440,100 L1440,160 L0,160 Z" />
+          <path className="wave-path-2" d="M0,135 C120,108 240,152 360,122 C480,92 600,148 720,118 C840,88 960,144 1080,114 C1200,84 1320,140 1440,122 L1440,160 L0,160 Z" />
         </svg>
         <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
-          <path className="wave-path-3" d="M0,85 C220,120 440,65 660,100 C880,135 1100,70 1320,100 L1440,110 L1440,160 L0,160 Z" />
+          <path className="wave-path-3" d="M0,148 C60,138 120,153 180,143 C240,133 300,151 360,141 C420,131 480,149 540,139 C600,129 660,147 720,137 C780,127 840,145 900,135 C960,125 1020,143 1080,133 C1140,123 1200,141 1260,131 C1320,121 1380,139 1440,133 L1440,160 L0,160 Z" />
         </svg>
       </div>
       {showMatchOverlay && (
