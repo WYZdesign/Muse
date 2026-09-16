@@ -564,23 +564,14 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "profile-completion" && user) {
-      // Audit fix (round 2): the previous fix here dropped media_kit_url,
-      // but this select ALSO included `photos` — a column that doesn't
-      // exist on muse_profiles in production (confirmed live: `type=export`,
-      // which does select("*"), returns a row with no `photos` key at all;
-      // the repo's own sql/muse_complete_schema.sql still has this as an
-      // `ADD COLUMN IF NOT EXISTS`, so the migration was apparently never
-      // run against prod). Same failure mode as media_kit_url: selecting a
-      // nonexistent column fails the whole query, `p` came back null, and
-      // every user showed "0%" regardless of their real profile — confirmed
-      // this was still happening live even after the media_kit_url fix
-      // shipped. Dropped `photos` from the select too. The app doesn't
-      // actually write muse_profiles.photos anywhere (it's not in
-      // ALLOWED_PROFILE_FIELDS) — real per-user photos live in the albums
-      // system (muse_albums/muse_album_photos, see the `album-photos`
-      // handler below), so the "photos" completion criterion now counts
-      // photos across the user's own albums instead of reading the phantom
-      // column.
+      // Audit fix: this select included media_kit_url, which the breakdown
+      // below never actually reads — but a schema mismatch on that one
+      // column fails the WHOLE select. Same failure mode as media_kit_url:
+      // selecting a nonexistent column fails the whole query, `p` came back
+      // null, and every user showed "0%" regardless of their real profile.
+      // Dropped both unused columns (media_kit_url + photos — photos doesn't
+      // exist on muse_profiles in production). Real per-user photos live in
+      // the albums system (muse_albums/muse_album_photos).
       const { data: p, error: pErr } = await sb.from("muse_profiles")
         .select("id, name, bio, styles, looking, avatar, type, age_verified, zodiac, chinese, mbti, life_path")
         .eq("id", profileId).maybeSingle();
