@@ -845,6 +845,23 @@ img{background-color:var(--card-bg)}
 .match-btn{padding:18px 56px;border-radius:99px;background:linear-gradient(135deg,var(--gold),var(--amber));color:var(--bg);font-size:17px;font-weight:700;box-shadow:0 2px 10px rgba(255,215,0,0.18);transition:all .3s;letter-spacing:0.5px;pointer-events:auto}
 .match-overlay-close{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:310;pointer-events:auto;transition:background .3s}
 .match-overlay-close:hover{background:rgba(255,255,255,0.16)}
+/* Variant 1: sparkles */
+.anim-variant-1 .match-title{animation:matchPulse 1.2s ease-in-out infinite,lavaFlow 4s ease-in-out infinite}
+.match-sparkles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.match-sparkle{position:absolute;color:var(--gold);animation:sparkleFloat 2s ease-in-out infinite;opacity:0}
+@keyframes sparkleFloat{0%,100%{opacity:0;transform:translateY(0) scale(0.5)}50%{opacity:1;transform:translateY(-30px) scale(1.2)}}
+/* Variant 2: hearts */
+.anim-variant-2 .match-title{background:linear-gradient(120deg,#ff6b6b,#ff8a80,#ffd700,#ff6b6b);-webkit-background-clip:text;background-clip:text;background-size:300% 300%;animation:lavaFlow 4s ease-in-out infinite}
+.anim-variant-2 .match-av{border-color:#ff6b6b;box-shadow:0 0 20px rgba(255,107,107,0.3)}
+.match-hearts{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.match-heart{position:absolute;bottom:-20px;color:#ff6b6b;animation:heartRise 2.5s ease-out infinite;opacity:0}
+@keyframes heartRise{0%{opacity:0;transform:translateY(0) scale(0.5) rotate(-10deg)}30%{opacity:1}100%{opacity:0;transform:translateY(-100vh) scale(1.2) rotate(15deg)}}
+/* Variant 3: stars */
+.anim-variant-3 .match-title{background:linear-gradient(120deg,#ffd700,#fff,#ffd700);-webkit-background-clip:text;background-clip:text;background-size:200% 200%;animation:lavaFlow 3s ease-in-out infinite}
+.match-stars{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.match-star{position:absolute;color:#ffd700;animation:starBurst 2s ease-out infinite;opacity:0;text-shadow:0 0 8px rgba(255,215,0,0.6)}
+@keyframes starBurst{0%{opacity:0;transform:scale(0) rotate(0deg)}40%{opacity:1;transform:scale(1.3) rotate(180deg)}100%{opacity:0;transform:scale(0.5) rotate(360deg)}}
+/* Variant 0: classic (default — no extra animation classes needed) */
 .match-btn:hover{transform:scale(1.05);box-shadow:0 3px 10px rgba(255,215,0,0.28)}
 .match-btn:active{transform:scale(0.95)}
 .briefs-scroll{flex:1;overflow-y:auto;padding:0 20px 90px;scrollbar-width:none}
