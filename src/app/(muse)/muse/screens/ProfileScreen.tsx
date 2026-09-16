@@ -187,6 +187,13 @@ export const ProfileScreen = memo(function ProfileScreen({
   // "type=albums" endpoint used here. Fetching it here too, instead of the
   // dead array, so this preview grid actually shows real work.
   const [portfolioAlbums, setPortfolioAlbums] = useState<{ id: string; title: string; cover_url: string; tags: string[] }[]>([]);
+  const [showMemberSinceEditor, setShowMemberSinceEditor] = useState(false);
+  const [memberSinceEditorValue, setMemberSinceEditorValue] = useState("");
+  const [memberSinceNote, setMemberSinceNote] = useState("");
+  const [isMuseProfile] = useState(true);
+  const [showSelfDiscovery, setShowSelfDiscovery] = useState(false);
+  const userRole = currentUser.type || "muse";
+  const roleBadgeText = (role: string) => role === "muse" ? "Muse" : role === "industry" ? "Industry" : "Creative";
   useEffect(() => {
     let cancelled = false;
     apiFetch("/api/muse?type=albums&profile_id=me")

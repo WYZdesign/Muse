@@ -77,6 +77,7 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
             .addTo(map);
         }
       }
+      } catch { setLoadError(true); }
     };
     if (w.mapboxgl) {
       init();

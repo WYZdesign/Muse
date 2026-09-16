@@ -13,7 +13,6 @@ import { PORTRAIT_IMG } from "../components/photoOrientation";
 import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../hooks/useDeviceTilt";
 import { attachSpatialDepth } from "../hooks/useSpatialDepth";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
-import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, CONN_FULL } from "../components/badgeInfo";
 import NonDatingDisclaimer from "../components/NonDatingDisclaimer";
 import Lightbox from "../components/Lightbox";
 // Tag description maps + the tap-to-detail popover, shared across every
@@ -451,7 +450,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               onPointerDown={(e) => e.stopPropagation()}
                               onClick={(e) => { e.stopPropagation(); togglePhotoLike(heroSrc); }}
                               aria-label={`Like photo ${(currentPhotoIdx ?? 0) + 1}`}
-                            ><MuseSpark size={16} /><span style={{ fontSize: 11, fontWeight: 700 }}>{photoLike[heroSrc]?.count || 0}</span></button>
+                            ><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg><span style={{ fontSize: 11, fontWeight: 700 }}>{photoLike[heroSrc]?.count || 0}</span></button>
                           )}
                           {showNoteTooltip && (
                             <div style={{ textAlign: "center", padding: "4px 16px 0", animation: "tooltipIn .4s ease" }}>

@@ -539,7 +539,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               >
                 Hiring{proHiringOnly ? " ✓" : ""}
               </span>
-            </HScroll>
+            </div>
             {/* Expanded filter panels — single-line horizontal scroll, color-coded per category */}
             {filterSections.experience && (
               <div className="filter-scroll-row" style={{ marginBottom: 10 }}>

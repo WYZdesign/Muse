@@ -4,6 +4,9 @@ import React, { memo, useState } from "react";
 import Image from "next/image";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon } from "./traitIcons";
 import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, BadgeInfoModal, type BadgeInfo } from "./badgeInfo";
+import { viewerSide, viewerSideOf, getMuseRole, type MuseRole } from "@/lib/role";
+
+const roleBadgeText = (role: string) => role === "muse" ? "Muse" : role === "industry" ? "Industry" : "Creative";
 
 export interface MatchCardProps {
   m: any;

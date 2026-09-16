@@ -2,7 +2,7 @@
 
 import React, { memo, useEffect, useState } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiPlus, FiSearch, FiGrid, FiRepeat, FiDollarSign, FiVolume2, FiZap, FiFlag, FiInfo, FiX } from "react-icons/fi";
+import { FiArrowLeft, FiPlus, FiSearch, FiGrid, FiRepeat, FiDollarSign, FiVolume2, FiZap, FiFlag, FiInfo, FiX, FiBookmark } from "react-icons/fi";
 import { matchesBriefSearch } from "../components/searchMatch";
 import Nav from "../components/Nav";
 import { EmptyState } from "../components/EmptyState";
@@ -203,7 +203,7 @@ export const CollabScreen = memo(function CollabScreen({
             <Icon size={11} />{l}
           </div>
         ))}
-      </HScroll>
+      </div>
       <div className="briefs-scroll">
         {(() => {
           const allBriefs = [
