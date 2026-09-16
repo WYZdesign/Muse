@@ -2162,7 +2162,12 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     const cardTop = card.getBoundingClientRect().top;
     const relY = e.clientY - cardTop;
     dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY, startTime: Date.now(), el: card, axis: null };
-    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    // Only capture pointer if user is NOT starting inside the scrollable card
+    // info area — capture steals all subsequent pointer events from children,
+    // which breaks native scroll in .card-info-scroll.
+    if (!target.closest || !target.closest('.card-info-scroll')) {
+      (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    }
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
