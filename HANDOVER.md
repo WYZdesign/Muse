@@ -2,6 +2,26 @@
 
 ---
 
+## 🆕 FOR WYZMIND — round 36 ready to merge: desktop wave width + map debug overlay (2026-09-16)
+
+**Status check first:** round 35 (per-page tutorials + the map resize fix) is confirmed merged — `origin/main` at `19a8243` includes it (via `fb177bc`/`44910e4`). No action needed there.
+
+**What's in round 36** (bundle: `round36-desktop-waves-map-debug.bundle` in `V:\Muse\_to_delete\`, commit `28223bd` merged onto your current tip `19a8243` — already resolved on this end, should apply clean):
+
+Two small, direct asks from Torreé:
+
+1. **Desktop background waves now full-width.** `.wave-bottom` (the ambient wave strip behind the phone card) was clamped to `width:min(430px,100vw)` even on desktop, so on a wide browser window it sat in a narrow column instead of reading as full-width background. Added `@media(min-width:768px){.wave-bottom{width:100vw;left:0;transform:none}}` — same breakpoint the phone card itself already uses to go full-bleed on mobile, so phones are unaffected.
+2. **Map debug overlay (diagnostic tool, not a fix).** Torreé says the off-screen studio markers are "far off in the ocean," only visible at a specific zoom/pan — that could be the viewport-projection bug already fixed in round 35 (`08fe375`), or a genuinely wrong geocoded coordinate somewhere in `studios.ts`, or both. Rather than guess, `MuseMap.tsx` now shows a live top-left readout (updates continuously on pan/zoom): zoom as a 0-100% figure (mapped from mapbox's native 0-22 zoom range) plus the raw zoom level, and the map center's lat/lng. Once this is live, have Torreé pan/zoom to wherever she sees a marker "in the ocean" and read off the coordinates shown — that'll tell us definitively whether a specific `studios.ts` entry has a bad `geo` value (e.g. sign flipped, or lat/long swapped) versus it just being the projection bug (in which case, with round 35's `map.resize()` fix now live, it shouldn't reproduce at all — worth Torreé re-checking that first before hunting for a coordinate bug that may already be resolved).
+
+**To merge:**
+```
+git fetch V:\Muse\_to_delete\round36-desktop-waves-map-debug.bundle muse-fix-delivery:bundle/round36
+git merge bundle/round36
+```
+Verify same as always: `npx tsc --noEmit`, `npm test` (349/349 expected), `npm run build`.
+
+---
+
 ## 🆕 FOR WYZMIND — round 35 ready to merge: per-page first-visit tutorials (2026-09-16)
 
 **Status check first:** round 34 (`903f3eb`) is confirmed merged and live — no action needed there.
