@@ -8,9 +8,7 @@ import type { Screen, Match } from "../components/types";
 import { isPaidTier } from "../components/subscriptionTiers";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 import Lightbox from "../components/Lightbox";
-import SelfDiscoveryModal from "../components/SelfDiscoveryModal";
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
-import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
 
 export interface ProfileScreenProps {
   screen: Screen;
@@ -142,14 +140,6 @@ export const ProfileScreen = memo(function ProfileScreen({
   // (Discover's swipe cards) already made them tappable for a detail
   // popover. Reusing that exact pattern here.
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
-  const [showSelfDiscovery, setShowSelfDiscovery] = useState(false);
-  const [memberSinceNote, setMemberSinceNote] = useState("");
-  const [showMemberSinceEditor, setShowMemberSinceEditor] = useState(false);
-  const [memberSinceEditorValue, setMemberSinceEditorValue] = useState("");
-
-  // Role detection — determines which profile variant to render
-  const userRole: MuseRole = getMuseRole({ audience: currentUser?.audience, type: currentUser?.type || obData?.type });
-  const isMuseProfile = userRole === "muse";
 
   useEffect(() => {
     const fetchReferralData = async () => {
@@ -197,6 +187,13 @@ export const ProfileScreen = memo(function ProfileScreen({
   // "type=albums" endpoint used here. Fetching it here too, instead of the
   // dead array, so this preview grid actually shows real work.
   const [portfolioAlbums, setPortfolioAlbums] = useState<{ id: string; title: string; cover_url: string; tags: string[] }[]>([]);
+  const [showMemberSinceEditor, setShowMemberSinceEditor] = useState(false);
+  const [memberSinceEditorValue, setMemberSinceEditorValue] = useState("");
+  const [memberSinceNote, setMemberSinceNote] = useState("");
+  const [isMuseProfile] = useState(true);
+  const [showSelfDiscovery, setShowSelfDiscovery] = useState(false);
+  const userRole = currentUser.type || "muse";
+  const roleBadgeText = (role: string) => role === "muse" ? "Muse" : role === "industry" ? "Industry" : "Creative";
   useEffect(() => {
     let cancelled = false;
     apiFetch("/api/muse?type=albums&profile_id=me")
@@ -250,8 +247,8 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
           <div className="profile-name">{currentUser.name}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
-            <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: isMuseProfile ? "rgba(255,215,0,0.12)" : "rgba(138,43,226,0.12)", border: `1px solid ${isMuseProfile ? "rgba(255,215,0,0.25)" : "rgba(138,43,226,0.25)"}`, color: isMuseProfile ? "var(--gold)" : "#b388ff" }}>
-              {isMuseProfile ? <FiBriefcase size={9} style={{ marginRight: 3 }} /> : <FiZap size={9} style={{ marginRight: 3 }} />}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: isMuseProfile ? "rgba(255,215,0,0.12)" : "rgba(138,43,226,0.12)", border: `1px solid ${isMuseProfile ? "rgba(255,215,0,0.25)" : "rgba(138,43,226,0.25)"}`, color: isMuseProfile ? "var(--gold)" : "#b388ff" }}>
+              {isMuseProfile ? <FiBriefcase size={9} /> : <FiZap size={9} />}
               {roleBadgeText(userRole)}
             </span>
             <div className="profile-type">{obData.type || (isMuseProfile ? "Muse" : "Creative")}</div>
@@ -622,15 +619,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         />
       )}
       <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
-      <SelfDiscoveryModal
-        open={showSelfDiscovery}
-        onClose={() => setShowSelfDiscovery(false)}
-        obData={obData}
-        onSaved={(k, v) => setObData((d: any) => ({ ...d, [k]: v }))}
-        apiFetch={apiFetch}
-        showToast={showToast}
-      />
-      <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} role={userRole} />
+      <Nav active="profile" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
     </div>
   );
 });
