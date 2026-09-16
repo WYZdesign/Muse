@@ -966,7 +966,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                 Scan this QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.), then enter the 6-digit code below.
               </div>
               {mfaQrUri && (
-                <div style={{ textAlign: "center", padding: 16, background: "rgba(255,255,255,0.95)", borderRadius: 12 }}>
+                <div style={{ display: "flex", justifyContent: "center", padding: 16, background: "rgba(255,255,255,0.95)", borderRadius: 12 }}>
                   <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(mfaQrUri)}`} alt="MFA QR Code" style={{ width: 200, height: 200 }} />
                 </div>
               )}
@@ -1062,9 +1062,9 @@ export const SettingsScreen = memo(function SettingsScreen({
                   setMfaError("");
                   try {
                     const res = await mfaEnroll();
-                    if (res.id && res.qr_uri) {
-                      setMfaQrUri(res.qr_uri);
-                      setMfaSecret(res.secret || "");
+                    if (res.id) {
+                      setMfaQrUri(res.qr_uri || res.totp?.qr_code || "");
+                      setMfaSecret(res.secret || res.totp?.secret || "");
                       setMfaFactors([{ id: res.id, status: "unverified" }]);
                       setMfaEnrolling(true);
                     } else {

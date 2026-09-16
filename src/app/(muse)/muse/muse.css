@@ -1995,8 +1995,8 @@ img{background-color:var(--card-bg)}
    (150ms, vs. the 300ms open) on collapse so it doesn't feel sluggish when
    dismissing. Sits below the radial buttons (z-index 29) and the FAB
    itself (30) but above the card's own content. */
-.match-fab-scrim{position:absolute;inset:0;z-index:28;background:rgba(10,6,18,0.001);backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px);opacity:0;pointer-events:none;transition:opacity .15s ease,backdrop-filter .15s ease,-webkit-backdrop-filter .15s ease}
-.match-fab-scrim.open{opacity:1;background:rgba(10,6,18,0.32);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:auto;transition:opacity .3s ease,backdrop-filter .3s ease,-webkit-backdrop-filter .3s ease}
+.match-fab-scrim{position:absolute;bottom:0;right:0;width:62%;height:52%;z-index:28;background:rgba(10,6,18,0.001);backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px);opacity:0;pointer-events:none;transition:opacity .15s ease,backdrop-filter .15s ease,-webkit-backdrop-filter .15s ease;border-radius:0 0 16px 0}
+.match-fab-scrim.open{opacity:1;background:rgba(10,6,18,0.32);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:auto;transition:opacity .3s ease,backdrop-filter .3s ease,-webkit-backdrop-filter .3s ease;border-radius:0 0 16px 0}
 .match-fab-btn{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;cursor:pointer;border:2px solid rgba(255,255,255,0.25);color:#0a0612;background-color:#FFD700;background:linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700);background-size:400% 400%;animation:lavaFlow 4s ease-in-out infinite;box-shadow:0 4px 16px rgba(0,0,0,0.5);transition:transform .25s cubic-bezier(.4,0,.2,1)}
 .match-fab-btn.open{transform:scale(1.15)}
 .match-fab-btn:active{transform:scale(0.9)}
