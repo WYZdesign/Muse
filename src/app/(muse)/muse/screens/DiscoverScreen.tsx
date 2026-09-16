@@ -289,7 +289,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
             {discoverSearchOpen && (
               <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0, animation: "fadeIn .25s ease" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 2, background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: "3px 5px 3px 14px", flex: 1, minWidth: 0 }}>
-                  <input className="inp" placeholder="Name, style, type, or city..." value={discoverSearch} onChange={e => setDiscoverSearch(e.target.value)} autoFocus style={{ margin: 0, padding: "8px 0", fontSize: 14, flex: 1, minWidth: 0, border: "none", background: "transparent", boxShadow: "none" }} />
+                  <input className="inp search-input" placeholder="Name, style, type, or city..." value={discoverSearch} onChange={e => setDiscoverSearch(e.target.value)} autoFocus style={{ margin: 0, padding: "8px 0", fontSize: 14, flex: 1, minWidth: 0, border: "none", background: "transparent", boxShadow: "none" }} />
                   {/* M7: this used to render a second, purely decorative search-icon
                       button here (it only blurred the input, didn't search or close
                       anything) alongside the real toggle button above — two magnifying
@@ -387,7 +387,13 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 now top-left per Torreé's request) — absolutely positioned over
                                 the hero photo instead of stacked in the info flex column. */}
                             {(() => {
-                              const ms = Number((profile as any).matchScore || 0);
+                              // Demo-deck profiles (PROFILES in components/types.ts) carry a
+                              // static `.score` seed but no `.matchScore` — fall back to it so
+                              // the pill still renders when live-scored candidates aren't
+                              // available (see round-37 audit: /api/muse/match returning 0
+                              // candidates falls back to the demo deck, which was silently
+                              // hiding the pill entirely).
+                              const ms = Number((profile as any).matchScore ?? (profile as any).score ?? 0);
                               const reasons = (profile as any).matchReasons || [];
                               // 2026-09-15: simplified from "✦ 92% match" to a bare
                               // "92%" per Torreé's decluttering ask, and made tappable

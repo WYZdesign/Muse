@@ -504,7 +504,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 : "Pros who can book, pay, and launch your career."}
             </div>
             <input
-              className="inp"
+              className="inp search-input"
               placeholder="Search pros — name, craft, skills, who they're looking for…"
               value={proSearch}
               onChange={(e) => setProSearch(e.target.value)}
@@ -983,7 +983,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               )}
               {forumSearchOpen && (
                 <input
-                  className="inp"
+                  className="inp search-input"
                   placeholder="Search the forum…"
                   value={forumSearch}
                   onChange={(e) => setForumSearch(e.target.value)}

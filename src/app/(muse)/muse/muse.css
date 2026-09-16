@@ -2256,6 +2256,7 @@ img{background-color:var(--card-bg)}
 .screen-discover.active .conn-tab.active{color:#FFD700;border-bottom-color:#FFD700;text-shadow:0 0 10px rgba(255,215,0,0.35)}
 .screen-discover.active .hdr-btn:hover{color:#FFD700}
 .screen-discover.active .inp:focus{border-color:#FFD700;box-shadow:0 0 10px rgba(255,215,0,0.12)}
+.screen-discover.active .search-input:focus{border-color:rgba(255,215,0,0.5);box-shadow:0 0 10px rgba(255,215,0,0.06)}
 
 /* BTS PAGE — hot pink */
 .screen-bts.active{--line-color:#FF69B4}
@@ -2271,9 +2272,10 @@ img{background-color:var(--card-bg)}
 
 /* SESSIONS PAGE — bright purple */
 .screen-sessions.active{--line-color:#BA68C8}
-.screen-sessions.active .conn-tab.active{color:#BA68C8;border-bottom-color:#BA68C8;text-shadow:0 0 10px rgba(186,104,200,0.35)}
+.screen-sessions.active .conn-tab.active{color:#E07A5F;border-bottom-color:#E07A5F;text-shadow:0 0 10px rgba(224,122,95,0.35)}
 .screen-sessions.active .hdr-btn:hover{color:#BA68C8}
 .screen-sessions.active .inp:focus{border-color:#BA68C8;box-shadow:0 0 10px rgba(186,104,200,0.12)}
+.screen-sessions.active .search-input:focus{border-color:rgba(186,104,200,0.5);box-shadow:0 0 10px rgba(186,104,200,0.06)}
 
 /* SETTINGS PAGE — lavender */
 .screen-settings.active{--line-color:#B388FF}
@@ -2292,6 +2294,7 @@ img{background-color:var(--card-bg)}
 .screen-muses.active .conn-tab.active{color:#FF4500;border-bottom-color:#FF4500;text-shadow:0 0 10px rgba(255,69,0,0.35)}
 .screen-muses.active .hdr-btn:hover{color:#FF4500}
 .screen-muses.active .inp:focus{border-color:#FF4500;box-shadow:0 0 10px rgba(255,69,0,0.12)}
+.screen-muses.active .search-input:focus{border-color:rgba(255,69,0,0.5);box-shadow:0 0 10px rgba(255,69,0,0.06)}
 
 /* PORTFOLIO PAGE — bright teal */
 .screen-portfolio.active{--line-color:#4DD0E1}
@@ -2369,7 +2372,13 @@ img{background-color:var(--card-bg)}
 .screen-el[data-screen] .conn-tab.active,
 .screen-el[data-screen] .hdr-btn:hover{color:var(--accent)}
 .screen-el[data-screen] .conn-tab.active{border-bottom-color:var(--accent);text-shadow:0 0 10px color-mix(in srgb,var(--accent) 40%,transparent)}
+/* Sessions filter tabs (Browse/My Bookings/Requests): match the "Sessions"
+   title's warm terracotta gradient instead of the screen's default lavender
+   --accent, which the title itself never used. #E07A5F is the gradient's
+   anchor/midpoint tone. */
+.screen-el[data-screen="sessions"] .conn-tab.active{color:#E07A5F;border-bottom-color:#E07A5F;text-shadow:0 0 10px rgba(224,122,95,0.35)}
 .screen-el[data-screen] .inp:focus{border-color:transparent;box-shadow:0 0 8px color-mix(in srgb,var(--accent) 10%,transparent)}
+.screen-el[data-screen] .search-input:focus{border-color:transparent;box-shadow:0 0 8px color-mix(in srgb,var(--accent) 5%,transparent)}
 .screen-el[data-screen] .conn-tab-sub.active{color:var(--accent);border-color:var(--accent-border);background:var(--accent-soft)}
 .screen-el[data-screen] .feed-title,
 .screen-el[data-screen] .discover-title,

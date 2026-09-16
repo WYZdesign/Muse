@@ -19,11 +19,13 @@ type Strike = {
 type AuditLog = { id: string; query_text: string; query_result_summary: string; created_at: string };
 
 export default function AdminModerationPanel() {
-  const [tab, setTab] = useState<"reports" | "strikes" | "scans" | "brain" | "audit">("reports");
+  const [tab, setTab] = useState<"reports" | "strikes" | "scans" | "custom" | "brain" | "audit">("reports");
   const [reports, setReports] = useState<Report[]>([]);
   const [strikes, setStrikes] = useState<Strike[]>([]);
   const [scanRows, setScanRows] = useState<any[]>([]);
   const [incidents, setIncidents] = useState<any[]>([]);
+  const [customValueProfiles, setCustomValueProfiles] = useState<any[]>([]);
+  const [reviewingCustom, setReviewingCustom] = useState<string | null>(null);
   const [auditLog, setAuditLog] = useState<AuditLog[]>([]);
   const [brainQuery, setBrainQuery] = useState("");
   const [brainResult, setBrainResult] = useState<string>("");
@@ -44,10 +46,28 @@ export default function AdminModerationPanel() {
       const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-content-scans" }) });
       if (r.ok) { const d = await r.json(); setScanRows(d.scans || []); setIncidents(d.incidents || []); }
     }
+    if (t === "custom") {
+      // Always refetch — this reflects live profile edits, not just what was
+      // pending on first load.
+      const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-custom-values" }) });
+      if (r.ok) { const d = await r.json(); setCustomValueProfiles(d.profiles || []); }
+    }
     if (t === "audit") {
       const r = await authFetch("/api/muse?type=admin-analytics");
       if (r.ok) { const d = await r.json(); setAuditLog(d.auditLog || []); }
     }
+  };
+
+  const reviewCustomValue = async (targetUserId: string, field: "type" | "style") => {
+    setReviewingCustom(`${targetUserId}:${field}`);
+    try {
+      const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-review-custom-value", targetUserId, field }) });
+      if (r.ok) {
+        setCustomValueProfiles(prev => prev
+          .map(p => p.id === targetUserId ? { ...p, [field === "type" ? "custom_type_pending" : "custom_style_pending"]: false } : p)
+          .filter(p => p.custom_type_pending || p.custom_style_pending));
+      }
+    } finally { setReviewingCustom(null); }
   };
 
   const runBrainQuery = async () => {
@@ -140,7 +160,7 @@ export default function AdminModerationPanel() {
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>
-          {[["reports", `Reports (${reports.length})`], ["strikes", `Warnings (${strikes.length})`], ["scans", `Review Queue${incidents.length ? ` ⚠${incidents.length}` : ""}`], ["brain", "🧠 AI Assistant"], ["audit", "Activity Log"]].map(([key, label]) => (
+          {[["reports", `Reports (${reports.length})`], ["strikes", `Warnings (${strikes.length})`], ["scans", `Review Queue${incidents.length ? ` ⚠${incidents.length}` : ""}`], ["custom", `Custom Values (${customValueProfiles.length})`], ["brain", "🧠 AI Assistant"], ["audit", "Activity Log"]].map(([key, label]) => (
             <button key={key} onClick={() => loadTab(key)} style={{ flex: 1, padding: "10px 0", borderRadius: 8, background: tab === key ? "rgba(255,215,0,0.15)" : "transparent", border: "none", color: tab === key ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
               {label}
             </button>
@@ -221,6 +241,38 @@ export default function AdminModerationPanel() {
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
                   ctx: {s.context || "?"} · type: {s.file_type || "?"}{s.confidence != null ? ` · conf ${(s.confidence * 100).toFixed(0)}%` : ""}{s.flagged_categories?.length ? ` · [${s.flagged_categories.join(", ")}]` : ""}{s.user_id ? ` · user ${String(s.user_id).slice(0, 8)}…` : ""}
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* CUSTOM VALUES — profiles with a user-typed "Other" creative type
+            and/or aesthetic style pending review (Torreé audit item 6). */}
+        {tab === "custom" && (
+          <div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>
+              Profiles with a custom-typed role or aesthetic not in the preset list. The value is already live on the profile — this just clears it off the review queue.
+            </div>
+            {customValueProfiles.length === 0 ? (
+              <div style={{ ...box, textAlign: "center", padding: 40, color: "rgba(255,255,255,0.4)" }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>✏️</div>
+                <div>No custom values pending review</div>
+              </div>
+            ) : customValueProfiles.map(p => (
+              <div key={p.id} style={{ ...box, marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#ffd700", marginBottom: 8 }}>{p.name || "Unknown"}</div>
+                {p.custom_type_pending && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <div style={{ fontSize: 12, color: "#f5f0ff" }}><strong>Custom type:</strong> {p.type || "(empty)"}</div>
+                    <button disabled={reviewingCustom === `${p.id}:type`} onClick={() => reviewCustomValue(p.id, "type")} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(100,200,120,0.15)", border: "1px solid rgba(100,200,120,0.3)", color: "#7ee2a0", fontSize: 11, fontWeight: 600, cursor: reviewingCustom === `${p.id}:type` ? "default" : "pointer", opacity: reviewingCustom === `${p.id}:type` ? 0.5 : 1 }}>Mark reviewed</button>
+                  </div>
+                )}
+                {p.custom_style_pending && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: 12, color: "#f5f0ff" }}><strong>Custom style(s):</strong> {(p.styles || []).join(", ") || "(empty)"}</div>
+                    <button disabled={reviewingCustom === `${p.id}:style`} onClick={() => reviewCustomValue(p.id, "style")} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(100,200,120,0.15)", border: "1px solid rgba(100,200,120,0.3)", color: "#7ee2a0", fontSize: 11, fontWeight: 600, cursor: reviewingCustom === `${p.id}:style` ? "default" : "pointer", opacity: reviewingCustom === `${p.id}:style` ? 0.5 : 1 }}>Mark reviewed</button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

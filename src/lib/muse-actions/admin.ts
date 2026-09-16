@@ -233,6 +233,39 @@ export const adminResolveReport = async ({ sb, profile, rest }: ActionContext) =
   return NextResponse.json({ success: true });
 };
 
+// Custom (user-typed) creative type / aesthetic style review queue (Torreé
+// audit item 6). A user who picks "Other" in the type/aesthetic chip picker
+// (onboarding, the Edit Profile modal, or Settings → Creative Profile) has
+// their custom text saved as a real muse_profiles.type/.styles value
+// immediately (so it works everywhere those columns are already read) but
+// flagged here — same "review queue" shape as the Reports/Scans tabs.
+export const adminCustomValues = async ({ sb, profile }: ActionContext) => {
+  if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { data } = await sb.from("muse_profiles")
+    .select("id, name, avatar, type, styles, custom_type_pending, custom_style_pending")
+    .or("custom_type_pending.eq.true,custom_style_pending.eq.true")
+    .order("id", { ascending: false }).limit(50);
+  return NextResponse.json({ profiles: data || [] });
+};
+
+// Clears one of the two pending flags once an admin has looked at the
+// custom value — mirrors adminResolveIncident's "mark reviewed" shape. This
+// doesn't reject/remove the custom value (the profile keeps using it either
+// way); it just takes the profile off the review queue. A fuller
+// approve/reject-with-replacement workflow is a possible follow-up but
+// isn't required for the review queue to be useful.
+export const adminReviewCustomValue = async ({ sb, profile, rest }: ActionContext) => {
+  if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { targetUserId, field } = rest;
+  if (!targetUserId || !UUID_RE.test(String(targetUserId))) return NextResponse.json({ error: "targetUserId required" }, { status: 400 });
+  if (!["type", "style"].includes(field as string)) return NextResponse.json({ error: "field must be 'type' or 'style'" }, { status: 400 });
+  const updates: Record<string, unknown> = field === "type" ? { custom_type_pending: false } : { custom_style_pending: false };
+  const { error } = await sb.from("muse_profiles").update(updates).eq("id", targetUserId);
+  if (error) return safeServerError(error, "db op");
+  await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `review_custom_value:${targetUserId}:${field}` });
+  return NextResponse.json({ success: true });
+};
+
 export const adminScanNsfw = async ({ sb, profile, rest, ip }: ActionContext) => {
   if (!await checkRate(ip, "admin-scan-nsfw", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   if (!isAdminEmail(profile.email)) {

@@ -11,7 +11,7 @@ import { checkRateUser } from "@/lib/rate-limit";
 import { NextResponse, safeServerError, type ActionContext } from "./shared";
 
 export const profileUpdate = async ({ sb, profile, rest }: ActionContext) => {
-  const ALLOWED_PROFILE_FIELDS = ["name", "bio", "styles", "loc", "city", "type", "zodiac", "chinese", "mbti", "life_path", "looking", "avatar", "audience", "media_kit_url", "travel_dates", "availability_status", "budget_range", "travel_destinations"];
+  const ALLOWED_PROFILE_FIELDS = ["name", "bio", "styles", "loc", "city", "type", "zodiac", "chinese", "mbti", "life_path", "looking", "avatar", "audience", "media_kit_url", "travel_dates", "availability_status", "budget_range", "travel_destinations", "custom_type_pending", "custom_style_pending"];
   const updates: Record<string, unknown> = {};
   for (const k of ALLOWED_PROFILE_FIELDS) {
     if (rest[k] !== undefined) updates[k] = rest[k];
@@ -21,6 +21,8 @@ export const profileUpdate = async ({ sb, profile, rest }: ActionContext) => {
   if (typeof updates.styles === "string") updates.styles = sanitizeText(updates.styles as string, 200);
   if (typeof updates.looking === "string") updates.looking = sanitizeText(updates.looking as string, 200);
   if (typeof updates.budget_range === "string") updates.budget_range = sanitizeText(updates.budget_range as string, 100);
+  if (updates.custom_type_pending !== undefined) updates.custom_type_pending = updates.custom_type_pending === true;
+  if (updates.custom_style_pending !== undefined) updates.custom_style_pending = updates.custom_style_pending === true;
   if (!Array.isArray(updates.travel_dates)) delete updates.travel_dates;
   if (typeof updates.travel_destinations === "string") {
     const raw = updates.travel_destinations as string;

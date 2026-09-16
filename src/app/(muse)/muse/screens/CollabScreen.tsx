@@ -182,7 +182,7 @@ export const CollabScreen = memo(function CollabScreen({
           below the category tabs, with the search button INSIDE the bar. */}
       <div style={{ margin: "0 12px 10px", display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "6px 12px" }}>
         <FiSearch size={14} color="var(--muted)" />
-        <input className="inp" placeholder="Describe what you're looking for..." value={briefSearchQuery} onChange={e => setBriefSearchQuery(e.target.value)} style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
+        <input className="inp search-input" placeholder="Describe what you're looking for..." value={briefSearchQuery} onChange={e => setBriefSearchQuery(e.target.value)} style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
         {briefSearchQuery && <button onClick={() => setBriefSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
       </div>
       {/* Audit fix (2026-09-08, wyzmind's Torreé batch item 3): .conn-tabs is a

@@ -283,8 +283,12 @@ export const SettingsScreen = memo(function SettingsScreen({
   const [showPersonality, setShowPersonality] = useState(false);
   const [showCreativeProfile, setShowCreativeProfile] = useState(false);
   const [cpType, setCpType] = useState((obData as any)?.type || "");
+  const [cpCustomTypePending, setCpCustomTypePending] = useState(false);
   const [cpLooking, setCpLooking] = useState<string[]>((obData as any)?.looking || []);
   const [cpStyles, setCpStyles] = useState<string[]>((obData as any)?.styles || []);
+  const [cpShowCustomStyleInput, setCpShowCustomStyleInput] = useState(false);
+  const [cpCustomStyleDraft, setCpCustomStyleDraft] = useState("");
+  const [cpCustomStylePending, setCpCustomStylePending] = useState(false);
   const [persZodiac, setPersZodiac] = useState((obData as any)?.zodiac || "");
   const [persChinese, setPersChinese] = useState((obData as any)?.chinese || "");
   const [persMbti, setPersMbti] = useState((obData as any)?.mbti || "");
@@ -1040,13 +1044,57 @@ export const SettingsScreen = memo(function SettingsScreen({
             );
             return (
               <div>
-                {row("Behind the Camera", BEHIND_CAMERA, cpType, (v) => setCpType(v))}
-                {row("In Front of the Camera", IN_FRONT_CAMERA, cpType, (v) => setCpType(v))}
+                {row("Behind the Camera", BEHIND_CAMERA, cpType, (v) => { setCpType(v); setCpCustomTypePending(false); })}
+                {row("In Front of the Camera", IN_FRONT_CAMERA, cpType, (v) => { setCpType(v); setCpCustomTypePending(false); })}
+                {/* Torreé audit item 6: not every creative role fits the preset
+                    list — "Other" lets someone type their own, saved as a real
+                    `type` value immediately and flagged custom_type_pending
+                    for admin review at /muse/admin/moderation. */}
+                <div style={{ marginBottom: 16 }}>
+                  <div className="chips" style={{ marginBottom: 0 }}>
+                    <div className={"chip" + (cpCustomTypePending ? " sel" : "")} role="button" tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCpType(""); setCpCustomTypePending(true); } }}
+                      onClick={() => { setCpType(""); setCpCustomTypePending(true); }}><span>Other</span></div>
+                  </div>
+                  {cpCustomTypePending && (
+                    <input className="inp" placeholder="Type your creative role..." value={cpType} onChange={e => setCpType(e.target.value)} style={{ marginTop: 10 }} autoFocus />
+                  )}
+                </div>
                 {row("Looking For", lookingForOptions(cpType), cpLooking, (v) => toggle(cpLooking, v, setCpLooking, 4), true)}
                 {row("Aesthetic", AESTHETICS, cpStyles, (v) => toggle(cpStyles, v, setCpStyles, 6), true)}
+                <div style={{ marginBottom: 16 }}>
+                  <div className="chips" style={{ marginBottom: 0 }}>
+                    <div className={"chip" + (cpShowCustomStyleInput ? " sel" : "")} role="button" tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCpShowCustomStyleInput(v => !v); } }}
+                      onClick={() => setCpShowCustomStyleInput(v => !v)}><span>Other</span></div>
+                    {cpStyles.filter(s => !AESTHETICS.includes(s)).map(s => (
+                      <div key={s} className="chip sel" role="button" tabIndex={0} title="Tap to remove"
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCpStyles(cs => cs.filter(x => x !== s)); } }}
+                        onClick={() => setCpStyles(cs => cs.filter(x => x !== s))}><span>✎ {s} ✕</span></div>
+                    ))}
+                  </div>
+                  {cpShowCustomStyleInput && (
+                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                      <input className="inp" placeholder="Type your own aesthetic..." value={cpCustomStyleDraft} onChange={e => setCpCustomStyleDraft(e.target.value)} style={{ margin: 0, flex: 1 }} autoFocus />
+                      <button className="btn btn-outline" style={{ padding: "0 16px" }} onClick={() => {
+                        const v = cpCustomStyleDraft.trim();
+                        if (!v) return;
+                        if (cpStyles.includes(v)) return;
+                        if (cpStyles.length >= 6) { showToast("Max 6 selected"); return; }
+                        setCpStyles(cs => [...cs, v]);
+                        setCpCustomStylePending(true);
+                        setCpCustomStyleDraft("");
+                      }}>Add</button>
+                    </div>
+                  )}
+                </div>
                 <button className="btn btn-gold" style={{ width: "100%", marginTop: 8 }} onClick={async () => {
                   try {
-                    await apiFetch?.("/api/muse/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-profile", type: cpType, looking: cpLooking, styles: cpStyles }) });
+                    await apiFetch?.("/api/muse/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+                      action: "update-profile", type: cpType, looking: cpLooking, styles: cpStyles,
+                      ...(cpCustomTypePending ? { custom_type_pending: true } : {}),
+                      ...(cpCustomStylePending ? { custom_style_pending: true } : {}),
+                    }) });
                     showToast("Creative profile saved!");
                     setShowCreativeProfile(false);
                   } catch { showToast("Couldn't save — try again"); }

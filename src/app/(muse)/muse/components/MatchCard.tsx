@@ -150,6 +150,23 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
           </div>
         )}
         {m.online && <div className="online-dot" style={{ position: "absolute", bottom: 2, right: 2, zIndex: 2 }} />}
+        {/* Match-percentage pill (grid view only — the list-view avatar is too
+            small at 78px to carry a legible badge; see the inline one added
+            near the name/type below instead). Same fallback and threshold as
+            DiscoverScreen's card pill and PublicProfileScreen's hero pill:
+            .matchScore for live-scored candidates, .score for the static
+            demo deck, hidden below 15% and behind showMatchPercent. */}
+        {!isList && (() => {
+          const ms = Number((m as any).matchScore ?? (m as any).score ?? 0);
+          const showMatchPercent = (m as any).showMatchPercent !== false;
+          return ms >= 15 && showMatchPercent ? (
+            <div
+              className="card-match-topleft"
+              style={{ background: "rgba(255,215,0,0.16)", border: "1px solid rgba(255,215,0,0.4)", color: "var(--gold)", fontWeight: 800, zIndex: 2 }}
+              aria-label={`${ms}% match`}
+            >{ms}%</div>
+          ) : null;
+        })()}
       </div>
       <div className="match-info" style={isList ? { marginLeft: 14, textAlign: "left" } : undefined}>
         <div className="match-name" style={{ display: "flex", alignItems: "center", gap: 5, ...(isList ? { fontSize: 15, lineHeight: 1.2 } : {}) }}>
@@ -160,7 +177,19 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
             {roleBadgeText(matchRole)}
           </span>
         </div>
-        <div className="match-type" style={isList ? { fontSize: 11 } : undefined}>{m.type}</div>
+        <div className="match-type" style={isList ? { fontSize: 11 } : undefined}>
+          {m.type}
+          {/* List-view match-percentage badge — the 78px avatar is too small
+              for the overlay pill grid view uses, so it's shown inline here
+              instead. Same fallback/threshold/visibility rules. */}
+          {isList && (() => {
+            const ms = Number((m as any).matchScore ?? (m as any).score ?? 0);
+            const showMatchPercent = (m as any).showMatchPercent !== false;
+            return ms >= 15 && showMatchPercent ? (
+              <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: "var(--gold)" }} aria-label={`${ms}% match`}>{ms}% match</span>
+            ) : null;
+          })()}
+        </div>
         {isList && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap" }}>
             {m.location && <span style={{ fontSize: 11, color: "var(--muted)" }}>{m.location}</span>}

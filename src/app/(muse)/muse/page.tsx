@@ -269,6 +269,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [editLoc, setEditLoc] = useState("");
   const [editAvatar, setEditAvatar] = useState("");
   const [editType, setEditType] = useState("");
+  const [editCustomTypePending, setEditCustomTypePending] = useState(false);
   const [editLooking, setEditLooking] = useState<string[]>([]);
   const [editNsfw, setEditNsfw] = useState(false);
   const [editMediaKit, setEditMediaKit] = useState("");
@@ -1428,6 +1429,23 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     return () => { if (scroller) scroller.removeEventListener("scroll", check); };
   }, [screen]);
 
+  // Scroll to top on every screen navigation (Torreé audit), except Settings
+  // and Profile — those manage their own internal scroll position and a
+  // reset here would fight it. Keyed on `screen` so it fires whether
+  // navigation went through showScreen, goBack, or a direct setScreen call.
+  // Most screens' real scrolling happens on an inner content div (flex:1,
+  // overflowY:auto) rather than the outer .screen-el itself, so this resets
+  // both the .screen-el.active container and any scrollable descendant.
+  useEffect(() => {
+    if (screen === "settings" || screen === "profile") return;
+    try {
+      const active = document.querySelector<HTMLElement>(".screen-el.active");
+      if (!active) return;
+      active.scrollTop = 0;
+      active.querySelectorAll<HTMLElement>('[style*="overflow"],.match-list,.messages,.profile-scroll,.portfolio-scroll,.settings-scroll,.briefs-scroll,.conn-scroll,.sub-scroll,.modal-body,.card-info-scroll').forEach(el => { el.scrollTop = 0; });
+    } catch {}
+  }, [screen]);
+
   // Also always show waves on the swipe card (Discover) as a gradient accent.
   //
   // CRITICAL FIX (freeze root cause): this previously observed
@@ -2449,6 +2467,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           looking: editLooking,
           nsfw: nsfwValue,
           media_kit_url: editMediaKit.trim(),
+          // Torreé audit item 6: carry the "Other" custom-type review flag
+          // through to the saved profile.
+          ...(editCustomTypePending ? { custom_type_pending: true } : {}),
           ...(geo ? { lat: geo.lat, long: geo.long, city: geo.city } : {}),
         }),
       });
@@ -2461,7 +2482,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     } catch {
       showToast("Failed to save — try again");
     }
-  }, [editName, editBio, editLoc, editAvatar, editType, editLooking, editNsfw, editMediaKit, showToast, currentUser.nsfw, trackQuest]);
+  }, [editName, editBio, editLoc, editAvatar, editType, editCustomTypePending, editLooking, editNsfw, editMediaKit, showToast, currentUser.nsfw, trackQuest]);
 
   const toggleObSelect = (key: string, val: string | number) => {
     setObData(prev => ({ ...prev, [key]: val }));
@@ -2750,7 +2771,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                       <div className="side-sub">You make the work — crew, direction, craft.</div>
                       <div className="chips">
                         {BEHIND_CAMERA.map(t => (
-                          <div key={t} className={"chip"+(obData.type===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:t})); } }} onClick={()=>setObData(d=>({...d,type:t}))}><span>{t}</span></div>
+                          <div key={t} className={"chip"+(obData.type===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:t,customTypePending:false} as any)); } }} onClick={()=>setObData(d=>({...d,type:t,customTypePending:false} as any))}><span>{t}</span></div>
                         ))}
                       </div>
                     </div>
@@ -2759,10 +2780,18 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                       <div className="side-sub">You're the talent — on-camera, performing, audience-facing.</div>
                       <div className="chips">
                         {IN_FRONT_CAMERA.map(t => (
-                          <div key={t} className={"chip"+(obData.type===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:t})); } }} onClick={()=>setObData(d=>({...d,type:t}))}><span>{t}</span></div>
+                          <div key={t} className={"chip"+(obData.type===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:t,customTypePending:false} as any)); } }} onClick={()=>setObData(d=>({...d,type:t,customTypePending:false} as any))}><span>{t}</span></div>
                         ))}
+                        {/* Torreé audit item 6: not every creative role fits the
+                            preset list — "Other" lets someone type their own,
+                            saved as a real `type` value immediately and flagged
+                            custom_type_pending for admin review. */}
+                        <div key="other" className={"chip"+((obData as any).customTypePending?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:"",customTypePending:true} as any)); } }} onClick={()=>setObData(d=>({...d,type:"",customTypePending:true} as any))}><span>Other</span></div>
                       </div>
                     </div>
+                    {(obData as any).customTypePending && (
+                      <input className="inp" placeholder="Type your creative role..." value={obData.type||""} onChange={e=>setObData(d=>({...d,type:e.target.value} as any))} style={{ marginTop: 10 }} autoFocus />
+                    )}
                     {!obData.type && <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", margin: "6px 0 2px" }}>Select one to continue</div>}
                     <button className="btn btn-gold" disabled={!obData.type} style={!obData.type?{opacity:0.5}:undefined} onClick={()=>setObStep(3)}>Next</button>
                     <button className="back-link" onClick={()=>setObStep(1)}>Back</button>
@@ -2790,7 +2819,31 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                       {AESTHETICS.map(s => (
                         <div key={s} className={"chip"+((obData.styles||[]).includes(s)?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleObMulti("styles", s, 5); } }} onClick={()=>toggleObMulti("styles", s, 5)}><span>{s}</span></div>
                       ))}
+                      {/* Torreé audit item 6: aesthetic "Other" — typed values are
+                          appended to `styles` immediately and flagged
+                          custom_style_pending for admin review. */}
+                      <div key="other" className={"chip"+((obData as any).showCustomStyleInput?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,showCustomStyleInput:!(d as any).showCustomStyleInput} as any)); } }} onClick={()=>setObData(d=>({...d,showCustomStyleInput:!(d as any).showCustomStyleInput} as any))}><span>Other</span></div>
                     </div>
+                    {(obData as any).showCustomStyleInput && (
+                      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                        <input className="inp" placeholder="Type your own aesthetic..." value={(obData as any).customStyleDraft||""} onChange={e=>setObData(d=>({...d,customStyleDraft:e.target.value} as any))} style={{ margin: 0, flex: 1 }} autoFocus />
+                        <button className="btn btn-outline" style={{ padding: "0 16px" }} onClick={() => {
+                          const v = ((obData as any).customStyleDraft || "").trim();
+                          if (!v) return;
+                          const cur = obData.styles || [];
+                          if (cur.includes(v)) return;
+                          if (cur.length >= 5) { showToast("Max 5 selected"); return; }
+                          setObData(d => ({ ...d, styles: [...(d.styles||[]), v], customStylePending: true, customStyleDraft: "" } as any));
+                        }}>Add</button>
+                      </div>
+                    )}
+                    {(obData.styles||[]).filter(s => !AESTHETICS.includes(s)).length > 0 && (
+                      <div className="chips" style={{ marginTop: 8 }}>
+                        {(obData.styles||[]).filter(s => !AESTHETICS.includes(s)).map(s => (
+                          <div key={s} className="chip sel" role="button" tabIndex={0} title="Tap to remove" onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d => ({ ...d, styles: (d.styles||[]).filter(x => x !== s) })); } }} onClick={() => setObData(d => ({ ...d, styles: (d.styles||[]).filter(x => x !== s) }))}><span>✎ {s} ✕</span></div>
+                        ))}
+                      </div>
+                    )}
                     {!(obData.styles||[]).length && <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", margin: "6px 0 2px" }}>Select at least one style to continue</div>}
                     <button className="btn btn-gold" disabled={!(obData.styles||[]).length} style={!(obData.styles||[]).length?{opacity:0.5}:undefined} onClick={()=>setObStep(5)}>Next</button>
                     <button className="back-link" onClick={()=>setObStep(3)}>Back</button>
@@ -3069,6 +3122,10 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                             looking:obData.looking,styles:obData.styles,
                             zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,life_path:obData.lifePath,
                             avatar:obProfilePic,
+                            // Torreé audit item 6: carry the "Other" custom-value
+                            // review flags through to the saved profile.
+                            ...((obData as any).customTypePending ? { custom_type_pending: true } : {}),
+                            ...((obData as any).customStylePending ? { custom_style_pending: true } : {}),
                             ...(geo ? { lat: geo.lat, long: geo.long, city: geo.city } : {})
                           })});
                           if (!r.ok) showToast("Profile saved locally — sync will retry");
@@ -3690,12 +3747,17 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               <div className="side-label">Creative Type</div>
               <div className="side-sub" style={{ marginBottom: 6 }}>🎬 Behind the Camera</div>
               <div className="chips" style={{ marginBottom: 8 }}>
-                {BEHIND_CAMERA.map(t => <div key={t} className={"chip"+(editType===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(t); } }} onClick={()=>setEditType(t)}><span>{t}</span></div>)}
+                {BEHIND_CAMERA.map(t => <div key={t} className={"chip"+(editType===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(t); setEditCustomTypePending(false); } }} onClick={()=>{setEditType(t);setEditCustomTypePending(false);}}><span>{t}</span></div>)}
               </div>
               <div className="side-sub" style={{ marginBottom: 6 }}>📸 In Front of the Camera</div>
               <div className="chips">
-                {IN_FRONT_CAMERA.map(t => <div key={t} className={"chip"+(editType===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(t); } }} onClick={()=>setEditType(t)}><span>{t}</span></div>)}
+                {IN_FRONT_CAMERA.map(t => <div key={t} className={"chip"+(editType===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(t); setEditCustomTypePending(false); } }} onClick={()=>{setEditType(t);setEditCustomTypePending(false);}}><span>{t}</span></div>)}
+                {/* Torreé audit item 6 */}
+                <div key="other" className={"chip"+(editCustomTypePending?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(""); setEditCustomTypePending(true); } }} onClick={()=>{setEditType("");setEditCustomTypePending(true);}}><span>Other</span></div>
               </div>
+              {editCustomTypePending && (
+                <input className="inp" placeholder="Type your creative role..." value={editType} onChange={e=>setEditType(e.target.value)} style={{ marginTop: 10 }} />
+              )}
             </div>
             <div style={{ marginBottom: 14 }}>
               <div className="side-label">Looking For</div>

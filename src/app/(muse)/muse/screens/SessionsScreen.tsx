@@ -328,7 +328,7 @@ export const SessionsScreen = memo(function SessionsScreen({
       {sessTab === "sessions" && (
         <div style={{ margin: "0 16px 12px", display: "flex", alignItems: "center", gap: 8, background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, padding: "6px 12px", animation: "fadeIn .2s ease" }}>
           <FiSearch size={14} color="var(--muted)" />
-          <input className="inp" placeholder="Name, type, or skill..." value={sessionSearchQuery} onChange={e => setSessionSearchQuery(e.target.value)} autoFocus style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
+          <input className="inp search-input" placeholder="Name, type, or skill..." value={sessionSearchQuery} onChange={e => setSessionSearchQuery(e.target.value)} autoFocus style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
           {sessionSearchQuery && <button onClick={() => setSessionSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
         </div>
       )}
@@ -358,7 +358,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                     read far more prominent than the card's other icon buttons (Eye,
                     Bookmark — both var(--text2)) below it. Matched to the same pattern
                     CommunityScreen's identical report button already uses. */}
-                <button aria-label="Report session" title="Report" onClick={() => { setReportTarget({ id: s.id, type: "session", name: s.name || "session" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "var(--card-bg)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
+                <button aria-label="Report session" title="Report" onClick={() => { setReportTarget({ id: s.id, type: "session", name: s.name || "session" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "rgba(20,15,25,0.15)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
                 {/* Torreé audit item 4: tapping the card (image + name/meta/skills
                     area) opens the full-detail modal. Deliberately excludes the
                     button row below — those buttons keep their own actions

@@ -196,6 +196,23 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
           return (
             <>
               <Image loading="lazy" src={curPhoto || ""} alt={displayName} fill sizes="(max-width: 600px) 100vw, 400px" style={{ objectFit: "cover" }} onError={handleImgError} />
+              {/* Match-percentage pill — same visual language and data fallback as
+                  DiscoverScreen's card pill (.card-match-topleft): live-scored
+                  candidates carry .matchScore, the static demo deck only has
+                  .score, so fall back to whichever is present. Hidden below the
+                  same 15% threshold and gated by the profile owner's
+                  showMatchPercent visibility toggle (round-34 settings). */}
+              {(() => {
+                const ms = Number((user as any).matchScore ?? (user as any).score ?? 0);
+                const showMatchPercent = (user as any).showMatchPercent !== false;
+                return ms >= 15 && showMatchPercent ? (
+                  <div
+                    className="card-match-topleft"
+                    style={{ background: "rgba(255,215,0,0.16)", border: "1px solid rgba(255,215,0,0.4)", color: "var(--gold)", fontWeight: 800 }}
+                    aria-label={`${ms}% match`}
+                  >{ms}%</div>
+                ) : null;
+              })()}
               {/* 2026-09-15: removed the decorative "halo ring" that used to sit here —
                   a slowly-spinning 156px gold circle absolutely centered on the ENTIRE
                   hero photo (not on an avatar or any specific element), so on a normal
