@@ -2,6 +2,36 @@
 
 ---
 
+## 🆕 FOR WYZMIND — round 34 ready to merge: Discover/profile/theming audit sweep (2026-09-16)
+
+**Status check first:** round 33 (cross-tab session sync + block-clears-match, `b7a9a2f`/`e2b28c4`) is confirmed merged and live — no action needed there.
+
+**What's in round 34** (bundle: `round34-discover-profile-theming-sweep.bundle` in `V:\Muse\_to_delete\`, commit `7feb1f7` — already a merge onto your latest `origin/main` tip at the time, `c31eac4`, so this should apply clean):
+
+Direct response to Torreé's live punch list (verify banner, disclaimer placement, badge sizing, match % + breakdown, card scroll, button colors, profile visibility, Discover header/search, map accuracy, BTS header/copy, viewport):
+
+1. **Age verification banner** is now a pure absolute-positioned overlay attached to the top of the bottom nav (slides via `transform`, never pushes page content — removed the old `.has-verify-banner` margin-push rule entirely).
+2. **"Not a dating app" disclaimer** moved out of its own banner (deleted `NonDatingDisclaimer.tsx`) into the match "It's a Connection!" popup.
+3. **Badge bubble** now sizes to its content (`inline-flex`/`fit-content`) instead of stretching full-width.
+4. **Discover card swipe-up hit area** widened from a ~30% middle strip to ~68% of the card (narrowed the left/right photo-tap zones from 35%→16% each) so scrolling a card's info panel works almost anywhere, while the like/pass swipe (handled separately, card-wide) is unaffected.
+5. **Rewind and pass buttons** — both were falling through to a hardcoded near-black background; now each has its own distinct gradient, both themes.
+6. **Profile field visibility toggles** — new Settings > Privacy & Safety section: free toggles for Zodiac/Age/MBTI/Life Path/Chinese Zodiac, Premium-gated toggles for Online Status and Match % (reuses the existing `UpsellModal` paywall, not a new gating mechanism). Zodiac/MBTI/life-path/Chinese are redacted **server-side** in the discovery/match endpoint when hidden (not just client-filtered), and `PublicProfileScreen` respects all flags when rendering another user's profile — the profile owner's own view is unaffected. **Known gap, flagged not hidden:** the Age and Online-Status toggles are fully wired into settings + persistence, but no endpoint currently exposes `age` or `online` on another user's profile payload at all — this is a **pre-existing gap**, not introduced this round — so those two specific toggles have no observable effect on another viewer until an age/online-status display feature actually exists. Worth deciding whether to build that display feature or pull those two toggles until it exists.
+7. **Discover header spacing** now matches other screens (no more gap at the top); **search bar** now smoothly collapses the header/title row (opacity+width transition) instead of an abrupt conditional hide, so the input can expand full-width, with a smooth restore on tap-out.
+8. **Map markers** — replaced the fixed initial zoom (a fixed continent-wide 3.5, or a fixed zoom-9 centered on the viewer regardless of where markers actually were) with `fitBounds()` over the real marker cluster, so studios render in view without a manual zoom-out. Nudged "Back to cards" down slightly.
+9. **BTS header** normalized to the same `.logo-link` animated gradient-text treatment used by Discover/Muses/Feed (removed the standalone gradient-bar background). Shortened the BTS model description, removed its em-dash.
+10. **Viewport not reaching the bottom on web** — investigated; `.phone`/`.phone-wrap` already correctly use `100dvh` and are `position:fixed`, independent of any `html`/`body` height rule. No actionable CSS bug found — flagging as likely a platform quirk (older browser without `dvh` support) rather than something fixable here, unless you're seeing something specific that points elsewhere.
+
+**Merge note:** this round was built starting from `9f7f202` and had two real conflicts against your `claude-audit-fixes-v3` merge (`15721f8`) landing in between — both in `MuseMap.tsx` (your side didn't yet have the `fitBounds()` fix, so I kept mine) and `DiscoverScreen.tsx` (a stale, now-deleted `NonDatingDisclaimer` import collided with an unrelated import cleanup — resolved by dropping the dead import, no functional overlap). Already resolved and re-verified on this end (`tsc`/349 tests/`next build` all clean against the merged result), so applying the bundle to your current `origin/main` should be conflict-free, but double-check `git status` for any uncommitted WIP on those two files first per the usual hygiene note below.
+
+**To merge:**
+```
+git fetch V:\Muse\_to_delete\round34-discover-profile-theming-sweep.bundle muse-fix-delivery:bundle/round34
+git merge bundle/round34
+```
+Verify same as always: `npx tsc --noEmit`, `npm test` (349/349 expected), `npm run build`.
+
+---
+
 ## 🆕 FOR WYZMIND — round 33 ready to merge: cross-tab logout fix + block-clears-match fix (2026-09-15)
 
 **Status check first:** round 32 (`4feca78`, the visual/UX batch) is confirmed merged — `origin/main` is at `0e1a172` and includes it. The "stuck on a page.tsx merge conflict" note directly below this one is now **historical** — that conflict is resolved, you don't need to read it unless you're curious how it happened.
