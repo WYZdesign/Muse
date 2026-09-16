@@ -2,6 +2,32 @@
 
 ---
 
+## 🆕 FOR WYZMIND — round 35 ready to merge: per-page first-visit tutorials (2026-09-16)
+
+**Status check first:** round 34 (`903f3eb`) is confirmed merged and live — no action needed there.
+
+**What's in round 35** (bundle: `round35-per-page-tutorials.bundle` in `V:\Muse\_to_delete\`, commit `6c7f722`, built directly on your current `origin/main` tip `903f3eb` — should be a clean fast-forward, no conflicts expected):
+
+Torreé's ask: replace the single "welcome tour" lightbox (all pages, shown once on first login) with a **per-page tutorial** — each major screen shows its own small (1-3 slide) tutorial the first time that specific screen is opened, visually unique to it.
+
+- **New `components/PageTour.tsx`** — reusable per-screen tutorial lightbox, built on the same visual system as the old `FeatureTour` (sprite animation, swipe nav, dot pager, gradient theming), scoped to one screen at a time.
+- **New `components/pageTourContent.tsx`** — content + a distinct color pair for each of the **11 in-scope screens**: Discover, Feed (`connections`), Collab (`briefs`), Muses (`matches`), BTS, Chat, Community, Sessions, Forum, Network, Studios. **Excluded per spec:** Settings, Profile, Muse Pro (`subscription`), plus auth/onboard/analytics/matchGuide/codex/portfolio (out of scope — confirmed with Torreé as "main nav + other real destinations," not literally every screen).
+- Each screen's "seen" state is tracked independently in `localStorage` (`muse_tour_seen_<screen>`, same pattern the old single `muse_feature_tour_seen` flag used) — shows once per screen per browser, never more than one tour open at a time, guarded against stacking on other full-screen modals (daily login, age verification/gate, quests, stories, hamburger).
+- Forum is a tab inside the Network screen, not its own top-level `screen` — it gets a dedicated `onTabChange` callback from `NetworkScreen.tsx` so its tutorial fires the first time that tab (not just the Network screen) is opened.
+- **"Replay Tutorials"** — Settings > Help & Support now has a real replay entry (the old "App Walkthrough" button drove a tour that no longer exists; replaced it). Clears every screen's seen-flag so they naturally replay as the user revisits each one.
+- Deleted `FeatureTour.tsx` — fully superseded, confirmed no remaining references (`grep -rn "FeatureTour" src/` is clean).
+
+**Known minor edge case, not worth chasing further:** if a user lands on a screen for the very first time while another full-screen modal (e.g. the daily-login streak popup) happens to already be open, that screen's tour is deferred and — in the *same session* — won't retry unless they navigate away and back, since the trigger is keyed off `screen` changing. It self-heals on the next full page load/reload (the localStorage flag is never set unless the tour actually showed and was dismissed). Flagging in case anyone hits it and wonders why a tour didn't appear once.
+
+**To merge:**
+```
+git fetch V:\Muse\_to_delete\round35-per-page-tutorials.bundle muse-fix-delivery:bundle/round35
+git merge bundle/round35
+```
+Verify same as always: `npx tsc --noEmit`, `npm test` (349/349 expected), `npm run build`.
+
+---
+
 ## 🆕 FOR WYZMIND — round 34 ready to merge: Discover/profile/theming audit sweep (2026-09-16)
 
 **Status check first:** round 33 (cross-tab session sync + block-clears-match, `b7a9a2f`/`e2b28c4`) is confirmed merged and live — no action needed there.
