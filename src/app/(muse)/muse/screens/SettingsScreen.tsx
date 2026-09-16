@@ -9,7 +9,7 @@ import type { Screen } from "../components/types";
 import { BEHIND_CAMERA, IN_FRONT_CAMERA, AESTHETICS, lookingForOptions } from "../components/types";
 import { STRINGS } from "@/lib/strings";
 import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
-import NonDatingDisclaimer from "../components/NonDatingDisclaimer";
+import { isPaidTier } from "../components/subscriptionTiers";
 
 const SUPPORT_EMAIL = "info@wyzdesign.com";
 
@@ -85,6 +85,23 @@ export interface SettingsScreenProps {
   setShowOnline?: (v: boolean) => void;
   showDistance?: boolean;
   setShowDistance?: (v: boolean) => void;
+  // Per-field profile visibility toggles. Free: zodiac/age/MBTI/life-path/
+  // Chinese zodiac. Premium (gated via UpsellModal, same pattern as Rewind/
+  // Boost elsewhere in the app): showMatchPercent, and showOnline above.
+  showZodiac?: boolean;
+  setShowZodiac?: (v: boolean) => void;
+  showAge?: boolean;
+  setShowAge?: (v: boolean) => void;
+  showMbti?: boolean;
+  setShowMbti?: (v: boolean) => void;
+  showLifePath?: boolean;
+  setShowLifePath?: (v: boolean) => void;
+  showChinese?: boolean;
+  setShowChinese?: (v: boolean) => void;
+  showMatchPercent?: boolean;
+  setShowMatchPercent?: (v: boolean) => void;
+  userTier?: string;
+  setUpsell?: (v: { feature: string; reason: string; icon?: string } | null) => void;
   authFetch?: (url: string, opts?: any) => Promise<any>;
   setShowFeatureTour?: (v: boolean) => void;
   setSupportOpen?: (v: boolean) => void;
@@ -119,10 +136,10 @@ function SettingsSubPage({ title, onClose, children }: { title: string; onClose:
   );
 }
 
-function ToggleRow({ label, checked, onToggle }: { label: string; checked: boolean; onToggle: () => void }) {
+function ToggleRow({ label, desc, checked, onToggle }: { label: string; desc?: string; checked: boolean; onToggle: () => void }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-      <span style={{ fontSize: 14, color: "var(--text)" }}>{label}</span>
+      <span style={{ fontSize: 14, color: "var(--text)" }}>{label}{desc && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: "var(--gold)", background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.3)", borderRadius: 99, padding: "2px 7px", verticalAlign: "middle" }}>{desc}</span>}</span>
       <div
         role="switch"
         aria-checked={checked}
@@ -245,6 +262,20 @@ export const SettingsScreen = memo(function SettingsScreen({
   setShowOnline,
   showDistance,
   setShowDistance,
+  showZodiac,
+  setShowZodiac,
+  showAge,
+  setShowAge,
+  showMbti,
+  setShowMbti,
+  showLifePath,
+  setShowLifePath,
+  showChinese,
+  setShowChinese,
+  showMatchPercent,
+  setShowMatchPercent,
+  userTier = "free",
+  setUpsell,
   authFetch,
   setShowFeatureTour,
   setSupportOpen,
@@ -533,7 +564,6 @@ export const SettingsScreen = memo(function SettingsScreen({
           </div>
         </div>
         <div className="settings-scroll">
-          <NonDatingDisclaimer />
           {/* Audit fix (2026-09-08): the Menu's "Settings" card used to open
               a separate, older inline settings tab instead of this
               full-page screen — this section (age range, distance, gender)
@@ -682,13 +712,85 @@ export const SettingsScreen = memo(function SettingsScreen({
                 apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showDistance: next } }) }).catch(() => showToast("Couldn't save — try again"));
               }}
             />
+            {/* Free profile-field visibility toggles — every user can hide
+                these optional fields from their profile as seen by others.
+                The profile owner always still sees their own full profile
+                in edit mode (these only affect PublicProfileScreen/Discover
+                rendering for OTHER viewers). */}
+            <ToggleRow
+              label="Zodiac Sign"
+              checked={showZodiac !== false}
+              onToggle={() => {
+                const next = !(showZodiac !== false);
+                setShowZodiac?.(next);
+                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showZodiac: next } }) }).catch(() => showToast("Couldn't save — try again"));
+              }}
+            />
+            <ToggleRow
+              label="Age"
+              checked={showAge !== false}
+              onToggle={() => {
+                const next = !(showAge !== false);
+                setShowAge?.(next);
+                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showAge: next } }) }).catch(() => showToast("Couldn't save — try again"));
+              }}
+            />
+            <ToggleRow
+              label="MBTI Type"
+              checked={showMbti !== false}
+              onToggle={() => {
+                const next = !(showMbti !== false);
+                setShowMbti?.(next);
+                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showMbti: next } }) }).catch(() => showToast("Couldn't save — try again"));
+              }}
+            />
+            <ToggleRow
+              label="Life Path Number"
+              checked={showLifePath !== false}
+              onToggle={() => {
+                const next = !(showLifePath !== false);
+                setShowLifePath?.(next);
+                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showLifePath: next } }) }).catch(() => showToast("Couldn't save — try again"));
+              }}
+            />
+            <ToggleRow
+              label="Chinese Zodiac"
+              checked={showChinese !== false}
+              onToggle={() => {
+                const next = !(showChinese !== false);
+                setShowChinese?.(next);
+                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showChinese: next } }) }).catch(() => showToast("Couldn't save — try again"));
+              }}
+            />
+            {/* Premium-gated visibility toggles — same UpsellModal paywall
+                pattern used elsewhere in the app (Rewind, Boost, unlimited
+                likes) instead of a new gating mechanism. */}
             <ToggleRow
               label="Online Status"
+              desc="Muse Pro"
               checked={!!showOnline}
               onToggle={() => {
+                if (!isPaidTier(userTier)) {
+                  setUpsell?.({ feature: "Hide Online Status", reason: "Control who sees when you're active. Upgrade to Muse Pro to hide your online status from other members.", icon: "🟢" });
+                  return;
+                }
                 const next = !showOnline;
                 setShowOnline?.(next);
                 apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showOnline: next } }) }).catch(() => showToast("Couldn't save — try again"));
+              }}
+            />
+            <ToggleRow
+              label="Match % Visible to Others"
+              desc="Muse Pro"
+              checked={showMatchPercent !== false}
+              onToggle={() => {
+                if (!isPaidTier(userTier)) {
+                  setUpsell?.({ feature: "Hide Match %", reason: "Keep your match-percentage private. Upgrade to Muse Pro to control whether others see how well you match with them.", icon: "✨" });
+                  return;
+                }
+                const next = !(showMatchPercent !== false);
+                setShowMatchPercent?.(next);
+                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showMatchPercent: next } }) }).catch(() => showToast("Couldn't save — try again"));
               }}
             />
           </div>

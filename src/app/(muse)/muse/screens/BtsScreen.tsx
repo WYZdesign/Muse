@@ -230,7 +230,6 @@ export const BtsScreen = memo(function BtsScreen({
     showToast("Share your moment from the Feed composer!");
   }, [showScreen, showToast]);
 
-  const headerGradient = "linear-gradient(135deg, #FFFFFF 0%, #FF69B4 45%, #FFD700 100%)";
   const pinkGradient = "linear-gradient(135deg, #FF1493 0%, #FF69B4 40%, #FFD700 100%)";
   const activePill = "linear-gradient(135deg, #FF1493, #FF69B4)";
 
@@ -238,44 +237,42 @@ export const BtsScreen = memo(function BtsScreen({
 
   return (
     <div className={"screen-el" + (screen === "bts" ? " active" : "")} data-screen="bts">
-      {/* Header */}
-      <div
-        style={{
-          background: headerGradient,
-          backgroundSize: "400% 400%",
-          animation: "lavaFlow 8s ease-in-out infinite",
-          padding: "calc(14px + env(safe-area-inset-top,0px)) 18px 14px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          position: "relative",
-        }}
-      >
-        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.15)", pointerEvents: "none" }} />
+      {/* Header — normalized to the same treatment every other main screen
+          uses for its title (Discover, Muses, Feed, etc): plain .hdr bar,
+          no standalone decorative gradient-bar background, and the title
+          itself rendered with the shared .logo-link animated gradient-text
+          fill (Playfair Display italic, lavaFlow + logoShimmer) instead of
+          a flat white/pink bar behind plain white letters. */}
+      <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: "calc(12px + env(safe-area-inset-top,0px)) 18px 12px" }}>
         <button
           className="chat-back"
           onClick={() => (goBack ? goBack() : showScreen("discover"))}
           aria-label="Back"
-          style={{ position: "relative", zIndex: 1 }}
         >
           <FiArrowLeft size={20} />
         </button>
 
-          <div
+        <div
+          className="logo-link"
           style={{
-            fontSize: 35,
-            fontWeight: 900,
-            letterSpacing: 2,
-            color: "#fff",
-            textShadow: "0 2px 10px rgba(0,0,0,0.35)",
-            position: "relative",
-            zIndex: 1,
+            fontSize: 37.5,
+            backgroundImage: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)",
+            backgroundSize: "300% 100%",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            color: "transparent",
+            position: "static",
+            left: "auto",
+            top: "auto",
+            transform: "none",
+            animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite",
           }}
         >
           BTS
         </div>
 
-        <div style={{ width: 34, height: 34, position: "relative", zIndex: 1 }} />
+        <div style={{ width: 34, height: 34 }} />
       </div>
 
       {/* Scrollable content */}
@@ -294,7 +291,7 @@ export const BtsScreen = memo(function BtsScreen({
           <div style={{ textAlign: "center", marginBottom: 12 }}>
             <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", letterSpacing: 0.02 }}>Behind the Scenes</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", marginTop: 4, lineHeight: 1.5 }}>
-              Post a quick real-time shot of your creative process. Friends and followers get an honest, unpolished look at how you work — and you build connection by sharing the journey, not just the finished piece.
+              Post a quick, real-time shot of your creative process. An honest, unpolished look at the journey, not just the finished piece.
             </div>
           </div>
 

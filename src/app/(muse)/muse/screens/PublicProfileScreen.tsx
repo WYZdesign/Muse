@@ -209,7 +209,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 20px 20px", background: "linear-gradient(to top,rgba(10,6,18,0.97) 0%,rgba(10,6,18,0.7) 50%,transparent 100%)", pointerEvents: "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                   <span style={{ fontSize: 26, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", color: "#fff" }}>{displayName}</span>
-                  {user.age && <span style={{ fontSize: 22, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>{user.age}</span>}
+                  {user.age && (user as any).showAge !== false && <span style={{ fontSize: 22, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>{user.age}</span>}
                   {(user.isVerified || user.verified) && <span role="button" tabIndex={0} title="Identity verified" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Identity Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#22c55e" }); }} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: "rgba(34,197,94,0.2)", border: "1.5px solid rgba(34,197,94,0.5)", fontSize: 12, fontWeight: 800, color: "#22c55e", pointerEvents: "auto", cursor: "pointer" }}>✓</span>}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>
@@ -226,7 +226,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
                     </span>
                   )}
                 </div>
-                {user.online && (
+                {user.online && (user as any).showOnline !== false && (
                   <div role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Online", desc: "This member is online right now — a good time to reach out.", icon: "🟢", color: "#4ade80" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "#4ade80", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: 99, padding: "4px 10px", pointerEvents: "auto", cursor: "pointer" }}>
                     <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 6px rgba(74,222,128,0.5)" }} />
                     Online
@@ -274,34 +274,44 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
           </div>
         )}
 
-        {/* Personality Badges */}
-        {(user.zodiac || user.mbti || user.lifePath || user.chineseZodiac || user.chinese) && (
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.05 }}>Personality</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {user.zodiac && (
-                <button className="tag-pill" onClick={() => setBadgeInfo({ name: `${user.zodiac} — ${ZODIAC_FULL[user.zodiac!]?.tag || ""}`, desc: ZODIAC_FULL[user.zodiac!]?.desc || "", icon: ZODIAC_GLYPH[user.zodiac!] || "✦", color: "#FF69B4" })} style={{ cursor: "pointer" }}>
-                  {ZODIAC_GLYPH[user.zodiac!] || "✦"} {user.zodiac}
-                </button>
-              )}
-              {(user.chineseZodiac || user.chinese) && (
-                <button className="tag-pill" onClick={() => setBadgeInfo({ name: user.chineseZodiac || user.chinese || "", desc: CHINESE_FULL[user.chineseZodiac || user.chinese || ""] || "", icon: <ChineseZodiacIcon animal={user.chineseZodiac || user.chinese || ""} size={20} />, color: "#FFA500" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}>
-                  <ChineseZodiacIcon animal={user.chineseZodiac || user.chinese || ""} size={12} /> {user.chineseZodiac || user.chinese}
-                </button>
-              )}
-              {user.mbti && (
-                <button className="tag-pill" onClick={() => setBadgeInfo({ name: `${user.mbti} — ${MBTI_FULL[user.mbti!]?.tag || ""}`, desc: MBTI_FULL[user.mbti!]?.desc || "", icon: <MbtiIcon code={user.mbti!} size={20} />, color: "#7B68EE" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}>
-                  <MbtiIcon code={user.mbti!} size={12} /> {user.mbti}
-                </button>
-              )}
-              {user.lifePath && (
-                <button className="tag-pill" onClick={() => setBadgeInfo({ name: `Life Path ${user.lifePath}`, desc: LIFE_PATH_FULL[String(user.lifePath)] || "", icon: <LifePathIcon n={Number(user.lifePath)} size={20} />, color: "#20B2AA" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}>
-                  <LifePathIcon n={Number(user.lifePath)} size={12} /> Path {user.lifePath}
-                </button>
-              )}
+        {/* Personality Badges — each respects the profile owner's own
+            Settings > Privacy & Safety visibility toggle for that field
+            (free toggles: zodiac, MBTI, life path, Chinese zodiac). */}
+        {(() => {
+          const showZodiac = (user as any).showZodiac !== false;
+          const showChinese = (user as any).showChinese !== false;
+          const showMbti = (user as any).showMbti !== false;
+          const showLifePath = (user as any).showLifePath !== false;
+          const anyVisible = (user.zodiac && showZodiac) || (user.mbti && showMbti) || (user.lifePath && showLifePath) || ((user.chineseZodiac || user.chinese) && showChinese);
+          if (!anyVisible) return null;
+          return (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.05 }}>Personality</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {user.zodiac && showZodiac && (
+                  <button className="tag-pill" onClick={() => setBadgeInfo({ name: `${user.zodiac} — ${ZODIAC_FULL[user.zodiac!]?.tag || ""}`, desc: ZODIAC_FULL[user.zodiac!]?.desc || "", icon: ZODIAC_GLYPH[user.zodiac!] || "✦", color: "#FF69B4" })} style={{ cursor: "pointer" }}>
+                    {ZODIAC_GLYPH[user.zodiac!] || "✦"} {user.zodiac}
+                  </button>
+                )}
+                {(user.chineseZodiac || user.chinese) && showChinese && (
+                  <button className="tag-pill" onClick={() => setBadgeInfo({ name: user.chineseZodiac || user.chinese || "", desc: CHINESE_FULL[user.chineseZodiac || user.chinese || ""] || "", icon: <ChineseZodiacIcon animal={user.chineseZodiac || user.chinese || ""} size={20} />, color: "#FFA500" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}>
+                    <ChineseZodiacIcon animal={user.chineseZodiac || user.chinese || ""} size={12} /> {user.chineseZodiac || user.chinese}
+                  </button>
+                )}
+                {user.mbti && showMbti && (
+                  <button className="tag-pill" onClick={() => setBadgeInfo({ name: `${user.mbti} — ${MBTI_FULL[user.mbti!]?.tag || ""}`, desc: MBTI_FULL[user.mbti!]?.desc || "", icon: <MbtiIcon code={user.mbti!} size={20} />, color: "#7B68EE" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}>
+                    <MbtiIcon code={user.mbti!} size={12} /> {user.mbti}
+                  </button>
+                )}
+                {user.lifePath && showLifePath && (
+                  <button className="tag-pill" onClick={() => setBadgeInfo({ name: `Life Path ${user.lifePath}`, desc: LIFE_PATH_FULL[String(user.lifePath)] || "", icon: <LifePathIcon n={Number(user.lifePath)} size={20} />, color: "#20B2AA" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}>
+                    <LifePathIcon n={Number(user.lifePath)} size={12} /> Path {user.lifePath}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Stats Bar — role-aware */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2, marginBottom: 20, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, overflow: "hidden" }}>

@@ -14,6 +14,11 @@ import { UUID_RE, NextResponse, safeServerError, type ActionContext } from "./sh
 export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
   const ALLOWED_PREFS = new Set([
     "nsfw", "showOnline", "showDistance", "notifications", "emailNotifications",
+    // Profile-field visibility toggles (audit item: per-field visibility
+    // controls). Zodiac/age/MBTI/life-path/Chinese-zodiac are free for every
+    // user; showOnline (above) and showMatchPercent are Premium-gated on the
+    // client (UpsellModal) before this action is ever called for them.
+    "showZodiac", "showAge", "showMbti", "showLifePath", "showChinese", "showMatchPercent",
     "pushNotifications", "soundEffects", "darkMode", "distance", "ageRange",
     "openToTravel", "autoReply", "privacy", "visibility", "tags",
     "ageMin", "ageMax", "gender",

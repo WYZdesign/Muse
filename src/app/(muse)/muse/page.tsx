@@ -24,7 +24,6 @@ import { STRINGS } from "@/lib/strings";
 import DisclosureModal from "./components/DisclosureModal";
 import AgeVerificationModal from "./components/AgeVerificationModal";
 import UpsellModal from "./components/UpsellModal";
-import NonDatingDisclaimer from "./components/NonDatingDisclaimer";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon } from "./components/traitIcons";
 import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "./components/badgeInfo";
 import { useChatState } from "./hooks/useChatState";
@@ -192,6 +191,16 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [showNsfw, setShowNsfw] = useState(false);
   const [showOnline, setShowOnline] = useState(true);
   const [showDistance, setShowDistance] = useState(true);
+  // Per-field profile visibility toggles (Settings > Privacy & Safety).
+  // Zodiac/age/MBTI/life-path/Chinese-zodiac are free for every user;
+  // showMatchPercent is Premium-gated (see UpsellModal usage in
+  // SettingsScreen) same as showOnline above.
+  const [showZodiac, setShowZodiac] = useState(true);
+  const [showAge, setShowAge] = useState(true);
+  const [showMbti, setShowMbti] = useState(true);
+  const [showLifePath, setShowLifePath] = useState(true);
+  const [showChinese, setShowChinese] = useState(true);
+  const [showMatchPercent, setShowMatchPercent] = useState(true);
   // (debug artifact removed)
   const [bootstrapped, setBootstrapped] = useState(false);
   // Defaults true — this is a dismissible "you have unlimited likes" badge
@@ -668,7 +677,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         v: STATE_VERSION,
         currentUser, obData, obStep, matches: matches.slice(-MAX_ITEMS), dailyLikes, superLikes,
         savedBriefs, appliedBriefs, savedSessionIds, savedProfileIds, userBriefs: userBriefs.slice(-MAX_ITEMS), blockedUsers, notifPrefs,
-        obConnectedSocials, showNsfw, showOnline, showDistance, rsvpdEvents, forumPosts: forumPosts.slice(-MAX_ITEMS), feedPosts: feedPosts.slice(-MAX_ITEMS),
+        obConnectedSocials, showNsfw, showOnline, showDistance, showZodiac, showAge, showMbti, showLifePath, showChinese, showMatchPercent, rsvpdEvents, forumPosts: forumPosts.slice(-MAX_ITEMS), feedPosts: feedPosts.slice(-MAX_ITEMS),
         testLevels, obSelects, obProfilePic, obPortfolioItems,         likedBy: likedBy.slice(-MAX_ITEMS),
         profileViews: DEMO_MODE ? profileViews : 0, profileViewers: DEMO_MODE ? profileViewers.slice(-20) : [], stories: stories.slice(-20), theme, activityFeed: activityFeed.slice(-MAX_ITEMS),
         discoveryPrefs, chatImages: Object.fromEntries(Object.entries(chatImages).slice(-20).map(([k,v]) => [k, v.slice(-20)])), screen, filterStyles, filterScore,
@@ -682,7 +691,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs, stats: currentUser.stats }) }).catch(() => {});
       }
     } catch(e) {}
-  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,savedSessionIds,savedProfileIds,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,authUser,chatTarget]);
+  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,savedSessionIds,savedProfileIds,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,showZodiac,showAge,showMbti,showLifePath,showChinese,showMatchPercent,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,authUser,chatTarget]);
 
   const loadState = useCallback(async () => {
     try {
@@ -727,6 +736,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (d.showNsfw!=null) setShowNsfw(d.showNsfw);
       if (d.showOnline!=null) setShowOnline(d.showOnline);
       if (d.showDistance!=null) setShowDistance(d.showDistance);
+      if (d.showZodiac!=null) setShowZodiac(d.showZodiac);
+      if (d.showAge!=null) setShowAge(d.showAge);
+      if (d.showMbti!=null) setShowMbti(d.showMbti);
+      if (d.showLifePath!=null) setShowLifePath(d.showLifePath);
+      if (d.showChinese!=null) setShowChinese(d.showChinese);
+      if (d.showMatchPercent!=null) setShowMatchPercent(d.showMatchPercent);
       if (d.rsvpdEvents) setRsvpdEvents(d.rsvpdEvents);
       if (d.forumPosts) setForumPosts(d.forumPosts);
       if (d.feedPosts) setFeedPosts(d.feedPosts);
@@ -916,6 +931,24 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               }
               if (typeof d.profile.preferences?.showDistance === "boolean") {
                 setShowDistance(d.profile.preferences.showDistance);
+              }
+              if (typeof d.profile.preferences?.showZodiac === "boolean") {
+                setShowZodiac(d.profile.preferences.showZodiac);
+              }
+              if (typeof d.profile.preferences?.showAge === "boolean") {
+                setShowAge(d.profile.preferences.showAge);
+              }
+              if (typeof d.profile.preferences?.showMbti === "boolean") {
+                setShowMbti(d.profile.preferences.showMbti);
+              }
+              if (typeof d.profile.preferences?.showLifePath === "boolean") {
+                setShowLifePath(d.profile.preferences.showLifePath);
+              }
+              if (typeof d.profile.preferences?.showChinese === "boolean") {
+                setShowChinese(d.profile.preferences.showChinese);
+              }
+              if (typeof d.profile.preferences?.showMatchPercent === "boolean") {
+                setShowMatchPercent(d.profile.preferences.showMatchPercent);
               }
               setScreen(prev => (prev === "auth" || prev === "onboard") ? (d.profile.name && d.profile.type ? "discover" : "onboard") : prev);
             } else {
@@ -2480,6 +2513,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             It&apos;s a Connection!
           </div>
           <div className="match-subtitle">You and <strong style={{color:"var(--gold)"}}>{showMatchOverlay.name}</strong> are both ready to collaborate.</div>
+          <div className="match-disclaimer">Muse is for finding and booking creative collaborators, not a dating app.</div>
           <div className="match-avatars"
           >
             <Image loading="lazy" className="match-av" src={currentUser.avatar} alt="You" width={80} height={80} />
@@ -2608,17 +2642,20 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         </div>
       ) : (
 <div className={"phone-wrap"+((screen==="subscription"||screen==="settings"||screen==="analytics")?" phone-wrap-standalone-hidden":"")}>
-<div className={"phone"+(((!ageVerified) || verificationExpiringSoon) && !verificationBannerDismissed ? " has-verify-banner" : "")} id="muse-app">
+<div className="phone" id="muse-app">
 <div className="notch" />
 
 {/* ═══ VERIFICATION EXPIRY BANNER ═══ */}
-{/* Floating bubbler/pill overlay (Torreé audit): no longer attached to the top
-    of the page — it floats over the app header as a rounded pill, so it doesn't
-    push every screen's header down. Caption + dashed link per spec. Status is
-    never lost: Settings > Privacy & Safety > Identity Verification always shows
-    the same live state, dismissed or not. */}
+{/* Absolutely-positioned overlay attached to the top edge of the bottom nav
+    (bottom: var(--nav-h)) — it slides down into view over the nav on show and
+    slides back up out of view on dismiss (see .verify-banner keyframes in
+    muse.css). It never pushes or shifts any other content: it's taken out of
+    flow entirely (position:absolute against .phone, which is position:relative),
+    so no sibling ever reserves space for it. Status is never lost: Settings >
+    Privacy & Safety > Identity Verification always shows the same live state,
+    dismissed or not. */}
 {((!ageVerified) || verificationExpiringSoon) && !verificationBannerDismissed && (
-  <div className={"verify-banner" + (verificationBannerClosing ? " verify-banner-closing" : "")} style={{ position: "fixed", bottom: "var(--nav-h, calc(72px + env(safe-area-inset-bottom, 0px)))", left: 0, right: 0, zIndex: 9999, background: verificationExpiringSoon ? "linear-gradient(135deg, #ff8c00, #ffd700)" : "linear-gradient(135deg, #ff4444, #ff6b6b)", padding: "14px 40px 14px 16px", boxShadow: "0 -4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12)", textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, whiteSpace: "nowrap", opacity: 0.85 }}>
+  <div className={"verify-banner" + (verificationBannerClosing ? " verify-banner-closing" : "")} style={{ position: "absolute", bottom: "var(--nav-h, calc(72px + env(safe-area-inset-bottom, 0px)))", left: 0, right: 0, zIndex: 9999, background: verificationExpiringSoon ? "linear-gradient(135deg, #ff8c00, #ffd700)" : "linear-gradient(135deg, #ff4444, #ff6b6b)", padding: "14px 40px 14px 16px", boxShadow: "0 -4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12)", textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, whiteSpace: "nowrap", opacity: 0.85 }}>
     <span>Verify your identity to continue</span>
     <button onClick={() => setShowAgeVerification(true)} style={{ background: "none", border: "none", color: "#0a0612", textDecoration: "underline", cursor: "pointer", fontWeight: 800, padding: 0 }}>Verify Now</button>
     <button
@@ -2641,7 +2678,6 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                     <div className="sparkle" style={{bottom:"15%",right:"6%",fontSize:16}}>✧</div>
                     <div className="hero-text" style={{textAlign:"center"}}>Find your Muse</div>
                     <div className="hero-sub">Where creatives find <em>real connections</em> for professional collaboration</div>
-                    <NonDatingDisclaimer />
                     <button className="btn btn-gold" onClick={()=>setObStep(1)}>Get Started</button>
                   </div>
                 )}
@@ -3078,7 +3114,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       {screen === "analytics" && <React.Suspense fallback={null}><ScreenErrorBoundary name="Analytics"><AnalyticsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} /></ScreenErrorBoundary></React.Suspense>}
       {screen === "matchGuide" && <React.Suspense fallback={null}><ScreenErrorBoundary name="MatchGuide"><MatchGuideScreen screen={screen} showScreen={showScreen} goBack={goBack} /></ScreenErrorBoundary></React.Suspense>}
       {/* SETTINGS SCREEN */}
-      {screen === "settings" && <ScreenErrorBoundary name="Settings"><SettingsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} obData={obData} showNsfw={showNsfw} setShowNsfw={setShowNsfw} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} blockedUsers={blockedUsers} setBlockedUsers={setBlockedUsers} obConnectedSocials={obConnectedSocials} toggleSocial={toggleSocial} theme={theme} setTheme={setTheme} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} doLogout={doLogout} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditNsfw={setEditNsfw} setShowNotificationsSettings={setShowNotificationsSettings} showNotificationsSettings={showNotificationsSettings} setShowConnectedAccounts={setShowConnectedAccounts} showConnectedAccounts={showConnectedAccounts} pushEnabled={pushEnabled} setPushEnabled={setPushEnabled} subscribeToMusePush={subscribeToMusePush} unsubscribeFromMusePush={unsubscribeFromMusePush} setShowTerms={setShowTerms} setShowPrivacy={setShowPrivacy} setShowGuidelines={setShowGuidelines} setShowDeleteConfirm={setShowDeleteConfirm} isUnlimited={isUnlimited} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} promptResponses={promptResponses} promptBankData={promptBankData} myGeo={myGeo} setShowAgeGate={setShowAgeGate} setPendingNsfw={setPendingNsfw} setShowAgeVerification={setShowAgeVerification} setScreen={setScreen} setObStep={setObStep} apiFetch={apiFetch} setShowQuests={setShowQuests} questClaimables={claimableQuests} showBlockedUsers={showBlockedUsersPanel} setShowBlockedUsers={setShowBlockedUsersPanel} ageVerified={ageVerified} verificationExpiringSoon={verificationExpiringSoon} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} authFetch={authFetch} setShowFeatureTour={setShowFeatureTour} setSupportOpen={setSupportOpen} /></ScreenErrorBoundary>}
+      {screen === "settings" && <ScreenErrorBoundary name="Settings"><SettingsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} obData={obData} showNsfw={showNsfw} setShowNsfw={setShowNsfw} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} blockedUsers={blockedUsers} setBlockedUsers={setBlockedUsers} obConnectedSocials={obConnectedSocials} toggleSocial={toggleSocial} theme={theme} setTheme={setTheme} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} doLogout={doLogout} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditNsfw={setEditNsfw} setShowNotificationsSettings={setShowNotificationsSettings} showNotificationsSettings={showNotificationsSettings} setShowConnectedAccounts={setShowConnectedAccounts} showConnectedAccounts={showConnectedAccounts} pushEnabled={pushEnabled} setPushEnabled={setPushEnabled} subscribeToMusePush={subscribeToMusePush} unsubscribeFromMusePush={unsubscribeFromMusePush} setShowTerms={setShowTerms} setShowPrivacy={setShowPrivacy} setShowGuidelines={setShowGuidelines} setShowDeleteConfirm={setShowDeleteConfirm} isUnlimited={isUnlimited} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} promptResponses={promptResponses} promptBankData={promptBankData} myGeo={myGeo} setShowAgeGate={setShowAgeGate} setPendingNsfw={setPendingNsfw} setShowAgeVerification={setShowAgeVerification} setScreen={setScreen} setObStep={setObStep} apiFetch={apiFetch} setShowQuests={setShowQuests} questClaimables={claimableQuests} showBlockedUsers={showBlockedUsersPanel} setShowBlockedUsers={setShowBlockedUsersPanel} ageVerified={ageVerified} verificationExpiringSoon={verificationExpiringSoon} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} showZodiac={showZodiac} setShowZodiac={setShowZodiac} showAge={showAge} setShowAge={setShowAge} showMbti={showMbti} setShowMbti={setShowMbti} showLifePath={showLifePath} setShowLifePath={setShowLifePath} showChinese={showChinese} setShowChinese={setShowChinese} showMatchPercent={showMatchPercent} setShowMatchPercent={setShowMatchPercent} userTier={userTier} setUpsell={setUpsell} authFetch={authFetch} setShowFeatureTour={setShowFeatureTour} setSupportOpen={setSupportOpen} /></ScreenErrorBoundary>}
 
       {/* REPORT MODAL */}
       {showReport && (

@@ -14,7 +14,6 @@ import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../ho
 import { attachSpatialDepth } from "../hooks/useSpatialDepth";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, CONN_FULL } from "../components/badgeInfo";
-import NonDatingDisclaimer from "../components/NonDatingDisclaimer";
 import Lightbox from "../components/Lightbox";
 import MuseSpark from "../components/MuseSpark";
 
@@ -192,6 +191,23 @@ export const DiscoverScreen = memo(function DiscoverScreen({
     return (base[currentPhotoIdx ?? 0]) || topCard?.img || "";
   })();
 
+  const hdrRef = useRef<HTMLDivElement | null>(null);
+  // Tap-outside-to-close for the expanded search bar (M9): the header
+  // content fading back in is handled purely by CSS (.discover-hdr-title's
+  // transition), this just flips the same state a second tap on the search
+  // icon would.
+  useEffect(() => {
+    if (!discoverSearchOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (hdrRef.current && !hdrRef.current.contains(e.target as Node)) {
+        setDiscoverSearchOpen(false);
+        setDiscoverSearch("");
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [discoverSearchOpen, setDiscoverSearchOpen, setDiscoverSearch]);
+
   useEffect(() => {
     if (!topHeroSrc || screen !== "discover") return;
     let cancelled = false;
@@ -247,18 +263,28 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   return (
     <div className={"screen-el" + (screen === "discover" ? " active" : "")} data-screen="discover">
       <div className="discover-wrap">
-        <div className="hdr">
-          <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "static", left: "auto", top: "auto", transform: "none", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Discover</div>
-          <div style={{ flex: 1 }} />
-          <div style={{ display: "flex", gap: 4 }}>
+        <div className="hdr" ref={hdrRef}>
+          {/* Audit fix: opening search used to leave the title + spacer in
+              place, so the input was squeezed into whatever width was left
+              next to "Discover" instead of taking the full header. The
+              title/spacer now live in their own element that smoothly
+              collapses (opacity + max-width transition, not an abrupt
+              mount/unmount) whenever search is open, letting the search row
+              expand to fill the header; it fades/slides back in the same way
+              on close. */}
+          <div className={"discover-hdr-title" + (discoverSearchOpen ? " collapsed" : "")} aria-hidden={discoverSearchOpen}>
+            <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "static", left: "auto", top: "auto", transform: "none", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Discover</div>
+            <div style={{ flex: 1 }} />
+          </div>
+          <div className={"discover-hdr-actions" + (discoverSearchOpen ? " search-open" : "")} style={{ display: "flex", gap: 4, alignItems: "center" }}>
             <button
               className="hdr-btn"
-              style={{ width: 34, height: 34 }}
+              style={{ width: 34, height: 34, flexShrink: 0 }}
               onClick={() => { if (discoverSearchOpen) { setDiscoverSearchOpen(false); setDiscoverSearch(""); } else { setDiscoverSearchOpen(true); } }}
               aria-label="Search"
             ><FiSearch size={16} /></button>
             {discoverSearchOpen && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, animation: "fadeIn .2s ease" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0, animation: "fadeIn .25s ease" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 2, background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: "3px 5px 3px 14px", flex: 1, minWidth: 0 }}>
                   <input className="inp" placeholder="Name, style, type, or city..." value={discoverSearch} onChange={e => setDiscoverSearch(e.target.value)} autoFocus style={{ margin: 0, padding: "8px 0", fontSize: 14, flex: 1, minWidth: 0, border: "none", background: "transparent", boxShadow: "none" }} />
                   {/* M7: this used to render a second, purely decorative search-icon
@@ -286,7 +312,6 @@ export const DiscoverScreen = memo(function DiscoverScreen({
             )}
           </div>
         </div>
-        <NonDatingDisclaimer compact />
         {mapView && <MuseMap filteredProfiles={filteredProfiles as any} myGeo={myGeo ? { lat: myGeo.lat, lng: myGeo.long } : undefined} onClose={() => setMapView(false)} />}
         {!mapView && (
           <>
@@ -367,7 +392,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               // previously only reachable via a small info icon buried
                               // in the scrolled-down profile details) right from the card
                               // front, with a link through to the general matching guide.
-                              return ms >= 15 && !cardScrolled ? (
+                              const showMatchPercent = (profile as any).showMatchPercent !== false;
+                              return ms >= 15 && !cardScrolled && showMatchPercent ? (
                                 <button
                                   type="button"
                                   className="card-match-topleft"
@@ -386,7 +412,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                             <div className="card-hero-name">
                               {profile.name}
                               {profile.verified && <span className="card-verified-mark">✓</span>}
-                              {profile.online && <span className="card-online-dot" />}
+                              {profile.online && (profile as any).showOnline !== false && <span className="card-online-dot" />}
                             </div>
                             {!!(profile as any).boosted && (
                               <div className="card-hero-badge" style={{ background: "linear-gradient(135deg, rgba(255,215,0,0.28), rgba(233,30,99,0.28))", border: "1px solid rgba(255,215,0,0.55)", color: "#fff", fontWeight: 800, letterSpacing: 0.04 }}>⚡ BOOSTED</div>

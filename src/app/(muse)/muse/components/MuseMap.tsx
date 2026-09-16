@@ -16,7 +16,10 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
       try {
       w.mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
       const center: [number, number] = myGeo ? [myGeo.lng, myGeo.lat] : [-98.5, 39.8];
-      const zoom = myGeo ? 9 : 3.5;
+      // Only used as the initial paint before fitBounds (below) adjusts to
+      // the real marker cluster; kept as a reasonable fallback for the rare
+      // case no marker matches (fitBounds is skipped when there are none).
+      const zoom = myGeo ? 9 : 4.2;
       const map = new w.mapboxgl.Map({ container: containerRef.current!, style: "mapbox://styles/mapbox/dark-v11", center, zoom, attributionControl: false });
       map.addControl(new w.mapboxgl.NavigationControl({ showCompass: false, visualizePitch: false }), "bottom-right");
       map.addControl(new w.mapboxgl.AttributionControl({ compact: true }), "bottom-left");
@@ -42,6 +45,15 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
         if (existing) existing.count += 1;
         else byCity.set(cityKey, { geo, count: 1 });
       }
+      // Audit fix: the map used to always open at a fixed, far-out zoom
+      // (3.5 — a whole-continent view) unless the viewer's own location was
+      // known, in which case it opened at a fixed zoom 9 centered on THEM
+      // regardless of where any markers actually were. Neither reflected
+      // where the real marker cluster sat, so most markers rendered as tiny
+      // dots (or were off-screen entirely) until the viewer manually
+      // zoomed/panned. Instead, collect every marker's coordinates as we go
+      // and fit the map to their real bounds once they're all placed.
+      const allCoords: [number, number][] = [];
       for (const [cityKey, { geo, count }] of byCity) {
         const el = document.createElement("div");
         el.style.cssText = "min-width:30px;height:30px;padding:0 8px;border-radius:15px;background:linear-gradient(135deg,#FFD700,#FF8A80);border:2px solid #0a0612;box-shadow:0 0 14px rgba(255,215,0,0.5);cursor:pointer;display:flex;align-items:center;justify-content:center;color:#0a0612;font-weight:800;font-size:12px";
@@ -50,6 +62,7 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
           .setLngLat([geo.long, geo.lat])
           .setPopup(new w.mapboxgl.Popup({ offset: 25 }).setText(`${cityKey}: ${count} creative${count === 1 ? "" : "s"}`))
           .addTo(map);
+        allCoords.push([geo.long, geo.lat]);
       }
       // Studio locations (Torreé batch Part B item 5): plot every FD Photo
       // Studio building AND every other advertised studio (studios.ts's
@@ -75,7 +88,20 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
               `<strong>${profile.name} — ${building.label}</strong><br/>${building.address || ""}<br/>${building.studios.length} stage${building.studios.length === 1 ? "" : "s"} · from ${building.studios.reduce((min, s) => (parseFloat(s.price.replace(/[^0-9.]/g, "")) < parseFloat(min.replace(/[^0-9.]/g, "")) ? s.price : min), building.studios[0]?.price || "")}<br/><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(building.address || `${profile.name} ${building.label}`)}" target="_blank" rel="noopener noreferrer" style="color:#FFD700;font-weight:700;text-decoration:underline">Open in Maps</a>`
             ))
             .addTo(map);
+          allCoords.push([building.geo.long, building.geo.lat]);
         }
+      }
+      // Fit to the real cluster of markers just placed instead of a fixed
+      // zoom. A single marker (or a viewer-location center with no markers
+      // nearby) would make fitBounds zoom in absurdly close, so cap it with
+      // maxZoom; an empty result set (no cities matched, no studios) just
+      // keeps the constructor's initial center/zoom from above.
+      if (allCoords.length > 0) {
+        const bounds = allCoords.reduce(
+          (b, c) => b.extend(c),
+          new w.mapboxgl.LngLatBounds(allCoords[0], allCoords[0])
+        );
+        map.fitBounds(bounds, { padding: 64, maxZoom: myGeo ? 11 : 10, duration: 0 });
       }
       } catch (err) { setLoadError(true); console.error("Map failed to initialize", err); }
     };
@@ -113,7 +139,7 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#0a0612" }}>
-      <div style={{ position: "absolute", top: 18, left: 16, right: 16, zIndex: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ position: "absolute", top: 30, left: 16, right: 16, zIndex: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button onClick={onClose} style={{ background: "rgba(10,6,18,0.85)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "10px 16px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", backdropFilter: "blur(8px)" }}>← Back to cards</button>
         <div style={{ color: "#fff", fontSize: 14, fontWeight: 700, textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>Studios</div>
       </div>

@@ -123,6 +123,22 @@ export async function GET(req: NextRequest) {
       const cosineNorm = Math.round(cosineRaw * 100);
       const combined = Math.round(rules * 0.6 + cosineNorm * 0.4);
 
+      // Respect each candidate's own per-field visibility preferences (Settings
+      // > Privacy & Safety) — zodiac/MBTI/life-path/Chinese-zodiac are free
+      // toggles. When off, redact the raw value here (not just a client-side
+      // flag) so a candidate who hid a field never has it leak to another
+      // user's client at all.
+      const showZodiac = c.preferences?.showZodiac !== false;
+      const showMbti = c.preferences?.showMbti !== false;
+      const showLifePath = c.preferences?.showLifePath !== false;
+      const showChinese = c.preferences?.showChinese !== false;
+      // Premium-gated fields: match-% visibility (see UpsellModal-gated
+      // toggle in SettingsScreen). Only meaningful for paid tiers; a
+      // free-tier candidate's preference here is ignored server-side too,
+      // matching the client's own gating.
+      const candidateIsPaid = c.tier === "muse_pro" || c.tier === "pro" || c.tier === "muse_studio";
+      const showMatchPercent = !(candidateIsPaid && c.preferences?.showMatchPercent === false);
+
       return {
         ...c,
         embedding: undefined,
@@ -131,6 +147,11 @@ export async function GET(req: NextRequest) {
         // the client needs to decide whether to render a distance figure.
         preferences: undefined,
         showDistance: c.preferences?.showDistance !== false,
+        zodiac: showZodiac ? c.zodiac : "",
+        mbti: showMbti ? c.mbti : "",
+        life_path: showLifePath ? c.life_path : "",
+        chinese: showChinese ? c.chinese : "",
+        showMatchPercent,
         // Duality P2 — which side of the marketplace this candidate is on,
         // so the client can orient discovery (industry = hiring, creative =
         // for-hire/collab) without exposing the raw type taxonomy.

@@ -413,6 +413,14 @@ textarea.inp{resize:none}
 .auth-social-btn{width:100%;padding:14px;border-radius:14px;background:var(--glass);border:1.5px solid rgba(255,255,255,0.08);font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;justify-content:center;gap:10px;transition:all .3s}
 .auth-social-btn:hover{border-color:rgba(255,215,0,0.2);background:rgba(255,255,255,0.08)}
 .discover-wrap{flex:1;display:flex;flex-direction:column;height:100%;overflow:hidden;position:relative}
+/* Audit fix: Discover header's title/spacer collapse smoothly (instead of
+   an abrupt conditional mount/unmount) whenever search is open, so the
+   search row can expand to the full header width and the title fades/
+   slides back in the same way on close. */
+.discover-hdr-title{display:flex;align-items:center;flex:1;min-width:0;overflow:hidden;opacity:1;max-width:240px;transition:opacity .26s ease,max-width .26s cubic-bezier(.4,0,.2,1),margin .26s ease}
+.discover-hdr-title.collapsed{opacity:0;max-width:0;margin:0;pointer-events:none}
+.discover-hdr-actions{transition:flex .26s ease}
+.discover-hdr-actions.search-open{flex:1;min-width:0}
 /* Round 17 originally scoped this fix to .discover-wrap alone, reasoning
    that Discover was the only screen confirmed overlapping via visual
    sweep. A follow-up live sweep (round 18) found the same
@@ -434,21 +442,21 @@ textarea.inp{resize:none}
    margin only asks the flex:1 content sibling above it to stop 88px
    earlier, opening a gap that the floating banner occupies without
    touching nav OR the content. Verified live (browser-injected, before
-   committing) on Discover/chips, Muses/Chat input+send, and Feed. */
-.phone.has-verify-banner .screen-el.active .nav{margin-top:88px}
+   committing) on Discover/chips, Muses/Chat input+send, and Feed.
+   Superseded below: the banner is now a pure absolutely-positioned
+   overlay (position:absolute, attached to the top edge of .nav via
+   --nav-h) that never reserves layout space, so no sibling ever needs
+   to shrink or shift for it — it slides in/out purely via transform. */
 /* M11: verify-now banner is attached to the top of the bottom nav bar
-   (it's already positioned at bottom: calc(72px + safe-area), flush with
-   the nav's top edge — see the inline style in page.tsx). It slides up
-   from behind the nav on show and back down behind it on dismiss, instead
-   of popping in/out instantly. The slide distance is 88px (not 100%) to
-   match the exact nav+gap offset used above by .has-verify-banner — that
-   way the banner visibly emerges from behind the nav bar's top edge
-   rather than jumping in from an arbitrary distance tied to its own
-   (variable, text-dependent) height. */
-.verify-banner{animation:verifyBannerIn .32s cubic-bezier(.22,1,.36,1)}
+   (bottom: var(--nav-h), flush with the nav's top edge — see the inline
+   style in page.tsx). It's an overlay, not part of flow: it never pushes
+   or reserves space for any sibling content, it just slides up over the
+   nav's top edge on show and back down behind it on dismiss via
+   transform, so no other screen content ever shifts. */
+.verify-banner{position:absolute;animation:verifyBannerIn .32s cubic-bezier(.22,1,.36,1) forwards;transition:transform .32s cubic-bezier(.22,1,.36,1)}
 .verify-banner-closing{animation:verifyBannerOut .32s cubic-bezier(.4,0,1,1) forwards}
-@keyframes verifyBannerIn{from{transform:translateY(88px);opacity:0}to{transform:translateY(0);opacity:0.85}}
-@keyframes verifyBannerOut{from{transform:translateY(0);opacity:0.85}to{transform:translateY(88px);opacity:0}}
+@keyframes verifyBannerIn{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:0.85}}
+@keyframes verifyBannerOut{from{transform:translateY(0);opacity:0.85}to{transform:translateY(100%);opacity:0}}
 .card-stack{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0;padding:0}
 .swipe-card:active{cursor:grabbing}
 .swipe-card img{width:100%;height:100%;object-fit:cover;object-position:center;background:var(--bg)}
@@ -827,7 +835,8 @@ img{background-color:var(--card-bg)}
 @keyframes matchIn{from{opacity:0;transform:scale(1.3)}to{opacity:1;transform:scale(1)}}
 @keyframes matchPulse{0%,100%{opacity:0;transform:scale(0.8)}50%{opacity:1;transform:scale(1.15)}}
 .match-title{font-size:48px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(120deg,var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:300% 300%;animation:matchPulse 1.5s ease-in-out infinite,lavaFlow 6s ease-in-out infinite;margin-bottom:10px}
-.match-subtitle{font-size:16px;color:var(--text2);margin-bottom:32px;text-align:center;line-height:1.6}
+.match-subtitle{font-size:16px;color:var(--text2);margin-bottom:8px;text-align:center;line-height:1.6}
+.match-disclaimer{font-size:12px;color:var(--muted);margin-bottom:32px;text-align:center;line-height:1.5;max-width:280px}
 .match-avatars{display:flex;margin-bottom:36px}
 .match-av{width:80px;height:80px;border-radius:50%;border:3px solid var(--gold);object-fit:cover;animation:matchBounce .7s cubic-bezier(.4,0,.2,1);box-shadow:0 2px 8px rgba(255,215,0,0.12)}
 .match-av:nth-child(2){margin-left:-20px;border-color:var(--amber);animation-delay:.2s}
@@ -1181,7 +1190,7 @@ img{background-color:var(--card-bg)}
 .card-hero-loc{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;font-size:13.5px;font-weight:800;color:#D4A5FF;text-shadow:0 1px 6px rgba(212,165,255,0.3),0 2px 12px rgba(0,0,0,0.5);opacity:0.7}
 .card-hero-loc span{white-space:nowrap}
 .card-hero-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;padding-right:76px}
-.card-hero-badge{align-self:flex-start;padding:3px 9px;border-radius:99px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
+.card-hero-badge{display:inline-flex;align-items:center;width:fit-content;align-self:flex-start;padding:3px 9px;border-radius:99px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
 /* M6: match% badge moved to top-left of the card, overlaid on the hero photo
    instead of stacked with the other badges at the bottom. */
 .card-match-topleft{position:absolute;top:12px;left:12px;z-index:4;padding:4px 10px;border-radius:99px;font-size:11px;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.5);backdrop-filter:blur(6px)}
@@ -1932,7 +1941,17 @@ img{background-color:var(--card-bg)}
 .card-photo-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.4);box-shadow:0 0 4px rgba(0,0,0,0.5);transition:all .25s}
 .card-photo-dot.active{width:20px;border-radius:4px;background:linear-gradient(120deg,var(--gold),var(--pink),var(--lavender),var(--gold));background-size:300% 300%;animation:dotLava 3s ease-in-out infinite}
 @keyframes dotLava{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-.card-photo-zone{position:absolute;top:0;height:62vh;width:35%;z-index:5;transition:opacity .3s ease}
+/* Audit fix: these tap-to-advance-photo zones used to be 35% wide each
+   (70% of the card's width combined) and sat at z-index:5, above
+   .card-info-scroll (z-index:2) — so a vertical swipe-up-to-see-more-info
+   gesture only actually reached the scrollable info panel in the narrow
+   ~30% middle strip of the photo. Narrowed to 16% each so a mostly-vertical
+   swipe almost anywhere on the card (including most of the photo) scrolls
+   the info panel, while a slim edge strip is still reserved for tapping to
+   the previous/next photo. The horizontal like/pass swipe itself is handled
+   card-wide by the pointer handlers on .swipe-card (see page.tsx
+   onPointerMove's axis lock), not by these zones, so it's unaffected. */
+.card-photo-zone{position:absolute;top:0;height:62vh;width:16%;z-index:5;transition:opacity .3s ease}
 .card-photo-zone.hidden{opacity:0;pointer-events:none}
 .card-photo-zone-left{left:0}
 .card-photo-zone-right{right:0}
@@ -2018,7 +2037,16 @@ img{background-color:var(--card-bg)}
 .match-radial-btn:active{transform:scale(0.85)!important;animation:none!important}
 .match-radial-btn.btn-super{background:linear-gradient(135deg,#533483,#e94560)}
 .match-radial-btn.btn-like{background:linear-gradient(135deg,#e94560,#ffa07a)}
-.match-radial-btn.btn-nope{background:rgba(10,6,18,0.85)}
+/* Audit fix: .btn-nope was hardcoded to the same near-black as the generic
+   .match-radial-btn base (rgba(10,6,18,0.85)) here, and .btn-rewind had no
+   entry in this block at all — so it fell through to that same base
+   rgba(10,6,18,0.85) too (this block's selectors share .match-radial-btn's
+   specificity but come later in the file, so an un-listed button just
+   inherits the plain dark background). Both are now their own gradient, on
+   par with super/like/note, using existing palette hues (coral/sunset for
+   pass, lavender for rewind) so no button in the group renders black. */
+.match-radial-btn.btn-nope{background:linear-gradient(135deg,#ff6b6b,#ff8a80)}
+.match-radial-btn.btn-rewind{background:linear-gradient(135deg,#8a5eff,#d4a5ff)}
 .match-radial-btn.btn-note{background:linear-gradient(135deg,var(--card-bg),#533483)}
 
 /* Screen transitions */
