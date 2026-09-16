@@ -27,10 +27,20 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `fee7f51`
+## Confirmed merged, last verified at: `cbd6cb0`
 
-Everything at or before this commit is real, live, deployed code. No action
-needed on any of it.
+Everything at or before this commit is real, live, deployed code — this
+includes round 37 (sessions/search/scrolltop/matchpct/customrole) and
+round 38 (6 dark/6 light themes, splash wave fix), both confirmed merged by
+wyzmind. No action needed on either.
+
+**⚠️ Outstanding non-git action from round 37**: `sql/MUSE_CUSTOM_ROLE_PENDING_20260916.sql`
+still needs to be run in the Supabase SQL editor (adds `custom_type_pending`/
+`custom_style_pending` columns to `muse_profiles`) — this can't be verified
+via `git log` since it's a database change, not a commit. If unsure whether
+it's been run, check directly: `SELECT column_name FROM information_schema.columns
+WHERE table_name='muse_profiles' AND column_name IN ('custom_type_pending','custom_style_pending')`.
+Until it runs, saving a custom "Other" type/style will fail.
 
 ## Pending delivery — NOT in the codebase yet
 
@@ -45,37 +55,16 @@ It needs the bundle file moved to this path, or a fresh copy re-delivered.**
 
 | Bundle file (expected path: `V:\Muse\_to_delete\<filename>`) | Built on top of | Contains |
 |---|---|---|
-| `round37-sessions-search-scrolltop-matchpct-customrole.bundle` | `fee7f51` | Sessions button transparency, search-focus opacity, sessions tab color match, scroll-to-top nav, comprehensive match% badges, custom "Other" role/style + moderation queue |
-| `round38-themes-wave-distinctness.bundle` | `fee7f51` (carries round 37's commits too — merging this one covers both) | 2 more dark themes (Cinder, Boreal) + 2 more light themes (Meadow, Frost), splash wave visual-distinctness fix |
+| `round39-scrollfade-availability-boost-forumpin.bundle` | `cbd6cb0` | Horizontal-scroll edge fade (all themes), Muses "Interested" tab icon drop, real host-availability-probe bug fix, real boost-purchase-never-granted bug fix, forum post pin wiring. See `HANDOVER.md`'s round 39 entry for the full wiring-audit findings and the page.tsx/repo cleanliness assessment. |
 
-**Update 2026-09-16 22:12 UTC: both bundle files are confirmed physically
-present at `V:\Muse\_to_delete\round37-...bundle` and `V:\Muse\_to_delete\
-round38-...bundle`** — written directly via the device bridge once Torreé
-reopened the Claude desktop app (earlier attempts failed with "device not
-connected" because the app wasn't running; that was the actual root cause
-of wyzmind's confusion, not missing/lost work). `round38-...bundle` was
-rebuilt once more after that and re-placed, so it now also carries this
-file's own delivery-confirmation commit plus the `AGENTS.md` identity-pin
-commit — **`round38-...bundle` is the one to merge; it supersedes
-`round37-...bundle` entirely (same base, plus everything round 37 had,
-plus more) so the round-37 file can be ignored/deleted.** They still need
-to be merged — presence in `_to_delete\` is not the same as being in the
-commit history. Run the merge command below, then update the "Confirmed
-merged" SHA at the top of this file and delete both rows in the same
-commit as the merge.
-
-**To merge once the files are actually present:**
+**To merge once the file is actually present:**
 ```
-git fetch V:\Muse\_to_delete\round38-themes-wave-distinctness.bundle muse-fix-delivery:bundle/round38
-git merge bundle/round38
+git fetch V:\Muse\_to_delete\round39-scrollfade-availability-boost-forumpin.bundle muse-fix-delivery:bundle/round39
+git merge bundle/round39
 npx tsc --noEmit && npx vitest run && npx next build
 ```
-(349/349 tests expected, clean build expected.)
-
-**After merging:** run `sql/MUSE_CUSTOM_ROLE_PENDING_20260916.sql` in the
-Supabase SQL editor (round 37's custom-role feature needs it) — then update
-the "Confirmed merged" SHA above and delete the row(s) you just merged from
-the pending table, in the same commit as your merge.
+(349/349 tests expected, clean build expected.) Then update the "Confirmed
+merged" SHA above and delete this row, in the same commit as your merge.
 
 ## Known open issues (not blocked on delivery, just unsolved)
 

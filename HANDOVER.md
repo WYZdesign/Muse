@@ -7,6 +7,55 @@ but a round being described below does NOT mean it's live. Verify with
 `git log --oneline -1 origin/main` against `DELIVERY_STATUS.md`'s "Confirmed
 merged" line before trusting anything here.
 
+## 🆕 FOR WYZMIND — round 39 ready to merge: scroll-fade, availability probe fix, boost-purchase-grant fix, forum pin, wiring audit + page.tsx/repo cleanliness assessment (2026-09-16)
+
+**Status check first:** confirmed merged — you already merged round 37/38 (`origin/main` is at `cbd6cb0`, matching this session's own docs commit). This round builds directly on top, clean linear history, no conflicts.
+
+**What's in round 39** (bundle: `round39-scrollfade-availability-boost-forumpin.bundle` in `V:\Muse\_to_delete\`):
+
+1. Every horizontal-scroll row app-wide now fades its edges instead of hard-stopping (CSS mask, all themes) — fixes the Feed filter-row shadow bar Torreé specifically flagged, applied uniformly everywhere per her explicit "every single horizontal scroll bar" ask.
+2. Dropped the ✦ icon from the Muses "Interested" tab label.
+3. **Real bug fixed**: the session-booking "host availability" probe ignored its own `sessionId` param and queried the wrong user's bookings — fixed to look up the actual session host, and the frontend now shows a heads-up toast instead of discarding the result into a console.log.
+4. **Real revenue bug fixed**: buying a Boost never granted it — `boost-purchase-complete` (which is what actually grants credits post-webhook) was never called after the Stripe redirect returned. Fixed end to end (`lib/api.ts` → `SubscriptionScreen.tsx` → `page.tsx`'s existing `?payment=`-style query-param handler, now also handling `?boost=`).
+5. Wired `forumPostPin` (built server-side, zero callers) to a Pin/Unpin button on the post author's own view in `NetworkScreen.tsx`.
+6. **Portfolio/Albums independently live-tested against production** (not just code review) — create/list/delete all round-tripped correctly. No changes needed; it was already fully wired.
+
+**Found but deliberately NOT built this round** (needs new UI surface or new backend logic, not just wiring — see the commit message on `2bf21ef` for full detail on each):
+- No admin refund-review UI (backend `admin-refunds`/`admin-resolve-refund` fully built and registered, zero frontend caller).
+- No admin ban/mute list view or undo (`get-community-bans`/`get-community-mutes`/`unban-community-member`/`unmute-community-member` all registered, zero callers).
+- Community rules are read-only (`update-community-rules` registered, no edit UI).
+- Saved-search alerts never surface (`saved-search-alerts` computes real results, nothing calls it — needs a cron job or a client poll, a design decision, not a small fix).
+- `notify-claimable-quests` has no trigger, AND it's scoped to one authenticated profile at a time (`.eq("user_id", profile.id)`) — a cron sweep across all users would need new bulk-query logic, not just a new route calling the existing function.
+- `boost-analytics` is fully built and returns real data but has no UI panel showing it — an unfinished "how did your boost do" feature, not a bug.
+- `block-user`/`unblock-user` in `messaging.ts` appear to be dead duplicates of the actually-used `block`/`unblock` actions in `shared.ts` — flagged, not removed (didn't want to guess which is canonical without a deeper look at the `muse_blocks` schema).
+
+### page.tsx / repo cleanliness assessment (Torreé asked to "assess," not fix — no code changed for this section)
+
+**`page.tsx` is 4,032 lines** — the largest file in the app by a wide margin (next largest, `NetworkScreen.tsx`, is 1,756; `page.tsx` alone is ~17% of the entire `muse` app directory's ~24,300 lines). It's a single `function MusePage()` with 193 `useState`/`useEffect`/`useCallback`/`useMemo` calls. Concretely extractable pieces, none of which have been pulled out the way Discover/Sessions/etc already have their own screen components:
+- The entire onboarding flow (`obStep` 0 through 17) is ~450 lines inline (roughly line 2775-3226).
+- 15+ full modal implementations are inline in the same function rather than their own components: report, like-note, terms, privacy, guidelines, delete-confirm, discovery-prefs, edit-profile, share-profile, disclosure, age-verification, safety-checkin, prompt-bank, referral, and more.
+- The `SettingsScreen` invocation alone passes 60+ individually-named props — a textbook sign this component has no composition/context layer and everything is threaded through one giant parent.
+- **Recommendation**: a dedicated refactor round extracting the onboarding flow into its own component (it's already visually/functionally self-contained) and moving each standalone modal into `components/` the same way `MyAlbumsManager` or `PageTour` already are, would probably cut `page.tsx` by more than half without behavior changes. This is a big, risky-if-rushed change (props threading through dozens of call sites) — recommend a dedicated round with its own careful diff review, not bundled into a feature round.
+
+**Repo hygiene** — things committed to git that shouldn't be tracked at all:
+- 4 stray `.bundle` delivery-artifact files committed under `_to_delete/` (ironic, since those are meant to be transient handoff files, not repo history).
+- `build.log` and `build_output.txt` — raw build output text files.
+- `_audit_full.py` / `_verify_live.py` — one-off ad-hoc scripts at repo root.
+- `Muse_Boardroom_Audit.xlsx` at repo root.
+- 11 stray `screenshot_*.png` files at repo root, plus a `_screenshots/` dir (9 files) and a `test-screenshots/` dir (16 files) of what look like one-off manual QA captures — distinct from the legitimate app-asset PNGs under `public/`, `android/`, `ios/` (icons, splash screens — those are fine, don't touch).
+- **Recommendation**: none of this is used by the app at runtime — safe to `git rm` and add a `.gitignore` entry for `*.bundle`, `build.log`, `build_output.txt`, and one-off screenshot dirs so they don't creep back in. Low-risk cleanup, but flagging rather than doing it unasked since it touches a lot of file-listing/history surface area and Torreé should have the final say on what's actually disposable vs. something someone's relying on.
+
+**39 markdown handoff/audit docs at repo root** (`HANDOVER.md`, `HANDOVER_AUDIT.md`, `HANDOVER_V3_UX_AUDIT.md`, `CLAUDE_HANDOFF.md`, `CLAUDE_HANDOFF_V2.md`, and so on — full list via `ls *.md`), ~6,000 lines combined. This is the direct cause of the wyzmind-identity-confusion incident earlier this session: no single one of them reliably says what's actually merged. `DELIVERY_STATUS.md` (added this session) is meant to be the fix for that specific problem going forward, but the other docs' sprawl itself is a separate, larger cleanup question — worth a "which of these are still useful vs. superseded" pass at some point, but that's a content judgment call for Torreé, not something to auto-delete.
+
+**To merge:**
+```
+git fetch V:\Muse\_to_delete\round39-scrollfade-availability-boost-forumpin.bundle muse-fix-delivery:bundle/round39
+git merge bundle/round39
+```
+Verify same as always: `npx tsc --noEmit`, `npm test` (349/349 expected), `npm run build`.
+
+---
+
 ## Torree — INSTRUCTION FOR CLAUDE SESSIONS: Sweep ALL screens to the fullest extent. No stopping early. See end of file for full directive.
 
 ---
