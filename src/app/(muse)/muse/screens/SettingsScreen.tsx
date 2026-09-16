@@ -556,8 +556,8 @@ export const SettingsScreen = memo(function SettingsScreen({
             justifySelf: "center",
           }}>Settings</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-            <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: isMuseProfile ? "rgba(255,215,0,0.12)" : "rgba(138,43,226,0.12)", border: `1px solid ${isMuseProfile ? "rgba(255,215,0,0.25)" : "rgba(138,43,226,0.25)"}`, color: isMuseProfile ? "var(--gold)" : "#b388ff" }}>
-              {isMuseProfile ? <FiBriefcase size={9} style={{ marginRight: 3 }} /> : <FiZap size={9} style={{ marginRight: 3 }} />}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: isMuseProfile ? "rgba(255,215,0,0.12)" : "rgba(138,43,226,0.12)", border: `1px solid ${isMuseProfile ? "rgba(255,215,0,0.25)" : "rgba(138,43,226,0.25)"}`, color: isMuseProfile ? "var(--gold)" : "#b388ff" }}>
+              {isMuseProfile ? <FiBriefcase size={9} /> : <FiZap size={9} />}
               {roleBadgeText(userRole)}
             </span>
           </div>
