@@ -467,9 +467,17 @@ export default function MuseLandingPage() {
                 <button type="submit" disabled={heroSubmitting}>{heroSubmitting ? <span className="muse-spinner" style={{ borderTopColor: "#0a0612", borderColor: "rgba(10,6,18,0.25)" }} /> : "Join"}</button>
               </form>
               {heroError && <div style={{ color: "#ff8a80", fontSize: 13, marginTop: 8 }} role="alert">{heroError}</div>}
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>By joining you agree to our <a href="/muse/terms" style={{ color: "#ffd700", textDecoration: "none" }}>Terms</a> &amp; <a href="/muse/privacy" style={{ color: "#ffd700", textDecoration: "none" }}>Privacy</a></div>
             </>
           ) : (
-            <div className="muse-hero-email-done" data-depth="-0.3">✓ You're on the list, we'll notify you at launch</div>
+            <div className="muse-hero-email-done" data-depth="-0.3" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 14, fontWeight: 600 }}>✓ You're on the list — we'll email you when it's your turn.</span>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Founding members get lifetime Pro free.</span>
+              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                <button onClick={() => { navigator.clipboard?.writeText("https://wyzdesign.com/muse/landing"); }} style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", cursor: "pointer" }}>Copy Link</button>
+                <a href="https://twitter.com/intent/tweet?text=Just%20joined%20the%20Muse%20waitlist%20✦%20Creative%20professional%20network%20for%20photographers%2C%20models%2C%20and%20filmmakers&url=https%3A%2F%2Fwyzdesign.com%2Fmuse%2Flanding" target="_blank" rel="noopener" style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", textDecoration: "none" }}>Share on X</a>
+              </div>
+            </div>
           )}
         </div>
         <div className="muse-hero-scroll">
@@ -638,7 +646,7 @@ export default function MuseLandingPage() {
                   </div>
                   <div className="muse-form-group">
                     <label htmlFor="phone">Phone (optional)</label>
-                    <input id="phone" type="tel" placeholder="+1 (555) 000-0000" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))} />
+                    <input id="phone" type="tel" placeholder="+1 (555) 000-0000" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value.replace(/[^0-9+\-\s()]/g, "").slice(0, 20) }))} />
                   </div>
                 </div>
                 <button type="submit" className="muse-btn primary" style={{ width: "100%", justifyContent: "center" }} disabled={submitting}>{submitting ? (<><span className="muse-spinner" /> Joining...</>) : (<>Claim My Spot <FiArrowRight size={16} /></>)}</button>
