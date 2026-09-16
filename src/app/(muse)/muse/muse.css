@@ -2520,18 +2520,32 @@ img{background-color:var(--card-bg)}
    The three layers use mismatched, low-frequency bezier curves so they read as
    real, uneven tides rather than a repeating synthwave pattern.
    ══════════════════════════════════════════════════════════════════════════ */
-.wave-bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100vw);height:22%;z-index:90;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s ease}
+.wave-bottom{position:fixed;bottom:0;left:0;transform:none;width:100vw;height:22%;z-index:90;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s ease}
 .wave-bottom.show{opacity:1}
-/* Audit fix: on desktop the app renders as a centered ~430px phone card
-   with ambient background on either side (see .phone-wrap's desktop media
-   query above) — the waves were still clamped to that same 430px strip,
-   so on a wide screen they sat in a narrow column instead of reading as a
-   full-width background element behind the card. min(430px,100vw) is kept
-   below 768px (the same breakpoint the phone card itself uses to go full
-   width/fixed on mobile) so phones are unaffected. (De-duped 2026-09-16 —
-   this used to be defined twice after a merge with an independently
-   reimplemented version of the same fix; one full-width rule is enough.) */
-@media(min-width:768px){.wave-bottom{width:100vw;left:0;transform:none}}
+/* Audit fix (2026-09-16, round 40): this rule used to be inverted relative
+   to .phone's actual responsive behavior, which is why the wave looked
+   "cropped on the sides, not stretched" for anyone under the 768px
+   breakpoint — i.e. most phones and any desktop window narrower than
+   768px.
+   The 2026-09-15 "Standalone-PWA viewport fix" (see .phone,
+   @media(max-width:767px) above) changed .phone to go position:fixed,
+   width:100vw below 768px — full-bleed, edge to edge, like a native app.
+   Above 768px .phone reverts to its base rule: width:100%;max-width:430px;
+   margin:0 auto — a narrow mockup card centered in ambient background
+   (.phone-wrap goes width:100vw at that breakpoint to make room for that
+   ambient area).
+   The previous version of this rule had the exact opposite assumption
+   (narrow below 768px via min(430px,100vw), full-bleed above it via a
+   min-width:768px media query) — a leftover from before the PWA viewport
+   fix shipped, never updated to match. So below 768px the wave stayed
+   clamped to a centered 430px strip while .phone had already gone full
+   width around it, and above 768px the wave went full-bleed while .phone
+   had gone back to being the narrow centered card — wrong on both sides
+   of the breakpoint.
+   Base rule now matches .phone's <768px full-bleed behavior (100vw,
+   left:0, no transform). The >=768px override below re-narrows it to
+   match .phone's centered 430px card at that breakpoint instead. */
+@media(min-width:768px){.wave-bottom{width:min(430px,100vw);left:50%;transform:translateX(-50%)}}
 .wave-bottom svg{position:absolute;bottom:0;left:0;width:240%;height:100%;animation:waveDrift 14s ease-in-out infinite}
 .wave-bottom svg:nth-child(2){animation-duration:20s;animation-delay:-6s;opacity:.7}
 .wave-bottom svg:nth-child(3){animation-duration:28s;animation-delay:-13s;opacity:.5}
