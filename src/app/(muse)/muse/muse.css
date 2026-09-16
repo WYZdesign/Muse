@@ -228,14 +228,9 @@ a{color:inherit;text-decoration:none}
    edge-to-edge, that 24px read as dead space pushing the whole app down.
    Base rule is now edge-to-edge (margin:0, full height); the desktop-only
    media query below restores the 24px floating-card margin + glow. */
-/* --nav-h: single source of truth for the bottom nav's real rendered height,
-   read by the verify-banner's inline `bottom` offset (page.tsx) so it always
-   sits flush against the nav's top edge with zero gap. Previously the banner
-   hardcoded `bottom: calc(72px + safe-area)` — this constant, not this
-   variable — which only matched nav's height on the non-mobile/desktop
-   layout; the mobile media query below sets nav's real height to 64px, so on
-   every phone the banner floated with a visible ~8px gap above the nav
-   instead of touching it. */
+   /* --nav-h: single source of truth for the bottom nav's real rendered height,
+      read by the verify-banner's inline `bottom` offset (page.tsx) so it always
+      sits flush against the nav's top edge with zero gap. */
 .phone{--nav-h:calc(72px + env(safe-area-inset-bottom,0px));width:100%;max-width:430px;height:100dvh;margin:0 auto;border-radius:48px;border:2.5px solid rgba(255,255,255,0.08);overflow:hidden;position:relative;z-index:10;background:rgba(10,6,18,calc(0.35 * var(--scene-opacity, 1)));backdrop-filter:blur(calc(30px * var(--scene-opacity, 1)));box-shadow:0 0 100px rgba(255,215,0,0.08),0 0 200px rgba(255,181,194,0.04),inset 0 0 80px rgba(255,255,255,0.015),0 25px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column}
 .notch{display:none!important}
 .notch::after{content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);width:60px;height:6px;border-radius:3px;background:rgba(255,255,255,0.08)}
@@ -1751,9 +1746,9 @@ img{background-color:var(--card-bg)}
    dark-mode hues, so every light theme's stars pick up its palette. */
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star-field{opacity:1!important}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star{opacity:0.85!important;background:#fff!important;box-shadow:0 0 3px rgba(20,15,10,0.28),0 0 7px rgba(255,255,255,0.85)!important}
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star.bright{opacity:1!important;background:#fff!important;box-shadow:0 0 4px rgba(20,15,10,0.32),0 0 10px rgba(255,255,255,0.95)!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star.bright{opacity:1!important;box-shadow:0 0 4px rgba(20,15,10,0.32),0 0 10px rgba(255,255,255,0.95)!important}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star.warm,:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star.gold{background:var(--gold)!important;box-shadow:0 0 4px rgba(20,15,10,0.3),0 0 10px var(--gold)!important}
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star.blue{background:#fff!important;box-shadow:0 0 4px rgba(20,15,10,0.3),0 0 8px rgba(255,255,255,0.9)!important}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"]) .star.blue{background:var(--lavender)!important;box-shadow:0 0 4px rgba(20,15,10,0.3),0 0 10px var(--lavender)!important}
 /* Scene orbs: screen blend mode washes out on light — tone down, but keep
    them clearly visible rather than nearly-gone (was 0.12).
    Blur stays scaled by --scene-opacity (matches the dark-mode base rule)
