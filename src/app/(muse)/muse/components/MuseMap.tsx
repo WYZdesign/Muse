@@ -101,6 +101,19 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
           (b, c) => b.extend(c),
           new w.mapboxgl.LngLatBounds(allCoords[0], allCoords[0])
         );
+        // Live-verified bug (2026-09-16): this map mounts inside a freshly
+        // rendered position:fixed overlay, so on the very first render frame
+        // the container can still report a stale/zero size to mapbox-gl's
+        // constructor even though the DOM element itself is already the
+        // right dimensions — mapbox computes its internal transform from
+        // whatever size it read at construction, not from the CSS box, so
+        // fitBounds below was projecting against that stale transform and
+        // every marker rendered 300-450px below the visible canvas (all 19
+        // markers verified present in the DOM via .mapboxgl-marker, zero of
+        // them within the viewport's bounding rect). map.resize() forces
+        // mapbox to re-read the container's real current size immediately
+        // before fitBounds runs, so the projection matches what's on screen.
+        map.resize();
         map.fitBounds(bounds, { padding: 64, maxZoom: myGeo ? 11 : 10, duration: 0 });
       }
       } catch (err) { setLoadError(true); console.error("Map failed to initialize", err); }
