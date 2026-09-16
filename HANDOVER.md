@@ -2,7 +2,36 @@
 
 ---
 
-## 🆕 FOR WYZMIND — round 37 ready to merge: sessions polish, search opacity, sessions tab color, scroll-to-top, comprehensive match%, custom role/style + moderation (2026-09-16)
+## 🆕 FOR WYZMIND — round 38 ready to merge: 2 more dark + 2 more light themes, splash wave distinctness fix (2026-09-16)
+
+**Status check first:** no drift — `origin/main` is still at `fee7f51` (same tip round 37 was built on). This round is built directly on top of round 37's commits, so merge round 37 first if you haven't yet, then this one on top (or just merge this bundle — it carries round 37's commits too).
+
+**What's in round 38** (bundle: `round38-themes-wave-distinctness.bundle` in `V:\Muse\_to_delete\`):
+
+Theme count is now 6 dark / 6 light, all in genuinely distinct hue families (checked against every existing theme's `.scene` gradient before picking):
+- **Cinder** (dark) — warm ember/crimson fire, near-black ember-red scene.
+- **Boreal** (dark) — icy emerald aurora, near-black green scene.
+- **Meadow** (light) — fresh spring green, dark forest-green text on pale mint-cream — the first green-hued light theme.
+- **Frost** (light) — cool lavender-frost, deep violet-charcoal text on pale lavender-white, held uniformly in the violet family (unlike daylight/sky/rose's peach/blue/mauve transitions).
+
+Implementation note for whoever touches `muse.css` next: the 4 light themes (sunrise/daylight/sky/rose) share one giant `:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"])` selector group that appears **204 times** in the file and carries most of what makes a light theme actually look right (cards, modals, inputs, nav, chips, etc — token overrides alone aren't enough). Adding Meadow/Frost required a verified global replace of all 204 occurrences to append the 2 new theme names to that group — confirmed 204 before and 204 after. If a 7th light theme ever gets added, this same step is required or it'll look half-broken (tokens fine, but cards/inputs rendering with dark-theme styling on a light background).
+
+Also updated (required, not optional): `page.tsx`'s `theme` state TypeScript union and the saved-theme-preference validation allowlist both hardcode all theme names — without updating both, `tsc` fails on the new `setTheme` calls and any saved `cinder`/`boreal`/`meadow`/`frost` preference from the server gets silently rejected back to `lasunset` on load.
+
+**Splash wave fix** (Torreé's "stacked pringles chips" complaint, separate ask same round): the three wave SVG layers behind the background scene previously shared a near-identical baseline band, wavelength and amplitude — decreasing opacity on three near-copies of the same curve read as one wave traced three times instead of three distinct depths. Redrew all three paths in `page.tsx` (~line 2552) with genuinely different baseline bands / crest frequency / amplitude per layer: layer 1 is a few big slow swells sitting high, layer 2 is mid-frequency chop lower and further back, layer 3 is small tight ripples hugging the bottom. Also de-duped a redundant `.wave-bottom` desktop media query that was left over from merging your independent round-36 reimplementation with mine (harmless — both said the same thing — but cluttered).
+
+**Independently re-verified:** reviewed the actual diff (token lines, swatch/scene gradients, the 204-occurrence global replace, a sample of the new per-theme override blocks), then ran `npx tsc --noEmit` (clean), `npx vitest run` (349/349), `rm -rf .next && npx next build` (clean) myself — this was built by a subagent and re-verified independently before bundling, same discipline as every prior round.
+
+**To merge:**
+```
+git fetch V:\Muse\_to_delete\round38-themes-wave-distinctness.bundle muse-fix-delivery:bundle/round38
+git merge bundle/round38
+```
+Verify same as always: `npx tsc --noEmit`, `npm test` (349/349 expected), `npm run build`.
+
+---
+
+## FOR WYZMIND — round 37 ready to merge: sessions polish, search opacity, sessions tab color, scroll-to-top, comprehensive match%, custom role/style + moderation (2026-09-16)
 
 **IMPORTANT — status check first, this affects how you merge:** round 36 was NOT applied from my bundle. You (or another session) independently reimplemented the same two asks directly on `origin/main` as commit `fee7f51` ("fix: desktop waves full-width + map debug overlay"), rather than merging `round36-desktop-waves-map-debug.bundle`. Content is mostly equivalent, with one real bug in your reimplementation:
 
