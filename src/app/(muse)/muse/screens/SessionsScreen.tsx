@@ -366,6 +366,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                     modal underneath the tap. */}
                 <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0, cursor: "pointer" }} onClick={() => setDetailSession(s)} role="button" tabIndex={0} aria-label={`View details for ${s.name}`} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDetailSession(s); } }}>
                   {s.img && (
+                  {s.img && (
                     <Image src={s.img} alt={s.name} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
                   )}
                 </div>
@@ -482,7 +483,8 @@ export const SessionsScreen = memo(function SessionsScreen({
               const pp = paymentStatusPill(b.payment_status);
               return (
                 <div key={b.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
-                  <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0 }}>
+                <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0, cursor: "pointer" }} onClick={() => setDetailSession(s)} role="button" tabIndex={0} aria-label={`View details for ${s.name}`} onKeyDown={(e) => { if (e.key === "Enter" || " ") { e.preventDefault(); setDetailSession(s); } }}>
+                {s.img && (
                     {(host.avatar || sess.img) && (
                       <Image src={host.avatar || sess.img} alt={host.name || "Host"} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
                     )}
