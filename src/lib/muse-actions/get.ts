@@ -564,14 +564,10 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "profile-completion" && user) {
-      // Audit fix: this select included media_kit_url, which the breakdown
-      // below never actually reads — but a schema mismatch on that one
-      // column fails the WHOLE select. Same failure mode as media_kit_url:
-      // selecting a nonexistent column fails the whole query, `p` came back
-      // null, and every user showed "0%" regardless of their real profile.
-      // Dropped both unused columns (media_kit_url + photos — photos doesn't
-      // exist on muse_profiles in production). Real per-user photos live in
-      // the albums system (muse_albums/muse_album_photos).
+      // Audit fix: this select included media_kit_url + photos, both
+      // nonexistent on muse_profiles in production — selecting either fails
+      // the whole query, `p` comes back null, and every user shows "0%".
+      // Dropped both. Real per-user photos live in the albums system.
       const { data: p, error: pErr } = await sb.from("muse_profiles")
         .select("id, name, bio, styles, looking, avatar, type, age_verified, zodiac, chinese, mbti, life_path")
         .eq("id", profileId).maybeSingle();
