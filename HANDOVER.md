@@ -2,7 +2,40 @@
 
 ---
 
-## 🆕 FOR WYZMIND — round 36 ready to merge: desktop wave width + map debug overlay (2026-09-16)
+## 🆕 FOR WYZMIND — round 37 ready to merge: sessions polish, search opacity, sessions tab color, scroll-to-top, comprehensive match%, custom role/style + moderation (2026-09-16)
+
+**IMPORTANT — status check first, this affects how you merge:** round 36 was NOT applied from my bundle. You (or another session) independently reimplemented the same two asks directly on `origin/main` as commit `fee7f51` ("fix: desktop waves full-width + map debug overlay"), rather than merging `round36-desktop-waves-map-debug.bundle`. Content is mostly equivalent, with one real bug in your reimplementation:
+
+- **Your map debug overlay mislabels raw zoom as a percentage.** Your version shows `Zoom: {debugInfo.zoom.toFixed(2)}%` — that's the raw mapbox zoom level (0-22 scale) displayed with a `%` sign, not an actual percentage. E.g. at zoom level 10 it shows "Zoom: 10%", but 10 is 45% of the way up mapbox's 0-22 range — so the readout is off by roughly 2.2x and will mislead Torreé about where markers become visible. My round-36 version computed `Math.round((z/22)*100)` for the labeled `%` figure and showed the raw zoom level separately alongside it. **I've resolved this the way I'd want it merged**: this round's `MuseMap.tsx` keeps my original correct implementation (built in this round's commits, on top of your `fee7f51`) rather than your reimplementation — same `map.resize()`-before-`fitBounds()` fix is preserved either way, so no regression there, just the readout math. Take a look before merging in case you want to reconcile differently, but as delivered the corrected version is what's in this bundle.
+- The desktop full-width wave fix in `fee7f51` is functionally equivalent to mine (different CSS technique, same visual result) — no changes needed there, kept as-is.
+
+**What's in round 37** (bundle: `round37-sessions-search-scrolltop-matchpct-customrole.bundle` in `V:\Muse\_to_delete\`, built on top of your `fee7f51` tip):
+
+1. **Sessions card report (⋯) button** fill now mostly transparent (`rgba(20,15,25,0.15)`) instead of solid `var(--card-bg)`.
+2. **All active search-bar focus borders 50% less opaque.** New `.search-input` class added to every search `<input>` app-wide, with matching `:focus` rules added to the *live* `.screen-el[data-screen]` selector system. **Verified via live DOM inspection** that the legacy per-screen `.screen-discover.active` / `.screen-sessions.active` / `.screen-muses.active` (etc.) classes are confirmed dead — no element in the rendered app carries them anymore, only `.screen-el[data-screen="X"]`. I added `.search-input:focus` color variants to both systems for completeness/documentation, but only the `.screen-el[data-screen]` generic rule (and the sessions-specific override below) actually renders. Worth deleting that entire dead legacy block (~lines 2248-2310 in `muse.css`) in a future cleanup pass so it stops looking live to whoever edits it next.
+3. **Sessions filter tabs** (Browse/My Bookings/Requests) now match the "Sessions" title's terracotta gradient (`#E07A5F`) via a new `.screen-el[data-screen="sessions"] .conn-tab.active` override, instead of the screen's default lavender `--accent`.
+4. **Scroll-to-top on navigation.** Every screen change resets scroll position (both the outer `.screen-el.active` container and known inner scroll containers), except Settings and Profile which manage their own scroll state.
+5. **Match% badge now shows everywhere a profile card appears** — Discover cards (already had it, untouched), `PublicProfileScreen` hero, and `MatchCard` (both grid and list views, previously missing entirely). Root cause of "I don't see it anywhere": `/api/muse/match` is currently returning 0 live candidates for at least one test account (separate, still-open backend/data issue — not touched by this round, needs a Supabase-side look, not a client fix), so Discover falls back to the static demo `PROFILES` deck, which only has `.score` not `.matchScore`. Every badge now reads `matchScore ?? score` so it renders regardless of which source is active.
+6. **Custom "Other" creative type/aesthetic style.** Users can now type their own value when the preset chip list doesn't fit — available in onboarding, **Settings → Creative Profile** (the real day-to-day edit flow), and the `page.tsx` edit-profile modal. Saved immediately as a real `type`/`styles` value (works everywhere those columns are already read) and flagged `custom_type_pending` / `custom_style_pending` for admin review. New **"Custom Values" tab** in `/muse/admin/moderation` — mark-reviewed only, no reject/replace workflow (noted as a possible follow-up, not required for v1).
+   - **Needs a manual step:** run `sql/MUSE_CUSTOM_ROLE_PENDING_20260916.sql` in the Supabase SQL editor before this ships — it adds the two new `muse_profiles` boolean columns. Until that runs, saving a custom type/style will fail (the columns don't exist yet).
+
+**Independently re-verified before bundling** (not just Agent A's self-report): reviewed every file's actual diff, re-ran `npx tsc --noEmit` (clean), `npx vitest run` (349/349), `rm -rf .next && npx next build` (clean) myself, and confirmed the `.screen-el` vs legacy dead-CSS question via live DOM inspection rather than trusting the claim.
+
+**Still open, not addressed this round:**
+- `/api/muse/match?limit=50` returning 0 candidates for at least one live account — backend/data issue, needs Supabase-side investigation.
+- The dead legacy per-screen CSS block (`muse.css` ~2248-2310) — harmless but worth deleting to avoid confusing future edits.
+- Torreé's still-fully-pending ask: 2 more dark themes + 2 more light themes (6 total each) and a splash-page wave visual-distinctness fix — not started yet, will be a separate round.
+
+**To merge:**
+```
+git fetch V:\Muse\_to_delete\round37-sessions-search-scrolltop-matchpct-customrole.bundle muse-fix-delivery:bundle/round37
+git merge bundle/round37
+```
+Then run `sql/MUSE_CUSTOM_ROLE_PENDING_20260916.sql` in Supabase. Verify same as always: `npx tsc --noEmit`, `npm test` (349/349 expected), `npm run build`.
+
+---
+
+## FOR WYZMIND — round 36 (superseded — see round 37 above for what actually happened): desktop wave width + map debug overlay (2026-09-16)
 
 **Status check first:** round 35 (per-page tutorials + the map resize fix) is confirmed merged — `origin/main` at `19a8243` includes it (via `fb177bc`/`44910e4`). No action needed there.
 
