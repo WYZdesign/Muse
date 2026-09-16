@@ -4,10 +4,23 @@ import { useRef, useEffect, useState } from "react";
 import { CITY_GEO } from "./types";
 import { ALL_STUDIOS } from "./studios";
 
+// Mapbox zoom levels run roughly 0 (whole world) to 22 (building-level);
+// there's no native "percentage" concept, but a 0-22 -> 0-100% mapping
+// gives Torreé a quick, familiar readout for describing where on the map
+// a marker only becomes visible ("it shows up around 40% zoom").
+const MAX_ZOOM_LEVEL = 22;
+function zoomToPercent(z: number): number {
+  return Math.round((z / MAX_ZOOM_LEVEL) * 100);
+}
+
 export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filteredProfiles: any[], myGeo?: {lat:number,lng:number}, onClose: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const [loadError, setLoadError] = useState(false);
+  // Debug readout (Torreé's ask, 2026-09-16): a live zoom% + lat/lng overlay
+  // so she can pinpoint exactly where/at what zoom the off-screen studio
+  // markers actually become visible, instead of describing it verbally.
+  const [debugInfo, setDebugInfo] = useState<{ zoom: number; lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -24,6 +37,16 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
       map.addControl(new w.mapboxgl.NavigationControl({ showCompass: false, visualizePitch: false }), "bottom-right");
       map.addControl(new w.mapboxgl.AttributionControl({ compact: true }), "bottom-left");
       mapRef.current = map;
+      // Live zoom%/lat-lng readout — updates on every pan/zoom (move covers
+      // both drags and the NavigationControl's +/- buttons, zoom covers
+      // pinch/scroll specifically) so the overlay never goes stale mid-drag.
+      const updateDebugInfo = () => {
+        const c = map.getCenter();
+        setDebugInfo({ zoom: map.getZoom(), lat: c.lat, lng: c.lng });
+      };
+      map.on("move", updateDebugInfo);
+      map.on("zoom", updateDebugInfo);
+      updateDebugInfo();
       // Privacy: this used to drop one marker per profile with a popup naming
       // that person ("{name} · {type}") right on the map — effectively an
       // opt-out-free "here's exactly who's in this city" directory. Instead,
@@ -157,6 +180,20 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
         <div style={{ color: "#fff", fontSize: 14, fontWeight: 700, textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>Studios</div>
       </div>
       <div ref={containerRef} style={{ position: "absolute", inset: 0, touchAction: "none" }} />
+      {debugInfo && (
+        <div
+          style={{
+            position: "absolute", top: 78, left: 16, zIndex: 2,
+            background: "rgba(10,6,18,0.85)", border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: 10, padding: "6px 10px", backdropFilter: "blur(8px)",
+            color: "#fff", fontSize: 11, fontFamily: "monospace", lineHeight: 1.5,
+            pointerEvents: "none", whiteSpace: "nowrap",
+          }}
+        >
+          <div>Zoom {zoomToPercent(debugInfo.zoom)}% <span style={{ color: "rgba(255,255,255,0.5)" }}>(z{debugInfo.zoom.toFixed(2)} / {MAX_ZOOM_LEVEL})</span></div>
+          <div>{debugInfo.lat.toFixed(5)}, {debugInfo.lng.toFixed(5)}</div>
+        </div>
+      )}
       <div style={{ position: "absolute", bottom: 24, left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.55)", fontSize: 12, zIndex: 2, pointerEvents: "none" }}>Tap a marker to see creative studios nearby</div>
     </div>
   );

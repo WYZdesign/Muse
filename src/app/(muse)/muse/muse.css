@@ -2386,6 +2386,14 @@ img{background-color:var(--card-bg)}
    ══════════════════════════════════════════════════════════════════════════ */
 .wave-bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100vw);height:22%;z-index:90;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s ease}
 .wave-bottom.show{opacity:1}
+/* Audit fix: on desktop the app renders as a centered ~430px phone card
+   with ambient background on either side (see .phone-wrap's desktop media
+   query above) — the waves were still clamped to that same 430px strip,
+   so on a wide screen they sat in a narrow column instead of reading as a
+   full-width background element behind the card. min(430px,100vw) is kept
+   below 768px (the same breakpoint the phone card itself uses to go full
+   width/fixed on mobile) so phones are unaffected. */
+@media(min-width:768px){.wave-bottom{width:100vw;left:0;transform:none}}
 .wave-bottom svg{position:absolute;bottom:0;left:0;width:240%;height:100%;animation:waveDrift 14s ease-in-out infinite}
 .wave-bottom svg:nth-child(2){animation-duration:20s;animation-delay:-6s;opacity:.7}
 .wave-bottom svg:nth-child(3){animation-duration:28s;animation-delay:-13s;opacity:.5}
