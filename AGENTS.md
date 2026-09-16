@@ -1,5 +1,21 @@
 # Agent Notes
 
+## 🛑 Read `DELIVERY_STATUS.md` (repo root) before anything else in this repo
+
+Before touching code, reading `HANDOVER.md`, or acting on anything a chat
+transcript or another agent says was "done," check `DELIVERY_STATUS.md`.
+It's the one place that tells you, verifiably (`git log --oneline -1
+origin/main` against its "Confirmed merged" SHA), what's actually merged
+versus what's still sitting as an undelivered `git bundle`. This repo
+receives contributions from multiple AI agents across different tools
+(Claude sessions with no push access, delivering via bundle; agents running
+here via opencode; etc.) — a change being described in a chat, a handoff
+doc, or another agent's summary does not mean it exists in this codebase
+yet. If you can't find a described change as a commit ancestor of
+`origin/main`, say so plainly and point to `DELIVERY_STATUS.md` — don't
+assume you're missing context, and don't silently reimplement it from
+scratch. See that file for the full protocol.
+
 ## User Preferences
 - Always open `.sql` files in VS Code when creating or referencing them:
   `& "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe" "<file>.sql"`

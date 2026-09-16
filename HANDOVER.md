@@ -1,3 +1,12 @@
+## 🛑 STOP — read `DELIVERY_STATUS.md` (repo root) BEFORE this file or anything below.
+
+That file, not this one, is the source of truth for what's actually merged
+into `origin/main` versus what's sitting undelivered as a bundle. This file
+(`HANDOVER.md`) is a narrative log — it explains *why* changes were made,
+but a round being described below does NOT mean it's live. Verify with
+`git log --oneline -1 origin/main` against `DELIVERY_STATUS.md`'s "Confirmed
+merged" line before trusting anything here.
+
 ## Torree — INSTRUCTION FOR CLAUDE SESSIONS: Sweep ALL screens to the fullest extent. No stopping early. See end of file for full directive.
 
 ---
