@@ -248,14 +248,6 @@ export const CollabScreen = memo(function CollabScreen({
           }
           return ordered.map((brief, bi) => (
             <div key={brief.id} className="brief-card" style={{ position: "relative" }}>
-              {brief.cat !== "concept" && (
-                <button
-                  aria-label="Safety info"
-                  title="Safety info"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSafetyInfoBriefId(brief.id); }}
-                  style={{ position: "absolute", top: 14, left: 14, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                ><FiInfo size={13} /></button>
-              )}
               {!isOwnBrief(brief) && (
                 <button
                   aria-label="Not interested"
@@ -264,9 +256,18 @@ export const CollabScreen = memo(function CollabScreen({
                   style={{ position: "absolute", top: 14, left: 14, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >✕</button>
               )}
-              {/* Report flag (Torreé audit): sits in the very top-right corner of
-                  the card. The safety-info button moves just left of it. */}
-              {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ position: "absolute", top: 14, right: 14, zIndex: 3, width: 22, height: 22, color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={14} /></button>)}
+              {/* Report flag + safety info (top-right cluster) */}
+              <div style={{ position: "absolute", top: 14, right: 14, zIndex: 3, display: "flex", gap: 4, alignItems: "center" }}>
+                {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ width: 22, height: 22, color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={14} /></button>)}
+                {brief.cat !== "concept" && (
+                  <button
+                    aria-label="Safety info"
+                    title="Safety info"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSafetyInfoBriefId(brief.id); }}
+                    style={{ width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  ><FiInfo size={13} /></button>
+                )}
+              </div>
               <div className="brief-header" style={{ flexWrap: "wrap", gap: 6 }}>
                 <Image loading="lazy" src={brief.authorImg} alt={brief.author} width={86} height={86} className={"brief-avatar brief-variant-" + (bi % 5)} />
                 <div className="brief-info" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>

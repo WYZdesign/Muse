@@ -23,6 +23,7 @@ export function useDiscoverState() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [showMatchOverlay, setShowMatchOverlay] = useState<Match | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [matchAnimVariant, setMatchAnimVariant] = useState(0);
   const [swipeDir, setSwipeDir] = useState<"left" | "right" | null>(null);
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [boostActive, setBoostActive] = useState(false);
@@ -42,6 +43,7 @@ export function useDiscoverState() {
     currentIdx, setCurrentIdx,
     showMatchOverlay, setShowMatchOverlay,
     showConfetti, setShowConfetti,
+    matchAnimVariant, setMatchAnimVariant,
     swipeDir, setSwipeDir,
     expandedMatchId, setExpandedMatchId,
     boostActive, setBoostActive,

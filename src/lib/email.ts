@@ -14,10 +14,14 @@
  * in Resend (add SPF/DKIM DNS records), then send from info@wyzdesign.com.
  */
 
-import { getMuseUrl, getTermsUrl, getPrivacyUrl } from "@/lib/urls";
+import { getMuseUrl, getTermsUrl, getPrivacyUrl, getLandingUrl } from "@/lib/urls";
 
 const FROM = "Muse <info@wyzdesign.com>";
 const RESEND_URL = "https://api.resend.com/emails";
+
+function unsubscribeUrl(email: string): string {
+  return `${getMuseUrl()}/api/muse/unsubscribe?email=${encodeURIComponent(email)}`;
+}
 
 let warnedMissingKey = false;
 
@@ -51,6 +55,7 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
   }
 
   try {
+    const unsub = unsubscribeUrl(msg.to);
     const res = await fetch(RESEND_URL, {
       method: "POST",
       headers: {
@@ -63,6 +68,10 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
         subject: msg.subject,
         html: msg.html,
         text: msg.text,
+        headers: {
+          "List-Unsubscribe": `<${unsub}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
       }),
     });
 
@@ -81,7 +90,7 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
 
 /* ────────────────────────── Shared layout ────────────────────────── */
 
-const SHELL = (inner: string) => `
+const SHELL = (inner: string, email?: string) => `
 <!doctype html>
 <html>
   <body style="margin:0;padding:0;background:#0a0612;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
@@ -92,7 +101,7 @@ const SHELL = (inner: string) => `
       ${inner}
       <div style="margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08);text-align:center;font-size:12px;color:rgba(255,255,255,0.4);line-height:1.7;">
         You're receiving this because you're on Muse's list.<br/>
-        Built by WYZ Design · <a href="${getTermsUrl()}" style="color:#ffd700;text-decoration:none;">Terms</a> · <a href="${getPrivacyUrl()}" style="color:#ffd700;text-decoration:none;">Privacy</a>
+        Built by WYZ Design · <a href="${getTermsUrl()}" style="color:#ffd700;text-decoration:none;">Terms</a> · <a href="${getPrivacyUrl()}" style="color:#ffd700;text-decoration:none;">Privacy</a>${email ? ` · <a href="${unsubscribeUrl(email)}" style="color:#ffd700;text-decoration:none;">Unsubscribe</a>` : ""}
       </div>
     </div>
   </body>
@@ -137,12 +146,19 @@ export function waitlistWelcome(email: string, source?: string): EmailMessage {
         </p>
       </div>
 
+      <div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.15);border-radius:12px;padding:16px 20px;margin:0 0 24px;">
+        <h2 style="font-size:14px;color:#ffd700;margin:0 0 8px;">What happens next?</h2>
+        <p style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.7;margin:0;">
+          We're onboarding the first 150 founding members now. You'll get an email when it's your turn — that's your invite to create an account, set up your profile, and start matching. Founding members get lifetime Pro free.
+        </p>
+      </div>
+
       <div style="text-align:center;">
         <a href="${getMuseUrl()}?src=welcome_email" style="display:inline-block;padding:13px 30px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;font-size:14px;">Create your account</a>
         <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:10px;">Signed up with ${escapeHtml(email)}</div>
       </div>
     </div>
-  `);
+  `, email);
   return {
     to: email,
     subject: "You're on the Muse waitlist ✦",
@@ -158,7 +174,11 @@ export function waitlistWelcome(email: string, source?: string): EmailMessage {
       "",
       "Safety is our foundation: verified profiles, disclosure forms, and 24-hour check-ins for in-person work. No spam, ever.",
       "",
+      "What happens next: we're onboarding the first 150 founding members now. You'll get an email when it's your turn. Founding members get lifetime Pro free.",
+      "",
       "Create your account: " + getMuseUrl() + "?src=welcome_email",
+      "",
+      "Unsubscribe: " + unsubscribeUrl(email),
     ].join("\n"),
   };
 }
@@ -173,7 +193,7 @@ export function betaAccess(email: string): EmailMessage {
       </p>
       <a href="${getMuseUrl()}" style="display:inline-block;padding:13px 28px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;">Enter Muse</a>
     </div>
-  `);
+  `, email);
   return {
     to: email,
     subject: "Your Muse access is ready ✦",
@@ -194,16 +214,49 @@ export function signupWelcome(email: string, name?: string): EmailMessage {
     <div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.3);border-radius:16px;padding:32px 28px;text-align:center;">
       <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Welcome to Muse, ${escapeHtml(who)} ✦</h1>
       <p style="font-size:15px;color:rgba(255,255,255,0.8);line-height:1.7;margin:0 0 20px;">
-        Your account is live. Set up your profile, pick what kind of work you're into, and start matching with creatives who get it.
+        Your account is live. Here's what to do next:
       </p>
+      <div style="text-align:left;margin:0 0 20px;padding:0 12px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
+          <span style="font-size:16px;color:#ffd700;flex-shrink:0;">1.</span>
+          <span style="font-size:14px;color:rgba(255,255,255,0.75);line-height:1.5;">Add your name, location, and a short bio</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
+          <span style="font-size:16px;color:#ffd700;flex-shrink:0;">2.</span>
+          <span style="font-size:14px;color:rgba(255,255,255,0.75);line-height:1.5;">Pick your creative type and what kind of work you're into</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
+          <span style="font-size:16px;color:#ffd700;flex-shrink:0;">3.</span>
+          <span style="font-size:14px;color:rgba(255,255,255,0.75);line-height:1.5;">Upload a profile photo and portfolio</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
+          <span style="font-size:16px;color:#ffd700;flex-shrink:0;">4.</span>
+          <span style="font-size:14px;color:rgba(255,255,255,0.75);line-height:1.5;">Take the personality tests (zodiac, MBTI) for better matches</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:16px;color:#ffd700;flex-shrink:0;">5.</span>
+          <span style="font-size:14px;color:rgba(255,255,255,0.75);line-height:1.5;">Start swiping — matches happen when you're both into it</span>
+        </div>
+      </div>
       <a href="${getMuseUrl()}" style="display:inline-block;padding:13px 28px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;">Finish your profile</a>
     </div>
-  `);
+  `, email);
   return {
     to: email,
     subject: "Welcome to Muse ✦",
     html,
-    text: "Welcome to Muse! Your account is live. Set up your profile and start matching with creatives: " + getMuseUrl(),
+    text: [
+      "Welcome to Muse! Your account is live.",
+      "",
+      "Here's what to do next:",
+      "1. Add your name, location, and a short bio",
+      "2. Pick your creative type and what kind of work you're into",
+      "3. Upload a profile photo and portfolio",
+      "4. Take the personality tests (zodiac, MBTI) for better matches",
+      "5. Start swiping — matches happen when you're both into it",
+      "",
+      "Finish your profile: " + getMuseUrl(),
+    ].join("\n"),
   };
 }
 
@@ -218,7 +271,7 @@ export function notify(email: string, subject: string, title: string, body: stri
       <p style="font-size:15px;color:rgba(255,255,255,0.75);line-height:1.7;margin:0;">${escapeHtml(body)}</p>
       ${cta}
     </div>
-  `);
+  `, email);
   return { to: email, subject, html, text: body };
 }
 

@@ -173,6 +173,7 @@ const [excludedPortfolios, _setExcludedPortfolios] = useState<string[]>(EXCLUDED
     currentIdx, setCurrentIdx,
     showMatchOverlay, setShowMatchOverlay,
     showConfetti, setShowConfetti,
+    matchAnimVariant, setMatchAnimVariant,
     swipeDir, setSwipeDir,
     expandedMatchId, setExpandedMatchId,
     boostActive, setBoostActive,
@@ -2058,6 +2059,15 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         setMatches(prev => [...prev, newMatch]);
         setMatchStreak(prev => prev + 1);
         setActivityFeed(prev => [{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
+        setTimeout(() => {
+          setShowMatchOverlay(newMatch);
+          setMatchAnimVariant(Math.floor(Math.random() * 4));
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 2500);
+          setExpandedMatchId(String(newMatch.id));
+          analytics.discoverMatch(p.id, p.type);
+          flash("#FFD700");
+        }, 450);
       }
       if (DEMO_MODE && Math.random() > 0.4 && !likedBy.find(l => l.id === p.id)) {
         setLikedBy(prev => [...prev, p]);
@@ -2152,7 +2162,12 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     const cardTop = card.getBoundingClientRect().top;
     const relY = e.clientY - cardTop;
     dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY, startTime: Date.now(), el: card, axis: null };
-    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    // Only capture pointer if user is NOT starting inside the scrollable card
+    // info area — capture steals all subsequent pointer events from children,
+    // which breaks native scroll in .card-info-scroll.
+    if (!target.closest || !target.closest('.card-info-scroll')) {
+      (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    }
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
@@ -2526,16 +2541,20 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       </div>
       {showMatchOverlay && (
         <div
-          className="match-overlay"
+          className={`match-overlay anim-variant-${matchAnimVariant}`}
           role="dialog" aria-modal="true" aria-label="It's a Connection!"
           onClick={() => setShowMatchOverlay(null)}
         >
           <button className="match-overlay-close" onClick={(e)=>{e.stopPropagation();setShowMatchOverlay(null)}} aria-label="Close match overlay"><FiX size={22} /></button>
           {confettiPieces.map((piece,i)=><div key={i} className="confetti-piece" style={piece as React.CSSProperties} />)}
+          {/* Variant-specific animated background elements */}
+          {matchAnimVariant === 1 && <div className="match-sparkles" aria-hidden="true">{Array.from({length:20}).map((_,i)=><span key={i} className="match-sparkle" style={{left:`${Math.random()*100}%`,top:`${Math.random()*100}%`,animationDelay:`${Math.random()*1.5}s`,fontSize:`${10+Math.random()*18}px`}}>{["✦","✧","⭑","⋆"][i%4]}</span>)}</div>}
+          {matchAnimVariant === 2 && <div className="match-hearts" aria-hidden="true">{Array.from({length:12}).map((_,i)=><span key={i} className="match-heart" style={{left:`${10+Math.random()*80}%`,animationDelay:`${Math.random()*2}s`,fontSize:`${14+Math.random()*20}px`}}>♥</span>)}</div>}
+          {matchAnimVariant === 3 && <div className="match-stars" aria-hidden="true">{Array.from({length:16}).map((_,i)=><span key={i} className="match-star" style={{left:`${Math.random()*100}%`,top:`${Math.random()*100}%`,animationDelay:`${Math.random()*1.8}s`,fontSize:`${8+Math.random()*16}px`}}>★</span>)}</div>}
           <div
             className="match-title"
           >
-            It&apos;s a Connection!
+            {matchAnimVariant === 1 ? "✨ It's a Match!" : matchAnimVariant === 2 ? "♥ You Connected!" : matchAnimVariant === 3 ? "★ Star Connection!" : "It&apos;s a Connection!"}
           </div>
           <div className="match-subtitle">You and <strong style={{color:"var(--gold)"}}>{showMatchOverlay.name}</strong> are both ready to collaborate.</div>
           <div className="match-disclaimer">Muse is for finding and booking creative collaborators, not a dating app.</div>
