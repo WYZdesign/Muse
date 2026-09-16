@@ -48,15 +48,20 @@ It needs the bundle file moved to this path, or a fresh copy re-delivered.**
 | `round37-sessions-search-scrolltop-matchpct-customrole.bundle` | `fee7f51` | Sessions button transparency, search-focus opacity, sessions tab color match, scroll-to-top nav, comprehensive match% badges, custom "Other" role/style + moderation queue |
 | `round38-themes-wave-distinctness.bundle` | `fee7f51` (carries round 37's commits too — merging this one covers both) | 2 more dark themes (Cinder, Boreal) + 2 more light themes (Meadow, Frost), splash wave visual-distinctness fix |
 
-**Update 2026-09-16 21:09 UTC: both bundle files are now confirmed physically
+**Update 2026-09-16 22:12 UTC: both bundle files are confirmed physically
 present at `V:\Muse\_to_delete\round37-...bundle` and `V:\Muse\_to_delete\
 round38-...bundle`** — written directly via the device bridge once Torreé
 reopened the Claude desktop app (earlier attempts failed with "device not
 connected" because the app wasn't running; that was the actual root cause
-of wyzmind's confusion, not missing/lost work). **They still need to be
-merged** — presence in `_to_delete\` is not the same as being in the
-commit history. Run the merge commands below, then update the "Confirmed
-merged" SHA at the top of this file and delete these two rows in the same
+of wyzmind's confusion, not missing/lost work). `round38-...bundle` was
+rebuilt once more after that and re-placed, so it now also carries this
+file's own delivery-confirmation commit plus the `AGENTS.md` identity-pin
+commit — **`round38-...bundle` is the one to merge; it supersedes
+`round37-...bundle` entirely (same base, plus everything round 37 had,
+plus more) so the round-37 file can be ignored/deleted.** They still need
+to be merged — presence in `_to_delete\` is not the same as being in the
+commit history. Run the merge command below, then update the "Confirmed
+merged" SHA at the top of this file and delete both rows in the same
 commit as the merge.
 
 **To merge once the files are actually present:**
