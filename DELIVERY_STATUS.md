@@ -27,7 +27,7 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `c67db67`
+## Confirmed merged, last verified at: `a617086`
 
 Everything at or before this commit is real, live, deployed code — this
 includes round 37 (sessions/search/scrolltop/matchpct/customrole), round 38
@@ -37,12 +37,15 @@ Discover-page card scroll, wave vertical position (corrected in the round-42
 bundle below — see its entry for why), and tutorial-popup first-time-only
 behavior, round 39/40 (scroll-fade, Muses icon drop, availability/boost fixes,
 forum pin, wave-breakpoint responsive fix), round 41 (the `.match-fab-scrim`
-click-block fix plus the `AGENTS.md` wake-up-briefing rewrite), and round 42
+click-block fix plus the `AGENTS.md` wake-up-briefing rewrite), round 42
 (match badge now tappable at z-index 7 with matching dark-glass styling,
 `.wave-bottom` back flush to the bottom with height 22%→36% and a 4th stacked
-wave layer for fullness). All confirmed merged — this specific SHA verified
-2026-09-17 by fetching `origin/main` directly (`git log --oneline -1
-origin/main` → `c67db67`) and diffing actual file content (not trusting commit
+wave layer for fullness), and round 44 (signup now returns a real session —
+`POST /api/muse/auth` with `action=register` now calls `signInWithPassword`
+after creating the account so new users are authenticated immediately;
+fails open — account still exists even if sign-in throws).
+All confirmed merged — this specific SHA verified 2026-09-17 by fetching
+`origin/main` directly and diffing actual file content (not trusting commit
 messages), and re-running `tsc`/`vitest`/`next build` clean after merging each
 into this session's own branch. No action needed on any of these.
 
@@ -57,8 +60,6 @@ Until it runs, saving a custom "Other" type/style will fail.
 ## Pending delivery — NOT in the codebase yet
 
 **None.** All delivered bundles are merged. See the "Confirmed merged" section above for the current SHA.
-
-**To merge once the file is actually present:**
 
 ## Known open issues (not blocked on delivery, just unsolved)
 

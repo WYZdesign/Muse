@@ -7,6 +7,29 @@ but a round being described below does NOT mean it's live. Verify with
 `git log --oneline -1 origin/main` against `DELIVERY_STATUS.md`'s "Confirmed
 merged" line before trusting anything here.
 
+## 🔴 FOR WYZMIND — round 44 ready to merge: HIGH PRIORITY — new signups get no working session (2026-09-17)
+
+**Merge this one ahead of anything else pending.** `origin/main` is at `c67db67` (round 42, confirmed merged) as of this round.
+
+**How this was found:** Torreé asked for two test accounts to QA every interaction (matching, messaging, booking) end to end. First step was signing up a brand-new test account through the real signup form on production. Onboarding visibly worked — Your Info, Creative Type, Looking For, Aesthetic Style all saved and advanced normally — but the very first *server*-authenticated action, uploading a photo during onboarding, failed with a toast: "Upload failed: Not authenticated." Checked the network tab live: `POST /api/muse/upload` → `401`. Not a fluke — reproduced it twice on the same fresh account. A separate background fetch (referral status) also 401'd the same way in the console.
+
+**Root cause:** `POST /api/muse/auth` with `action=register` has never included a `session` in its JSON response — only `action=login` does. The client's `handleAuthClick` (page.tsx) reads `j.session?.access_token` and stores it as the new user's access token in `localStorage.muse_user`. For a fresh signup that's always `""`. Every subsequent `authFetch()` call only attaches `Authorization: Bearer <token>` `if (token)` — so a brand-new user's browser sends **no Authorization header on any authenticated request for the rest of that session**, until they manually log out and log back in (which does return a real session, since `login` was never missing this). This isn't cosmetic: `authedProfileId()` on the server is how every protected route — upload, and by the same code path presumably likes/matches/messages/bookings too — identifies who's calling. A brand-new user effectively can't do anything that touches the server until they re-login once, with no error message telling them why.
+
+**Fix:** `register` now calls `supabase.auth.signInWithPassword(...)` immediately after `admin.createUser(...)` succeeds — the exact same call `login` already makes — and returns that real session (`access_token`/`refresh_token`) plus the newly-created profile in the response, matching `login`'s response shape exactly. Fails open: if the sign-in call itself throws, the account still exists and `session` stays `null` rather than turning an otherwise-successful signup into a 500 — the client's existing refresh/re-login fallback still recovers in that narrow case.
+
+**Verified:** `tsc --noEmit` clean, `vitest run` 349/349 (including `auth.route.test.ts`'s register cases, which didn't need changes since they only assert error paths), `next build` clean. Root cause confirmed live against production (network tab showing the actual 401, not a guess from reading source), the fix itself is a straightforward parity change with `login`'s already-working code path.
+
+**To merge:**
+```
+git fetch V:\Muse\_to_delete\round44-signup-session-fix.bundle muse-fix-delivery:bundle/round44
+git merge bundle/round44
+npx tsc --noEmit && npx vitest run && npx next build
+git push origin HEAD:main
+```
+(349/349 tests expected, clean build expected.) Then update `DELIVERY_STATUS.md`'s "Confirmed merged" SHA and delete its round-44 pending row, in the same commit as the merge.
+
+---
+
 ## 🆕 FOR WYZMIND — round 42 ready to merge: match-badge z-index + style, wave-bottom gap/fullness (supersedes round 41 — merge this one, you get everything through round 41 too) (2026-09-17)
 
 **Status check first:** `origin/main` is at `23a257f` as of this round (round 41's scrim fix + the `AGENTS.md` wake-up-briefing rewrite, both confirmed merged). This round is built directly on top of that.
