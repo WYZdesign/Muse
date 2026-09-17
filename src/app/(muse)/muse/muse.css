@@ -617,7 +617,16 @@ img{background-color:var(--card-bg)}
 .msg-me{align-self:flex-end;background:linear-gradient(135deg,var(--gold),var(--amber));color:var(--bg);border-bottom-right-radius:6px;box-shadow:0 2px 8px rgba(255,215,0,0.12)}
 .msg-time{font-size:11px;color:var(--muted);margin-top:5px}
 .msg-time-me{color:rgba(10,6,18,0.35)}
-.chat-input-wrap{display:flex;align-items:flex-end;padding:12px 14px;border-top:1px solid rgba(255,255,255,0.05);background:rgba(10,6,18,0.85);backdrop-filter:blur(30px);gap:10px}
+/* Round 45 fix: the global .verify-banner sits at position:absolute,
+   z-index:9999, pinned to the same bottom offset as the chat composer
+   (both anchor just above the bottom nav). With no z-index of its own,
+   the composer lost that stacking fight whenever the banner was showing,
+   so its send button became visually present but unclickable -- clicks
+   landed on the banner's DOM node instead (confirmed via
+   document.elementFromPoint during QA). The composer needs to win that
+   fight; it's the one thing on this screen a blocked user must still be
+   able to use. */
+.chat-input-wrap{position:relative;z-index:10000;display:flex;align-items:flex-end;padding:12px 14px;border-top:1px solid rgba(255,255,255,0.05);background:rgba(10,6,18,0.85);backdrop-filter:blur(30px);gap:10px}
 .chat-inp{flex:1;min-width:0;background:var(--glass);border:1.5px solid rgba(255,255,255,0.06);border-radius:99px;padding:12px 20px;font-size:15px;color:var(--text);font-family:inherit;transition:all .3s}
 .chat-inp:focus{border-color:var(--gold);box-shadow:0 0 20px rgba(255,215,0,0.08)}
 .chat-inp{font-size:16px}.chat-inp::placeholder{color:rgba(255,255,255,0.55)}

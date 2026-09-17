@@ -2624,7 +2624,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           <div
             className="match-title"
           >
-            {matchAnimVariant === 1 ? "✨ It's a Match!" : matchAnimVariant === 2 ? "★ Star Connection!" : "It&apos;s a Connection!"}
+            {matchAnimVariant === 1 ? "✨ It's a Match!" : matchAnimVariant === 2 ? "★ Star Connection!" : "It's a Connection!"}
           </div>
           <div className="match-subtitle">You and <strong style={{color:"var(--gold)"}}>{showMatchOverlay.name}</strong> are both ready to collaborate.</div>
           <div className="match-disclaimer">Muse is for finding and booking creative collaborators, not a dating app.</div>
@@ -3240,7 +3240,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                 <StudiosScreen screen={screen} showScreen={showScreen} goBack={goBack} apiFetch={apiFetch} openHamburger={() => setShowHamburger(true)} unreadNotificationCount={unreadNotificationCount} />
               </ScreenErrorBoundary>
             )}
-            <SessionsScreen screen={screen} showScreen={showScreen} goBack={goBack} sessTab={sessTab} setSessTab={setSessTab} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} uid={uid} currentUser={currentUser} setShowAgeVerification={setShowAgeVerification} demo={DEMO_MODE} liveSessions={liveSessions || undefined} myBookings={myBookings} setMyBookings={setMyBookings} bookingReminders={bookingReminders} setDisclosureTarget={setDisclosureTarget} setDisclosureBookingId={setDisclosureBookingId} setShowDisclosureModal={setShowDisclosureModal} setViewProfile={setViewProfile} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} savedSessionIds={savedSessionIds} setSavedSessionIds={setSavedSessionIds} />
+            <SessionsScreen screen={screen} showScreen={showScreen} goBack={goBack} sessTab={sessTab} setSessTab={setSessTab} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} uid={uid} currentUser={currentUser} setShowAgeVerification={setShowAgeVerification} demo={DEMO_MODE} liveSessions={liveSessions || undefined} setLiveSessions={setLiveSessions} myBookings={myBookings} setMyBookings={setMyBookings} bookingReminders={bookingReminders} setDisclosureTarget={setDisclosureTarget} setDisclosureBookingId={setDisclosureBookingId} setShowDisclosureModal={setShowDisclosureModal} setViewProfile={setViewProfile} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} savedSessionIds={savedSessionIds} setSavedSessionIds={setSavedSessionIds} />
             </ScreenErrorBoundary>
 
             <ScreenErrorBoundary name="Network">

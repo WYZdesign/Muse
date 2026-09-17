@@ -39,6 +39,7 @@ export interface SessionsScreenProps {
   unreadNotificationCount?: number;
   demo?: boolean;
   liveSessions?: SessionListing[];
+  setLiveSessions?: React.Dispatch<React.SetStateAction<SessionListing[] | null>>;
   myBookings?: { asBooker: any[]; asHost: any[] };
   setMyBookings?: React.Dispatch<React.SetStateAction<{ asBooker: any[]; asHost: any[] }>>;
   bookingReminders?: any[];
@@ -96,6 +97,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   demo = false,
   setMatches = () => {},
   liveSessions = [],
+  setLiveSessions = () => {},
   myBookings = { asBooker: [], asHost: [] },
   setMyBookings = () => {},
   bookingReminders = [],
@@ -193,7 +195,16 @@ export const SessionsScreen = memo(function SessionsScreen({
           .catch(() => {});
       } catch {}
       const noteText = note ? [note.sizing && `Sizing/prefs: ${note.sizing}`, note.requirements && `Requirements: ${note.requirements}`, note.message && `Note: ${note.message}`].filter(Boolean).join(" · ") : "";
-      const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "book-session", sessionId: s.id, note: noteText }) });
+      // Round 45 fix: this used to call apiFetch, which throws on any
+      // non-2xx response (see page.tsx's apiFetch — `if (!res.ok) throw`).
+      // That meant a 403 VERIFICATION_REQUIRED response never reached the
+      // `r.status === 403` branch below at all — apiFetch had already thrown
+      // and execution was in the catch block by then, so every failed
+      // booking (verification-gated or not) showed the same generic "Failed
+      // to book session" toast instead of the specific, actionable one.
+      // authFetch resolves instead of throwing on non-2xx, so the status/body
+      // inspection below actually runs.
+      const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "book-session", sessionId: s.id, note: noteText }) });
       if (r.status === 403) {
         const d = await r.json().catch(() => ({}));
         if (d.code === "VERIFICATION_REQUIRED") {
@@ -217,6 +228,18 @@ export const SessionsScreen = memo(function SessionsScreen({
     try {
       const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-session", ...newSession }) });
       if (!r.ok) throw new Error("failed");
+      // Round 45 fix: the Browse tab renders liveSessions verbatim (falling
+      // back to the static demo array only when liveSessions is empty — see
+      // the `base` computation below), but this handler never updated that
+      // array after a successful create. A host who just listed a session
+      // saw the create succeed (toast + modal close) yet the Browse list
+      // kept showing the old/demo cards with their own listing nowhere in
+      // it, until a full page reload re-fetched liveSessions from scratch.
+      // Prepending the server's own row (not a locally-guessed one) here
+      // makes a new listing show up immediately, same session as everyone
+      // else will eventually fetch.
+      const created = await r.json().catch(() => null);
+      if (created?.session) setLiveSessions(prev => [created.session, ...(prev || [])]);
       showToast("Session listed — you're now bookable");
       setShowCreate(false);
       setNewSession({ title: "", description: "", type: "Photoshoot", rate: "", duration: "60 min", date: "", location: "" });
