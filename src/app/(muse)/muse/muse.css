@@ -2496,7 +2496,7 @@ img{background-color:var(--card-bg)}
    The three layers use mismatched, low-frequency bezier curves so they read as
    real, uneven tides rather than a repeating synthwave pattern.
    ══════════════════════════════════════════════════════════════════════════ */
-.wave-bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100vw);height:22%;z-index:90;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s ease}
+.wave-bottom{position:fixed;bottom:10%;left:50%;transform:translateX(-50%);width:min(430px,100vw);height:22%;z-index:90;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s ease}
 .wave-bottom.show{opacity:1}
 /* Audit fix: on desktop the app renders as a centered ~430px phone card
    with ambient background on either side (see .phone-wrap's desktop media
