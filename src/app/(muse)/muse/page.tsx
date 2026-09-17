@@ -1653,10 +1653,16 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     // Same defensive pattern the old trigger used with showDailyLogin —
     // never stack a page tour on top of another full-screen modal.
     if (showDailyLogin || showAgeVerification || showAgeGate || showQuests || showStories || showHamburger) return;
-    pageTourShownRef.current.add(id);
+    // Check localStorage FIRST — if this screen's tour has already been dismissed
+    // in any prior session, don't show it again. (Previously the localStorage
+    // read happened after adding to the ref, which was fine, but the early ref
+    // add also meant a dismissed tour would be re-added to the ref set and
+    // then immediately discarded — harmless but confusing; cleaner to gate
+    // the localStorage check before any ref mutation.)
     let seen = "";
     try { seen = safeGetItem(tourSeenKey(id)) || ""; } catch {}
     if (seen) return;
+    pageTourShownRef.current.add(id);
     setActivePageTour(id);
   }, [activePageTour, showDailyLogin, showAgeVerification, showAgeGate, showQuests, showStories, showHamburger]);
 
@@ -2196,9 +2202,10 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     const target = e.target as HTMLElement;
+    // If user taps inside the scrollable card info area, let native scroll handle it
+    // Don't capture pointer — capture steals all subsequent pointer events from children
     if (target.closest && target.closest('.card-info-scroll')) {
-      const scroller = target.closest('.card-info-scroll') as HTMLElement;
-      if (scroller && scroller.scrollTop > 5) return;
+      return;
     }
     if (target.closest && (target.closest('.card-action-btn') || target.closest('.card-portfolio-btn') || target.closest('.card-photo-thumb') || target.closest('button') || target.closest('a'))) return;
     const card = e.currentTarget as HTMLElement;
@@ -2208,9 +2215,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     // Only capture pointer if user is NOT starting inside the scrollable card
     // info area — capture steals all subsequent pointer events from children,
     // which breaks native scroll in .card-info-scroll.
-    if (!target.closest || !target.closest('.card-info-scroll')) {
-      (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
-    }
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
