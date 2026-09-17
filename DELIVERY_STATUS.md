@@ -27,23 +27,24 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `23a257f`
+## Confirmed merged, last verified at: `c67db67`
 
 Everything at or before this commit is real, live, deployed code — this
 includes round 37 (sessions/search/scrolltop/matchpct/customrole), round 38
 (6 dark/6 light themes, splash wave fix), a match-percentage-badge color fix
 (`.match-badge` now uses `var(--gold)`), Torree/wyzmind's own fixes for
-Discover-page card scroll, wave vertical position (`bottom:10%` — note: this
-specific value gets corrected again in the round-42 bundle below, see its
-entry for why), and tutorial-popup first-time-only behavior, round 39/40
-(scroll-fade, Muses icon drop, availability/boost fixes, forum pin,
-wave-breakpoint responsive fix), and round 41 (the `.match-fab-scrim`
-click-block fix plus the `AGENTS.md` wake-up-briefing rewrite). All
-confirmed merged — this specific SHA verified 2026-09-17 by fetching
-`origin/main` directly (`git log --oneline -1 origin/main` → `23a257f`) and
-diffing actual file content (not trusting commit messages), and re-running
-`tsc`/`vitest`/`next build` clean after merging each into this session's own
-branch. No action needed on any of these.
+Discover-page card scroll, wave vertical position (`bottom:10%`), and
+tutorial-popup first-time-only behavior, round 39/40 (scroll-fade, Muses
+icon drop, availability/boost fixes, forum pin, wave-breakpoint responsive
+fix), round 41 (the `.match-fab-scrim` click-block fix plus the `AGENTS.md`
+wake-up-briefing rewrite), and round 42 (match-badge z-index/style fix, the
+wave-bottom gap fix that corrected `0ffd6cd`'s `bottom:10%` back to
+`bottom:0`+taller, and a 4th wave layer for fullness). All confirmed merged
+— this specific SHA verified 2026-09-17 by fetching `origin/main` directly
+(`git log --oneline -1 origin/main` → `c67db67`) and diffing actual file
+content (not trusting commit messages), and re-running `tsc`/`vitest`/`next
+build` clean after merging each into this session's own branch. No action
+needed on any of these.
 
 **⚠️ Outstanding non-git action from round 37**: `sql/MUSE_CUSTOM_ROLE_PENDING_20260916.sql`
 still needs to be run in the Supabase SQL editor (adds `custom_type_pending`/
@@ -66,16 +67,19 @@ It needs the bundle file moved to this path, or a fresh copy re-delivered.**
 
 | Bundle file (expected path: `V:\Muse\_to_delete\<filename>`) | Built on top of | Contains |
 |---|---|---|
-| `round42-badge-wave-fix.bundle` | `23a257f` (includes everything round41b had — scrim click-block fix, AGENTS.md rewrite — plus two new fixes) | (1) `.card-match-topleft` (the match% badge on Discover cards) was z-index:4, BELOW `.card-photo-zone`'s invisible photo-advance tap zone at z-index:5, so taps never reached the badge's onClick even after the scrim fix — raised to z-index:7, and root-caused live via `document.elementFromPoint()`. Also moved its background/text color out of inline JSX into the `.card-match-topleft` CSS rule, matching the exact dark-glass style (`rgba(10,6,18,0.55)` bg, gold text, `blur(8px)`) already used by `.card-anchor-like-btn` and the photo-nav arrows — this is the "should have same color style" fix Torree asked for repeatedly. The badge's onClick already correctly opened the existing match-breakdown popup (`setWhyInfo(...)` in `DiscoverScreen.tsx`) — that popup was never broken, taps just never reached the button. (2) `.wave-bottom`'s `bottom:10%` (from Torree's own 0ffd6cd commit) lifted the whole fixed-position wave container UP off the bottom edge instead of stretching its visible art upward — leaving a blank gap underneath ("random gap under the waves"). Reverted to `bottom:0`, grew `height` 22%→36% so more wave shows from behind the bottom nav bar with zero gap, and added a 4th stacked wave layer (`.wave-path-4`, new `<svg>` in the JSX + matching CSS incl. all 4 light-theme overrides) so the taller container reads as a genuinely fuller body of water rather than the same 3 curves just stretched over more space — per Torree's direct follow-up ("either stretch them up or add more stacks of tides, or both... more full"). |
+| `round44-signup-session-fix.bundle` | `c67db67` (round 42, already merged) | 🔴 **HIGH PRIORITY — affects every new signup in production right now.** Found live while creating QA test accounts: `POST /api/muse/auth` with `action=register` has never returned a `session` in its response (only `action=login` did). The client stores `j.session?.access_token` as the new user's access token, so it's always `""` right after signup — meaning a brand-new user's browser sends **no Authorization header on any authenticated request for the rest of that session**. Reproduced live and confirmed via network tab: a freshly-created account's very first onboarding photo upload 401'd with "Not authenticated" (`POST /api/muse/upload`), and a referral-status fetch 401'd the same way — same root cause almost certainly blocks matching/messaging/booking for any user who hasn't yet logged out and back in once. Fix: `register` now calls `signInWithPassword` immediately after creating the account (same call `login` already makes) and returns that real session plus the new profile, matching `login`'s response shape. Fails open — if the sign-in call itself throws, the account still exists and `session` stays `null` rather than 5xx-ing an otherwise-successful signup. |
 
 **To merge once the file is actually present:**
 ```
-git fetch V:\Muse\_to_delete\round42-badge-wave-fix.bundle muse-fix-delivery:bundle/round42
-git merge bundle/round42
+git fetch V:\Muse\_to_delete\round44-signup-session-fix.bundle muse-fix-delivery:bundle/round44
+git merge bundle/round44
 npx tsc --noEmit && npx vitest run && npx next build
 ```
 (349/349 tests expected, clean build expected.) Then update the "Confirmed
 merged" SHA above and delete this row, in the same commit as your merge.
+**Given the severity (new signups are effectively broken in most authenticated
+flows until they re-login), this one should jump the queue over any other
+pending bundle.**
 
 ## Known open issues (not blocked on delivery, just unsolved)
 

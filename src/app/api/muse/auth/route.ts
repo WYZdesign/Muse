@@ -74,17 +74,47 @@ export async function POST(req: NextRequest) {
       // Insert ONLY whitelisted fields. Never spread arbitrary client data
       // into the profile row — that would allow mass-assignment of tier,
       // verified, suspended, etc.
-      const { error: profileErr } = await sb.from("muse_profiles").insert({
+      const { data: newProfile, error: profileErr } = await sb.from("muse_profiles").insert({
         auth_id: authUser.user!.id,
         email: email.toLowerCase(),
         name: sanitizeText(name || email.split("@")[0], 60),
-      });
+      }).select("*").maybeSingle();
       if (profileErr) return safeServerError(profileErr, "register profile");
 
       // Welcome email (fail-open — never block signup on email).
       sendEmail(signupWelcome(email.toLowerCase(), name)).catch(() => {});
 
-      return NextResponse.json({ success: true, user: authUser.user });
+      // Round 44 fix (2026-09-17): this endpoint used to return only
+      // { success, user } — no `session`. The client (handleAuthClick in
+      // page.tsx) reads `j.session?.access_token`, which was always ""
+      // after signup, so it never sent an Authorization header on any
+      // authFetch call for the rest of that session. Every server-
+      // authenticated action taken by a brand-new user — photo upload
+      // during onboarding, the referral-status fetch, and by the same
+      // code path likely matching/messaging/booking too — silently 401'd
+      // as "Not authenticated" until the user manually logged out and
+      // back in (the "login" action below has always returned a real
+      // session). Root-caused live: signed up a fresh test account,
+      // watched POST /api/muse/upload return 401 on the very first
+      // onboarding photo upload with a freshly-created, genuinely logged-
+      // in account. Fixed by signing the new user in immediately after
+      // creating them, the same way "login" does, so register returns a
+      // real session — fail-closed: if sign-in itself fails, the account
+      // still exists (so the client's own fallback login path still
+      // works), we just skip attaching a session rather than 500ing an
+      // otherwise-successful signup.
+      let session: { access_token: string; refresh_token: string } | null = null;
+      try {
+        const { data: signInData } = await supabase.auth.signInWithPassword({
+          email: email.toLowerCase(),
+          password,
+        });
+        if (signInData?.session) {
+          session = { access_token: signInData.session.access_token, refresh_token: signInData.session.refresh_token };
+        }
+      } catch { /* fail-open: signup still succeeds without a session */ }
+
+      return NextResponse.json({ success: true, user: authUser.user, profile: pubProfile(newProfile), session });
     }
 
     if (action === "login") {
