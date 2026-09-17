@@ -2143,6 +2143,32 @@ img{background-color:var(--card-bg)}
    itself (30) but above the card's own content. */
 .match-fab-scrim{position:absolute;inset:0;z-index:28;background:rgba(10,6,18,0.001);backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px);opacity:0;pointer-events:none;transition:opacity .15s ease,backdrop-filter .15s ease,-webkit-backdrop-filter .15s ease;mask-image:radial-gradient(circle 150px at calc(100% - 62px) calc(100% - 62px),black 30%,transparent 100%);-webkit-mask-image:radial-gradient(circle 150px at calc(100% - 62px) calc(100% - 62px),black 30%,transparent 100%)}
 .match-fab-scrim.open{opacity:1;background:rgba(10,6,18,0.32);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:auto;transition:opacity .3s ease,backdrop-filter .3s ease,-webkit-backdrop-filter .3s ease}
+/* Round 41 fix (2026-09-17): .screen-el.active *{pointer-events:auto} (below,
+   ~line 2193) is a blanket rule that force-enables pointer-events on EVERY
+   descendant of the active screen, with no exception. Its specificity
+   (0,2,0) beats this file's own .match-fab-scrim{pointer-events:none} rule
+   (0,1,0), so despite this being a resting, invisible (opacity:0), CSS-mask
+   -"circular" full-card overlay meant to be click-through except while its
+   menu is open, it was actually sitting at z-index:28 — covering the ENTIRE
+   card, hit-testable everywhere regardless of the mask (masks affect paint,
+   not hit-testing) — and silently eating every tap on anything under it
+   with a lower z-index. That's the real cause behind "tapping the top-left
+   match% badge (z-index 6) and top-right like button (z-index 6) does
+   nothing": both sit well below this scrim's z-index 28, so their onClick
+   handlers correctly never fired. The photo-nav arrows still worked only
+   because they carry an inline pointerEvents style, which beats any
+   external stylesheet rule including this one.
+   Fix: a higher-specificity selector (0,4,0) that re-asserts
+   pointer-events:none for the resting (non-.open) scrim specifically when
+   the screen is active, without touching the .open state or the wildcard
+   rule's other, legitimate uses elsewhere. .match-fab-blur and
+   .match-radial are the same "invisible full/near-full-card decorative
+   layer, meant to be click-through at rest" pattern in this same feature —
+   fixed alongside for the same reason, before they cause the identical bug
+   somewhere else on the card. */
+.screen-el.active .match-fab-scrim:not(.open){pointer-events:none}
+.screen-el.active .match-fab-blur{pointer-events:none}
+.screen-el.active .match-radial:not(.open){pointer-events:none}
 .match-fab-btn{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;cursor:pointer;border:2px solid rgba(255,255,255,0.25);color:#0a0612;background-color:#FFD700;background:linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700);background-size:400% 400%;animation:lavaFlow 4s ease-in-out infinite;box-shadow:0 4px 16px rgba(0,0,0,0.5);transition:transform .25s cubic-bezier(.4,0,.2,1)}
 .match-fab-btn.open{transform:scale(1.15)}
 .match-fab-btn:active{transform:scale(0.9)}
