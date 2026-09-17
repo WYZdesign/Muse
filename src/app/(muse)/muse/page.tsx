@@ -2620,12 +2620,11 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           {confettiPieces.map((piece,i)=><div key={i} className="confetti-piece" style={piece as React.CSSProperties} />)}
           {/* Variant-specific animated background elements */}
           {matchAnimVariant === 1 && <div className="match-sparkles" aria-hidden="true">{Array.from({length:20}).map((_,i)=><span key={i} className="match-sparkle" style={{left:`${Math.random()*100}%`,top:`${Math.random()*100}%`,animationDelay:`${Math.random()*1.5}s`,fontSize:`${10+Math.random()*18}px`}}>{["✦","✧","⭑","⋆"][i%4]}</span>)}</div>}
-          {matchAnimVariant === 2 && <div className="match-hearts" aria-hidden="true">{Array.from({length:12}).map((_,i)=><span key={i} className="match-heart" style={{left:`${10+Math.random()*80}%`,animationDelay:`${Math.random()*2}s`,fontSize:`${14+Math.random()*20}px`}}>♥</span>)}</div>}
-          {matchAnimVariant === 3 && <div className="match-stars" aria-hidden="true">{Array.from({length:16}).map((_,i)=><span key={i} className="match-star" style={{left:`${Math.random()*100}%`,top:`${Math.random()*100}%`,animationDelay:`${Math.random()*1.8}s`,fontSize:`${8+Math.random()*16}px`}}>★</span>)}</div>}
+          {matchAnimVariant === 2 && <div className="match-stars" aria-hidden="true">{Array.from({length:16}).map((_,i)=><span key={i} className="match-star" style={{left:`${Math.random()*100}%`,top:`${Math.random()*100}%`,animationDelay:`${Math.random()*1.8}s`,fontSize:`${8+Math.random()*16}px`}}>★</span>)}</div>}
           <div
             className="match-title"
           >
-            {matchAnimVariant === 1 ? "✨ It's a Match!" : matchAnimVariant === 2 ? "♥ You Connected!" : matchAnimVariant === 3 ? "★ Star Connection!" : "It&apos;s a Connection!"}
+            {matchAnimVariant === 1 ? "✨ It's a Match!" : matchAnimVariant === 2 ? "★ Star Connection!" : "It&apos;s a Connection!"}
           </div>
           <div className="match-subtitle">You and <strong style={{color:"var(--gold)"}}>{showMatchOverlay.name}</strong> are both ready to collaborate.</div>
           <div className="match-disclaimer">Muse is for finding and booking creative collaborators, not a dating app.</div>

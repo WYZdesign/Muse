@@ -835,10 +835,10 @@ img{background-color:var(--card-bg)}
 .match-overlay{position:absolute;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,6,18,0.96);backdrop-filter:blur(30px);animation:matchIn .6s cubic-bezier(.4,0,.2,1);pointer-events:none}
 @keyframes matchIn{from{opacity:0;transform:scale(1.3)}to{opacity:1;transform:scale(1)}}
 @keyframes matchPulse{0%,100%{opacity:0;transform:scale(0.8)}50%{opacity:1;transform:scale(1.15)}}
-.match-title{font-size:48px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(120deg,var(--gold),var(--amber),var(--pink),var(--lavender),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:300% 300%;animation:matchPulse 1.5s ease-in-out infinite,lavaFlow 6s ease-in-out infinite;margin-bottom:10px}
+.match-title{font-size:48px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;color:var(--gold);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:matchPulse 1.5s ease-in-out infinite,lavaFlow 6s ease-in-out infinite;margin-bottom:10px}
 .match-subtitle{font-size:16px;color:var(--text2);margin-bottom:8px;text-align:center;line-height:1.6}
 .match-disclaimer{font-size:12px;color:var(--muted);margin-bottom:32px;text-align:center;line-height:1.5;max-width:280px}
-.match-avatars{display:flex;margin-bottom:36px}
+.match-avatars{display:flex;justify-content:center;gap:8px;margin-bottom:36px}
 .match-av{width:80px;height:80px;border-radius:50%;border:3px solid var(--gold);object-fit:cover;animation:matchBounce .7s cubic-bezier(.4,0,.2,1);box-shadow:0 2px 8px rgba(255,215,0,0.12)}
 .match-av:nth-child(2){margin-left:-20px;border-color:var(--amber);animation-delay:.2s}
 @keyframes matchBounce{0%{transform:scale(0) rotate(-15deg)}60%{transform:scale(1.15) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
@@ -850,14 +850,8 @@ img{background-color:var(--card-bg)}
 .match-sparkles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .match-sparkle{position:absolute;color:var(--gold);animation:sparkleFloat 2s ease-in-out infinite;opacity:0}
 @keyframes sparkleFloat{0%,100%{opacity:0;transform:translateY(0) scale(0.5)}50%{opacity:1;transform:translateY(-30px) scale(1.2)}}
-/* Variant 2: hearts */
-.anim-variant-2 .match-title{background:linear-gradient(120deg,#ff6b6b,#ff8a80,#ffd700,#ff6b6b);-webkit-background-clip:text;background-clip:text;background-size:300% 300%;animation:lavaFlow 4s ease-in-out infinite}
-.anim-variant-2 .match-av{border-color:#ff6b6b;box-shadow:0 0 20px rgba(255,107,107,0.3)}
-.match-hearts{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.match-heart{position:absolute;bottom:-20px;color:#ff6b6b;animation:heartRise 2.5s ease-out infinite;opacity:0}
-@keyframes heartRise{0%{opacity:0;transform:translateY(0) scale(0.5) rotate(-10deg)}30%{opacity:1}100%{opacity:0;transform:translateY(-100vh) scale(1.2) rotate(15deg)}}
-/* Variant 3: stars */
-.anim-variant-3 .match-title{background:linear-gradient(120deg,#ffd700,#fff,#ffd700);-webkit-background-clip:text;background-clip:text;background-size:200% 200%;animation:lavaFlow 3s ease-in-out infinite}
+/* Variant 2: stars */
+.anim-variant-2 .match-title{background:linear-gradient(120deg,#ffd700,#fff,#ffd700);-webkit-background-clip:text;background-clip:text;background-size:200% 200%;animation:lavaFlow 3s ease-in-out infinite}
 .match-stars{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .match-star{position:absolute;color:#ffd700;animation:starBurst 2s ease-out infinite;opacity:0;text-shadow:0 0 8px rgba(255,215,0,0.6)}
 @keyframes starBurst{0%{opacity:0;transform:scale(0) rotate(0deg)}40%{opacity:1;transform:scale(1.3) rotate(180deg)}100%{opacity:0;transform:scale(0.5) rotate(360deg)}}
