@@ -56,15 +56,16 @@ It needs the bundle file moved to this path, or a fresh copy re-delivered.**
 | Bundle file (expected path: `V:\Muse\_to_delete\<filename>`) | Built on top of | Contains |
 |---|---|---|
 | `round39-scrollfade-availability-boost-forumpin.bundle` | `cbd6cb0` | Horizontal-scroll edge fade (all themes), Muses "Interested" tab icon drop, real host-availability-probe bug fix, real boost-purchase-never-granted bug fix, forum post pin wiring. See `HANDOVER.md`'s round 39 entry for the full wiring-audit findings and the page.tsx/repo cleanliness assessment. |
+| `round40-wave-breakpoint-fix.bundle` | round 39 commit `72a576e` (includes round 39, so merge this one and you get both — you do not need round39's bundle separately if you merge this one) | Real fix for the "wave still looks cropped/not stretched on the sides" report: `.wave-bottom`'s responsive breakpoint was inverted relative to `.phone`'s actual current layout (the 2026-09-15 standalone-PWA viewport fix changed `.phone` to go full-bleed `100vw` *below* 768px and stay a centered 430px card *above* it — `.wave-bottom` still had the opposite assumption). Root-caused and verified live against production via DOM rect inspection + before/after screenshots at a real narrow (702px) browser width, which is what actually reproduced the bug. See `HANDOVER.md`'s round 40 entry for the full writeup. |
 
-**To merge once the file is actually present:**
+**To merge once the file is actually present (round 40 alone supersedes round 39 — it's built on top of it):**
 ```
-git fetch V:\Muse\_to_delete\round39-scrollfade-availability-boost-forumpin.bundle muse-fix-delivery:bundle/round39
-git merge bundle/round39
+git fetch V:\Muse\_to_delete\round40-wave-breakpoint-fix.bundle muse-fix-delivery:bundle/round40
+git merge bundle/round40
 npx tsc --noEmit && npx vitest run && npx next build
 ```
 (349/349 tests expected, clean build expected.) Then update the "Confirmed
-merged" SHA above and delete this row, in the same commit as your merge.
+merged" SHA above and delete both rows, in the same commit as your merge.
 
 ## Known open issues (not blocked on delivery, just unsolved)
 

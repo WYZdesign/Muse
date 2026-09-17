@@ -7,7 +7,37 @@ but a round being described below does NOT mean it's live. Verify with
 `git log --oneline -1 origin/main` against `DELIVERY_STATUS.md`'s "Confirmed
 merged" line before trusting anything here.
 
-## 🆕 FOR WYZMIND — round 39 ready to merge: scroll-fade, availability probe fix, boost-purchase-grant fix, forum pin, wiring audit + page.tsx/repo cleanliness assessment (2026-09-16)
+## 🆕 FOR WYZMIND — round 40 ready to merge: real fix for the "wave still looks cropped" report (supersedes round 39 — merge this one, you get both) (2026-09-17)
+
+**Status check first:** `origin/main` still at `cbd6cb0` as of this round — round 39 has NOT been merged yet. This round is built directly on top of round 39's own commit (`72a576e`), so merging `round40-wave-breakpoint-fix.bundle` brings in round 39's changes too. Don't merge round39's bundle separately — just merge round 40.
+
+**What happened:** Torreé reported that even after the earlier desktop-full-width wave fix, "the eaves at the bottom still seem cropped on the sides and not stretched fully." That earlier fix's logic was checked into the repo correctly — the actual bug is that a *different*, later change silently broke its assumption.
+
+**Root cause:** `.wave-bottom`'s responsive rule (in `muse.css`) was written to assume `.phone` (the actual visible app card) stays a narrow ~430px centered mockup below the 768px breakpoint, and goes full-bleed/edge-to-edge above it — so the wave was set up to mirror that: narrow+centered below 768px, `100vw` above it.
+
+That assumption was true when it was written, but a separate later change — the 2026-09-15 "Standalone-PWA viewport fix" (`@media(max-width:767px){.phone{...width:100%!important;max-width:100vw!important;position:fixed...}}`) — flipped `.phone`'s actual behavior: it now goes **full-bleed below 768px** (so the app fills the whole phone screen like a native app) and **stays the narrow 430px centered card at 768px and above** (the desktop "mockup" look). Nobody updated `.wave-bottom` to match, so its breakpoint logic ended up exactly backwards relative to `.phone`'s real layout on both sides of the 768px line. Below 768px — which covers essentially all real phones, and this session's own test browser window at 702px — the wave stayed clamped to a centered 430px strip while `.phone` had already gone full width around it. That mismatch is what read as "cropped on the sides, not stretched."
+
+**Fix:** swapped the two rules so the base (sub-768px) rule is full-bleed (`width:100vw;left:0;transform:none`, matching `.phone`'s current sub-768px behavior) and the `@media(min-width:768px)` override re-narrows it to `width:min(430px,100vw);left:50%;transform:translateX(-50%)` (matching `.phone`'s current desktop behavior).
+
+**Verified, not just reasoned through:**
+- Live DOM inspection against production (`muse.wyzdesign.com/muse`) confirmed `.phone` really is `position:fixed;width:702px` (full viewport) at a 702px test window, while `.wave-bottom` was still rendering at the old code's `width:430px` — the exact mismatch described above, reproduced directly rather than assumed.
+- Took a screenshot at that same width showing the visibly asymmetric/cropped wave under the current (unfixed) production code.
+- Locally patched the CSS, then re-verified via `tsc --noEmit` (clean), `vitest run` (349/349), `next build` (clean), and a live-DOM re-check confirming the wave's rect now matches `.phone`'s full-width rect exactly (`x:0, width:702, right:702` — no gap on either side).
+- Took a second screenshot after the fix confirming the wave now reads edge-to-edge instead of centered-with-margins.
+
+**To merge:**
+```
+git fetch V:\Muse\_to_delete\round40-wave-breakpoint-fix.bundle muse-fix-delivery:bundle/round40
+git merge bundle/round40
+npx tsc --noEmit && npx vitest run && npx next build
+```
+(349/349 tests expected, clean build expected.)
+
+**Note for whoever reviews this next:** this is a good example of why "the CSS looks right" isn't the same as "the CSS is right" — the original desktop-full-width fix was correct in isolation, but broke silently when a second, unrelated change (the PWA viewport fix) altered the layout it depended on. If another change touches `.phone`'s responsive breakpoints in the future, re-check `.wave-bottom` (and anything else keyed to the same "narrow mockup vs. full-bleed" distinction) against it.
+
+---
+
+## FOR WYZMIND — round 39 ready to merge: scroll-fade, availability probe fix, boost-purchase-grant fix, forum pin, wiring audit + page.tsx/repo cleanliness assessment (2026-09-16)
 
 **Status check first:** confirmed merged — you already merged round 37/38 (`origin/main` is at `cbd6cb0`, matching this session's own docs commit). This round builds directly on top, clean linear history, no conflicts.
 
