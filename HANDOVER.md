@@ -7,7 +7,35 @@ but a round being described below does NOT mean it's live. Verify with
 `git log --oneline -1 origin/main` against `DELIVERY_STATUS.md`'s "Confirmed
 merged" line before trusting anything here.
 
-## 🆕 FOR WYZMIND — round 40 ready to merge: real fix for the "wave still looks cropped" report (supersedes round 39 — merge this one, you get both) (2026-09-17)
+## 🆕 FOR WYZMIND — round 41 ready to merge: real fix for "tapping the match% badge / like button does nothing" (supersedes round 40b — merge this one, you get everything through round 40 too) (2026-09-17)
+
+**Status check first:** `origin/main` is at `0ffd6cd` as of this round (Torree/wyzmind's own commit for Discover card-scroll, wave positioning, and tour-popup fixes — all confirmed merged, verified by diffing the actual pushed content, not just the commit message). This round is built directly on top of that, so merging `round41-scrim-clickblock-fix.bundle` brings in rounds 39+40 too.
+
+**What happened:** Torreé reported that on the Discover page, "literally none of the elements like tapping arrows to switch images or tapping button top right corner to like image or tapping match badge in top left do nothing when i tap them." wyzmind's swipe-scroll fix (now merged in `0ffd6cd`) addressed a *different*, real bug (native scroll inside `.card-info-scroll` being blocked by pointer capture) but didn't touch this one.
+
+**Investigation:** live-tested each control directly against production (`muse.wyzdesign.com/muse`) rather than guessing from source:
+- The photo-switch arrows (‹ ›) actually *do* work — clicking one live advanced the photo and the progress dots updated. They only look broken alongside the other two because of an inconsistent symptom (see root cause below).
+- The match% badge (top-left) and the per-photo like button (top-right) genuinely do nothing when tapped. Confirmed with `document.elementFromPoint()` at the badge's exact live coordinates: it returned `<div class="match-fab-scrim">`, not the button underneath it.
+
+**Root cause:** `.match-fab-scrim` is an invisible (opacity 0 at rest), CSS-mask-"circular", full-card overlay (`position:absolute;inset:0`, z-index 28) that backs the bottom-right FAB's radial menu — it's supposed to be click-through (`pointer-events:none`) except while that menu is open. But `muse.css` also has a blanket rule, `.screen-el.active *{pointer-events:auto}`, that force-enables pointer-events on *every* descendant of the currently-active screen with no exceptions. That wildcard rule's CSS specificity (0,2,0) beats the scrim's own `pointer-events:none` rule (0,1,0), so the scrim was actually clickable/hit-testable across its *entire* inset:0 box at all times — CSS masks affect what's painted, not what's hit-tested, so the visual "circle near the FAB" told you nothing about the real click target, which was the whole card. Anything underneath it with a lower z-index silently stopped receiving taps: the match badge and like button are both z-index 6, well below the scrim's 28. The arrows kept working only because their click zones carry an inline `pointerEvents` style in `DiscoverScreen.tsx`, and inline styles always beat external stylesheet rules regardless of specificity — which is exactly why the bug presented as "some things work, some don't" instead of a clean total failure, and why it was worth actually testing each control live instead of assuming they were all broken the same way.
+
+**Fix:** added `.screen-el.active .match-fab-scrim:not(.open){pointer-events:none}` — specificity (0,4,0), unconditionally beats the wildcard rule without touching the wildcard's other legitimate uses or the scrim's own `.open` (menu-open) state. Fixed `.match-fab-blur` and `.match-radial` alongside for the same reason: both are the identical "invisible, click-through-at-rest overlay on top of interactive card content" pattern in the same FAB feature, and would produce the exact same class of bug the moment something interactive ends up under them.
+
+**Not fixed, flagged instead:** `.screen-el.active *` is a structurally risky rule — any future decorative/overlay element anywhere in the app that relies on `pointer-events:none` to stay click-through, and that happens to render inside an active screen at a z-index above something interactive, will hit this same bug silently. A proper fix would replace the wildcard with something scoped (e.g. only re-enabling pointer-events on elements that actually need it, or a convention like `.pe-auto` applied deliberately) but that's a wider refactor with real regression risk across every screen in the app, not a one-round fix — flagging for a dedicated pass rather than rushing it.
+
+**Verified:** `tsc --noEmit` clean, `vitest run` 349/349, `next build` clean. The specificity math itself (0,4,0 > 0,2,0) is deterministic per the CSS spec, not something that needs a live re-test once the selector count is right — but the underlying bug diagnosis it's built on came from live production testing, not source-reading alone.
+
+**To merge:**
+```
+git fetch V:\Muse\_to_delete\round41-scrim-clickblock-fix.bundle muse-fix-delivery:bundle/round41
+git merge bundle/round41
+npx tsc --noEmit && npx vitest run && npx next build
+```
+(349/349 tests expected, clean build expected.)
+
+---
+
+## FOR WYZMIND — round 40 ready to merge: real fix for the "wave still looks cropped" report (supersedes round 39 — merge this one, you get both) (2026-09-17)
 
 **Status check first:** `origin/main` still at `cbd6cb0` as of this round — round 39 has NOT been merged yet. This round is built directly on top of round 39's own commit (`72a576e`), so merging `round40-wave-breakpoint-fix.bundle` brings in round 39's changes too. Don't merge round39's bundle separately — just merge round 40.
 

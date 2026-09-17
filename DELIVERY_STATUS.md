@@ -27,18 +27,18 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `d7f096d`
+## Confirmed merged, last verified at: `0ffd6cd`
 
 Everything at or before this commit is real, live, deployed code — this
 includes round 37 (sessions/search/scrolltop/matchpct/customrole), round 38
-(6 dark/6 light themes, splash wave fix), and a match-percentage-badge color
-fix (`.match-badge` now uses `var(--gold)` instead of hardcoded per-theme
-colors so it matches the like-button star and nav-arrow gold consistently
-across all 12 themes). All three confirmed merged — verified 2026-09-17 by
-fetching `origin/main` directly and diffing the actual file content (not
-just trusting the commit message), and re-running `tsc`/`vitest`/`next
-build` clean after merging it into this session's own branch. No action
-needed on any of the three.
+(6 dark/6 light themes, splash wave fix), a match-percentage-badge color fix
+(`.match-badge` now uses `var(--gold)`), and Torree/wyzmind's own fixes for
+Discover-page card scroll, wave vertical position (`bottom:10%`), and
+tutorial-popup first-time-only behavior. All confirmed merged — verified
+2026-09-17 by fetching `origin/main` directly and diffing actual file
+content (not trusting commit messages), and re-running `tsc`/`vitest`/`next
+build` clean after merging each into this session's own branch. No action
+needed on any of these.
 
 **⚠️ Outstanding non-git action from round 37**: `sql/MUSE_CUSTOM_ROLE_PENDING_20260916.sql`
 still needs to be run in the Supabase SQL editor (adds `custom_type_pending`/
@@ -61,12 +61,12 @@ It needs the bundle file moved to this path, or a fresh copy re-delivered.**
 
 | Bundle file (expected path: `V:\Muse\_to_delete\<filename>`) | Built on top of | Contains |
 |---|---|---|
-| `round40b-wave-breakpoint-fix-rebased.bundle` | `d7f096d` (rebased/re-merged on top of the match-badge fix after it landed on `origin/main` on 2026-09-17 — the old `round39-...bundle` and `round40-wave-breakpoint-fix.bundle` files are now stale, superseded by this one; delete them from `_to_delete/` once this merges cleanly) | Everything round 39 + round 40 had: horizontal-scroll edge fade (all themes), Muses "Interested" tab icon drop, real host-availability-probe bug fix, real boost-purchase-never-granted bug fix, forum post pin wiring, AND the real fix for the "wave still looks cropped/not stretched on the sides" report (`.wave-bottom`'s responsive breakpoint was inverted relative to `.phone`'s actual layout — see `HANDOVER.md`'s round 40 entry for the full root-cause writeup). |
+| `round41-scrim-clickblock-fix.bundle` | `0ffd6cd` (rebased on top of Torree/wyzmind's swipe-scroll + wave-position + tour-popup commit — includes everything round 39/40 had too; the old `round40b-wave-breakpoint-fix-rebased.bundle` is now stale/superseded, delete it from `_to_delete/` once this merges cleanly) | Everything round 39+40 had (scroll-fade, Muses icon drop, availability/boost fixes, forum pin, wave-breakpoint fix), PLUS a real fix for "tapping the match% badge / like button does nothing": `.match-fab-scrim` (an invisible full-card overlay, z-index 28, meant to be click-through except while its menu is open) was being force-set to `pointer-events:auto` by the blanket `.screen-el.active *` rule elsewhere in the file, which has higher CSS specificity than the scrim's own `pointer-events:none`. So the scrim silently ate every tap on the badge/like button (both z-index 6, well below it) everywhere on the card, all the time — not just while its menu was open. Root-caused live against production via `document.elementFromPoint()` at the badge's exact coordinates, which returned the scrim, not the button. Fixed with a higher-specificity override; `.match-fab-blur` and `.match-radial` (same "invisible click-through overlay" pattern) fixed alongside pre-emptively. See `HANDOVER.md`'s round 41 entry. |
 
 **To merge once the file is actually present:**
 ```
-git fetch V:\Muse\_to_delete\round40b-wave-breakpoint-fix-rebased.bundle muse-fix-delivery:bundle/round40b
-git merge bundle/round40b
+git fetch V:\Muse\_to_delete\round41-scrim-clickblock-fix.bundle muse-fix-delivery:bundle/round41
+git merge bundle/round41
 npx tsc --noEmit && npx vitest run && npx next build
 ```
 (349/349 tests expected, clean build expected.) Then update the "Confirmed
