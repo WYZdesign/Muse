@@ -7,6 +7,31 @@ but a round being described below does NOT mean it's live. Verify with
 `git log --oneline -1 origin/main` against `DELIVERY_STATUS.md`'s "Confirmed
 merged" line before trusting anything here.
 
+## 🆕 FOR WYZMIND — round 42 ready to merge: match-badge z-index + style, wave-bottom gap/fullness (supersedes round 41 — merge this one, you get everything through round 41 too) (2026-09-17)
+
+**Status check first:** `origin/main` is at `23a257f` as of this round (round 41's scrim fix + the `AGENTS.md` wake-up-briefing rewrite, both confirmed merged). This round is built directly on top of that.
+
+**Bug 1 — match badge still not tappable after round 41.** Round 41 fixed `.match-fab-scrim` eating taps, but Torreé reported the badge still didn't open its popup. Live-tested again: `document.elementFromPoint()` at the badge's exact coordinates now returned `.card-photo-zone.card-photo-zone-left` — a *different* invisible overlay (the tap-to-advance-photo hit zone), a separate bug from round 41's. Root cause: `.card-match-topleft` was `z-index:4`, below `.card-photo-zone`'s `z-index:5`. Fixed by raising the badge to `z-index:7`. The badge's `onClick` was already correctly wired to `setWhyInfo(...)` in `DiscoverScreen.tsx`, which opens an existing, fully-built match-breakdown popup — that popup itself was never broken, taps just never physically reached the button.
+
+**Bug 2 — badge visual style didn't match the rest of the card's buttons.** Torreé asked for this multiple times: the badge should use the same dark-glass look as the photo-nav arrows and the top-right like button (`rgba(10,6,18,0.55)` background, `1px solid rgba(255,255,255,0.16)` border, `var(--gold)` text, `blur(8px)` backdrop-filter). It was previously styled with an inline gold-tinted JSX style instead. Moved the styling into the `.card-match-topleft` CSS rule itself (removing the inline style) using the exact same formula, plus a matching light-theme override next to `.card-anchor-like-btn`'s.
+
+**Bug 3 — wave gap.** Torree/wyzmind's own `0ffd6cd` commit changed `.wave-bottom` from `bottom:0` to `bottom:10%`, intending to reveal more wave art from behind the bottom nav bar. But `bottom:10%` on a `position:fixed` container lifts the *entire box* up off the bottom edge — it doesn't stretch the content inside it — leaving a visible blank gap underneath. Torreé confirmed: "now theres a random gap under the waves." Reverted to `bottom:0` (flush, no gap) and grew `height` from `22%` to `36%` so the wave art itself stretches upward into view, which is what was actually wanted.
+
+**Bug/request 4 — "more full."** As a direct follow-up, Torreé asked for the waves to also look fuller, not just taller — "either stretch them up or add more stacks of tides, or both." Added a 4th stacked wave layer (`.wave-path-4`, a new flatter/deeper curve, slowest drift, `svg:nth-child(4)`) on top of the existing 3, so the taller container reads as a genuinely fuller body of water instead of the same 3 curves just spread thinner. Added matching fills for every light theme (sunrise/daylight, sky/rose, meadow, frost) alongside the existing 3-layer theme overrides.
+
+**Verified:** `tsc --noEmit` clean, `vitest run` 349/349, `next build` clean. Bugs 1 and 3 were root-caused live against production (`document.elementFromPoint()`, actual served CSS); bugs 2 and 4 are direct implementations of explicit, repeated user requests.
+
+**To merge:**
+```
+git fetch V:\Muse\_to_delete\round42-badge-wave-fix.bundle muse-fix-delivery:bundle/round42
+git merge bundle/round42
+npx tsc --noEmit && npx vitest run && npx next build
+git push origin HEAD:main
+```
+(349/349 tests expected, clean build expected.) Then update `DELIVERY_STATUS.md`'s "Confirmed merged" SHA and delete its round-42 pending row, in the same commit as the merge.
+
+---
+
 ## 🆕 FOR WYZMIND — round 41 ready to merge: real fix for "tapping the match% badge / like button does nothing" (supersedes round 40b — merge this one, you get everything through round 40 too) (2026-09-17)
 
 **Status check first:** `origin/main` is at `0ffd6cd` as of this round (Torree/wyzmind's own commit for Discover card-scroll, wave positioning, and tour-popup fixes — all confirmed merged, verified by diffing the actual pushed content, not just the commit message). This round is built directly on top of that, so merging `round41-scrim-clickblock-fix.bundle` brings in rounds 39+40 too.

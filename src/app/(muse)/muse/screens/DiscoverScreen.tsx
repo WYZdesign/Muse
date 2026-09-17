@@ -406,7 +406,11 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 <button
                                   type="button"
                                   className="card-match-topleft"
-                                  style={{ background: "rgba(255,215,0,0.16)", border: "1px solid rgba(255,215,0,0.4)", color: "var(--gold)", fontWeight: 800, cursor: "pointer", fontFamily: "inherit", lineHeight: "normal" }}
+                                  // Round 42: style (dark-glass background, gold text) now lives
+                                  // entirely in the .card-match-topleft CSS rule, matching
+                                  // .card-anchor-like-btn (top-right) and the photo-nav arrows —
+                                  // moved out of inline style so the light-theme override next to
+                                  // .card-anchor-like-btn's in muse.css can actually apply to it too.
                                   onPointerDown={(e) => e.stopPropagation()}
                                   onClick={(e) => { e.stopPropagation(); setWhyInfo({ score: ms, reasons }); }}
                                   aria-label={`${ms}% match — why?`}

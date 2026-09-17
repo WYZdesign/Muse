@@ -27,18 +27,23 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `0ffd6cd`
+## Confirmed merged, last verified at: `23a257f`
 
 Everything at or before this commit is real, live, deployed code — this
 includes round 37 (sessions/search/scrolltop/matchpct/customrole), round 38
 (6 dark/6 light themes, splash wave fix), a match-percentage-badge color fix
-(`.match-badge` now uses `var(--gold)`), and Torree/wyzmind's own fixes for
-Discover-page card scroll, wave vertical position (`bottom:10%`), and
-tutorial-popup first-time-only behavior. All confirmed merged — verified
-2026-09-17 by fetching `origin/main` directly and diffing actual file
-content (not trusting commit messages), and re-running `tsc`/`vitest`/`next
-build` clean after merging each into this session's own branch. No action
-needed on any of these.
+(`.match-badge` now uses `var(--gold)`), Torree/wyzmind's own fixes for
+Discover-page card scroll, wave vertical position (`bottom:10%` — note: this
+specific value gets corrected again in the round-42 bundle below, see its
+entry for why), and tutorial-popup first-time-only behavior, round 39/40
+(scroll-fade, Muses icon drop, availability/boost fixes, forum pin,
+wave-breakpoint responsive fix), and round 41 (the `.match-fab-scrim`
+click-block fix plus the `AGENTS.md` wake-up-briefing rewrite). All
+confirmed merged — this specific SHA verified 2026-09-17 by fetching
+`origin/main` directly (`git log --oneline -1 origin/main` → `23a257f`) and
+diffing actual file content (not trusting commit messages), and re-running
+`tsc`/`vitest`/`next build` clean after merging each into this session's own
+branch. No action needed on any of these.
 
 **⚠️ Outstanding non-git action from round 37**: `sql/MUSE_CUSTOM_ROLE_PENDING_20260916.sql`
 still needs to be run in the Supabase SQL editor (adds `custom_type_pending`/
@@ -61,12 +66,12 @@ It needs the bundle file moved to this path, or a fresh copy re-delivered.**
 
 | Bundle file (expected path: `V:\Muse\_to_delete\<filename>`) | Built on top of | Contains |
 |---|---|---|
-| `round41b-scrim-fix-plus-agents-briefing.bundle` | `0ffd6cd` (same content as `round41-scrim-clickblock-fix.bundle`, now stale/superseded — delete it from `_to_delete/` once this merges cleanly) | Everything round 39+40 had (scroll-fade, Muses icon drop, availability/boost fixes, forum pin, wave-breakpoint fix), a real fix for "tapping the match% badge / like button does nothing" (`.match-fab-scrim`, an invisible full-card overlay meant to be click-through, was being force-set to `pointer-events:auto` by a higher-specificity blanket rule elsewhere in the CSS, silently eating every tap on anything under it — root-caused live via `document.elementFromPoint()` against production, fixed with a higher-specificity override; `.match-fab-blur`/`.match-radial` fixed alongside pre-emptively), PLUS a full rewrite of `AGENTS.md` into a proper wake-up briefing (identity, the Claude/wyzmind working relationship, a mandatory 3-step "check reality before forming an opinion" routine, and a list of real incidents from this project not to repeat — Torree's explicit ask, so a fresh model routed in via opencode stops re-discovering all of this the hard way every session). See `HANDOVER.md`'s round 41 entry for the scrim fix writeup. |
+| `round42-badge-wave-fix.bundle` | `23a257f` (includes everything round41b had — scrim click-block fix, AGENTS.md rewrite — plus two new fixes) | (1) `.card-match-topleft` (the match% badge on Discover cards) was z-index:4, BELOW `.card-photo-zone`'s invisible photo-advance tap zone at z-index:5, so taps never reached the badge's onClick even after the scrim fix — raised to z-index:7, and root-caused live via `document.elementFromPoint()`. Also moved its background/text color out of inline JSX into the `.card-match-topleft` CSS rule, matching the exact dark-glass style (`rgba(10,6,18,0.55)` bg, gold text, `blur(8px)`) already used by `.card-anchor-like-btn` and the photo-nav arrows — this is the "should have same color style" fix Torree asked for repeatedly. The badge's onClick already correctly opened the existing match-breakdown popup (`setWhyInfo(...)` in `DiscoverScreen.tsx`) — that popup was never broken, taps just never reached the button. (2) `.wave-bottom`'s `bottom:10%` (from Torree's own 0ffd6cd commit) lifted the whole fixed-position wave container UP off the bottom edge instead of stretching its visible art upward — leaving a blank gap underneath ("random gap under the waves"). Reverted to `bottom:0`, grew `height` 22%→36% so more wave shows from behind the bottom nav bar with zero gap, and added a 4th stacked wave layer (`.wave-path-4`, new `<svg>` in the JSX + matching CSS incl. all 4 light-theme overrides) so the taller container reads as a genuinely fuller body of water rather than the same 3 curves just stretched over more space — per Torree's direct follow-up ("either stretch them up or add more stacks of tides, or both... more full"). |
 
 **To merge once the file is actually present:**
 ```
-git fetch V:\Muse\_to_delete\round41b-scrim-fix-plus-agents-briefing.bundle muse-fix-delivery:bundle/round41b
-git merge bundle/round41b
+git fetch V:\Muse\_to_delete\round42-badge-wave-fix.bundle muse-fix-delivery:bundle/round42
+git merge bundle/round42
 npx tsc --noEmit && npx vitest run && npx next build
 ```
 (349/349 tests expected, clean build expected.) Then update the "Confirmed

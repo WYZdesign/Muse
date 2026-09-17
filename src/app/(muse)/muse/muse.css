@@ -1234,8 +1234,24 @@ img{background-color:var(--card-bg)}
 .card-hero-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;padding-right:76px}
 .card-hero-badge{display:inline-flex;align-items:center;width:fit-content;align-self:flex-start;padding:3px 9px;border-radius:99px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
 /* M6: match% badge moved to top-left of the card, overlaid on the hero photo
-   instead of stacked with the other badges at the bottom. */
-.card-match-topleft{position:absolute;top:12px;left:12px;z-index:4;padding:4px 10px;border-radius:99px;font-size:11px;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.5);backdrop-filter:blur(6px)}
+   instead of stacked with the other badges at the bottom.
+   Round 42 fix (2026-09-17): z-index was 4, BELOW .card-photo-zone's z-index
+   of 5 — the invisible left/right tap-to-advance-photo zones (16% width,
+   62vh tall, anchored top:0) cover this exact top-left corner, so the zone
+   silently ate every tap meant for the badge, the same "invisible layer
+   above an interactive control" bug class as the .match-fab-scrim fix
+   earlier, just a different pair of elements. Raised to 7, matching
+   .card-anchor-like-btn/.card-photo-dots (both 6) and clearing
+   .card-photo-zone (5) with room to spare, so the badge is reliably on top
+   regardless of what else gets added to this stack later.
+   Style also brought in line with the other card-front controls
+   (.card-anchor-like-btn, .card-photo-nav): dark glass pill
+   (rgba(10,6,18,.55) + blur) with a colored icon/label, instead of the
+   gold-tinted-background treatment it had before — set inline in page.tsx
+   where the button is rendered, this rule now just carries the shared
+   layout/sizing so both stay visually consistent by construction. */
+.card-match-topleft{position:absolute;top:12px;left:12px;z-index:7;display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:99px;font-size:11px;font-weight:700;white-space:nowrap;background:rgba(10,6,18,0.55);border:1px solid rgba(255,255,255,0.16);color:var(--gold);cursor:pointer;font-family:inherit;line-height:normal;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:opacity .3s ease,transform .15s ease}
+.card-match-topleft:active{transform:scale(0.94)}
 
 /* ═══ SEARCH ═══ */
 .search-wrap{padding:0 20px 10px}
@@ -1758,6 +1774,7 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .card-prompts{background:var(--surface);border-color:var(--border-subtle)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .card-prompt-arrow{color:var(--muted)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .card-anchor-like-btn{background:var(--panel-bg);color:var(--text)}
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .card-match-topleft{background:var(--panel-bg);color:var(--gold)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .card-portfolio-btn{border-color:var(--gold);background:var(--surface)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .match-overlay{background:rgba(0,0,0,0.85);backdrop-filter:blur(30px)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .match-overlay-close{background:var(--surface-hover);border-color:var(--border-med)}
@@ -1938,15 +1955,19 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"]) .wave-bottom .wave-path-1{fill:rgba(80,160,230,0.30)}
 :is([data-theme="sunrise"],[data-theme="daylight"]) .wave-bottom .wave-path-2{fill:rgba(100,180,250,0.22)}
 :is([data-theme="sunrise"],[data-theme="daylight"]) .wave-bottom .wave-path-3{fill:rgba(120,200,255,0.15)}
+:is([data-theme="sunrise"],[data-theme="daylight"]) .wave-bottom .wave-path-4{fill:rgba(140,215,255,0.09)}
 :is([data-theme="sky"],[data-theme="rose"]) .wave-bottom .wave-path-1{fill:rgba(70,140,220,0.28)}
 :is([data-theme="sky"],[data-theme="rose"]) .wave-bottom .wave-path-2{fill:rgba(90,160,240,0.20)}
 :is([data-theme="sky"],[data-theme="rose"]) .wave-bottom .wave-path-3{fill:rgba(110,180,250,0.13)}
+:is([data-theme="sky"],[data-theme="rose"]) .wave-bottom .wave-path-4{fill:rgba(130,195,255,0.08)}
 [data-theme="meadow"] .wave-bottom .wave-path-1{fill:rgba(90,155,74,0.28)}
 [data-theme="meadow"] .wave-bottom .wave-path-2{fill:rgba(110,175,90,0.20)}
 [data-theme="meadow"] .wave-bottom .wave-path-3{fill:rgba(140,195,110,0.13)}
+[data-theme="meadow"] .wave-bottom .wave-path-4{fill:rgba(160,210,130,0.08)}
 [data-theme="frost"] .wave-bottom .wave-path-1{fill:rgba(122,107,191,0.26)}
 [data-theme="frost"] .wave-bottom .wave-path-2{fill:rgba(140,125,205,0.18)}
 [data-theme="frost"] .wave-bottom .wave-path-3{fill:rgba(160,145,220,0.12)}
+[data-theme="frost"] .wave-bottom .wave-path-4{fill:rgba(180,165,230,0.07)}
 
 /* ═══ NAV ICON HUE SHIFT ═══ */
 @keyframes gradientShift{0%{background-position:0% 50%}20%{background-position:34% 72%}40%{background-position:70% 26%}60%{background-position:100% 64%}80%{background-position:52% 16%}100%{background-position:0% 50%}}
@@ -2546,7 +2567,7 @@ img{background-color:var(--card-bg)}
    The three layers use mismatched, low-frequency bezier curves so they read as
    real, uneven tides rather than a repeating synthwave pattern.
    ══════════════════════════════════════════════════════════════════════════ */
-.wave-bottom{position:fixed;bottom:10%;left:0;transform:none;width:100vw;height:22%;z-index:90;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s ease}
+.wave-bottom{position:fixed;bottom:0;left:0;transform:none;width:100vw;height:36%;z-index:90;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s ease}
 .wave-bottom.show{opacity:1}
 /* Audit fix (2026-09-16, round 40): this rule used to be inverted relative
    to .phone's actual responsive behavior, which is why the wave looked
@@ -2572,17 +2593,29 @@ img{background-color:var(--card-bg)}
    left:0, no transform). The >=768px override below re-narrows it to
    match .phone's centered 430px card at that breakpoint instead. */
 @media(min-width:768px){.wave-bottom{width:min(430px,100vw);left:50%;transform:translateX(-50%)}}
-/* bottom:10% (was 0) merged in from Torree's 2026-09-17 wave-positioning
-   commit (0ffd6cd) — lifts the wave up off the very bottom edge on both
-   sides of the breakpoint above; applies via the base rule since it's the
+/* Round 43 fix (2026-09-17): Torree's 0ffd6cd commit set bottom:10% intending
+   to reveal more wave art from behind the bottom nav bar, but bottom:10% on
+   a position:fixed container LIFTS THE WHOLE BOX off the bottom edge,
+   leaving a visible blank gap below it — not what was wanted ("stretch them
+   up 10%... now theres a random gap under the waves"). The actual intent —
+   more wave visible above the nav bar, no gap below, and "more full" — is a
+   taller box anchored flush to the bottom, not a box moved up. Reverted to
+   bottom:0 and grew height 22% -> 36% so the wave content stretches upward
+   into view with zero gap underneath. Paired with a 4th stacked wave layer
+   (.wave-path-4, see the JSX + svg:nth-child(4) rule below) per Torree's
+   "add more stacks of tides... more full" follow-up, so the taller
+   container reads as a fuller body of water instead of the same 3 curves
+   just spread over more space. Applies via the base rule since it's the
    same value at every width. */
 .wave-bottom svg{position:absolute;bottom:0;left:0;width:240%;height:100%;animation:waveDrift 14s ease-in-out infinite}
 .wave-bottom svg:nth-child(2){animation-duration:20s;animation-delay:-6s;opacity:.7}
 .wave-bottom svg:nth-child(3){animation-duration:28s;animation-delay:-13s;opacity:.5}
+.wave-bottom svg:nth-child(4){animation-duration:34s;animation-delay:-20s;opacity:.4}
 @keyframes waveDrift{0%{transform:translateX(0) translateY(0) scaleX(1)}20%{transform:translateX(-6%) translateY(-3px) scaleX(1.02)}40%{transform:translateX(-14%) translateY(5px) scaleX(0.98)}60%{transform:translateX(-8%) translateY(-4px) scaleX(1.01)}80%{transform:translateX(-2%) translateY(2px) scaleX(0.99)}100%{transform:translateX(0) translateY(0) scaleX(1)}}
 .wave-bottom .wave-path-1{fill:rgba(80,160,230,0.35)}
 .wave-bottom .wave-path-2{fill:rgba(100,181,246,0.25)}
 .wave-bottom .wave-path-3{fill:rgba(120,200,255,0.18)}
+.wave-bottom .wave-path-4{fill:rgba(140,210,255,0.11)}
 
 /* ══════════════════════════════════════════════════════════════════════════
    MUSE PRO BANNER — BUTTERY CINEMATIC SHEEN

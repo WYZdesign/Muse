@@ -2601,6 +2601,14 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
           <path className="wave-path-3" d="M0,148 C60,138 120,153 180,143 C240,133 300,151 360,141 C420,131 480,149 540,139 C600,129 660,147 720,137 C780,127 840,145 900,135 C960,125 1020,143 1080,133 C1140,123 1200,141 1260,131 C1320,121 1380,139 1440,133 L1440,160 L0,160 Z" />
         </svg>
+        {/* Round 43: 4th, deepest layer added per Torree's "more stacks of
+            tides... more full" request. Fills in the bottom band so the
+            taller container (height 22%->32%) reads as a fuller body of
+            water rather than the same 3 curves just stretched over more
+            space. Flattest, broadest curve, slowest drift, furthest back. */}
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
+          <path className="wave-path-4" d="M0,158 C180,150 360,159 540,152 C720,145 900,158 1080,150 C1200,145 1320,155 1440,150 L1440,160 L0,160 Z" />
+        </svg>
       </div>
       {showMatchOverlay && (
         <div
