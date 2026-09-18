@@ -133,6 +133,27 @@ function initialsAvatarUrl(name: string, key: string | number): string {  const 
   return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='${c1}'/><stop offset='1' stop-color='${c2}'/></linearGradient></defs><rect width='200' height='200' fill='url(%23g)'/><text x='100' y='102' font-family='Inter,Arial,sans-serif' font-size='82' font-weight='700' fill='white' text-anchor='middle' dominant-baseline='central'>${letters}</text></svg>`;
 }
 
+// Round 46: the match-celebration overlay used to have ~3 hand-coded
+// variants (anim-variant-1/2 in muse.css, plus a plain default), picked via
+// Math.random()*4 even though only 0-2 actually rendered anything distinct.
+// Torreé asked for the full 10 variants he originally requested: no
+// romance-themed copy, real apostrophes, and each with its own gradient
+// pulled from the site's existing color tokens. Data-driven so muse.css
+// doesn't need a new .anim-variant-N block per variant — .match-title reads
+// its gradient from a CSS custom property set inline per variant instead.
+const MATCH_VARIANTS: { title: string; symbol: string; particles: string[]; gradient: string; particleColor: string }[] = [
+  { title: "It's a Connection!", symbol: "✨", particles: ["✦","✧","⭑","⋆"], gradient: "linear-gradient(120deg,var(--gold),var(--amber),var(--sunset-orange),var(--gold))", particleColor: "var(--gold)" },
+  { title: "It's a Match!", symbol: "★", particles: ["★","☆","✦"], gradient: "linear-gradient(120deg,var(--pink),var(--coral),var(--gold),var(--pink))", particleColor: "var(--coral)" },
+  { title: "Creative Match!", symbol: "🎨", particles: ["🎨","✦","⭑"], gradient: "linear-gradient(120deg,var(--lavender),var(--pink),var(--gold),var(--lavender))", particleColor: "var(--lavender)" },
+  { title: "Let's Collaborate!", symbol: "🤝", particles: ["✦","⋆","✧"], gradient: "linear-gradient(120deg,var(--sky),var(--mint),var(--gold),var(--sky))", particleColor: "var(--sky)" },
+  { title: "New Connection!", symbol: "⚡", particles: ["⚡","✦","⭑"], gradient: "linear-gradient(120deg,var(--honey),var(--amber),var(--coral),var(--honey))", particleColor: "var(--honey)" },
+  { title: "Match Made!", symbol: "🌟", particles: ["🌟","★","✧"], gradient: "linear-gradient(120deg,var(--golden-rose),var(--pink),var(--lavender),var(--golden-rose))", particleColor: "var(--golden-rose)" },
+  { title: "Time to Create!", symbol: "🎬", particles: ["✦","⋆","✧"], gradient: "linear-gradient(120deg,var(--sunset),var(--gold),var(--peach),var(--sunset))", particleColor: "var(--sunset)" },
+  { title: "Connection Found!", symbol: "🔗", particles: ["✦","⭑","✧"], gradient: "linear-gradient(120deg,var(--mint),var(--sky),var(--lavender),var(--mint))", particleColor: "var(--mint)" },
+  { title: "You're a Match!", symbol: "💫", particles: ["💫","✦","⭑"], gradient: "linear-gradient(120deg,var(--warm-cream),var(--gold),var(--amber),var(--warm-cream))", particleColor: "var(--gold)" },
+  { title: "Collab Unlocked!", symbol: "🎉", particles: ["🎉","✦","⋆"], gradient: "linear-gradient(120deg,var(--coral),var(--peach),var(--gold),var(--coral))", particleColor: "var(--coral)" },
+];
+
 function MusePage() {
   const [screen, setScreen] = useState<Screen>("auth");
   const {
@@ -2080,8 +2101,26 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       // only decides whether we show the celebratory "You matched!" overlay;
       // it must NOT swallow the like, or a like on a low-score profile is lost.
        const isMatch = matchScore > 50 || (DEMO_MODE && Math.random() < 0.5);
-      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id, intent }) }).then(async (r) => {
-        if (!r.ok) throw new Error("match failed");
+      // Round 46 fix: this used to call apiFetch, which throws on any
+      // non-2xx response (see apiFetch's own `if (!res.ok) throw` a few
+      // lines up in this file). The `.then()` below never saw a non-ok
+      // response — apiFetch had already thrown by the time it would have
+      // run — so every failure (rate limit, blocked, suspended, a genuine
+      // 500) landed in the same generic `.catch()` and showed the same
+      // unhelpful "Match failed — try again" with no way to tell what
+      // actually happened. Switched to authFetch (resolves instead of
+      // throwing on non-2xx) so the status/body can actually be inspected,
+      // and surfaced the specific cases the server can return
+      // (matching.ts's matchCreate: 429 rate limited, 403 blocked/
+      // suspended, 400 bad target) instead of one catch-all message.
+      authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id, intent }) }).then(async (r) => {
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({} as any));
+          if (r.status === 429) showToast("You're swiping a bit fast — give it a few seconds and try again");
+          else if (r.status === 403) showToast(d?.error || "Can't like this profile right now");
+          else showToast(d?.error || "Match failed — try again");
+          return;
+        }
         const d = await r.json().catch(() => ({}));
         // If the server reported this is a mutual match (target already liked
         // us), surface the overlay even below the client score threshold.
@@ -2110,7 +2149,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         setActivityFeed(prev => [{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
         setTimeout(() => {
           setShowMatchOverlay(newMatch);
-          setMatchAnimVariant(Math.floor(Math.random() * 4));
+          setMatchAnimVariant(Math.floor(Math.random() * MATCH_VARIANTS.length));
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 2500);
           setExpandedMatchId(String(newMatch.id));
@@ -2610,21 +2649,27 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           <path className="wave-path-4" d="M0,158 C180,150 360,159 540,152 C720,145 900,158 1080,150 C1200,145 1320,155 1440,150 L1440,160 L0,160 Z" />
         </svg>
       </div>
-      {showMatchOverlay && (
+      {showMatchOverlay && (() => {
+        // Round 46: 10 random variants, each with its own text (no romance
+        // framing — see MATCH_VARIANTS above the component) and its own
+        // color gradient, driven off --match-grad / --match-particle-color
+        // instead of a per-variant CSS class, so this block works the same
+        // for all 10 without needing 10 sets of JSX/CSS.
+        const mv = MATCH_VARIANTS[matchAnimVariant] || MATCH_VARIANTS[0];
+        return (
         <div
-          className={`match-overlay anim-variant-${matchAnimVariant}`}
-          role="dialog" aria-modal="true" aria-label="It's a Connection!"
+          className="match-overlay"
+          style={{ ["--match-grad" as any]: mv.gradient, ["--match-particle-color" as any]: mv.particleColor }}
+          role="dialog" aria-modal="true" aria-label={mv.title}
           onClick={() => setShowMatchOverlay(null)}
         >
           <button className="match-overlay-close" onClick={(e)=>{e.stopPropagation();setShowMatchOverlay(null)}} aria-label="Close match overlay"><FiX size={22} /></button>
           {confettiPieces.map((piece,i)=><div key={i} className="confetti-piece" style={piece as React.CSSProperties} />)}
-          {/* Variant-specific animated background elements */}
-          {matchAnimVariant === 1 && <div className="match-sparkles" aria-hidden="true">{Array.from({length:20}).map((_,i)=><span key={i} className="match-sparkle" style={{left:`${Math.random()*100}%`,top:`${Math.random()*100}%`,animationDelay:`${Math.random()*1.5}s`,fontSize:`${10+Math.random()*18}px`}}>{["✦","✧","⭑","⋆"][i%4]}</span>)}</div>}
-          {matchAnimVariant === 2 && <div className="match-stars" aria-hidden="true">{Array.from({length:16}).map((_,i)=><span key={i} className="match-star" style={{left:`${Math.random()*100}%`,top:`${Math.random()*100}%`,animationDelay:`${Math.random()*1.8}s`,fontSize:`${8+Math.random()*16}px`}}>★</span>)}</div>}
+          <div className="match-particles" aria-hidden="true">{Array.from({length:18}).map((_,i)=><span key={i} className="match-particle" style={{left:`${Math.random()*100}%`,top:`${Math.random()*100}%`,animationDelay:`${Math.random()*2}s`,fontSize:`${10+Math.random()*18}px`}}>{mv.particles[i % mv.particles.length]}</span>)}</div>
           <div
             className="match-title"
           >
-            {matchAnimVariant === 1 ? "✨ It's a Match!" : matchAnimVariant === 2 ? "★ Star Connection!" : "It's a Connection!"}
+            {mv.symbol} {mv.title}
           </div>
           <div className="match-subtitle">You and <strong style={{color:"var(--gold)"}}>{showMatchOverlay.name}</strong> are both ready to collaborate.</div>
           <div className="match-disclaimer">Muse is for finding and booking creative collaborators, not a dating app.</div>
@@ -2638,7 +2683,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             Send a Message
           </button>
         </div>
-      )}
+        );
+      })()}
       {showIntentPicker && intentProfile && (
         <div className="intent-overlay" role="presentation" aria-hidden="true" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null);setIntentSelection([])}}>
           <div className="intent-modal" onClick={e=>e.stopPropagation()}>

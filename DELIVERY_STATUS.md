@@ -27,7 +27,7 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `a617086`
+## Confirmed merged, last verified at: `0f540ba`
 
 Everything at or before this commit is real, live, deployed code — this
 includes round 37 (sessions/search/scrolltop/matchpct/customrole), round 38
@@ -40,11 +40,13 @@ forum pin, wave-breakpoint responsive fix), round 41 (the `.match-fab-scrim`
 click-block fix plus the `AGENTS.md` wake-up-briefing rewrite), round 42
 (match badge now tappable at z-index 7 with matching dark-glass styling,
 `.wave-bottom` back flush to the bottom with height 22%→36% and a 4th stacked
-wave layer for fullness), and round 44 (signup now returns a real session —
+wave layer for fullness), round 44 (signup now returns a real session —
 `POST /api/muse/auth` with `action=register` now calls `signInWithPassword`
 after creating the account so new users are authenticated immediately;
-fails open — account still exists even if sign-in throws).
-All confirmed merged — this specific SHA verified 2026-09-17 by fetching
+fails open — account still exists even if sign-in throws), and Torree/wyzmind's
+own `0f540ba` (removed the "You Connected!"/hearts match-animation variant,
+gold centered title).
+All confirmed merged — this specific SHA verified 2026-09-18 by fetching
 `origin/main` directly and diffing actual file content (not trusting commit
 messages), and re-running `tsc`/`vitest`/`next build` clean after merging each
 into this session's own branch. No action needed on any of these.
@@ -59,7 +61,14 @@ Until it runs, saving a custom "Other" type/style will fail.
 
 ## Pending delivery — NOT in the codebase yet
 
-**None.** All delivered bundles are merged. See the "Confirmed merged" section above for the current SHA.
+**Bundle: `muse-round45-round46-delivery.bundle`** (branch `muse-fix-delivery`, built on top of confirmed-merged `0f540ba` above). Two rounds, delivered together since round46 had to be rebased onto round45 anyway:
+
+- **Round 45** (commit `5c08505`, rebased) — the verify-banner z-index fix, the booking-error-swallowing fix in `SessionsScreen.tsx`, the stale-sessions-list-after-booking fix, and the match-title apostrophe fix (`It's a Match!` / `It's a Connection!` with real apostrophes, not `&apos;` entities). This round conflicted with wyzmind's own `0f540ba` (both touched the match-title ternary) — resolved by keeping wyzmind's hearts-variant removal *and* the apostrophe fix together; see `HANDOVER.md` for the full note.
+- **Round 46** (new commit on top) — two independent fixes Torreé reported:
+  1. **"Match failed" toast fix**: `doSwipe`'s match-like POST in `page.tsx` used `apiFetch`, which throws on any non-2xx response, so the `.then()` handler's `if (r.status === X)` branches were dead code — every failure (rate-limited, blocked, a real 500) fell into the same generic catch and showed "Match failed — try again" with no way to tell what happened. Switched to `authFetch` (resolves instead of throwing) and now shows distinct messages for 429 (rate limited — "swiping a bit fast"), 403 (blocked/suspended — server's own message), and other errors (server's own message or a generic fallback). This does not claim to have found *why* matches were failing (rate limiting from heavy same-IP test traffic vs. something else is still unconfirmed) — it makes the real cause visible next time it happens instead of hiding it behind one message.
+  2. **10-variant match-celebration animation**, per Torreé's explicit request: `MATCH_VARIANTS` (10 entries, top of `page.tsx`) replaces the old ~3-variant system. Every variant has non-romance-themed copy ("It's a Connection!", "Creative Match!", "Let's Collaborate!", "New Connection!", "Match Made!", "Time to Create!", "Connection Found!", "You're a Match!", "Collab Unlocked!", "It's a Match!"), its own gradient built from existing site color tokens (`--pink`/`--coral`/`--peach`/`--lavender`/`--gold`/`--amber`/`--honey`/`--sunset-orange`/`--warm-cream`/`--golden-rose`/`--sunset`/`--sky`/`--mint`), and its own particle symbol set — all rendered through one generic `.match-title`/`.match-particles` CSS block (`muse.css`) driven by `--match-grad`/`--match-particle-color` custom properties set inline per variant, instead of a `.anim-variant-N` block per variant. Also removed the continuous scale-based "grow and shrink" title pulse (`matchPulse`) and a *second*, later-in-file, equal-specificity `.match-title{animation:matchZoom...}` rule that was silently winning the cascade and was the actual live cause of that complaint — both replaced with pure opacity fades (`matchTitleFade`, `matchParticleFade`, and a fade-only `matchIn` for the overlay entrance). `matchAnimVariant` is now randomized over `MATCH_VARIANTS.length` (0–9) instead of a hardcoded `*4`.
+
+`tsc --noEmit`, `vitest run` (349/349), and `next build` all clean on this branch after rebasing onto `0f540ba`. Sitting in `V:\Muse\_to_delete\muse-round45-round46-delivery.bundle` — merge both commits into `origin/main`, then update this file's "Confirmed merged" SHA and clear this section.
 
 ## Known open issues (not blocked on delivery, just unsolved)
 
