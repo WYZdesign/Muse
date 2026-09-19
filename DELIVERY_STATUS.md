@@ -27,7 +27,38 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `e192af3`
+## Confirmed merged, last verified at: `b791dd9`
+
+### Round 47 — SQL migration suite idempotency (verified 2026-09-19)
+
+`b791dd9` makes the entire `sql/` migration suite run clean back-to-back:
+**51/51 files, two consecutive full runs, zero failures.** Fixes in this round:
+
+- `storage.objects` policy qualifiers (`ON storage;` → `ON storage.objects;`)
+  and removal of invalid `DROP POLICY ... ON public;` statements that raised
+  `relation "public" does not exist`.
+- Quest system: `MUSE_QUESTS_V2/V3` now create `muse_quests` themselves
+  (`CREATE TABLE IF NOT EXISTS` + unique index) so file order can't break them;
+  `MUSE_WEEKLY_QUESTS` seeds use column-inference
+  `ON CONFLICT (action_key, frequency, target_count) DO NOTHING` on every
+  INSERT (the previous `ON CONFLICT ON CONSTRAINT` referenced an index, not a
+  constraint).
+- `rls_policies.sql`: a `DROP POLICY IF EXISTS` now precedes every
+  `CREATE POLICY`; `id::text` casts added only in policies whose guarded
+  column is TEXT (`muse_reports.reporter_id`, `muse_blocks.user_id`).
+- `muse_complete_schema.sql`: `muse_profiles.id::text` cast in the
+  `muse_messages` participant policies (`sender_id`/`receiver_id` are TEXT).
+- New `sql/MUSE_REPORTS_MODERATION.sql`: adds `status`, `resolved_at`,
+  `resolved_by`, `resolution_note` to `muse_reports` (idempotent).
+- `muse.css`: removed `!important` from `.intent-btn:hover` so the two-tap
+  selected-state highlight is no longer overridden on hover.
+
+Verification for `b791dd9`: `npx tsc --noEmit` clean, `vitest run` 349/349,
+`next build` clean, `check_muse_migration.py` reports all six `muse_reports`
+columns present, and Vercel deployment state `READY` (DEPLOY IS LIVE) for the
+exact pushed SHA.
+
+## Prior verified baseline: `e192af3`
 
 Everything at or before this commit is real, live, deployed code — this
 includes round 37 (sessions/search/scrolltop/matchpct/customrole), round 38
