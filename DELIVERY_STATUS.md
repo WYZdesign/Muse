@@ -27,7 +27,7 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `b791dd9`
+## Confirmed merged, last verified at: `6c4b388`
 
 ### Round 47 — SQL migration suite idempotency (verified 2026-09-19)
 
@@ -57,6 +57,13 @@ Verification for `b791dd9`: `npx tsc --noEmit` clean, `vitest run` 349/349,
 `next build` clean, `check_muse_migration.py` reports all six `muse_reports`
 columns present, and Vercel deployment state `READY` (DEPLOY IS LIVE) for the
 exact pushed SHA.
+
+Follow-up on `6c4b388` (same round): deleted the confirmed-dead legacy
+per-screen CSS block from `muse.css` (68 lines, `.screen-<name>.active`), which
+no rendered element carries. `tsc` clean, `vitest` 349/349, `next build` clean,
+Vercel `READY` for `6c4b388`. Note: the commit that records this line is a
+documentation-only follow-up on top of `6c4b388`; the verified *code* SHA is
+`6c4b388`.
 
 ## Prior verified baseline: `e192af3`
 
