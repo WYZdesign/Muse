@@ -106,11 +106,11 @@ Until it runs, saving a custom "Other" type/style will fail.
 - `/api/muse/match?limit=50` returns 0 live candidates for at least one real
   account — backend/Supabase-data issue, not a client bug. Discover falls
   back to the static demo deck when this happens.
-- The dead legacy per-screen CSS block in `muse.css` (~lines 2248-2310,
-  `.screen-discover.active` etc.) no longer matches any live DOM element —
-  confirmed via direct DOM inspection on production. Harmless (nothing reads
-  it) but worth deleting so it stops looking live to the next person editing
-  that file.
+- ~~Dead legacy per-screen CSS block in `muse.css`~~ **RESOLVED** — the
+  `.screen-<name>.active` block was deleted (68 lines) and replaced with a
+  one-line note; only the live `.screen-el[data-screen="..."]` theming remains.
+  Verified: no source file references `.screen-<name>.active`, CSS braces
+  balanced, `tsc`/`vitest`/`next build` clean.
 
 ## Protocol for any agent picking up this repo (Claude, wyzmind, or anything
 running via opencode)

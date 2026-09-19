@@ -2421,74 +2421,9 @@ img{background-color:var(--card-bg)}
 
 
 
-/* ═══════════════════════════════════════════════════════════════
-   PAGE-SPECIFIC GRADIENT THEMES — accent tints for tabs, inputs, indicators
-   Nav item colors are controlled by Nav.tsx inline styles; these rules
-   only tint non-nav elements (conn-tabs, inputs, header buttons).
-   ═══════════════════════════════════════════════════════════════ */
-
-/* FEED PAGE — blue */
-.screen-feed.active{--line-color:#1E90FF}
-.screen-feed.active .conn-tab.active{color:#1E90FF;border-bottom-color:#1E90FF;text-shadow:0 0 10px rgba(30,144,255,0.35)}
-.screen-feed.active .hdr-btn:hover{color:#1E90FF}
-.screen-feed.active .inp:focus{border-color:#1E90FF;box-shadow:0 0 10px rgba(30,144,255,0.12)}
-
-/* DISCOVER PAGE — gold */
-.screen-discover.active{--line-color:#FFD700}
-.screen-discover.active .conn-tab.active{color:#FFD700;border-bottom-color:#FFD700;text-shadow:0 0 10px rgba(255,215,0,0.35)}
-.screen-discover.active .hdr-btn:hover{color:#FFD700}
-.screen-discover.active .inp:focus{border-color:#FFD700;box-shadow:0 0 10px rgba(255,215,0,0.12)}
-.screen-discover.active .search-input:focus{border-color:rgba(255,215,0,0.5);box-shadow:0 0 10px rgba(255,215,0,0.06)}
-
-/* BTS PAGE — hot pink */
-.screen-bts.active{--line-color:#FF69B4}
-.screen-bts.active .conn-tab.active{color:#FF69B4;border-bottom-color:#FF69B4;text-shadow:0 0 10px rgba(255,105,180,0.35)}
-.screen-bts.active .hdr-btn:hover{color:#FF69B4}
-.screen-bts.active .inp:focus{border-color:#FF69B4;box-shadow:0 0 10px rgba(255,105,180,0.12)}
-
-/* COMMUNITY PAGE — coral red */
-.screen-community.active{--line-color:#FF6B6B}
-.screen-community.active .conn-tab.active{color:#FF6B6B;border-bottom-color:#FF6B6B;text-shadow:0 0 10px rgba(255,107,107,0.35)}
-.screen-community.active .hdr-btn:hover{color:#FF6B6B}
-.screen-community.active .inp:focus{border-color:#FF6B6B;box-shadow:0 0 10px rgba(255,107,107,0.12)}
-
-/* SESSIONS PAGE — bright purple */
-.screen-sessions.active{--line-color:#BA68C8}
-.screen-sessions.active .conn-tab.active{color:#E07A5F;border-bottom-color:#E07A5F;text-shadow:0 0 10px rgba(224,122,95,0.35)}
-.screen-sessions.active .hdr-btn:hover{color:#BA68C8}
-.screen-sessions.active .inp:focus{border-color:#BA68C8;box-shadow:0 0 10px rgba(186,104,200,0.12)}
-.screen-sessions.active .search-input:focus{border-color:rgba(186,104,200,0.5);box-shadow:0 0 10px rgba(186,104,200,0.06)}
-
-/* SETTINGS PAGE — lavender */
-.screen-settings.active{--line-color:#B388FF}
-.screen-settings.active .conn-tab.active{color:#B388FF;border-bottom-color:#B388FF;text-shadow:0 0 10px rgba(179,136,255,0.35)}
-.screen-settings.active .hdr-btn:hover{color:#B388FF}
-.screen-settings.active .inp:focus{border-color:#B388FF;box-shadow:0 0 10px rgba(179,136,255,0.12)}
-
-/* PROFILE PAGE — pink */
-.screen-profile.active{--line-color:#F48FB1}
-.screen-profile.active .conn-tab.active{color:#F48FB1;border-bottom-color:#F48FB1;text-shadow:0 0 10px rgba(244,143,177,0.35)}
-.screen-profile.active .hdr-btn:hover{color:#F48FB1}
-.screen-profile.active .inp:focus{border-color:#F48FB1;box-shadow:0 0 10px rgba(244,143,177,0.12)}
-
-/* MUSES PAGE — orange/gold */
-.screen-muses.active{--line-color:#FF4500}
-.screen-muses.active .conn-tab.active{color:#FF4500;border-bottom-color:#FF4500;text-shadow:0 0 10px rgba(255,69,0,0.35)}
-.screen-muses.active .hdr-btn:hover{color:#FF4500}
-.screen-muses.active .inp:focus{border-color:#FF4500;box-shadow:0 0 10px rgba(255,69,0,0.12)}
-.screen-muses.active .search-input:focus{border-color:rgba(255,69,0,0.5);box-shadow:0 0 10px rgba(255,69,0,0.06)}
-
-/* PORTFOLIO PAGE — bright teal */
-.screen-portfolio.active{--line-color:#4DD0E1}
-.screen-portfolio.active .conn-tab.active{color:#4DD0E1;border-bottom-color:#4DD0E1;text-shadow:0 0 10px rgba(77,208,225,0.35)}
-.screen-portfolio.active .hdr-btn:hover{color:#4DD0E1}
-.screen-portfolio.active .inp:focus{border-color:#4DD0E1;box-shadow:0 0 10px rgba(77,208,225,0.12)}
-
-/* ANALYTICS/SUBSCRIPTION — lavender */
-.screen-analytics.active,.screen-subscription.active{--line-color:#B388FF}
-.screen-analytics.active .conn-tab.active,.screen-subscription.active .conn-tab.active{color:#B388FF;border-bottom-color:#B388FF;text-shadow:0 0 10px rgba(179,136,255,0.35)}
-.screen-analytics.active .hdr-btn:hover,.screen-subscription.active .hdr-btn:hover{color:#B388FF}
-.screen-analytics.active .inp:focus,.screen-subscription.active .inp:focus{border-color:#B388FF;box-shadow:0 0 10px rgba(179,136,255,0.12)}
+/* Legacy per-screen theme block (.screen-<name>.active) removed 2026-09-19:
+   dead code — no rendered element carries those classes; live theming is
+   .screen-el[data-screen="..."] further down this file. */
 
 
 
