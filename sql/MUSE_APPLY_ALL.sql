@@ -9,18 +9,28 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Convert sender_id/receiver_id from UUID to TEXT (idempotent, runs before policies)
-DO $$ BEGIN
-  BEGIN
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='muse_messages' AND column_name='sender_id' AND data_type='uuid'
+  ) THEN
+    -- Drop dependent policies before altering column type
+    EXECUTE 'DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages';
+    EXECUTE 'DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages';
+    EXECUTE 'DROP POLICY IF EXISTS "muse_messages_select" ON muse_messages';
+    
     ALTER TABLE muse_messages ALTER COLUMN sender_id TYPE TEXT USING sender_id::text;
-  EXCEPTION WHEN duplicate_column THEN NULL; END;
-  
-  BEGIN
     ALTER TABLE muse_messages ALTER COLUMN receiver_id TYPE TEXT USING receiver_id::text;
-  EXCEPTION WHEN duplicate_column THEN NULL; END;
+    -- Policies will be recreated later in this file
+  END IF;
   
-  BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='muse_messages' AND column_name='client_msg_id'
+  ) THEN
     ALTER TABLE muse_messages ADD COLUMN client_msg_id TEXT;
-  EXCEPTION WHEN duplicate_column THEN NULL; END;
+  END IF;
 END $$;
 
 -- Users (extends Supabase auth.users)
@@ -595,7 +605,7 @@ BEGIN
   END IF;
 END $$;
 
--- Verify/repair RLS on muse_messages (table already exists).
+-- Recreate RLS policies for muse_messages (TEXT key format)
 ALTER TABLE muse_messages ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages;
 DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages;

@@ -19,6 +19,17 @@ WHERE a.booking_id = b.booking_id
   AND a.booking_id IS NOT NULL
   AND a.created_at < b.created_at;
 
-ALTER TABLE muse_booking_payments
-  ADD CONSTRAINT muse_booking_payments_booking_id_key
-  UNIQUE (booking_id);
+-- Guard ADD CONSTRAINT — Postgres doesn't support IF NOT EXISTS on ADD CONSTRAINT
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    WHERE t.relname = 'muse_booking_payments'
+      AND c.conname = 'muse_booking_payments_booking_id_key'
+  ) THEN
+    ALTER TABLE muse_booking_payments
+      ADD CONSTRAINT muse_booking_payments_booking_id_key
+      UNIQUE (booking_id);
+  END IF;
+END $$;

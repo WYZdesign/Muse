@@ -7,6 +7,29 @@
 -- rows cascade-delete with them).
 -- ═══════════════════════════════════════════════════════════════════════
 
+-- Ensure quest tables exist (self-sufficient + idempotent).
+CREATE TABLE IF NOT EXISTS muse_quests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  category TEXT NOT NULL,
+  quest_tier TEXT NOT NULL,
+  frequency TEXT NOT NULL,
+  action_key TEXT NOT NULL,
+  target_count INT NOT NULL DEFAULT 1,
+  reward_type TEXT NOT NULL,
+  reward_amount INT NOT NULL DEFAULT 1,
+  reward_label TEXT NOT NULL,
+  icon TEXT NOT NULL DEFAULT '⭐',
+  color TEXT NOT NULL DEFAULT '#FFD700',
+  xp_reward INT NOT NULL DEFAULT 10,
+  sort_order INT NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_quests_key_freq_target
+  ON muse_quests(action_key, frequency, target_count);
+
 DELETE FROM muse_quests;
 
 INSERT INTO muse_quests (title, description, category, quest_tier, frequency, action_key, target_count, reward_type, reward_amount, reward_label, icon, color, xp_reward, sort_order) VALUES

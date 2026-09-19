@@ -1,27 +1,32 @@
--- Run this in Supabase SQL Editor to create the storage bucket
--- Go to https://supabase.com/dashboard → Storage → New Bucket
+-- Muse storage bucket + object policies (idempotent, safe to re-run).
+-- Bucket: muse-uploads (public read, authenticated write, 10 MB limit).
 
--- Create bucket (also do via UI: Storage → New Bucket → name: "muse-uploads", public: true)
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('muse-uploads', 'muse-uploads', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+VALUES ('muse-uploads', 'muse-uploads', true, 10485760,
+        ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 ON CONFLICT (id) DO NOTHING;
 
--- Allow authenticated uploads
-DROP POLICY IF EXISTS "Authenticated users can upload" ON storage;
+-- Authenticated users may upload into the muse-uploads bucket.
+DROP POLICY IF EXISTS "Authenticated users can upload" ON storage.objects;
 CREATE POLICY "Authenticated users can upload" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'muse-uploads');
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'muse-uploads');
 
--- Allow public read access
-DROP POLICY IF EXISTS "Public read access" ON storage;
+-- Public read access for the muse-uploads bucket.
+DROP POLICY IF EXISTS "Public read access" ON storage.objects;
 CREATE POLICY "Public read access" ON storage.objects
-  FOR SELECT USING (bucket_id = 'muse-uploads');
+  FOR SELECT TO public
+  USING (bucket_id = 'muse-uploads');
 
--- Allow users to update their own uploads
-DROP POLICY IF EXISTS "Users can update own uploads" ON storage;
+-- Users may update their own uploads.
+DROP POLICY IF EXISTS "Users can update own uploads" ON storage.objects;
 CREATE POLICY "Users can update own uploads" ON storage.objects
-  FOR UPDATE USING (bucket_id = 'muse-uploads');
+  FOR UPDATE TO authenticated
+  USING (bucket_id = 'muse-uploads' AND owner = auth.uid())
+  WITH CHECK (bucket_id = 'muse-uploads' AND owner = auth.uid());
 
--- Allow users to delete their own uploads
-DROP POLICY IF EXISTS "Users can delete own uploads" ON storage;
+-- Users may delete their own uploads.
+DROP POLICY IF EXISTS "Users can delete own uploads" ON storage.objects;
 CREATE POLICY "Users can delete own uploads" ON storage.objects
-  FOR DELETE USING (bucket_id = 'muse-uploads');
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'muse-uploads' AND owner = auth.uid());

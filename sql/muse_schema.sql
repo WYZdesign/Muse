@@ -182,7 +182,7 @@ CREATE POLICY "Users can create matches" ON muse_matches FOR INSERT WITH CHECK (
 
 DROP POLICY IF EXISTS "Users can read their messages" ON muse_messages;
 CREATE POLICY "Users can read their messages" ON muse_messages FOR SELECT USING (
-  match_id IN (SELECT id FROM muse_matches WHERE user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()) OR target_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()))
+  match_id IN (SELECT id::text FROM muse_matches WHERE user_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()) OR target_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid()))
 );
 
 -- Activity logging trigger

@@ -89,7 +89,8 @@ INSERT INTO muse_quests (title, description, category, quest_tier, frequency, ac
 ('First Match', 'Get your first match', 'discovery', 'starter', 'once', 'first_match', 1, 'super_like', 1, 'Super Like', '💘', '#FF69B4', 25, 4),
 ('Portfolio Starter', 'Upload your first photo', 'profile', 'starter', 'once', 'upload_photo', 1, 'like', 2, '2 Free Likes', '📷', '#FFD700', 20, 5),
 ('Bio Complete', 'Write your bio (50+ characters)', 'profile', 'starter', 'once', 'write_bio', 1, 'like', 1, 'Free Like', '✍️', '#D4A5FF', 15, 6),
-('Style Picker', 'Set your creative styles', 'profile', 'starter', 'once', 'set_styles', 1, 'like', 1, 'Free Like', '🎨', '#FF8A80', 10, 7);
+('Style Picker', 'Set your creative styles', 'profile', 'starter', 'once', 'set_styles', 1, 'like', 1, 'Free Like', '🎨', '#FF8A80', 10, 7)
+ON CONFLICT (action_key, frequency, target_count) DO NOTHING;
 
 -- ─── DAILY (easy daily habits) ─────────────────────────────────────
 INSERT INTO muse_quests (title, description, category, quest_tier, frequency, action_key, target_count, reward_type, reward_amount, reward_label, icon, color, xp_reward, sort_order) VALUES
@@ -100,7 +101,8 @@ INSERT INTO muse_quests (title, description, category, quest_tier, frequency, ac
 ('Capture the Moment', 'Post a Moment', 'content', 'daily', 'daily', 'create_moment', 1, 'like', 1, 'Free Like', '✨', '#FF8A80', 15, 14),
 ('Profile Check', 'Update your profile (name, bio, or avatar)', 'profile', 'daily', 'daily', 'update_profile', 1, 'like', 1, 'Free Like', '✅', '#98FB98', 10, 15),
 ('Event Scout', 'View an event detail', 'community', 'daily', 'daily', 'view_event', 1, 'like', 1, 'Free Like', '🗓️', '#D4A5FF', 5, 16),
-('Group Watch', 'View a community group', 'community', 'daily', 'daily', 'view_community', 1, 'like', 1, 'Free Like', '👀', '#87CEEB', 5, 17);
+('Group Watch', 'View a community group', 'community', 'daily', 'daily', 'view_community', 1, 'like', 1, 'Free Like', '👀', '#87CEEB', 5, 17)
+ON CONFLICT (action_key, frequency, target_count) DO NOTHING;
 
 -- ─── WEEKLY (moderate weekly goals) ────────────────────────────────
 INSERT INTO muse_quests (title, description, category, quest_tier, frequency, action_key, target_count, reward_type, reward_amount, reward_label, icon, color, xp_reward, sort_order) VALUES
@@ -117,7 +119,8 @@ INSERT INTO muse_quests (title, description, category, quest_tier, frequency, ac
 ('Brief Applicant', 'Apply to a Creative Brief', 'content', 'weekly', 'weekly', 'apply_brief', 1, 'like', 2, '2 Free Likes', '🎯', '#FF8A80', 20, 30),
 ('Photo Drop', 'Upload a photo to your portfolio', 'profile', 'weekly', 'weekly', 'upload_photo', 1, 'like', 2, '2 Free Likes', '📷', '#FFD700', 15, 31),
 ('Networker', 'Like 20 profiles this week', 'discovery', 'weekly', 'weekly', 'like_20', 20, 'like', 2, '2 Free Likes', '🤝', '#87CEEB', 25, 32),
-('Chat Champion', 'Send 10 messages this week', 'social', 'weekly', 'weekly', 'send_message', 10, 'like', 2, '2 Free Likes', '🏆', '#FFD700', 30, 33);
+('Chat Champion', 'Send 10 messages this week', 'social', 'weekly', 'weekly', 'send_message', 10, 'like', 2, '2 Free Likes', '🏆', '#FFD700', 30, 33)
+ON CONFLICT (action_key, frequency, target_count) DO NOTHING;
 
 -- ─── MONTHLY (bigger monthly challenges) ───────────────────────────
 INSERT INTO muse_quests (title, description, category, quest_tier, frequency, action_key, target_count, reward_type, reward_amount, reward_label, icon, color, xp_reward, sort_order) VALUES
@@ -134,7 +137,8 @@ INSERT INTO muse_quests (title, description, category, quest_tier, frequency, ac
 ('Forum Regular', 'Post 5 times in the Forum', 'community', 'monthly', 'monthly', 'forum_post', 5, 'like', 5, '5 Free Likes', '📢', '#87CEEB', 60, 50),
 ('BTS Creator', 'Post 3 Behind the Scenes photos', 'content', 'monthly', 'monthly', 'post_bts', 3, 'super_like', 1, 'Super Like', '🎥', '#FF8A80', 50, 51),
 ('Brief Completer', 'Apply to 3 Creative Briefs', 'content', 'monthly', 'monthly', 'apply_brief', 3, 'like', 3, '3 Free Likes', '📋', '#D4A5FF', 50, 52),
-('Social Star', 'Get 50 messages sent this month', 'social', 'monthly', 'monthly', 'send_message', 50, 'super_like', 1, 'Super Like', '⭐', '#FFD700', 60, 53);
+('Social Star', 'Get 50 messages sent this month', 'social', 'monthly', 'monthly', 'send_message', 50, 'super_like', 1, 'Super Like', '⭐', '#FFD700', 60, 53)
+ON CONFLICT (action_key, frequency, target_count) DO NOTHING;
 
 -- ─── SEASON (quarterly / long-term goals) ──────────────────────────
 INSERT INTO muse_quests (title, description, category, quest_tier, frequency, action_key, target_count, reward_type, reward_amount, reward_label, icon, color, xp_reward, sort_order) VALUES
@@ -149,7 +153,8 @@ INSERT INTO muse_quests (title, description, category, quest_tier, frequency, ac
 ('Moment Master', 'Create 20 Moments total', 'content', 'season', 'lifetime', 'total_moments', 20, 'super_like', 2, '2 Super Likes', '✨', '#FF8A80', 150, 68),
 ('Forum Leader', 'Post 20 times in the Forum', 'community', 'season', 'lifetime', 'total_forum_posts', 20, 'super_like', 2, '2 Super Likes', '📢', '#87CEEB', 150, 69),
 ('BTS Director', 'Post 10 Behind the Scenes photos', 'content', 'season', 'lifetime', 'total_bts', 10, 'super_like', 2, '2 Super Likes', '🎥', '#FF8A80', 150, 70),
-('Networker Pro', 'Like 500 profiles total', 'discovery', 'season', 'lifetime', 'total_likes_given', 500, 'super_like', 3, '3 Super Likes', '🤝', '#D4A5FF', 150, 71);
+('Networker Pro', 'Like 500 profiles total', 'discovery', 'season', 'lifetime', 'total_likes_given', 500, 'super_like', 3, '3 Super Likes', '🤝', '#D4A5FF', 150, 71)
+ON CONFLICT (action_key, frequency, target_count) DO NOTHING;
 
 -- ─── LEGENDARY (ultra-hard lifetime achievements) ──────────────────
 INSERT INTO muse_quests (title, description, category, quest_tier, frequency, action_key, target_count, reward_type, reward_amount, reward_label, icon, color, xp_reward, sort_order) VALUES

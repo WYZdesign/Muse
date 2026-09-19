@@ -252,13 +252,18 @@ INSERT INTO muse_communities (name, description, img, category, is_nsfw, member_
   ('Adults Only (18+)', 'Mature creative content and collaborations', '', 'nsfw', true, 320)
 ON CONFLICT DO NOTHING;
 
--- Seed sessions
-INSERT INTO muse_sessions (host_id, title, description, type, rate, duration, skills, date, location, img, available, rating) VALUES
-  ('00000000-0000-0000-0000-000000000000', 'Portrait Photography Session', '1-on-1 portrait shoot in natural light', 'Photography', '$150', '60 min', ARRAY['Portrait','Natural Light','Posing'], '2026-07-20', 'Los Angeles, CA', '', true, 4.9),
-  ('00000000-0000-0000-0000-000000000000', 'Brand Strategy Consult', 'Help defining your creative brand identity', 'Consulting', '$200', '90 min', ARRAY['Branding','Strategy','Marketing'], '2026-07-22', 'Remote', '', true, 5.0),
-  ('00000000-0000-0000-0000-000000000000', 'Vocal Coaching', 'Improve your range and tone', 'Music', '$80', '45 min', ARRAY['Vocals','Technique','Performance'], '2026-07-25', 'Chicago, IL', '', true, 4.7),
-  ('00000000-0000-0000-0000-000000000000', 'Filmmaking Mentorship', 'Learn the fundamentals of directing', 'Film', '$120', '60 min', ARRAY['Directing','Story','Editing'], '2026-07-28', 'Remote', '', false, 4.8)
-ON CONFLICT DO NOTHING;
+-- Seed sessions (wrapped in DO block to handle missing host_id gracefully)
+DO $$
+BEGIN
+  INSERT INTO muse_sessions (host_id, title, description, type, rate, duration, skills, date, location, img, available, rating) VALUES
+    ('00000000-0000-0000-0000-000000000000', 'Portrait Photography Session', '1-on-1 portrait shoot in natural light', 'Photography', '$150', '60 min', ARRAY['Portrait','Natural Light','Posing'], '2026-07-20', 'Los Angeles, CA', '', true, 4.9),
+    ('00000000-0000-0000-0000-000000000000', 'Brand Strategy Consult', 'Help defining your creative brand identity', 'Consulting', '$200', '90 min', ARRAY['Branding','Strategy','Marketing'], '2026-07-22', 'Remote', '', true, 5.0),
+    ('00000000-0000-0000-0000-000000000000', 'Vocal Coaching', 'Improve your range and tone', 'Music', '$80', '45 min', ARRAY['Vocals','Technique','Performance'], '2026-07-25', 'Chicago, IL', '', true, 4.7),
+    ('00000000-0000-0000-0000-000000000000', 'Filmmaking Mentorship', 'Learn the fundamentals of directing', 'Film', '$120', '60 min', ARRAY['Directing','Story','Editing'], '2026-07-28', 'Remote', '', false, 4.8)
+  ON CONFLICT DO NOTHING;
+EXCEPTION WHEN foreign_key_violation THEN
+  -- Seed sessions skipped: no valid host_id exists yet
+END $$;
 
 -- ============================================================
 -- 7. ERROR TELEMETRY (client-side error tracking via /api/telemetry)
@@ -345,13 +350,13 @@ DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
 DROP POLICY IF EXISTS "muse_messages_participants" ON muse_messages;
 CREATE POLICY "muse_messages_participants" ON muse_messages FOR SELECT
   USING (
-    sender_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
-    OR receiver_id IN (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+    sender_id IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
+    OR receiver_id IN (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
   );
 DROP POLICY IF EXISTS "muse_messages_insert" ON muse_messages;
 CREATE POLICY "muse_messages_insert" ON muse_messages FOR INSERT
   WITH CHECK (
-    sender_id = (SELECT id FROM muse_profiles WHERE auth_id = auth.uid())
+    sender_id = (SELECT id::text FROM muse_profiles WHERE auth_id = auth.uid())
   );
 
 -- ============================================================
