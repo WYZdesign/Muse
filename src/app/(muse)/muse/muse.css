@@ -847,13 +847,26 @@ img{background-color:var(--card-bg)}
    "gets larger and smaller" animation Torreé asked to have replaced. Both
    are now pure opacity fades; nothing in the match-celebration overlay
    changes size anymore. */
-@keyframes matchIn{from{opacity:0}to{opacity:1}}
-@keyframes matchTitleFade{0%{opacity:0}18%{opacity:1}82%{opacity:1}100%{opacity:.55}}
+@keyframes matchIn{from{opacity:0;transform:scale(1.3)}to{opacity:1;transform:scale(1)}}
+@keyframes matchTitleFade{0%,100%{opacity:0;transform:translateY(20px) scale(0.9)}50%{opacity:1;transform:translateY(-5px) scale(1.02)}75%{opacity:0.8;transform:translateY(0) scale(0.99)}}
 /* Round 46: 10 variants (see MATCH_VARIANTS in page.tsx) all render through
    this one rule — each sets --match-grad and --match-particle-color inline
    instead of needing its own .anim-variant-N override, so adding/adjusting
    a variant never touches this file. */
-.match-title{font-size:48px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;color:var(--gold);background:var(--match-grad,linear-gradient(120deg,var(--gold),var(--amber),var(--sunset-orange),var(--gold)));background-size:300% 300%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:matchTitleFade 2.6s ease-in-out infinite,lavaFlow 6s ease-in-out infinite;margin-bottom:10px}
+.match-title{font-size:48px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;color:var(--gold);background:var(--match-grad,linear-gradient(120deg,var(--gold),var(--amber),var(--sunset-orange),var(--gold)));background-size:300% 300%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:matchTitleFade 3.2s ease-in-out infinite,lavaFlow 6s ease-in-out infinite;margin-bottom:10px}
+.match-title-symbol{font-size:72px;line-height:1;display:inline-block;animation:matchSymbolFloat 3.2s ease-in-out infinite,matchSymbolPulse 2.4s ease-in-out infinite}
+@keyframes matchSymbolFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-14px) scale(1.06)}}
+@keyframes matchSymbolPulse{0%,100%{opacity:0.85;filter:brightness(1)}50%{opacity:1;filter:brightness(1.35) drop-shadow(0 0 14px rgba(255,215,0,0.5))}}
+/* PowerPoint-style text animations: marquee, wave, typewriter, fade-up */
+@keyframes matchMarquee{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+@keyframes matchWave{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes matchTypewriter{from{width:0;opacity:0}to{width:100%;opacity:1}}
+@keyframes matchFadeUp{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+.match-marquee{display:inline-block;overflow:hidden;white-space:nowrap;animation:matchMarquee 6s linear infinite}
+.match-marquee span{display:inline-block;padding:0 12px}
+.match-wave{display:inline-block;animation:matchWave 1.8s ease-in-out infinite}
+.match-typewriter{display:inline-block;overflow:hidden;white-space:nowrap;border-right:2px solid var(--gold);animation:matchTypewriter 2.4s steps(40,end) forwards}
+.match-fade-up{display:inline-block;animation:matchFadeUp 1s ease-out both}
 .match-subtitle{font-size:16px;color:var(--text2);margin-bottom:8px;text-align:center;line-height:1.6}
 .match-disclaimer{font-size:12px;color:var(--muted);margin-bottom:32px;text-align:center;line-height:1.5;max-width:280px}
 .match-avatars{display:flex;justify-content:center;gap:8px;margin-bottom:36px}
@@ -1999,7 +2012,7 @@ img{background-color:var(--card-bg)}
    explicit 90% alpha rgba of their own base color instead of relying on
    --card-bg, since that variable is shared with several fully-opaque avatar
    border tricks elsewhere and isn't safe to bump globally. */
-.swipe-card .card-details{margin-top:90vh;background:rgba(18,10,36,0.9);padding:24px 20px 40px;border-radius:24px 24px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,0.4);z-index:2;min-height:60vh}
+.swipe-card .card-details{margin-top:90vh;background:rgba(18,10,36,0.9);padding:24px 20px 40px;border-radius:24px 24px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,0.4);z-index:2;min-height:60vh;pointer-events:auto}
 
 /* ═══ ALL IMAGES FILL CONTAINERS ═══ */
 /* Scoped to swipe cards only — this was previously a global img[src^="/models/"] selector

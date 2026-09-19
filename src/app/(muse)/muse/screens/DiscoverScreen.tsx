@@ -395,27 +395,12 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               // hiding the pill entirely).
                               const ms = Number((profile as any).matchScore ?? (profile as any).score ?? 0);
                               const reasons = (profile as any).matchReasons || [];
-                              // 2026-09-15: simplified from "✦ 92% match" to a bare
-                              // "92%" per Torreé's decluttering ask, and made tappable
-                              // — opens the existing "why this match?" popover (below,
-                              // previously only reachable via a small info icon buried
-                              // in the scrolled-down profile details) right from the card
-                              // front, with a link through to the general matching guide.
-                              const showMatchPercent = (profile as any).showMatchPercent !== false;
-                              return ms >= 15 && !cardScrolled && showMatchPercent ? (
-                                <button
-                                  type="button"
-                                  className="card-match-topleft"
-                                  // Round 42: style (dark-glass background, gold text) now lives
-                                  // entirely in the .card-match-topleft CSS rule, matching
-                                  // .card-anchor-like-btn (top-right) and the photo-nav arrows —
-                                  // moved out of inline style so the light-theme override next to
-                                  // .card-anchor-like-btn's in muse.css can actually apply to it too.
-                                  onPointerDown={(e) => e.stopPropagation()}
-                                  onClick={(e) => { e.stopPropagation(); setWhyInfo({ score: ms, reasons }); }}
-                                  aria-label={`${ms}% match — why?`}
-                                >{ms}%</button>
-                              ) : null;
+                              // Round 46: match-percentage badge removed from card top-left
+                              // per Torreé's decluttering ask — it was a tappable pill that
+                              // opened the "why this match?" popover, but the same popover is
+                              // now reachable from the profile details below, and the card
+                              // front reads cleaner without it.
+                              return null;
                             })()}
                             <div className="card-shine" />
                             <div className="card-gradient" />

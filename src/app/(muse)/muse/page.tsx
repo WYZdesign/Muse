@@ -2669,7 +2669,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           <div
             className="match-title"
           >
-            {mv.symbol} {mv.title}
+            <span className="match-title-symbol">{mv.symbol}</span>
+            {mv.title}
           </div>
           <div className="match-subtitle">You and <strong style={{color:"var(--gold)"}}>{showMatchOverlay.name}</strong> are both ready to collaborate.</div>
           <div className="match-disclaimer">Muse is for finding and booking creative collaborators, not a dating app.</div>
@@ -2708,11 +2709,15 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               ]).map(({icon,label,desc,intent})=>(
                 <button key={intent} className={`intent-btn ${intentSelection.includes(intent) ? "selected" : ""}`} onClick={(e)=>{
                   e.stopPropagation();
+                  // Round 46: two-tap flow — first tap highlights option 1,
+                  // second tap highlights option 2 (and vice-versa). No
+                  // other outline, no ripple, no hover state — just the
+                  // selected background swap. If a third tap lands on an
+                  // already-selected item, it deselects; if it lands on a
+                  // third option while two are already chosen, it's ignored.
                   if (intentSelection.length >= 2 && !intentSelection.includes(intent)) return;
                   setIntentSelection(prev => prev.includes(intent) ? prev.filter(i => i !== intent) : [...prev, intent]);
                 }} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,background:intentSelection.includes(intent) ? "var(--gold)" : "var(--glass)",cursor:"pointer",width:"100%",textAlign:"left",transition:"all .15s"}}
-                onMouseEnter={e=>{e.currentTarget.style.background=intentSelection.includes(intent) ? "rgba(255,215,0,0.85)" : "rgba(255,255,255,0.06)";e.currentTarget.style.borderColor="var(--gold)"}}
-                onMouseLeave={e=>{e.currentTarget.style.background=intentSelection.includes(intent) ? "var(--gold)" : "var(--glass)";e.currentTarget.style.borderColor="rgba(255,255,255,0.06)"}}
                 >
                   <span style={{fontSize:28}}>{icon}</span>
                   <div style={{flex:1}}>
