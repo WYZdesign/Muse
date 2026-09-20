@@ -103,6 +103,38 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "start") {
+      // Age gate: Muse carries NSFW content, so nobody unverified gets on a
+      // call. Verification is valid for 150 days (see isAgeVerificationCurrent).
+      try {
+        const { data: both } = await sb.from("muse_profiles")
+          .select("id, age_verified, age_verified_at")
+          .in("id", [profile.id, toId]);
+        const cutoff = Date.now() - 150 * 24 * 60 * 60 * 1000;
+        const stale = (both || []).filter((p: { age_verified?: boolean; age_verified_at?: string }) =>
+          !p.age_verified || !p.age_verified_at || new Date(p.age_verified_at).getTime() < cutoff);
+        if (stale.length) {
+          const mine = stale.some((p: { id: string }) => String(p.id) === String(profile.id));
+          return NextResponse.json({
+            error: mine ? "Verify your age before calling" : "They need to verify their age before calls",
+            code: "AGE_VERIFICATION_REQUIRED",
+          }, { status: 403 });
+        }
+      } catch { /* if the check itself fails, don't block the call */ }
+
+      // Busy: someone already ringing/on a call in the last 5 minutes.
+      try {
+        const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        const { data: busy } = await sb.from("muse_calls")
+          .select("id, caller_id")
+          .eq("callee_id", toId)
+          .in("status", ["ringing", "answered"])
+          .gte("started_at", fiveMinAgo)
+          .limit(1).maybeSingle();
+        if (busy) {
+          return NextResponse.json({ error: "They're on another call right now", code: "BUSY" }, { status: 409 });
+        }
+      } catch { /* best-effort */ }
+
       try {
         const svc = new RoomServiceClient(httpUrl(), LK_KEY, LK_SECRET);
         await svc.createRoom({ name: room, emptyTimeout: 60 * 3, maxParticipants: 2 });

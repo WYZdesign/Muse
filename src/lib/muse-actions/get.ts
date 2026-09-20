@@ -930,6 +930,60 @@ export async function GET(req: NextRequest) {
         auditLog = auditEntries || [];
       } catch { /* table may not exist yet */ }
 
+      // ── Round 2: moderation SLA, refunds, calls, top creators ──
+      let moderation = undefined;
+      try {
+        const { data: inc } = await sb.from("muse_safety_incidents").select("status, created_at, reviewed_at").limit(2000);
+        const rows = inc || [];
+        const open = rows.filter((r: any) => r.status !== "resolved" && r.status !== "dismissed").length;
+        const resolved = rows.filter((r: any) => r.reviewed_at);
+        const avgHours = resolved.length
+          ? Math.round(resolved.reduce((s: number, r: any) =>
+              s + (new Date(r.reviewed_at).getTime() - new Date(r.created_at).getTime()) / 3600000, 0) / resolved.length)
+          : null;
+        moderation = { total: rows.length, open, resolved: resolved.length, avgResolutionHours: avgHours };
+      } catch { /* table may not exist yet */ }
+
+      let refunds = undefined;
+      try {
+        const { data: rr } = await sb.from("muse_refund_requests").select("status").limit(2000);
+        const rows = rr || [];
+        refunds = {
+          total: rows.length,
+          open: rows.filter((r: any) => r.status === "open" || r.status === "pending").length,
+          approved: rows.filter((r: any) => r.status === "approved").length,
+          rejected: rows.filter((r: any) => r.status === "rejected").length,
+        };
+      } catch { /* table may not exist yet */ }
+
+      let calls = undefined;
+      try {
+        const { data: cl } = await sb.from("muse_calls").select("status, kind").limit(5000);
+        const rows = cl || [];
+        calls = {
+          total: rows.length,
+          answered: rows.filter((r: any) => r.status === "answered" || r.status === "ended").length,
+          missed: rows.filter((r: any) => r.status === "missed" || r.status === "declined").length,
+          voicemails: rows.filter((r: any) => r.status === "voicemail").length,
+        };
+      } catch { /* table may not exist yet */ }
+
+      // Top creators by recorded activity (30d) — who's actually driving the app.
+      let topCreators: any[] = [];
+      try {
+        const counts = new Map<string, number>();
+        for (const r of activity7d.data || []) {
+          const id = (r as any).user_id;
+          if (id) counts.set(id, (counts.get(id) || 0) + 1);
+        }
+        const topIds = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => id);
+        if (topIds.length) {
+          const { data: profs } = await sb.from("muse_profiles").select("id, name, type, avatar").in("id", topIds);
+          topCreators = (profs || []).map((p: any) => ({ ...p, activity: counts.get(p.id) || 0 }))
+            .sort((a: any, b: any) => b.activity - a.activity);
+        }
+      } catch { /* best-effort */ }
+
       return NextResponse.json({
         totals: { users: totalUsers || 0, matches: totalMatches || 0, albums: totalAlbums || 0 },
         signupsByDay,
@@ -940,6 +994,10 @@ export async function GET(req: NextRequest) {
         payments,
         connectedAccounts,
         auditLog,
+        moderation,
+        refunds,
+        calls,
+        topCreators,
       });
     }
 

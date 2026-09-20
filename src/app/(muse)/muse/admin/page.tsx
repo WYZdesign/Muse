@@ -13,6 +13,10 @@ type AnalyticsData = {
   referrals?: { total: number; signedUp: number; rewarded: number };
   payments?: { total: number; succeeded: number; totalVolume: number; totalCommission: number };
   connectedAccounts?: number;
+  moderation?: { total: number; open: number; resolved: number; avgResolutionHours: number | null };
+  refunds?: { total: number; open: number; approved: number; rejected: number };
+  calls?: { total: number; answered: number; missed: number; voicemails: number };
+  topCreators?: { id: string; name?: string; type?: string; activity: number }[];
 };
 
 /**
@@ -327,6 +331,60 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
+
+            {/* ── SAFETY & SUPPORT ── */}
+            {(data.moderation || data.refunds || data.calls) && (
+              <>
+                <div style={groupTitle}>Safety, support &amp; calls</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 28 }}>
+                  {data.moderation && (
+                    <>
+                      <div style={{ ...box, borderLeft: `3px solid ${data.moderation.open > 0 ? "#ff6b6b" : "#98FB98"}` }}>
+                        <div style={label}>Reports Needing Review</div>
+                        <div style={{ ...bigNum, color: data.moderation.open > 0 ? "#ff6b6b" : "#98FB98" }}>{data.moderation.open}</div>
+                        <div style={hint}>{data.moderation.resolved} handled so far</div>
+                      </div>
+                      <div style={{ ...box, borderLeft: "3px solid #4ecdc4" }}>
+                        <div style={label}>Avg. Review Time</div>
+                        <div style={{ ...bigNum, color: "#4ecdc4" }}>
+                          {data.moderation.avgResolutionHours !== null ? `${data.moderation.avgResolutionHours}h` : "—"}
+                        </div>
+                        <div style={hint}>How fast a report gets handled</div>
+                      </div>
+                    </>
+                  )}
+                  {data.refunds && (
+                    <div style={{ ...box, borderLeft: "3px solid #E1BEE7" }}>
+                      <div style={label}>Refund Requests</div>
+                      <div style={{ ...bigNum, color: "#E1BEE7" }}>{data.refunds.open}</div>
+                      <div style={hint}>{data.refunds.total} total · {data.refunds.approved} approved</div>
+                    </div>
+                  )}
+                  {data.calls && (
+                    <div style={{ ...box, borderLeft: "3px solid #ffd700" }}>
+                      <div style={label}>Calls</div>
+                      <div style={{ ...bigNum, color: "#ffd700" }}>{data.calls.total}</div>
+                      <div style={hint}>{data.calls.answered} answered · {data.calls.missed} missed · {data.calls.voicemails} voicemail</div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* ── TOP CREATORS ── */}
+            {data.topCreators && data.topCreators.length > 0 && (
+              <>
+                <div style={groupTitle}>Most active people (last 7 days)</div>
+                <div style={{ ...box, marginBottom: 28 }}>
+                  {data.topCreators.map((c, i) => (
+                    <div key={c.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: i < data.topCreators!.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none", fontSize: 13 }}>
+                      <span>{i + 1}. {c.name || "Unnamed"}{c.type ? ` · ${c.type}` : ""}</span>
+                      <span style={{ color: "#ffd700", fontWeight: 700 }}>{c.activity} actions</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* ── LATEST EVENTS ── */}
             <div style={box}>
