@@ -1,4 +1,4 @@
--- Migration 007: Travel & availability fields on profiles
+-- Migration 0007: Travel & availability fields on profiles
 -- Adds travel dates, availability status, budget, and travel destinations.
 
 ALTER TABLE muse_profiles

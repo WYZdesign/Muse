@@ -1,4 +1,4 @@
--- 015_add_photo_likes.sql
+-- 0015_add_photo_likes.sql
 -- Global per-photo likes keyed by the image URL (stable across Discover cards,
 -- portfolio/album photos, and profile photos). "Like this photo" on a Discover
 -- card now likes the picture itself, and the same URL shows the same count on

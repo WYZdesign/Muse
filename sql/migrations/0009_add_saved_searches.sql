@@ -1,4 +1,4 @@
--- Migration 009: Saved searches with alerts
+-- Migration 0009: Saved searches with alerts
 -- Users can save search queries and get notified when new matches appear.
 
 CREATE TABLE IF NOT EXISTS muse_saved_searches (

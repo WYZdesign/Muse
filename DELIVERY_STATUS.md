@@ -48,10 +48,36 @@ same way.
   column is TEXT (`muse_reports.reporter_id`, `muse_blocks.user_id`).
 - `muse_complete_schema.sql`: `muse_profiles.id::text` cast in the
   `muse_messages` participant policies (`sender_id`/`receiver_id` are TEXT).
-- New `sql/MUSE_REPORTS_MODERATION.sql`: adds `status`, `resolved_at`,
-  `resolved_by`, `resolution_note` to `muse_reports` (idempotent).
 - `muse.css`: removed `!important` from `.intent-btn:hover` so the two-tap
   selected-state highlight is no longer overridden on hover.
+
+### Round 48 — numbered migrations actually applied (verified 2026-09-19)
+
+The `sql/migrations/` system had **never been run**. Discovered state:
+`schema_migrations` did not exist, 12 of 13 migration artifacts were missing
+(the deployed code already calls these columns/tables, so those features were
+broken in production), 11 files were mis-named 3-digit (`005_`…`015_`) so the
+runner's `^(\d{4})_` pattern skipped them entirely, and
+`scripts/run_migrations.py --apply` was a stub that only printed "use the
+Supabase CLI". Fixed:
+
+- renamed `005_`–`015_` → `0005_`–`0015_` (4-digit convention per the README).
+- implemented `scripts/run_migrations.py --apply` for real (psycopg2, DSN from
+  `DATABASE_URL` / `SUPABASE_DB_URL` / `MUSE_DATABASE_URL`); it creates
+  `schema_migrations`, applies pending files in order, and records each.
+- applied all 15 migrations. `schema_migrations` now has 15 rows and every
+  artifact exists: `muse_matches.anchor_type/anchor_value/note`,
+  `muse_communities.rules`, `muse_community_members.role`, `muse_reports.status/
+  resolved_at/resolved_by/resolution_note`, `muse_message_requests`,
+  `muse_forum_replies.parent_reply_id/depth`, `muse_profiles.travel_dates/
+  availability_status/budget_range/travel_destinations/profile_completion_pct/
+  boost_inventory/boost_expires_at`, `muse_forum_posts.locked`,
+  `muse_reviews.criteria_*`, `muse_saved_searches`, `muse_community_bans`,
+  `muse_community_mutes`, `muse_community_join_requests`, `muse_boost_purchases`,
+  `muse_refund_requests`, `muse_photo_likes`.
+- removed the duplicate `sql/MUSE_REPORTS_MODERATION.sql` (migration `0004` is
+  the canonical owner of the `muse_reports` moderation columns; the `sql/`
+  folder is frozen per `sql/migrations/README.md`).
 
 Verification for `b791dd9`: `npx tsc --noEmit` clean, `vitest run` 349/349,
 `next build` clean, `check_muse_migration.py` reports all six `muse_reports`

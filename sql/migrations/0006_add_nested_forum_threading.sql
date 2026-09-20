@@ -1,4 +1,4 @@
--- Migration 006: Nested forum threading
+-- Migration 0006: Nested forum threading
 -- Adds parent_reply_id and depth columns to muse_forum_replies for reply-to-reply nesting.
 
 ALTER TABLE muse_forum_replies

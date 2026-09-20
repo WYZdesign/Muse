@@ -1,4 +1,4 @@
--- 010_add_criterion_reviews.sql
+-- 0010_add_criterion_reviews.sql
 -- Add structured review criteria to muse_reviews for multi-dimensional ratings
 -- (communication, reliability, creative_quality, professionalism, safety).
 -- Idempotent: safe to re-run.

@@ -1,4 +1,4 @@
--- 013_add_boost_inventory_and_expiry.sql
+-- 0013_add_boost_inventory_and_expiry.sql
 -- Unified boost model for Muse:
 --   - boost_inventory  = count of unused boosts the user owns (from quest rewards or paid one-offs)
 --   - boost_expires_at = when the user's CURRENTLY ACTIVE boost expires (null if not boosted now)

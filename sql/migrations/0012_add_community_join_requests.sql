@@ -1,4 +1,4 @@
--- 012_add_community_join_requests.sql
+-- 0012_add_community_join_requests.sql
 -- Add join request queue for private communities.
 -- Idempotent: safe to re-run.
 

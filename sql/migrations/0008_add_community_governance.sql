@@ -1,4 +1,4 @@
--- Migration 008: Community governance (rules + mod tools)
+-- Migration 0008: Community governance (rules + mod tools)
 -- Adds rules JSONB to communities, role update ability, and ban/mute tables.
 
 ALTER TABLE muse_communities

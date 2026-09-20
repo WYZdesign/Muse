@@ -1,4 +1,4 @@
--- 014_add_refund_and_dispute_requests.sql
+-- 0014_add_refund_and_dispute_requests.sql
 -- Buyer-facing refund/dispute request queue for completed bookings.
 -- The booker files a request; Muse (admin/owner) resolves it against Stripe.
 -- Idempotent: safe to re-run.

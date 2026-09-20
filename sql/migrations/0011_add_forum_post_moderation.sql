@@ -1,4 +1,4 @@
--- 011_add_forum_post_moderation.sql
+-- 0011_add_forum_post_moderation.sql
 -- Add locked column to muse_forum_posts for admin/mod post locking.
 -- pinned column already exists. Idempotent: safe to re-run.
 

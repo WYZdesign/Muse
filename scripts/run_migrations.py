@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
-"""Muse migration runner — zero-dependency, ordered, idempotent.
+"""Muse migration runner — ordered, idempotent, tracked in `schema_migrations`.
 
-Applies sql/migrations/NNNN_*.sql in numeric order, tracking each file in a
+Applies sql/migrations/NNNN_*.sql in numeric order, recording each file in a
 `schema_migrations` table so it is never re-applied. Dry-run by default.
 
 Usage:
     python scripts/run_migrations.py                  # print ordered queue (dry run)
     python scripts/run_migrations.py --apply          # apply pending, in order
     python scripts/run_migrations.py --create-table   # just ensure schema_migrations exists
+
+Connection: reads a Postgres DSN from the first of
+    DATABASE_URL / SUPABASE_DB_URL / MUSE_DATABASE_URL
+(a Supabase pooler/direct URL with the DB password — NOT the service_role JWT).
 """
 from __future__ import annotations
 
@@ -34,12 +38,8 @@ def env(*names: str) -> str | None:
     return None
 
 
-def get_supabase_url() -> str | None:
-    return env("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL")
-
-
-def get_supabase_key() -> str | None:
-    return env("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY")
+def get_dsn() -> str | None:
+    return env("DATABASE_URL", "SUPABASE_DB_URL", "MUSE_DATABASE_URL")
 
 
 def list_queue() -> list[Path]:
@@ -50,17 +50,15 @@ def list_queue() -> list[Path]:
     return sorted(files, key=lambda p: p.name)
 
 
-def create_table(client: object) -> None:
-    print("  ensuring schema_migrations exists")
-    r = client.rpc  # placeholder; real impl uses postgrest/psql below
-    # The Supabase client doesn't expose raw DDL easily here, so this runner
-    # applies via the REST `rpc` or a direct connection. For zero dependencies
-    # without a DB driver, this is documented; use the Supabase CLI for DDL.
-    raise NotImplementedError(
-        "Apply DDL with the Supabase CLI (`supabase db push`) — this runner is a "
-        "queue/dry-run helper. Implement `--apply` with your DB driver of choice "
-        "(psycopg/postgres) or route through `supabase db push`."
-    )
+def connect(dsn: str):
+    try:
+        import psycopg2
+    except ImportError:
+        print("ERROR: psycopg2 not installed (pip install psycopg2-binary)", file=sys.stderr)
+        sys.exit(1)
+    conn = psycopg2.connect(dsn, connect_timeout=15)
+    conn.autocommit = True
+    return conn
 
 
 def main() -> None:
@@ -72,15 +70,61 @@ def main() -> None:
     for p in queue:
         print(f"  {p.name}  ({len(p.read_text().splitlines())} lines)")
 
-    if "--apply" in sys.argv:
-        url = get_supabase_url()
-        key = get_supabase_key()
-        if not url or not key:
-            print("ERROR: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set", file=sys.stderr)
+    create_only = "--create-table" in sys.argv
+    apply = "--apply" in sys.argv
+
+    if not (apply or create_only):
+        print("\n(dry run — pass --apply to execute, --create-table to only create the ledger)")
+        return
+
+    dsn = get_dsn()
+    if not dsn:
+        print("ERROR: set DATABASE_URL (or SUPABASE_DB_URL / MUSE_DATABASE_URL) to a "
+              "Postgres DSN with the DB password.", file=sys.stderr)
+        sys.exit(1)
+
+    conn = connect(dsn)
+    cur = conn.cursor()
+    cur.execute(CREATE_TABLE)
+    print("\n  ensured schema_migrations exists")
+
+    if create_only:
+        cur.close()
+        conn.close()
+        return
+
+    cur.execute("SELECT filename FROM schema_migrations")
+    applied = {r[0] for r in cur.fetchall()}
+    print(f"  already applied: {len(applied)}")
+
+    newly = 0
+    for p in queue:
+        if p.name in applied:
+            print(f"  SKIP  {p.name}")
+            continue
+        sql = p.read_text(encoding="utf-8")
+        try:
+            cur.execute(sql)
+            cur.execute(
+                "INSERT INTO schema_migrations (filename) VALUES (%s) "
+                "ON CONFLICT (filename) DO NOTHING",
+                (p.name,),
+            )
+            newly += 1
+            print(f"  OK    {p.name}")
+        except Exception as e:  # noqa: BLE001
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            print(f"  FAIL  {p.name}: {type(e).__name__}: {str(e)[:200]}")
+            cur.close()
+            conn.close()
             sys.exit(1)
-        print("\nApply DDL with the Supabase CLI for safety:")
-        print("  supabase migration list && supabase db push")
-        sys.exit(2)
+
+    cur.close()
+    conn.close()
+    print(f"\nDone. {newly} applied, {len(queue) - newly} already present.")
 
 
 if __name__ == "__main__":
