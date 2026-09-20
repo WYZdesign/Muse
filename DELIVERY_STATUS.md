@@ -244,6 +244,39 @@ test account sees the other as a candidate.
 
 Verification: `tsc` clean, `vitest` 350/350, `next build` clean.
 
+### Round 56–58 — recorded clips, safety, and LiveKit calls (verified 2026-09-19)
+
+**Recorded voice + video notes** (`ab7a34d`)
+- Migration `0016`: `muse_messages.kind / media_url / media_type / duration_ms / transcript`.
+- `messageSend` accepts media-only messages; push preview says "sent a voice note".
+- `/api/muse/upload` distinguishes audio vs video WebM via `mediaKind` (identical
+  EBML headers) → `audio/webm`; voice notes skip the video path that would
+  otherwise mark the uploader NSFW.
+- Chat: 🎤 + 🎥 record buttons (MediaRecorder, 60s cap), live recording bar with
+  Cancel, inline `<audio>`/`<video>` players, video blurred until revealed.
+- `/api/muse/transcribe` → Groq Whisper. `GROQ_API_KEY` added to Vercel
+  Production, so voice notes now auto-transcribe (searchable + accessible).
+
+**Clip safety** (`88949c9`)
+- One-time consent notice before the first recording (two-party-consent states).
+- "Report this clip" on received voice/video notes.
+
+**Voice + video calls** (`167eb9a`) — LiveKit
+- `POST /api/muse/call`: `start` (create room + token + notify/email callee),
+  `token` (accept/rejoin), `end` (delete room). Room name is deterministic
+  (`muse-<sorted profile ids>`), so both sides land in the same room with no
+  extra handshake. Blocked users can't call each other; returns 503 with a clear
+  message when the keys are absent.
+- `hooks/useCall.ts`: ringing over one shared Supabase broadcast channel
+  (`muse-calls`), filtered by payload `to` — ring / accept / decline / end.
+- `components/CallOverlay.tsx`: full-screen LiveKit room, remote view + local
+  picture-in-picture, mic + camera toggles, end, and report (wired to the
+  existing report modal).
+- `ChatScreen`: voice + video call buttons in the header.
+- Credentials verified live (token mint, room create/list/delete) before deploy.
+- Env: `LIVEKIT_URL` / `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` added to Vercel
+  Production and vaulted.
+
 ## Prior verified baseline: `e192af3`
 
 Everything at or before this commit is real, live, deployed code — this
