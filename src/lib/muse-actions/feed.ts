@@ -132,11 +132,28 @@ export const momentCreate = async ({ sb, profile, rest, ip }: ActionContext) => 
   const { text, img } = rest;
   const cleanText = sanitizeText(String(text || "").slice(0, 500));
   const resolvedImg = img && typeof img === "string" ? String(img).slice(0, 500) : "";
-  if (!cleanText && !resolvedImg) return NextResponse.json({ error: "text or img required" }, { status: 400 });
+  // Recorded clips: a voice/video moment has no text and no image.
+  const mediaUrl = typeof rest.media_url === "string" ? rest.media_url : "";
+  const clipKind = rest.kind === "voice" || rest.kind === "video" ? String(rest.kind) : "";
+  const mediaType = typeof rest.media_type === "string" ? rest.media_type.slice(0, 40) : null;
+  const durationMs = Number.isFinite(Number(rest.duration_ms))
+    ? Math.max(0, Math.min(600_000, Math.round(Number(rest.duration_ms))))
+    : null;
+  const transcript = typeof rest.transcript === "string" && rest.transcript.trim()
+    ? sanitizeText(rest.transcript.slice(0, 2000))
+    : null;
+  if (!cleanText && !resolvedImg && !mediaUrl) return NextResponse.json({ error: "text, img or media required" }, { status: 400 });
   const isVideo = /\.(mp4|webm|mov)(\?|$)/i.test(resolvedImg);
   const { data, error } = await sb.from("muse_moments").insert({
-    author_id: profile.id, text: cleanText, img: resolvedImg, type: resolvedImg ? (isVideo ? "video" : "photo") : "text",
-  }).select("id, text, img, type, likes, comments, created_at, author_id(name, avatar)").single();
+    author_id: profile.id,
+    text: cleanText,
+    img: resolvedImg,
+    type: clipKind ? clipKind : resolvedImg ? (isVideo ? "video" : "photo") : "text",
+    media_url: mediaUrl || null,
+    media_type: mediaType,
+    duration_ms: durationMs,
+    transcript,
+  }).select("id, text, img, type, media_url, duration_ms, transcript, likes, comments, created_at, author_id(name, avatar)").single();
   if (error) return safeServerError(error, "db op");
   return NextResponse.json({ success: true, moment: data });
 };
