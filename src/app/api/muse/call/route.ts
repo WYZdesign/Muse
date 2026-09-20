@@ -89,6 +89,16 @@ export async function POST(req: NextRequest) {
         const svc = new RoomServiceClient(httpUrl(), LK_KEY, LK_SECRET);
         await svc.deleteRoom(room);
       } catch { /* room may already be gone */ }
+      // Close out the log row: duration is measured client-side (answered → end).
+      const endedId = String(body.callId || body.call_id || "");
+      if (UUID_RE.test(endedId)) {
+        const durationMs = Number.isFinite(Number(body.duration_ms)) ? Math.max(0, Math.round(Number(body.duration_ms))) : null;
+        await sb.from("muse_calls").update({
+          status: "ended",
+          ended_at: new Date().toISOString(),
+          duration_ms: durationMs,
+        }).eq("id", endedId);
+      }
       return NextResponse.json({ success: true, room });
     }
 
@@ -102,7 +112,20 @@ export async function POST(req: NextRequest) {
       }
       const token = await mint(profile, room);
 
-      // Notify the callee (in-app + email + push) so a missed ring isn't silent.
+      // Call log row — the source of truth for history + missed calls.
+      let callId: string | null = null;
+      try {
+        const { data: row } = await sb.from("muse_calls").insert({
+          caller_id: profile.id,
+          callee_id: toId,
+          kind,
+          status: "ringing",
+          room,
+        }).select("id").single();
+        callId = row?.id ?? null;
+      } catch { /* log is best-effort; the call still proceeds */ }
+
+      // Notify the callee (in-app + push + email) so a missed ring isn't silent.
       try {
         await sb.from("muse_notifications").insert({
           user_id: toId,
@@ -111,19 +134,82 @@ export async function POST(req: NextRequest) {
           body: `${profile.name || "Someone"} is calling you`,
           read: false,
         });
-      } catch { /* notification is best-effort */ }
-      const { emailProfile } = await import("@/lib/muse-actions/shared").catch(() => ({ emailProfile: null as never }));
-      if (emailProfile) {
+      } catch { /* best-effort */ }
+      try {
+        const { pushToProfile } = await import("@/lib/push");
+        pushToProfile(
+          toId,
+          `${kind === "voice" ? "Voice" : "Video"} call`,
+          `${profile.name || "Someone"} is calling you on Muse`,
+          "/muse/matches",
+        ).catch(() => {});
+        const { emailProfile } = await import("@/lib/muse-actions/shared");
         emailProfile(sb, toId, "Incoming Muse call", `${profile.name || "Someone"} is calling`, `${profile.name || "Someone"} is trying to reach you on Muse.`, "Answer", "https://muse.wyzdesign.com/muse", "call").catch(() => {});
-      }
+      } catch { /* notifications are best-effort */ }
 
       return NextResponse.json({
         token,
         room,
         url: LK_URL,
         kind,
+        callId,
         from: { id: profile.id, name: profile.name || "Muse user" },
       });
+    }
+
+    // ── Lifecycle updates on the call log ──
+    const callId = String(body.callId || body.call_id || "");
+    if (action === "answer" || action === "decline" || action === "missed" || action === "voicemail") {
+      if (!UUID_RE.test(callId)) return NextResponse.json({ error: "Invalid callId" }, { status: 400 });
+
+      if (action === "voicemail") {
+        const url = typeof body.voicemail_url === "string" ? body.voicemail_url : "";
+        const durationMs = Number.isFinite(Number(body.duration_ms)) ? Math.max(0, Math.round(Number(body.duration_ms))) : null;
+        const transcript = typeof body.transcript === "string" && body.transcript.trim() ? body.transcript.slice(0, 2000) : null;
+        await sb.from("muse_calls").update({
+          status: "voicemail",
+          ended_at: new Date().toISOString(),
+          voicemail_url: url || null,
+          voicemail_duration_ms: durationMs,
+          voicemail_transcript: transcript,
+        }).eq("id", callId).eq("caller_id", profile.id);
+        // Drop the voicemail into the conversation so it's not lost in a log.
+        if (url) {
+          const matchId = [profile.id, toId].sort().join("__");
+          await sb.from("muse_messages").insert({
+            match_id: matchId,
+            sender_id: profile.id,
+            receiver_id: toId,
+            text: "",
+            img: "",
+            kind: "voice",
+            media_url: url,
+            media_type: "audio/webm",
+            duration_ms: durationMs,
+            transcript,
+          }).then(() => {}, () => {});
+          await sb.from("muse_notifications").insert({
+            user_id: toId, from_id: profile.id, type: "voicemail",
+            body: `${profile.name || "Someone"} left you a voicemail`, read: false,
+          }).then(() => {}, () => {});
+        }
+        return NextResponse.json({ success: true });
+      }
+
+      const patch: Record<string, unknown> = { status: action === "missed" ? "missed" : action };
+      if (action === "answer") patch.answered_at = new Date().toISOString();
+      if (action === "decline") patch.ended_at = new Date().toISOString();
+      await sb.from("muse_calls").update(patch).eq("id", callId);
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "history") {
+      const { data: rows } = await sb.from("muse_calls")
+        .select("id, caller_id, callee_id, kind, status, started_at, answered_at, ended_at, duration_ms, voicemail_url, voicemail_duration_ms, voicemail_transcript")
+        .or(`caller_id.eq.${profile.id},callee_id.eq.${profile.id}`)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return NextResponse.json({ success: true, calls: rows || [] });
     }
 
     if (action === "token") {

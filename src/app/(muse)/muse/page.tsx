@@ -574,7 +574,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const { liveBriefs, setLiveBriefs } = useBriefsData({ authFetch, profileId: authUser?.profile?.id ?? null });  const { myStats, setMyStats, safetyCheckins, setSafetyCheckins, safetyProfile, setSafetyProfile, promptBankData, setPromptBankData, promptResponses, setPromptResponses } = useProfileData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
 
   // ── Calls (LiveKit): ringing + in-call state for the whole app ──
-  const { incoming: incomingCall, active: activeCall, error: callError, setError: setCallError, startCall, acceptCall, declineCall, endCall } = useCall(authUser?.profile?.id ?? null);
+  const { incoming: incomingCall, active: activeCall, error: callError, setError: setCallError, startCall, acceptCall, declineCall, endCall, leaveVoicemail, fetchHistory: fetchCallHistory } = useCall(authUser?.profile?.id ?? null);
 
   // Load a profile's reviews when the profile modal opens (reviews are
   // written via submit-review but were previously never read back).
@@ -3317,7 +3317,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             <React.Suspense fallback={null}><CodexScreen screen={screen} showScreen={showScreen} goBack={goBack} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} /></React.Suspense>
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Chat">
-            <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} goBack={goBack} messages={chatTarget?.messages || []} setMessages={((msgs: any) => setChatTarget((prev: any) => prev ? {...prev, messages: typeof msgs === "function" ? msgs(prev?.messages || []) : msgs} : prev)) as any} chatText={chatInput} setChatText={setChatInput} messagesEndRef={messagesEndRef} sendChat={sendMsg} sendChatImg={sendChatImg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} uploadImage={uploadImage} uploadMedia={uploadMedia} sendChatMedia={sendChatMedia} startCall={startCall} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
+            <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} goBack={goBack} messages={chatTarget?.messages || []} setMessages={((msgs: any) => setChatTarget((prev: any) => prev ? {...prev, messages: typeof msgs === "function" ? msgs(prev?.messages || []) : msgs} : prev)) as any} chatText={chatInput} setChatText={setChatInput} messagesEndRef={messagesEndRef} sendChat={sendMsg} sendChatImg={sendChatImg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} uploadImage={uploadImage} uploadMedia={uploadMedia} sendChatMedia={sendChatMedia} startCall={startCall} fetchCallHistory={fetchCallHistory} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Collab">
             <CollabScreen screen={screen} showScreen={showScreen} goBack={goBack} museCat={museCat} setMuseCat={setMuseCat} userBriefs={userBriefs} setUserBriefs={setUserBriefs} showPostBrief={showPostBrief} setShowPostBrief={setShowPostBrief} liveBriefs={liveBriefs || []} showNsfw={showNsfw} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} uid={uid} appliedBriefs={appliedBriefs} setAppliedBriefs={setAppliedBriefs} savedBriefs={savedBriefs} setSavedBriefs={setSavedBriefs} setChatTarget={setChatTarget} briefTitle={briefTitle} setBriefTitle={setBriefTitle} briefDesc={briefDesc} setBriefDesc={setBriefDesc} briefBudget={briefBudget} setBriefBudget={setBriefBudget} briefCat={briefCat} setBriefCat={setBriefCat} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} demo={DEMO_MODE} />
@@ -4151,6 +4151,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         <CallOverlay
           call={activeCall}
           onEnd={endCall}
+          onVoicemail={leaveVoicemail}
+          uploadMedia={uploadMedia}
           onReport={() => { setReportTarget({ id: activeCall.peerId, type: "user", name: activeCall.peerName }); setShowReport(true); }}
         />
       )}

@@ -9,22 +9,30 @@ import {
   type RemoteTrackPublication,
   type RemoteParticipant,
 } from "livekit-client";
-import { FiMic, FiMicOff, FiVideo, FiVideoOff, FiPhoneOff, FiFlag } from "react-icons/fi";
+import { FiMic, FiMicOff, FiVideo, FiVideoOff, FiPhoneOff, FiFlag, FiVoicemail, FiSquare } from "react-icons/fi";
 import type { ActiveCall } from "../hooks/useCall";
+import { useRecorder } from "../hooks/useRecorder";
 
 /**
  * Full-screen call overlay. Connects to the LiveKit room, renders the remote
  * participant full-bleed with a local picture-in-picture, and exposes the
  * expected controls (mute, camera, end) plus a report action for safety.
+ *
+ * When it's an outgoing call that nobody has picked up yet, a "Leave voicemail"
+ * action appears — records a voice note and drops it into the conversation.
  */
 export default function CallOverlay({
   call,
   onEnd,
   onReport,
+  onVoicemail,
+  uploadMedia,
 }: {
   call: NonNullable<ActiveCall>;
   onEnd: () => void;
   onReport?: () => void;
+  onVoicemail?: (url: string, durationMs: number, transcript?: string) => void;
+  uploadMedia?: (file: File, folder: string, kind: "voice" | "video") => Promise<string | null>;
 }) {
   const roomRef = useRef<Room | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -39,6 +47,15 @@ export default function CallOverlay({
   const [camOn, setCamOn] = useState(call.kind === "video");
   const [remotePresent, setRemotePresent] = useState(false);
   const [seconds, setSeconds] = useState(0);
+
+  // Voicemail — only offered on an outgoing call nobody has answered.
+  const rec = useRecorder({
+    uploadMedia: uploadMedia || (async () => null),
+    folder: "voicemail",
+    showToast: () => {},
+    onDone: (url, _kind, durationMs, _mediaType, transcript) => { onVoicemail?.(url, durationMs, transcript); },
+  });
+  const canVoicemail = Boolean(call.outgoing && !remotePresent && onVoicemail && uploadMedia);
 
   useEffect(() => {
     let cancelled = false;
@@ -166,10 +183,28 @@ export default function CallOverlay({
             <FiFlag size={20} />
           </button>
         )}
+        {canVoicemail && (
+          <button
+            onClick={() => (rec.recording ? rec.stop() : rec.start("voice"))}
+            disabled={rec.sending}
+            aria-label={rec.recording ? "Stop and send voicemail" : "Leave voicemail"}
+            style={{ width: 54, height: 54, borderRadius: "50%", border: "none", background: rec.recording ? "#ff3b30" : "rgba(255,255,255,0.12)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            {rec.recording ? <FiSquare size={20} /> : <FiVoicemail size={20} />}
+          </button>
+        )}
         <button onClick={onEnd} aria-label="End call" style={{ width: 64, height: 64, borderRadius: "50%", border: "none", background: "#ff3b30", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <FiPhoneOff size={26} />
         </button>
       </div>
+
+      {canVoicemail && (
+        <div style={{ textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.45)", paddingBottom: "calc(14px + env(safe-area-inset-bottom,0px))", background: "#0a0612" }}>
+          {rec.recording
+            ? `Recording voicemail · ${rec.fmt(rec.recordSecs * 1000)} — tap the square to send`
+            : "No answer? Tap the voicemail icon to leave a voice message."}
+        </div>
+      )}
     </div>
   );
 }

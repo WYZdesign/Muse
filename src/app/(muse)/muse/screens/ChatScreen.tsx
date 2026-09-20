@@ -39,6 +39,8 @@ export interface ChatScreenProps {
   sendChatMedia?: (url: string, kind: "voice" | "video", durationMs: number, mediaType: string, transcript?: string) => void;
   /** Starts a LiveKit voice/video call with this conversation's other person. */
   startCall?: (peerId: string, peerName: string, kind: "voice" | "video") => void;
+  /** Recent call log with this conversation's other person. */
+  fetchCallHistory?: (peerId: string) => Promise<any[]>;
   authUser?: any;
   chatInput?: string;
   setChatInput?: (v: string) => void;
@@ -79,6 +81,7 @@ export const ChatScreen = memo(function ChatScreen({
   uploadMedia,
   sendChatMedia,
   startCall,
+  fetchCallHistory,
 }: ChatScreenProps) {
   // Blur-then-reveal chat image messages (consistent with Discover/BTS/Portfolio):
   // chat media can be sensitive, so it's blurred until the viewer taps to reveal,
@@ -90,6 +93,17 @@ export const ChatScreen = memo(function ChatScreen({
   // the app to actually reach them from an active conversation — a real gap,
   // not a style choice. This menu is that entry point.
   const [showChatMenu, setShowChatMenu] = useState(false);
+  // Call history for this conversation (missed / answered / voicemail).
+  const [showCallLog, setShowCallLog] = useState(false);
+  const [callLog, setCallLog] = useState<any[]>([]);
+
+  const openCallLog = async () => {
+    setShowChatMenu(false);
+    setShowCallLog(true);
+    if (fetchCallHistory && chatTarget?.id) {
+      try { setCallLog(await fetchCallHistory(String(chatTarget.id))); } catch { setCallLog([]); }
+    }
+  };
 
   // ── Recorded voice / video notes ──
   // MediaRecorder → WebM → /api/muse/upload (folder "chat") → message. Clips are
@@ -236,6 +250,45 @@ export const ChatScreen = memo(function ChatScreen({
           </div>
         </div>
       )}
+      {showCallLog && (
+        <div role="dialog" aria-modal="true" aria-label="Call history" onClick={() => setShowCallLog(false)} style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", padding: 20 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--panel-bg-solid, #0f0a1a)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 22, maxWidth: 380, width: "100%", maxHeight: "70vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--gold)" }}>Call history</div>
+              <button onClick={() => setShowCallLog(false)} aria-label="Close call history" style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 18, cursor: "pointer" }}>✕</button>
+            </div>
+            {callLog.length === 0 ? (
+              <div style={{ fontSize: 13, color: "var(--muted)" }}>No calls with {chatTarget?.name} yet.</div>
+            ) : (
+              callLog.map((c: any) => {
+                const outgoing = String(c.caller_id) !== String(chatTarget?.id);
+                const when = new Date(c.started_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+                const label =
+                  c.status === "answered" ? (c.duration_ms ? `Answered · ${Math.round(c.duration_ms / 1000)}s` : "Answered")
+                    : c.status === "missed" ? "Missed"
+                      : c.status === "declined" ? "Declined"
+                        : c.status === "voicemail" ? "Voicemail left"
+                          : c.status === "ended" ? (c.duration_ms ? `Call · ${Math.round(c.duration_ms / 1000)}s` : "Call")
+                            : String(c.status);
+                return (
+                  <div key={c.id} style={{ padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 13 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: outgoing ? "var(--text2)" : "var(--gold)", fontWeight: 600 }}>
+                        {outgoing ? "↗ Outgoing" : "↙ Incoming"} · {c.kind === "voice" ? "voice" : "video"}
+                      </span>
+                      <span style={{ color: "var(--muted)", fontSize: 11 }}>{when}</span>
+                    </div>
+                    <div style={{ color: "var(--muted)", fontSize: 11, marginTop: 2 }}>{label}</div>
+                    {c.voicemail_url && (
+                      <audio controls preload="metadata" src={c.voicemail_url} style={{ width: "100%", marginTop: 6 }} />
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
       {chatTarget && (
         <div className="chat-wrap">
           <div className="chat-header">
@@ -270,6 +323,7 @@ export const ChatScreen = memo(function ChatScreen({
                 <>
                   <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 998 }} onClick={() => setShowChatMenu(false)} />
                   <div role="menu" style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 999, minWidth: 168, background: "var(--panel-bg)", border: "1px solid var(--border-med)", borderRadius: 14, padding: 6, boxShadow: "0 12px 32px rgba(0,0,0,0.5)" }}>
+                    <button role="menuitem" onClick={openCallLog} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiPhone size={14} /> Call history</button>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setShowReport(true); setReportTarget({ id: chatTarget.id, type: "user", name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiFlag size={14} /> Report</button>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setUnmatchTarget({ id: chatTarget.id, name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiUserX size={14} /> Unmatch</button>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setBlockTarget({ id: chatTarget.id, name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "#ff6b6b", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiSlash size={14} /> Block</button>
