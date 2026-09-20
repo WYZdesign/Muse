@@ -27,7 +27,7 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `6c4b388`
+## Confirmed merged, last verified at: `cd1af17`
 
 ### Round 47 — SQL migration suite idempotency (verified 2026-09-19)
 
