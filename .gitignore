@@ -30,3 +30,7 @@ scripts/__pycache__/
 _vision.js
 screenshots/
 capture-screenshots.js
+
+# Local dev-server logs
+dev.out.log
+dev.err.log
