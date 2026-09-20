@@ -146,7 +146,7 @@ function ilikeContainsPattern(raw: string): string {
   return `"%${escaped}%"`;
 }
 
-export const searchAll = async ({ sb, rest, ip }: ActionContext) => {
+export const searchAll = async ({ sb, profile, rest, ip }: ActionContext) => {
   if (!await checkRate(ip, "search", 30)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { query, type = "all", limit: rawLimit = 20, styles, creativeType, loc, verified, online, availability, destination, sort = "relevance" } = rest;
   if (!query || query.trim().length < 2) return NextResponse.json({ error: "Query must be at least 2 characters" }, { status: 400 });
@@ -203,6 +203,20 @@ export const searchAll = async ({ sb, rest, ip }: ActionContext) => {
       .order("created_at", { ascending: false })
       .limit(limit);
     results.forum = posts || [];
+  }
+
+  if (type === "messages") {
+    // Opt-in (type: "messages") rather than part of "all" — no UI renders these
+    // yet, and an extra scan on every search would be wasted work.
+    // Searches the caller's own conversations only, across message text AND the
+    // auto-transcript of voice notes — so a spoken word is findable.
+    const { data: msgs } = await sb.from("muse_messages")
+      .select("id, match_id, sender_id, receiver_id, text, transcript, kind, created_at")
+      .or(`sender_id.eq.${profile.id},receiver_id.eq.${profile.id}`)
+      .or(`text.ilike.${pattern},transcript.ilike.${pattern}`)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    results.messages = msgs || [];
   }
 
   return NextResponse.json({ success: true, results });
