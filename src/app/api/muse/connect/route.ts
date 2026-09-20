@@ -47,6 +47,9 @@ export async function POST(req: NextRequest) {
     if (action === "create-account" && !await checkRate(ip, "connect-create-account", 5)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
+    if (action === "create-account-session" && !await checkRate(ip, "connect-account-session", 20)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
     if (action === "create-payment" && !await checkRate(ip, "connect-create-payment", 10)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
@@ -112,6 +115,45 @@ export async function POST(req: NextRequest) {
         onboardingUrl: accountLink.url,
         onboardingComplete: false,
       });
+    }
+
+    // ═══ CREATE-ACCOUNT-SESSION: Embedded Connect onboarding (ConnectJS) ═══
+    // Used by the embedded (non-redirect) flow: creates the Express account if
+    // needed, then mints an Account Session whose client_secret drives the
+    // embedded <ConnectAccountOnboarding> / <ConnectAccountManagement> components.
+    if (action === "create-account-session") {
+      let accountId = profile.stripe_connect_id as string | null;
+
+      if (!accountId) {
+        const account = await stripe.accounts.create({
+          type: "express",
+          email: profile.email || undefined,
+          metadata: { muse_user_id: profile.id },
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
+        });
+        accountId = account.id;
+        await sb.from("muse_stripe_connect").upsert({
+          user_id: profile.id,
+          stripe_account_id: account.id,
+          charges_enabled: false,
+          payouts_enabled: false,
+          details_submitted: false,
+        }, { onConflict: "user_id" });
+        await sb.from("muse_profiles").update({ stripe_connect_id: account.id }).eq("id", profile.id);
+      }
+
+      const accountSession = await stripe.accountSessions.create({
+        account: accountId,
+        components: {
+          account_onboarding: { enabled: true },
+          account_management: { enabled: true },
+        },
+      });
+
+      return NextResponse.json({ clientSecret: accountSession.client_secret, accountId });
     }
 
     // ═══ CREATE-PAYMENT: Pay for a booking via marketplace ═══

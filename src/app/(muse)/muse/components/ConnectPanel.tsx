@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { authFetch } from "../lib/auth-client";
+import EmbeddedConnect from "./EmbeddedConnect";
 
 type ConnectStatus = {
   connected: boolean;
@@ -19,17 +20,33 @@ export default function ConnectPanel({ onClose }: Props) {
   const [status, setStatus] = useState<ConnectStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
+  const [embedded, setEmbedded] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    authFetch("/api/muse/connect", {
-      method: "POST",
-      body: JSON.stringify({ action: "account-status" }),
-    }).then(r => r.json()).then(d => { if (!cancelled) { setStatus(d); setLoading(false); } }).catch(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+  const refresh = useCallback(async () => {
+    try {
+      const r = await authFetch("/api/muse/connect", {
+        method: "POST",
+        body: JSON.stringify({ action: "account-status" }),
+      });
+      const d = await r.json();
+      setStatus(d);
+    } catch {
+      /* leave previous status */
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  useEffect(() => { refresh(); }, [refresh]);
+
   const startOnboarding = async () => {
+    // Embedded ConnectJS flow — custom-styled in-app, no redirect.
+    if (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+      setEmbedded(true);
+      return;
+    }
+
+    // Fallback: hosted redirect (only when the publishable key isn't configured).
     setConnecting(true);
     try {
       const r = await authFetch("/api/muse/connect", {
@@ -68,13 +85,21 @@ export default function ConnectPanel({ onClose }: Props) {
           <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
 
-        {isComplete ? (
+        {embedded ? (
+          <EmbeddedConnect
+            onExit={async () => {
+              setEmbedded(false);
+              setLoading(true);
+              await refresh();
+            }}
+          />
+        ) : isComplete ? (
           <div>
             {/* Connected & Active */}
             <div style={{ padding: 16, background: "rgba(78,205,196,0.08)", borderRadius: 12, marginBottom: 16, borderLeft: "3px solid #4ecdc4" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#4ecdc4", marginBottom: 4 }}>✓ Connected to Stripe</div>
               <div style={{ fontSize: 12, color: "var(--text2)" }}>
-                You can receive payments for bookings. Muse charges a 5% marketplace fee on transactions.
+                You can receive payments for bookings. Muse takes a 7% host commission on each booking.
               </div>
             </div>
 
@@ -96,8 +121,8 @@ export default function ConnectPanel({ onClose }: Props) {
             <div style={{ padding: 12, background: "rgba(255,215,0,0.06)", borderRadius: 10, fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
               <strong style={{ color: "var(--gold)" }}>How it works:</strong><br/>
               • Clients pay you through Muse bookings<br/>
-              • Muse takes 5% marketplace fee<br/>
-              • You receive 95% via Stripe payouts<br/>
+              • Muse takes a 7% host commission (clients also pay an 8% service fee)<br/>
+              • You receive 93% via Stripe payouts<br/>
               • Funds arrive in 2-7 business days
             </div>
           </div>

@@ -122,6 +122,38 @@ delivered as a bundle (it had no push access and ran out of credits):
 
 Verification: `tsc` clean, `vitest` 349/349, `next build` clean.
 
+### Round 50 — Embedded Stripe Connect (ConnectJS) + fee-copy fix (verified 2026-09-19)
+
+Stripe Connect onboarding was a **hosted redirect** (`accountLinks.create` →
+`window.location.href`), so users left the app and got Stripe's default styling.
+The Stripe platform profile is already set to *Embedded onboarding components* /
+*Embedded account components*, so the app now matches it:
+
+- Added `@stripe/react-connect-js` (3.4.4).
+- New `POST /api/muse/connect` action `create-account-session`: creates the
+  Express account if the user has none (with `metadata.muse_user_id` + DB
+  linkage), then mints an Account Session with `account_onboarding` +
+  `account_management` components and returns its `client_secret`.
+- New `components/EmbeddedConnect.tsx`: `loadConnectAndInitialize` +
+  `<ConnectComponentsProvider>` + `<ConnectAccountOnboarding>`, themed to
+  Muse's dark/gold tokens via the ConnectJS `appearance` API (variables + rules)
+  so onboarding renders natively inside the app — no redirect.
+- `ConnectPanel.tsx` renders the embedded component in place; the hosted
+  redirect is kept only as a fallback when `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+  is absent.
+- Corrected the marketplace fee copy: the panel said "5% marketplace fee /
+  you receive 95%" but the code charges **7% host commission + 8% buyer service
+  fee** (`MUSE_HOST_COMMISSION_RATE` / `MUSE_BUYER_SERVICE_FEE_RATE`). Now reads
+  7% / 93%.
+- Added a route test for `create-account-session` (350 tests total).
+
+Note on Express: users do **not** need an existing Stripe account — Express
+accounts are created under the platform and Stripe collects business type +
+identity/tax/bank details dynamically during onboarding. Existing Stripe
+accounts can't be linked to Express (that's Standard/OAuth only).
+
+Verification: `tsc` clean, `vitest` 350/350, `next build` clean.
+
 ## Prior verified baseline: `e192af3`
 
 Everything at or before this commit is real, live, deployed code — this

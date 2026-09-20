@@ -21,6 +21,9 @@ vi.mock("stripe", () => ({
       accountLinks: {
         create: async () => ({ url: "https://connect.stripe.com/express" }),
       },
+      accountSessions: {
+        create: async () => ({ client_secret: "acs_test_123" }),
+      },
       paymentIntents: {
         create: async (opts: any) => ({ id: "pi_123", client_secret: "cs_123", amount: opts.amount }),
       },
@@ -93,6 +96,15 @@ describe("connect route", () => {
     expect(r.status).toBe(200);
     const body = await r.json();
     expect(body.onboardingUrl).toContain("connect.stripe.com");
+  });
+
+  it("create-account-session returns a client secret for embedded onboarding", async () => {
+    state.tables.muse_profiles = { id: "p1", email: "a@b.com" };
+    const r = await POST(req({ action: "create-account-session" }));
+    expect(r.status).toBe(200);
+    const body = await r.json();
+    expect(body.clientSecret).toBe("acs_test_123");
+    expect(body.accountId).toBe("acct_123");
   });
 
   it("rejects unknown action with 400", async () => {
