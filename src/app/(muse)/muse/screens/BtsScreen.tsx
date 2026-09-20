@@ -2,7 +2,8 @@
 
 import React, { memo, useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiCamera, FiClock } from "react-icons/fi";
+import { FiArrowLeft, FiCamera, FiClock, FiMic, FiSquare } from "react-icons/fi";
+import { useRecorder } from "../hooks/useRecorder";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
@@ -22,6 +23,8 @@ export interface BtsScreenProps {
   apiFetch: (url: string, opts?: any) => Promise<any>;
   currentUser?: { name: string; avatar: string } | null;
   uploadImage?: (file: File) => Promise<string>;
+  /** Uploads a recorded voice/video clip (WebM) — kind tells the server which. */
+  uploadMedia?: (file: File, folder: string, kind: "voice" | "video") => Promise<string | null>;
   uid?: string;
   setShowReport?: (v: boolean) => void;
   setReportTarget?: (t: { id: number | string; type: string; name: string }) => void;
@@ -61,6 +64,7 @@ export const BtsScreen = memo(function BtsScreen({
   apiFetch,
   currentUser,
   uploadImage,
+  uploadMedia,
   uid,
   setShowReport = () => {},
   setReportTarget = () => {},
@@ -74,6 +78,39 @@ export const BtsScreen = memo(function BtsScreen({
   const [commentingId, setCommentingId] = useState<string | number | null>(null);
   const [commentDraft, setCommentDraft] = useState("");
   const [sendingComment, setSendingComment] = useState(false);
+
+  // ── Voice moment ──
+  // Audio-only moments can't come from the camera, so they get their own
+  // recorder. Shares useRecorder with Chat/Feed (consent gate, 60s cap,
+  // Whisper transcript).
+  const postVoiceMoment = useCallback(async (url: string, kind: "voice" | "video", durationMs: number, mediaType: string, transcript?: string) => {
+    const localId = uid || `m-${Date.now()}`;
+    const optimistic = {
+      id: localId, author: currentUser?.name || "You", avatar: currentUser?.avatar || "",
+      type: kind, text: "", img: "", media: [url], mediaUrl: url, durationMs, transcript,
+      time: "Just now", likes: 0, comments: 0,
+    };
+    setStories(prev => [optimistic, ...prev]);
+    try {
+      const r = await apiFetch("/api/muse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create-moment", text: "", media_url: url, kind, media_type: mediaType, duration_ms: durationMs, transcript }),
+      });
+      if (!r?.ok) throw new Error("failed");
+      showToast(kind === "voice" ? "Voice moment shared ✨" : "Video moment shared ✨");
+    } catch {
+      setStories(prev => prev.filter(s => s.id !== localId));
+      showToast("Couldn't share that moment");
+    }
+  }, [apiFetch, currentUser, setStories, showToast, uid]);
+
+  const rec = useRecorder({
+    uploadMedia: uploadMedia || (async () => null),
+    folder: "bts",
+    showToast: (m: string) => showToast(m),
+    onDone: postVoiceMoment,
+  });
 
   useEffect(() => {
     if (screen !== "bts") return;
@@ -517,6 +554,18 @@ export const BtsScreen = memo(function BtsScreen({
                 </div>
 
                 {/* Image area */}
+                {(s.type === "voice" && (s.mediaUrl || s.media_url)) && (
+                  <div style={{ marginTop: 8, padding: 12, borderRadius: 14, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)" }}>
+                    <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>🎤 Voice moment</div>
+                    <audio controls preload="metadata" src={s.mediaUrl || s.media_url} style={{ width: "100%" }} />
+                    {s.transcript && (
+                      <details style={{ fontSize: 11, color: "var(--text2)", marginTop: 6 }}>
+                        <summary style={{ cursor: "pointer" }}>Transcript</summary>
+                        <div style={{ marginTop: 4, lineHeight: 1.5 }}>{s.transcript}</div>
+                      </details>
+                    )}
+                  </div>
+                )}
                 <div
                   className="bts-photo-wrap"
                   style={{ position: "relative", marginTop: 8, width: "100%", maxWidth: "100%", aspectRatio: "1", overflow: "hidden" }}
@@ -712,6 +761,28 @@ export const BtsScreen = memo(function BtsScreen({
               >
                 <FiCamera size={14} />
             Snap Moment
+              </button>
+              <button
+                onClick={() => (rec.recording ? rec.stop() : rec.start("voice"))}
+                disabled={rec.sending}
+                style={{
+                  marginTop: 8,
+                  marginLeft: 8,
+                  padding: "10px 20px",
+                  borderRadius: 12,
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: rec.recording ? "#ff3b30" : "rgba(255,255,255,0.06)",
+                  color: "#fff",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: rec.sending ? "default" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                {rec.recording ? <FiSquare size={14} /> : <FiMic size={14} />}
+                {rec.recording ? `Stop ${rec.fmt(rec.recordSecs * 1000)}` : "Voice Moment"}
               </button>
             </div>
           )}
