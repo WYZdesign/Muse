@@ -2886,7 +2886,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                             preset list — "Other" lets someone type their own,
                             saved as a real `type` value immediately and flagged
                             custom_type_pending for admin review. */}
-                        <div key="other" className={"chip"+((obData as any).customTypePending?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:"",customTypePending:true} as any)); } }} onClick={()=>setObData(d=>({...d,type:"",customTypePending:true} as any))}><span>Other</span></div>
+                        <div key="other" className={"chip"+((obData as any).customTypePending?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:"",customTypePending:true} as any)); } }} onClick={()=>setObData(d=>({...d,type:"",customTypePending:true} as any))}><span>Add New +</span></div>
                       </div>
                     </div>
                     {(obData as any).customTypePending && (
@@ -2922,7 +2922,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                       {/* Torreé audit item 6: aesthetic "Other" — typed values are
                           appended to `styles` immediately and flagged
                           custom_style_pending for admin review. */}
-                      <div key="other" className={"chip"+((obData as any).showCustomStyleInput?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,showCustomStyleInput:!(d as any).showCustomStyleInput} as any)); } }} onClick={()=>setObData(d=>({...d,showCustomStyleInput:!(d as any).showCustomStyleInput} as any))}><span>Other</span></div>
+                      <div key="other" className={"chip"+((obData as any).showCustomStyleInput?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,showCustomStyleInput:!(d as any).showCustomStyleInput} as any)); } }} onClick={()=>setObData(d=>({...d,showCustomStyleInput:!(d as any).showCustomStyleInput} as any))}><span>Add New +</span></div>
                     </div>
                     {(obData as any).showCustomStyleInput && (
                       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -3853,7 +3853,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               <div className="chips">
                 {IN_FRONT_CAMERA.map(t => <div key={t} className={"chip"+(editType===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(t); setEditCustomTypePending(false); } }} onClick={()=>{setEditType(t);setEditCustomTypePending(false);}}><span>{t}</span></div>)}
                 {/* Torreé audit item 6 */}
-                <div key="other" className={"chip"+(editCustomTypePending?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(""); setEditCustomTypePending(true); } }} onClick={()=>{setEditType("");setEditCustomTypePending(true);}}><span>Other</span></div>
+                <div key="other" className={"chip"+(editCustomTypePending?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(""); setEditCustomTypePending(true); } }} onClick={()=>{setEditType("");setEditCustomTypePending(true);}}><span>Add New +</span></div>
               </div>
               {editCustomTypePending && (
                 <input className="inp" placeholder="Type your creative role..." value={editType} onChange={e=>setEditType(e.target.value)} style={{ marginTop: 10 }} />

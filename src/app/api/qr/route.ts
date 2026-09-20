@@ -26,30 +26,39 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "url parameter required" }, { status: 400 });
   }
 
-  // SSRF prevention: validate URL format and block internal addresses
+  // SSRF prevention: validate URL format and block internal addresses.
+  // `otpauth://` is allowed because it is only *encoded* into the QR image,
+  // never fetched — this is what the 2FA setup QR needs. (The previous 2FA QR
+  // used api.qrserver.com, which the site CSP blocks, so the image never showed.)
   try {
     const parsed = new URL(url);
-    if (!["http:", "https:"].includes(parsed.protocol)) {
+    const isOtpAuth = parsed.protocol === "otpauth:";
+    if (!isOtpAuth && !["http:", "https:"].includes(parsed.protocol)) {
       return NextResponse.json({ error: "Only http/https URLs allowed" }, { status: 400 });
     }
-    const host = parsed.hostname.toLowerCase();
-    if (host === "localhost" || host === "127.0.0.1" || host === "::1" || host.startsWith("169.254.") || host.startsWith("10.") || host.startsWith("192.168.")) {
-      return NextResponse.json({ error: "Internal URLs not allowed" }, { status: 400 });
+    if (!isOtpAuth) {
+      const host = parsed.hostname.toLowerCase();
+      if (host === "localhost" || host === "127.0.0.1" || host === "::1" || host.startsWith("169.254.") || host.startsWith("10.") || host.startsWith("192.168.")) {
+        return NextResponse.json({ error: "Internal URLs not allowed" }, { status: 400 });
+      }
     }
   } catch {
     return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
   }
 
   try {
-    // Track QR scan event
-    await sb.from("muse_qr_events").insert({
-      source,
-      event_type: "scan",
-      referrer: req.headers.get("referer") || null,
-      user_agent: req.headers.get("user-agent") || null,
-      ip_hash: Buffer.from(req.headers.get("x-forwarded-for") || "unknown").toString("base64").slice(0, 16),
-      created_at: new Date().toISOString(),
-    });
+    // Track QR scan event (real shareable links only — the 2FA otpauth QR is
+    // not a link and shouldn't pollute analytics).
+    if (!url.startsWith("otpauth:")) {
+      await sb.from("muse_qr_events").insert({
+        source,
+        event_type: "scan",
+        referrer: req.headers.get("referer") || null,
+        user_agent: req.headers.get("user-agent") || null,
+        ip_hash: Buffer.from(req.headers.get("x-forwarded-for") || "unknown").toString("base64").slice(0, 16),
+        created_at: new Date().toISOString(),
+      });
+    }
 
     // Generate QR code
     const qrSvg = await generateQrSvg(url);

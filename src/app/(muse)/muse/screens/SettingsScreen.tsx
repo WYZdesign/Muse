@@ -303,6 +303,12 @@ export const SettingsScreen = memo(function SettingsScreen({
   const [bookingLeadDays, setBookingLeadDays] = useState<number>(Number(preferences.bookingLeadDays ?? 3));
   const [travelDates, setTravelDates] = useState<string>(String(preferences.travelDates ?? ""));
   const [budgetRange, setBudgetRange] = useState<string>(String(preferences.budgetRange ?? ""));
+  const [showRateSettings, setShowRateSettings] = useState(false);
+  const [rateHourly, setRateHourly] = useState<string>(String(preferences.rateHourly ?? ""));
+  const [rateHalfDay, setRateHalfDay] = useState<string>(String(preferences.rateHalfDay ?? ""));
+  const [rateFullDay, setRateFullDay] = useState<string>(String(preferences.rateFullDay ?? ""));
+  const [rateCurrency, setRateCurrency] = useState<string>(String(preferences.rateCurrency ?? "USD"));
+  const [rateNotes, setRateNotes] = useState<string>(String(preferences.rateNotes ?? ""));
   const [showPersonality, setShowPersonality] = useState(false);
   const [showCreativeProfile, setShowCreativeProfile] = useState(false);
   const [cpType, setCpType] = useState((obData as any)?.type || "");
@@ -731,8 +737,13 @@ export const SettingsScreen = memo(function SettingsScreen({
             {privacyItems.map(renderRow)}
             <ToggleRow
               label="Show Distance"
+              desc="Muse Pro"
               checked={!!showDistance}
               onToggle={() => {
+                if (!isPaidTier(userTier)) {
+                  setUpsell?.({ feature: "Show Distance", reason: "Let people see how close you are. Upgrade to Muse Pro to control whether your distance is shown on your profile.", icon: "📍" });
+                  return;
+                }
                 const next = !showDistance;
                 setShowDistance?.(next);
                 apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showDistance: next } }) }).catch(() => showToast("Couldn't save — try again"));
@@ -754,8 +765,13 @@ export const SettingsScreen = memo(function SettingsScreen({
             />
             <ToggleRow
               label="Age"
+              desc="Muse Pro"
               checked={showAge !== false}
               onToggle={() => {
+                if (!isPaidTier(userTier)) {
+                  setUpsell?.({ feature: "Hide Age", reason: "Keep your age private. Upgrade to Muse Pro to control whether your age is shown on your profile.", icon: "🎂" });
+                  return;
+                }
                 const next = !(showAge !== false);
                 setShowAge?.(next);
                 apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showAge: next } }) }).catch(() => showToast("Couldn't save — try again"));
@@ -1077,7 +1093,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                   <div className="chips" style={{ marginBottom: 0 }}>
                     <div className={"chip" + (cpCustomTypePending ? " sel" : "")} role="button" tabIndex={0}
                       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCpType(""); setCpCustomTypePending(true); } }}
-                      onClick={() => { setCpType(""); setCpCustomTypePending(true); }}><span>Other</span></div>
+                      onClick={() => { setCpType(""); setCpCustomTypePending(true); }}><span>Add New +</span></div>
                   </div>
                   {cpCustomTypePending && (
                     <input className="inp" placeholder="Type your creative role..." value={cpType} onChange={e => setCpType(e.target.value)} style={{ marginTop: 10 }} autoFocus />
@@ -1089,7 +1105,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                   <div className="chips" style={{ marginBottom: 0 }}>
                     <div className={"chip" + (cpShowCustomStyleInput ? " sel" : "")} role="button" tabIndex={0}
                       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCpShowCustomStyleInput(v => !v); } }}
-                      onClick={() => setCpShowCustomStyleInput(v => !v)}><span>Other</span></div>
+                      onClick={() => setCpShowCustomStyleInput(v => !v)}><span>Add New +</span></div>
                     {cpStyles.filter(s => !AESTHETICS.includes(s)).map(s => (
                       <div key={s} className="chip sel" role="button" tabIndex={0} title="Tap to remove"
                         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCpStyles(cs => cs.filter(x => x !== s)); } }}
@@ -1144,8 +1160,10 @@ export const SettingsScreen = memo(function SettingsScreen({
                 Scan this QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.), then enter the 6-digit code below.
               </div>
               {mfaQrUri && (
-                <div style={{ display: "flex", justifyContent: "center", padding: 16, background: "rgba(255,255,255,0.95)", borderRadius: 12 }}>
-                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(mfaQrUri)}`} alt="MFA QR Code" style={{ width: 200, height: 200 }} />
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: 16, background: "rgba(255,255,255,0.95)", borderRadius: 12, margin: "0 auto" }}>
+                  {/* Local /api/qr (same-origin) — the old api.qrserver.com URL was
+                      blocked by the site CSP img-src, so the QR never rendered. */}
+                  <img src={`/api/qr?url=${encodeURIComponent(mfaQrUri)}&source=mfa`} alt="MFA QR Code" width={200} height={200} style={{ width: 200, height: 200, display: "block", margin: "0 auto" }} />
                 </div>
               )}
               {mfaSecret && (

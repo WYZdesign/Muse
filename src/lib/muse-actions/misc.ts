@@ -33,6 +33,8 @@ export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
     "portfolioVisibility", "portfolioFeatured", "portfolioShowOnProfile",
     "availabilityStatus", "availabilityNote", "bookingLeadDays",
     "travelDates", "budgetRange",
+    // Rate Settings (Settings → "Portfolio & Availability").
+    "rateHourly", "rateHalfDay", "rateFullDay", "rateCurrency", "rateNotes", "ratePackages",
   ]);
   const source = (rest.preferences && typeof rest.preferences === "object") ? rest.preferences : rest;
   const prefs: Record<string, unknown> = {};
