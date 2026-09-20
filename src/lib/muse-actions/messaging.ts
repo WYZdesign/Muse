@@ -20,7 +20,21 @@ export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
   if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
   const { toId, text, image_url, img, client_msg_id } = rest;
   const imageUrl = image_url || img;
-  if (!text?.trim() && !imageUrl) return NextResponse.json({ error: "text or image required" }, { status: 400 });
+  // Voice / video notes: `media_url` + `kind` ('voice' | 'video') + duration.
+  // A voice note legitimately has no text and no image, so media-only messages
+  // must be allowed through both validation gates below.
+  const mediaUrl = typeof rest.media_url === "string" ? rest.media_url : "";
+  const kind = ["text", "image", "voice", "video"].includes(String(rest.kind))
+    ? String(rest.kind)
+    : (imageUrl ? "image" : "text");
+  const mediaType = typeof rest.media_type === "string" ? rest.media_type.slice(0, 40) : null;
+  const durationMs = Number.isFinite(Number(rest.duration_ms))
+    ? Math.max(0, Math.min(600_000, Math.round(Number(rest.duration_ms))))
+    : null;
+  const transcript = typeof rest.transcript === "string" && rest.transcript.trim()
+    ? sanitizeText(rest.transcript.slice(0, 2000))
+    : null;
+  if (!text?.trim() && !imageUrl && !mediaUrl) return NextResponse.json({ error: "text, image or media required" }, { status: 400 });
   if (!toId) return NextResponse.json({ error: "toId required" }, { status: 400 });
   const isUuid = UUID_RE.test(String(toId));
   const isDemoStub = /^[a-zA-Z0-9]{1,2}$/.test(String(toId));
@@ -87,7 +101,7 @@ export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
     return NextResponse.json({ success: true, pending: true, message: "Request sent — they'll see it in their Message Requests inbox" });
   }
 
-  if (!cleanText && !imageUrl) return NextResponse.json({ error: "text or image required" }, { status: 400 });
+  if (!cleanText && !imageUrl && !mediaUrl) return NextResponse.json({ error: "text, image or media required" }, { status: 400 });
   const matchId = [profile.id, String(toId)].sort().join("__");
   const { error } = await sb.from("muse_messages").insert({
     match_id: matchId,
@@ -95,6 +109,11 @@ export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
     receiver_id: String(toId),
     text: cleanText,
     img: img || image_url || "",
+    kind,
+    media_url: mediaUrl || null,
+    media_type: mediaType,
+    duration_ms: durationMs,
+    transcript,
     client_msg_id: typeof client_msg_id === "string" ? client_msg_id.slice(0, 120) : undefined,
   });
   if (error && (error as { code?: string }).code !== "23505") return safeServerError(error, "message insert");
@@ -103,7 +122,9 @@ export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
     await sb.from("muse_notifications").insert({ user_id: String(toId), from_id: profile.id, type: "message", body: `${profile.name} sent you a message`, read: false });
   }
   await emailProfile(sb, String(toId), "New message on Muse ✦", "You have a new message", `${profile.name} sent you a message.`, "Read it", "https://muse.wyzdesign.com/muse", "message");
-  pushToProfile(String(toId), "New Message", `${profile.name}: ${cleanText.slice(0, 80) || "sent an image"}`, "/muse/matches").catch(() => {});
+  const preview = cleanText.slice(0, 80)
+    || (kind === "voice" ? "sent a voice note" : kind === "video" ? "sent a video note" : "sent an image");
+  pushToProfile(String(toId), "New Message", `${profile.name}: ${preview}`, "/muse/matches").catch(() => {});
   return NextResponse.json({ success: true, match_id: matchId });
 };
 

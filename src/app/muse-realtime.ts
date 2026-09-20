@@ -27,10 +27,16 @@ export async function persistMessage(opts: {
   theirId: string;
   text: string;
   img?: string;
+  /** 'text' | 'image' | 'voice' | 'video' — recorded clips set mediaUrl too. */
+  kind?: "text" | "image" | "voice" | "video";
+  mediaUrl?: string;
+  mediaType?: string;
+  durationMs?: number;
+  transcript?: string;
   clientMsgId?: string;
 }): Promise<boolean> {
   if (!opts.myId || opts.myId === "local") return false;
-  if (!opts.theirId || (!opts.text.trim() && !opts.img)) return false;
+  if (!opts.theirId || (!opts.text.trim() && !opts.img && !opts.mediaUrl)) return false;
   const convo = convoIdFor(opts.myId, opts.theirId);
   try {
     const res = await authFetch("/api/muse", {
@@ -41,6 +47,11 @@ export async function persistMessage(opts: {
         toId: opts.theirId,
         text: opts.text.trim().slice(0, 2000),
         img: opts.img || "",
+        kind: opts.kind,
+        media_url: opts.mediaUrl,
+        media_type: opts.mediaType,
+        duration_ms: opts.durationMs,
+        transcript: opts.transcript,
         client_msg_id: opts.clientMsgId || `${opts.myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       }),
     });
@@ -62,7 +73,7 @@ export async function fetchConversationHistory(opts: {
   myId: string;
   theirId: string;
   limit?: number;
-}): Promise<{ from: "me" | "them"; text: string; img?: string; time: string; clientMsgId?: string }[]> {
+}): Promise<{ from: "me" | "them"; text: string; img?: string; time: string; clientMsgId?: string; kind?: string; mediaUrl?: string; mediaType?: string; durationMs?: number; transcript?: string }[]> {
   if (!opts.myId || opts.myId === "local" || !opts.theirId) return [];
   const convo = convoIdFor(opts.myId, opts.theirId);
   try {
@@ -76,6 +87,11 @@ export async function fetchConversationHistory(opts: {
       from: String(r.sender_id) === String(opts.myId) ? ("me" as const) : ("them" as const),
       text: r.text || "",
       img: r.img || undefined,
+      kind: r.kind || undefined,
+      mediaUrl: r.media_url || undefined,
+      mediaType: r.media_type || undefined,
+      durationMs: typeof r.duration_ms === "number" ? r.duration_ms : undefined,
+      transcript: r.transcript || undefined,
       time: r.created_at
         ? new Date(r.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         : "",

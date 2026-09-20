@@ -1767,6 +1767,44 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     } catch { trackError("upload_image_failed", { folder }); showToast("Upload failed"); return null; }
   }, [showToast, trackQuest]);
 
+  // Recorded clips (voice / video notes). Same /api/muse/upload endpoint, but
+  // the server must be told audio vs video — both are WebM containers with an
+  // identical header, so it can't tell from the bytes.
+  const uploadMedia = useCallback(async (file: File, folder: string, mediaKind: "voice" | "video"): Promise<string | null> => {
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", folder);
+      fd.append("mediaKind", mediaKind);
+      const r = await authFetch("/api/muse/upload", { method: "POST", body: fd, timeoutMs: 120000 });
+      const j = await r.json();
+      if (j.success && j.url) return j.url;
+      showToast("Upload failed: " + (j.error || "Unknown"));
+      return null;
+    } catch { trackError("upload_media_failed", { folder, mediaKind }); showToast("Upload failed"); return null; }
+  }, [showToast]);
+
+  const sendChatMedia = useCallback(async (url: string, kind: "voice" | "video", durationMs: number, mediaType: string, transcript?: string) => {
+    if (!url || !chatTarget) return;
+    const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const myId = authUser?.profile?.id || authUser?.id || "local";
+    const clientMsgId = `${myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const userMsg = { from: "me" as const, text: "", img: "", kind, mediaUrl: url, mediaType, durationMs, transcript, time: now, clientMsgId };
+    const targetId = String(chatTarget.id);
+    setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, userMsg] } : prev);
+    setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, userMsg] } : m));
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    let sent = true;
+    try {
+      sent = await persistMessage({ myId, theirId: targetId, text: "", img: "", kind, mediaUrl: url, mediaType, durationMs, transcript, clientMsgId });
+    } catch { sent = false; }
+    if (!sent && myId !== "local") {
+      setChatTarget(prev => prev ? { ...prev, messages: prev.messages.filter(m => m !== userMsg) } : prev);
+      setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: m.messages.filter(mm => mm !== userMsg) } : m));
+      showToast(kind === "voice" ? "Voice note couldn't be sent" : "Video note couldn't be sent");
+    }
+  }, [chatTarget, authUser, setMatches, showToast]);
+
   // Single source of truth lives in components/types.ts — a second local copy
   // existed here and the two were drifting.
   const getIcebreaker = useCallback((type: string, seed?: string) => {
@@ -3275,7 +3313,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             <React.Suspense fallback={null}><CodexScreen screen={screen} showScreen={showScreen} goBack={goBack} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} /></React.Suspense>
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Chat">
-            <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} goBack={goBack} messages={chatTarget?.messages || []} setMessages={((msgs: any) => setChatTarget((prev: any) => prev ? {...prev, messages: typeof msgs === "function" ? msgs(prev?.messages || []) : msgs} : prev)) as any} chatText={chatInput} setChatText={setChatInput} messagesEndRef={messagesEndRef} sendChat={sendMsg} sendChatImg={sendChatImg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} uploadImage={uploadImage} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
+            <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} goBack={goBack} messages={chatTarget?.messages || []} setMessages={((msgs: any) => setChatTarget((prev: any) => prev ? {...prev, messages: typeof msgs === "function" ? msgs(prev?.messages || []) : msgs} : prev)) as any} chatText={chatInput} setChatText={setChatInput} messagesEndRef={messagesEndRef} sendChat={sendMsg} sendChatImg={sendChatImg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} uploadImage={uploadImage} uploadMedia={uploadMedia} sendChatMedia={sendChatMedia} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Collab">
             <CollabScreen screen={screen} showScreen={showScreen} goBack={goBack} museCat={museCat} setMuseCat={setMuseCat} userBriefs={userBriefs} setUserBriefs={setUserBriefs} showPostBrief={showPostBrief} setShowPostBrief={setShowPostBrief} liveBriefs={liveBriefs || []} showNsfw={showNsfw} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} uid={uid} appliedBriefs={appliedBriefs} setAppliedBriefs={setAppliedBriefs} savedBriefs={savedBriefs} setSavedBriefs={setSavedBriefs} setChatTarget={setChatTarget} briefTitle={briefTitle} setBriefTitle={setBriefTitle} briefDesc={briefDesc} setBriefDesc={setBriefDesc} briefBudget={briefBudget} setBriefBudget={setBriefBudget} briefCat={briefCat} setBriefCat={setBriefCat} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} demo={DEMO_MODE} />

@@ -63,6 +63,9 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const folder = (formData.get("folder") as string) || "avatars";
+    // Recorded clips arrive as WebM for both audio and video (MediaRecorder),
+    // and the container header is identical, so the client tells us which it is.
+    const mediaKind = (formData.get("mediaKind") as string) || "";
 
     if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
     if (file.size > 10 * 1024 * 1024) return NextResponse.json({ error: "File too large (max 10MB)" }, { status: 400 });
@@ -70,8 +73,9 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const { valid, ext } = validateMagicBytes(buffer);
     if (!valid) return NextResponse.json({ error: "Invalid file type — only JPEG, PNG, WebP, GIF, WebM allowed" }, { status: 400 });
-    const isVideo = ext === "webm";
-    if (file.size > (isVideo ? 25 : 10) * 1024 * 1024) return NextResponse.json({ error: isVideo ? "Video too large (max 25MB)" : "File too large (max 10MB)" }, { status: 400 });
+    const isAudio = ext === "webm" && mediaKind === "voice";
+    const isVideo = ext === "webm" && !isAudio;
+    if (file.size > (ext === "webm" ? 25 : 10) * 1024 * 1024) return NextResponse.json({ error: ext === "webm" ? "Clip too large (max 25MB)" : "File too large (max 10MB)" }, { status: 400 });
 
     const blocklistedExts = ["svg","html","xml","js","php","exe","sh"];
     if (blocklistedExts.includes(file.name.toLowerCase().split(".").pop() || "")) {
@@ -85,7 +89,19 @@ export async function POST(req: NextRequest) {
     let autoNsfw = false;
     let videoPendingReview = false;
     let videoJobId: string | null = null;
-    if (isVideo) {
+    if (isAudio) {
+      // Voice notes carry no visual content, so there is nothing for Rekognition
+      // to scan — and crucially the video path below marks the uploader's profile
+      // NSFW, which would be wrong for a voice note. Just record the upload.
+      await logScan({
+        userId: profileId,
+        fileName: file.name,
+        fileType: "audio/webm",
+        fileSize: file.size,
+        context: folder,
+        result: { safe: true, scanned: true, flaggedCategories: [], confidence: 1, shouldBlock: false, shouldReport: false, isCSAM: false, details: [{ kind: "voice" }] },
+      });
+    } else if (isVideo) {
       // Start async video moderation via Rekognition
       const videoResult = await startVideoModeration(buffer);
       if ("jobId" in videoResult) {
@@ -156,14 +172,14 @@ export async function POST(req: NextRequest) {
     const sb = getServiceClient();
     const mimeExt = ext === "jpg" ? "jpeg" : ext;
     const { data, error } = await sb.storage.from("muse-uploads").upload(path, buffer, {
-      contentType: isVideo ? "video/webm" : `image/${mimeExt}`,
+      contentType: isAudio ? "audio/webm" : isVideo ? "video/webm" : `image/${mimeExt}`,
       upsert: false,
     });
 
     if (error) return safeServerError(error, "upload POST");
 
     const { data: urlData } = sb.storage.from("muse-uploads").getPublicUrl(data.path);
-    return NextResponse.json({ success: true, url: urlData.publicUrl, path: data.path, moderation: isVideo ? (videoJobId ? "video_processing" : "pending_review") : "scanned", autoNsfw: autoNsfw || undefined, videoPendingReview: videoPendingReview || undefined, videoJobId: videoJobId || undefined });
+    return NextResponse.json({ success: true, url: urlData.publicUrl, path: data.path, moderation: isAudio ? "audio" : isVideo ? (videoJobId ? "video_processing" : "pending_review") : "scanned", autoNsfw: autoNsfw || undefined, videoPendingReview: videoPendingReview || undefined, videoJobId: videoJobId || undefined });
   } catch (e: unknown) {
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
