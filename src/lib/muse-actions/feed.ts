@@ -19,15 +19,38 @@ export const feedPost = async ({ sb, profile, rest, ip }: ActionContext) => {
   const vErr = validateInput(rest);
   if (vErr) return NextResponse.json({ error: vErr }, { status: 400 });
   const { text, image_url, image, img, media } = rest;
-  if (!text?.trim()) return NextResponse.json({ error: "text required" }, { status: 400 });
-  const cleanText = sanitizeText(String(text).trim());
-  if (!cleanText) return NextResponse.json({ error: "text required" }, { status: 400 });
-  const screen = screenText(cleanText);
+  // Recorded clips: a voice/video post can legitimately have no text and no
+  // image, so media must satisfy the required-content check.
+  const mediaUrl = typeof rest.media_url === "string" ? rest.media_url : "";
+  const clipKind = rest.kind === "voice" || rest.kind === "video" ? String(rest.kind) : "";
+  const mediaType = typeof rest.media_type === "string" ? rest.media_type.slice(0, 40) : null;
+  const durationMs = Number.isFinite(Number(rest.duration_ms))
+    ? Math.max(0, Math.min(600_000, Math.round(Number(rest.duration_ms))))
+    : null;
+  const transcript = typeof rest.transcript === "string" && rest.transcript.trim()
+    ? sanitizeText(rest.transcript.slice(0, 2000))
+    : null;
+  if (!text?.trim() && !mediaUrl) return NextResponse.json({ error: "text required" }, { status: 400 });
+  const cleanText = text?.trim() ? sanitizeText(String(text).trim()) : "";
+  if (!cleanText && !mediaUrl) return NextResponse.json({ error: "text required" }, { status: 400 });
+  const screen = cleanText ? screenText(cleanText) : { block: false };
   if (screen.block) return NextResponse.json({ error: "Post blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
   const mediaArr = Array.isArray(media) ? media : [];
   const resolvedImg = img || image_url || image || mediaArr[0] || "";
-  const { error } = await sb.from("muse_feed_posts").insert({ author_id: profile.id, text: cleanText, img: resolvedImg, type: resolvedImg ? "photo" : "text" });
+  const { error } = await sb.from("muse_feed_posts").insert({
+    author_id: profile.id,
+    text: cleanText,
+    img: resolvedImg,
+    type: clipKind ? clipKind : resolvedImg ? "photo" : "text",
+    media_url: mediaUrl || null,
+    media_type: mediaType,
+    duration_ms: durationMs,
+    transcript,
+  });
   if (error) return safeServerError(error, "db op");
+  if (clipKind === "voice" || clipKind === "video") {
+    bumpQuest(sb, profile.id, "post_feed").catch(() => {});
+  }
   return NextResponse.json({ success: true });
 };
 

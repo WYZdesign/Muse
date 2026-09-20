@@ -2,7 +2,8 @@
 
 import React, { memo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FiArrowLeft, FiImage, FiX, FiFlag, FiSend } from "react-icons/fi";
+import { FiArrowLeft, FiImage, FiX, FiFlag, FiSend, FiMic, FiVideo, FiSquare } from "react-icons/fi";
+import { useRecorder } from "../hooks/useRecorder";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import Nav from "../components/Nav";
 import { EmptyState } from "../components/EmptyState";
@@ -41,6 +42,7 @@ export interface FeedScreenProps {
   stories: any[];
   setStories: React.Dispatch<React.SetStateAction<any[]>>;
   uploadImage: (file: File, context: string) => Promise<string | null>;
+  uploadMedia?: (file: File, folder: string, kind: "voice" | "video") => Promise<string | null>;
   uid: () => any;
   bootstrapped?: boolean;
   feedPostsStatic?: any[];
@@ -76,8 +78,8 @@ export const FeedScreen = memo(function FeedScreen({
   setLiveFeed,
   showScreen,
   showToast,
-  uploadImage,
-  apiFetch,
+  uploadImage,  apiFetch,
+  uploadMedia,
   handleImgError,
   stories,
   setStories,
@@ -109,6 +111,15 @@ export const FeedScreen = memo(function FeedScreen({
   const [postCommentTexts, setPostCommentTexts] = useState<Record<number, string>>({});
   const [detailPostId, setDetailPostId] = useState<number | null>(null);
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
+
+  // ── Recorded voice / video post ──
+  const [feedClip, setFeedClip] = useState<null | { url: string; kind: "voice" | "video"; durationMs: number; mediaType: string; transcript?: string }>(null);
+  const rec = useRecorder({
+    uploadMedia: uploadMedia || (async () => null),
+    folder: "feed",
+    showToast,
+    onDone: (url, kind, durationMs, mediaType, transcript) => setFeedClip({ url, kind, durationMs, mediaType, transcript }),
+  });
 
   // Real posts fetched from the DB (liveFeed) are the source of truth once
   // present; feedPostsStatic (hardcoded demo posts) is only a placeholder
@@ -360,6 +371,16 @@ export const FeedScreen = memo(function FeedScreen({
               )}
             </div>
           </div>
+            {rec.recording && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "8px 12px", marginBottom: 8, borderRadius: 12, background: "rgba(255,107,107,0.12)", border: "1px solid rgba(255,107,107,0.35)" }}>
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#ff6b6b", flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
+                  {rec.recording === "voice" ? "🎤 Recording voice" : "🎥 Recording video"} · {rec.fmt(rec.recordSecs * 1000)}
+                </span>
+                <button type="button" onClick={rec.cancel} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                <button type="button" onClick={rec.stop} className="btn btn-gold" style={{ padding: "6px 14px", fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}><FiSquare size={12} /> Stop</button>
+              </div>
+            )}
             <div style={{ display: "flex", gap: 8, alignItems: "center", width: "100%" }}>
               <label style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }}>
                 <FiImage size={16} />
@@ -381,7 +402,26 @@ export const FeedScreen = memo(function FeedScreen({
                   }}
                 />
               </label>
+              {/* Record a voice or video note straight into the post */}
+              <button type="button" aria-label="Record voice note" disabled={!!rec.recording || rec.sending}
+                onClick={() => rec.start("voice")}
+                style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}>
+                <FiMic size={16} />
+              </button>
+              <button type="button" aria-label="Record video note" disabled={!!rec.recording || rec.sending}
+                onClick={() => rec.start("video")}
+                style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}>
+                <FiVideo size={16} />
+              </button>
               <button style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
+              {feedClip && (
+                <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 10, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.3)", flexShrink: 0 }}>
+                  <span style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700 }}>
+                    {feedClip.kind === "voice" ? "🎤 Voice" : "🎥 Video"} {rec.fmt(feedClip.durationMs)}
+                  </span>
+                  <button onClick={() => setFeedClip(null)} aria-label="Remove clip" style={{ background: "none", border: "none", color: "var(--gold)", cursor: "pointer", display: "flex", alignItems: "center" }}><FiX size={12} /></button>
+                </div>
+              )}
               {feedMedia.slice(0, 1).map((url, i) => (
                 <div key={i} style={{ position: "relative", width: 36, height: 36, flexShrink: 0 }}>
                   {url.endsWith(".mp4") || url.includes("video") ? (
@@ -394,20 +434,22 @@ export const FeedScreen = memo(function FeedScreen({
               ))}
               <button
                 className="btn btn-gold"
-                disabled={!feedText.trim() && !feedMedia.length}
-                style={{ flex: 1, padding: "10px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap", opacity: (!feedText.trim() && !feedMedia.length) ? 0.5 : 1, cursor: (!feedText.trim() && !feedMedia.length) ? "not-allowed" : "pointer" }}
-                aria-disabled={!feedText.trim() && !feedMedia.length}
+                disabled={!feedText.trim() && !feedMedia.length && !feedClip}
+                style={{ flex: 1, padding: "10px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap", opacity: (!feedText.trim() && !feedMedia.length && !feedClip) ? 0.5 : 1, cursor: (!feedText.trim() && !feedMedia.length && !feedClip) ? "not-allowed" : "pointer" }}
+                aria-disabled={!feedText.trim() && !feedMedia.length && !feedClip}
                 onClick={async () => {
-                  if (feedText.trim() || feedMedia.length) {
+                  if (feedText.trim() || feedMedia.length || feedClip) {
                     const txt = feedText.trim();
                     const hasVideo = feedMedia.some(u => u.endsWith(".mp4") || u.includes("video"));
-                    const type = feedMedia.length ? (hasVideo ? "video" : "photo") : "text";
+                    const type = feedClip ? feedClip.kind : feedMedia.length ? (hasVideo ? "video" : "photo") : "text";
                     const optimisticId = uid();
+                    const clip = feedClip;
                     setFeedText("");
                     setFeedMedia([]);
-                    setFeedPosts(prev => [{ id: optimisticId, author: currentUser.name, avatar: currentUser.avatar, type, text: txt, likes: 0, comments: 0, shares: 0, views: 0, time: "Just now", img: feedMedia[0] || undefined, media: feedMedia, liked: false, saved: false, reactions: {}, isBts: hasVideo }, ...prev]);
+                    setFeedClip(null);
+                    setFeedPosts(prev => [{ id: optimisticId, author: currentUser.name, avatar: currentUser.avatar, type, text: txt, likes: 0, comments: 0, shares: 0, views: 0, time: "Just now", img: clip ? undefined : feedMedia[0] || undefined, media: feedMedia, kind: clip?.kind, mediaUrl: clip?.url, durationMs: clip?.durationMs, transcript: clip?.transcript, liked: false, saved: false, reactions: {}, isBts: hasVideo }, ...prev]);
                     try {
-                      await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed", text: txt, media: feedMedia, userId: currentUser.id }) });
+                      await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed", text: txt, media: feedMedia, userId: currentUser.id, media_url: clip?.url, kind: clip?.kind, media_type: clip?.mediaType, duration_ms: clip?.durationMs, transcript: clip?.transcript }) });
                       showToast("Posted!");
                       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_key: "post_feed" }) }).catch(() => {});
                     } catch {
@@ -490,6 +532,27 @@ export const FeedScreen = memo(function FeedScreen({
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPostDetail(post.id); } }}
                   onClick={() => openPostDetail(post.id)}
                 >{post.text}</div>
+                {(post.kind === "voice" || post.kind === "video") && (post.mediaUrl || post.media_url) && (
+                  <div style={{ padding: "10px 18px 4px" }}>
+                    {post.kind === "voice" ? (
+                      <>
+                        <audio controls preload="metadata" src={post.mediaUrl || post.media_url} style={{ width: "100%" }} />
+                        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>🎤 Voice post</div>
+                        {post.transcript && (
+                          <details style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>
+                            <summary style={{ cursor: "pointer" }}>Transcript</summary>
+                            <div style={{ marginTop: 4, lineHeight: 1.5 }}>{post.transcript}</div>
+                          </details>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <video controls preload="metadata" src={post.mediaUrl || post.media_url} style={{ width: "100%", borderRadius: 12, display: "block", background: "#0f0a1a" }} />
+                        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>🎥 Video post</div>
+                      </>
+                    )}
+                  </div>
+                )}
                 {post.img && (
                   <div className="feed-post-img-wrap" style={{ position: "relative", width: "100%", aspectRatio: "4/3", overflow: "hidden", background: "var(--card-bg)" }}>
                     {/* Full-bleed contained media: a fixed aspect-ratio frame spans the
