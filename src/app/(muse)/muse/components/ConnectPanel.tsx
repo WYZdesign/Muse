@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { authFetch } from "../lib/auth-client";
 import EmbeddedConnect from "./EmbeddedConnect";
+import LoadingOverlay from "./LoadingOverlay";
 
 type ConnectStatus = {
   connected: boolean;
@@ -84,6 +85,8 @@ export default function ConnectPanel({ onClose }: Props) {
           <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>💰 Marketplace Payments</h2>
           <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
+
+        {connecting && <LoadingOverlay message="Redirecting to Stripe…" />}
 
         {embedded ? (
           <EmbeddedConnect

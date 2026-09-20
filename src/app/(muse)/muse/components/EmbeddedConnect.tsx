@@ -4,6 +4,7 @@ import { useState } from "react";
 import { loadConnectAndInitialize, type StripeConnectInstance } from "@stripe/connect-js";
 import { ConnectComponentsProvider, ConnectAccountOnboarding } from "@stripe/react-connect-js";
 import { authFetch } from "../lib/auth-client";
+import LoadingOverlay from "./LoadingOverlay";
 
 const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
@@ -62,6 +63,7 @@ function getInstance(): StripeConnectInstance {
 }
 
 export default function EmbeddedConnect({ onExit }: { onExit: () => void }) {
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   if (!PUBLISHABLE_KEY) {
@@ -84,17 +86,27 @@ export default function EmbeddedConnect({ onExit }: { onExit: () => void }) {
   }
 
   return (
-    <div style={{ minHeight: 460 }}>
+    <div style={{ position: "relative", minHeight: 460 }}>
       {error && (
-        <div style={{ padding: 12, marginBottom: 12, borderRadius: 10, background: "#2a1216", color: "#ff8a80", fontSize: 12 }}>
+        <div style={{ padding: 12, marginBottom: 12, borderRadius: 10, background: "#2a1216", color: "#ff8a80", fontSize: 12, lineHeight: 1.5 }}>
           {error}
         </div>
       )}
+
+      {loading && !error && (
+        <div style={{ position: "absolute", inset: 0, zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--card-bg, #0f0a1a)" }}>
+          <LoadingOverlay inline message="Loading secure onboarding…" />
+        </div>
+      )}
+
       <ConnectComponentsProvider connectInstance={instance}>
         <ConnectAccountOnboarding
-          onExit={() => {
-            try { onExit(); } catch (e: unknown) { setError((e as Error)?.message || "Something went wrong"); }
+          onLoaderStart={() => setLoading(false)}
+          onLoadError={({ error: err }) => {
+            setLoading(false);
+            setError((err as { message?: string })?.message || "Stripe could not load. Please try again.");
           }}
+          onExit={() => onExit()}
         />
       </ConnectComponentsProvider>
     </div>

@@ -154,6 +154,23 @@ accounts can't be linked to Express (that's Standard/OAuth only).
 
 Verification: `tsc` clean, `vitest` 350/350, `next build` clean.
 
+### Round 51 — CSP fix for embedded Connect + loading overlays (verified 2026-09-19)
+
+The embedded Connect lightbox rendered **empty** because the site CSP didn't
+allow `connect-js.stripe.com`:
+
+- `next.config.ts` CSP now includes `https://connect-js.stripe.com` in
+  `script-src`, `connect-src`, and `frame-src` (plus `https://m.stripe.network`
+  in `connect-src`). ConnectJS loads its SDK and renders its iframe from that
+  origin, so the previous `frame-src https://js.stripe.com …` blocked it.
+- Added `components/LoadingOverlay.tsx` — gold spinner + message, Muse dark
+  styling. Shown while the embedded components initialize, and before the
+  hosted-redirect fallback navigates away, so the UI never appears frozen.
+- `EmbeddedConnect` now drives it via `onLoaderStart` / `onLoadError` — a load
+  failure now shows the real message instead of a blank box.
+
+Verification: `tsc` clean, `vitest` 350/350, `next build` clean.
+
 ## Prior verified baseline: `e192af3`
 
 Everything at or before this commit is real, live, deployed code — this
