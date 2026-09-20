@@ -8,6 +8,9 @@ vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, clientIp: () =
 vi.mock("@/lib/http", () => ({ safeServerError: (e: any, ctx: string) => ({ status: 500, json: async () => ({ error: `${ctx} failed` }) }) as any }));
 vi.mock("@/lib/contentScan", () => ({
   scanWithRekognition: async () => ({ safe: true, scanned: true, flaggedCategories: [], confidence: 0, shouldBlock: false, shouldReport: false, isCSAM: false, details: [] }),
+  // Second moderation engine (added alongside Rekognition) — must be present or
+  // the route throws when it calls it.
+  scanWithSightengine: async () => ({ safe: true, scanned: true, flaggedCategories: [], confidence: 0, shouldBlock: false, shouldReport: false, isCSAM: false, details: [] }),
   logScan: async () => {},
   startVideoModeration: async () => ({ jobId: "job_1" }),
   reportIncident: async () => {},

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
 import { checkRate, clientIp } from "@/lib/rate-limit";
-import { scanWithRekognition, startVideoModeration, logScan, reportIncident, escalateToNcmec } from "@/lib/contentScan";
+import { scanWithRekognition, scanWithSightengine, startVideoModeration, logScan, reportIncident, escalateToNcmec } from "@/lib/contentScan";
 
 const ALLOWED_SIGNATURES: Record<string, { bytes: number[]; ext: string }> = {
   "89504e47": { bytes: [0x89,0x50,0x4E,0x47], ext: "png" },
@@ -142,7 +142,23 @@ export async function POST(req: NextRequest) {
         videoPendingReview = true;
       }
     } else {
-      const scanResult = await scanWithRekognition(buffer);
+      // Two engines, merged: Rekognition (only one that asserts CSAM
+      // categories) + Sightengine (much better explicit-content recall).
+      // Block if EITHER says block; report if either says report.
+      const [rek, sight] = await Promise.all([
+        scanWithRekognition(buffer),
+        scanWithSightengine(buffer, file.type || `image/${ext}`),
+      ]);
+      const scanResult = {
+        safe: rek.safe && sight.safe,
+        scanned: rek.scanned || sight.scanned,
+        flaggedCategories: Array.from(new Set([...rek.flaggedCategories, ...sight.flaggedCategories])),
+        confidence: Math.max(rek.confidence, sight.confidence),
+        shouldBlock: rek.shouldBlock || sight.shouldBlock,
+        shouldReport: rek.shouldReport || sight.shouldReport,
+        isCSAM: rek.isCSAM,
+        details: [...rek.details, ...sight.details],
+      };
       await logScan({ userId: profileId, fileName: file.name, fileType: file.type || `image/${ext}`, fileSize: file.size, context: folder, result: scanResult });
       if (scanResult.shouldBlock) {
         if (scanResult.isCSAM) {

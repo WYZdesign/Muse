@@ -109,6 +109,70 @@ export async function scanWithRekognition(imageBuffer: Buffer): Promise<Moderati
 // Uses StartContentModeration + GetContentModeration for video files.
 // Returns a job ID that can be polled for results.
 
+/**
+ * Sightengine moderation — second opinion alongside Rekognition, and the
+ * intended path for video frames. Stronger recall on explicit content, with
+ * calibrated probabilities we can threshold ourselves.
+ *
+ * Fail-open by design (same as Rekognition): a missing key or API hiccup must
+ * never block every upload.
+ */
+export async function scanWithSightengine(media: Buffer, mime = "image/jpeg"): Promise<ModerationResult> {
+  const user = process.env.SIGHTENGINE_API_USER || "";
+  const secret = process.env.SIGHTENGINE_API_SECRET || "";
+  const empty: ModerationResult = { safe: true, scanned: false, flaggedCategories: [], confidence: 0, shouldBlock: false, shouldReport: false, isCSAM: false, details: [] };
+  if (!user || !secret) return empty;
+
+  try {
+    const fd = new FormData();
+    fd.append("media", new Blob([new Uint8Array(media)], { type: mime }), "upload");
+    fd.append("models", "nudity-2.1,weapon,gore-2.0,offensive");
+    fd.append("api_user", user);
+    fd.append("api_secret", secret);
+
+    const r = await fetch("https://api.sightengine.com/1.0/check.json", { method: "POST", body: fd });
+    if (!r.ok) throw new Error(`sightengine ${r.status}`);
+    const d = await r.json();
+    if (d.status !== "success") throw new Error(String(d.error?.message || "sightengine error"));
+
+    const flagged: string[] = [];
+    let maxConf = 0;
+
+    const n = d.nudity || {};
+    const explicit = Math.max(Number(n.sexual_activity || 0), Number(n.sexual_display || 0), Number(n.erotica || 0));
+    const suggestive = Math.max(Number(n.very_suggestive || 0), Number(n.suggestive || 0));
+    if (explicit >= 0.5) { flagged.push("Explicit Nudity"); maxConf = Math.max(maxConf, explicit); }
+    else if (suggestive >= 0.5) { flagged.push("Suggestive"); maxConf = Math.max(maxConf, suggestive); }
+
+    const weaponClasses = d.weapon?.classes || {};
+    const weapon = Math.max(0, ...Object.values(weaponClasses).map((v) => Number(v) || 0));
+    if (weapon >= 0.5) { flagged.push("Violence"); maxConf = Math.max(maxConf, weapon); }
+
+    const gore = Number(d.gore?.prob || 0);
+    if (gore >= 0.5) { flagged.push("Violence"); maxConf = Math.max(maxConf, gore); }
+
+    const off = d.offensive || {};
+    const offensive = Math.max(Number(off.prob || 0), Number(off.nazi || 0), Number(off.supremacist || 0), Number(off.terrorist || 0));
+    if (offensive >= 0.6) { flagged.push("Offensive"); maxConf = Math.max(maxConf, offensive); }
+
+    // Sightengine's models don't assert CSAM — that stays with Rekognition.
+    const shouldBlock = flagged.includes("Explicit Nudity") || flagged.includes("Violence");
+    return {
+      safe: flagged.length === 0,
+      scanned: true,
+      flaggedCategories: flagged,
+      confidence: maxConf,
+      shouldBlock,
+      shouldReport: shouldBlock || flagged.includes("Offensive"),
+      isCSAM: false,
+      details: [{ engine: "sightengine" }],
+    };
+  } catch (e) {
+    console.error("[contentScan] sightengine failed:", String(e).slice(0, 200));
+    return empty;
+  }
+}
+
 export async function startVideoModeration(
   videoBuffer: Buffer,
   minConfidence = 50

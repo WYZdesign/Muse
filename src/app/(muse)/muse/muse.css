@@ -2575,7 +2575,12 @@ img{background-color:var(--card-bg)}
    Base rule now matches .phone's <768px full-bleed behavior (100vw,
    left:0, no transform). The >=768px override below re-narrows it to
    match .phone's centered 430px card at that breakpoint instead. */
-@media(min-width:768px){.wave-bottom{width:min(430px,100vw);left:50%;transform:translateX(-50%)}}
+/* Desktop: the waves are the PAGE background, not part of the phone frame.
+   Previously `width:min(430px,100vw);left:50%` confined them to the app card
+   and `z-index:90` drew them ON TOP of it. Now: full browser width, sitting
+   behind the phone (which is z-index:10). Mobile keeps the original
+   bottom-of-screen treatment. */
+@media(min-width:768px){.wave-bottom{width:100vw;left:0;transform:none;z-index:1}}
 /* Round 43 fix (2026-09-17): Torree's 0ffd6cd commit set bottom:10% intending
    to reveal more wave art from behind the bottom nav bar, but bottom:10% on
    a position:fixed container LIFTS THE WHOLE BOX off the bottom edge,
