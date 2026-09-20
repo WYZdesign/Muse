@@ -1,0 +1,14 @@
+
+> wyzdesign@0.1.0 dev
+> next dev
+
+▲ Next.js 16.3.1 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://100.64.115.93:3001
+- Environments: .env.local
+✓ Ready in 1527ms
+✓ Running next.config.ts took 3.0s
+- Experiments (use with caution):
+  · clientTraceMetadata
+  · optimizePackageImports
+

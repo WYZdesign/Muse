@@ -213,6 +213,37 @@ accounts (Unsplash URLs, already allowed by the CSP `img-src`), and back-fills
 existing rows that lack one. Verified: 2 profiles now pass the filter, so each
 test account sees the other as a candidate.
 
+### Round 55 — header parity, Settings slide sheets, Portfolio & Availability built (verified 2026-09-19)
+
+- **Header parity (web vs mobile):** on desktop `min-width:768px` the `.phone`
+  frame had `margin:24px auto` + `height:min(844px,calc(100dvh - 48px))`, which
+  pushed `.hdr`, the page title and the top action buttons **27px lower** than
+  the mobile layout (24px margin + 3px border) and left a visible gap above the
+  app. Mobile is `.phone{position:fixed;top:0}`. Now `margin:0 auto;
+  height:100dvh`, so every page's header/title/buttons sit at the same height
+  as mobile.
+- **Hamburger side-menu header parity:** the panel's close/bell/title sat at
+  `top:calc(30px + safe-area)` with `padding-top:calc(96px + safe-area)` —
+  ~18px lower than the main header and a large gap before the first item. Now
+  the header row sits at 15/18px and the panel content starts at 72px, matching
+  the main page header height.
+- **Settings popups now slide:** `SettingsSubPage` was a hard `pop`-in sheet.
+  It's now a `sheet-overlay`/`sheet-panel` with a buttery
+  `sheetSlideUp` (cubic-bezier(.22,1,.36,1)) entrance and a reverse
+  `sheetSlideDown` exit — the component holds itself mounted for 280ms so the
+  close animation actually plays before unmounting.
+- **Portfolio Settings + Availability Calendar built out** (were
+  "coming soon" toasts):
+  - Portfolio Settings: visibility (Everyone / Matches only / Private),
+    featured-work toggle, show-on-profile toggle → persisted.
+  - Availability Calendar: status (Available / Busy / Not accepting), booking
+    lead time, away/travel dates, budget range, client note → persisted.
+  - Added the corresponding keys to `save-preferences`' allowlist in
+    `lib/muse-actions/misc.ts`, and SettingsScreen now accepts a `preferences`
+    prop (seeded from the profile) so saved values load back.
+
+Verification: `tsc` clean, `vitest` 350/350, `next build` clean.
+
 ## Prior verified baseline: `e192af3`
 
 Everything at or before this commit is real, live, deployed code — this

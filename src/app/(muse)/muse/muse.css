@@ -299,10 +299,10 @@ a{color:inherit;text-decoration:none}
 .chip-scroll::-webkit-scrollbar{display:none}
 .chip-scroll>*{flex:0 0 auto}
 .hamburger-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)}
-.hamburger-panel{width:78%;max-width:340px;height:100%;background:linear-gradient(135deg,rgba(212,165,255,0.30) 0%,rgba(255,215,0,0.24) 30%,rgba(255,181,194,0.26) 55%,rgba(152,251,152,0.22) 80%,rgba(15,8,30,0.06) 100%),linear-gradient(180deg,rgba(15,8,30,0.995) 0%,rgba(10,6,18,1) 100%);background-size:300% 100%,100% 100%;background-attachment:local;backdrop-filter:blur(40px);padding:calc(96px + env(safe-area-inset-top,0px)) 20px calc(32px + env(safe-area-inset-bottom,0px));overflow-y:auto;overflow-x:hidden;position:relative;border-left:1px solid rgba(212,165,255,0.08);animation:gradientShift 8s ease-in-out infinite,hamburgerSlide .35s cubic-bezier(.4,0,.2,1)}
-.hamburger-close{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));left:12px;width:42px;height:42px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:var(--text);cursor:pointer;font-size:18px;transition:all .2s;z-index:1}
+.hamburger-panel{width:78%;max-width:340px;height:100%;background:linear-gradient(135deg,rgba(212,165,255,0.30) 0%,rgba(255,215,0,0.24) 30%,rgba(255,181,194,0.26) 55%,rgba(152,251,152,0.22) 80%,rgba(15,8,30,0.06) 100%),linear-gradient(180deg,rgba(15,8,30,0.995) 0%,rgba(10,6,18,1) 100%);background-size:300% 100%,100% 100%;background-attachment:local;backdrop-filter:blur(40px);padding:calc(72px + env(safe-area-inset-top,0px)) 20px calc(32px + env(safe-area-inset-bottom,0px));overflow-y:auto;overflow-x:hidden;position:relative;border-left:1px solid rgba(212,165,255,0.08);animation:gradientShift 8s ease-in-out infinite,hamburgerSlide .35s cubic-bezier(.4,0,.2,1)}
+.hamburger-close{position:absolute;top:calc(15px + env(safe-area-inset-top,0px));left:12px;width:42px;height:42px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:var(--text);cursor:pointer;font-size:18px;transition:all .2s;z-index:1}
 .hamburger-close:hover{background:rgba(255,255,255,0.06);color:var(--gold)}
-.hamburger-bell{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));right:12px;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);cursor:pointer;font-size:16px;transition:all .2s;z-index:1;animation:floatySmall 4s ease-in-out infinite}
+.hamburger-bell{position:absolute;top:calc(18px + env(safe-area-inset-top,0px));right:12px;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);cursor:pointer;font-size:16px;transition:all .2s;z-index:1;animation:floatySmall 4s ease-in-out infinite}
 .hamburger-bell:hover{background:rgba(255,255,255,0.12);color:var(--gold)}
 /* M15: plain red dot, no stroke, no number badge (was a numbered pill with a border). */
 .hamburger-bell-dot{position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;background:var(--coral);border:none}
@@ -311,7 +311,7 @@ a{color:inherit;text-decoration:none}
    against the panel's available space and can wrap ("Your Profile" was breaking onto
    two lines). nowrap forces it to size to its actual one-line content, and
    left:50%/translateX(-50%) still centers that single-line box correctly. */
-.hamburger-menu-title{position:absolute;top:calc(30px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-size:28px;font-weight:800;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(135deg,var(--gold),var(--lavender),var(--pink),var(--gold));background-size:400% 100%;animation:gradientShift 6s ease-in-out infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:1;pointer-events:none;line-height:36px;margin:0;white-space:nowrap;width:max-content;text-align:center}
+.hamburger-menu-title{position:absolute;top:calc(18px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-size:28px;font-weight:800;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(135deg,var(--gold),var(--lavender),var(--pink),var(--gold));background-size:400% 100%;animation:gradientShift 6s ease-in-out infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:1;pointer-events:none;line-height:36px;margin:0;white-space:nowrap;width:max-content;text-align:center}
 .side-group{margin-bottom:8px}
 .side-label{font-size:14px;font-weight:800;color:var(--gold);margin-bottom:4px;letter-spacing:0.02em}
 .side-sub{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5}
@@ -940,6 +940,19 @@ img{background-color:var(--card-bg)}
 .portfolio-add-icon{font-size:32px}
 .settings-scroll{flex:1;overflow-y:auto;padding:0 20px 90px;scrollbar-width:none}
 .settings-scroll::-webkit-scrollbar{width:0}
+/* ═══ SETTINGS SHEET — buttery slide in / reverse slide out ═══ */
+.sheet-overlay{position:fixed;inset:0;z-index:950;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.85);backdrop-filter:blur(4px);animation:sheetOverlayIn .28s cubic-bezier(.4,0,.2,1) both}
+.sheet-overlay.closing{animation:sheetOverlayOut .28s cubic-bezier(.4,0,.2,1) both;pointer-events:none}
+.sheet-panel{width:100%;max-width:480px;max-height:85vh;background:var(--panel-bg-solid);backdrop-filter:blur(30px);border-radius:24px 24px 0 0;border:1px solid var(--border-subtle);border-bottom:none;display:flex;flex-direction:column;overflow:hidden;animation:sheetSlideUp .34s cubic-bezier(.22,1,.36,1) both;will-change:transform}
+.sheet-panel.closing{animation:sheetSlideDown .28s cubic-bezier(.4,0,.2,1) both}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;padding:20px 20px 16px;border-bottom:1px solid var(--border-subtle);flex-shrink:0}
+.sheet-title{font-size:17px;font-weight:800;color:var(--text)}
+.sheet-close{background:none;border:none;color:var(--text2);cursor:pointer;padding:6px}
+.sheet-body{padding:16px 20px 28px;overflow-y:auto}
+@keyframes sheetSlideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes sheetSlideDown{from{transform:translateY(0)}to{transform:translateY(100%)}}
+@keyframes sheetOverlayIn{from{opacity:0}to{opacity:1}}
+@keyframes sheetOverlayOut{from{opacity:1}to{opacity:0}}
 .settings-group{margin-bottom:24px}
 .settings-group-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
 .settings-item{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-radius:16px;background:var(--glass);border:1px solid rgba(255,255,255,0.05);margin-bottom:8px;cursor:pointer;transition:all .3s}
@@ -972,7 +985,13 @@ img{background-color:var(--card-bg)}
 @media(min-width:768px){.phone-wrap{width:100vw}}
 @media(max-width:767px){.phone-wrap{min-height:100dvh}}
 @media(min-width:768px){
-  .phone{margin:24px auto;height:min(844px,calc(100dvh - 48px));border-width:3px;box-shadow:0 0 120px rgba(255,215,0,0.3),0 0 240px rgba(255,181,194,0.05)}
+  /* Header parity with mobile (2026-09-19): this used to be `margin:24px auto`
+     with `height:min(844px,calc(100dvh - 48px))`, which pushed the whole frame
+     (and therefore .hdr, the page title, and the top action buttons) 27px lower
+     than the mobile layout (24px margin + 3px border), leaving a visible gap
+     above the app. Mobile is `.phone{position:fixed;top:0}`. Match it: no top
+     offset, full viewport height. */
+  .phone{margin:0 auto;height:100dvh;border-width:3px;box-shadow:0 0 120px rgba(255,215,0,0.3),0 0 240px rgba(255,181,194,0.05)}
   body{overflow-y:auto;overflow-x:hidden}
   /* Scrollbar visibility for all scroll containers */
   .screen-el,.match-list,.messages,.profile-scroll,.portfolio-scroll,.settings-scroll,.briefs-scroll,.conn-scroll,.sub-scroll,.modal-body,.hamburger-panel,.onboard-content,.card-info,.swipe-card.expanded,.swipe-card .card-info-scroll,.card-info-scroll{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.12) transparent}

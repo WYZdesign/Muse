@@ -70,6 +70,9 @@ export interface SettingsScreenProps {
   setShowAgeGate: (v: boolean) => void;
   setPendingNsfw: (v: boolean) => void;
   setShowAgeVerification: (v: boolean) => void;
+  /** Persisted profile preferences (muse_profiles.preferences) — seeds the
+   *  Portfolio & Availability sub-pages with the user's saved values. */
+  preferences?: Record<string, unknown>;
   authUser?: any;
   showBlockedUsers?: boolean;
   setShowBlockedUsers?: (v: boolean | ((p: boolean) => boolean)) => void;
@@ -116,21 +119,30 @@ export interface SettingsScreenProps {
 // column. A sub-page keeps the main list a fixed, scannable length and
 // gives each section its own focused screen with one clear way back.
 function SettingsSubPage({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  // Buttery slide: mount -> slide up; close -> slide back down, THEN unmount.
+  // The parent still renders us conditionally, so we hold ourselves on screen
+  // for the exit animation before calling the real onClose.
+  const [closing, setClosing] = React.useState(false);
+  const requestClose = React.useCallback(() => {
+    setClosing((c) => {
+      if (c) return c;
+      window.setTimeout(onClose, 280);
+      return true;
+    });
+  }, [onClose]);
+
   return (
     <div
-      style={{ position: "fixed", inset: 0, zIndex: 950, display: "flex", alignItems: "flex-end", justifyContent: "center", background: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)" }}
+      className={"sheet-overlay" + (closing ? " closing" : "")}
       role="presentation"
-      onClick={onClose}
+      onClick={requestClose}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 480, maxHeight: "85vh", background: "var(--panel-bg-solid)", backdropFilter: "blur(30px)", borderRadius: "24px 24px 0 0", border: "1px solid var(--border-subtle)", borderBottom: "none", display: "flex", flexDirection: "column", overflow: "hidden" }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 20px 16px", borderBottom: "1px solid var(--border-subtle)", flexShrink: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: "var(--text)" }}>{title}</div>
-          <button onClick={onClose} aria-label={`Close ${title}`} style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", padding: 6 }}><FiX size={20} /></button>
+      <div className={"sheet-panel" + (closing ? " closing" : "")} onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-head">
+          <div className="sheet-title">{title}</div>
+          <button onClick={requestClose} aria-label={`Close ${title}`} className="sheet-close"><FiX size={20} /></button>
         </div>
-        <div style={{ padding: "16px 20px 28px", overflowY: "auto" }}>{children}</div>
+        <div className="sheet-body">{children}</div>
       </div>
     </div>
   );
@@ -278,8 +290,19 @@ export const SettingsScreen = memo(function SettingsScreen({
   setUpsell,
   authFetch,
   setSupportOpen,
+  preferences = {},
 }: SettingsScreenProps) {
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showPortfolioSettings, setShowPortfolioSettings] = useState(false);
+  const [showAvailability, setShowAvailability] = useState(false);
+  const [portfolioVisibility, setPortfolioVisibility] = useState<string>(String(preferences.portfolioVisibility ?? "everyone"));
+  const [portfolioFeatured, setPortfolioFeatured] = useState<boolean>(preferences.portfolioFeatured !== false);
+  const [portfolioShowOnProfile, setPortfolioShowOnProfile] = useState<boolean>(preferences.portfolioShowOnProfile !== false);
+  const [availabilityStatus, setAvailabilityStatus] = useState<string>(String(preferences.availabilityStatus ?? "available"));
+  const [availabilityNote, setAvailabilityNote] = useState<string>(String(preferences.availabilityNote ?? ""));
+  const [bookingLeadDays, setBookingLeadDays] = useState<number>(Number(preferences.bookingLeadDays ?? 3));
+  const [travelDates, setTravelDates] = useState<string>(String(preferences.travelDates ?? ""));
+  const [budgetRange, setBudgetRange] = useState<string>(String(preferences.budgetRange ?? ""));
   const [showPersonality, setShowPersonality] = useState(false);
   const [showCreativeProfile, setShowCreativeProfile] = useState(false);
   const [cpType, setCpType] = useState((obData as any)?.type || "");
@@ -663,8 +686,8 @@ export const SettingsScreen = memo(function SettingsScreen({
           ) : (
             <div className="settings-group">
               <div className="settings-group-title">Portfolio & Availability</div>
-              {renderRow({ icon: <FiEye size={18} />, label: "Portfolio Settings", desc: "Manage visibility and featured work", action: () => showToast("Portfolio settings coming soon") })}
-              {renderRow({ icon: <FiLink size={18} />, label: "Availability Calendar", desc: "Set your schedule and booking preferences", action: () => showToast("Availability calendar coming soon") })}
+              {renderRow({ icon: <FiEye size={18} />, label: "Portfolio Settings", desc: "Manage visibility and featured work", action: () => setShowPortfolioSettings(true) })}
+              {renderRow({ icon: <FiLink size={18} />, label: "Availability Calendar", desc: "Set your schedule and booking preferences", action: () => setShowAvailability(true) })}
               {renderRow({ icon: <FiDollarSign size={18} />, label: "Rate Settings", desc: "Set your standard rates and packages", action: () => showToast("Rate settings coming soon") })}
             </div>
           )}
@@ -1246,6 +1269,72 @@ export const SettingsScreen = memo(function SettingsScreen({
               >Set Up Two-Factor</button>
             </div>
           )}
+        </SettingsSubPage>
+      )}
+
+      {showPortfolioSettings && (
+        <SettingsSubPage title="Portfolio Settings" onClose={() => setShowPortfolioSettings(false)}>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
+            Control who can see your portfolio and how your work is presented.
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", margin: "4px 0 8px" }}>Who can see your portfolio</div>
+          {[
+            { k: "everyone", l: "Everyone", d: "Any Muse member can view your work" },
+            { k: "matches", l: "Matches only", d: "Only people you've matched with" },
+            { k: "private", l: "Private", d: "Hidden from everyone" },
+          ].map(o => (
+            <button key={o.k} onClick={() => setPortfolioVisibility(o.k)}
+              style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", marginBottom: 8, border: "1px solid var(--border-subtle)", borderRadius: 14, background: portfolioVisibility === o.k ? "var(--gold)" : "var(--glass)", color: portfolioVisibility === o.k ? "#0a0612" : "var(--text)", cursor: "pointer" }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>{o.l}</div>
+              <div style={{ fontSize: 11, opacity: .75, marginTop: 2 }}>{o.d}</div>
+            </button>
+          ))}
+          <ToggleRow label="Featured work" desc="Highlight your best pieces first" checked={portfolioFeatured} onToggle={() => setPortfolioFeatured(v => !v)} />
+          <ToggleRow label="Show portfolio on my profile" checked={portfolioShowOnProfile} onToggle={() => setPortfolioShowOnProfile(v => !v)} />
+          <button className="btn btn-gold" style={{ width: "100%", marginTop: 16 }} onClick={async () => {
+            try {
+              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { portfolioVisibility, portfolioFeatured, portfolioShowOnProfile } }) });
+              showToast("Portfolio settings saved!");
+            } catch { showToast("Couldn't save — try again"); }
+          }}>Save Portfolio Settings</button>
+        </SettingsSubPage>
+      )}
+
+      {showAvailability && (
+        <SettingsSubPage title="Availability Calendar" onClose={() => setShowAvailability(false)}>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
+            Tell clients when you&apos;re bookable. This drives your Discover badge and booking requests.
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", margin: "4px 0 8px" }}>Current status</div>
+          {[
+            { k: "available", l: "Available", d: "Open to booking requests" },
+            { k: "busy", l: "Busy", d: "Working — limited availability" },
+            { k: "unavailable", l: "Not accepting", d: "Paused all new bookings" },
+          ].map(o => (
+            <button key={o.k} onClick={() => setAvailabilityStatus(o.k)}
+              style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", marginBottom: 8, border: "1px solid var(--border-subtle)", borderRadius: 14, background: availabilityStatus === o.k ? "var(--gold)" : "var(--glass)", color: availabilityStatus === o.k ? "#0a0612" : "var(--text)", cursor: "pointer" }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>{o.l}</div>
+              <div style={{ fontSize: 11, opacity: .75, marginTop: 2 }}>{o.d}</div>
+            </button>
+          ))}
+          {[
+            { label: "Booking lead time (days)", value: String(bookingLeadDays), set: (v: string) => setBookingLeadDays(Math.max(0, Math.min(90, Number(v) || 0))), ph: "3", type: "number" },
+            { label: "Away / travel dates", value: travelDates, set: setTravelDates, ph: "e.g. Oct 1–15 (traveling)", type: "text" },
+            { label: "Typical budget range", value: budgetRange, set: setBudgetRange, ph: "e.g. $500–$2,000", type: "text" },
+            { label: "Note shown to clients (optional)", value: availabilityNote, set: setAvailabilityNote, ph: "e.g. Booking 2 weeks out", type: "text" },
+          ].map(f => (
+            <div key={f.label} style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>{f.label}</div>
+              <input type={f.type} placeholder={f.ph} value={f.value} onChange={e => f.set(e.target.value)}
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
+            </div>
+          ))}
+          <button className="btn btn-gold" style={{ width: "100%", marginTop: 16 }} onClick={async () => {
+            try {
+              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { availabilityStatus, availabilityNote, bookingLeadDays, travelDates, budgetRange } }) });
+              showToast("Availability saved!");
+            } catch { showToast("Couldn't save — try again"); }
+          }}>Save Availability</button>
         </SettingsSubPage>
       )}
     </div>

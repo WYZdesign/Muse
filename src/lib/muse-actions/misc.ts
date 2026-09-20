@@ -28,6 +28,11 @@ export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
     "appliedBriefs",
     "savedProfileIds",
     "savedSessionIds",
+    // Portfolio & Availability (Settings → "Portfolio & Availability").
+    // These were "coming soon" stubs; now persisted like the other prefs.
+    "portfolioVisibility", "portfolioFeatured", "portfolioShowOnProfile",
+    "availabilityStatus", "availabilityNote", "bookingLeadDays",
+    "travelDates", "budgetRange",
   ]);
   const source = (rest.preferences && typeof rest.preferences === "object") ? rest.preferences : rest;
   const prefs: Record<string, unknown> = {};
