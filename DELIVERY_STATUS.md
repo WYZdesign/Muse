@@ -201,6 +201,18 @@ component rendered nothing.
 `NEXT_PUBLIC_*` is inlined at build time, so this needed a redeploy (this commit
 triggers it).
 
+### Round 54 — Discover "0 candidates" explained + test accounts given visuals (verified 2026-09-19)
+
+`/api/muse/match` filters candidates to profiles that have an avatar **or**
+photos (`match/route.ts`). The DB has 3 profiles total: the owner's (excluded as
+self) and the two test accounts, which were seeded with **empty avatar/photos** —
+so they were filtered out and Discover showed 0 candidates. Not a code bug.
+
+`scripts/seed_test_accounts.py` now also sets an avatar + photo on both test
+accounts (Unsplash URLs, already allowed by the CSP `img-src`), and back-fills
+existing rows that lack one. Verified: 2 profiles now pass the filter, so each
+test account sees the other as a candidate.
+
 ## Prior verified baseline: `e192af3`
 
 Everything at or before this commit is real, live, deployed code — this

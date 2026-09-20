@@ -53,6 +53,14 @@ SESSION = {
     "rating": 5.0,
 }
 
+# Discover (/api/muse/match) only surfaces candidates with an avatar OR photos
+# (route.ts candidate filter), so test accounts need visuals or they never
+# appear in each other's deck. Unsplash is already allowed by the CSP img-src.
+AVATARS = {
+    "torree.marcel+musetest1@gmail.com": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&q=80",
+    "torree.marcel+musetest2@gmail.com": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&q=80",
+}
+
 
 def dsn() -> str | None:
     for n in ("DATABASE_URL", "SUPABASE_DB_URL", "MUSE_DATABASE_URL"):
@@ -111,6 +119,20 @@ def main() -> int:
         pid = cur.fetchone()[0]
         created[a["email"]] = pid
         print(f"OK    {a['email']} -> profile {pid}")
+
+    # Ensure the test accounts have visuals (existing rows included).
+    for email, pid in created.items():
+        cur.execute("SELECT avatar, photos FROM muse_profiles WHERE id = %s", (pid,))
+        row = cur.fetchone()
+        avatar = (row[0] or "").strip() if row else ""
+        photos = row[1] if row and isinstance(row[1], list) else []
+        if not avatar and email in AVATARS:
+            url = AVATARS[email]
+            cur.execute(
+                "UPDATE muse_profiles SET avatar = %s, photos = %s WHERE id = %s",
+                (url, photos + [url] if url not in photos else photos, pid),
+            )
+            print(f"OK    avatar + photo set for {email}")
 
     host_id = created.get(ACCOUNTS[0]["email"])
     if host_id:
