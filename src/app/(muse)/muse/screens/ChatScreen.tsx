@@ -100,6 +100,10 @@ export const ChatScreen = memo(function ChatScreen({
   const timerRef = useRef<number | null>(null);
   const startedAtRef = useRef(0);
   const cancelRef = useRef(false);
+  // Consent gate — recording someone (or being recorded) is legally sensitive in
+  // two-party-consent states, so the first recording shows a one-time notice.
+  const [showConsent, setShowConsent] = useState(false);
+  const [consentKind, setConsentKind] = useState<"voice" | "video">("voice");
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -116,6 +120,19 @@ export const ChatScreen = memo(function ChatScreen({
 
   const startRecording = async (kind: "voice" | "video") => {
     if (recording || sendingClip) return;
+    if (!uploadMedia || !sendChatMedia) { showToast?.("Recording unavailable"); return; }
+    // One-time consent notice before the very first clip.
+    try {
+      if (typeof window !== "undefined" && !window.localStorage.getItem("muse_rec_consent")) {
+        setConsentKind(kind);
+        setShowConsent(true);
+        return;
+      }
+    } catch { /* localStorage unavailable — don't block recording */ }
+    await beginRecording(kind);
+  };
+
+  const beginRecording = async (kind: "voice" | "video") => {
     if (!uploadMedia || !sendChatMedia) { showToast?.("Recording unavailable"); return; }
     try {
       const stream = await navigator.mediaDevices.getUserMedia(
@@ -186,6 +203,12 @@ export const ChatScreen = memo(function ChatScreen({
   const stopRecording = () => { try { mediaRecorderRef.current?.stop(); } catch { /* noop */ } };
   const cancelRecording = () => { cancelRef.current = true; stopRecording(); };
 
+  const acceptConsent = () => {
+    try { window.localStorage.setItem("muse_rec_consent", "1"); } catch { /* ignore */ }
+    setShowConsent(false);
+    void beginRecording(consentKind);
+  };
+
   const fmtDur = (ms?: number) => {
     if (!ms || ms < 0) return "";
     const s = Math.round(ms / 1000);
@@ -194,6 +217,22 @@ export const ChatScreen = memo(function ChatScreen({
 
   return (
     <div className={"screen-el" + (screen === "chat" && chatTarget ? " active" : "")} data-screen="chat">
+      {showConsent && (
+        <div role="dialog" aria-modal="true" aria-label="Recording consent" style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", padding: 20 }}>
+          <div style={{ background: "var(--panel-bg-solid, #0f0a1a)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 24, maxWidth: 380, width: "100%" }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "var(--gold)", marginBottom: 10 }}>Before you record</div>
+            <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6, marginBottom: 16 }}>
+              {consentKind === "voice" ? "Voice notes" : "Video notes"} are saved to your account and shared with{" "}
+              <strong style={{ color: "var(--text)" }}>{chatTarget?.name || "this person"}</strong>. Only record people who
+              have agreed to it — in some places recording someone without consent is illegal.
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setShowConsent(false)}>Cancel</button>
+              <button className="btn btn-gold" style={{ flex: 1 }} onClick={acceptConsent}>I understand</button>
+            </div>
+          </div>
+        </div>
+      )}
       {chatTarget && (
         <div className="chat-wrap">
           <div className="chat-header">
@@ -277,6 +316,13 @@ export const ChatScreen = memo(function ChatScreen({
                       🎥 Video note{msg.durationMs ? ` · ${fmtDur(msg.durationMs)}` : ""}
                     </div>
                   </div>
+                )}
+                {(msg.kind === "voice" || msg.kind === "video") && msg.from !== "me" && (
+                  <button type="button"
+                    onClick={() => { setReportTarget?.({ id: chatTarget.id, type: "user", name: chatTarget.name }); setShowReport(true); }}
+                    style={{ display: "block", background: "none", border: "none", color: "var(--muted)", fontSize: 10, padding: 0, marginTop: 2, cursor: "pointer", textDecoration: "underline" }}>
+                    ⚑ Report this clip
+                  </button>
                 )}
                 {msg.text && <div>{msg.text}</div>}
                 <div className="msg-time" style={{ textAlign: msg.from === "me" ? "right" : "left", marginTop: 4, fontSize: 10, color: msg.from === "me" ? "rgba(10,6,18,0.4)" : "var(--muted)" }}>
