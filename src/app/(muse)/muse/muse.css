@@ -2254,6 +2254,10 @@ img{background-color:var(--card-bg)}
 .match-radial-btn.btn-nope{background:linear-gradient(135deg,#ff6b6b,#ff8a80)}
 .match-radial-btn.btn-rewind{background:linear-gradient(135deg,#8a5eff,#d4a5ff)}
 .match-radial-btn.btn-note{background:linear-gradient(135deg,var(--card-bg),#533483)}
+/* Rewind with an empty history: visibly unavailable instead of firing a
+   "No profiles left to undo" toast on tap. */
+.match-radial-btn:disabled,.match-radial-btn.is-disabled{opacity:.35!important;cursor:default;filter:grayscale(.45);pointer-events:none}
+.match-radial-btn:disabled:active{transform:none!important;animation:none!important}
 
 /* Screen transitions */
 .screen-el{opacity:0;pointer-events:none}

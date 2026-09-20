@@ -85,6 +85,7 @@ export interface DiscoverScreenProps {
   showMatchMenu?: boolean;
   setShowMatchMenu?: (v: boolean | ((p: boolean) => boolean)) => void;
   doRewind?: () => void;
+  canRewind?: boolean;
   doLikeWithNote?: (anchor?: LikeAnchor) => void;
   onAnchorLike?: (anchor: LikeAnchor) => void;
   setDailyLikes?: (v: number) => void;
@@ -152,6 +153,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   showMatchMenu = false,
   setShowMatchMenu = () => {},
   doRewind = () => {},
+  canRewind = false,
   doSwipe,
   doLikeWithNote = () => {},
   onAnchorLike,
@@ -604,7 +606,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               <div className={"match-fab" + (cardScrolled ? " hidden" : "")}>
                               <button className={"match-fab-btn" + (showMatchMenu ? " open" : "")} onClick={() => setShowMatchMenu(v => !v)} aria-label="Match actions" style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>{showMatchMenu ? <FiCamera size={28} /> : "M"}</button>
                               <div className={"match-radial" + (showMatchMenu ? " open" : "")}>
-                                <button className="match-radial-btn btn-rewind" style={{ left: -110, top: 7 }} onClick={doRewind} aria-label="Rewind">↺</button>
+                                <button className={"match-radial-btn btn-rewind" + (canRewind ? "" : " is-disabled")} style={{ left: -110, top: 7 }} onClick={canRewind ? doRewind : undefined} disabled={!canRewind} aria-disabled={!canRewind} aria-label="Rewind">↺</button>
                                 <button className="match-radial-btn btn-nope" style={{ left: -106, top: -40 }} onClick={() => doSwipe("left")} aria-label="Pass">✕</button>
                                 <button className="match-radial-btn btn-super" style={{ left: -77, top: -77, width: 37, height: 37, fontSize: 16 }} onClick={() => doSwipe("super")} aria-label="Super Like">★</button>
                                 <button className="match-radial-btn btn-like" style={{ left: -40, top: -106, width: 44, height: 44, flexDirection: "column", fontSize: 16, lineHeight: 1 }} onClick={() => doSwipe("right")} aria-label="Like this match"><span aria-hidden="true" style={{ fontSize: 18 }}>♥</span></button>

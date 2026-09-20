@@ -171,6 +171,17 @@ allow `connect-js.stripe.com`:
 
 Verification: `tsc` clean, `vitest` 350/350, `next build` clean.
 
+### Round 52 — Rewind disabled when there's nothing to undo (verified 2026-09-19)
+
+The Rewind (↺) button in the card's radial popup was always rendered and always
+clickable, so tapping it with an empty history fired a "No profiles left to
+undo" toast every time. `page.tsx` now passes `canRewind={rewindStack.length > 0}`
+to `DiscoverScreen`, and the button renders disabled (dimmed/grayscaled,
+`pointer-events:none`, `disabled` + `aria-disabled`) when the stack is empty, so
+there's nothing misleading to tap.
+
+Verification: `tsc` clean, `vitest` 350/350, `next build` clean.
+
 ## Prior verified baseline: `e192af3`
 
 Everything at or before this commit is real, live, deployed code — this
