@@ -182,6 +182,25 @@ there's nothing misleading to tap.
 
 Verification: `tsc` clean, `vitest` 350/350, `next build` clean.
 
+### Round 53 — root cause of the blank Connect box: bad publishable key (verified 2026-09-19)
+
+After the CSP fix (Round 51) the embedded lightbox was still blank. The actual
+cause was the env var itself: the deployed `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+held `pk_1TnV6TFBOP6…` — **27 chars, not a valid Stripe key** (Stripe uses
+`pk_live_…`/`pk_test_…`, 107 chars). ConnectJS can't initialize with it, so the
+component rendered nothing.
+
+- Set `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` in Vercel (Production) to the correct
+  Muse key `pk_live_51U0n0…` (matching `muse_STRIPE_SECRET_KEY` /
+  `sk_live_51U0n0…`).
+- Corrected the same stale value in the vault
+  (`muse_NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`).
+- Confirmed server-side is healthy independently: `stripe.accountSessions.create`
+  returns an `accs_secret_…` for the connected account.
+
+`NEXT_PUBLIC_*` is inlined at build time, so this needed a redeploy (this commit
+triggers it).
+
 ## Prior verified baseline: `e192af3`
 
 Everything at or before this commit is real, live, deployed code — this
