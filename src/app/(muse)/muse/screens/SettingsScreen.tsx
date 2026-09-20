@@ -1106,7 +1106,13 @@ export const SettingsScreen = memo(function SettingsScreen({
       )}
 
       {showMFA && (
-        <SettingsSubPage title="Two-Factor Authentication" onClose={() => { setShowMFA(false); setMfaEnrolling(false); setMfaQrUri(""); setMfaSecret(""); setMfaVerifyCode(""); setMfaError(""); }}>
+        <SettingsSubPage title="Two-Factor Authentication" onClose={() => {
+          // Abandoning setup (X / back) must also drop the factor we just created,
+          // otherwise a stale unverified factor blocks the next attempt.
+          const pendingId = mfaFactors[0]?.id;
+          if (mfaEnrolling && pendingId) { mfaUnenroll(pendingId).catch(() => { /* best effort */ }); }
+          setShowMFA(false); setMfaEnrolling(false); setMfaQrUri(""); setMfaSecret(""); setMfaVerifyCode(""); setMfaError(""); setMfaFactors([]);
+        }}>
           {mfaLoading ? (
             <div style={{ textAlign: "center", padding: 20, color: "var(--text2)", fontSize: 13 }}>Loading...</div>
           ) : mfaEnrolling ? (
@@ -1136,7 +1142,14 @@ export const SettingsScreen = memo(function SettingsScreen({
               />
               {mfaError && <div style={{ fontSize: 12, color: "var(--coral)", textAlign: "center" }}>{mfaError}</div>}
               <div style={{ display: "flex", gap: 8 }}>
-                <button className="btn btn-outline" style={{ flex: 1, fontSize: 13 }} onClick={() => { setMfaEnrolling(false); setMfaQrUri(""); setMfaSecret(""); setMfaVerifyCode(""); setMfaError(""); }}>Cancel</button>
+                <button className="btn btn-outline" style={{ flex: 1, fontSize: 13 }} onClick={async () => {
+                  // Unenroll the factor we just created so abandoning setup doesn't
+                  // leave a stale unverified factor blocking the next attempt.
+                  const pendingId = mfaFactors[0]?.id;
+                  if (pendingId) { try { await mfaUnenroll(pendingId); } catch { /* best effort */ } }
+                  setMfaFactors([]);
+                  setMfaEnrolling(false); setMfaQrUri(""); setMfaSecret(""); setMfaVerifyCode(""); setMfaError("");
+                }}>Cancel</button>
                 <button
                   className="btn btn-gold"
                   style={{ flex: 1, fontSize: 13 }}
@@ -1210,6 +1223,14 @@ export const SettingsScreen = memo(function SettingsScreen({
                   setMfaLoading(true);
                   setMfaError("");
                   try {
+                    // Self-heal: drop any stale unverified factor(s) left by a previous
+                    // abandoned setup before enrolling, so we never stack factors or
+                    // trip over a half-finished one.
+                    const status = await mfaStatus().catch(() => null);
+                    const stale = (status?.factors || []).filter(f => f.status !== "verified");
+                    for (const f of stale) {
+                      try { await mfaUnenroll(f.id); } catch { /* best effort */ }
+                    }
                     const res = await mfaEnroll();
                     if (res.id) {
                       setMfaQrUri(res.qr_uri || res.totp?.qr_code || "");

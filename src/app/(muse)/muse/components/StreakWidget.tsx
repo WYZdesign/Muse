@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 
 const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -15,6 +15,18 @@ export default function StreakWidget({
   compact?: boolean;
   onTap?: () => void;
 }) {
+  // SVG <defs> ids are document-global. Two StreakWidgets (the compact header
+  // chip and the full daily-login popup) both used to declare `fireGrad` /
+  // `dotGold`, so `url(#id)` in the second instance resolved to the first
+  // instance's defs — and the flame/fill vanished whenever that first instance
+  // was unmounted or hidden. Prefix every id with a per-instance useId instead.
+  // (Colons are stripped because useId returns e.g. ":r1:".)
+  const uid = useId().replace(/:/g, "");
+  const fireId = `fireGrad-${uid}`;
+  const innerId = `innerGrad-${uid}`;
+  const fireLgId = `fireGradLg-${uid}`;
+  const innerLgId = `innerGradLg-${uid}`;
+
   // weeklyLogins is a rolling 7-day window: index 0 = 6 days ago, index 6 = today.
   // Derive each slot's weekday letter from the actual date so labels always line up
   // with the day they represent (rather than a fixed Mon–Sun order).
@@ -31,15 +43,15 @@ export default function StreakWidget({
       <div className="streak-compact">
         <div className="streak-compact-fire">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <path d="M14 2C14 2 6 10 6 17a8 8 0 0016 0c0-7-8-15-8-15z" fill="url(#fireGrad)" />
-            <path d="M14 10c0 0-4 4-4 8a4 4 0 008 0c0-4-4-8-4-8z" fill="url(#innerGrad)" />
+            <path d="M14 2C14 2 6 10 6 17a8 8 0 0016 0c0-7-8-15-8-15z" fill={`url(#${fireId})`} />
+            <path d="M14 10c0 0-4 4-4 8a4 4 0 008 0c0-4-4-8-4-8z" fill={`url(#${innerId})`} />
             <defs>
-              <linearGradient id="fireGrad" x1="14" y1="2" x2="14" y2="27" gradientUnits="userSpaceOnUse">
+              <linearGradient id={fireId} x1="14" y1="2" x2="14" y2="27" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#FFD700" />
                 <stop offset="0.5" stopColor="#FF8C00" />
                 <stop offset="1" stopColor="#FF4500" />
               </linearGradient>
-              <linearGradient id="innerGrad" x1="14" y1="10" x2="14" y2="22" gradientUnits="userSpaceOnUse">
+              <linearGradient id={innerId} x1="14" y1="10" x2="14" y2="22" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#FFF7CC" />
                 <stop offset="1" stopColor="#FFD700" />
               </linearGradient>
@@ -65,15 +77,15 @@ export default function StreakWidget({
         <div className="streak-widget-flame">
           <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
             <circle cx="20" cy="20" r="19" stroke="var(--gold)" strokeWidth="2" />
-            <path d="M20 6C20 6 10 16 10 23a10 10 0 0020 0c0-7-10-17-10-17z" fill="url(#fireGradLg)" />
-            <path d="M20 14c0 0-5 5-5 9a5 5 0 0010 0c0-4-5-9-5-9z" fill="url(#innerGradLg)" />
+            <path d="M20 6C20 6 10 16 10 23a10 10 0 0020 0c0-7-10-17-10-17z" fill={`url(#${fireLgId})`} />
+            <path d="M20 14c0 0-5 5-5 9a5 5 0 0010 0c0-4-5-9-5-9z" fill={`url(#${innerLgId})`} />
             <defs>
-              <linearGradient id="fireGradLg" x1="20" y1="6" x2="20" y2="34" gradientUnits="userSpaceOnUse">
+              <linearGradient id={fireLgId} x1="20" y1="6" x2="20" y2="34" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#FFD700" />
                 <stop offset="0.5" stopColor="#FF8C00" />
                 <stop offset="1" stopColor="#FF4500" />
               </linearGradient>
-              <linearGradient id="innerGradLg" x1="20" y1="14" x2="20" y2="28" gradientUnits="userSpaceOnUse">
+              <linearGradient id={innerLgId} x1="20" y1="14" x2="20" y2="28" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#FFF7CC" />
                 <stop offset="1" stopColor="#FFD700" />
               </linearGradient>
@@ -90,20 +102,23 @@ export default function StreakWidget({
         </div>
       </div>
       <div className="streak-widget-bar">
-        {weeklyLogins.map((on, i) => (
-          <div key={i} className={"streak-day" + (on ? " hit" : "") + (i === todayIdx ? " today" : "")}>
-            <div className="streak-day-ring">
-              {on ? (
-                <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="url(#dotGold)" /><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="#0a0612" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                  <defs><linearGradient id="dotGold" x1="0" y1="0" x2="18" y2="18"><stop stopColor="#FFD700" /><stop offset="1" stopColor="#FF8C00" /></linearGradient></defs>
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7.5" stroke="rgba(255,255,255,0.15)" strokeWidth="1" fill="rgba(255,255,255,0.03)" /></svg>
-              )}
+        {weeklyLogins.map((on, i) => {
+          const dotId = `dotGold-${uid}-${i}`;
+          return (
+            <div key={i} className={"streak-day" + (on ? " hit" : "") + (i === todayIdx ? " today" : "")}>
+              <div className="streak-day-ring">
+                {on ? (
+                  <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill={`url(#${dotId})`} /><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="#0a0612" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <defs><linearGradient id={dotId} x1="0" y1="0" x2="18" y2="18"><stop stopColor="#FFD700" /><stop offset="1" stopColor="#FF8C00" /></linearGradient></defs>
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7.5" stroke="rgba(255,255,255,0.15)" strokeWidth="1" fill="rgba(255,255,255,0.03)" /></svg>
+                )}
+              </div>
+              <span className="streak-day-label">{dayLabels[i]}</span>
             </div>
-            <span className="streak-day-label">{dayLabels[i]}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <div className="streak-widget-progress">
         <div className="streak-progress-track">

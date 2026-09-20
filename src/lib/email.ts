@@ -90,20 +90,64 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
 
 /* ────────────────────────── Shared layout ────────────────────────── */
 
-const SHELL = (inner: string, email?: string) => `
+/**
+ * Email-client-safe CTA button. Outlook (and several mobile clients) ignore
+ * `linear-gradient`, so a solid `bgcolor` is declared first and the gradient is
+ * layered on via `background-image` for clients that support it. Table-based so
+ * the padding survives Outlook's Word renderer.
+ */
+function ctaButton(label: string, href: string, marginTop = 20): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:${marginTop}px auto 0;">
+      <tr>
+        <td align="center" bgcolor="#ffd700" style="border-radius:12px;background-color:#ffd700;background-image:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);">
+          <a href="${escapeHtml(href)}" style="display:inline-block;padding:13px 30px;border-radius:12px;font-weight:800;font-size:14px;line-height:1;color:#0a0612;text-decoration:none;">${escapeHtml(label)}</a>
+        </td>
+      </tr>
+    </table>`;
+}
+
+/**
+ * Table-based shell. Body background is repeated on an outer `<table bgcolor>`
+ * because Gmail/Outlook strip `body{background}`. `preheader` is the hidden
+ * inbox-preview line. Hex colours only (no rgba) for Outlook.
+ */
+const SHELL = (inner: string, email?: string, preheader?: string) => `
 <!doctype html>
-<html>
-  <body style="margin:0;padding:0;background:#0a0612;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-    <div style="max-width:560px;margin:0 auto;padding:32px 20px;">
-      <div style="text-align:center;padding:24px 0 8px;">
-        <span style="font-size:28px;font-weight:800;letter-spacing:1px;color:#ffd700;">Muse<span style="color:#d4a5ff;">✦</span></span>
-      </div>
-      ${inner}
-      <div style="margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08);text-align:center;font-size:12px;color:rgba(255,255,255,0.4);line-height:1.7;">
-        You're receiving this because you're on Muse's list.<br/>
-        Built by WYZ Design · <a href="${getTermsUrl()}" style="color:#ffd700;text-decoration:none;">Terms</a> · <a href="${getPrivacyUrl()}" style="color:#ffd700;text-decoration:none;">Privacy</a>${email ? ` · <a href="${unsubscribeUrl(email)}" style="color:#ffd700;text-decoration:none;">Unsubscribe</a>` : ""}
-      </div>
-    </div>
+<html lang="en" style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="supported-color-schemes" content="dark light" />
+    <title>Muse</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#0a0612;">
+    ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#0a0612;font-size:1px;line-height:1px;">${escapeHtml(preheader)}</div>` : ""}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0a0612;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px;max-width:100%;">
+            <tr>
+              <td align="center" style="padding:32px 20px 8px;font-size:28px;font-weight:800;letter-spacing:1px;color:#ffd700;">
+                Muse<span style="color:#d4a5ff;">&#10022;</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 20px 32px;">
+                ${inner}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px;border-top:1px solid #241b36;text-align:center;font-size:12px;color:#8b8299;line-height:1.7;">
+                You're receiving this because you're on Muse's list.<br/>
+                Built by WYZ Design &middot; <a href="${getTermsUrl()}" style="color:#ffd700;text-decoration:none;">Terms</a> &middot; <a href="${getPrivacyUrl()}" style="color:#ffd700;text-decoration:none;">Privacy</a>${email ? ` &middot; <a href="${unsubscribeUrl(email)}" style="color:#ffd700;text-decoration:none;">Unsubscribe</a>` : ""}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>`;
 
@@ -112,53 +156,53 @@ const SHELL = (inner: string, email?: string) => `
 /** Confirmation sent immediately when someone joins the waitlist. */
 export function waitlistWelcome(email: string, source?: string): EmailMessage {
   const html = SHELL(`
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,215,0,0.2);border-radius:16px;padding:32px 28px;">
+    <div style="background:#141020;border:1px solid #4a3f14;border-radius:16px;padding:32px 28px;">
       <h1 style="font-size:22px;color:#fff;margin:0 0 12px;text-align:center;">You're on the list ✦</h1>
-      <p style="font-size:15px;color:rgba(255,255,255,0.75);line-height:1.7;margin:0 0 24px;text-align:center;">
+      <p style="font-size:15px;color:#bfbacb;line-height:1.7;margin:0 0 24px;text-align:center;">
         Thanks for joining. Your spot is reserved — we'll let you know the moment it's your turn.
       </p>
 
       <div style="margin:0 0 22px;">
         <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">What Muse is</h2>
-        <p style="font-size:14px;color:rgba(255,255,255,0.72);line-height:1.7;margin:0;">
+        <p style="font-size:14px;color:#b8b3c4;line-height:1.7;margin:0;">
           Muse is a creative professional network. Photographers, models, filmmakers, musicians, designers — people who make things — use it to find each other, collaborate, and book real work. Think of it as the place your portfolio meets the people who want to hire it.
         </p>
       </div>
 
       <div style="margin:0 0 22px;">
         <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">How it works</h2>
-        <p style="font-size:14px;color:rgba(255,255,255,0.72);line-height:1.7;margin:0;">
+        <p style="font-size:14px;color:#b8b3c4;line-height:1.7;margin:0;">
           You build a profile, pick what kind of work you're into, and Muse matches you with the right people. Browse their work, message them, and book sessions — all in one place. No cold DMs, no endless scrolling through people who don't fit.
         </p>
       </div>
 
       <div style="margin:0 0 22px;">
         <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">What you'll do</h2>
-        <p style="font-size:14px;color:rgba(255,255,255,0.72);line-height:1.7;margin:0;">
+        <p style="font-size:14px;color:#b8b3c4;line-height:1.7;margin:0;">
           When your spot opens, you'll create an account and set up your profile — your name, what you do, a few photos, and what kind of collaborations you're after. It takes a few minutes, and it's how matches get made.
         </p>
       </div>
 
       <div style="margin:0 0 24px;">
         <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">What you can expect from us</h2>
-        <p style="font-size:14px;color:rgba(255,255,255,0.72);line-height:1.7;margin:0;">
+        <p style="font-size:14px;color:#b8b3c4;line-height:1.7;margin:0;">
           Safety is the foundation here — verified profiles, disclosure forms, and 24-hour check-ins for in-person work. No spam, ever. Just a note when it's time to join, and a community that takes your craft as seriously as you do.
         </p>
       </div>
 
-      <div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.15);border-radius:12px;padding:16px 20px;margin:0 0 24px;">
+      <div style="background:#1f1a08;border:1px solid #3a3110;border-radius:12px;padding:16px 20px;margin:0 0 24px;">
         <h2 style="font-size:14px;color:#ffd700;margin:0 0 8px;">What happens next?</h2>
-        <p style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.7;margin:0;">
+        <p style="font-size:13px;color:#b3aec0;line-height:1.7;margin:0;">
           We're onboarding the first 150 founding members now. You'll get an email when it's your turn — that's your invite to create an account, set up your profile, and start matching. Founding members get lifetime Pro free.
         </p>
       </div>
 
       <div style="text-align:center;">
-        <a href="${getMuseUrl()}?src=welcome_email" style="display:inline-block;padding:13px 30px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;font-size:14px;">Create your account</a>
-        <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:10px;">Signed up with ${escapeHtml(email)}</div>
+        ${ctaButton("Create your account", `${getMuseUrl()}?src=welcome_email`, 0)}
+        <div style="font-size:12px;color:#8b8299;margin-top:10px;">Signed up with ${escapeHtml(email)}</div>
       </div>
     </div>
-  `, email);
+  `, email, "Your spot is reserved — here's what Muse is and what happens next.");
   return {
     to: email,
     subject: "You're on the Muse waitlist ✦",
@@ -186,14 +230,14 @@ export function waitlistWelcome(email: string, source?: string): EmailMessage {
 /** Sent when a user reaches the front of the line / gets beta access. */
 export function betaAccess(email: string): EmailMessage {
   const html = SHELL(`
-    <div style="background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.35);border-radius:16px;padding:32px 28px;text-align:center;">
+    <div style="background:#241f0a;border:1px solid #6b5a1c;border-radius:16px;padding:32px 28px;text-align:center;">
       <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Your Muse access is ready</h1>
-      <p style="font-size:15px;color:rgba(255,255,255,0.8);line-height:1.7;margin:0 0 20px;">
+      <p style="font-size:15px;color:#ccc7d6;line-height:1.7;margin:0 0 20px;">
         It's time to find your muse.<br/>Head to the app and set up your profile to start matching.
       </p>
-      <a href="${getMuseUrl()}" style="display:inline-block;padding:13px 28px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;">Enter Muse</a>
+      ${ctaButton("Enter Muse", getMuseUrl(), 4)}
     </div>
-  `, email);
+  `, email, "Your Muse access is ready — set up your profile and start matching.");
   return {
     to: email,
     subject: "Your Muse access is ready ✦",
@@ -211,36 +255,21 @@ export function trySend(msg: EmailMessage): void {
 export function signupWelcome(email: string, name?: string): EmailMessage {
   const who = name && name.trim() ? name.trim() : "there";
   const html = SHELL(`
-    <div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.3);border-radius:16px;padding:32px 28px;text-align:center;">
+    <div style="background:#1f1a08;border:1px solid #5c4e18;border-radius:16px;padding:32px 28px;text-align:center;">
       <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Welcome to Muse, ${escapeHtml(who)} ✦</h1>
-      <p style="font-size:15px;color:rgba(255,255,255,0.8);line-height:1.7;margin:0 0 20px;">
+      <p style="font-size:15px;color:#ccc7d6;line-height:1.7;margin:0 0 20px;">
         Your account is live. Here's what to do next:
       </p>
-      <div style="text-align:left;margin:0 0 20px;padding:0 12px;">
-        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
-          <span style="font-size:16px;color:#ffd700;flex-shrink:0;">1.</span>
-          <span style="font-size:14px;color:rgba(255,255,255,0.75);line-height:1.5;">Add your name, location, and a short bio</span>
-        </div>
-        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
-          <span style="font-size:16px;color:#ffd700;flex-shrink:0;">2.</span>
-          <span style="font-size:14px;color:rgba(255,255,255,0.75);line-height:1.5;">Pick your creative type and what kind of work you're into</span>
-        </div>
-        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
-          <span style="font-size:16px;color:#ffd700;flex-shrink:0;">3.</span>
-          <span style="font-size:14px;color:rgba(255,255,255,0.75);line-height:1.5;">Upload a profile photo and portfolio</span>
-        </div>
-        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
-          <span style="font-size:16px;color:#ffd700;flex-shrink:0;">4.</span>
-          <span style="font-size:14px;color:rgba(255,255,255,0.75);line-height:1.5;">Take the personality tests (zodiac, MBTI) for better matches</span>
-        </div>
-        <div style="display:flex;gap:10px;align-items:flex-start;">
-          <span style="font-size:16px;color:#ffd700;flex-shrink:0;">5.</span>
-          <span style="font-size:14px;color:rgba(255,255,255,0.75);line-height:1.5;">Start swiping — matches happen when you're both into it</span>
-        </div>
-      </div>
-      <a href="${getMuseUrl()}" style="display:inline-block;padding:13px 28px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;">Finish your profile</a>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;">
+        <tr><td width="24" valign="top" style="font-size:16px;color:#ffd700;padding:0 0 10px;">1.</td><td valign="top" style="font-size:14px;color:#bfbacb;line-height:1.5;padding:0 0 10px;">Add your name, location, and a short bio</td></tr>
+        <tr><td width="24" valign="top" style="font-size:16px;color:#ffd700;padding:0 0 10px;">2.</td><td valign="top" style="font-size:14px;color:#bfbacb;line-height:1.5;padding:0 0 10px;">Pick your creative type and what kind of work you're into</td></tr>
+        <tr><td width="24" valign="top" style="font-size:16px;color:#ffd700;padding:0 0 10px;">3.</td><td valign="top" style="font-size:14px;color:#bfbacb;line-height:1.5;padding:0 0 10px;">Upload a profile photo and portfolio</td></tr>
+        <tr><td width="24" valign="top" style="font-size:16px;color:#ffd700;padding:0 0 10px;">4.</td><td valign="top" style="font-size:14px;color:#bfbacb;line-height:1.5;padding:0 0 10px;">Take the personality tests (zodiac, MBTI) for better matches</td></tr>
+        <tr><td width="24" valign="top" style="font-size:16px;color:#ffd700;">5.</td><td valign="top" style="font-size:14px;color:#bfbacb;line-height:1.5;">Start swiping — matches happen when you're both into it</td></tr>
+      </table>
+      ${ctaButton("Finish your profile", getMuseUrl(), 0)}
     </div>
-  `, email);
+  `, email, "Your account is live — here are the 5 steps to finish your profile.");
   return {
     to: email,
     subject: "Welcome to Muse ✦",
@@ -262,16 +291,14 @@ export function signupWelcome(email: string, name?: string): EmailMessage {
 
 /** Generic notification for events: match, message, booking, verification, etc. */
 export function notify(email: string, subject: string, title: string, body: string, ctaLabel?: string, ctaUrl?: string): EmailMessage {
-  const cta = ctaLabel && ctaUrl
-    ? `<a href="${escapeHtml(ctaUrl)}" style="display:inline-block;margin-top:20px;padding:12px 26px;border-radius:12px;background:linear-gradient(120deg,#ffd700,#ff8a80,#d4a5ff);color:#0a0612;font-weight:800;text-decoration:none;">${escapeHtml(ctaLabel)}</a>`
-    : "";
+  const cta = ctaLabel && ctaUrl ? ctaButton(ctaLabel, ctaUrl, 20) : "";
   const html = SHELL(`
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:32px 28px;text-align:center;">
-      <h1 style="font-size:20px;color:#fff;margin:0 0 12px;">${escapeHtml(title)}</h1>
-      <p style="font-size:15px;color:rgba(255,255,255,0.75);line-height:1.7;margin:0;">${escapeHtml(body)}</p>
+    <div style="background-color:#141020;border:1px solid #241b36;border-radius:16px;padding:32px 28px;text-align:center;">
+      <h1 style="font-size:20px;color:#ffffff;margin:0 0 12px;">${escapeHtml(title)}</h1>
+      <p style="font-size:15px;color:#bfbacb;line-height:1.7;margin:0;">${escapeHtml(body)}</p>
       ${cta}
     </div>
-  `, email);
+  `, email, body);
   return { to: email, subject, html, text: body };
 }
 

@@ -91,6 +91,37 @@ Vercel `READY` for `6c4b388`. Note: the commit that records this line is a
 documentation-only follow-up on top of `6c4b388`; the verified *code* SHA is
 `6c4b388`.
 
+### Round 49 — Claude's remaining asks (verified 2026-09-19)
+
+Re-implemented the work that was in Claude's separate workspace but never
+delivered as a bundle (it had no push access and ran out of credits):
+
+- **StreakWidget flame vanishing** (`components/StreakWidget.tsx`): SVG
+  `<defs>` ids were document-global and `dotGold` was emitted 7× inside the
+  day map, so `url(#id)` in one widget resolved to another (unmounted)
+  instance's defs and the fill disappeared. Every gradient id is now prefixed
+  with a per-instance `useId()` (colons stripped).
+- **2FA setup** (`screens/SettingsScreen.tsx`): the Cancel button (and closing
+  the sub-page) now unenrolls the just-created factor instead of leaving a
+  stale unverified one, and "Set Up Two-Factor" self-heals by dropping any
+  unverified factor(s) before enrolling.
+- **Transactional email styling** (`src/lib/email.ts`): table-based shell with
+  an outer `bgcolor` (Gmail/Outlook strip `body{background}`), table-based CTA
+  buttons with a solid `bgcolor` fallback behind the gradient, the flexbox
+  onboarding step list replaced with a table (Outlook has no flexbox), all
+  `rgba()` colours swapped for hex (Outlook ignores rgba → invisible text), and
+  hidden inbox preheaders added.
+- **Stripe Connect failure surfacing** (`api/muse/connect/route.ts`): the catch
+  block returned a blanket "Server error", which made the Connect-as-user
+  failure undiagnosable. Stripe's own user-safe `message`/`code`/`type` are now
+  returned (with the full error logged server-side).
+- **Two test accounts** (`scripts/seed_test_accounts.py` + `docs/MUSE_TEST_PUNCHLIST.md`):
+  the auth users `torree.marcel+musetest1/2@gmail.com` existed but had no
+  `muse_profiles` rows, so they couldn't interact. Both now have pre-verified,
+  100%-complete profiles, and the host has a bookable session.
+
+Verification: `tsc` clean, `vitest` 349/349, `next build` clean.
+
 ## Prior verified baseline: `e192af3`
 
 Everything at or before this commit is real, live, deployed code — this

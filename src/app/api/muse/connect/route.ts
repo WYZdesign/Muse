@@ -447,7 +447,27 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (e: unknown) {
-    console.error("[connect] failed:", e);
+    // Surface the real cause. A blanket "Server error" made the Connect-as-user
+    // failure impossible to diagnose from the client — Stripe's own errors carry
+    // a user-safe `message` + `code` + `type`, so return those (and log the rest).
+    const err = e as {
+      type?: string; code?: string; message?: string;
+      statusCode?: number; raw?: unknown; stack?: string;
+    };
+    const isStripe = typeof err?.type === "string" && err.type.startsWith("Stripe");
+    console.error(
+      "[connect] failed:",
+      isStripe ? `${err.type}/${err.code}` : "",
+      err?.message || String(e),
+      err?.raw ? JSON.stringify(err.raw).slice(0, 500) : "",
+    );
+    if (isStripe) {
+      const status = err.statusCode && err.statusCode >= 400 && err.statusCode < 600 ? err.statusCode : 502;
+      return NextResponse.json(
+        { error: err.message || "Stripe error", code: err.code || "stripe_error", type: err.type },
+        { status },
+      );
+    }
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
