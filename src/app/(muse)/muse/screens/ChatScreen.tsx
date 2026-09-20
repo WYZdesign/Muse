@@ -2,7 +2,7 @@
 
 import React, { memo, useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiImage, FiSend, FiMoreVertical, FiFlag, FiUserX, FiSlash, FiMic, FiVideo, FiSquare } from "react-icons/fi";
+import { FiArrowLeft, FiImage, FiSend, FiMoreVertical, FiFlag, FiUserX, FiSlash, FiMic, FiVideo, FiSquare, FiPhone } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { authFetch } from "../lib/auth-client";
 import type { Screen } from "../components/types";
@@ -37,6 +37,8 @@ export interface ChatScreenProps {
   uploadMedia?: (file: File, folder: string, kind: "voice" | "video") => Promise<string | null>;
   /** Sends an already-uploaded recorded clip as a message. */
   sendChatMedia?: (url: string, kind: "voice" | "video", durationMs: number, mediaType: string, transcript?: string) => void;
+  /** Starts a LiveKit voice/video call with this conversation's other person. */
+  startCall?: (peerId: string, peerName: string, kind: "voice" | "video") => void;
   authUser?: any;
   chatInput?: string;
   setChatInput?: (v: string) => void;
@@ -76,6 +78,7 @@ export const ChatScreen = memo(function ChatScreen({
   uploadImage,
   uploadMedia,
   sendChatMedia,
+  startCall,
 }: ChatScreenProps) {
   // Blur-then-reveal chat image messages (consistent with Discover/BTS/Portfolio):
   // chat media can be sensitive, so it's blurred until the viewer taps to reveal,
@@ -247,6 +250,14 @@ export const ChatScreen = memo(function ChatScreen({
               <div className="chat-name">{chatTarget.name}</div>
               <div className="chat-type">{typingTarget === chatTarget.id ? <span style={{ color: "var(--gold)", fontStyle: "italic" }}>typing…</span> : chatTarget.type}</div>
             </div>
+            {/* Voice / video call buttons (LiveKit). Hidden until the peer has a
+                real profile id — the demo stubs have 1-2 char ids. */}
+            {startCall && typeof chatTarget.id === "string" && chatTarget.id.length > 3 && (
+              <>
+                <button className="chat-back" aria-label={`Voice call ${chatTarget.name}`} onClick={() => startCall(String(chatTarget.id), String(chatTarget.name || "Muse user"), "voice")} style={{ marginRight: 2 }}><FiPhone size={19} /></button>
+                <button className="chat-back" aria-label={`Video call ${chatTarget.name}`} onClick={() => startCall(String(chatTarget.id), String(chatTarget.name || "Muse user"), "video")} style={{ marginRight: 6 }}><FiVideo size={19} /></button>
+              </>
+            )}
             <div style={{ position: "relative" }}>
               <button
                 className="chat-back"

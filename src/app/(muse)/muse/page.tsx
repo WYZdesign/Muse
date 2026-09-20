@@ -27,6 +27,8 @@ import UpsellModal from "./components/UpsellModal";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon } from "./components/traitIcons";
 import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "./components/badgeInfo";
 import { useChatState } from "./hooks/useChatState";
+import { useCall } from "./hooks/useCall";
+import CallOverlay from "./components/CallOverlay";
 import { useBriefsState } from "./hooks/useBriefsState";
 import { useSavedListingsState } from "./hooks/useSavedListingsState";
 import { useModalVisibility } from "./hooks/useModalVisibility";
@@ -569,8 +571,10 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const { liveFeed, setLiveFeed, feedPosts, setFeedPosts, stories, setStories, liveForum, setLiveForum, forumPosts, setForumPosts } = useFeedData({ authFetch, profileId: authUser?.profile?.id ?? null, initialStories: INITIAL_STORIES });
   const { liveCommunities, setLiveCommunities, liveEvents, setLiveEvents, rsvpdEvents, setRsvpdEvents } = useCommunityData({ authFetch, profileId: authUser?.profile?.id ?? null });
   const { myBookings, setMyBookings, liveSessions, setLiveSessions, bookingReminders } = useSessionData({ authFetch, profileId: authUser?.profile?.id ?? null });
-  const { liveBriefs, setLiveBriefs } = useBriefsData({ authFetch, profileId: authUser?.profile?.id ?? null });
-  const { myStats, setMyStats, safetyCheckins, setSafetyCheckins, safetyProfile, setSafetyProfile, promptBankData, setPromptBankData, promptResponses, setPromptResponses } = useProfileData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
+  const { liveBriefs, setLiveBriefs } = useBriefsData({ authFetch, profileId: authUser?.profile?.id ?? null });  const { myStats, setMyStats, safetyCheckins, setSafetyCheckins, safetyProfile, setSafetyProfile, promptBankData, setPromptBankData, promptResponses, setPromptResponses } = useProfileData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
+
+  // ── Calls (LiveKit): ringing + in-call state for the whole app ──
+  const { incoming: incomingCall, active: activeCall, error: callError, setError: setCallError, startCall, acceptCall, declineCall, endCall } = useCall(authUser?.profile?.id ?? null);
 
   // Load a profile's reviews when the profile modal opens (reviews are
   // written via submit-review but were previously never read back).
@@ -3313,7 +3317,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             <React.Suspense fallback={null}><CodexScreen screen={screen} showScreen={showScreen} goBack={goBack} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} /></React.Suspense>
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Chat">
-            <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} goBack={goBack} messages={chatTarget?.messages || []} setMessages={((msgs: any) => setChatTarget((prev: any) => prev ? {...prev, messages: typeof msgs === "function" ? msgs(prev?.messages || []) : msgs} : prev)) as any} chatText={chatInput} setChatText={setChatInput} messagesEndRef={messagesEndRef} sendChat={sendMsg} sendChatImg={sendChatImg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} uploadImage={uploadImage} uploadMedia={uploadMedia} sendChatMedia={sendChatMedia} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
+            <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} goBack={goBack} messages={chatTarget?.messages || []} setMessages={((msgs: any) => setChatTarget((prev: any) => prev ? {...prev, messages: typeof msgs === "function" ? msgs(prev?.messages || []) : msgs} : prev)) as any} chatText={chatInput} setChatText={setChatInput} messagesEndRef={messagesEndRef} sendChat={sendMsg} sendChatImg={sendChatImg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} uploadImage={uploadImage} uploadMedia={uploadMedia} sendChatMedia={sendChatMedia} startCall={startCall} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Collab">
             <CollabScreen screen={screen} showScreen={showScreen} goBack={goBack} museCat={museCat} setMuseCat={setMuseCat} userBriefs={userBriefs} setUserBriefs={setUserBriefs} showPostBrief={showPostBrief} setShowPostBrief={setShowPostBrief} liveBriefs={liveBriefs || []} showNsfw={showNsfw} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} uid={uid} appliedBriefs={appliedBriefs} setAppliedBriefs={setAppliedBriefs} savedBriefs={savedBriefs} setSavedBriefs={setSavedBriefs} setChatTarget={setChatTarget} briefTitle={briefTitle} setBriefTitle={setBriefTitle} briefDesc={briefDesc} setBriefDesc={setBriefDesc} briefBudget={briefBudget} setBriefBudget={setBriefBudget} briefCat={briefCat} setBriefCat={setBriefCat} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} demo={DEMO_MODE} />
@@ -4125,6 +4129,37 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           weeklyLogins={weeklyLogins}
         />
       </ScreenErrorBoundary>
+
+      {/* ── Incoming call ring ── */}
+      {incomingCall && !activeCall && (
+        <div role="dialog" aria-modal="true" aria-label="Incoming call" style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(5,3,10,0.94)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: 24, textAlign: "center" }}>
+          <div style={{ width: 104, height: 104, borderRadius: "50%", background: "linear-gradient(135deg,#ffd700,#d4a5ff)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 42, fontWeight: 800, color: "#0a0612" }}>
+            {(incomingCall.fromName || "?").slice(0, 1).toUpperCase()}
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#f5f0ff" }}>{incomingCall.fromName}</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>
+            Incoming {incomingCall.kind === "voice" ? "voice" : "video"} call
+          </div>
+          <div style={{ display: "flex", gap: 18, marginTop: 10 }}>
+            <button onClick={declineCall} style={{ width: 66, height: 66, borderRadius: "50%", border: "none", background: "#ff3b30", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Decline</button>
+            <button onClick={acceptCall} style={{ width: 66, height: 66, borderRadius: "50%", border: "none", background: "#34c759", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Accept</button>
+          </div>
+        </div>
+      )}
+
+      {activeCall && (
+        <CallOverlay
+          call={activeCall}
+          onEnd={endCall}
+          onReport={() => { setReportTarget({ id: activeCall.peerId, type: "user", name: activeCall.peerName }); setShowReport(true); }}
+        />
+      )}
+
+      {callError && !activeCall && (
+        <div onClick={() => setCallError(null)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCallError(null); } }} style={{ position: "fixed", bottom: 96, left: "50%", transform: "translateX(-50%)", zIndex: 10002, background: "#2a1216", color: "#ff8a80", border: "1px solid rgba(255,138,128,0.35)", borderRadius: 12, padding: "10px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", maxWidth: "90vw" }}>
+          {callError}
+        </div>
+      )}
     </div>
   );
 }

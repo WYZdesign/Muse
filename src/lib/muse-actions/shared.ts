@@ -51,7 +51,7 @@ export function getAuthUser() {
  *  (preferences.notifications.match/message/brief/like) — previously the toggles
  *  saved but were never consulted, so opt-outs had zero effect. Omit prefKey
  *  for transactional/safety notices that must always deliver. */
-export async function emailProfile(sb: ReturnType<typeof getServiceClient>, profileId: string, subject: string, title: string, body: string, ctaLabel?: string, ctaUrl?: string, prefKey?: "match" | "message" | "brief" | "like") {
+export async function emailProfile(sb: ReturnType<typeof getServiceClient>, profileId: string, subject: string, title: string, body: string, ctaLabel?: string, ctaUrl?: string, prefKey?: "match" | "message" | "brief" | "like" | "call") {
   try {
     const { data } = await sb.from("muse_profiles").select("email, preferences").eq("id", profileId).maybeSingle();
     const prefs = (data as any)?.preferences?.notifications;
