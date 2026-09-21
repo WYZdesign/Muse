@@ -45,3 +45,7 @@ Base observed locally: `909abfd` on `mutation-observer-fix`.
 2. Test raw URL denial, authorized signed URL creation, invite revocation, and WebM upload against the real bucket.
 3. Test both-party consent from two accounts; one user must not start Egress alone.
 4. Obtain counsel review of updated public retention wording before broad beta.
+
+## Round 3 follow-up
+
+After wyzmind merged and verified the P0 implementation as `95b7544`, the only remaining wording ambiguity was that “promptly” could imply a delayed soft-delete flow. Privacy and Terms now say account access and associated content are removed **immediately**, matching the current route behavior. `npx tsc --noEmit --incremental false` again completed with no TypeScript diagnostics; the local `npx` wrapper still emits its unrelated npm-prefix access warning.
