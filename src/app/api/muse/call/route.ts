@@ -142,12 +142,15 @@ export async function POST(req: NextRequest) {
     if (action === "start") {
       // Age gate: Muse carries NSFW content, so nobody unverified gets on a
       // call. Verification is valid for 150 days (see isAgeVerificationCurrent).
-      try {
-        const { data: both } = await sb.from("muse_profiles")
+      {
+        const { data: both, error: verificationError } = await sb.from("muse_profiles")
           .select("id, age_verified, age_verified_at")
           .in("id", [profile.id, toId]);
+        if (verificationError || !both || both.length !== 2) {
+          return NextResponse.json({ error: "Age verification is temporarily unavailable", code: "AGE_VERIFICATION_UNAVAILABLE" }, { status: 503 });
+        }
         const cutoff = Date.now() - 150 * 24 * 60 * 60 * 1000;
-        const stale = (both || []).filter((p: { age_verified?: boolean; age_verified_at?: string }) =>
+        const stale = both.filter((p: { age_verified?: boolean; age_verified_at?: string }) =>
           !p.age_verified || !p.age_verified_at || new Date(p.age_verified_at).getTime() < cutoff);
         if (stale.length) {
           const mine = stale.some((p: { id: string }) => String(p.id) === String(profile.id));
@@ -156,7 +159,7 @@ export async function POST(req: NextRequest) {
             code: "AGE_VERIFICATION_REQUIRED",
           }, { status: 403 });
         }
-      } catch { /* if the check itself fails, don't block the call */ }
+      }
 
       // Busy: someone already ringing/on a call in the last 5 minutes.
       try {
@@ -284,8 +287,25 @@ export async function POST(req: NextRequest) {
     // ═══ CALL RECORDING (LiveKit Egress → Cloudflare R2) ═══
     // The R2 destination is passed inline in the request, so nothing needs to be
     // pre-configured in the LiveKit dashboard.
-    if (action === "start-recording" || action === "stop-recording") {
+    if (action === "recording-consent" || action === "start-recording" || action === "stop-recording") {
       const recId = String(body.callId || body.call_id || "");
+      if (!UUID_RE.test(recId)) return NextResponse.json({ error: "Invalid callId" }, { status: 400 });
+      const { data: call, error: callError } = await sb.from("muse_calls")
+        .select("id, caller_id, callee_id").eq("id", recId).maybeSingle();
+      if (callError || !call || (String(call.caller_id) !== String(profile.id) && String(call.callee_id) !== String(profile.id))) {
+        return NextResponse.json({ error: "Call not found" }, { status: 404 });
+      }
+
+      if (action === "recording-consent") {
+        const { error } = await sb.from("muse_call_recording_consents").upsert({
+          call_id: recId, user_id: profile.id, consent_version: "2026-09-21",
+        }, { onConflict: "call_id,user_id" });
+        if (error) return safeServerError(error, "recording consent");
+        const { data: consents } = await sb.from("muse_call_recording_consents")
+          .select("user_id").eq("call_id", recId);
+        const agreed = new Set((consents || []).map((row: any) => String(row.user_id)));
+        return NextResponse.json({ success: true, waitingForPeer: !agreed.has(String(call.caller_id)) || !agreed.has(String(call.callee_id)) });
+      }
 
       if (action === "stop-recording") {
         const egressId = String(body.egressId || body.egress_id || "");
@@ -294,9 +314,7 @@ export async function POST(req: NextRequest) {
           const ec = new EgressClient(httpUrl(), LK_KEY, LK_SECRET);
           await ec.stopEgress(egressId);
         } catch { /* already stopped */ }
-        if (UUID_RE.test(recId)) {
-          await sb.from("muse_calls").update({ recording_egress_id: null }).eq("id", recId);
-        }
+        await sb.from("muse_calls").update({ recording_egress_id: null }).eq("id", recId);
         return NextResponse.json({ success: true });
       }
 
@@ -306,6 +324,13 @@ export async function POST(req: NextRequest) {
       const sk = process.env.R2_SECRET_KEY || "";
       if (!ep || !bucket || !ak || !sk) {
         return NextResponse.json({ error: "Recording storage is not configured" }, { status: 503 });
+      }
+
+      const { data: consents, error: consentError } = await sb.from("muse_call_recording_consents")
+        .select("user_id").eq("call_id", recId);
+      const agreed = new Set((consents || []).map((row: any) => String(row.user_id)));
+      if (consentError || !agreed.has(String(call.caller_id)) || !agreed.has(String(call.callee_id))) {
+        return NextResponse.json({ error: "Both call participants must explicitly consent before recording", code: "RECORDING_CONSENT_REQUIRED" }, { status: 403 });
       }
 
       const filepath = `muse-recordings/${room}-${Date.now()}.mp4`;
@@ -330,9 +355,7 @@ export async function POST(req: NextRequest) {
           }),
           { layout: "grid" },
         );
-        if (UUID_RE.test(recId)) {
-          await sb.from("muse_calls").update({ recording_egress_id: info.egressId, recording_path: filepath }).eq("id", recId);
-        }
+        await sb.from("muse_calls").update({ recording_egress_id: info.egressId, recording_path: filepath }).eq("id", recId);
         return NextResponse.json({ success: true, egressId: info.egressId, filepath });
       } catch (e) {
         const msg = String((e as Error)?.message || e).slice(0, 200);

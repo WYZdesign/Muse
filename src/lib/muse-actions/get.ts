@@ -12,6 +12,16 @@ import { sanitizeText } from "@/lib/request-safety";
 import { bearerTokenFromReq, isConvoParticipant, UUID_RE, isAdminEmail, isAgeVerificationCurrent } from "./shared";
 import { getBoostStatus, isBoostActive } from "./misc";
 
+const PRIVATE_ALBUM_PREFIX = "storage://muse-private/";
+async function albumPhotoForViewer(sb: ReturnType<typeof getServiceClient>, photo: any) {
+  const value = typeof photo?.img_url === "string" ? photo.img_url : "";
+  if (!value.startsWith(PRIVATE_ALBUM_PREFIX)) return photo;
+  const path = value.slice(PRIVATE_ALBUM_PREFIX.length);
+  if (!path || path.includes("..")) return { ...photo, img_url: "" };
+  const { data, error } = await sb.storage.from("muse-private").createSignedUrl(path, 3600);
+  return error || !data?.signedUrl ? { ...photo, img_url: "" } : { ...photo, img_url: data.signedUrl };
+}
+
 // Server-side mirror of the client's calcMatch (components/types.ts) so
 // discovery can rank against live rows. Professional fit + vibe signals.
 const CREATIVE_SIDE: Record<string, "behind" | "front"> = {
@@ -845,7 +855,7 @@ export async function GET(req: NextRequest) {
       }
       const { data: photos, error } = await sb.from("muse_album_photos").select("id, img_url, caption, position, created_at").eq("album_id", albumId).order("position");
       if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ photos: photos || [] });
+      return NextResponse.json({ photos: await Promise.all((photos || []).map((photo: any) => albumPhotoForViewer(sb, photo))) });
     }
 
     if (type === "admin-analytics") {

@@ -206,6 +206,11 @@ export function useCall(myId: string | null | undefined) {
     if (!a || !myId) return;
     setError(null);
     try {
+      const consent = await callApi("recording-consent", a.peerId, a.kind, { callId: a.callId });
+      if (consent.waitingForPeer) {
+        setError("Your consent is saved. Ask the other participant to tap Record and consent before recording starts.");
+        return;
+      }
       const d = await callApi("start-recording", a.peerId, a.kind, { callId: a.callId });
       setRecording({ egressId: d.egressId });
       send("recording", { to: a.peerId, from: myId, on: true });

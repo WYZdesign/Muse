@@ -22,7 +22,7 @@ export default function PrivacyPage() {
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>3. Third-Party Services</h2>
         <p style={{ marginBottom: 16 }}>We share data with: <strong>Supabase</strong> (database/auth), <strong>Stripe</strong> (payments/identity), <strong>AWS Rekognition</strong> (content scanning), <strong>Mapbox</strong> (geolocation), and <strong>Vercel</strong> (hosting). Each has their own privacy policy.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>4. Data Retention</h2>
-        <p style={{ marginBottom: 16 }}>We retain your data for the lifetime of your account plus 30 days after deletion. Content moderation logs are kept for 1 year. Booking records are kept for 7 years for tax/legal compliance.</p>
+        <p style={{ marginBottom: 16 }}>When you delete your account, we remove your account and associated user content promptly. We may retain the minimum information necessary to comply with legal, tax, fraud-prevention, safety, dispute-resolution, and recordkeeping obligations. Content moderation and safety records may be retained where needed to investigate reports or comply with law.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>5. Your Rights</h2>
         <p style={{ marginBottom: 16 }}>You may: access your data, correct inaccuracies, export your data, delete your account, opt out of marketing. Contact <a href="mailto:privacy@wyzdesign.com" style={{ color: "#ffd700" }}>privacy@wyzdesign.com</a> for requests. We respond within 30 days.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>6. Data Security</h2>

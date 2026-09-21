@@ -87,7 +87,12 @@ export async function POST(req: NextRequest) {
     // flagged clip instead of just showing a filename.
     const safeFolder = folder.replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "avatars";
     const path = safeFilename(`${profileId}/${safeFolder}`, ext);
-    const publicUrl = getServiceClient().storage.from("muse-uploads").getPublicUrl(path).data.publicUrl;
+    const bucket = safeFolder === "album" ? "muse-private" : "muse-uploads";
+    // Restricted album objects are represented by an internal locator. The
+    // album endpoint authorizes the viewer before exchanging it for a signed URL.
+    const storedUrl = bucket === "muse-private"
+      ? `storage://${bucket}/${path}`
+      : getServiceClient().storage.from(bucket).getPublicUrl(path).data.publicUrl;
 
     // Content moderation — scan image uploads with AWS Rekognition before
     // storing. Video (webm) can't go through the image scanner yet; instead
@@ -106,7 +111,7 @@ export async function POST(req: NextRequest) {
         fileType: "audio/webm",
         fileSize: file.size,
         context: folder,
-        result: { safe: true, scanned: true, flaggedCategories: [], confidence: 1, shouldBlock: false, shouldReport: false, isCSAM: false, details: [{ kind: "voice", url: publicUrl }] },
+        result: { safe: true, scanned: true, flaggedCategories: [], confidence: 1, shouldBlock: false, shouldReport: false, isCSAM: false, details: [{ kind: "voice", url: storedUrl }] },
       });
     } else if (isVideo) {
       // Start async video moderation via Rekognition
@@ -120,7 +125,7 @@ export async function POST(req: NextRequest) {
           fileType: "video/webm",
           fileSize: file.size,
           context: folder,
-          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PROCESSING"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ jobId: videoJobId, url: publicUrl }] },
+          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PROCESSING"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ jobId: videoJobId, url: storedUrl }] },
         });
         // Store job ID for async result polling (could use cron or webhook)
         // For now, mark as pending and allow upload - results checked via separate endpoint
@@ -133,12 +138,12 @@ export async function POST(req: NextRequest) {
           fileType: "video/webm",
           fileSize: file.size,
           context: folder,
-          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PENDING_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ url: publicUrl }] },
+          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PENDING_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ url: storedUrl }] },
         });
         await reportIncident({
           userId: profileId,
           context: `video-upload:${folder}`,
-          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_NEEDS_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ url: publicUrl }] },
+          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_NEEDS_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ url: storedUrl }] },
         });
         try {
           await getServiceClient().from("muse_profiles").update({ nsfw: true }).eq("id", profileId);
@@ -191,15 +196,17 @@ export async function POST(req: NextRequest) {
     }
     const sb = getServiceClient();
     const mimeExt = ext === "jpg" ? "jpeg" : ext;
-    const { data, error } = await sb.storage.from("muse-uploads").upload(path, buffer, {
+    const { data, error } = await sb.storage.from(bucket).upload(path, buffer, {
       contentType: isAudio ? "audio/webm" : isVideo ? "video/webm" : `image/${mimeExt}`,
       upsert: false,
     });
 
     if (error) return safeServerError(error, "upload POST");
 
-    const { data: urlData } = sb.storage.from("muse-uploads").getPublicUrl(data.path);
-    return NextResponse.json({ success: true, url: urlData.publicUrl, path: data.path, moderation: isAudio ? "audio" : isVideo ? (videoJobId ? "video_processing" : "pending_review") : "scanned", autoNsfw: autoNsfw || undefined, videoPendingReview: videoPendingReview || undefined, videoJobId: videoJobId || undefined });
+    const url = bucket === "muse-private"
+      ? `storage://${bucket}/${data.path}`
+      : sb.storage.from(bucket).getPublicUrl(data.path).data.publicUrl;
+    return NextResponse.json({ success: true, url, path: data.path, moderation: isAudio ? "audio" : isVideo ? (videoJobId ? "video_processing" : "pending_review") : "scanned", autoNsfw: autoNsfw || undefined, videoPendingReview: videoPendingReview || undefined, videoJobId: videoJobId || undefined });
   } catch (e: unknown) {
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }

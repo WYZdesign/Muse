@@ -3,6 +3,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // signState and verifyState are pure crypto functions — no mocks needed.
 // We just test the round-trip, forgery detection, and expiry.
 
+vi.hoisted(() => {
+  process.env.OAUTH_STATE_SECRET = "test-secret-for-oauth-state";
+});
+
 import { signState, verifyState } from "@/lib/oauth-state";
 
 beforeEach(() => {

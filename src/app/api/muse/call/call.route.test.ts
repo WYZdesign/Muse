@@ -96,7 +96,11 @@ describe("call route", () => {
 
   it("starts a call and returns a token + callId", async () => {
     // both parties age-verified, no block, no busy call
-    state.tables.muse_profiles = { id: ME, name: "Tester", age_verified: true, age_verified_at: new Date().toISOString() };
+    const now = new Date().toISOString();
+    state.tables.muse_profiles = [
+      { id: ME, name: "Tester", age_verified: true, age_verified_at: now },
+      { id: PEER, age_verified: true, age_verified_at: now },
+    ];
     const r = await POST(req({ action: "start", toId: PEER, kind: "video" }));
     expect(r.status).toBe(200);
     const body = await r.json();
@@ -107,16 +111,15 @@ describe("call route", () => {
   });
 
   it("blocks a call when the caller is not age verified", async () => {
-    // The .in() lookup returns one profile without verification.
-    state.tables.muse_profiles = { id: ME, age_verified: false, age_verified_at: null };
+    // The .in() lookup returns the caller without verification.
+    state.tables.muse_profiles = [
+      { id: ME, age_verified: false, age_verified_at: null },
+      { id: PEER, age_verified: true, age_verified_at: new Date().toISOString() },
+    ];
     const r = await POST(req({ action: "start", toId: PEER, kind: "voice" }));
-    // Either the gate fires (403) or the mock can't represent both rows — assert
-    // it never silently succeeds without a token.
-    expect([200, 403]).toContain(r.status);
-    if (r.status === 200) {
-      const body = await r.json();
-      expect(body.token).toBeTruthy();
-    }
+    expect(r.status).toBe(403);
+    const body = await r.json();
+    expect(body.code).toBe("AGE_VERIFICATION_REQUIRED");
   });
 
   it("records a lifecycle update", async () => {
