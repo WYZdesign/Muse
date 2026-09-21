@@ -1,50 +1,56 @@
-# HANDOFF: opencode → ChatGPT — Round 2
+# HANDOFF: opencode → ChatGPT — Round 5
 
 **Date:** 2026-09-21
 **From:** opencode
-**Commit:** `95b7544` — pushed to main, Vercel deploying
+**Commit:** `6b99919` — pushed to main, Vercel live
 
-## What I reviewed in your work
+## Status: All P0s + all P1s resolved
 
-All 5 P0 fixes. They're good. I merged everything + fixed two test failures.
+| Fix | Who | Commit |
+|---|---|---|
+| OAuth hardcoded fallback | opencode | `1946f82` |
+| OAuth callback rate limit | opencode | `1946f82` |
+| Social button truncation | opencode | `1946f82` |
+| Terms/contrast accessibility | opencode | `1946f82` |
+| Storage privacy (muse-private bucket) | ChatGPT | `95b7544` |
+| WebM MIME policy | ChatGPT | `95b7544` |
+| Recording consent (server-side) | ChatGPT | `95b7544` |
+| Call age-verify fail-closed | ChatGPT | `95b7544` |
+| Privacy/terms retention copy | ChatGPT | `4e4343d` |
+| Auth enumeration (neutral 202) | ChatGPT | `6b99919` |
+| User-based rate limits | ChatGPT | `6b99919` |
+| QR analytics HMAC IP | ChatGPT | `6b99919` |
+| OAuth key isolation (no Stripe fallback) | opencode | `6b99919` |
+| Aria labels + tab roles | both | `6b99919` |
 
-## What I fixed (your code needed test updates)
+## What I verified in your round 4 work
 
-1. **`call.route.test.ts`** — Your new fail-closed age verification returns an array from `.in()`, but the mock returned a single object. Updated two tests to use array mocks. Both now assert your 503/403 behavior correctly.
+- **Auth enumeration:** Replaced admin.createUser with public signUp. Both new/existing return same 202. Test added. ✅
+- **Rate limits:** checkRateUser replaces checkRate for authenticated routes. Test mocks updated. ✅
+- **QR IP hashing:** HMAC-SHA256 keyed by ANALYTICS_IP_HASH_SECRET, null if no secret. ✅
+- **Client registrationPending:** Handles 202, shows toast, switches to login. ✅
 
-2. **`oauth-state.test.ts`** — My earlier change throws at module load if `OAUTH_STATE_SECRET` is unset. Added `vi.hoisted` to set it in test env.
+## Test results
+- `npx vitest run`: 360/360 pass
+- `npx tsc --noEmit`: 0 errors
+- Deploy `6b99919`: LIVE
 
-3. **Tests:** 359/359 passing. `tsc` clean.
+## Demo mode
+Demo mode is ON (user wants to test with demo data before beta). When ready for production:
+```
+vercel env add NEXT_PUBLIC_DEMO_MODE false production
+```
 
-## What I verified in your code
+## Remaining (not blocking beta)
+- Legal counsel review of privacy/terms
+- Soft-delete for account deletion (current "immediately" matches code behavior)
+- CSP nonce migration (complex, deferred)
+- SoundCloud (needs Artist Pro)
+- NCMEC API credentials (email sent, waiting for reply)
+- Supabase key rotation (done, but user should verify JWT secret rotation when ready)
 
-### ✅ Storage privacy (migration 0022 + upload/albums/get)
-- `muse-private` bucket: private, 10MB, image-only. Correct.
-- `muse-uploads` bucket: now includes `audio/webm`, `video/webm`. Correct.
-- Upload route: album uploads → `storage://muse-private/...` locator, avatars/posts → public URL. Correct.
-- Albums: validates private media before allowing access_level change. Correct.
-- GET handler: resolves `storage://` to signed URL (1hr expiry). Correct.
-
-### ✅ Recording consent (migration 0023 + route + useCall)
-- `muse_call_recording_consents` table with UNIQUE(call_id, user_id). Correct.
-- Route: `recording-consent` action upserts consent, checks both parties before allowing `start-recording`. Correct.
-- useCall: sends consent first, shows "waiting for peer" message. Correct.
-
-### ✅ Fail-closed age verification
-- Returns 503 if DB query fails or returns unexpected shape. Correct.
-- No more silent pass-through on catch. Correct.
-
-### ✅ Privacy/terms copy
-- Updated to match actual deletion behavior. Correct.
-
-## Remaining P0s from original audit
-- **Account deletion vs retention** — your copy fix is good, but the code still immediately deletes. Need soft-delete or explicit statement that "prompt" means "immediate".
-- **Auth enumeration** — registration returns "Email already registered" (P1, not P0).
-
-## What's next
-I'll keep monitoring for your changes. When you're ready for the next round, write a handoff here or just edit files — I'll pick them up.
-
-## How to verify
-- `npx tsc --noEmit` — must be 0 errors
-- `npx vitest run` — must be 359/359
-- `python W:\WYZ_Command_Center\wyz_deploy_check.py 95b7544` — must say READY
+## How to work
+- Edit files in V:\Muse directly
+- Run `npx tsc --noEmit` and `npx vitest run` before asking me to push
+- Write changes here or in CHATGPT_P0_IMPLEMENTATION_HANDOFF_2026-09-21.md
+- I handle git commit + push + deploy + verification
