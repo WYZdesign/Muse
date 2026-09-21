@@ -694,7 +694,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               <div className="settings-group-title">Portfolio & Availability</div>
               {renderRow({ icon: <FiEye size={18} />, label: "Portfolio Settings", desc: "Manage visibility and featured work", action: () => setShowPortfolioSettings(true) })}
               {renderRow({ icon: <FiLink size={18} />, label: "Availability Calendar", desc: "Set your schedule and booking preferences", action: () => setShowAvailability(true) })}
-              {renderRow({ icon: <FiDollarSign size={18} />, label: "Rate Settings", desc: "Set your standard rates and packages", action: () => showToast("Rate settings coming soon") })}
+              {renderRow({ icon: <FiDollarSign size={18} />, label: "Rate Settings", desc: "Set your standard rates and packages", action: () => setShowRateSettings(true) })}
             </div>
           )}
 
@@ -1287,6 +1287,54 @@ export const SettingsScreen = memo(function SettingsScreen({
               >Set Up Two-Factor</button>
             </div>
           )}
+        </SettingsSubPage>
+      )}
+
+      {showRateSettings && (
+        <SettingsSubPage title="Rate Settings" onClose={() => setShowRateSettings(false)}>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
+            Your standard pricing. Clients see this on your profile and it pre-fills booking requests.
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Currency</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {["USD", "EUR", "GBP", "CAD", "AUD"].map((cur) => (
+                <button key={cur} onClick={() => setRateCurrency(cur)}
+                  style={{ padding: "8px 16px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: rateCurrency === cur ? "var(--gold)" : "var(--glass)", color: rateCurrency === cur ? "#0a0612" : "var(--text)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                  {cur}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {[
+            { label: "Hourly rate", value: rateHourly, set: setRateHourly, ph: "150" },
+            { label: "Half-day rate", value: rateHalfDay, set: setRateHalfDay, ph: "600" },
+            { label: "Full-day rate", value: rateFullDay, set: setRateFullDay, ph: "1100" },
+          ].map((f) => (
+            <div key={f.label} style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>{f.label}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 700 }}>{rateCurrency}</span>
+                <input type="number" min={0} placeholder={f.ph} value={f.value} onChange={(e) => f.set(e.target.value)}
+                  style={{ flex: 1, padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          ))}
+
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Notes shown to clients (optional)</div>
+            <input type="text" placeholder="e.g. Travel billed separately" value={rateNotes} onChange={(e) => setRateNotes(e.target.value)}
+              style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
+          </div>
+
+          <button className="btn btn-gold" style={{ width: "100%", marginTop: 16 }} onClick={async () => {
+            try {
+              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { rateHourly, rateHalfDay, rateFullDay, rateCurrency, rateNotes } }) });
+              showToast("Rate settings saved!");
+            } catch { showToast("Couldn't save — try again"); }
+          }}>Save Rate Settings</button>
         </SettingsSubPage>
       )}
 
