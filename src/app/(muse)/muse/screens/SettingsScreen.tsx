@@ -309,6 +309,20 @@ export const SettingsScreen = memo(function SettingsScreen({
   const [rateFullDay, setRateFullDay] = useState<string>(String(preferences.rateFullDay ?? ""));
   const [rateCurrency, setRateCurrency] = useState<string>(String(preferences.rateCurrency ?? "USD"));
   const [rateNotes, setRateNotes] = useState<string>(String(preferences.rateNotes ?? ""));
+  // Brand/business tools (were "coming soon" stubs).
+  const [showBriefTemplates, setShowBriefTemplates] = useState(false);
+  const [showTeam, setShowTeam] = useState(false);
+  const [showHiring, setShowHiring] = useState(false);
+  const [briefTemplates, setBriefTemplates] = useState<{ title: string; desc: string; budget: string }[]>(
+    Array.isArray(preferences.briefTemplates) ? (preferences.briefTemplates as { title: string; desc: string; budget: string }[]) : [],
+  );
+  const [teamMembers, setTeamMembers] = useState<{ name: string; email: string; role: string }[]>(
+    Array.isArray(preferences.teamMembers) ? (preferences.teamMembers as { name: string; email: string; role: string }[]) : [],
+  );
+  const [hireMinRate, setHireMinRate] = useState<string>(String(preferences.hireMinRate ?? ""));
+  const [hireAvailability, setHireAvailability] = useState<string>(String(preferences.hireAvailability ?? ""));
+  const [hireTypes, setHireTypes] = useState<string>(String(preferences.hireTypes ?? ""));
+  const [hireNotes, setHireNotes] = useState<string>(String(preferences.hireNotes ?? ""));
   const [showPersonality, setShowPersonality] = useState(false);
   const [showCreativeProfile, setShowCreativeProfile] = useState(false);
   const [cpType, setCpType] = useState((obData as any)?.type || "");
@@ -685,9 +699,9 @@ export const SettingsScreen = memo(function SettingsScreen({
           {isMuseProfile ? (
             <div className="settings-group">
               <div className="settings-group-title">Hiring & Team</div>
-              {renderRow({ icon: <FiBriefcase size={18} />, label: "Brief Templates", desc: "Save and reuse brief formats", action: () => showToast("Brief templates coming soon") })}
-              {renderRow({ icon: <FiUsers size={18} />, label: "Team Management", desc: "Manage your team members and roles", action: () => showToast("Team management coming soon") })}
-              {renderRow({ icon: <FiStar size={18} />, label: "Hiring Preferences", desc: "Set preferred rates and availability requirements", action: () => showToast("Hiring preferences coming soon") })}
+              {renderRow({ icon: <FiBriefcase size={18} />, label: "Brief Templates", desc: "Save and reuse brief formats", action: () => setShowBriefTemplates(true) })}
+              {renderRow({ icon: <FiUsers size={18} />, label: "Team Management", desc: "Manage your team members and roles", action: () => setShowTeam(true) })}
+              {renderRow({ icon: <FiStar size={18} />, label: "Hiring Preferences", desc: "Set preferred rates and availability requirements", action: () => setShowHiring(true) })}
             </div>
           ) : (
             <div className="settings-group">
@@ -1287,6 +1301,103 @@ export const SettingsScreen = memo(function SettingsScreen({
               >Set Up Two-Factor</button>
             </div>
           )}
+        </SettingsSubPage>
+      )}
+
+      {showBriefTemplates && (
+        <SettingsSubPage title="Brief Templates" onClose={() => setShowBriefTemplates(false)}>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
+            Reusable formats so you don&apos;t retype the same brief every time.
+          </div>
+          {briefTemplates.length === 0 && (
+            <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>No templates yet — add your first below.</div>
+          )}
+          {briefTemplates.map((t, i) => (
+            <div key={i} style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)" }}>
+              <input value={t.title} placeholder="Template name" onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, title: e.target.value } : x))}
+                style={{ width: "100%", marginBottom: 8, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
+              <textarea value={t.desc} placeholder="What you're looking for" rows={2} onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, desc: e.target.value } : x))}
+                style={{ width: "100%", marginBottom: 8, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
+              <div style={{ display: "flex", gap: 8 }}>
+                <input value={t.budget} placeholder="Budget (e.g. $500)" onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, budget: e.target.value } : x))}
+                  style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
+                <button onClick={() => setBriefTemplates((prev) => prev.filter((_, j) => j !== i))} aria-label="Delete template"
+                  style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,138,128,0.4)", background: "transparent", color: "#ff8a80", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Delete</button>
+              </div>
+            </div>
+          ))}
+          <button className="btn btn-outline" style={{ width: "100%", marginBottom: 12 }}
+            onClick={() => setBriefTemplates((prev) => [...prev, { title: "", desc: "", budget: "" }])}>+ Add template</button>
+          <button className="btn btn-gold" style={{ width: "100%" }} onClick={async () => {
+            try {
+              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { briefTemplates } }) });
+              showToast("Brief templates saved!");
+            } catch { showToast("Couldn't save — try again"); }
+          }}>Save Templates</button>
+        </SettingsSubPage>
+      )}
+
+      {showTeam && (
+        <SettingsSubPage title="Team Management" onClose={() => setShowTeam(false)}>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
+            Who works with you. Roles are for your own reference.
+          </div>
+          {teamMembers.length === 0 && (
+            <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>No team members yet.</div>
+          )}
+          {teamMembers.map((m, i) => (
+            <div key={i} style={{ marginBottom: 10, padding: 12, borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)" }}>
+              {[
+                { k: "name" as const, ph: "Name" },
+                { k: "email" as const, ph: "Email" },
+              ].map((f) => (
+                <input key={f.k} value={m[f.k]} placeholder={f.ph} onChange={(e) => setTeamMembers((prev) => prev.map((x, j) => j === i ? { ...x, [f.k]: e.target.value } : x))}
+                  style={{ width: "100%", marginBottom: 8, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
+              ))}
+              <div style={{ display: "flex", gap: 8 }}>
+                <select value={m.role} onChange={(e) => setTeamMembers((prev) => prev.map((x, j) => j === i ? { ...x, role: e.target.value } : x))}
+                  style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit" }}>
+                  {["Owner", "Manager", "Editor", "Assistant", "Viewer"].map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+                <button onClick={() => setTeamMembers((prev) => prev.filter((_, j) => j !== i))} aria-label="Remove member"
+                  style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,138,128,0.4)", background: "transparent", color: "#ff8a80", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Remove</button>
+              </div>
+            </div>
+          ))}
+          <button className="btn btn-outline" style={{ width: "100%", marginBottom: 12 }}
+            onClick={() => setTeamMembers((prev) => [...prev, { name: "", email: "", role: "Editor" }])}>+ Add member</button>
+          <button className="btn btn-gold" style={{ width: "100%" }} onClick={async () => {
+            try {
+              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { teamMembers } }) });
+              showToast("Team saved!");
+            } catch { showToast("Couldn't save — try again"); }
+          }}>Save Team</button>
+        </SettingsSubPage>
+      )}
+
+      {showHiring && (
+        <SettingsSubPage title="Hiring Preferences" onClose={() => setShowHiring(false)}>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
+            What you look for when hiring — used to filter who you see and to auto-decline mismatches.
+          </div>
+          {[
+            { label: "Minimum rate", value: hireMinRate, set: setHireMinRate, ph: "e.g. $300/day" },
+            { label: "Availability needed", value: hireAvailability, set: setHireAvailability, ph: "e.g. Weekends, 2 weeks notice" },
+            { label: "Preferred creative types", value: hireTypes, set: setHireTypes, ph: "e.g. Photographer, MUA, Stylist" },
+            { label: "Notes", value: hireNotes, set: setHireNotes, ph: "Anything else you need" },
+          ].map((f) => (
+            <div key={f.label} style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>{f.label}</div>
+              <input value={f.value} placeholder={f.ph} onChange={(e) => f.set(e.target.value)}
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
+            </div>
+          ))}
+          <button className="btn btn-gold" style={{ width: "100%", marginTop: 16 }} onClick={async () => {
+            try {
+              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { hireMinRate, hireAvailability, hireTypes, hireNotes } }) });
+              showToast("Hiring preferences saved!");
+            } catch { showToast("Couldn't save — try again"); }
+          }}>Save Hiring Preferences</button>
         </SettingsSubPage>
       )}
 

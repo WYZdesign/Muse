@@ -35,6 +35,9 @@ export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
     "travelDates", "budgetRange",
     // Rate Settings (Settings → "Portfolio & Availability").
     "rateHourly", "rateHalfDay", "rateFullDay", "rateCurrency", "rateNotes", "ratePackages",
+    // Brand/business tools (were "coming soon" stubs).
+    "briefTemplates", "teamMembers",
+    "hireMinRate", "hireAvailability", "hireTypes", "hireNotes",
   ]);
   const source = (rest.preferences && typeof rest.preferences === "object") ? rest.preferences : rest;
   const prefs: Record<string, unknown> = {};
