@@ -315,7 +315,7 @@ export const MusesScreen = memo(function MusesScreen({
                 <div key={req.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 16, display: "flex", gap: 12, alignItems: "flex-start" }}>
                   <div style={{ width: 48, height: 48, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
                     {(() => { const av = req.request_from?.avatar || req.from_avatar; return av ? (
-                      <img src={av} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <img src={av} alt="Requester avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
                       <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: "var(--muted)" }}>
                         {((req.request_from?.name || req.from_name || "?")[0])}

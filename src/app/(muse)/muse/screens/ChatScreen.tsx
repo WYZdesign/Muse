@@ -197,7 +197,7 @@ export const ChatScreen = memo(function ChatScreen({
                         {photos.map((m, i) => (
                           <a key={i} href={m.img} target="_blank" rel="noreferrer" style={{ display: "block", aspectRatio: "1", borderRadius: 10, overflow: "hidden", background: "#141020" }}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={m.img} alt="Shared" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            <img src={m.img} alt={`Photo shared with ${chatTarget?.name || "contact"}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                           </a>
                         ))}
                       </div>

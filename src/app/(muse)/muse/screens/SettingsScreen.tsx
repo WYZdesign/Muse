@@ -1024,7 +1024,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             blockedUsers.map(uid => (
               <div key={uid} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border-subtle)" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "var(--text)" }}>
-                  {blockedProfiles[uid]?.avatar && <img src={blockedProfiles[uid].avatar} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
+                  {blockedProfiles[uid]?.avatar && <img src={blockedProfiles[uid].avatar} alt={`${blockedProfiles[uid]?.name || "Blocked user"}'s avatar`} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
                   {blockedProfiles[uid]?.name || uid}
                 </span>
                 <button className="btn btn-outline" style={{ padding: "4px 12px", fontSize: 12 }} onClick={() => { setBlockedUsers(blockedUsers.filter(b => b !== uid)); if (apiFetch) { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unblock", target_id: uid }) }).catch(() => {}); } }}>Unblock</button>
