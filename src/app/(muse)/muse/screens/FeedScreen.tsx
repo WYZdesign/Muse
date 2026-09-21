@@ -316,7 +316,7 @@ export const FeedScreen = memo(function FeedScreen({
   return (
     <div className={"screen-el" + (screen === "connections" ? " active" : "")} data-screen="connections">
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
-        <button className="chat-back" onClick={() => showScreen("discover")}><FiArrowLeft size={20} /></button>
+        <button className="chat-back" aria-label="Back" onClick={() => showScreen("discover")} style={{ width: 44, height: 44 }}><FiArrowLeft size={20} /></button>
         <div
           className="logo-link"
           style={{
@@ -351,7 +351,7 @@ export const FeedScreen = memo(function FeedScreen({
             const active = feedFilter === f.k;
             return (
               <button type="button" key={f.k} role="tab" aria-selected={active} onClick={() => setFeedFilter(f.k as any)}
-                style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: active ? "var(--text)" : "#90CAF9", background: active ? "rgba(144,202,249,0.3)" : "var(--card-bg)", border: active ? "1.5px solid rgba(144,202,249,0.4)" : "1px solid var(--border-subtle)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
+                style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: active ? "var(--text)" : "#90CAF9", background: active ? "rgba(144,202,249,0.3)" : "var(--card-bg)", border: active ? "1.5px solid rgba(144,202,249,0.4)" : "1px solid var(--border-subtle)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap", gap: 4 }}>
                 {f.l}
               </button>
             );
@@ -365,7 +365,7 @@ export const FeedScreen = memo(function FeedScreen({
             </div>
           </div>
             <div style={{ position: "relative", flex: 1 }}>
-              <textarea className="inp" placeholder="Share your work or ideas.." rows={2} value={feedText} maxLength={500} onChange={e => setFeedText(e.target.value)} style={{ resize: "none", margin: 0, minHeight: 52, background: "var(--glass)", border: "1px solid var(--border-subtle)" }} />
+              <textarea className="inp" aria-label="Create a post" placeholder="Share your work or ideas.." rows={2} value={feedText} maxLength={500} onChange={e => setFeedText(e.target.value)} style={{ resize: "none", margin: 0, minHeight: 52, background: "var(--glass)", border: "1px solid var(--border-subtle)" }} />
               {feedText.length > 0 && (
                 <span style={{ position: "absolute", bottom: 7, right: 10, fontSize: 10, color: feedText.length > 450 ? "#ff8a80" : "var(--muted)", fontWeight: 700, pointerEvents: "none" }}>{feedText.length}/500</span>
               )}
@@ -382,7 +382,7 @@ export const FeedScreen = memo(function FeedScreen({
               </div>
             )}
             <div style={{ display: "flex", gap: 8, alignItems: "center", width: "100%" }}>
-              <label style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }}>
+              <label style={{ width: 44, height: 44, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }}>
                 <FiImage size={16} />
                 <input
                   type="file"
@@ -405,15 +405,15 @@ export const FeedScreen = memo(function FeedScreen({
               {/* Record a voice or video note straight into the post */}
               <button type="button" aria-label="Record voice note" disabled={!!rec.recording || rec.sending}
                 onClick={() => rec.start("voice")}
-                style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}>
+                style={{ width: 44, height: 44, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}>
                 <FiMic size={16} />
               </button>
               <button type="button" aria-label="Record video note" disabled={!!rec.recording || rec.sending}
                 onClick={() => rec.start("video")}
-                style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}>
+                style={{ width: 44, height: 44, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}>
                 <FiVideo size={16} />
               </button>
-              <button style={{ width: 36, height: 36, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
+              <button aria-label="Add emoji" style={{ width: 44, height: 44, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
               {feedClip && (
                 <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 10, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.3)", flexShrink: 0 }}>
                   <span style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700 }}>
@@ -435,7 +435,7 @@ export const FeedScreen = memo(function FeedScreen({
               <button
                 className="btn btn-gold"
                 disabled={!feedText.trim() && !feedMedia.length && !feedClip}
-                style={{ flex: 1, padding: "10px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap", opacity: (!feedText.trim() && !feedMedia.length && !feedClip) ? 0.5 : 1, cursor: (!feedText.trim() && !feedMedia.length && !feedClip) ? "not-allowed" : "pointer" }}
+                style={{ flex: 1, padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap", opacity: (!feedText.trim() && !feedMedia.length && !feedClip) ? 0.5 : 1, cursor: (!feedText.trim() && !feedMedia.length && !feedClip) ? "not-allowed" : "pointer", minHeight: 44 }}
                 aria-disabled={!feedText.trim() && !feedMedia.length && !feedClip}
                 onClick={async () => {
                   if (feedText.trim() || feedMedia.length || feedClip) {
@@ -463,7 +463,7 @@ export const FeedScreen = memo(function FeedScreen({
               </button>
               <button
                 className="btn btn-outline"
-                style={{ flex: 1, padding: "10px 0", fontSize: 13, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap" }}
+                style={{ flex: 1, padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap", minHeight: 44 }}
                 onClick={() => openCamera("photo")}
               >
                 📷 BTS
@@ -522,7 +522,7 @@ export const FeedScreen = memo(function FeedScreen({
                     </div>
                     <div style={{ fontSize: 11, color: "var(--muted)" }}>{post.time}</div>
                   </div>
-                   <div style={{ position: "absolute", top: 10, right: 10, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", fontSize: 13 }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); } }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }} aria-label="Report post"><FiFlag size={13} /></div>
+                   <div style={{ position: "absolute", top: 10, right: 10, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", fontSize: 13 }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); } }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }} aria-label="Report post"><FiFlag size={13} /></div>
                 </div>
                 <div
                   className="feed-caption-clamp"
@@ -584,8 +584,8 @@ export const FeedScreen = memo(function FeedScreen({
                   {/* Equal flex:1 + minWidth:0 on all three (was 1.25/1.25/0.9 with
                       Report flexShrink:0) — uneven ratios could overflow the card's
                       rounded edge and clip Report. */}
-                  <button className={"feed-action-btn" + (post.liked ? " liked-pop" : "")} style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: post.liked ? "var(--gold)" : "var(--muted)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { const newLiked = !post.liked; const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) { setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); return; } updateFeedPostState(post.id, p => ({ ...p, liked: newLiked })); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "like-feed-post", postId: post.id, liked: newLiked }) }).then(r => { if (!r.ok) throw new Error("failed"); }).catch(() => { updateFeedPostState(post.id, p => ({ ...p, liked: !newLiked })); showToast("Failed to update like"); }); }}>✦ {post.likes + (post.liked ? 1 : 0)}</button>
-                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => {
+                  <button className={"feed-action-btn" + (post.liked ? " liked-pop" : "")} style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: post.liked ? "var(--gold)" : "var(--muted)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { const newLiked = !post.liked; const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) { setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); return; } updateFeedPostState(post.id, p => ({ ...p, liked: newLiked })); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "like-feed-post", postId: post.id, liked: newLiked }) }).then(r => { if (!r.ok) throw new Error("failed"); }).catch(() => { updateFeedPostState(post.id, p => ({ ...p, liked: !newLiked })); showToast("Failed to update like"); }); }}>✦ {post.likes + (post.liked ? 1 : 0)}</button>
+                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => {
                     // Tapping Comment always gives a visible result: expand the
                     // inline reply composer AND open the full post detail (which
                     // has the same composer), so the user can't get a no-op.
@@ -598,8 +598,8 @@ export const FeedScreen = memo(function FeedScreen({
                         }).catch(() => {});
                     }
                   }}>💬 {post.comments}</button>
-                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => setShareTarget(post)}>Share</button>
-                  <button className="feed-action-btn" title="Save for later" style={{ flex: 1, minWidth: 0, height: 42, background: "transparent", border: "none", color: post.saved ? "#FFD700" : "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { const newSaved = !post.saved; if (feedPostsStatic.some(p => p.id === post.id)) { setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, saved: newSaved }) : p)); } else { updateFeedPostState(post.id, p => ({ ...p, saved: newSaved })); } showToast(newSaved ? "Saved ✓" : "Removed from saves"); }}>{post.saved ? "Saved" : "Save"}</button>
+                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => setShareTarget(post)}>Share</button>
+                  <button className="feed-action-btn" title="Save for later" style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: post.saved ? "#FFD700" : "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { const newSaved = !post.saved; if (feedPostsStatic.some(p => p.id === post.id)) { setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, saved: newSaved }) : p)); } else { updateFeedPostState(post.id, p => ({ ...p, saved: newSaved })); } showToast(newSaved ? "Saved ✓" : "Removed from saves"); }}>{post.saved ? "Saved" : "Save"}</button>
                 </div>
                 {replyingTo === post.id && (
                   <div style={{ borderTop: "1px solid var(--border-subtle)" }}>

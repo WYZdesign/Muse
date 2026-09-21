@@ -445,7 +445,7 @@ export const NetworkScreen = memo(function NetworkScreen({
           padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px`,
         }}
       >
-        <button className="chat-back" onClick={() => (goBack ? goBack() : showScreen("discover"))}>
+        <button className="chat-back" aria-label="Back to menu" onClick={() => (goBack ? goBack() : showScreen("discover"))}>
           <FiArrowLeft size={20} />
         </button>
         <div
@@ -505,6 +505,7 @@ export const NetworkScreen = memo(function NetworkScreen({
             </div>
             <input
               className="inp search-input"
+              aria-label="Search professionals"
               placeholder="Search pros — name, craft, skills, who they're looking for…"
               value={proSearch}
               onChange={(e) => setProSearch(e.target.value)}
@@ -523,7 +524,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 lighter/darker shades) for its sub-options below — Skills (pink)
                 and Looking (teal) already used one consistent hue for their
                 sub-options, so their pill gradient now matches that hue too. */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 10, alignItems: "center", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: 2 }}>
+            <div style={{ display: "flex", gap: 6, marginBottom: 10, alignItems: "center", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: 2, position: "relative", maskImage: "linear-gradient(to right,transparent 0,#000 12px,#000 calc(100% - 28px),transparent 100%)", WebkitMaskImage: "linear-gradient(to right,transparent 0,#000 12px,#000 calc(100% - 28px),transparent 100%)" }} aria-label="Filter professionals">
               {([
                 { key: "experience", label: "Experience", active: proExp !== "all", grad: "linear-gradient(135deg,#90CAF9,#42A5F5)" },
                 { key: "sort", label: "Sort", active: proSort !== "match", grad: "linear-gradient(135deg,var(--gold),var(--amber))" },
@@ -534,8 +535,9 @@ export const NetworkScreen = memo(function NetworkScreen({
                 <button
                   key={f.key}
                   type="button"
+                  aria-label={`${f.label} filter${f.active ? " (active)" : ""}`}
                   onClick={() => setFilterSections(s => ({ ...s, [f.key]: !s[f.key] }))}
-                  style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: f.active ? "#0a0612" : "var(--text)", background: f.active ? f.grad : "rgba(255,255,255,0.06)", border: f.active ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "6px 14px", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
+                  style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: f.active ? "#0a0612" : "var(--text)", background: f.active ? f.grad : "rgba(255,255,255,0.06)", border: f.active ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
                 >
                   {f.label}{f.active ? " ✓" : ""}
                 </button>
@@ -543,10 +545,11 @@ export const NetworkScreen = memo(function NetworkScreen({
               <span
                 role="tab"
                 aria-selected={proHiringOnly}
+                aria-label={`Hiring filter${proHiringOnly ? " (active)" : ""}`}
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProHiringOnly(!proHiringOnly); } }}
                 onClick={() => setProHiringOnly(!proHiringOnly)}
-                style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: proHiringOnly ? "var(--text)" : "var(--text)", background: proHiringOnly ? "#4cdd88" : "rgba(255,255,255,0.06)", border: proHiringOnly ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "6px 14px", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
+                style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: proHiringOnly ? "var(--text)" : "var(--text)", background: proHiringOnly ? "#4cdd88" : "rgba(255,255,255,0.06)", border: proHiringOnly ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
               >
                 Hiring{proHiringOnly ? " ✓" : ""}
               </span>
@@ -563,7 +566,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                   <button type="button" key={b.k} role="tab" aria-selected={proExp === b.k} tabIndex={0}
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProExp(b.k); } }}
                     onClick={() => setProExp(b.k)}
-                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proExp === b.k ? "var(--text)" : b.color, background: proExp === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proExp === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
+                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proExp === b.k ? "var(--text)" : b.color, background: proExp === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proExp === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
                   >{b.label}</button>
                 ))}
               </div>
@@ -580,7 +583,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 ] as const).map((b) => (
                   <button type="button" key={b.k}
                     onClick={() => setProSort(b.k)}
-                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSort === b.k ? "var(--text)" : b.color, background: proSort === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proSort === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
+                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSort === b.k ? "var(--text)" : b.color, background: proSort === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proSort === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
                   >{b.label}</button>
                 ))}
               </div>
@@ -596,7 +599,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 ] as const).map((b) => (
                   <button type="button" key={b.k}
                     onClick={() => setProRateBand(b.k)}
-                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proRateBand === b.k ? "var(--text)" : b.color, background: proRateBand === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proRateBand === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
+                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proRateBand === b.k ? "var(--text)" : b.color, background: proRateBand === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proRateBand === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
                   >{b.label}</button>
                 ))}
               </div>
@@ -610,21 +613,21 @@ export const NetworkScreen = memo(function NetworkScreen({
                 {filterSections.skills && (
                   <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
                     <button type="button" aria-pressed={!proSkill.length} onClick={() => setProSkill([])}
-                      className="filter-chip" style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: !proSkill.length ? "var(--text)" : "#FF69B4", background: !proSkill.length ? "rgba(255,105,180,0.3)" : "rgba(255,255,255,0.06)", border: !proSkill.length ? "1.5px solid rgba(255,105,180,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>All skills</button>
+                      className="filter-chip" style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: !proSkill.length ? "var(--text)" : "#FF69B4", background: !proSkill.length ? "rgba(255,105,180,0.3)" : "rgba(255,255,255,0.06)", border: !proSkill.length ? "1.5px solid rgba(255,105,180,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>All skills</button>
                     {allSkills.map((s) => (
                       <button key={s} type="button" aria-pressed={proSkill.includes(s)}
                         onClick={() => setProSkill(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
-                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSkill.includes(s) ? "var(--text)" : "#FF69B4", background: proSkill.includes(s) ? "rgba(255,105,180,0.3)" : "rgba(255,255,255,0.06)", border: proSkill.includes(s) ? "1.5px solid rgba(255,105,180,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>{s}</button>
+                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSkill.includes(s) ? "var(--text)" : "#FF69B4", background: proSkill.includes(s) ? "rgba(255,105,180,0.3)" : "rgba(255,255,255,0.06)", border: proSkill.includes(s) ? "1.5px solid rgba(255,105,180,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>{s}</button>
                     ))}
                   </div>
                 )}
                 {filterSections.looking && allLooking.length > 0 && (
                   <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
                     <button type="button" onClick={() => setProLooking("all")}
-                      style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === "all" ? "var(--text)" : "#20B2AA", background: proLooking === "all" ? "rgba(32,178,170,0.25)" : "rgba(255,255,255,0.06)", border: proLooking === "all" ? "1.5px solid rgba(32,178,170,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>Anyone</button>
+                      style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === "all" ? "var(--text)" : "#20B2AA", background: proLooking === "all" ? "rgba(32,178,170,0.25)" : "rgba(255,255,255,0.06)", border: proLooking === "all" ? "1.5px solid rgba(32,178,170,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>Anyone</button>
                     {allLooking.map((l) => (
                       <button key={l} type="button" onClick={() => setProLooking(l)}
-                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === l ? "var(--text)" : "#20B2AA", background: proLooking === l ? "rgba(32,178,170,0.25)" : "rgba(255,255,255,0.06)", border: proLooking === l ? "1.5px solid rgba(32,178,170,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "6px 14px", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>{l}</button>
+                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === l ? "var(--text)" : "#20B2AA", background: proLooking === l ? "rgba(32,178,170,0.25)" : "rgba(255,255,255,0.06)", border: proLooking === l ? "1.5px solid rgba(32,178,170,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>{l}</button>
                     ))}
                   </div>
                 )}
@@ -686,8 +689,8 @@ export const NetworkScreen = memo(function NetworkScreen({
                   position: "absolute",
                   top: 12,
                   right: 12,
-                  width: 34,
-                  height: 34,
+                  width: 44,
+                  height: 44,
                   borderRadius: 10,
                   background: savedProfileIds.includes(p.id) ? "rgba(255,215,0,0.22)" : "rgba(0,0,0,0.45)",
                   border: savedProfileIds.includes(p.id) ? "1px solid rgba(255,215,0,0.4)" : "1px solid var(--border-subtle)",

@@ -737,7 +737,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (d.obData) setObData(d.obData);
       if (d.obStep) setObStep(d.obStep);
       if (d.authUser) setAuthUser(d.authUser);
-      if (d.matches) setMatches(d.matches);
+      if (d.matches) setMatches(d.matches.map((m: any) => {
+        const t = m.target_id || m;
+        const lastSeen = t.last_seen_at || null;
+        const online = !!lastSeen && (Date.now() - new Date(lastSeen).getTime()) < 5 * 60 * 1000;
+        return { ...m, name: t.name || m.name, img: t.avatar || m.img, type: t.type || m.type, bio: t.bio || m.bio, location: t.loc || m.location, online, lastSeen, nsfw: t.nsfw || m.nsfw };
+      }));
       if (!d.matches || d.matches.length === 0) {
         // DEMO_MODE only: never seed a real user's Matches list with fabricated
         // profiles (ARCANA/AUDREY/CHER) in live production. An empty matches list

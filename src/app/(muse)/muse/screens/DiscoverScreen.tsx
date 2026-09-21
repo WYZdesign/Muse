@@ -304,7 +304,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
           <div className={"discover-hdr-actions" + (discoverSearchOpen ? " search-open" : "")} style={{ display: "flex", gap: 4, alignItems: "center" }}>
             <button
               className="hdr-btn"
-              style={{ width: 34, height: 34, flexShrink: 0 }}
+              style={{ width: 44, height: 44, flexShrink: 0 }}
               onClick={() => { if (discoverSearchOpen) { setDiscoverSearchOpen(false); setDiscoverSearch(""); } else { setDiscoverSearchOpen(true); } }}
               aria-label="Search"
             ><FiSearch size={16} /></button>
@@ -345,9 +345,9 @@ export const DiscoverScreen = memo(function DiscoverScreen({
             )}
             {!discoverSearchOpen && (
               <>
-                <button className="hdr-btn" onClick={() => setShowDiscoveryPrefs(true)} style={{ width: 34, height: 34 }} aria-label="Discovery Preferences"><FiSettings size={16} /></button>
-                <button className={"hdr-btn" + (mapView ? " hdr-btn-glow" : "")} onClick={() => setMapView(v => !v)} title="Map View" style={{ width: 34, height: 34 }} aria-label="Map View"><FiCompass size={16} /></button>
-                <button className={"hdr-btn" + (boostActive ? " hdr-btn-glow" : "")} onClick={() => { if (boostActive) { setBoostActive(false); setBoostEnd(0); try { safeRemoveItem?.("muse_boost"); } catch {} showToast("Boost off"); return; } apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "boost" }) }).then((r: any) => { if (r.ok) { const end = Date.now() + 1800000; setBoostActive(true); setBoostEnd(end); try { safeSetItem?.("muse_boost", "" + end); } catch {} showToast("Boost on for 30 min!"); } else { r.json?.().then((d: any) => showToast((d && (d.error || "Boost unavailable")) || "Boost unavailable")).catch(() => showToast("Boost unavailable")); } }).catch(() => showToast("Boost unavailable")); }} style={{ width: 34, height: 34 }} aria-label="Boost"><FiZap size={16} /></button>
+                <button className="hdr-btn" onClick={() => setShowDiscoveryPrefs(true)} style={{ width: 44, height: 44 }} aria-label="Discovery Preferences"><FiSettings size={16} /></button>
+                <button className={"hdr-btn" + (mapView ? " hdr-btn-glow" : "")} onClick={() => setMapView(v => !v)} title="Map View" style={{ width: 44, height: 44 }} aria-label="Map View"><FiCompass size={16} /></button>
+                <button className={"hdr-btn" + (boostActive ? " hdr-btn-glow" : "")} onClick={() => { if (boostActive) { setBoostActive(false); setBoostEnd(0); try { safeRemoveItem?.("muse_boost"); } catch {} showToast("Boost off"); return; } apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "boost" }) }).then((r: any) => { if (r.ok) { const end = Date.now() + 1800000; setBoostActive(true); setBoostEnd(end); try { safeSetItem?.("muse_boost", "" + end); } catch {} showToast("Boost on for 30 min!"); } else { r.json?.().then((d: any) => showToast((d && (d.error || "Boost unavailable")) || "Boost unavailable")).catch(() => showToast("Boost unavailable")); } }).catch(() => showToast("Boost unavailable")); }} style={{ width: 44, height: 44 }} aria-label="Boost"><FiZap size={16} /></button>
               </>
             )}
           </div>
@@ -505,7 +505,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                             </>
                           )}
                           <div className={"card-photo-dots" + (cardScrolled ? " hidden" : "")}>
-                            {photos.map((_: string, i: number) => <div key={i} className={"card-photo-dot" + (i === currentPhotoIdx ? " active" : "")} />)}
+                            {photos.map((_: string, i: number) => <button key={i} className={"card-photo-dot" + (i === currentPhotoIdx ? " active" : "")} aria-label={`Show photo ${i + 1}`} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(i); }} style={{ width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", padding: 0, cursor: "pointer" }}><span style={{ width: i === currentPhotoIdx ? 20 : 7, height: 7, borderRadius: i === currentPhotoIdx ? 4 : "50%", background: i === currentPhotoIdx ? "linear-gradient(120deg,var(--gold),var(--pink),var(--lavender),var(--gold))" : "rgba(255,255,255,0.4)", transition: "all .25s", display: "block" }} /></button>)}
                           </div>
                           {isTop && (!(profile as any).nsfw || revealedNsfw.has(String(profile.id))) && (
                             <button
@@ -647,11 +647,11 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               <div className={"match-fab" + (cardScrolled ? " hidden" : "")}>
                               <button className={"match-fab-btn" + (showMatchMenu ? " open" : "")} onClick={() => setShowMatchMenu(v => !v)} aria-label="Match actions" style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>{showMatchMenu ? <FiCamera size={28} /> : "M"}</button>
                               <div className={"match-radial" + (showMatchMenu ? " open" : "")}>
-                                <button className={"match-radial-btn btn-rewind" + (canRewind ? "" : " is-disabled")} style={{ left: -110, top: 7 }} onClick={canRewind ? doRewind : undefined} disabled={!canRewind} aria-disabled={!canRewind} aria-label="Rewind">↺</button>
-                                <button className="match-radial-btn btn-nope" style={{ left: -106, top: -40 }} onClick={() => doSwipe("left")} aria-label="Pass">✕</button>
-                                <button className="match-radial-btn btn-super" style={{ left: -77, top: -77, width: 37, height: 37, fontSize: 16 }} onClick={() => doSwipe("super")} aria-label="Super Like">★</button>
+                                <button className={"match-radial-btn btn-rewind" + (canRewind ? "" : " is-disabled")} style={{ left: -110, top: 7, width: 44, height: 44 }} onClick={canRewind ? doRewind : undefined} disabled={!canRewind} aria-disabled={!canRewind} aria-label="Rewind">↺</button>
+                                <button className="match-radial-btn btn-nope" style={{ left: -106, top: -40, width: 44, height: 44 }} onClick={() => doSwipe("left")} aria-label="Pass">✕</button>
+                                <button className="match-radial-btn btn-super" style={{ left: -77, top: -77, width: 44, height: 44, fontSize: 16 }} onClick={() => doSwipe("super")} aria-label="Super Like">★</button>
                                 <button className="match-radial-btn btn-like" style={{ left: -40, top: -106, width: 44, height: 44, flexDirection: "column", fontSize: 16, lineHeight: 1 }} onClick={() => doSwipe("right")} aria-label="Like this match"><span aria-hidden="true" style={{ fontSize: 18 }}>♥</span></button>
-                                <button className="match-radial-btn btn-note" style={{ left: 7, top: -110 }} onClick={() => doLikeWithNote()} aria-label="Like + Note">✎</button>
+                                <button className="match-radial-btn btn-note" style={{ left: 7, top: -110, width: 44, height: 44 }} onClick={() => doLikeWithNote()} aria-label="Like + Note">✎</button>
                               </div>
                               </div>
                             </>

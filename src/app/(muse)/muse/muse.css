@@ -297,7 +297,7 @@ a{color:inherit;text-decoration:none}
 .chip-scroll::-webkit-scrollbar{display:none}
 .chip-scroll>*{flex:0 0 auto}
 .hamburger-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)}
-.hamburger-panel{width:78%;max-width:340px;height:100%;background:linear-gradient(135deg,rgba(212,165,255,0.30) 0%,rgba(255,215,0,0.24) 30%,rgba(255,181,194,0.26) 55%,rgba(152,251,152,0.22) 80%,rgba(15,8,30,0.06) 100%),linear-gradient(180deg,rgba(15,8,30,0.995) 0%,rgba(10,6,18,1) 100%);background-size:300% 100%,100% 100%;background-attachment:local;backdrop-filter:blur(40px);padding:calc(72px + env(safe-area-inset-top,0px)) 20px calc(32px + env(safe-area-inset-bottom,0px));overflow-y:auto;overflow-x:hidden;position:relative;border-left:1px solid rgba(212,165,255,0.08);animation:gradientShift 8s ease-in-out infinite,hamburgerSlide .35s cubic-bezier(.4,0,.2,1)}
+.hamburger-panel{width:78%;max-width:340px;height:100%;background:linear-gradient(135deg,rgba(212,165,255,0.30) 0%,rgba(255,215,0,0.24) 30%,rgba(255,181,194,0.26) 55%,rgba(152,251,152,0.22) 80%,rgba(15,8,30,0.06) 100%),linear-gradient(180deg,rgba(15,8,30,1) 0%,rgba(10,6,18,1) 100%);background-size:300% 100%,100% 100%;background-attachment:local;backdrop-filter:blur(40px);padding:calc(72px + env(safe-area-inset-top,0px)) 20px calc(32px + env(safe-area-inset-bottom,0px));overflow-y:auto;overflow-x:hidden;position:relative;border-left:1px solid rgba(212,165,255,0.08);animation:gradientShift 8s ease-in-out infinite,hamburgerSlide .35s cubic-bezier(.4,0,.2,1)}
 .hamburger-close{position:absolute;top:calc(15px + env(safe-area-inset-top,0px));left:12px;width:42px;height:42px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:var(--text);cursor:pointer;font-size:18px;transition:all .2s;z-index:1}
 .hamburger-close:hover{background:rgba(255,255,255,0.06);color:var(--gold)}
 .hamburger-bell{position:absolute;top:calc(18px + env(safe-area-inset-top,0px));right:12px;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);cursor:pointer;font-size:16px;transition:all .2s;z-index:1;animation:floatySmall 4s ease-in-out infinite}
@@ -552,7 +552,7 @@ img{background-color:var(--card-bg)}
 .halo-v9{background-image:linear-gradient(var(--card-bg),var(--card-bg)),linear-gradient(var(--grad-angle,135deg),var(--sky),var(--coral),var(--pink),var(--amber))!important}
 .online-dot{width:15px;height:15px;border-radius:50%;background:var(--mint);border:3px solid var(--bg);position:absolute;bottom:0;right:0;animation:onlinePulse 2s ease-in-out infinite}
 .match-info{flex:1;min-width:0}
-.match-name{font-size:18px;font-weight:700;line-height:1.2}
+.match-name{font-size:18px;font-weight:700;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .match-type{font-size:12px;background:linear-gradient(90deg,var(--gold),var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:600}
 .match-msg{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px;background:transparent}
 .match-loc-dist{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;font-size:12px;color:var(--text2)}
@@ -2123,7 +2123,7 @@ img{background-color:var(--card-bg)}
 .card-hero-bio{font-size:13px;color:rgba(255,255,255,0.85);line-height:1.4;text-shadow:0 1px 4px rgba(0,0,0,0.5)}
 .card-hero-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .card-hero-tag{font-size:10px;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85)}
-.card-photo-dots{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:6;pointer-events:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));transition:opacity .3s ease}
+.card-photo-dots{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:6;pointer-events:auto;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));transition:opacity .3s ease;padding:8px 0}
 .card-photo-dots.hidden{opacity:0}
 .card-photo-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.4);box-shadow:0 0 4px rgba(0,0,0,0.5);transition:all .25s}
 .card-photo-dot.active{width:20px;border-radius:4px;background:linear-gradient(120deg,var(--gold),var(--pink),var(--lavender),var(--gold));background-size:300% 300%;animation:dotLava 3s ease-in-out infinite}
@@ -2282,16 +2282,16 @@ img{background-color:var(--card-bg)}
 .screen-el.active *{pointer-events:auto}
 
 .card-prompts{display:flex;align-items:center;gap:8px;padding:10px 16px;margin:4px 16px 10px;background:rgba(255,255,255,0.03);border-radius:14px;border:1px solid rgba(255,255,255,0.06)}
-.card-prompt-arrow{background:none;border:none;color:rgba(255,255,255,0.4);font-size:24px;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0}
+.card-prompt-arrow{background:none;border:none;color:rgba(255,255,255,0.4);font-size:24px;cursor:pointer;padding:10px 8px;line-height:1;flex-shrink:0;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
 .card-prompt-text{flex:1;text-align:center}
 .card-prompt-q{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:2px}
 .card-prompt-a{font-size:13px;color:var(--text2);line-height:1.4}
-.card-prompt-like-btn{background:none;border:none;color:var(--coral);font-size:16px;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0;transition:transform .15s ease}
+.card-prompt-like-btn{background:none;border:none;color:var(--coral);font-size:16px;cursor:pointer;padding:10px 8px;line-height:1;flex-shrink:0;transition:transform .15s ease;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
 .card-prompt-like-btn:hover{transform:scale(1.15)}
 
 /* Hinge-style anchored like: tap to like a specific photo, opening the
    like-with-note composer already anchored to it. */
-.card-anchor-like-btn{position:absolute;z-index:6;display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:99px;background:rgba(10,6,18,0.55);border:1px solid rgba(255,255,255,0.16);color:#fff;font-size:11px;font-weight:700;cursor:pointer;backdrop-filter:blur(8px);transition:opacity .3s ease,transform .15s ease}
+.card-anchor-like-btn{position:absolute;z-index:6;display:flex;align-items:center;gap:5px;padding:10px 14px;min-height:44px;border-radius:99px;background:rgba(10,6,18,0.55);border:1px solid rgba(255,255,255,0.16);color:#fff;font-size:11px;font-weight:700;cursor:pointer;backdrop-filter:blur(8px);transition:opacity .3s ease,transform .15s ease}
 .card-anchor-like-btn:hover{transform:scale(1.05)}
 .card-anchor-like-btn.hidden{opacity:0;pointer-events:none}
 
