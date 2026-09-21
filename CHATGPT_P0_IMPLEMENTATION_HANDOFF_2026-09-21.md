@@ -49,3 +49,33 @@ Base observed locally: `909abfd` on `mutation-observer-fix`.
 ## Round 3 follow-up
 
 After wyzmind merged and verified the P0 implementation as `95b7544`, the only remaining wording ambiguity was that “promptly” could imply a delayed soft-delete flow. Privacy and Terms now say account access and associated content are removed **immediately**, matching the current route behavior. `npx tsc --noEmit --incremental false` again completed with no TypeScript diagnostics; the local `npx` wrapper still emits its unrelated npm-prefix access warning.
+
+## Round 4 — P1 registration account-enumeration fix (pending wyzmind review)
+
+- `src/app/api/muse/auth/route.ts` no longer queries `muse_profiles` for an email before registration and no longer returns `409 Email already registered`.
+- Registration now uses Supabase's verification-first public `signUp` flow. New and pre-existing addresses receive the same `202` `registrationPending` response and no authentication session, so response status/body do not reveal whether an address has an account.
+- The profile insert is performed only for a real newly-created auth user; Supabase's existing-email obfuscated user (no identities) is not given a duplicate profile.
+- `src/app/(muse)/muse/page.tsx` handles `registrationPending` by clearing the password, switching to Log In, and showing the neutral verification/sign-in guidance. It never assumes a `user` object is returned.
+- Verification: `node_modules/.bin/tsc.cmd --noEmit --incremental false` and `node_modules/.bin/vitest.cmd run` both exited 0; `git diff --check` passed.
+
+Reviewer checks before merge: confirm Supabase Auth's **Confirm email** setting is enabled in production and confirm its verification-email template/redirect returns users to `/muse`. This change intentionally makes verification a required registration step; that is what removes the previous oracle instead of merely rewording it.
+
+## Round 4 — P1 authenticated rate-limit identity (pending wyzmind review)
+
+- `src/app/api/muse/upload/route.ts` now uses `checkRateUser(profileId, ...)` for both upload and upload-delete after authentication rather than trusting `x-real-ip` / `x-forwarded-for` for a per-user quota.
+- `src/app/api/muse/call/route.ts` likewise keys the call quota to the authenticated profile.
+- This closes the forwarded-header evasion path for these authenticated, high-cost actions and prevents multiple legitimate users behind one NAT/mobile carrier from sharing a quota.
+- Re-ran `node_modules/.bin/tsc.cmd --noEmit --incremental false`, `node_modules/.bin/vitest.cmd run`, and `git diff --check`; all exited 0 after this edit.
+
+## Round 4 — P1 QR analytics IP pseudonymization (pending wyzmind review)
+
+- `src/app/api/qr/route.ts` previously stored a reversible Base64 prefix of `x-forwarded-for` in a column called `ip_hash`. It now stores a full SHA-256 HMAC of the normalized client IP, keyed by `ANALYTICS_IP_HASH_SECRET`.
+- If that secret is missing, the route stores `null` rather than silently falling back to raw, encoded, or unsalted IP data. This preserves the privacy claim and avoids collecting the value until operations configure the secret.
+- Deployment requirement: add a high-entropy `ANALYTICS_IP_HASH_SECRET` in Vercel before relying on repeat-scan analytics. Existing historical values remain a data-governance cleanup task.
+- Re-ran `node_modules/.bin/tsc.cmd --noEmit --incremental false`, `node_modules/.bin/vitest.cmd run`, and `git diff --check`; all exited 0.
+
+## Round 4 — regression coverage added
+
+- Added `does not reveal an existing account during registration` to `src/app/api/muse/auth/auth.route.test.ts`. It mocks Supabase's no-identities existing-user response and asserts the neutral 202 pending-registration shape, with neither address nor “already registered” text exposed.
+- `node node_modules/typescript/bin/tsc --noEmit --incremental false` and `git diff --check` exited 0 after adding the test.
+- Local Vitest verification was subsequently blocked before execution by `EPERM` creating `V:\Muse\node_modules\.vite-temp\vitest.config...mjs`; please run `npx vitest run` in wyzmind's unrestricted shell to verify the new test alongside the suite. No test failure was reported—the runner never loaded its config.

@@ -59,62 +59,49 @@ export async function POST(req: NextRequest) {
       const pwErr = validatePassword(String(password));
       if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
 
+      const normalizedEmail = email.toLowerCase();
       const sb = getServiceClient();
-      const { data: existing } = await sb.from("muse_profiles").select("id").eq("email", email.toLowerCase()).maybeSingle();
-      if (existing) return NextResponse.json({ error: "Email already registered" }, { status: 409 });
-
-      const { data: authUser, error: authErr } = await sb.auth.admin.createUser({
-        email: email.toLowerCase(),
+      // Use Supabase's public sign-up flow instead of pre-checking the profile
+      // table. A pre-check plus a distinct 409 response made this endpoint an
+      // account-enumeration oracle. The public flow sends verification mail for
+      // a new address and deliberately gives the same response to an existing
+      // address. Do not return a session from registration: that would make the
+      // two outcomes distinguishable again.
+      const { data: authUser, error: authErr } = await supabase.auth.signUp({
+        email: normalizedEmail,
         password,
-        email_confirm: true,
-        user_metadata: { name: name || email.split("@")[0] },
+        options: { data: { name: name || email.split("@")[0] } },
       });
-      if (authErr) return safeServerError(authErr, "register auth");
+      if (authErr) {
+        // Supabase may return an explicit duplicate error depending on its
+        // configuration. Keep that result indistinguishable from a successful
+        // enrolment; operational failures still use the normal safe error.
+        if (/already|registered|exists/i.test(authErr.message)) {
+          return NextResponse.json({ success: true, registrationPending: true, message: "Check your email to continue. If you already have an account, sign in or reset your password." }, { status: 202 });
+        }
+        return safeServerError(authErr, "register auth");
+      }
+
+      // With email confirmation enabled, an existing address is represented by
+      // an obfuscated user with no identities. Never create a profile for it.
+      if (!authUser.user?.identities?.length) {
+        return NextResponse.json({ success: true, registrationPending: true, message: "Check your email to continue. If you already have an account, sign in or reset your password." }, { status: 202 });
+      }
 
       // Insert ONLY whitelisted fields. Never spread arbitrary client data
       // into the profile row — that would allow mass-assignment of tier,
       // verified, suspended, etc.
       const { data: newProfile, error: profileErr } = await sb.from("muse_profiles").insert({
-        auth_id: authUser.user!.id,
-        email: email.toLowerCase(),
+        auth_id: authUser.user.id,
+        email: normalizedEmail,
         name: sanitizeText(name || email.split("@")[0], 60),
       }).select("*").maybeSingle();
       if (profileErr) return safeServerError(profileErr, "register profile");
 
-      // Welcome email (fail-open — never block signup on email).
-      sendEmail(signupWelcome(email.toLowerCase(), name)).catch(() => {});
+      // Welcome email is supplemental; Supabase owns verification delivery.
+      sendEmail(signupWelcome(normalizedEmail, name)).catch(() => {});
 
-      // Round 44 fix (2026-09-17): this endpoint used to return only
-      // { success, user } — no `session`. The client (handleAuthClick in
-      // page.tsx) reads `j.session?.access_token`, which was always ""
-      // after signup, so it never sent an Authorization header on any
-      // authFetch call for the rest of that session. Every server-
-      // authenticated action taken by a brand-new user — photo upload
-      // during onboarding, the referral-status fetch, and by the same
-      // code path likely matching/messaging/booking too — silently 401'd
-      // as "Not authenticated" until the user manually logged out and
-      // back in (the "login" action below has always returned a real
-      // session). Root-caused live: signed up a fresh test account,
-      // watched POST /api/muse/upload return 401 on the very first
-      // onboarding photo upload with a freshly-created, genuinely logged-
-      // in account. Fixed by signing the new user in immediately after
-      // creating them, the same way "login" does, so register returns a
-      // real session — fail-closed: if sign-in itself fails, the account
-      // still exists (so the client's own fallback login path still
-      // works), we just skip attaching a session rather than 500ing an
-      // otherwise-successful signup.
-      let session: { access_token: string; refresh_token: string } | null = null;
-      try {
-        const { data: signInData } = await supabase.auth.signInWithPassword({
-          email: email.toLowerCase(),
-          password,
-        });
-        if (signInData?.session) {
-          session = { access_token: signInData.session.access_token, refresh_token: signInData.session.refresh_token };
-        }
-      } catch { /* fail-open: signup still succeeds without a session */ }
-
-      return NextResponse.json({ success: true, user: authUser.user, profile: pubProfile(newProfile), session });
+      return NextResponse.json({ success: true, registrationPending: true, message: "Check your email to verify your account, then sign in.", profile: pubProfile(newProfile) }, { status: 202 });
     }
 
     if (action === "login") {

@@ -4,7 +4,7 @@ vi.mock("@/lib/supabase", () => ({
   supabase: { auth: { getUser: async (token: string) => (globalThis as any).__authUser || { data: { user: null } } } },
   getServiceClient: () => (globalThis as any).__sbMock,
 }));
-vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, clientIp: () => "10.0.0.1" }));
+vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/http", () => ({ safeServerError: (e: any, ctx: string) => ({ status: 500, json: async () => ({ error: `${ctx} failed` }) }) as any }));
 vi.mock("@/lib/contentScan", () => ({
   scanWithRekognition: async () => ({ safe: true, scanned: true, flaggedCategories: [], confidence: 0, shouldBlock: false, shouldReport: false, isCSAM: false, details: [] }),

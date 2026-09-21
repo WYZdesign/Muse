@@ -2,6 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import QRCode from "qrcode";
+import crypto from "crypto";
+
+// Do not store a raw IP (or a reversible encoding of one) in analytics. A
+// keyed HMAC supports the limited legitimate use case—counting repeat scans—
+// without making the database a lookup table for visitors' addresses. If the
+// deployment secret is absent, omit the value rather than quietly weakening
+// the privacy guarantee with an unsalted hash.
+function analyticsIpHash(req: NextRequest): string | null {
+  const secret = process.env.ANALYTICS_IP_HASH_SECRET;
+  const ip = clientIp(req);
+  if (!secret || ip === "unknown") return null;
+  return crypto.createHmac("sha256", secret).update(ip).digest("hex");
+}
 
 // Local QR generation (qrcode npm package) — no external API dependency.
 async function generateQrSvg(url: string): Promise<string> {
@@ -55,7 +68,7 @@ export async function GET(req: NextRequest) {
         event_type: "scan",
         referrer: req.headers.get("referer") || null,
         user_agent: req.headers.get("user-agent") || null,
-        ip_hash: Buffer.from(req.headers.get("x-forwarded-for") || "unknown").toString("base64").slice(0, 16),
+        ip_hash: analyticsIpHash(req),
         created_at: new Date().toISOString(),
       });
     }
@@ -108,7 +121,7 @@ export async function POST(req: NextRequest) {
         event_type: "share",
         referrer: req.headers.get("referer") || null,
         user_agent: req.headers.get("user-agent") || null,
-        ip_hash: Buffer.from(req.headers.get("x-forwarded-for") || "unknown").toString("base64").slice(0, 16),
+        ip_hash: analyticsIpHash(req),
         created_at: new Date().toISOString(),
       });
     }

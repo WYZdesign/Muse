@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
-import { checkRate, clientIp } from "@/lib/rate-limit";
+import { checkRateUser } from "@/lib/rate-limit";
 import { scanWithRekognition, scanWithSightengine, startVideoModeration, logScan, reportIncident, escalateToNcmec } from "@/lib/contentScan";
 
 const ALLOWED_SIGNATURES: Record<string, { bytes: number[]; ext: string }> = {
@@ -54,9 +54,11 @@ export async function POST(req: NextRequest) {
     if (profileId === "__SUSPENDED__") return NextResponse.json({ error: "Account suspended", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
     if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-    // Rate limit uploads per user (generous: 60/min for normal photo workflow)
-    const ip = clientIp(req);
-    if (!await checkRate(ip, "upload", 60)) {
+    // The caller is authenticated and resolved to a profile, so key this limit
+    // to that profile rather than a forwarded IP header. This prevents a client
+    // from changing a spoofable forwarding header to evade the quota and avoids
+    // punishing unrelated creators behind the same NAT/mobile carrier.
+    if (!await checkRateUser(profileId, "upload", 60)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 
@@ -217,8 +219,7 @@ export async function DELETE(req: NextRequest) {
     const profileId = await authedProfileId(req);
     if (profileId === "__SUSPENDED__") return NextResponse.json({ error: "Account suspended", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
     if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    const ip = clientIp(req);
-    if (!await checkRate(ip, "upload-delete", 60)) {
+    if (!await checkRateUser(profileId, "upload-delete", 60)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 

@@ -2085,6 +2085,13 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       });
       const j = await r.json();
       if (!r.ok) { setFormErrors({ email: j.error || "Auth failed" }); setAuthLoading(false); return; }
+      if (j.registrationPending) {
+        setAuthMode("login");
+        setAuthPass("");
+        showToast(j.message || "Check your email to continue, then sign in.");
+        setAuthLoading(false);
+        return;
+      }
       // The login endpoint now returns the session token directly — use it.
       const accessToken = j.session?.access_token || "";
       const refreshToken = j.session?.refresh_token || "";
@@ -2816,14 +2823,14 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                 <div className="hero-text" style={{marginBottom:14}}>muse</div>
                 <div className="hero-sub">Where creatives find <em>real connections</em></div>
                 <div style={{width:"100%",maxWidth:320,margin:"0 auto"}}>
-                  <div className="auth-tabs">
-                    <button className={"auth-tab"+(authMode==="login"?" active":"")} onClick={()=>setAuthMode("login")}>Log In</button>
-                    <button className={"auth-tab"+(authMode==="signup"?" active":"")} onClick={()=>setAuthMode("signup")}>Sign Up</button>
+                  <div className="auth-tabs" role="tablist" aria-label="Authentication mode">
+                    <button className={"auth-tab"+(authMode==="login"?" active":"")} role="tab" aria-selected={authMode==="login"} onClick={()=>setAuthMode("login")}>Log In</button>
+                    <button className={"auth-tab"+(authMode==="signup"?" active":"")} role="tab" aria-selected={authMode==="signup"} onClick={()=>setAuthMode("signup")}>Sign Up</button>
                   </div>
-                  <input className={"inp"+(formErrors.email?" error":"")} placeholder="Email" type="email" value={authEmail} onChange={e=>{setAuthEmail(e.target.value);setFormErrors(p=>({...p,email:""}))}} style={authEmail.length>28?{textOverflow:"ellipsis"}:{}} title={authEmail} />
+                  <input className={"inp"+(formErrors.email?" error":"")} placeholder="Email" type="email" aria-label="Email address" value={authEmail} onChange={e=>{setAuthEmail(e.target.value);setFormErrors(p=>({...p,email:""}))}} style={authEmail.length>28?{textOverflow:"ellipsis"}:{}} title={authEmail} />
                   {formErrors.email && <div className="error-msg">{formErrors.email}</div>}
                   <div style={{position:"relative"}}>
-                    <input className={"inp"+(formErrors.pass?" error":"")} placeholder="Password" type={showPass?"text":"password"} value={authPass} onChange={e=>{setAuthPass(e.target.value);setFormErrors(p=>({...p,pass:""}))}} style={{paddingRight:44}} />
+                    <input className={"inp"+(formErrors.pass?" error":"")} placeholder="Password" type={showPass?"text":"password"} aria-label="Password" value={authPass} onChange={e=>{setAuthPass(e.target.value);setFormErrors(p=>({...p,pass:""}))}} style={{paddingRight:44}} />
                     <button type="button" onClick={()=>setShowPass(p=>!p)} style={{position:"absolute",right:4,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:18,padding:0,lineHeight:1,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center"}} aria-label={showPass?"Hide password":"Show password"}>{showPass?"🙈":"👁️"}</button>
                   </div>
                   {authMode==="signup" && authPass && (()=>{const l=authPass.length;const u=/[A-Z]/.test(authPass);const y=/[!@#$%^&*]/.test(authPass);const s=l>=8&&u&&y?l>=12?4:3:l>=6?2:1;const lbl=["","Weak","Fair","Strong","Very strong"][s];const col=["","var(--sunset)","var(--sunset-orange)","var(--amber)","var(--mint)"][s];const t=["","weak","fair","strong","vstrong"][s];return(<div><div className="pw-meter-label" style={{color:col}}>{lbl}</div><div className="pw-meter-wrap"><div className={"pw-meter-bar"+(s>=1?" "+t:"")}/><div className={"pw-meter-bar"+(s>=2?" "+t:"")}/><div className={"pw-meter-bar"+(s>=3?" "+t:"")}/><div className={"pw-meter-bar"+(s>=4?" "+t:"")}/></div></div>);})()}

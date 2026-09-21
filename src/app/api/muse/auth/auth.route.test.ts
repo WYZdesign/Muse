@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // allow validation (400) to fire for the distinct-IP validation tests, and 429 after
 // 5 for the "rate limits registration" test (uses ip 55.55.55.55). Per-IP counting.
 const authCallsByIp = new Map<string, number>();
+const { mockSignUp } = vi.hoisted(() => ({ mockSignUp: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({
   checkRate: vi.fn(async (ip: string) => {
     const n = (authCallsByIp.get(ip) || 0) + 1;
@@ -14,6 +15,7 @@ vi.mock("@/lib/rate-limit", () => ({
   clientIp: vi.fn((r: any) => r?.headers?.get?.("x-forwarded-for")?.split(",")[0]?.trim() || "10.0.0.1"),
 }));
 vi.mock("@/lib/supabase", () => ({
+  supabase: { auth: { signUp: mockSignUp } },
   getServiceClient: vi.fn(() => ({ auth: { getSession: vi.fn(async () => ({ data: { session: null } })) } })),
   getAnonClient: vi.fn(() => ({})),
 }));
@@ -35,7 +37,7 @@ function mockReq(body: unknown, ip = "10.0.0.1") {
 }
 
 describe("auth route (integration)", () => {
-  beforeEach(() => { authCallsByIp.clear(); });
+  beforeEach(() => { authCallsByIp.clear(); mockSignUp.mockReset(); });
 
   it("rejects missing email/password with 400", async () => {
     const r = await POST(mockReq({ action: "register" }));
@@ -72,5 +74,18 @@ describe("auth route (integration)", () => {
       status = r.status;
     }
     expect(status).toBe(429);
+  });
+
+  it("does not reveal an existing account during registration", async () => {
+    // Supabase obfuscates an existing address as a user without identities
+    // when email confirmation is enabled. The route must preserve that
+    // neutral result rather than restoring a 409/email-exists oracle.
+    mockSignUp.mockResolvedValue({ data: { user: { id: "opaque", identities: [] } }, error: null });
+    const r = await POST(mockReq({ action: "register", email: "existing@example.com", password: "Strong!123" }));
+    const body = await r.json();
+    expect(r.status).toBe(202);
+    expect(body).toMatchObject({ success: true, registrationPending: true });
+    expect(JSON.stringify(body).toLowerCase()).not.toContain("already registered");
+    expect(JSON.stringify(body).toLowerCase()).not.toContain("existing@example.com");
   });
 });

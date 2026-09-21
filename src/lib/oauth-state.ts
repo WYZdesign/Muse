@@ -1,7 +1,7 @@
 import crypto from "crypto";
 
-const SECRET = process.env.OAUTH_STATE_SECRET || process.env.STRIPE_SECRET_KEY;
-if (!SECRET) { throw new Error("FATAL: OAUTH_STATE_SECRET (or STRIPE_SECRET_KEY) must be set — refusing to start with a weak fallback"); }
+const SECRET = process.env.OAUTH_STATE_SECRET;
+if (!SECRET) { throw new Error("FATAL: OAUTH_STATE_SECRET must be set — refusing to start without a dedicated signing key"); }
 const _SECRET: string = SECRET;
 
 /** Sign state data as HMAC-SHA256(base64url(json)). */

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { AccessToken, RoomServiceClient, EgressClient, EncodedFileOutput, EncodedFileType, S3Upload } from "livekit-server-sdk";
-import { checkRate, clientIp } from "@/lib/rate-limit";
+import { checkRateUser } from "@/lib/rate-limit";
 import { safeServerError } from "@/lib/http";
 import { UUID_RE } from "@/lib/muse-actions/shared";
 
@@ -65,8 +65,7 @@ export async function POST(req: NextRequest) {
     if (auth.error) return auth.error;
     const profile = auth.profile!;
 
-    const ip = clientIp(req);
-    if (!await checkRate(ip, "call", 40)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    if (!await checkRateUser(profile.id, "call", 40)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
 
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || "");
