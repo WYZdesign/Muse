@@ -277,6 +277,13 @@ Verification: `tsc` clean, `vitest` 350/350, `next build` clean.
 - Env: `LIVEKIT_URL` / `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` added to Vercel
   Production and vaulted.
 
+
+### Key rotation (2026-09-21)
+
+- Vercel `SUPABASE_SECRET_KEY` updated to the rotated `sb_secret_` key (verified working).
+- Added `NEXT_PUBLIC_SUPABASE_ANON_KEY` (legacy anon JWT, verified working) so the client no longer depends on the mis-named publishable entry.
+- Vault: rotated secret key, legacy service_role/anon JWTs and the new legacy JWT secret recorded.
+
 ## Prior verified baseline: `e192af3`
 
 Everything at or before this commit is real, live, deployed code — this
