@@ -525,7 +525,7 @@ export const BtsScreen = memo(function BtsScreen({
                 >
                   <Image
                     src={s.avatar}
-                    alt="Avatar"
+                    alt={`${s.author || "Creator"}'s avatar`}
                     width={32}
                     height={32}
                     onError={handleImgError}

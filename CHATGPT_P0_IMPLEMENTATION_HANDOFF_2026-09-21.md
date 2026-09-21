@@ -94,3 +94,33 @@ Reviewer checks before merge: confirm Supabase Auth's **Confirm email** setting 
 - Added useful text labels for profile-photo, prompt, and portfolio-photo navigation, including portfolio dot controls, instead of leaving assistive technology to announce arrow glyphs or unnamed buttons.
 - Replaced generic Discover image alt text with `Profile photo of {name}` and `{name}'s portfolio photo {n}` so the card's visual work has meaningful context.
 - `node node_modules/typescript/bin/tsc --noEmit --incremental false` and `git diff --check` exited 0. Please run the normal full Vitest suite before merge.
+
+## Round 5 — media-label accessibility bundle (pending wyzmind review)
+
+- Replaced generic avatar alt text in BTS, Feed composer/detail, and notification rows with the creator/sender's name where available.
+- Follow-on identified, intentionally not mass-edited: numerous legacy interactive informational badge spans in Collab, Community, Network, Profile, and Sessions are pointer-focusable but lack Enter/Space handlers. This needs a systematic component-level keyboard-a11y pass plus regression coverage, rather than a brittle search-and-replace across unrelated flows.
+- `node node_modules/typescript/bin/tsc --noEmit --incremental false` and `git diff --check` exited 0 for the complete current bundle. Please run the normal full Vitest suite before merge.
+
+## Round 5 — keyboard badge bundle (pending wyzmind review)
+
+- Added Enter/Space activation to every interactive category/status badge on Collab briefs (TFP, Paid, Open Call, Ideas, Urgent, and 18+) and to the “Interested” / locked “Pro” labels in Muses.
+- These were already announced as buttons and focusable, but mouse/touch-only; keyboard users can now open the same explanatory badge information.
+- The remaining cross-screen badge inventory is still documented above for a systematic follow-on (Community, Network, Profile, Sessions). `node node_modules/typescript/bin/tsc --noEmit --incremental false` and `git diff --check` exited 0 after this bundle.
+
+## Round 5 — Community and Profile keyboard badge bundle (pending wyzmind review)
+
+- Added Enter/Space activation to Community detail category/18+ badges and Profile founding-tier/earned-badge controls.
+- The remaining known keyboard-badge screens are Network and Sessions, plus the repeating Community list badges; these are suitable for wyzmind's next systematic bundle if desired.
+- `node node_modules/typescript/bin/tsc --noEmit --incremental false` and `git diff --check` exited 0.
+
+## Round 5 — complete Sessions keyboard badge variants (pending wyzmind review)
+
+- Completed the remaining high-use booking variants in Sessions: skill tags, requester-side member verification, payment state, and booking state now activate with Enter/Space.
+- Current unmerged source bundle spans BTS/Feed/notifications media labels and the Collab, Community detail, Muses, Network, Profile, and Sessions keyboard fixes. Wyzmind should run the full Vitest suite, commit, deploy, then re-check the mobile AX tree.
+- `node node_modules/typescript/bin/tsc --noEmit --incremental false` and `git diff --check` exited 0.
+
+## Round 5 — Network and Sessions keyboard badge bundle (pending wyzmind review)
+
+- Added Enter/Space activation to Network “Seeking” and professional-signal badges, plus the first booking-card host-verification, payment-state, and session-state badges in Sessions.
+- This closes the high-traffic card instances from the original keyboard badge inventory. Additional duplicate detail-card variants in Sessions and Community list-card badges remain a low-risk cleanup pass if wyzmind wants to complete every legacy instance.
+- `node node_modules/typescript/bin/tsc --noEmit --incremental false` and `git diff --check` exited 0.

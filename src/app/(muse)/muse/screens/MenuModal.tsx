@@ -30,7 +30,7 @@ function NotificationAvatar({ name, src, letter }: { name?: string; src?: string
   if (!src || failed) {
     return <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--pink),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{initial}</div>;
   }
-  return <Image loading="lazy" src={src} alt="Avatar" width={40} height={40} onError={() => setFailed(true)} style={{ borderRadius: "50%", objectFit: "cover", backgroundColor: "var(--card-bg)", flexShrink: 0 }} />;
+  return <Image loading="lazy" src={src} alt={`${name || "Notification sender"}'s avatar`} width={40} height={40} onError={() => setFailed(true)} style={{ borderRadius: "50%", objectFit: "cover", backgroundColor: "var(--card-bg)", flexShrink: 0 }} />;
 }
 
 // Swipe-to-dismiss notification row. Horizontal swipe (touch OR mouse) translates

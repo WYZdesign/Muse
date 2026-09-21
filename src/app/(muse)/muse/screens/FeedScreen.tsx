@@ -361,7 +361,7 @@ export const FeedScreen = memo(function FeedScreen({
             <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingRight: 3 }}>
             <div style={{ position: "relative", width: 52, height: 52 }}>
-              <Image loading="lazy" src={currentUser.avatar} alt="Avatar" width={52} height={52} className="feed-avatar" style={{ flexShrink: 0, borderRadius: "50%", objectFit: "cover" }} onError={handleImgError} />
+              <Image loading="lazy" src={currentUser.avatar} alt={`${currentUser.name || "Your"} avatar`} width={52} height={52} className="feed-avatar" style={{ flexShrink: 0, borderRadius: "50%", objectFit: "cover" }} onError={handleImgError} />
             </div>
           </div>
             <div style={{ position: "relative", flex: 1 }}>
@@ -669,7 +669,7 @@ export const FeedScreen = memo(function FeedScreen({
             </div>
             <div className="modal-body">
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                <Image loading="lazy" src={dp.avatar} alt="Avatar" width={60} height={60} className="feed-avatar" style={{ backgroundColor: "var(--card-bg)" }} onError={handleImgError} />
+                <Image loading="lazy" src={dp.avatar} alt={`${dp.author || "Post author"}'s avatar`} width={60} height={60} className="feed-avatar" style={{ backgroundColor: "var(--card-bg)" }} onError={handleImgError} />
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 800 }}>{dp.author}</div>
                   <div style={{ fontSize: 12, color: "var(--muted)" }}>{dp.time}</div>
