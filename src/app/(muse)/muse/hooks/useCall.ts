@@ -38,10 +38,16 @@ export function useCall(myId: string | null | undefined) {
   const [incoming, setIncoming] = useState<IncomingCall>(null);
   const [active, setActive] = useState<ActiveCall>(null);
   const [error, setError] = useState<string | null>(null);
+  // Recording state: `recording` = we started it, `peerRecording` = they did
+  // (broadcast), so BOTH sides always see that a recording is in progress.
+  const [recording, setRecording] = useState<{ egressId?: string } | null>(null);
+  const [peerRecording, setPeerRecording] = useState(false);
+  const recordingRef = useRef<{ egressId?: string } | null>(null);
   const chanRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const activeRef = useRef<ActiveCall>(null);
 
   useEffect(() => { activeRef.current = active; }, [active]);
+  useEffect(() => { recordingRef.current = recording; }, [recording]);
 
   const send = useCallback((event: string, payload: Record<string, unknown>) => {
     try { chanRef.current?.send({ type: "broadcast", event, payload }); } catch { /* channel not ready */ }
@@ -79,6 +85,13 @@ export function useCall(myId: string | null | undefined) {
       if (!payload || String(payload.to) !== String(myId)) return;
       setActive(null);
       setIncoming(null);
+      setPeerRecording(false);
+    });
+
+    // Both sides always see that a recording is happening.
+    ch.on("broadcast", { event: "recording" }, ({ payload }: { payload: any }) => {
+      if (!payload || String(payload.to) !== String(myId)) return;
+      setPeerRecording(Boolean(payload.on));
     });
 
     ch.subscribe();
@@ -187,5 +200,30 @@ export function useCall(myId: string | null | undefined) {
     }
   }, [myId]);
 
-  return { incoming, active, error, setError, startCall, acceptCall, declineCall, endCall, leaveVoicemail, fetchHistory, startRoom };
+  /** Start a server-side recording (LiveKit egress → R2). Both sides are told. */
+  const startRecording = useCallback(async () => {
+    const a = activeRef.current;
+    if (!a || !myId) return;
+    setError(null);
+    try {
+      const d = await callApi("start-recording", a.peerId, a.kind, { callId: a.callId });
+      setRecording({ egressId: d.egressId });
+      send("recording", { to: a.peerId, from: myId, on: true });
+    } catch (e: unknown) {
+      setError((e as Error)?.message || "Could not start recording");
+    }
+  }, [myId, callApi, send]);
+
+  const stopRecording = useCallback(async () => {
+    const a = activeRef.current;
+    const r = recordingRef.current;
+    setRecording(null);
+    if (!a || !myId) return;
+    send("recording", { to: a.peerId, from: myId, on: false });
+    if (r?.egressId) {
+      try { await callApi("stop-recording", a.peerId, a.kind, { callId: a.callId, egressId: r.egressId }); } catch { /* already stopped */ }
+    }
+  }, [myId, callApi, send]);
+
+  return { incoming, active, error, setError, startCall, acceptCall, declineCall, endCall, leaveVoicemail, fetchHistory, startRoom, recording, peerRecording, startRecording, stopRecording };
 }

@@ -574,7 +574,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const { liveBriefs, setLiveBriefs } = useBriefsData({ authFetch, profileId: authUser?.profile?.id ?? null });  const { myStats, setMyStats, safetyCheckins, setSafetyCheckins, safetyProfile, setSafetyProfile, promptBankData, setPromptBankData, promptResponses, setPromptResponses } = useProfileData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
 
   // ── Calls (LiveKit): ringing + in-call state for the whole app ──
-  const { incoming: incomingCall, active: activeCall, error: callError, setError: setCallError, startCall, acceptCall, declineCall, endCall, leaveVoicemail, fetchHistory: fetchCallHistory, startRoom } = useCall(authUser?.profile?.id ?? null);
+  const { incoming: incomingCall, active: activeCall, error: callError, setError: setCallError, startCall, acceptCall, declineCall, endCall, leaveVoicemail, fetchHistory: fetchCallHistory, startRoom, recording: callRecording, peerRecording: callPeerRecording, startRecording: startCallRecording, stopRecording: stopCallRecording } = useCall(authUser?.profile?.id ?? null);
 
   // Load a profile's reviews when the profile modal opens (reviews are
   // written via submit-review but were previously never read back).
@@ -4153,6 +4153,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           onEnd={endCall}
           onVoicemail={leaveVoicemail}
           uploadMedia={uploadMedia}
+          recording={!!callRecording}
+          peerRecording={callPeerRecording}
+          onToggleRecording={() => (callRecording ? stopCallRecording() : startCallRecording())}
           onReport={() => { setReportTarget({ id: activeCall.peerId, type: "user", name: activeCall.peerName }); setShowReport(true); }}
         />
       )}

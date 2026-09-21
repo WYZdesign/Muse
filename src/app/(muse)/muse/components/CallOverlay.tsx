@@ -9,7 +9,7 @@ import {
   type RemoteTrackPublication,
   type RemoteParticipant,
 } from "livekit-client";
-import { FiMic, FiMicOff, FiVideo, FiVideoOff, FiPhoneOff, FiFlag, FiVoicemail, FiSquare } from "react-icons/fi";
+import { FiMic, FiMicOff, FiVideo, FiVideoOff, FiPhoneOff, FiFlag, FiVoicemail, FiSquare, FiDisc } from "react-icons/fi";
 import type { ActiveCall } from "../hooks/useCall";
 import { useRecorder } from "../hooks/useRecorder";
 
@@ -27,12 +27,18 @@ export default function CallOverlay({
   onReport,
   onVoicemail,
   uploadMedia,
+  recording,
+  peerRecording,
+  onToggleRecording,
 }: {
   call: NonNullable<ActiveCall>;
   onEnd: () => void;
   onReport?: () => void;
   onVoicemail?: (url: string, durationMs: number, transcript?: string) => void;
   uploadMedia?: (file: File, folder: string, kind: "voice" | "video") => Promise<string | null>;
+  recording?: boolean;
+  peerRecording?: boolean;
+  onToggleRecording?: () => void;
 }) {
   const roomRef = useRef<Room | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -203,10 +209,24 @@ export default function CallOverlay({
             {rec.recording ? <FiSquare size={20} /> : <FiVoicemail size={20} />}
           </button>
         )}
+        {onToggleRecording && (
+          <button onClick={onToggleRecording} aria-label={recording ? "Stop recording" : "Record this call"} aria-pressed={!!recording}
+            style={{ width: 54, height: 54, borderRadius: "50%", border: "none", background: recording ? "#ff3b30" : "rgba(255,255,255,0.12)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <FiDisc size={20} />
+          </button>
+        )}
         <button onClick={onEnd} aria-label="End call" style={{ width: 64, height: 64, borderRadius: "50%", border: "none", background: "#ff3b30", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <FiPhoneOff size={26} />
         </button>
       </div>
+
+      {/* Both sides always know when a recording is running. */}
+      {(recording || peerRecording) && (
+        <div role="status" aria-live="polite" style={{ position: "absolute", top: "calc(14px + env(safe-area-inset-top,0px))", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 7, padding: "6px 14px", borderRadius: 99, background: "rgba(255,59,48,0.92)", color: "#fff", fontSize: 12, fontWeight: 800, letterSpacing: 0.5, zIndex: 5 }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff" }} />
+          REC{peerRecording && !recording ? " · other person is recording" : ""}
+        </div>
+      )}
 
       {canVoicemail && (
         <div style={{ textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.45)", paddingBottom: "calc(14px + env(safe-area-inset-bottom,0px))", background: "#0a0612" }}>

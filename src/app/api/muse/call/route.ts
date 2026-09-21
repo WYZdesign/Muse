@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
-import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
+import { AccessToken, RoomServiceClient, EgressClient, EncodedFileOutput, EncodedFileType, S3Upload } from "livekit-server-sdk";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { safeServerError } from "@/lib/http";
 import { UUID_RE } from "@/lib/muse-actions/shared";
@@ -279,6 +279,65 @@ export async function POST(req: NextRequest) {
         .order("created_at", { ascending: false })
         .limit(50);
       return NextResponse.json({ success: true, calls: rows || [] });
+    }
+
+    // ═══ CALL RECORDING (LiveKit Egress → Cloudflare R2) ═══
+    // The R2 destination is passed inline in the request, so nothing needs to be
+    // pre-configured in the LiveKit dashboard.
+    if (action === "start-recording" || action === "stop-recording") {
+      const recId = String(body.callId || body.call_id || "");
+
+      if (action === "stop-recording") {
+        const egressId = String(body.egressId || body.egress_id || "");
+        if (!egressId) return NextResponse.json({ error: "egressId required" }, { status: 400 });
+        try {
+          const ec = new EgressClient(httpUrl(), LK_KEY, LK_SECRET);
+          await ec.stopEgress(egressId);
+        } catch { /* already stopped */ }
+        if (UUID_RE.test(recId)) {
+          await sb.from("muse_calls").update({ recording_egress_id: null }).eq("id", recId);
+        }
+        return NextResponse.json({ success: true });
+      }
+
+      const ep = process.env.R2_ENDPOINT || "";
+      const bucket = process.env.R2_BUCKET || "";
+      const ak = process.env.R2_ACCESS_KEY || "";
+      const sk = process.env.R2_SECRET_KEY || "";
+      if (!ep || !bucket || !ak || !sk) {
+        return NextResponse.json({ error: "Recording storage is not configured" }, { status: 503 });
+      }
+
+      const filepath = `muse-recordings/${room}-${Date.now()}.mp4`;
+      try {
+        const ec = new EgressClient(httpUrl(), LK_KEY, LK_SECRET);
+        const info = await ec.startRoomCompositeEgress(
+          room,
+          new EncodedFileOutput({
+            fileType: EncodedFileType.MP4,
+            filepath,
+            output: {
+              case: "s3",
+              value: new S3Upload({
+                accessKey: ak,
+                secret: sk,
+                bucket,
+                region: "auto",
+                endpoint: ep.replace(/^https?:\/\//, ""),
+                forcePathStyle: true,
+              }),
+            },
+          }),
+          { layout: "grid" },
+        );
+        if (UUID_RE.test(recId)) {
+          await sb.from("muse_calls").update({ recording_egress_id: info.egressId, recording_path: filepath }).eq("id", recId);
+        }
+        return NextResponse.json({ success: true, egressId: info.egressId, filepath });
+      } catch (e) {
+        const msg = String((e as Error)?.message || e).slice(0, 200);
+        return NextResponse.json({ error: `Recording failed: ${msg}` }, { status: 502 });
+      }
     }
 
     if (action === "token") {
