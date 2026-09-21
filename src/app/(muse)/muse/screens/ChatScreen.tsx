@@ -4,6 +4,7 @@ import React, { memo, useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiImage, FiSend, FiMoreVertical, FiFlag, FiUserX, FiSlash, FiMic, FiVideo, FiSquare, FiPhone, FiSearch, FiX } from "react-icons/fi";
 import Nav from "../components/Nav";
+import RecorderSheet from "../components/RecorderSheet";
 import { authFetch } from "../lib/auth-client";
 import type { Screen } from "../components/types";
 
@@ -111,37 +112,21 @@ export const ChatScreen = memo(function ChatScreen({
   };
 
   // ── Recorded voice / video notes ──
-  // MediaRecorder → WebM → /api/muse/upload (folder "chat") → message. Clips are
-  // capped at 60s so nothing huge lands in storage from a stuck button.
-  const [recording, setRecording] = useState<null | "voice" | "video">(null);
-  const [recordSecs, setRecordSecs] = useState(0);
-  const [sendingClip, setSendingClip] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
-  const timerRef = useRef<number | null>(null);
-  const startedAtRef = useRef(0);
-  const cancelRef = useRef(false);
-  // Consent gate — recording someone (or being recorded) is legally sensitive in
-  // two-party-consent states, so the first recording shows a one-time notice.
+  // Recording itself now lives in <RecorderSheet> (live self-preview, then a
+  // preview-before-send step). This block only gates it behind the one-time
+  // consent notice.
+  const [recKind, setRecKind] = useState<null | "voice" | "video">(null);
   const [showConsent, setShowConsent] = useState(false);
   const [consentKind, setConsentKind] = useState<"voice" | "video">("voice");
 
-  const stopStream = () => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-    if (timerRef.current) { window.clearInterval(timerRef.current); timerRef.current = null; }
+  const acceptConsent = () => {
+    try { window.localStorage.setItem("muse_rec_consent", "1"); } catch { /* ignore */ }
+    setShowConsent(false);
+    setRecKind(consentKind);
   };
 
-  // Never leave the mic/camera hot if the chat closes mid-recording.
-  useEffect(() => () => {
-    try { mediaRecorderRef.current?.stop(); } catch { /* already stopped */ }
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    if (timerRef.current) window.clearInterval(timerRef.current);
-  }, []);
-
-  const startRecording = async (kind: "voice" | "video") => {
-    if (recording || sendingClip) return;
+  const startRecording = (kind: "voice" | "video") => {
+    if (recKind) return;
     if (!uploadMedia || !sendChatMedia) { showToast?.("Recording unavailable"); return; }
     // One-time consent notice before the very first clip.
     try {
@@ -151,84 +136,7 @@ export const ChatScreen = memo(function ChatScreen({
         return;
       }
     } catch { /* localStorage unavailable — don't block recording */ }
-    await beginRecording(kind);
-  };
-
-  const beginRecording = async (kind: "voice" | "video") => {
-    if (!uploadMedia || !sendChatMedia) { showToast?.("Recording unavailable"); return; }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia(
-        kind === "voice"
-          ? { audio: true }
-          : { audio: true, video: { facingMode: "user", width: { ideal: 720 } } },
-      );
-      streamRef.current = stream;
-      chunksRef.current = [];
-      const mime = kind === "voice" ? "audio/webm" : "video/webm";
-      const mr = typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(mime)
-        ? new MediaRecorder(stream, { mimeType: mime })
-        : new MediaRecorder(stream);
-      mediaRecorderRef.current = mr;
-
-      mr.ondataavailable = (e) => { if (e.data && e.data.size) chunksRef.current.push(e.data); };
-      mr.onstop = async () => {
-        const durationMs = Date.now() - startedAtRef.current;
-        const type = mr.mimeType || mime;
-        const blob = new Blob(chunksRef.current, { type });
-        const cancelled = cancelRef.current;
-        cancelRef.current = false;
-        stopStream();
-        setRecording(null);
-        setRecordSecs(0);
-        if (cancelled) return;
-        if (durationMs < 700 || blob.size < 1200) { showToast?.("Too short — hold a little longer"); return; }
-        setSendingClip(true);
-        showToast?.(kind === "voice" ? "Sending voice note…" : "Sending video note…");
-        const file = new File([blob], `${kind}-${Date.now()}.webm`, { type });
-        const url = await uploadMedia(file, "chat", kind);
-        setSendingClip(false);
-        if (!url) return;
-        // Voice notes get an auto-transcript when Groq is configured — makes them
-        // searchable, accessible, and moderatable. Entirely optional: a 503 just
-        // means the note sends without one.
-        let transcript: string | undefined;
-        if (kind === "voice") {
-          try {
-            const fd = new FormData();
-            fd.append("file", file, file.name);
-            const tr = await authFetch("/api/muse/transcribe", { method: "POST", body: fd, timeoutMs: 60000 });
-            if (tr.ok) {
-              const tj = await tr.json();
-              transcript = typeof tj.transcript === "string" && tj.transcript.trim() ? tj.transcript.trim() : undefined;
-            }
-          } catch { /* transcription is best-effort */ }
-        }
-        sendChatMedia(url, kind, durationMs, type, transcript);
-      };
-
-      startedAtRef.current = Date.now();
-      mr.start();
-      setRecording(kind);
-      setRecordSecs(0);
-      timerRef.current = window.setInterval(() => {
-        const s = Math.floor((Date.now() - startedAtRef.current) / 1000);
-        setRecordSecs(s);
-        if (s >= 60) { try { mediaRecorderRef.current?.stop(); } catch { /* noop */ } }
-      }, 250);
-    } catch {
-      stopStream();
-      setRecording(null);
-      showToast?.(kind === "voice" ? "Microphone permission needed" : "Camera + microphone permission needed");
-    }
-  };
-
-  const stopRecording = () => { try { mediaRecorderRef.current?.stop(); } catch { /* noop */ } };
-  const cancelRecording = () => { cancelRef.current = true; stopRecording(); };
-
-  const acceptConsent = () => {
-    try { window.localStorage.setItem("muse_rec_consent", "1"); } catch { /* ignore */ }
-    setShowConsent(false);
-    void beginRecording(consentKind);
+    setRecKind(kind);
   };
 
   const fmtDur = (ms?: number) => {
@@ -255,8 +163,19 @@ export const ChatScreen = memo(function ChatScreen({
           </div>
         </div>
       )}
-      {showGallery && (() => {
-        const msgs = (chatTarget?.messages || []) as any[];
+      {recKind && uploadMedia && sendChatMedia && (
+        <RecorderSheet
+          kind={recKind}
+          folder="chat"
+          uploadMedia={uploadMedia}
+          onCancel={() => setRecKind(null)}
+          onSent={(url: string, kind: "voice" | "video", durationMs: number, mediaType: string, transcript?: string) => {
+            setRecKind(null);
+            sendChatMedia(url, kind, durationMs, mediaType, transcript);
+          }}
+        />
+      )}
+      {showGallery && (() => {        const msgs = (chatTarget?.messages || []) as any[];
         const photos = msgs.filter((m) => m.img && !m.kind);
         const clips = msgs.filter((m) => m.mediaUrl && (m.kind === "voice" || m.kind === "video"));
         const none = photos.length === 0 && clips.length === 0;
@@ -501,17 +420,6 @@ export const ChatScreen = memo(function ChatScreen({
               <button key={q} className="quick-reply" onClick={() => { setChatText(q); }}>{q}</button>
             ))}
           </div>
-          {recording ? (
-            <div className="chat-input-wrap" style={{ alignItems: "center", gap: 10 }}>
-              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#ff6b6b", flexShrink: 0, animation: "pulseDot 1s ease-in-out infinite" }} />
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
-                {recording === "voice" ? "🎤 Voice note" : "🎥 Video note"} · {fmtDur(recordSecs * 1000)}
-                <span style={{ display: "block", fontSize: 10, fontWeight: 500, color: "var(--muted)" }}>Max 60s</span>
-              </span>
-              <button type="button" onClick={cancelRecording} aria-label="Cancel recording" style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-              <button className="send-btn" onClick={stopRecording} aria-label="Stop and send" disabled={sendingClip}><FiSquare size={16} /></button>
-            </div>
-          ) : (
           <div className="chat-input-wrap">
             <label style={{ cursor: "pointer", color: "var(--muted)", fontSize: 18, display: "flex", alignItems: "center", alignSelf: "center" }}>
               <FiImage size={22} />
@@ -525,18 +433,17 @@ export const ChatScreen = memo(function ChatScreen({
                 if (url) sendChatImg?.(url);
               }} />
             </label>
-            <button type="button" onClick={() => startRecording("voice")} disabled={sendingClip} aria-label="Record voice note"
-              style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 18, display: "flex", alignItems: "center", alignSelf: "center", cursor: sendingClip ? "default" : "pointer", padding: 0 }}>
+            <button type="button" onClick={() => startRecording("voice")} aria-label="Record voice note"
+              style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 18, display: "flex", alignItems: "center", alignSelf: "center", cursor: "pointer", padding: 0 }}>
               <FiMic size={20} />
             </button>
-            <button type="button" onClick={() => startRecording("video")} disabled={sendingClip} aria-label="Record video note"
-              style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 18, display: "flex", alignItems: "center", alignSelf: "center", cursor: sendingClip ? "default" : "pointer", padding: 0 }}>
+            <button type="button" onClick={() => startRecording("video")} aria-label="Record video note"
+              style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 18, display: "flex", alignItems: "center", alignSelf: "center", cursor: "pointer", padding: 0 }}>
               <FiVideo size={20} />
             </button>
             <input className="chat-inp" placeholder="Type a message..." value={chatText} onChange={e => { setChatText(e.target.value); if (sendTyping) sendTyping(); }} onKeyDown={e => { if (e.key === "Enter" && chatText.trim()) { sendChat(); } }} />
             <button className="send-btn" onClick={() => sendChat()}><FiSend size={18} /></button>
           </div>
-          )}
         </div>
       )}
       <Nav active="matches" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />
