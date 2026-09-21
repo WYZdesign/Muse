@@ -96,6 +96,8 @@ export const ChatScreen = memo(function ChatScreen({
   // Call history for this conversation (missed / answered / voicemail).
   const [showCallLog, setShowCallLog] = useState(false);
   const [callLog, setCallLog] = useState<any[]>([]);
+  // Media & clips shared in this conversation (photos, video notes, voice notes).
+  const [showGallery, setShowGallery] = useState(false);
 
   const openCallLog = async () => {
     setShowChatMenu(false);
@@ -250,6 +252,58 @@ export const ChatScreen = memo(function ChatScreen({
           </div>
         </div>
       )}
+      {showGallery && (() => {
+        const msgs = (chatTarget?.messages || []) as any[];
+        const photos = msgs.filter((m) => m.img && !m.kind);
+        const clips = msgs.filter((m) => m.mediaUrl && (m.kind === "voice" || m.kind === "video"));
+        const none = photos.length === 0 && clips.length === 0;
+        return (
+          <div role="dialog" aria-modal="true" aria-label="Media and clips" onClick={() => setShowGallery(false)} style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.88)", padding: 20 }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--panel-bg-solid, #0f0a1a)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 20, maxWidth: 420, width: "100%", maxHeight: "78vh", overflowY: "auto" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--gold)" }}>Media &amp; clips</div>
+                <button onClick={() => setShowGallery(false)} aria-label="Close media" style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 18, cursor: "pointer" }}>✕</button>
+              </div>
+              {none ? (
+                <div style={{ fontSize: 13, color: "var(--muted)" }}>Nothing shared with {chatTarget?.name} yet.</div>
+              ) : (
+                <>
+                  {photos.length > 0 && (
+                    <>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Photos · {photos.length}</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: 16 }}>
+                        {photos.map((m, i) => (
+                          <a key={i} href={m.img} target="_blank" rel="noreferrer" style={{ display: "block", aspectRatio: "1", borderRadius: 10, overflow: "hidden", background: "#141020" }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={m.img} alt="Shared" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          </a>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {clips.length > 0 && (
+                    <>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Clips · {clips.length}</div>
+                      {clips.map((m, i) => (
+                        <div key={i} style={{ marginBottom: 10 }}>
+                          {m.kind === "video" ? (
+                            <video controls preload="metadata" src={m.mediaUrl} style={{ width: "100%", borderRadius: 10, background: "#0f0a1a" }} />
+                          ) : (
+                            <audio controls preload="metadata" src={m.mediaUrl} style={{ width: "100%" }} />
+                          )}
+                          <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3 }}>
+                            {m.from === "me" ? "You" : chatTarget?.name} · {m.kind === "voice" ? "🎤 voice" : "🎥 video"}{m.durationMs ? ` · ${fmtDur(m.durationMs)}` : ""}
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
       {showCallLog && (
         <div role="dialog" aria-modal="true" aria-label="Call history" onClick={() => setShowCallLog(false)} style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", padding: 20 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--panel-bg-solid, #0f0a1a)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 22, maxWidth: 380, width: "100%", maxHeight: "70vh", overflowY: "auto" }}>
@@ -323,6 +377,7 @@ export const ChatScreen = memo(function ChatScreen({
                 <>
                   <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 998 }} onClick={() => setShowChatMenu(false)} />
                   <div role="menu" style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 999, minWidth: 168, background: "var(--panel-bg)", border: "1px solid var(--border-med)", borderRadius: 14, padding: 6, boxShadow: "0 12px 32px rgba(0,0,0,0.5)" }}>
+                    <button role="menuitem" onClick={() => { setShowChatMenu(false); setShowGallery(true); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiImage size={14} /> Media &amp; clips</button>
                     <button role="menuitem" onClick={openCallLog} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiPhone size={14} /> Call history</button>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setShowReport(true); setReportTarget({ id: chatTarget.id, type: "user", name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiFlag size={14} /> Report</button>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setUnmatchTarget({ id: chatTarget.id, name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiUserX size={14} /> Unmatch</button>
