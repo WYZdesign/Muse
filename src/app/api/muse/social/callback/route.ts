@@ -3,6 +3,7 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import { getMuseUrl } from "@/lib/urls";
 import { verifyState } from "@/lib/oauth-state";
 import { encryptToken } from "@/lib/token-crypto";
+import { checkRate } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -81,6 +82,13 @@ async function fetchUserInfo(provider: string, accessToken: string) {
 
 export async function GET(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+
+    // Rate-limit OAuth callback to prevent SSRF/token-exchange abuse
+    if (!(await checkRate(ip, "oauth_callback", 10))) {
+      return NextResponse.redirect(`${getMuseUrl()}?error=rate_limited`);
+    }
+
     const url = new URL(req.url);
     const provider = url.searchParams.get("provider");
     const code = url.searchParams.get("code");
