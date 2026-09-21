@@ -374,7 +374,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                   <div
                     key={profile.id}
                     className={"swipe-card" + (isTop ? " top-card" : "")}
-                    style={{ zIndex: 3 - idx, transform: "scale(" + (Math.max(0.92, 1 - idx * 0.04)) + ")" }}
+                    style={{ zIndex: 3 - idx, transform: "scale(" + (Math.max(0.92, 1 - idx * 0.04)) + ")", pointerEvents: isTop ? "auto" : "none" }}
                     // The next two cards are visual depth cues only. Without
                     // hiding/inerting them, screen readers announce three full
                     // profiles and keyboard focus can land on controls beneath
@@ -500,8 +500,6 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                           </div>
                           {isTop && (
                             <>
-                              <div className={"card-photo-zone card-photo-zone-left" + (cardScrolled ? " hidden" : "")} role="button" tabIndex={0} aria-label="Previous profile photo" onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.max(0, prev - 1)); } }} style={{ pointerEvents: cardScrolled ? "none" : "auto" }} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.max(0, prev - 1)); }}><span className="card-photo-nav" style={{ left: 6 }} aria-hidden="true">‹</span></div>
-                              <div className={"card-photo-zone card-photo-zone-right" + (cardScrolled ? " hidden" : "")} role="button" tabIndex={0} aria-label="Next profile photo" onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.min(photos.length - 1, prev + 1)); } }} style={{ pointerEvents: cardScrolled ? "none" : "auto" }} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.min(photos.length - 1, prev + 1)); }}><span className="card-photo-nav" style={{ right: 6 }} aria-hidden="true">›</span></div>
                             </>
                           )}
                           <div className={"card-photo-dots" + (cardScrolled ? " hidden" : "")}>

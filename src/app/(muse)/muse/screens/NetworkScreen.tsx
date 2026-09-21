@@ -729,7 +729,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                   }}
                 >
                   {p.name}
-                  {p.verified && <span className="card-verified-mark" title="Identity verified" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Muse — we confirmed this professional's government ID and credentials.", icon: "✓", color: "#FFD700" }); }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Muse — we confirmed this professional's government ID and credentials.", icon: "✓", color: "#FFD700" }); } }} style={{ cursor: "pointer" }}>✓</span>}
+                  {p.verified && <span className="card-verified-mark" title="Identity verified" style={{ fontSize: 12 }}>✓</span>}
                 </div>
                 <div
                   style={{
@@ -770,9 +770,6 @@ export const NetworkScreen = memo(function NetworkScreen({
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <span
-                    role="button"
-                    tabIndex={0}
-                    onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${p.exp} in the field`, desc: "Years of hands-on professional experience in this craft.", icon: "⏳", color: "#FFD700" }); }}
                     style={{
                       fontSize: 11,
                       padding: "4px 12px",
@@ -781,15 +778,11 @@ export const NetworkScreen = memo(function NetworkScreen({
                       border: "1px solid rgba(255,215,0,0.4)",
                       color: "var(--gold)",
                       fontWeight: 700,
-                      cursor: "pointer",
                     }}
                   >
                     {p.exp}
                   </span>
                   <span
-                    role="button"
-                    tabIndex={0}
-                    onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Openings", desc: `${p.openings} spot${p.openings === 1 ? "" : "s"} open right now — available to take on new collaborators.`, icon: "📬", color: "#b7e4f7" }); }}
                     style={{
                       fontSize: 11,
                       padding: "4px 12px",
@@ -798,16 +791,12 @@ export const NetworkScreen = memo(function NetworkScreen({
                       border: "1px solid rgba(135,206,235,0.35)",
                       color: "#b7e4f7",
                       fontWeight: 700,
-                      cursor: "pointer",
                     }}
                   >
                     {p.openings} openings
                   </span>
                   {p.rate && (
                     <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => { e.stopPropagation(); const isTfp = /tfp/i.test(String(p.rate || "")); setBadgeInfo({ name: isTfp ? "TFP — Trade For Print" : "Rate", desc: isTfp ? "Trade for print — this pro works for portfolio/collaboration credit instead of cash. Great for spec work and building a book." : `This pro's standard rate is ${p.rate}. Paid securely via Muse checkout.`, icon: isTfp ? "🔄" : "💵", color: "#4cdd88" }); }}
                       style={{
                         fontSize: 11,
                         padding: "4px 12px",
@@ -816,7 +805,6 @@ export const NetworkScreen = memo(function NetworkScreen({
                         border: "1px solid rgba(76,221,136,0.35)",
                         color: "#4cdd88",
                         fontWeight: 700,
-                        cursor: "pointer",
                       }}
                     >
                       {p.rate}
@@ -828,7 +816,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                     <FiUserPlus size={12} style={{ color: "var(--lavender)" }} />
                     <span>Seeking:</span>
                     {p.looking.map((l: string) => (
-                      <span key={l} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); e.currentTarget.click(); } }} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: l, desc: `This pro is currently seeking ${l}s to collaborate with.`, icon: "🤝", color: "#e6d3ff" }); }} style={{ padding: "2px 8px", borderRadius: 99, background: "rgba(212,165,255,0.14)", border: "1px solid rgba(212,165,255,0.3)", color: "#e6d3ff", fontWeight: 600, cursor: "pointer" }}>{l}</span>
+                      <span key={l} style={{ padding: "2px 8px", borderRadius: 99, background: "rgba(212,165,255,0.14)", border: "1px solid rgba(212,165,255,0.3)", color: "#e6d3ff", fontWeight: 600 }}>{l}</span>
                     ))}
                   </div>
                 )}
@@ -848,7 +836,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                     if (p.skills?.includes("Experimental")) badges.push({ icon: "🧪", label: "Experimental", ...BADGE_COLORS.blue });
                     if (p.skills?.includes("Photography") || p.skills?.includes("Editorial")) badges.push({ icon: "📸", label: "Photo", ...BADGE_COLORS.blue });
                     return badges.slice(0, 5).map((b) => (
-                      <span key={b.label} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); e.currentTarget.click(); } }} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: b.label, desc: STYLE_FULL[b.label] || `A signal about this pro: ${b.label}.`, icon: b.icon, color: b.c }); }} style={{ fontSize: 10, padding: "3px 9px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 700, display: "flex", alignItems: "center", gap: 3, cursor: "pointer" }}>
+                      <span key={b.label} style={{ fontSize: 10, padding: "3px 9px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
                         {b.icon} {b.label}
                       </span>
                     ));
