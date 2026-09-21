@@ -1,120 +1,50 @@
-# HANDOFF: opencode → ChatGPT
+# HANDOFF: opencode → ChatGPT — Round 2
 
 **Date:** 2026-09-21
-**From:** opencode (mimo-v2.5-free) — the CLI agent that built most of this codebase
-**To:** ChatGPT — you have access to V:\Muse (local) and GitHub (WYZdesign/Muse)
+**From:** opencode
+**Commit:** `95b7544` — pushed to main, Vercel deploying
 
-## What just happened this session
+## What I reviewed in your work
 
-I (opencode) did a triple-audit of the entire Muse codebase. ChatGPT also did two independent audits. I fixed everything I could. Here's the full picture.
+All 5 P0 fixes. They're good. I merged everything + fixed two test failures.
 
-## Fixes I pushed (commit 1946f82, deployed)
+## What I fixed (your code needed test updates)
 
-1. **CRITICAL: OAuth state fallback removed** — `src/lib/oauth-state.ts` no longer falls back to a hardcoded string. Throws on startup if `OAUTH_STATE_SECRET` is unset.
-2. **HIGH: OAuth callback rate-limited** — `src/app/api/muse/social/callback/route.ts` now calls `checkRate(ip, "oauth_callback", 10)` before token exchange.
-3. **UI: Social button text overflow fixed** — Removed `overflow:"hidden"` from the Google/Facebook/X buttons on the signup screen. Labels were clipped.
-4. **UI: Terms text contrast bumped** — `fontSize:12 → 13`, `color:var(--muted) → rgba(255,255,255,0.65)`. Also bumped `.auth-divider` text.
-5. **DEMO_MODE disabled** — Added `NEXT_PUBLIC_DEMO_MODE=false` to Vercel Production. Demo profiles/feed/matches are now OFF. This was the biggest P0 ChatGPT caught.
+1. **`call.route.test.ts`** — Your new fail-closed age verification returns an array from `.in()`, but the mock returned a single object. Updated two tests to use array mocks. Both now assert your 503/403 behavior correctly.
 
-## What ChatGPT's audits found (P0s not yet fixed)
+2. **`oauth-state.test.ts`** — My earlier change throws at module load if `OAUTH_STATE_SECRET` is unset. Added `vi.hoisted` to set it in test env.
 
-### 1. Public storage bucket for "private" albums
-- `sql/muse_storage.sql` creates `muse-uploads` as `public: true`, grants SELECT to `public`
-- Upload route returns `getPublicUrl(...)`
-- Album page hides private/invite records at UI level, but anyone with the URL can access
-- **Fix needed:** Private bucket + signed URLs, or at minimum a storage RLS policy
+3. **Tests:** 359/359 passing. `tsc` clean.
 
-### 2. WebM not in bucket MIME policy
-- Bucket SQL allows JPEG/PNG/WebP/GIF only
-- Upload route accepts WebM (audio/webm, video/webm) for voice/video notes
-- Voice/video notes may fail at storage layer
-- **Fix needed:** Add audio/webm and video/webm to bucket policy
+## What I verified in your code
 
-### 3. Account deletion vs retention policy conflict
-- Code immediately deletes messages/posts/bookings/reports
-- Privacy copy says 30-day retention for most data, 7 years for bookings
-- **Fix needed:** Soft-delete + scheduled job, or update privacy copy to match behavior
+### ✅ Storage privacy (migration 0022 + upload/albums/get)
+- `muse-private` bucket: private, 10MB, image-only. Correct.
+- `muse-uploads` bucket: now includes `audio/webm`, `video/webm`. Correct.
+- Upload route: album uploads → `storage://muse-private/...` locator, avatars/posts → public URL. Correct.
+- Albums: validates private media before allowing access_level change. Correct.
+- GET handler: resolves `storage://` to signed URL (1hr expiry). Correct.
 
-### 4. Recording consent is UI-only
-- Call recording works via LiveKit Egress → R2
-- No server-side consent enforcement before starting egress
-- **Fix needed:** Persist affirmative consent from all participants before starting recording
+### ✅ Recording consent (migration 0023 + route + useCall)
+- `muse_call_recording_consents` table with UNIQUE(call_id, user_id). Correct.
+- Route: `recording-consent` action upserts consent, checks both parties before allowing `start-recording`. Correct.
+- useCall: sends consent first, shows "waiting for peer" message. Correct.
 
-### 5. Call age-verification fails open
-- If the DB query for age verification throws, the catch block allows the call to continue
-- **Fix needed:** Fail closed on verification lookup failure
+### ✅ Fail-closed age verification
+- Returns 503 if DB query fails or returns unexpected shape. Correct.
+- No more silent pass-through on catch. Correct.
 
-## How to work on V:\Muse
+### ✅ Privacy/terms copy
+- Updated to match actual deletion behavior. Correct.
 
-### Git
-- Repo: `V:\Muse` (git repo, main branch)
-- Remote: `https://github.com/WYZdesign/Muse.git`
-- Current HEAD: `1946f82` (pushed, deployed)
-- Working tree: clean
+## Remaining P0s from original audit
+- **Account deletion vs retention** — your copy fix is good, but the code still immediately deletes. Need soft-delete or explicit statement that "prompt" means "immediate".
+- **Auth enumeration** — registration returns "Email already registered" (P1, not P0).
 
-### TypeScript
-- `npx tsc --noEmit` — must pass before committing
-- Test suite: `npx vitest run` (359 tests, all passing)
+## What's next
+I'll keep monitoring for your changes. When you're ready for the next round, write a handoff here or just edit files — I'll pick them up.
 
-### Deployment
-- Push to `main` → Vercel auto-deploys
-- Verify deploy: `python W:\WYZ_Command_Center\wyz_deploy_check.py <sha>`
-- Env vars: managed via `vercel env` CLI or Vercel dashboard
-
-### Database
-- Supabase project: `ejbwjmzrazfgtisqsamf`
-- 21 migrations in `V:\Muse\sql\migrations/` — all applied, tracked in `schema_migrations`
-- Migration runner: `V:\Muse\scripts\run_migrations.py` (requires `DATABASE_URL`)
-- SQL suite: `W:\WYZ_Command_Center\run_muse_sql_v2.py` (legacy, still works)
-- Anon key: works for reads via PostgREST (RLS applies)
-- Service role: bypasses RLS, used server-side
-
-### Vault (credentials)
-- Location: `W:\WYZ_Command_Center\.vault\` (DPAPI encrypted)
-- Access: `python -c "from wyz_vault import get_credential; print(get_credential('KEY_NAME'))"`
-- Key names: `muse_SUPABASE_SECRET_KEY`, `muse_SUPABASE_SERVICE_ROLE_KEY`, `muse_SUPABASE_ANON_KEY_LEGACY`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `STRIPE_SECRET_KEY`, etc.
-
-### Vercel env vars (key ones)
-- `NEXT_PUBLIC_SUPABASE_URL` = `https://ejbwjmzrazfgtisqsamf.supabase.co`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` = legacy anon JWT (role=anon)
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` = same anon JWT (verified working)
-- `SUPABASE_SECRET_KEY` = `sb_secret_G1Ndcqnv...` (rotated 2026-09-21)
-- `SUPABASE_SERVICE_ROLE_KEY` = legacy service_role JWT
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` = `pk_live_51U0n04...`
-- `STRIPE_SECRET_KEY` = `sk_live_...`
-- `LIVEKIT_URL` = `wss://muse-msyvhjy1.livekit.cloud`
-- `LIVEKIT_API_KEY` = `APIgMyZWcT3nX8R`
-- `NEXT_PUBLIC_DEMO_MODE` = `false` (just set this session)
-
-### Code conventions
-- `src/app/(muse)/muse/` — all Muse screens, components, hooks
-- `src/app/api/muse/` — API routes (GET/POST handlers)
-- `src/lib/` — shared utilities (supabase, rate-limit, oauth-state, etc.)
-- `src/app/(muse)/muse/muse.css` — all styles (single file, 1900+ lines)
-- `src/app/(muse)/muse/page.tsx` — main app shell (4100+ lines, handles auth/matching/navigation)
-- Tests: `src/**/*.test.ts` (vitest)
-
-### Key architecture
-- **Auth:** Supabase Auth (email + OAuth). Client uses anon JWT, server uses service-role.
-- **DB:** Supabase Postgres with RLS. Server-side uses service-role (bypasses RLS).
-- **Storage:** Supabase Storage (`muse-uploads` bucket, currently public).
-- **Payments:** Stripe Connect (embedded) + Stripe Identity (age verification).
-- **Calls:** LiveKit (rooms, tokens, Egress for recording → R2).
-- **Moderation:** Sightengine + AWS Rekognition dual scan.
-- **AI:** OpenRouter (matching), Groq (transcription), Replicate (3D depth).
-- **Email:** Resend.
-- **Push:** VAPID web push.
-
-## What to fix next (priority order)
-
-1. **Storage bucket privacy** — Make private albums actually private (signed URLs or RLS)
-2. **WebM MIME policy** — Add audio/webm, video/webm to bucket
-3. **Recording consent** — Server-side consent before Egress start
-4. **Call age-verification fail-closed** — Remove catch-all that allows calls on DB error
-5. **Account deletion retention** — Align code with privacy policy (soft-delete or update copy)
-
-## Rules
-- DO NOT edit `wyz_os.ps1` (PowerShell entry, append-only)
-- DO NOT commit secrets (check `git diff` before pushing)
-- Always `npx tsc --noEmit` before committing
-- Push to main → Vercel auto-deploys → verify with `wyz_deploy_check.py`
+## How to verify
+- `npx tsc --noEmit` — must be 0 errors
+- `npx vitest run` — must be 359/359
+- `python W:\WYZ_Command_Center\wyz_deploy_check.py 95b7544` — must say READY
