@@ -206,17 +206,31 @@ export const searchAll = async ({ sb, profile, rest, ip }: ActionContext) => {
   }
 
   if (type === "messages") {
-    // Opt-in (type: "messages") rather than part of "all" — no UI renders these
-    // yet, and an extra scan on every search would be wasted work.
+    // Opt-in (type: "messages") rather than part of "all" — an extra scan on
+    // every search would be wasted work.
     // Searches the caller's own conversations only, across message text AND the
     // auto-transcript of voice notes — so a spoken word is findable.
     const { data: msgs } = await sb.from("muse_messages")
-      .select("id, match_id, sender_id, receiver_id, text, transcript, kind, created_at")
+      .select("id, sender_id, receiver_id, text, transcript, kind, created_at")
       .or(`sender_id.eq.${profile.id},receiver_id.eq.${profile.id}`)
       .or(`text.ilike.${pattern},transcript.ilike.${pattern}`)
       .order("created_at", { ascending: false })
       .limit(limit);
-    results.messages = msgs || [];
+    const rows = msgs || [];
+    // Resolve the other participant so the UI can show who it was with + open it.
+    const peerIds = Array.from(new Set(rows.map((m: { sender_id: string; receiver_id: string }) =>
+      String(m.sender_id) === String(profile.id) ? String(m.receiver_id) : String(m.sender_id))));
+    const byId = new Map<string, { id: string; name?: string; avatar?: string }>();
+    if (peerIds.length) {
+      const { data: profs } = await sb.from("muse_profiles").select("id, name, avatar").in("id", peerIds);
+      for (const p of (profs || []) as { id: string; name?: string; avatar?: string }[]) {
+        byId.set(String(p.id), p);
+      }
+    }
+    results.messages = rows.map((m: { sender_id: string; receiver_id: string }) => {
+      const peerId = String(m.sender_id) === String(profile.id) ? String(m.receiver_id) : String(m.sender_id);
+      return { ...m, peer: byId.get(peerId) || { id: peerId } };
+    });
   }
 
   return NextResponse.json({ success: true, results });

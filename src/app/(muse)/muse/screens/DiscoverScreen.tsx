@@ -125,6 +125,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   safeSetItem = () => {},
   safeRemoveItem = () => {},
   filteredProfiles,
+  openChat,
   isLoading = false,
   myGeo,
   myStyles = [],
@@ -213,9 +214,28 @@ export const DiscoverScreen = memo(function DiscoverScreen({
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [discoverSearchOpen, setDiscoverSearchOpen, setDiscoverSearch]);
 
+  // Global message search — matches message text AND voice-note transcripts
+  // across all of the caller's conversations. Debounced, min 2 chars.
+  const [msgResults, setMsgResults] = useState<any[]>([]);
   useEffect(() => {
-    if (!topHeroSrc || screen !== "discover") return;
+    const q = discoverSearch.trim();
+    if (q.length < 2) { setMsgResults([]); return; }
     let cancelled = false;
+    const t = window.setTimeout(() => {
+      apiFetch("/api/muse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "search", type: "messages", query: q, limit: 8 }),
+      })
+        .then((r) => r.json())
+        .then((d) => { if (!cancelled && d?.results) setMsgResults(d.results.messages || []); })
+        .catch(() => { if (!cancelled) setMsgResults([]); });
+    }, 300);
+    return () => { cancelled = true; window.clearTimeout(t); };
+  }, [discoverSearch, apiFetch]);
+
+  useEffect(() => {
+    if (!topHeroSrc || screen !== "discover") return;    let cancelled = false;
     apiFetch(`/api/muse?type=photo-likes&urls=${encodeURIComponent(topHeroSrc)}`).then(r => r.json()).then(d => {
       if (!cancelled && d) setPhotoLike(prev => ({ ...prev, [topHeroSrc]: { liked: !!d.likedByMe?.[topHeroSrc], count: d.counts?.[topHeroSrc] || 0 } }));
     }).catch(() => {});
@@ -306,6 +326,21 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                 {discoverSearch.trim() && (
                   <span style={{ fontSize: 11, fontWeight: 700, color: filteredProfiles.length ? "var(--gold)" : "#ff8a80", padding: "3px 9px", borderRadius: 99, background: "rgba(255,255,255,0.06)", whiteSpace: "nowrap", flexShrink: 0 }}>{filteredProfiles.length} {filteredProfiles.length === 1 ? "match" : "matches"}</span>
                 )}
+              </div>
+            )}
+            {discoverSearch.trim().length >= 2 && msgResults.length > 0 && (
+              <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 12, right: 12, zIndex: 80, background: "var(--panel-bg-solid, #0f0a1a)", border: "1px solid var(--border-subtle)", borderRadius: 14, padding: 8, maxHeight: 300, overflowY: "auto", boxShadow: "0 14px 34px rgba(0,0,0,0.55)" }}>
+                <div style={{ fontSize: 10, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5, padding: "4px 6px" }}>Messages &amp; voice notes</div>
+                {msgResults.map((m: any) => (
+                  <button key={m.id}
+                    onClick={() => { setDiscoverSearch(""); setDiscoverSearchOpen(false); openChat({ id: m.peer?.id, name: m.peer?.name || "Chat", avatar: m.peer?.avatar, messages: [] }); }}
+                    style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 6px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", cursor: "pointer" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>{m.peer?.name || "Conversation"}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {m.kind === "voice" ? "🎤 " : ""}{String(m.text || m.transcript || "").slice(0, 70)}
+                    </div>
+                  </button>
+                ))}
               </div>
             )}
             {!discoverSearchOpen && (
