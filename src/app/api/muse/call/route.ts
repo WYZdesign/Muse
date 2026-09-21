@@ -71,6 +71,43 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || "");
     const toId = String(body.toId || body.to_id || "");
+
+    // ═══ COMMUNITY VOICE ROOM (group call) ═══
+    // Handled BEFORE the peer-id validation below — a room has no single peer.
+    // One shared room per community: any member can join, age-gated, up to 20.
+    if (action === "start-room") {
+      const communityId = String(body.communityId || body.community_id || "");
+      if (!UUID_RE.test(communityId)) return NextResponse.json({ error: "Invalid community" }, { status: 400 });
+      const sb0 = getServiceClient();
+
+      const { data: membership } = await sb0.from("muse_community_members")
+        .select("id").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
+      if (!membership) return NextResponse.json({ error: "Join the community to enter its voice room" }, { status: 403 });
+
+      const { data: community } = await sb0.from("muse_communities")
+        .select("id, name").eq("id", communityId).maybeSingle();
+      if (!community) return NextResponse.json({ error: "Community not found" }, { status: 404 });
+
+      const { data: me } = await sb0.from("muse_profiles")
+        .select("age_verified, age_verified_at").eq("id", profile.id).maybeSingle();
+      const cutoff = Date.now() - 150 * 24 * 60 * 60 * 1000;
+      if (!me?.age_verified || !me?.age_verified_at || new Date(me.age_verified_at).getTime() < cutoff) {
+        return NextResponse.json({ error: "Verify your age before joining voice rooms", code: "AGE_VERIFICATION_REQUIRED" }, { status: 403 });
+      }
+
+      const groupRoom = `muse-community-${communityId}`;
+      try {
+        const svc = new RoomServiceClient(httpUrl(), LK_KEY, LK_SECRET);
+        await svc.createRoom({ name: groupRoom, emptyTimeout: 60 * 10, maxParticipants: 20 });
+      } catch { /* already exists is fine */ }
+
+      const token = await mint(profile, groupRoom);
+      return NextResponse.json({
+        token, room: groupRoom, url: LK_URL, kind: "voice",
+        community: { id: community.id, name: community.name },
+      });
+    }
+
     if (!UUID_RE.test(toId)) return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
     if (toId === profile.id) return NextResponse.json({ error: "You can't call yourself" }, { status: 400 });
 
@@ -242,42 +279,6 @@ export async function POST(req: NextRequest) {
         .order("created_at", { ascending: false })
         .limit(50);
       return NextResponse.json({ success: true, calls: rows || [] });
-    }
-
-    // ═══ COMMUNITY VOICE ROOM (group call) ═══
-    // One shared room per community: anyone who is a member can join, and the
-    // room name is derived from the community id so everyone lands together.
-    if (action === "start-room") {
-      const communityId = String(body.communityId || body.community_id || "");
-      if (!UUID_RE.test(communityId)) return NextResponse.json({ error: "Invalid community" }, { status: 400 });
-
-      const { data: membership } = await sb.from("muse_community_members")
-        .select("id").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
-      if (!membership) return NextResponse.json({ error: "Join the community to enter its voice room" }, { status: 403 });
-
-      const { data: community } = await sb.from("muse_communities")
-        .select("id, name, is_nsfw").eq("id", communityId).maybeSingle();
-      if (!community) return NextResponse.json({ error: "Community not found" }, { status: 404 });
-
-      // Age gate applies here too.
-      const { data: me } = await sb.from("muse_profiles")
-        .select("age_verified, age_verified_at").eq("id", profile.id).maybeSingle();
-      const cutoff = Date.now() - 150 * 24 * 60 * 60 * 1000;
-      if (!me?.age_verified || !me?.age_verified_at || new Date(me.age_verified_at).getTime() < cutoff) {
-        return NextResponse.json({ error: "Verify your age before joining voice rooms", code: "AGE_VERIFICATION_REQUIRED" }, { status: 403 });
-      }
-
-      const groupRoom = `muse-community-${communityId}`;
-      try {
-        const svc = new RoomServiceClient(httpUrl(), LK_KEY, LK_SECRET);
-        await svc.createRoom({ name: groupRoom, emptyTimeout: 60 * 10, maxParticipants: 20 });
-      } catch { /* already exists is fine */ }
-
-      const token = await mint(profile, groupRoom);
-      return NextResponse.json({
-        token, room: groupRoom, url: LK_URL, kind: "voice",
-        community: { id: community.id, name: community.name },
-      });
     }
 
     if (action === "token") {
