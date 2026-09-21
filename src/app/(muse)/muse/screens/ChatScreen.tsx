@@ -437,12 +437,21 @@ export const ChatScreen = memo(function ChatScreen({
                     </div>
                   </div>
                 )}
-                {(msg.kind === "voice" || msg.kind === "video") && msg.from !== "me" && (
-                  <button type="button"
-                    onClick={() => { setReportTarget?.({ id: chatTarget.id, type: "user", name: chatTarget.name }); setShowReport(true); }}
-                    style={{ display: "block", background: "none", border: "none", color: "var(--muted)", fontSize: 10, padding: 0, marginTop: 2, cursor: "pointer", textDecoration: "underline" }}>
-                    ⚑ Report this clip
-                  </button>
+                {(msg.kind === "voice" || msg.kind === "video") && msg.mediaUrl && (
+                  <div style={{ display: "flex", gap: 10, marginTop: 3 }}>
+                    {/* Download / save the clip to the device */}
+                    <a href={msg.mediaUrl} download target="_blank" rel="noreferrer"
+                      style={{ color: "var(--muted)", fontSize: 10, textDecoration: "underline" }}>
+                      ⤓ Save
+                    </a>
+                    {msg.from !== "me" && (
+                      <button type="button"
+                        onClick={() => { setReportTarget?.({ id: chatTarget.id, type: "user", name: chatTarget.name }); setShowReport(true); }}
+                        style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 10, padding: 0, cursor: "pointer", textDecoration: "underline" }}>
+                        ⚑ Report this clip
+                      </button>
+                    )}
+                  </div>
                 )}
                 {msg.text && <div>{msg.text}</div>}
                 <div className="msg-time" style={{ textAlign: msg.from === "me" ? "right" : "left", marginTop: 4, fontSize: 10, color: msg.from === "me" ? "rgba(10,6,18,0.4)" : "var(--muted)" }}>
