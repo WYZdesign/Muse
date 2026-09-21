@@ -355,7 +355,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
         {mapView && <MuseMap filteredProfiles={filteredProfiles as any} myGeo={myGeo ? { lat: myGeo.lat, lng: myGeo.long } : undefined} onClose={() => setMapView(false)} />}
         {!mapView && (
           <>
-            <div className="card-stack" role="application" aria-label="Swipe cards to discover creatives" aria-roledescription="card carousel">
+            <div className="card-stack" role="region" aria-label="Swipe cards to discover creatives" aria-roledescription="card carousel">
               {isLoading && filteredProfiles.length === 0 && (
                 Array.from({ length: 3 }).map((_, idx) => (
                   <div key={"skel-" + idx} className="swipe-card" style={{ position: idx === 0 ? "relative" : "absolute", top: idx === 0 ? 0 : idx * 10, left: 0, right: 0, opacity: idx === 0 ? 1 : 0.6, zIndex: 3 - idx, height: "100%", borderRadius: 24, overflow: "hidden", background: "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))" }}>
@@ -375,6 +375,12 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                     key={profile.id}
                     className={"swipe-card" + (isTop ? " top-card" : "")}
                     style={{ zIndex: 3 - idx, transform: "scale(" + (Math.max(0.92, 1 - idx * 0.04)) + ")" }}
+                    // The next two cards are visual depth cues only. Without
+                    // hiding/inerting them, screen readers announce three full
+                    // profiles and keyboard focus can land on controls beneath
+                    // the active card.
+                    aria-hidden={isTop ? undefined : true}
+                    inert={isTop ? undefined : true}
                     onPointerDown={isTop ? onPointerDown : undefined}
                     onPointerMove={isTop ? onPointerMove : undefined}
                     onPointerUp={isTop ? onPointerUp : undefined}
@@ -402,7 +408,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                           >
                             <Image
                               src={heroSrc}
-                              alt={profile.name}
+                              alt={`Profile photo of ${profile.name}`}
                               fill
                               sizes="(max-width: 600px) 100vw, 400px"
                               draggable={false}
@@ -494,8 +500,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                           </div>
                           {isTop && (
                             <>
-                              <div className={"card-photo-zone card-photo-zone-left" + (cardScrolled ? " hidden" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.max(0, prev - 1)); } }} style={{ pointerEvents: cardScrolled ? "none" : "auto" }} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.max(0, prev - 1)); }}><span className="card-photo-nav" style={{ left: 6 }}>‹</span></div>
-                              <div className={"card-photo-zone card-photo-zone-right" + (cardScrolled ? " hidden" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.min(photos.length - 1, prev + 1)); } }} style={{ pointerEvents: cardScrolled ? "none" : "auto" }} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.min(photos.length - 1, prev + 1)); }}><span className="card-photo-nav" style={{ right: 6 }}>›</span></div>
+                              <div className={"card-photo-zone card-photo-zone-left" + (cardScrolled ? " hidden" : "")} role="button" tabIndex={0} aria-label="Previous profile photo" onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.max(0, prev - 1)); } }} style={{ pointerEvents: cardScrolled ? "none" : "auto" }} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.max(0, prev - 1)); }}><span className="card-photo-nav" style={{ left: 6 }} aria-hidden="true">‹</span></div>
+                              <div className={"card-photo-zone card-photo-zone-right" + (cardScrolled ? " hidden" : "")} role="button" tabIndex={0} aria-label="Next profile photo" onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.min(photos.length - 1, prev + 1)); } }} style={{ pointerEvents: cardScrolled ? "none" : "auto" }} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(prev => Math.min(photos.length - 1, prev + 1)); }}><span className="card-photo-nav" style={{ right: 6 }} aria-hidden="true">›</span></div>
                             </>
                           )}
                           <div className={"card-photo-dots" + (cardScrolled ? " hidden" : "")}>
@@ -531,12 +537,12 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 <div className="card-section">
                                   <div className="card-section-title">Prompts</div>
                                   <div className="card-prompts" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-                                    <button className="card-prompt-arrow" onClick={(e) => { e.stopPropagation(); setPromptIdx?.(prev => Math.max(0, (prev ?? 0) - 1)); }} style={{ opacity: (promptIdx ?? 0) > 0 ? 1 : 0.3 }}>‹</button>
+                                    <button className="card-prompt-arrow" aria-label="Previous prompt" onClick={(e) => { e.stopPropagation(); setPromptIdx?.(prev => Math.max(0, (prev ?? 0) - 1)); }} style={{ opacity: (promptIdx ?? 0) > 0 ? 1 : 0.3 }}>‹</button>
                                     <div className="card-prompt-text">
                                       <div className="card-prompt-q">{(profile as any).prompts[promptIdx ?? 0]?.q || ""}</div>
                                       <div className="card-prompt-a">{(profile as any).prompts[promptIdx ?? 0]?.a || ""}</div>
                                     </div>
-                                    <button className="card-prompt-arrow" onClick={(e) => { e.stopPropagation(); setPromptIdx?.(prev => Math.min(((profile as any).prompts.length - 1), (prev ?? 0) + 1)); }} style={{ opacity: (promptIdx ?? 0) < ((profile as any).prompts.length - 1) ? 1 : 0.3 }}>›</button>
+                                    <button className="card-prompt-arrow" aria-label="Next prompt" onClick={(e) => { e.stopPropagation(); setPromptIdx?.(prev => Math.min(((profile as any).prompts.length - 1), (prev ?? 0) + 1)); }} style={{ opacity: (promptIdx ?? 0) < ((profile as any).prompts.length - 1) ? 1 : 0.3 }}>›</button>
                                     <button
                                       className="card-prompt-like-btn"
                                       onClick={(e) => { e.stopPropagation(); const p = (profile as any).prompts[promptIdx ?? 0]; if (p) handleAnchorLike({ type: "prompt", value: p.a || p.q || "" }); }}
@@ -589,7 +595,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                         style={{ position: "relative", borderRadius: 14, overflow: "hidden", aspectRatio: "3/4", background: "rgba(255,255,255,0.03)", cursor: "pointer" }}
                                         onClick={() => { setLightboxPhotos(albumPhotos); setLightboxIdx(portIdx); }}
                                       >
-                                         <Image loading="lazy" src={albumPhotos[portIdx]} alt="Photo" fill sizes="(max-width: 600px) 50vw, 300px" style={{ objectFit: "cover", filter: (profile as any).nsfw && !revealedNsfw.has(String(profile.id)) ? "blur(26px) brightness(0.7)" : "none", transition: "filter .3s" }} onError={handleImgError} />
+                                         <Image loading="lazy" src={albumPhotos[portIdx]} alt={`${profile.name}'s portfolio photo ${portIdx + 1}`} fill sizes="(max-width: 600px) 50vw, 300px" style={{ objectFit: "cover", filter: (profile as any).nsfw && !revealedNsfw.has(String(profile.id)) ? "blur(26px) brightness(0.7)" : "none", transition: "filter .3s" }} onError={handleImgError} />
                                         {(profile as any).nsfw && !revealedNsfw.has(String(profile.id)) && (
                                            <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); } }} onClick={(e) => { e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); }} style={{ position: "absolute", inset: 0, zIndex: 4, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(10,6,18,0.45)", cursor: "pointer" }}>
                                             <div style={{ fontSize: 24, fontWeight: 800, color: "#ff8a80" }}>18+</div>
@@ -607,8 +613,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                         {/* Left/Right arrows */}
                                         {albumPhotos.length > 1 && (
                                           <>
-                                            <button onClick={(e) => { e.stopPropagation(); setPortfolioPhotoIdx(p => Math.max(0, p - 1)); }} style={{ position: "absolute", left: 6, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, cursor: "pointer", zIndex: 3, backgroundImage: "linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)", backgroundSize: "300% 300%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", lineHeight: "34px", filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.8))" }}>‹</button>
-                                            <button onClick={(e) => { e.stopPropagation(); setPortfolioPhotoIdx(p => Math.min(albumPhotos.length - 1, p + 1)); }} style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, cursor: "pointer", zIndex: 3, backgroundImage: "linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)", backgroundSize: "300% 300%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", lineHeight: "34px", filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.8))" }}>›</button>
+                                            <button aria-label="Previous portfolio photo" onClick={(e) => { e.stopPropagation(); setPortfolioPhotoIdx(p => Math.max(0, p - 1)); }} style={{ position: "absolute", left: 6, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, cursor: "pointer", zIndex: 3, backgroundImage: "linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)", backgroundSize: "300% 300%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", lineHeight: "34px", filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.8))" }}>‹</button>
+                                            <button aria-label="Next portfolio photo" onClick={(e) => { e.stopPropagation(); setPortfolioPhotoIdx(p => Math.min(albumPhotos.length - 1, p + 1)); }} style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, cursor: "pointer", zIndex: 3, backgroundImage: "linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700)", backgroundSize: "300% 300%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", lineHeight: "34px", filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.8))" }}>›</button>
                                           </>
                                         )}
                                       </div>
@@ -616,7 +622,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                       {albumPhotos.length > 1 && (
                                         <div style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 8 }}>
                                           {albumPhotos.map((_: string, i: number) => (
-                                             <div key={i} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setPortfolioPhotoIdx(i); } }} onClick={(e) => { e.stopPropagation(); setPortfolioPhotoIdx(i); }} style={{ width: 6, height: 6, borderRadius: "50%", background: i === portIdx ? "var(--gold)" : "rgba(255,255,255,0.15)", cursor: "pointer", transition: "all .2s" }} />
+                                             <div key={i} role="button" tabIndex={0} aria-label={`Show portfolio photo ${i + 1}`} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setPortfolioPhotoIdx(i); } }} onClick={(e) => { e.stopPropagation(); setPortfolioPhotoIdx(i); }} style={{ width: 6, height: 6, borderRadius: "50%", background: i === portIdx ? "var(--gold)" : "rgba(255,255,255,0.15)", cursor: "pointer", transition: "all .2s" }} />
                                           ))}
                                         </div>
                                       )}

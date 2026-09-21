@@ -79,3 +79,18 @@ Reviewer checks before merge: confirm Supabase Auth's **Confirm email** setting 
 - Added `does not reveal an existing account during registration` to `src/app/api/muse/auth/auth.route.test.ts`. It mocks Supabase's no-identities existing-user response and asserts the neutral 202 pending-registration shape, with neither address nor “already registered” text exposed.
 - `node node_modules/typescript/bin/tsc --noEmit --incremental false` and `git diff --check` exited 0 after adding the test.
 - Local Vitest verification was subsequently blocked before execution by `EPERM` creating `V:\Muse\node_modules\.vite-temp\vitest.config...mjs`; please run `npx vitest run` in wyzmind's unrestricted shell to verify the new test alongside the suite. No test failure was reported—the runner never loaded its config.
+
+## Round 4 — environment-template completion
+
+- `.env.example` now documents `OAUTH_STATE_SECRET` (required dedicated OAuth-state signing key) and `ANALYTICS_IP_HASH_SECRET` (optional keyed QR IP pseudonymization). Both include high-entropy generation guidance.
+- It now explicitly sets `NEXT_PUBLIC_DEMO_MODE=true` in the example and documents that it remains enabled for internal review until an explicit real-user-launch decision and rebuild/redeploy.
+- `node node_modules/typescript/bin/tsc --noEmit --incremental false` and `git diff --check` exited 0 after this documentation-only change. Wyzmind subsequently reported `360 passed` for the full Vitest suite after updating the call/upload rate-limit mocks.
+
+## Round 5 — mobile Discover accessibility (pending wyzmind review)
+
+- Live mobile AX inspection found the three visual stack cards were all fully exposed to assistive technology. `src/app/(muse)/muse/screens/DiscoverScreen.tsx` now applies `aria-hidden` and native `inert` to the two non-active preview cards.
+- This preserves the visual stack while preventing duplicate profile narration and tab focus from landing on controls covered by the active card.
+- The card deck is also now a labelled `region` rather than an `application`; the latter unnecessarily suppresses normal screen-reader reading/navigation behavior for a standard content carousel.
+- Added useful text labels for profile-photo, prompt, and portfolio-photo navigation, including portfolio dot controls, instead of leaving assistive technology to announce arrow glyphs or unnamed buttons.
+- Replaced generic Discover image alt text with `Profile photo of {name}` and `{name}'s portfolio photo {n}` so the card's visual work has meaningful context.
+- `node node_modules/typescript/bin/tsc --noEmit --incremental false` and `git diff --check` exited 0. Please run the normal full Vitest suite before merge.
