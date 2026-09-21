@@ -350,7 +350,7 @@ export const ChatScreen = memo(function ChatScreen({
               <div key={i} className={"msg " + (msg.from === "me" ? "msg-me" : "msg-them")}>
                 {msg.img && (
                   <div style={{ position: "relative", display: "inline-block" }} onClick={() => setRevealedChatImgs(prev => { const n = new Set(prev); n.add(String(msg.img)); return n; })} role="button" tabIndex={0} aria-label="Reveal image">
-                    <Image loading="lazy" src={msg.img} alt="Photo" width={200} height={200} style={{ width: "auto", height: "auto", maxWidth: 200, borderRadius: 12, marginBottom: 6, display: "block", filter: revealedChatImgs.has(String(msg.img)) ? "none" : "blur(24px)", transition: "filter .2s" }} />
+                    <Image loading="lazy" src={msg.img} alt="Shared photo" width={200} height={200} style={{ width: "auto", height: "auto", maxWidth: 200, borderRadius: 12, marginBottom: 6, display: "block", filter: revealedChatImgs.has(String(msg.img)) ? "none" : "blur(24px)", transition: "filter .2s" }} />
                     {!revealedChatImgs.has(String(msg.img)) && (
                       <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 11, color: "#fff", background: "rgba(10,6,18,0.6)", padding: "4px 10px", borderRadius: 99, whiteSpace: "nowrap" }}>Tap to reveal</span>
                     )}

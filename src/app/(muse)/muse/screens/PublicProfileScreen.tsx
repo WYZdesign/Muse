@@ -254,15 +254,15 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
               {photos.length > 1 && (
                 <div style={{ position: "absolute", bottom: 16, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 6, zIndex: 4 }}>
                   {photos.map((_: string, i: number) => (
-                    <div key={i} onClick={() => setPhotoIdx(i)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPhotoIdx(i); } }} style={{ width: 7, height: 7, borderRadius: "50%", background: i === photoIdx ? "#FFD700" : "rgba(255,255,255,0.4)", cursor: "pointer", transition: "all .2s" }} />
+                    <div key={i} onClick={() => setPhotoIdx(i)} role="button" tabIndex={0} aria-label={`Show photo ${i + 1}`} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPhotoIdx(i); } }} style={{ width: 7, height: 7, borderRadius: "50%", background: i === photoIdx ? "#FFD700" : "rgba(255,255,255,0.4)", cursor: "pointer", transition: "all .2s" }} />
                   ))}
                 </div>
               )}
               {/* Left/right tap zones */}
               {photos.length > 1 && (
                 <>
-                  <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPhotoIdx(p => p > 0 ? p - 1 : photos.length - 1); } }} onClick={() => setPhotoIdx(p => p > 0 ? p - 1 : photos.length - 1)} style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "35%", zIndex: 3, cursor: "pointer" }} />
-                  <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPhotoIdx(p => p < photos.length - 1 ? p + 1 : 0); } }} onClick={() => setPhotoIdx(p => p < photos.length - 1 ? p + 1 : 0)} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "35%", zIndex: 3, cursor: "pointer" }} />
+                  <div role="button" tabIndex={0} aria-label="Previous photo" onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPhotoIdx(p => p > 0 ? p - 1 : photos.length - 1); } }} onClick={() => setPhotoIdx(p => p > 0 ? p - 1 : photos.length - 1)} style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "35%", zIndex: 3, cursor: "pointer" }} />
+                  <div role="button" tabIndex={0} aria-label="Next photo" onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPhotoIdx(p => p < photos.length - 1 ? p + 1 : 0); } }} onClick={() => setPhotoIdx(p => p < photos.length - 1 ? p + 1 : 0)} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "35%", zIndex: 3, cursor: "pointer" }} />
                 </>
               )}
             </>

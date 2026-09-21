@@ -519,9 +519,9 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div className="section">
           <div className="section-title">Portfolio</div>
           <div className="section-text" style={{ marginBottom: 10 }}>Your albums &amp; showcased work</div>
-          <div style={{ display: "flex", gap: 8, marginBottom: 12, overflowX: "auto", scrollbarWidth: "none", paddingTop: 8 }}>
+          <div role="tablist" aria-label="Portfolio filter" style={{ display: "flex", gap: 8, marginBottom: 12, overflowX: "auto", scrollbarWidth: "none", paddingTop: 8 }}>
             {(["all", "portrait", "landscape", "sets"] as const).map(tab => (
-              <span key={tab} className={"conn-tab" + (portfolioTab === tab ? " active" : "")} role="tab" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPortfolioTab(tab); } }} onClick={() => setPortfolioTab(tab)} style={{ flexShrink: 0, fontSize: 12, padding: "6px 14px" }}>{tab === "all" ? "All" : tab === "portrait" ? "Portrait" : tab === "landscape" ? "Landscape" : "Sets"}</span>
+              <span key={tab} className={"conn-tab" + (portfolioTab === tab ? " active" : "")} role="tab" tabIndex={0} aria-selected={portfolioTab === tab} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPortfolioTab(tab); } }} onClick={() => setPortfolioTab(tab)} style={{ flexShrink: 0, fontSize: 12, padding: "6px 14px" }}>{tab === "all" ? "All" : tab === "portrait" ? "Portrait" : tab === "landscape" ? "Landscape" : "Sets"}</span>
             ))}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>

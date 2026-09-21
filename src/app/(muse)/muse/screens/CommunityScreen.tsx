@@ -322,7 +322,7 @@ export const CommunityScreen = memo(function CommunityScreen({
               {/* Same img:'' seed-data gap as the card views — gradient-initial fallback */}
               {detailItem.img ? (
                 <div style={{ position: "relative", width: "100%", height: 200, borderRadius: 16, marginBottom: 16, overflow: "hidden" }}>
-                  <Image src={detailItem.img} alt="Photo" fill sizes="(max-width: 600px) 100vw, 500px" style={{ objectFit: "cover" }} onError={handleImgError} />
+                  <Image src={detailItem.img} alt="Community post image" fill sizes="(max-width: 600px) 100vw, 500px" style={{ objectFit: "cover" }} onError={handleImgError} />
                 </div>
               ) : (
                 <div style={{ width: "100%", height: 200, borderRadius: 16, marginBottom: 16, background: "linear-gradient(135deg, #2a1a3e 0%, #1a0a2e 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,215,0,0.6)", fontSize: "2.5em", fontWeight: 700 }}>

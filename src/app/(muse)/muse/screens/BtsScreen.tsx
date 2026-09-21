@@ -419,7 +419,7 @@ export const BtsScreen = memo(function BtsScreen({
                 >
                   <Image
                     src={s.img || s.avatar}
-                    alt="Photo"
+                    alt="Behind the scenes photo"
                     fill
                     sizes="64px"
                     onError={handleImgError}
@@ -572,7 +572,7 @@ export const BtsScreen = memo(function BtsScreen({
                 >
                   <Image
                     src={s.img || s.avatar}
-                    alt="Photo"
+                    alt="Behind the scenes photo"
                     fill
                     sizes="(max-width: 600px) 50vw, 300px"
                     className="bts-photo"
