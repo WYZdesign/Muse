@@ -92,10 +92,22 @@ export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
     const { data: existing } = await sb.from("muse_message_requests").select("id,status").eq("request_from", profile.id).eq("request_to", String(toId)).maybeSingle();
     if (existing && existing.status === "blocked") return NextResponse.json({ error: "Unable to message this user" }, { status: 403 });
     if (!existing) {
-      const { error: insErr } = await sb.from("muse_message_requests").insert({ request_from: profile.id, request_to: String(toId), message_preview: cleanText.slice(0, 500) });
+      const { error: insErr } = await sb.from("muse_message_requests").insert({
+        request_from: profile.id,
+        request_to: String(toId),
+        message_preview: cleanText.slice(0, 500),
+        // A voice/video intro is a valid first-contact note too.
+        media_url: mediaUrl || null,
+        media_type: mediaType,
+        duration_ms: durationMs,
+        transcript,
+      });
       if (insErr) return safeServerError(insErr, "request insert");
       await sb.from("muse_notifications").insert({ user_id: String(toId), from_id: profile.id, type: "message", body: `${profile.name} wants to chat`, read: false });
-      await emailProfile(sb, String(toId), "New message request on Muse ✦", "You have a new message request", `${profile.name} sent a message request.`, "Check Requests", "https://muse.wyzdesign.com/muse", "message");
+      const introPreview = cleanText
+        ? `${profile.name} sent a message request.`
+        : `${profile.name} sent a ${mediaUrl ? (kind === "voice" ? "voice" : "video") : "media"} intro.`;
+      await emailProfile(sb, String(toId), "New message request on Muse ✦", "You have a new message request", introPreview, "Check Requests", "https://muse.wyzdesign.com/m");
       pushToProfile(String(toId), "New Message Request", `${profile.name} wants to chat — tap to view`, "/muse/matches").catch(() => {});
     }
     return NextResponse.json({ success: true, pending: true, message: "Request sent — they'll see it in their Message Requests inbox" });
