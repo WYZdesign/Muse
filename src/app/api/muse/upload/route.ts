@@ -82,6 +82,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid file extension" }, { status: 400 });
     }
 
+    // Compute the storage path BEFORE moderation so the scan log can carry the
+    // final public URL — the admin review queue needs it to actually play the
+    // flagged clip instead of just showing a filename.
+    const safeFolder = folder.replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "avatars";
+    const path = safeFilename(`${profileId}/${safeFolder}`, ext);
+    const publicUrl = getServiceClient().storage.from("muse-uploads").getPublicUrl(path).data.publicUrl;
+
     // Content moderation — scan image uploads with AWS Rekognition before
     // storing. Video (webm) can't go through the image scanner yet; instead
     // we log the upload, create a safety incident for manual admin review,
@@ -99,7 +106,7 @@ export async function POST(req: NextRequest) {
         fileType: "audio/webm",
         fileSize: file.size,
         context: folder,
-        result: { safe: true, scanned: true, flaggedCategories: [], confidence: 1, shouldBlock: false, shouldReport: false, isCSAM: false, details: [{ kind: "voice" }] },
+        result: { safe: true, scanned: true, flaggedCategories: [], confidence: 1, shouldBlock: false, shouldReport: false, isCSAM: false, details: [{ kind: "voice", url: publicUrl }] },
       });
     } else if (isVideo) {
       // Start async video moderation via Rekognition
@@ -113,7 +120,7 @@ export async function POST(req: NextRequest) {
           fileType: "video/webm",
           fileSize: file.size,
           context: folder,
-          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PROCESSING"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ jobId: videoJobId }] },
+          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PROCESSING"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ jobId: videoJobId, url: publicUrl }] },
         });
         // Store job ID for async result polling (could use cron or webhook)
         // For now, mark as pending and allow upload - results checked via separate endpoint
@@ -126,12 +133,12 @@ export async function POST(req: NextRequest) {
           fileType: "video/webm",
           fileSize: file.size,
           context: folder,
-          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PENDING_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [] },
+          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PENDING_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ url: publicUrl }] },
         });
         await reportIncident({
           userId: profileId,
           context: `video-upload:${folder}`,
-          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_NEEDS_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [] },
+          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_NEEDS_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ url: publicUrl }] },
         });
         try {
           await getServiceClient().from("muse_profiles").update({ nsfw: true }).eq("id", profileId);
@@ -182,9 +189,6 @@ export async function POST(req: NextRequest) {
         }
       }
     }
-
-    const safeFolder = folder.replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "avatars";
-    const path = safeFilename(`${profileId}/${safeFolder}`, ext);
     const sb = getServiceClient();
     const mimeExt = ext === "jpg" ? "jpeg" : ext;
     const { data, error } = await sb.storage.from("muse-uploads").upload(path, buffer, {

@@ -17,6 +17,7 @@ type AnalyticsData = {
   refunds?: { total: number; open: number; approved: number; rejected: number };
   calls?: { total: number; answered: number; missed: number; voicemails: number };
   topCreators?: { id: string; name?: string; type?: string; activity: number }[];
+  auditLog?: { id?: string; query_text?: string; action?: string; created_at?: string }[];
 };
 
 /**
@@ -413,6 +414,22 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
+
+            {/* ── ADMIN AUDIT LOG ── */}
+            {Array.isArray(data.auditLog) && data.auditLog.length > 0 && (
+              <>
+                <div style={groupTitle}>Admin activity log</div>
+                <div style={{ ...box, marginBottom: 28 }}>
+                  <div style={{ ...hint, marginBottom: 8 }}>Who changed what, newest first — useful when something unexpected happens.</div>
+                  {data.auditLog.slice(0, 25).map((a, i) => (
+                    <div key={a.id || i} style={{ fontSize: 12, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", gap: 10 }}>
+                      <span style={{ color: "rgba(255,255,255,0.75)", wordBreak: "break-word" }}>{String(a.query_text || a.action || "(no detail)").slice(0, 160)}</span>
+                      <span style={{ color: "rgba(255,255,255,0.35)", whiteSpace: "nowrap" }}>{a.created_at ? new Date(a.created_at).toLocaleString() : ""}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* ── WHAT NEEDS ATTENTION ── */}
             <div style={{ ...groupTitle, marginTop: 28 }}>What needs attention</div>

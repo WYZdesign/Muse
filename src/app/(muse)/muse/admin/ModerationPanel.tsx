@@ -241,6 +241,23 @@ export default function AdminModerationPanel() {
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
                   ctx: {s.context || "?"} · type: {s.file_type || "?"}{s.confidence != null ? ` · conf ${(s.confidence * 100).toFixed(0)}%` : ""}{s.flagged_categories?.length ? ` · [${s.flagged_categories.join(", ")}]` : ""}{s.user_id ? ` · user ${String(s.user_id).slice(0, 8)}…` : ""}
                 </div>
+                {/* Play the actual flagged clip so a reviewer isn't judging a
+                    filename. The upload route stores its public URL in details. */}
+                {(() => {
+                  const url = Array.isArray(s.details) ? (s.details.find((d: any) => d?.url)?.url || s.details[0]?.url) : null;
+                  if (!url) return null;
+                  const isAudio = /audio/i.test(String(s.file_type));
+                  return (
+                    <div style={{ marginTop: 8 }}>
+                      {isAudio ? (
+                        <audio controls preload="metadata" src={url} style={{ width: "100%" }} />
+                      ) : (
+                        <video controls preload="metadata" src={url} style={{ width: "100%", maxHeight: 260, borderRadius: 8, background: "#0f0a1a" }} />
+                      )}
+                      <a href={url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#ffd700", display: "inline-block", marginTop: 4 }}>Open full size ↗</a>
+                    </div>
+                  );
+                })()}
               </div>
             ))}
           </div>
