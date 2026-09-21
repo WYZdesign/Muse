@@ -2,7 +2,7 @@
 
 import React, { memo, useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiImage, FiSend, FiMoreVertical, FiFlag, FiUserX, FiSlash, FiMic, FiVideo, FiSquare, FiPhone } from "react-icons/fi";
+import { FiArrowLeft, FiImage, FiSend, FiMoreVertical, FiFlag, FiUserX, FiSlash, FiMic, FiVideo, FiSquare, FiPhone, FiSearch, FiX } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { authFetch } from "../lib/auth-client";
 import type { Screen } from "../components/types";
@@ -98,6 +98,9 @@ export const ChatScreen = memo(function ChatScreen({
   const [callLog, setCallLog] = useState<any[]>([]);
   // Media & clips shared in this conversation (photos, video notes, voice notes).
   const [showGallery, setShowGallery] = useState(false);
+  // In-chat search across message text AND voice-note transcripts.
+  const [chatQuery, setChatQuery] = useState("");
+  const [showChatSearch, setShowChatSearch] = useState(false);
 
   const openCallLog = async () => {
     setShowChatMenu(false);
@@ -378,6 +381,7 @@ export const ChatScreen = memo(function ChatScreen({
                   <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 998 }} onClick={() => setShowChatMenu(false)} />
                   <div role="menu" style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 999, minWidth: 168, background: "var(--panel-bg)", border: "1px solid var(--border-med)", borderRadius: 14, padding: 6, boxShadow: "0 12px 32px rgba(0,0,0,0.5)" }}>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setShowGallery(true); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiImage size={14} /> Media &amp; clips</button>
+                    <button role="menuitem" onClick={() => { setShowChatMenu(false); setShowChatSearch(true); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiSearch size={14} /> Search this chat</button>
                     <button role="menuitem" onClick={openCallLog} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiPhone size={14} /> Call history</button>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setShowReport(true); setReportTarget({ id: chatTarget.id, type: "user", name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiFlag size={14} /> Report</button>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setUnmatchTarget({ id: chatTarget.id, name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiUserX size={14} /> Unmatch</button>
@@ -393,6 +397,20 @@ export const ChatScreen = memo(function ChatScreen({
               Reconnecting… messages will resume automatically
             </div>
           )}
+          {showChatSearch && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderBottom: "1px solid var(--border-subtle)", background: "var(--glass)" }}>
+              <FiSearch size={15} color="var(--muted)" />
+              <input
+                autoFocus
+                value={chatQuery}
+                onChange={(e) => setChatQuery(e.target.value)}
+                placeholder="Search messages and voice transcripts…"
+                aria-label="Search this chat"
+                style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "var(--text)", fontSize: 13, fontFamily: "inherit" }}
+              />
+              <button onClick={() => { setShowChatSearch(false); setChatQuery(""); }} aria-label="Close search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer" }}><FiX size={15} /></button>
+            </div>
+          )}
           <div className="messages" ref={messagesEndRef as any}>
             {(chatTarget.messages || []).length === 0 && !(typingTarget === chatTarget.id) && (
               <div style={{ textAlign: "center", padding: "48px 24px 24px", color: "var(--muted)" }}>
@@ -401,7 +419,15 @@ export const ChatScreen = memo(function ChatScreen({
                 <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>Break the ice with a quick reply below, or send your own message to kick things off.</div>
               </div>
             )}
-            {(chatTarget.messages || []).map((msg: any, i: number) => (
+            {(chatTarget.messages || [])
+              .filter((msg: any) => {
+                const q = chatQuery.trim().toLowerCase();
+                if (!q) return true;
+                // Searches message text AND the auto-transcript of voice notes.
+                return String(msg.text || "").toLowerCase().includes(q)
+                  || String(msg.transcript || "").toLowerCase().includes(q);
+              })
+              .map((msg: any, i: number) => (
               <div key={i} className={"msg " + (msg.from === "me" ? "msg-me" : "msg-them")}>
                 {msg.img && (
                   <div style={{ position: "relative", display: "inline-block" }} onClick={() => setRevealedChatImgs(prev => { const n = new Set(prev); n.add(String(msg.img)); return n; })} role="button" tabIndex={0} aria-label="Reveal image">
