@@ -13,8 +13,9 @@ export default function LoadingOverlay({
   inline?: boolean;
 }) {
   const body = (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14 }}>
+    <div role="status" aria-live="polite" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14 }}>
       <div
+        aria-hidden="true"
         style={{
           width: 44,
           height: 44,

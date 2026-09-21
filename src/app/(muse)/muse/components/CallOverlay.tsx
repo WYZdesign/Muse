@@ -148,7 +148,7 @@ export default function CallOverlay({
   const ss = String(seconds % 60).padStart(2, "0");
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 10001, background: "#05030a", display: "flex", flexDirection: "column" }}>
+    <div role="dialog" aria-modal="true" aria-label={`${call.kind === "voice" ? "Voice" : "Video"} call with ${call.peerName}`} style={{ position: "fixed", inset: 0, zIndex: 10001, background: "#05030a", display: "flex", flexDirection: "column" }}>
       {/* Remote view */}
       <div style={{ position: "relative", flex: 1, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div ref={remoteContainerRef} style={{ position: "absolute", inset: 0, display: "grid", gridTemplateColumns: remoteCount > 1 ? "1fr 1fr" : "1fr", gap: 4 }} />
