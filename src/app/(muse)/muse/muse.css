@@ -11,7 +11,7 @@ a{color:inherit;text-decoration:none}
 .bg-orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:0.3;will-change:transform}
 .bg-orb-1{width:400px;height:400px;background:var(--gold);top:-15%;left:-10%}
 .skeleton-container{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:60px 20px;min-height:100dvh}
-.skeleton-block{background:var(--surface);border-radius:20px;padding:24px;width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center}
+
 .skeleton-pulse{background:linear-gradient(90deg,var(--surface) 25%,var(--glass) 50%,var(--surface) 75%);background-size:200% 100%;animation:skeletonPulse 1.5s ease-in-out infinite;border-radius:8px}
 @keyframes skeletonPulse{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
@@ -19,9 +19,7 @@ a{color:inherit;text-decoration:none}
 /* Motion Audit Batch A-I: Animated interactions */
 
 /* Skeleton loading states (enhanced) */
-.skeleton-block {
-  animation: skeletonPulse 1.5s ease-in-out infinite;
-}
+
 
 .bg-orb-2{width:350px;height:350px;background:var(--amber);top:25%;right:-15%;opacity:0.25}
 .bg-orb-3{width:280px;height:280px;background:var(--peach);bottom:0;left:20%}
@@ -157,14 +155,14 @@ a{color:inherit;text-decoration:none}
 .splash-ocean{position:absolute;left:0;right:0;bottom:0;height:42%;z-index:2}
 .splash-waves-svg{position:absolute;bottom:0;left:-8%;width:116%;height:100%;display:block}
 .splash-waves-svg .swv{transform-origin:center bottom;will-change:transform}
-.swv-1{fill:rgba(30,195,215,0.48);animation:swave1 7.3s ease-in-out infinite}
-.swv-2{fill:rgba(18,155,182,0.56);animation:swave2 9.1s ease-in-out infinite -2.4s}
-.swv-3{fill:rgba(12,122,155,0.64);animation:swave3 6.4s ease-in-out infinite -4.7s}
-.swv-4{fill:rgba(8,92,128,0.72);animation:swave4 10.6s ease-in-out infinite -1.3s}
-.swv-5{fill:rgba(6,60,96,0.85);animation:swave5 12.3s ease-in-out infinite -5.1s}
-.swv-6{fill:rgba(30,195,215,0.3);animation:swave6 8.7s ease-in-out infinite -3.6s}
-.swv-7{fill:rgba(18,155,182,0.22);animation:swave7 11.4s ease-in-out infinite -1.9s}
-.swv-8{fill:rgba(12,122,155,0.16);animation:swave8 9.8s ease-in-out infinite -6.2s}
+
+
+
+
+
+
+
+
 /* Irregular, non-synchronized swell — each layer bobs to its own uneven rhythm
    (varying amplitude per crest) with a slight horizontal drift, so crests travel
    independently like real water instead of the whole ocean pulsing in lockstep.
@@ -350,8 +348,8 @@ a{color:inherit;text-decoration:none}
 @keyframes hamburgerSlide{from{transform:translateX(100%)}to{transform:translateX(0)}}
 @keyframes floatySmall{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes floatyMed{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.floaty-sm{animation:floatySmall 3.6s ease-in-out infinite}
-.floaty-md{animation:floatyMed 4.4s ease-in-out infinite}
+
+
 @keyframes hamburgerOut{from{opacity:1}to{opacity:0}}
 @keyframes hamburgerSlideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:.6}}
 @keyframes hamburgerBackdropOut{from{opacity:1}to{opacity:0}}
@@ -760,7 +758,7 @@ img{background-color:var(--card-bg)}
 .swirl-ring-4{animation-duration:8s;animation-direction:reverse;background:linear-gradient(120deg,var(--sunset),var(--mint),var(--gold),var(--sky),var(--sunset));background-size:340% 340%}
 .swirl-ring-5{animation-duration:5.5s;background:linear-gradient(120deg,var(--lavender),var(--pink),var(--peach),var(--coral),var(--lavender));background-size:340% 340%}
 .swirl-ring-6{animation-duration:6.5s;animation-direction:reverse;background:linear-gradient(120deg,var(--mint),var(--sky),var(--lavender),var(--amber),var(--mint));background-size:340% 340%}
-.swirl-avatar-1{animation:avatarEccentric 5s linear infinite}
+
 
 
 /* ═══ SITE-COLOR RING GRADIENT VARIANTS (5) — Torreé's "4 or 5 variations of site
