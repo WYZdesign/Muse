@@ -166,5 +166,26 @@ export function useCall(myId: string | null | undefined) {
     } catch { return []; }
   }, [myId, callApi]);
 
-  return { incoming, active, error, setError, startCall, acceptCall, declineCall, endCall, leaveVoicemail, fetchHistory };
+  /** Join a community's shared voice room (group call — anyone in the community). */
+  const startRoom = useCallback(async (communityId: string, communityName?: string) => {
+    if (!myId || !communityId) return;
+    setError(null);
+    try {
+      const r = await authFetch("/api/muse/call", {
+        method: "POST",
+        body: JSON.stringify({ action: "start-room", communityId }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "Could not join the room");
+      setActive({
+        room: d.room, url: d.url, token: d.token, kind: "voice",
+        peerId: communityId, peerName: d.community?.name || communityName || "Community room",
+        outgoing: false, callId: null, startedAt: Date.now(),
+      });
+    } catch (e: unknown) {
+      setError((e as Error)?.message || "Could not join the room");
+    }
+  }, [myId]);
+
+  return { incoming, active, error, setError, startCall, acceptCall, declineCall, endCall, leaveVoicemail, fetchHistory, startRoom };
 }

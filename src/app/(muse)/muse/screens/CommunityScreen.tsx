@@ -3,7 +3,7 @@
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
 import { STRINGS } from "@/lib/strings";
-import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX, FiShield, FiUserPlus, FiMoreHorizontal } from "react-icons/fi";
+import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX, FiShield, FiUserPlus, FiMoreHorizontal, FiMic } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { EmptyState } from "../components/EmptyState";
 import { BADGE_COLORS } from "../components/badgeColors";
@@ -34,6 +34,8 @@ export interface CommunityScreenProps {
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   openHamburger?: () => void;
   unreadNotificationCount?: number;
+  /** Join this community's shared LiveKit voice room (group call). */
+  onJoinVoiceRoom?: (communityId: string, communityName: string) => void;
   setShowReport?: (v: boolean) => void;
   setReportTarget?: (t: { id: number | string; type: string; name: string }) => void;
   currentUser?: any;
@@ -61,6 +63,7 @@ export const CommunityScreen = memo(function CommunityScreen({
   goBack,
   openHamburger,
   unreadNotificationCount,
+  onJoinVoiceRoom,
   setShowReport = () => {},
   setReportTarget = () => {},
   showToast,
@@ -334,6 +337,17 @@ export const CommunityScreen = memo(function CommunityScreen({
                     {detailItem.nsfw && <span role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: "18+", desc: "Adult / NSFW community — only shown to verified adults.", icon: "🔞", color: "#ff6b6b" })} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 99, background: "rgba(255,69,0,0.15)", border: "1px solid rgba(255,69,0,0.3)", color: "#ff6b6b", fontWeight: 600, cursor: "pointer" }}>18+</span>}
                   </div>
                   <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6, marginBottom: 20 }}>{detailItem.desc || "No description yet."}</div>
+
+                  {/* Community voice room — a shared LiveKit room any member can
+                      join (group call). Age verification is enforced server-side. */}
+                  {onJoinVoiceRoom && (
+                    <button
+                      onClick={() => onJoinVoiceRoom(String(detailItem.id), detailItem.name || "Community room")}
+                      style={{ width: "100%", padding: "12px 18px", marginBottom: 20, borderRadius: 14, border: "1px solid rgba(255,215,0,0.35)", background: "linear-gradient(135deg, rgba(255,215,0,0.16), rgba(212,165,255,0.16))", color: "var(--gold)", fontSize: 14, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                    >
+                      <FiMic size={16} /> Join voice room
+                    </button>
+                  )}
 
                   {/* Rules — real, group-authored data (muse_communities.rules).
                       No sample text: an empty/missing list just isn't shown. */}

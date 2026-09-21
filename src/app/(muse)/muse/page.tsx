@@ -574,7 +574,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const { liveBriefs, setLiveBriefs } = useBriefsData({ authFetch, profileId: authUser?.profile?.id ?? null });  const { myStats, setMyStats, safetyCheckins, setSafetyCheckins, safetyProfile, setSafetyProfile, promptBankData, setPromptBankData, promptResponses, setPromptResponses } = useProfileData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
 
   // ── Calls (LiveKit): ringing + in-call state for the whole app ──
-  const { incoming: incomingCall, active: activeCall, error: callError, setError: setCallError, startCall, acceptCall, declineCall, endCall, leaveVoicemail, fetchHistory: fetchCallHistory } = useCall(authUser?.profile?.id ?? null);
+  const { incoming: incomingCall, active: activeCall, error: callError, setError: setCallError, startCall, acceptCall, declineCall, endCall, leaveVoicemail, fetchHistory: fetchCallHistory, startRoom } = useCall(authUser?.profile?.id ?? null);
 
   // Load a profile's reviews when the profile modal opens (reviews are
   // written via submit-review but were previously never read back).
@@ -3324,7 +3324,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             </ScreenErrorBoundary>
 
             <ScreenErrorBoundary name="Community">
-            <CommunityScreen screen={screen} showScreen={showScreen} goBack={goBack} commTab={commTab} setCommTab={setCommTab} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} demo={DEMO_MODE} />
+            <CommunityScreen screen={screen} showScreen={showScreen} goBack={goBack} commTab={commTab} setCommTab={setCommTab} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} onJoinVoiceRoom={startRoom} setShowReport={setShowReport} setReportTarget={setReportTarget} demo={DEMO_MODE} />
             </ScreenErrorBoundary>
 
             <ScreenErrorBoundary name="Sessions">

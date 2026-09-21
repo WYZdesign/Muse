@@ -36,8 +36,7 @@ export default function CallOverlay({
 }) {
   const roomRef = useRef<Room | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
-  const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const remoteContainerRef = useRef<HTMLDivElement | null>(null);
   const onEndRef = useRef(onEnd);
   onEndRef.current = onEnd;
 
@@ -45,7 +44,7 @@ export default function CallOverlay({
   const [connected, setConnected] = useState(false);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(call.kind === "video");
-  const [remotePresent, setRemotePresent] = useState(false);
+  const [remoteCount, setRemoteCount] = useState(0);
   const [seconds, setSeconds] = useState(0);
 
   // Voicemail — only offered on an outgoing call nobody has answered.
@@ -55,28 +54,38 @@ export default function CallOverlay({
     showToast: () => {},
     onDone: (url, _kind, durationMs, _mediaType, transcript) => { onVoicemail?.(url, durationMs, transcript); },
   });
-  const canVoicemail = Boolean(call.outgoing && !remotePresent && onVoicemail && uploadMedia);
+  const canVoicemail = Boolean(call.outgoing && (remoteCount === 0) && onVoicemail && uploadMedia);
 
   useEffect(() => {
     let cancelled = false;
     const room = new Room({ adaptiveStream: true, dynacast: true });
     roomRef.current = room;
 
-    const attach = (track: RemoteTrack) => {
-      if (track.kind === Track.Kind.Video && remoteVideoRef.current) {
-        track.attach(remoteVideoRef.current);
-        setRemotePresent(true);
-      } else if (track.kind === Track.Kind.Audio && remoteAudioRef.current) {
-        track.attach(remoteAudioRef.current);
-        setRemotePresent(true);
+    // Remote tracks are attached into a container rather than one fixed <video>,
+    // so the same overlay works for a 1:1 call and a community room with N people.
+    const attachRemote = (track: RemoteTrack, participant?: RemoteParticipant) => {
+      const el = track.attach();
+      el.dataset.identity = participant?.identity || "remote";
+      el.dataset.kind = track.kind;
+      if (track.kind === Track.Kind.Video) {
+        (el as HTMLVideoElement).style.cssText = "width:100%;height:100%;object-fit:cover;background:#05030a;display:block";
+      } else {
+        (el as HTMLAudioElement).style.display = "none";
       }
+      remoteContainerRef.current?.appendChild(el);
+      if (track.kind === Track.Kind.Video) setRemoteCount((c) => c + 1);
+    };
+
+    const removeParticipant = (identity: string) => {
+      remoteContainerRef.current?.querySelectorAll(`[data-identity="${CSS.escape(identity)}"]`).forEach((n) => n.remove());
+      setRemoteCount(remoteContainerRef.current?.querySelectorAll('[data-kind="video"]').length || 0);
     };
 
     room
-      .on(RoomEvent.TrackSubscribed, (track: RemoteTrack) => attach(track))
-      .on(RoomEvent.TrackUnsubscribed, (track: RemoteTrack) => track.detach())
-      .on(RoomEvent.ParticipantConnected, () => setRemotePresent(true))
-      .on(RoomEvent.ParticipantDisconnected, () => setRemotePresent(false))
+      .on(RoomEvent.TrackSubscribed, (track: RemoteTrack, _pub: RemoteTrackPublication, participant: RemoteParticipant) => attachRemote(track, participant))
+      .on(RoomEvent.TrackUnsubscribed, (track: RemoteTrack) => track.detach().forEach((el) => el.remove()))
+      .on(RoomEvent.ParticipantConnected, () => setRemoteCount((c) => c))
+      .on(RoomEvent.ParticipantDisconnected, (p: RemoteParticipant) => removeParticipant(p.identity))
       .on(RoomEvent.Disconnected, () => { if (!cancelled) onEndRef.current(); })
       .on(RoomEvent.LocalTrackPublished, (pub) => {
         if (pub.track && pub.track.kind === Track.Kind.Video && localVideoRef.current) {
@@ -101,9 +110,10 @@ export default function CallOverlay({
         }
         room.remoteParticipants.forEach((p: RemoteParticipant) => {
           p.trackPublications.forEach((pub: RemoteTrackPublication) => {
-            if (pub.track) attach(pub.track);
+            if (pub.track) attachRemote(pub.track, p);
           });
         });
+        setRemoteCount(room.remoteParticipants.size);
       } catch {
         if (!cancelled) setStatus("Could not connect");
       }
@@ -141,22 +151,22 @@ export default function CallOverlay({
     <div style={{ position: "fixed", inset: 0, zIndex: 10001, background: "#05030a", display: "flex", flexDirection: "column" }}>
       {/* Remote view */}
       <div style={{ position: "relative", flex: 1, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "100%", height: "100%", objectFit: "cover", background: "#05030a", display: remotePresent && call.kind === "video" ? "block" : "none" }} />
-        <audio ref={remoteAudioRef} autoPlay />
+        <div ref={remoteContainerRef} style={{ position: "absolute", inset: 0, display: "grid", gridTemplateColumns: remoteCount > 1 ? "1fr 1fr" : "1fr", gap: 4 }} />
+        {remoteCount === 0 && (
 
-        {(!remotePresent || call.kind === "voice") && (
+        
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, textAlign: "center", padding: 24 }}>
             <div style={{ width: 96, height: 96, borderRadius: "50%", background: "linear-gradient(135deg,#ffd700,#d4a5ff)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 38, fontWeight: 800, color: "#0a0612" }}>
               {(call.peerName || "?").slice(0, 1).toUpperCase()}
             </div>
             <div style={{ fontSize: 20, fontWeight: 800, color: "#f5f0ff" }}>{call.peerName}</div>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
-              {connected ? (remotePresent ? `On the call · ${mm}:${ss}` : "Waiting for them to join…") : status}
+              {connected ? (remoteCount > 0 ? `On the call · ${mm}:${ss}` : "Waiting for them to join…") : status}
             </div>
           </div>
         )}
 
-        {remotePresent && call.kind === "video" && (
+        {remoteCount > 0 && call.kind === "video" && (
           <div style={{ position: "absolute", top: 16, left: 0, right: 0, textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.8)", textShadow: "0 1px 6px rgba(0,0,0,.8)" }}>
             {call.peerName} · {mm}:{ss}
           </div>
