@@ -10,6 +10,7 @@ import { EmptyState } from "../components/EmptyState";
 import { sessionTier } from "../components/sessionTiers";
 import { matchesSessionSearch } from "../components/searchMatch";
 import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 import type { Screen, Match, SessionListing } from "../components/types";
 import { SESSIONS } from "../components/types";
@@ -309,6 +310,11 @@ export const SessionsScreen = memo(function SessionsScreen({
     } catch { showToast("Failed to cancel"); }
     setCancelBusy(false);
   };
+  const createSessionTrap = useFocusTrap(showCreate, () => setShowCreate(false));
+  const detailSessionTrap = useFocusTrap(detailSession !== null, () => setDetailSession(null));
+  const bookFormTrap = useFocusTrap(bookFormTarget !== null, () => { if (!bookSubmitting) setBookFormTarget(null); });
+  const cancelBookingTrap = useFocusTrap(cancelTarget !== null, () => setCancelTarget(null));
+  const reviewTrap = useFocusTrap(reviewTarget !== null, () => setReviewTarget(null));
 
   const payBooking = async (booking: any) => {
     const host = booking.host_id;
@@ -630,7 +636,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         )}
       </div>
       {showCreate && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Create session" onClick={() => setShowCreate(false)}>
+        <div ref={createSessionTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Create session" onClick={() => setShowCreate(false)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 20 }}>
             <div className="modal-title" style={{ marginBottom: 4 }}>List a Session</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Become bookable — set your rate and availability.</div>
@@ -650,7 +656,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         </div>
       )}
       {detailSession && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Session details" onClick={() => setDetailSession(null)}>
+        <div ref={detailSessionTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Session details" onClick={() => setDetailSession(null)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 440, width: "90%", padding: 20, maxHeight: "80vh", overflowY: "auto" }}>
             {detailSession.img && (
               <div style={{ position: "relative", width: "100%", height: 160, borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
@@ -692,7 +698,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         </div>
       )}
       {bookFormTarget && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Book session" onClick={() => { if (!bookSubmitting) setBookFormTarget(null); }}>
+        <div ref={bookFormTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Book session" onClick={() => { if (!bookSubmitting) setBookFormTarget(null); }}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, width: "90%", padding: 20 }}>
             <div className="modal-title" style={{ marginBottom: 4 }}>{bookFormTarget.available ? "Book" : "Join Waitlist for"} {bookFormTarget.name}</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>A quick note for the host — sizing/prep and anything they should know before accepting.</div>
@@ -720,7 +726,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         </div>
       )}
       {cancelTarget && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Cancel booking" onClick={() => setCancelTarget(null)}>
+        <div ref={cancelBookingTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Cancel booking" onClick={() => setCancelTarget(null)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 380, width: "90%", padding: 20 }}>
             <div className="modal-title" style={{ marginBottom: 6 }}>Cancel this booking?</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 18 }}>Any held payment will be released back to the client.</div>
@@ -732,7 +738,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         </div>
       )}
       {reviewTarget && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Leave review" onClick={() => setReviewTarget(null)}>
+        <div ref={reviewTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Leave review" onClick={() => setReviewTarget(null)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, width: "90%", padding: 20 }}>
             <div className="modal-title" style={{ marginBottom: 4 }}>Leave a Review</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>How was your shoot with {reviewTarget.host_id?.name || reviewTarget.user_id?.name || "them"}?</div>

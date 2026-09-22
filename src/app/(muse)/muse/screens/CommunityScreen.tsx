@@ -491,7 +491,7 @@ export const CommunityScreen = memo(function CommunityScreen({
           <EmptyState icon={<FiCalendar size={44} />} title="No events yet" sub="When events are posted they'll appear here." />
         )}
         {commTab === "groups" && filteredGroups.map((c: any) => (
-          <div key={c.id} className="conn-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openGroupDetail(c); } }} style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "column", alignItems: "center", cursor: "pointer", position: "relative" }} onClick={() => openGroupDetail(c)}>
+          <div key={c.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "column", alignItems: "center", cursor: "pointer", position: "relative" }} onClick={() => openGroupDetail(c)}>
             {/* Top-banner layout (matches Events). Seeded communities have img:"" — a bare
                 <img src=""> doesn't reliably fire onError, so guard explicitly and render an
                 initials-gradient banner instead of a blank hole. */}
@@ -535,7 +535,7 @@ export const CommunityScreen = memo(function CommunityScreen({
           </div>
         ))}
         {commTab === "events" && events.map((ev: any) => (
-          <div key={ev.id} className="conn-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openEventDetail(ev); } }} style={{ flexDirection: "column", alignItems: "center", marginBottom: 10, padding: 0, overflow: "hidden", borderRadius: 16, cursor: "pointer", position: "relative" }} onClick={() => openEventDetail(ev)}>
+          <div key={ev.id} className="conn-card" style={{ flexDirection: "column", alignItems: "center", marginBottom: 10, padding: 0, overflow: "hidden", borderRadius: 16, cursor: "pointer", position: "relative" }} onClick={() => openEventDetail(ev)}>
             {ev.img ? (
               <div style={{ position: "relative", width: "100%", height: 160 }}>
                 <Image loading="lazy" src={ev.img} alt={ev.title} fill sizes="(max-width: 600px) 100vw, 500px" className="comm-banner" style={{ objectFit: "cover" }} onError={handleImgError} />

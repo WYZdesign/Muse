@@ -511,20 +511,20 @@ export const FeedScreen = memo(function FeedScreen({
             const isOnline = post.online === true || (post.lastSeen && (Date.now() - new Date(post.lastSeen).getTime() < 5 * 60 * 1000));
             return (
               <div key={post.id} className="conn-card" style={{ flexDirection: "column", margin: "0 20px 14px", padding: 0, overflow: "hidden", position: "relative" }}>
-                <div style={{ padding: "14px 18px 0", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPostDetail(post.id); } }} onClick={() => openPostDetail(post.id)}>
+                <div style={{ padding: "14px 18px 0", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => openPostDetail(post.id)}>
                     <div style={{ position: "relative", flexShrink: 0 }}>
-                      <Image loading="lazy" src={post.avatar} alt={`${post.author}'s avatar`} width={52} height={52} className="feed-avatar" style={{ flexShrink: 0, borderRadius: "50%", objectFit: "cover", cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: post.rid || post.id, name: post.author, avatar: post.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: post.rid || post.id, name: post.author, img: post.avatar, type: "Creative" }); } }} />
+                      <Image loading="lazy" src={post.avatar} alt={`${post.author}'s avatar`} width={52} height={52} className="feed-avatar" style={{ flexShrink: 0, borderRadius: "50%", objectFit: "cover", cursor: "pointer" }} onError={handleImgError} onClick={(e) => { e.stopPropagation(); openAuthorProfile({ id: post.rid || post.id, name: post.author, avatar: post.avatar }, e); }} />
                       {isOnline && <span title="Online" style={{ position: "absolute", right: -1, bottom: -1, width: 12, height: 12, borderRadius: "50%", background: "#22c55e", border: "2px solid var(--bg)", boxShadow: "0 0 6px rgba(34,197,94,0.7)" }} />}
 
                    </div>
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
                       {post.author}
-                      {post.authorVerified && <span className="card-verified-mark" style={{ fontSize: 12, cursor: "pointer" }} title="Identity verified" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#FFD700" }); }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#FFD700" }); } }}>✓</span>}
+                      {post.authorVerified && <span className="card-verified-mark" style={{ fontSize: 12 }} title="Identity verified">✓</span>}
                     </div>
                     <div style={{ fontSize: 11, color: "var(--muted)" }}>{post.time}</div>
                   </div>
-                   <div style={{ position: "absolute", top: 10, right: 10, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", fontSize: 13 }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); } }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }} aria-label="Report post"><FiFlag size={13} /></div>
+                   <div style={{ position: "absolute", top: 10, right: 10, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", fontSize: 13 }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); } }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }} aria-label="Report post"><FiFlag size={13} /></div>
                 </div>
                 <div
                   className="feed-caption-clamp"

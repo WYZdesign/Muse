@@ -443,7 +443,7 @@ export const ChatScreen = memo(function ChatScreen({
               <FiVideo size={20} />
             </button>
             <input className="chat-inp" aria-label="Type a message" placeholder="Type a message..." value={chatText} onChange={e => { setChatText(e.target.value); if (sendTyping) sendTyping(); }} onKeyDown={e => { if (e.key === "Enter" && chatText.trim()) { sendChat(); } }} />
-            <button className="send-btn" onClick={() => sendChat()}><FiSend size={18} /></button>
+            <button className="send-btn" aria-label="Send message" onClick={() => sendChat()}><FiSend size={18} /></button>
           </div>
         </div>
       )}

@@ -2467,6 +2467,7 @@ img{background-color:var(--card-bg)}
 @media (hover:hover) and (pointer:fine){
   .bts-story-circle:hover .bts-story-report-btn{display:flex;opacity:1}
 }
+.bts-story-circle:focus-within .bts-story-report-btn{display:flex;opacity:1}
 
 /* Mapbox GL controls — ensure they work on mobile touch */
 .mapboxgl-ctrl-group{background:rgba(10,6,18,0.85)!important;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.15)!important;border-radius:12px!important;box-shadow:0 4px 16px rgba(0,0,0,0.4)!important}

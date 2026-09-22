@@ -210,8 +210,18 @@ export const DiscoverScreen = memo(function DiscoverScreen({
         setDiscoverSearch("");
       }
     };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDiscoverSearchOpen(false);
+        setDiscoverSearch("");
+      }
+    };
     document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, [discoverSearchOpen, setDiscoverSearchOpen, setDiscoverSearch]);
 
   // Global message search — matches message text AND voice-note transcripts

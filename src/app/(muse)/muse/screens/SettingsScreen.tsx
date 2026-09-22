@@ -3,6 +3,7 @@
 import React, { memo, useState, useEffect, useRef } from "react";
 import { FiArrowLeft, FiUser, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiTwitter, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX, FiLock, FiBell, FiHelpCircle, FiDownload, FiAlertTriangle, FiCompass, FiFacebook, FiBriefcase } from "react-icons/fi";
 import { mfaStatus, mfaEnroll, mfaVerify, mfaUnenroll } from "../lib/api";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 // Push subscribe/unsubscribe arrive as PROPS (page.tsx owns the real impls) —
 // importing the module fns here too shadowed them and invited drift.
 import type { Screen } from "../components/types";
@@ -130,11 +131,15 @@ function SettingsSubPage({ title, onClose, children }: { title: string; onClose:
       return true;
     });
   }, [onClose]);
+  const trapRef = useFocusTrap(true, requestClose);
 
   return (
     <div
+      ref={trapRef}
       className={"sheet-overlay" + (closing ? " closing" : "")}
-      role="presentation"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
       onClick={requestClose}
     >
       <div className={"sheet-panel" + (closing ? " closing" : "")} onClick={(e) => e.stopPropagation()}>
@@ -912,7 +917,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               ) : (
                 <div style={{ padding: 14, background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "var(--coral)", marginBottom: 10 }}>Report a Bug</div>
-                  <select value={bugCategory} onChange={e => setBugCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
+                  <select aria-label="Bug category" value={bugCategory} onChange={e => setBugCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
                     <option value="ui">UI / Visual Issue</option>
                     <option value="crash">App Crash</option>
                     <option value="payment">Payment Problem</option>
@@ -921,11 +926,11 @@ export const SettingsScreen = memo(function SettingsScreen({
                     <option value="upload">Upload / Media Issue</option>
                     <option value="other">Other</option>
                   </select>
-                  <textarea value={bugDescription} onChange={e => setBugDescription(e.target.value)} placeholder="What happened?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
-                  <textarea value={bugSteps} onChange={e => setBugSteps(e.target.value)} placeholder="Steps to reproduce (optional)" rows={2} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
+                  <textarea aria-label="Bug description" value={bugDescription} onChange={e => setBugDescription(e.target.value)} placeholder="What happened?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
+                  <textarea aria-label="Steps to reproduce" value={bugSteps} onChange={e => setBugSteps(e.target.value)} placeholder="Steps to reproduce (optional)" rows={2} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
                   <div style={{ display: "flex", gap: 8, marginBottom: 8, minWidth: 0 }}>
-                    <input value={bugExpected} onChange={e => setBugExpected(e.target.value)} placeholder="Expected behavior" style={{ flex: 1, minWidth: 0, boxSizing: "border-box", padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
-                    <input value={bugActual} onChange={e => setBugActual(e.target.value)} placeholder="Actual behavior" style={{ flex: 1, minWidth: 0, boxSizing: "border-box", padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
+                    <input aria-label="Expected behavior" value={bugExpected} onChange={e => setBugExpected(e.target.value)} placeholder="Expected behavior" style={{ flex: 1, minWidth: 0, boxSizing: "border-box", padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
+                    <input aria-label="Actual behavior" value={bugActual} onChange={e => setBugActual(e.target.value)} placeholder="Actual behavior" style={{ flex: 1, minWidth: 0, boxSizing: "border-box", padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,107,107,0.15)", border: "1px solid var(--border-subtle)", color: "var(--coral)" }} disabled={bugSubmitting || !bugDescription.trim() || !authFetch} onClick={async () => { if (!authFetch) return; setBugSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "report-bug", category: bugCategory, description: bugDescription, steps: bugSteps, expected: bugExpected, actual: bugActual }) }); if (!r.ok) throw new Error("failed"); showToast("Bug report sent — thank you!"); setShowBugForm(false); setBugDescription(""); setBugSteps(""); setBugExpected(""); setBugActual(""); } catch { showToast("Failed to send bug report"); } setBugSubmitting(false); }}>{bugSubmitting ? "Sending…" : "Submit Bug"}</button>

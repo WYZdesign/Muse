@@ -28,6 +28,7 @@ import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon } from "./components/traitIcons";
 import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "./components/badgeInfo";
 import { useChatState } from "./hooks/useChatState";
 import { useCall } from "./hooks/useCall";
+import { useFocusTrap } from "./hooks/useFocusTrap";
 import CallOverlay from "./components/CallOverlay";
 import { useBriefsState } from "./hooks/useBriefsState";
 import { useSavedListingsState } from "./hooks/useSavedListingsState";
@@ -281,6 +282,18 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     showStories, setShowStories,
     showEmojiPicker, setShowEmojiPicker,
   } = useModalVisibility();
+  // Focus traps for all overlay modals
+  const reportTrap = useFocusTrap(showReport, () => setShowReport(false));
+  const termsTrap = useFocusTrap(showTerms, () => setShowTerms(false));
+  const privacyTrap = useFocusTrap(showPrivacy, () => setShowPrivacy(false));
+  const guidelinesTrap = useFocusTrap(showGuidelines, () => setShowGuidelines(false));
+  const deleteConfirmTrap = useFocusTrap(showDeleteConfirm, () => setShowDeleteConfirm(false));
+  const discoveryPrefsTrap = useFocusTrap(showDiscoveryPrefs, () => setShowDiscoveryPrefs(false));
+  const ageVerificationTrap = useFocusTrap(showAgeVerification, () => setShowAgeVerification(false));
+  const likeNoteTrap = useFocusTrap(showLikeNote, () => setShowLikeNote(false));
+  const shareProfileTrap = useFocusTrap(showShareProfile, () => setShowShareProfile(false));
+  const intentPickerTrap = useFocusTrap(showIntentPicker, () => setShowIntentPicker(false));
+  const filterModalTrap = useFocusTrap(showFilterModal, () => setShowFilterModal(false));
   // Which screen's first-visit tutorial (if any) is currently open — see
   // the "Per-page tutorials" effect below.
   const [activePageTour, setActivePageTour] = useState<TourScreenId | null>(null);
@@ -417,6 +430,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-view", target_id: id }) }).catch(() => {});
     } catch {}
   }, [authUser]);
+  const viewProfileTrap = useFocusTrap(!!viewProfile, () => setViewProfile(null));
+  const shareTargetTrap = useFocusTrap(!!shareTarget, () => setShareTarget(null));
   const [viewProfileReviews, setViewProfileReviews] = useState<any[]>([]);
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
   const [publicProfileUser, setPublicProfileUser] = useState<any>(null);
@@ -751,7 +766,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           const demoMatches = PROFILES.slice(0, 6).map((p: any) => ({
             id: p.id, name: p.name, img: p.img, type: p.type,
             bio: p.bio, location: p.loc, booked: false, online: !!p.online,
-            messages: []
+            messages: [], _demo: true
           }));
           setMatches(demoMatches);
         } else {
@@ -2741,7 +2756,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         );
       })()}
       {showIntentPicker && intentProfile && (
-        <div className="intent-overlay" role="dialog" aria-modal="true" aria-label="Intent picker" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null);setIntentSelection([])}}>
+        <div className="intent-overlay" ref={intentPickerTrap} role="dialog" aria-modal="true" aria-label="Intent picker" onClick={(e) => { if (e.target === e.currentTarget) { setShowIntentPicker(false); setIntentProfile(null); setIntentSelection([]); } }}>
           <div className="intent-modal" onClick={e=>e.stopPropagation()}>
             <div style={{textAlign:"center",marginBottom:16}}>
               <Image loading="lazy" src={intentProfile.img} alt="Avatar" width={60} height={60} style={{borderRadius:"50%",objectFit:"cover",marginBottom:8}} onError={handleImgError} />
@@ -2875,7 +2890,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     dismissed or not. */}
 {((!ageVerified) || verificationExpiringSoon) && !verificationBannerDismissed && (
   <div className={"verify-banner" + (verificationBannerClosing ? " verify-banner-closing" : "")} style={{ position: "absolute", bottom: "var(--nav-h, calc(72px + env(safe-area-inset-bottom, 0px)))", left: 0, right: 0, zIndex: 9999, background: verificationExpiringSoon ? "linear-gradient(135deg, #ff8c00, #ffd700)" : "linear-gradient(135deg, #ff4444, #ff6b6b)", padding: "14px 40px 14px 16px", boxShadow: "0 -4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12)", textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, whiteSpace: "nowrap", opacity: 0.85 }}>
-    <span>Verify your identity to continue</span>
+    <span>{verificationExpiringSoon ? "Your verification is expiring soon" : "Verify your identity to unlock paid bookings"}</span>
     <button onClick={() => setShowAgeVerification(true)} style={{ background: "none", border: "none", color: "#0a0612", textDecoration: "underline", cursor: "pointer", fontWeight: 800, padding: 0 }}>Verify Now</button>
     <button
       onClick={dismissVerificationBanner}
@@ -3377,7 +3392,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* REPORT MODAL */}
       {showReport && (
-        <div className="modal-overlay">
+        <div className="modal-overlay" ref={reportTrap}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowReport(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Report</div>
@@ -3406,7 +3421,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* LIKE + NOTE MODAL */}
       {showLikeNote && noteTargetProfile && (
-        <div className="modal-overlay" style={{zIndex:500}}>
+        <div className="modal-overlay" style={{zIndex:500}} ref={likeNoteTrap}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>{setShowLikeNote(false);setLikeNoteAnchor(null);}}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Like + Note</div>
@@ -3469,7 +3484,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* TERMS OF SERVICE MODAL */}
       {showTerms && (
-        <div className="modal-overlay lighter">
+        <div className="modal-overlay lighter" ref={termsTrap}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowTerms(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Terms of Service</div>
@@ -3486,7 +3501,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             <p><strong>7. Privacy</strong>{"\n"}Your use of Muse is also governed by our Privacy Policy. Please review it to understand how we collect, use, and protect your information.</p>
             <p><strong>8. Termination</strong>{"\n"}We reserve the right to suspend or terminate your account at our discretion, with or without notice, for conduct that violates these Terms or is otherwise harmful to the service or its users.</p>
             <p><strong>9. Disclaimer</strong>{"\n"}Muse is provided {"\""}as is{"\""} without warranties of any kind. We are not liable for any damages arising from your use of the service.</p>
-            <p><strong>10. Changes to Terms</strong>{"\n"}We may update these Terms at any material time. Continued use of Muse after changes constitutes acceptance of the new Terms.</p>
+            <p><strong>10. Changes to Terms</strong>{"\n"}We may update these Terms at any time. Continued use of Muse after changes constitutes acceptance of the new Terms.</p>
             <div style={{textAlign:"center",padding:"16px 0",fontSize:11,color:"var(--muted)"}}>Last updated: July 2026 · WYZ Design LLC</div>
             <button className="btn btn-gold" style={{width:"100%",marginTop:8}} onClick={()=>setShowTerms(false)}>I Understand</button>
           </div>
@@ -3494,7 +3509,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       )}
 
       {showPrivacy && (
-        <div className="modal-overlay lighter">
+        <div className="modal-overlay lighter" ref={privacyTrap}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowPrivacy(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Privacy Policy</div>
@@ -3506,7 +3521,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             <p><strong>2. How We Use Your Information</strong>{"\n"}To provide and improve the Muse service, to match you with compatible creatives, to communicate with you about your account and the service, to detect and prevent fraud or abuse, and to comply with legal obligations.</p>
             <p><strong>3. Information Sharing</strong>{"\n"}We do not sell your personal information. We may share information with service providers who assist in operating the platform (hosting, analytics), when required by law, or with your explicit consent. Your profile is visible to other Muse users based on your privacy settings.</p>
             <p><strong>4. Data Storage & Security</strong>{"\n"}Your data is stored on secure servers provided by Supabase. We use industry-standard encryption for data in transit (TLS) and at rest. However, no method of transmission over the Internet is 100% secure.</p>
-             <p><strong>5. Your Rights</strong>{"\n"}You can access, update, or delete your account data at any time through the app settings. You may request a copy of all data we hold about you by contacting {SUPPORT_EMAIL}. You may also request deletion of your account and all associated data.</p>
+             <p><strong>5. Your Rights</strong>{"\n"}You can access, update, or delete your account data at any time through the app settings. You may request a copy of all data we hold about you by contacting {SUPPORT_EMAIL}. You may also request deletion of your account. Your profile, messages, and portfolio will be removed. Some data may be retained briefly for safety, fraud prevention, or legal compliance, then purged.</p>
             <p><strong>6. Cookies & Tracking</strong>{"\n"}We use essential cookies for authentication and session management. We do not use third-party advertising cookies. Analytics data is collected anonymously to improve the service.</p>
             <p><strong>7. Children's Privacy</strong>{"\n"}Muse is not intended for users under 18. We do not knowingly collect information from children. If we become aware of such collection, we will delete the information immediately.</p>
             <p><strong>8. Changes to This Policy</strong>{"\n"}We may update this Privacy Policy from time to time. We will notify you of material changes through the app or by email.</p>
@@ -3518,7 +3533,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       )}
 
       {showGuidelines && (
-        <div className="modal-overlay lighter">
+        <div className="modal-overlay lighter" ref={guidelinesTrap}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowGuidelines(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Community Guidelines</div>
@@ -3542,7 +3557,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* DELETE ACCOUNT CONFIRMATION */}
       {showDeleteConfirm && (
-        <div className="modal-overlay lighter">
+        <div className="modal-overlay lighter" ref={deleteConfirmTrap}>
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowDeleteConfirm(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Delete Account</div>
@@ -3551,7 +3566,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           <div className="modal-body" style={{textAlign:"center"}}>
             <div style={{fontSize:48,marginBottom:16}}>⚠️</div>
             <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Are you sure?</div>
-            <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>This action is permanent and cannot be undone. All your data, matches, messages, and portfolio will be permanently deleted.</div>
+            <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>Your account will be permanently deleted. Your profile, matches, messages, and portfolio will be removed. Some data may be retained briefly for safety, fraud prevention, or legal compliance, then purged.</div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
                <button className="btn btn-gold" style={{width:"100%",borderColor:"var(--coral)",background:"linear-gradient(135deg,var(--coral),#ff4444)"}} onClick={async()=>{try{const res=await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"delete-account"})});if(!res.ok) throw new Error("failed");safeRemoveItem("muse_user");safeRemoveItem("muse_v1");safeRemoveItem("muse_geo");safeRemoveItem("muse_boost");safeRemoveItem("muse_last_reset");safeRemoveItem("muse_local");safeRemoveItem("muse_premium");safeRemoveItem("muse_referral_code");safeRemoveItem("muse_open_count");safeRemoveItem("muse_hide_premium");setAuthUser(null);setShowDeleteConfirm(false);setScreen("auth");showToast("Account deleted. We're sorry to see you go.");return}catch{showToast("Delete failed. Try again")}}}>Yes, Delete My Account</button>
               <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setShowDeleteConfirm(false)}>{STRINGS.cancel}</button>
@@ -3562,7 +3577,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* DISCOVERY PREFERENCES MODAL */}
       {showDiscoveryPrefs && (
-        <div className="modal-overlay" onClick={()=>setShowDiscoveryPrefs(false)}>
+        <div className="modal-overlay" ref={discoveryPrefsTrap} onClick={(e) => { if (e.target === e.currentTarget) setShowDiscoveryPrefs(false); }}>
           <div className="modal-header" onClick={e=>e.stopPropagation()}>
             <button className="modal-back" onClick={()=>setShowDiscoveryPrefs(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title" style={{fontSize:16.5,whiteSpace:"nowrap"}}>Discovery Preferences</div>
@@ -3720,7 +3735,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         </div>
       )}
       {viewProfile && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="View profile" onClick={()=>setViewProfile(null)}>
+        <div className="modal-overlay" ref={viewProfileTrap} role="dialog" aria-modal="true" aria-label="View profile" onClick={(e) => { if (e.target === e.currentTarget) setViewProfile(null); }}>
           <div className="modal-panel" onClick={e=>e.stopPropagation()} style={{maxWidth:420,width:"90%",maxHeight:"88vh",overflowY:"auto",borderRadius:24,padding:0,background:"linear-gradient(180deg,#0f081e,#0a0612)"}}>
             <div style={{position:"relative",width:"100%",aspectRatio:"3/4",overflow:"hidden"}}>
               {(() => {
@@ -3840,7 +3855,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       )}
       {/* ══════ SHARE MODAL ══════ */}
       {shareTarget && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Share" onClick={() => setShareTarget(null)}>
+        <div className="modal-overlay" ref={shareTargetTrap} role="dialog" aria-modal="true" aria-label="Share" onClick={(e) => { if (e.target === e.currentTarget) setShareTarget(null); }}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", borderRadius: 24, padding: "24px 20px", background: "linear-gradient(180deg,#0f081e,#0a0612)" }}>
             <div style={{ textAlign: "center", marginBottom: 20 }}>
               <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", color: "var(--gold)" }}>Share</div>
@@ -3942,7 +3957,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       )}
       {/* ══════ SHARE PROFILE SHEET ══════ */}
       {showShareProfile && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Share profile" onClick={()=>setShowShareProfile(false)}>
+        <div className="modal-overlay" ref={shareProfileTrap} role="dialog" aria-modal="true" aria-label="Share profile" onClick={(e) => { if (e.target === e.currentTarget) setShowShareProfile(false); }}>
           <div className="share-sheet" onClick={e=>e.stopPropagation()}>
             <div className="share-title">Share Profile</div>
             <div className="share-options">

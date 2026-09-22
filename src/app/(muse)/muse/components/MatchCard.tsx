@@ -176,6 +176,7 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
           <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 99, background: isMuse ? "rgba(255,215,0,0.12)" : "rgba(138,43,226,0.12)", border: `1px solid ${isMuse ? "rgba(255,215,0,0.25)" : "rgba(138,43,226,0.25)"}`, color: isMuse ? "var(--gold)" : "#b388ff", whiteSpace: "nowrap" }}>
             {roleBadgeText(matchRole)}
           </span>
+          {m._demo && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 99, background: "rgba(255,107,107,0.12)", border: "1px solid rgba(255,107,107,0.25)", color: "#ff6b6b", whiteSpace: "nowrap" }}>Demo</span>}
         </div>
         <div className="match-type" style={isList ? { fontSize: 11 } : undefined}>
           {m.type}

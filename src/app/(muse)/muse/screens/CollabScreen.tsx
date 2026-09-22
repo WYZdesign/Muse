@@ -12,6 +12,7 @@ import HScroll from "../components/HScroll";
 import { viewerSide } from "@/lib/role";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export interface CollabScreenProps {
   screen: Screen;
@@ -113,6 +114,9 @@ export const CollabScreen = memo(function CollabScreen({
   // top-left "ⓘ" icon that opens a popup with the full text instead. Tracks
   // which single brief's popup is open (or null for none).
   const [safetyInfoBriefId, setSafetyInfoBriefId] = useState<any>(null);
+  const safetyInfoBriefTrap = useFocusTrap(safetyInfoBriefId !== null, () => setSafetyInfoBriefId(null));
+  const postBriefTrap = useFocusTrap(showPostBrief, () => setShowPostBrief(false));
+  const safetyGuidelinesTrap = useFocusTrap(safetyInfoOpen, () => setSafetyInfoOpen(false));
   const hideBrief = (id: any) => {
     setHiddenBriefIds(prev => new Set(prev).add(id));
     showToast({ msg: "Hidden from your feed", onTap: () => setHiddenBriefIds(prev => { const next = new Set(prev); next.delete(id); return next; }) });
@@ -381,7 +385,7 @@ export const CollabScreen = memo(function CollabScreen({
         })()}
       </div>
       {safetyInfoBriefId !== null && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Safety info" onClick={() => setSafetyInfoBriefId(null)}>
+        <div ref={safetyInfoBriefTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Safety info" onClick={() => setSafetyInfoBriefId(null)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 340, width: "90%", padding: 20 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <div className="modal-title" style={{ display: "flex", alignItems: "center", gap: 8 }}><FiInfo size={16} color="var(--muted)" /> Safety reminder</div>
@@ -394,7 +398,7 @@ export const CollabScreen = memo(function CollabScreen({
         </div>
       )}
       {showPostBrief && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Post brief" onClick={() => setShowPostBrief(false)}>
+        <div ref={postBriefTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Post brief" onClick={() => setShowPostBrief(false)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 20 }}>
             <div className="modal-title" style={{ marginBottom: 4 }}>{viewerSide(currentUser?.type) === "industry" ? "Post a Brief — find talent" : "Post a Brief"}</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Share a project, collab, or open call.</div>
@@ -414,7 +418,7 @@ export const CollabScreen = memo(function CollabScreen({
         </div>
       )}
       {safetyInfoOpen && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Safety guidelines" onClick={() => setSafetyInfoOpen(false)}>
+        <div ref={safetyGuidelinesTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Safety guidelines" onClick={() => setSafetyInfoOpen(false)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 22, textAlign: "left" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text)" }}>Safety at your shoot</div>

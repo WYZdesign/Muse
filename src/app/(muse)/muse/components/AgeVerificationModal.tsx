@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 type Props = {
   onVerified: () => void;
@@ -12,6 +13,7 @@ type Props = {
 export default function AgeVerificationModal({ onVerified, onClose, purpose = "age_gate", authFetch }: Props) {
   const [state, setState] = useState<"idle" | "loading" | "starting" | "redirected" | "checking" | "verified" | "error">("idle");
   const [message, setMessage] = useState("");
+  const trapRef = useFocusTrap<HTMLDivElement>(true, onClose);
 
   const startVerification = async () => {
     setState("loading");
@@ -88,7 +90,7 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
   }, []);
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)" }}>
+    <div ref={trapRef} role="dialog" aria-modal="true" aria-label="Age verification" style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)" }}>
       <div style={{ background: "var(--card-bg)", border: "1px solid var(--gold)", borderRadius: 24, padding: 32, maxWidth: 440, width: "90%", textAlign: "center" }}>
         <div style={{ fontSize: 44, marginBottom: 12 }}>🪪</div>
         <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", marginBottom: 10 }}>
@@ -99,7 +101,7 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
           <p style={{ fontSize: 14, color: "#3a9e3a", marginBottom: 20 }}>Your identity has been verified. You're all set for paid bookings.</p>
         ) : (
           <p style={{ fontSize: 13, color: "var(--text2)", marginBottom: 20, lineHeight: 1.6 }}>
-            Paid bookings require government ID + selfie verification (18+ only). This is a one-time check via Stripe Identity. Secure, encrypted, and never shared with other members.
+            Paid bookings require government ID + selfie verification (18+ only). This is a secure check via Stripe Identity. Your documents are encrypted and never stored on Muse servers. You can verify or skip at any time.
           </p>
         )}
 
@@ -149,7 +151,7 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
         </div>
 
         <p style={{ fontSize: 10, color: "var(--muted)", marginTop: 16, lineHeight: 1.5 }}>
-          Verification is provided by Stripe Identity. Your documents are encrypted and never stored on Muse servers. You can verify or skip at any time. Paid bookings require it.
+          Verification is provided by Stripe Identity. Your documents are encrypted and never stored on Muse servers. You can verify at any time. Paid bookings require it.
         </p>
       </div>
     </div>

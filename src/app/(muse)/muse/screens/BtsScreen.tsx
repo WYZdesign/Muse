@@ -438,8 +438,9 @@ export const BtsScreen = memo(function BtsScreen({
                     title="Report"
                     className="bts-story-report-btn"
                     onClick={(e) => { e.stopPropagation(); reportStory(s); }}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); reportStory(s); } }}
                     onPointerDown={(e) => e.stopPropagation()}
-                    style={{ position: "absolute", bottom: -2, right: -2, zIndex: 2, width: 16, height: 16, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(10,6,18,0.85)", color: "var(--muted)", fontSize: 9, lineHeight: 1, cursor: "pointer", alignItems: "center", justifyContent: "center" }}>⋯</button>
+                    style={{ position: "absolute", bottom: -2, right: -2, zIndex: 2, width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(10,6,18,0.85)", color: "var(--muted)", fontSize: 14, lineHeight: 1, cursor: "pointer", alignItems: "center", justifyContent: "center" }}>⋯</button>
                 </div>
                 <span
                   style={{

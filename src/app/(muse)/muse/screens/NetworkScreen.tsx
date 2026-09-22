@@ -646,9 +646,6 @@ export const NetworkScreen = memo(function NetworkScreen({
             <div
               key={p.id}
               className="pro-card"
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openProProfile(p); } }}
               onClick={() => openProProfile(p)}
               style={{
                 marginBottom: 14,
