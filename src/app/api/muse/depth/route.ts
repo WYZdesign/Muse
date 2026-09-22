@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 // ═══════════════════════════════════════════════════════════════
 // Muse depth-map generation — server-side proxy to a hosted
@@ -65,6 +66,7 @@ function normalizeOutput(out: unknown): string | null {
 
 export async function POST(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Depth generation"), { status: 409 });
     if (!depthEnabled()) return NextResponse.json({ error: "not_configured" }, { status: 501 });
     if (!(await isAuthed(req))) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 

@@ -9,7 +9,7 @@ vi.mock("@/lib/supabase", () => ({
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
-import { albumDelete, albumUpdate, albumView, albumLike, albumGrantAccess } from "@/lib/muse-actions/albums";
+import { albumAddPhoto, albumCreate, albumDelete, albumUpdate, albumView, albumLike, albumGrantAccess } from "@/lib/muse-actions/albums";
 
 function makeQuery() {
   const q: any = {
@@ -57,6 +57,21 @@ describe("albums actions (ownership gate)", () => {
     expect((r as Response).status).toBe(400);
   });
 
+  it("albumCreate rejects a public cover for a private album", async () => {
+    const r = await albumCreate(ctx({ title: "Private work", access_level: "private", cover_url: "https://cdn.example.test/public.jpg" }, null));
+    expect((r as Response).status).toBe(400);
+  });
+
+  it("albumAddPhoto rejects a public locator for an invite-only album", async () => {
+    const r = await albumAddPhoto(ctx({ albumId: "a1", img_url: "https://cdn.example.test/public.jpg" }, { profile_id: "owner1", access_level: "invite" }));
+    expect((r as Response).status).toBe(400);
+  });
+
+  it("albumAddPhoto rejects another owner's private locator", async () => {
+    const r = await albumAddPhoto(ctx({ albumId: "a1", img_url: "storage://muse-private/someone-else/album/photo.jpg" }, { profile_id: "owner1", access_level: "private" }));
+    expect((r as Response).status).toBe(400);
+  });
+
   it("albumGrantAccess requires albumId + viewerProfileId (400)", async () => {
     const r = await albumGrantAccess(ctx({ albumId: "a1" }, { profile_id: "owner1" }));
     expect((r as Response).status).toBe(400);
@@ -65,6 +80,11 @@ describe("albums actions (ownership gate)", () => {
   it("albumView returns 404 when album not found", async () => {
     const r = await albumView(ctx({ albumId: "a1" }, null));
     expect((r as Response).status).toBe(404);
+  });
+
+  it("albumView allows an owner to view their private album", async () => {
+    const r = await albumView(ctx({ albumId: "a1" }, { profile_id: "owner1", access_level: "private", view_count: 0 }));
+    expect((r as Response).status).toBe(200);
   });
 
   it("albumLike returns 404 when album not found", async () => {

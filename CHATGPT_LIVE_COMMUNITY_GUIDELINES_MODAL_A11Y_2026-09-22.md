@@ -54,3 +54,15 @@ within Community Guidelines never reaches Skip link, app controls, browser
 feedback, or any background control; the overlay has a role/name/modal state;
 and Close/Escape return focus to **Community Guidelines**. Re-run the same
 test matrix for Terms, Privacy, Safety Center, Report, and deletion overlays.
+
+## Deployed partial-remediation recheck
+
+After the remediation commit propagated, a fresh live check found a material
+improvement: Tab from **I Understand** now cycles back to an in-overlay button,
+and Close restores focus to the **Community Guidelines** invoker. The prior
+external-feedback focus escape is no longer reproduced in this flow.
+
+The release gate is still open: the rendered overlay has no native dialog or
+`role="dialog"`, no `aria-modal`, no accessible dialog name, and no inert
+background. Complete the semantic/background half of the shared modal
+primitive, deploy it, and re-run this same test.

@@ -3,6 +3,7 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import { isIndustryType } from "@/lib/role";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { embedText, cosineSimilarity, aiEnabled } from "@/lib/ai";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 /**
  * Muse Recommendations API — AI-powered matching.
@@ -26,6 +27,7 @@ function profileEmbedText(p: Record<string, unknown>): string {
 
 export async function GET(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("AI matching"), { status: 409 });
     if (!await checkRate(clientIp(req), "match", 30)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }

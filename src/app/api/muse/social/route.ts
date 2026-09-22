@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { signState } from "@/lib/oauth-state";
 import { checkRate, clientIp } from "@/lib/rate-limit";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 export const runtime = "nodejs";
 
@@ -65,7 +66,7 @@ export async function GET(req: NextRequest) {
     }
     if (!profileId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Status: which providers are connected for this user
+    // Status is read-only and remains available for accurate demo display.
     if (action === "status") {
       const sb = getServiceClient();
       const { data: conns } = await sb.from("muse_social_connections").select("provider").eq("user_id", profileId);
@@ -75,6 +76,10 @@ export async function GET(req: NextRequest) {
       }
       return NextResponse.json({ connected });
     }
+
+    // Any remaining action either starts OAuth or changes an existing account
+    // connection. Keep demo accounts observational only.
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Connected accounts"), { status: 409 });
 
     if (!provider) return NextResponse.json({ error: "Provider required" }, { status: 400 });
 

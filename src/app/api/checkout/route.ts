@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { supabase } from "@/lib/supabase";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,9 @@ const DEV_FALLBACK_PRICING: Record<string, { name: string; amount: number; inter
 
 export async function POST(req: NextRequest) {
   try {
+    // Never create a real Stripe Checkout Session from the public demo,
+    // including when this endpoint is invoked directly rather than via UI.
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Checkout"), { status: 409 });
     // Rate limit Stripe session creation to prevent API abuse / cost spikes.
     const ip = clientIp(req);
     if (!await checkRate(ip, "checkout", 10)) {

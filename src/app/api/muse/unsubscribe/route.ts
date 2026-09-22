@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 /**
  * One-click unsubscribe endpoint for transactional emails.
@@ -7,6 +8,7 @@ import { getServiceClient } from "@/lib/supabase";
  * POST: handles List-Unsubscribe-Post (one-click) from email clients.
  */
 export async function GET(req: NextRequest) {
+  if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Email subscription changes"), { status: 409 });
   const email = req.nextUrl.searchParams.get("email") || "";
   if (!email || !email.includes("@")) {
     return new NextResponse("<html><body style='background:#0a0612;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh'><div style='text-align:center'><h2>Invalid email</h2><p>Please check the unsubscribe link.</p></div></body></html>", { status: 400, headers: { "Content-Type": "text/html" } });
@@ -24,6 +26,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Email subscription changes"), { status: 409 });
   const formData = await req.formData().catch(() => null);
   const email = String(formData?.get("email") || req.nextUrl.searchParams.get("email") || "");
   if (!email || !email.includes("@")) {

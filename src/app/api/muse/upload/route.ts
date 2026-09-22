@@ -3,6 +3,7 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
 import { checkRateUser } from "@/lib/rate-limit";
 import { scanWithRekognition, scanWithSightengine, startVideoModeration, logScan, reportIncident, escalateToNcmec } from "@/lib/contentScan";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 const ALLOWED_SIGNATURES: Record<string, { bytes: number[]; ext: string }> = {
   "89504e47": { bytes: [0x89,0x50,0x4E,0x47], ext: "png" },
@@ -50,6 +51,7 @@ async function authedProfileId(req: NextRequest): Promise<string | null> {
 
 export async function POST(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Uploads"), { status: 409 });
     const profileId = await authedProfileId(req);
     if (profileId === "__SUSPENDED__") return NextResponse.json({ error: "Account suspended", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
     if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -216,6 +218,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Uploads"), { status: 409 });
     const profileId = await authedProfileId(req);
     if (profileId === "__SUSPENDED__") return NextResponse.json({ error: "Account suspended", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
     if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

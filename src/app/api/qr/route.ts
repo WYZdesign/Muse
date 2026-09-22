@@ -3,6 +3,7 @@ import { getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import QRCode from "qrcode";
 import crypto from "crypto";
+import { isDemoMode } from "@/lib/demo-mode";
 
 // Do not store a raw IP (or a reversible encoding of one) in analytics. A
 // keyed HMAC supports the limited legitimate use case—counting repeat scans—
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
   try {
     // Track QR scan event (real shareable links only — the 2FA otpauth QR is
     // not a link and shouldn't pollute analytics).
-    if (!url.startsWith("otpauth:")) {
+    if (!isDemoMode() && !url.startsWith("otpauth:")) {
       await sb.from("muse_qr_events").insert({
         source,
         event_type: "scan",
@@ -115,7 +116,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    if (action === "share") {
+    if (!isDemoMode() && action === "share") {
       await sb.from("muse_qr_events").insert({
         source: source || "default",
         event_type: "share",

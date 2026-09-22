@@ -643,7 +643,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Show Me</div>
               <div className="filter-scroll-row" style={{ gap: 8, flexWrap: "nowrap", paddingTop: 8 }}>
                 {["all", "women", "men", "non-binary"].map(g => (
-                  <div key={g} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDiscoveryPrefs(p => ({ ...p, gender: g })); } }} onClick={() => setDiscoveryPrefs(p => ({ ...p, gender: g }))} style={{ padding: "8px 16px", borderRadius: 99, cursor: "pointer", fontSize: 12, fontWeight: 600, transition: "all .25s", background: discoveryPrefs.gender === g ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: "1px solid " + (discoveryPrefs.gender === g ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"), color: discoveryPrefs.gender === g ? "var(--gold)" : "var(--muted)" }}>{g.charAt(0).toUpperCase() + g.slice(1)}</div>
+                  <button key={g} type="button" aria-pressed={discoveryPrefs.gender === g} onClick={() => setDiscoveryPrefs(p => ({ ...p, gender: g }))} style={{ minWidth: 44, minHeight: 44, padding: "8px 16px", borderRadius: 99, cursor: "pointer", fontSize: 12, fontWeight: 600, transition: "all .25s", background: discoveryPrefs.gender === g ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: "1px solid " + (discoveryPrefs.gender === g ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"), color: discoveryPrefs.gender === g ? "var(--gold)" : "var(--muted)" }}>{g.charAt(0).toUpperCase() + g.slice(1)}</button>
                 ))}
               </div>
             </div>
@@ -653,12 +653,11 @@ export const SettingsScreen = memo(function SettingsScreen({
           <div className="settings-group">
             <div className="settings-group-title">Account</div>
             {completionPct !== null && completionPct < 100 && (
-              <div
-                role="button"
-                tabIndex={0}
-                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowCompletionDetails(!showCompletionDetails); } }}
+              <button
+                type="button"
+                aria-expanded={showCompletionDetails}
                 onClick={() => setShowCompletionDetails(!showCompletionDetails)}
-                style={{ padding: "10px 14px", marginBottom: 8, borderRadius: 12, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", cursor: "pointer" }}
+                style={{ width: "100%", minHeight: 44, padding: "10px 14px", marginBottom: 8, borderRadius: 12, background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)", cursor: "pointer", textAlign: "left" }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)" }}>Profile Completion</span>
@@ -691,7 +690,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                     })}
                   </div>
                 )}
-              </div>
+              </button>
             )}
             {accountItems.map(renderRow)}
           </div>
@@ -896,7 +895,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               ) : (
                 <div style={{ padding: 14, background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginBottom: 10 }}>Share Your Idea</div>
-                  <select value={ideaCategory} onChange={e => setIdeaCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
+                  <select aria-label="Idea category" value={ideaCategory} onChange={e => setIdeaCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
                     <option value="feature">New Feature</option>
                     <option value="improvement">Improvement</option>
                     <option value="new-category">New Category</option>
@@ -1364,7 +1363,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                   style={{ width: "100%", marginBottom: 8, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
               ))}
               <div style={{ display: "flex", gap: 8 }}>
-                <select value={m.role} onChange={(e) => setTeamMembers((prev) => prev.map((x, j) => j === i ? { ...x, role: e.target.value } : x))}
+                <select aria-label="Member role" value={m.role} onChange={(e) => setTeamMembers((prev) => prev.map((x, j) => j === i ? { ...x, role: e.target.value } : x))}
                   style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit" }}>
                   {["Owner", "Manager", "Editor", "Assistant", "Viewer"].map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>

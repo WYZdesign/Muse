@@ -22,12 +22,25 @@ import { messageSend, messageRequestAccept, messageRequestDecline, messageReques
 import { feedPost, feedPostLike, feedCommentAdd, momentCreate, momentLike, briefCreate, briefApply } from "@/lib/muse-actions/feed";
 import { forumDispatch, reportCreate, userBlock, userUnblock, blocksGet, forumPostPin, forumPostLock } from "@/lib/muse-actions/forum";
 import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, boostAnalytics, boostStatus, saveBoostPurchase, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts, togglePhotoLike } from "@/lib/muse-actions/misc";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ACTION HANDLER REGISTRY
 // ══════════════════════════════════════════════════════════════════════════════
 
 const ACTIONS: Record<string, ActionHandler> = {};
+
+// The demo can retrieve the small set of read-only data needed to render its
+// screens, but it must never persist a real user action through the monolith.
+// Keep additions deliberate: this is an allowlist, not a best-effort blocklist.
+const DEMO_READ_ACTIONS = new Set([
+  "message-requests", "blocked-users", "get-blocks",
+  "get-community-bans", "get-community-mutes", "get-community-join-requests",
+  "get-disclosures", "get-strikes", "get-checkins", "get-safety-profile",
+  "get-prompts", "get-prompt-responses", "booking-reminders",
+  "host-availability", "get-payments", "get-quests", "search",
+  "saved-search-list", "boost-status", "get-notifications",
+]);
 
 // ═══ PROFILE ═══
 // Handler extracted to lib/muse-actions/profile.ts (monolith split, interleaved-domain pass).
@@ -232,6 +245,19 @@ export async function POST(req: NextRequest) {
     const actionType = rawAction || rawType;
 
     const ip = clientIp(req);
+
+    // `track-*` would otherwise write production event rows from a public
+    // demo. Acknowledge locally so the client remains quiet without retaining
+    // visitor data. Every other non-read action fails before authentication,
+    // rate-limit side effects, or handler dispatch can mutate production data.
+    if (isDemoMode()) {
+      if (actionType === "track-event" || actionType === "track-error") {
+        return NextResponse.json({ success: true, demo: true });
+      }
+      if (!DEMO_READ_ACTIONS.has(String(actionType))) {
+        return NextResponse.json(demoModeUnavailable("This action"), { status: 409 });
+      }
+    }
 
     // Blanket write-rate ceiling per IP. Per-action limits below are tighter;
     // this catches any action that doesn't have its own check (and throttles

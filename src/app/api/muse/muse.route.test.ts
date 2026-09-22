@@ -37,7 +37,7 @@ function req(body: unknown) {
   return { headers: { get: (n: string) => (n.toLowerCase() === "content-type" ? "application/json" : null) }, json: async () => body } as any;
 }
 
-beforeEach(() => { vi.clearAllMocks(); (globalThis as any).__authUser = { data: { user: { id: "u1" } } }; state.inserts = []; });
+beforeEach(() => { vi.clearAllMocks(); vi.stubEnv("MUSE_DEMO_MODE", "false"); (globalThis as any).__authUser = { data: { user: { id: "u1" } } }; state.inserts = []; });
 
 describe("muse dispatcher (integration)", () => {
   it("rejects track-event without a name with 400", async () => {
@@ -54,5 +54,19 @@ describe("muse dispatcher (integration)", () => {
   it("rejects a track-event with a non-string name with 400", async () => {
     const r = await POST(req({ action: "track-event", name: 12345 }));
     expect(r.status).toBe(400);
+  });
+
+  it("keeps direct write actions inert in demo mode", async () => {
+    vi.stubEnv("MUSE_DEMO_MODE", "true");
+    const r = await POST(req({ action: "feed", body: "must not persist" }));
+    expect(r.status).toBe(409);
+    expect(state.inserts).toEqual([]);
+  });
+
+  it("acknowledges analytics without retaining it in demo mode", async () => {
+    vi.stubEnv("MUSE_DEMO_MODE", "true");
+    const r = await POST(req({ action: "track-event", name: "demo_event" }));
+    expect(r.status).toBe(200);
+    expect(state.inserts).toEqual([]);
   });
 });

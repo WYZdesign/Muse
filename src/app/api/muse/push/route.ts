@@ -4,6 +4,7 @@ import { checkRate, clientIp } from "@/lib/rate-limit";
 import { safeServerError } from "@/lib/http";
 import { sendPushToUser, getVapidPublicKey } from "@/lib/push";
 import { isAdminEmail } from "@/lib/muse-actions/shared";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Push notifications"), { status: 409 });
     const body = await req.json();
     const { action, subscription, access_token, userId: bodyUserId, payload } = body;
 

@@ -337,7 +337,7 @@ export default function AdminModerationPanel() {
                 Ask questions about your community in plain language. Read-only — nothing gets changed.
               </p>
               <div style={{ display: "flex", gap: 8 }}>
-                <input value={brainQuery} onChange={e => setBrainQuery(e.target.value)} onKeyDown={e => e.key === "Enter" && runBrainQuery()} placeholder="e.g. How many users do we have? Who has the most reports?" style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 13 }} />
+                <input aria-label="Brain query" value={brainQuery} onChange={e => setBrainQuery(e.target.value)} onKeyDown={e => e.key === "Enter" && runBrainQuery()} placeholder="e.g. How many users do we have? Who has the most reports?" style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 13 }} />
                 <button onClick={runBrainQuery} disabled={loading || !brainQuery.trim()} style={{ padding: "10px 20px", borderRadius: 10, background: "linear-gradient(135deg, #ffd700, #ff8c00)", border: "none", color: "#0a0612", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                   {loading ? "..." : "Ask"}
                 </button>

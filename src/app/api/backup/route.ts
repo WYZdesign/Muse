@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,7 @@ export async function GET(req: NextRequest) {
     if (!process.env.CRON_SECRET || authHeader !== expected) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    if (isDemoMode()) return NextResponse.json({ success: true, demo: true });
 
     const sb = getServiceClient();
     const snapshots: Record<string, unknown> = {};

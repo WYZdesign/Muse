@@ -4,9 +4,11 @@ import { checkRate, clientIp } from "@/lib/rate-limit";
 import { sendEmail, notify } from "@/lib/email";
 import { isAgeVerificationCurrent } from "@/lib/muse-actions/shared";
 import Stripe from "stripe";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 export async function POST(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Identity verification"), { status: 409 });
     const secret = process.env.STRIPE_SECRET_KEY;
     if (!secret) return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
     const stripe = new Stripe(secret);
