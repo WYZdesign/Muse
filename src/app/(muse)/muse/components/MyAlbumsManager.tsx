@@ -24,6 +24,7 @@ const ACCESS_META: Record<string, { icon: React.ReactNode; label: string }> = {
   private: { icon: <FiLock size={12} />, label: "Private" },
   invite: { icon: <FiUsers size={12} />, label: "Invite Only" },
 };
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 
 /**
  * Full album management for the signed-in user's own profile: create/delete
@@ -58,10 +59,13 @@ export default function MyAlbumsManager({
   const albumReqId = useRef(0);
 
   const authedFetch = useCallback((body: Record<string, unknown>) =>
-    authFetch("/api/muse", { method: "POST", body: JSON.stringify(body) }).then(r => r.json())
+    DEMO_MODE
+      ? Promise.resolve({ success: false, error: "Album management is unavailable in this demo." })
+      : authFetch("/api/muse", { method: "POST", body: JSON.stringify(body) }).then(r => r.json())
   , []);
 
   const refreshAlbums = useCallback(() => {
+    if (DEMO_MODE) { setAlbums([]); setLoading(false); return; }
     if (!authToken) { setLoading(false); return; }
     authFetch("/api/muse?type=albums&profile_id=me")
       .then(r => r.json())
@@ -164,6 +168,7 @@ export default function MyAlbumsManager({
     setAccessList(Array.isArray(d.access) ? d.access : []);
   }, [selected, authedFetch]);
 
+  if (DEMO_MODE) return <div className="album-loading">Album management is unavailable in this demo. No private media or access settings are loaded.</div>;
   if (loading) return <div className="album-loading">Loading your albums…</div>;
 
   if (selected) {

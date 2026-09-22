@@ -43,6 +43,7 @@ export interface MusesScreenProps {
   matchActions?: any;
   messageRequests?: any[];
   setMessageRequests?: React.Dispatch<React.SetStateAction<any[]>>;
+  demo?: boolean;
 }
 
 export const MusesScreen = memo(function MusesScreen({
@@ -76,6 +77,7 @@ export const MusesScreen = memo(function MusesScreen({
   matchActions,
   messageRequests = [],
   setMessageRequests = () => {},
+  demo = process.env.NEXT_PUBLIC_DEMO_MODE !== "false",
 }: MusesScreenProps) {
   // Track which matches the user has opened so the "new match" right-edge tab
   // disappears once they've gone into the chat. Persisted so it survives reloads.
@@ -153,6 +155,7 @@ export const MusesScreen = memo(function MusesScreen({
     }
 
     if (Math.abs(diff) > 80) {
+      if (demo) { showToast("Match management is unavailable in this demo."); touchStartX.current = null; setSwipeInfo(null); return; }
       const cardId = e.currentTarget.getAttribute("data-card-id");
       if (!cardId) return;
 
@@ -329,14 +332,17 @@ export const MusesScreen = memo(function MusesScreen({
                     <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 10 }}>{req.time || "Recently"}</div>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button onClick={async () => {
+                        if (demo) { showToast?.("Message requests are unavailable in this demo."); return; }
                         const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "message-request-accept", requestId: req.id }) });
                         if (r.ok) { setMessageRequests(prev => prev.filter((x: any) => x.id !== req.id)); showToast?.("Request accepted"); }
                       }} style={{ padding: "6px 14px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#00C853,#00E676)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Accept</button>
                       <button onClick={async () => {
+                        if (demo) { showToast?.("Message requests are unavailable in this demo."); return; }
                         const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "message-request-decline", requestId: req.id }) });
                         if (r.ok) { setMessageRequests(prev => prev.filter((x: any) => x.id !== req.id)); showToast?.("Request declined"); }
                       }} style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "var(--text2)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Decline</button>
                       <button onClick={async () => {
+                        if (demo) { showToast?.("Message requests are unavailable in this demo."); return; }
                         const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "message-request-block", requestId: req.id }) });
                         if (r.ok) { setMessageRequests(prev => prev.filter((x: any) => x.id !== req.id)); showToast?.("User blocked"); }
                       }} style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(255,60,60,0.3)", background: "transparent", color: "#ff6b6b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Block</button>
@@ -369,8 +375,8 @@ export const MusesScreen = memo(function MusesScreen({
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{p.name}</div>
                     <div style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600 }}>{p.type}</div>
                   </div>
-                  <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); e.currentTarget.click(); } }} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Interested", desc: "This person has shown interest in connecting with you — go Pro to reveal exactly who and connect instantly.", icon: "✦", color: "#FF69B4" }); }} style={{ position: "absolute", top: 8, right: 8, padding: "3px 8px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 9, fontWeight: 800, color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.4)", cursor: "pointer" }}>✦ Interested</div>
-                  {!unlocked && (<div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); e.currentTarget.click(); } }} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Pro", desc: "Pro members get full access — reveal who's interested and message them directly.", icon: "⭐", color: "var(--gold)" }); }} style={{ position: "absolute", top: 8, left: 8, padding: "2px 7px", borderRadius: 99, background: "rgba(0,0,0,0.65)", fontSize: 9, fontWeight: 700, color: "var(--gold)", border: "1px solid rgba(255,215,0,0.3)", cursor: "pointer" }}>PRO</div>)}
+                  <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); e.currentTarget.click(); } }} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Interested", desc: "This person has shown interest in connecting with you — go Pro to reveal exactly who and connect instantly.", icon: "✦", color: "#FF69B4" }); }} style={{ position: "absolute", top: 8, right: 8, minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center", padding: "3px 8px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 9, fontWeight: 800, color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.4)", cursor: "pointer" }}>✦ Interested</div>
+                  {!unlocked && (<div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); e.currentTarget.click(); } }} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Pro", desc: "Pro members get full access — reveal who's interested and message them directly.", icon: "⭐", color: "var(--gold)" }); }} style={{ position: "absolute", top: 8, left: 8, minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center", padding: "2px 7px", borderRadius: 99, background: "rgba(0,0,0,0.65)", fontSize: 9, fontWeight: 700, color: "var(--gold)", border: "1px solid rgba(255,215,0,0.3)", cursor: "pointer" }}>PRO</div>)}
                 </div>
                 );
               })}

@@ -145,8 +145,9 @@ export async function POST(req: NextRequest) {
       const sb = getServiceClient();
       let { data: profile } = await sb.from("muse_profiles").select("*").eq("auth_id", user.id).maybeSingle();
 
-      // Auto-create profile for OAuth / first-time users
-      if (!profile) {
+      // Auto-create profile for OAuth / first-time users outside demo mode.
+      // Demo session hydration must never create a production profile.
+      if (!profile && !isDemoMode()) {
         const name = (user.user_metadata?.name as string) || (user.email ? user.email.split("@")[0] : "Creative");
         const avatar = (user.user_metadata?.avatar_url as string) || (user.user_metadata?.picture as string) || "";
         const { data: created, error: createErr } = await sb.from("muse_profiles").upsert({
@@ -174,7 +175,7 @@ export async function POST(req: NextRequest) {
       // signal of activity available (session checks fire on login and app
       // resume). Fire-and-forget: a failed/slow touch shouldn't block the
       // session response.
-      if (profile?.id) {
+      if (profile?.id && !isDemoMode()) {
         sb.from("muse_profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", profile.id).then(() => {}, () => {});
       }
 

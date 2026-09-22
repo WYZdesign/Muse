@@ -14,6 +14,7 @@ import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
 import { isPaidTier } from "../components/subscriptionTiers";
 
 const SUPPORT_EMAIL = "info@wyzdesign.com";
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 
 // See the theme-grid audit-fix comment below — unique 3-letter labels so no
 // two theme swatches read the same.
@@ -529,7 +530,7 @@ export const SettingsScreen = memo(function SettingsScreen({
     {
       icon: <FiLock size={18} />,
       label: "Identity Verification",
-      desc: !ageVerified ? "Expired — paid features locked. Tap to verify" : verificationExpiringSoon ? "Expires in ≤30 days — tap to re-verify" : "Verified ✓",
+      desc: !ageVerified ? "Not verified — paid features locked. Tap to verify" : verificationExpiringSoon ? "Reverification required soon — tap to continue paid access" : "Verified ✓",
       action: () => setShowAgeVerification(true),
       dot: !ageVerified || verificationExpiringSoon,
     },
@@ -559,7 +560,7 @@ export const SettingsScreen = memo(function SettingsScreen({
     { icon: <FiFile size={18} />, label: "Privacy Policy", desc: "How we handle your data", action: () => setShowPrivacy(true) },
     { icon: <FiFile size={18} />, label: "Community Guidelines", desc: "Standards & expectations", action: () => setShowGuidelines(true) },
     { icon: <FiFile size={18} />, label: "DMCA / Copyright", desc: "Copyright infringement claims", action: () => window.open("/dmca", "_self") },
-    { icon: <FiX size={18} />, label: "Delete Account", desc: "Permanently remove your data", action: () => setShowDeleteConfirm(true) },
+    { icon: <FiX size={18} />, label: "Delete Account", desc: "Remove account access and associated content", action: () => setShowDeleteConfirm(true) },
   ];
 
   const faqItems = [
@@ -567,7 +568,7 @@ export const SettingsScreen = memo(function SettingsScreen({
     { q: "What are Quests?", a: "Quests are small challenges that reward you for using Muse — like swiping on profiles, posting, or messaging someone. They refresh daily, weekly and monthly. Finishing one earns XP plus a reward such as free likes or a profile boost. Open Quests (Menu → Quests, or Settings → Rewards → Quests) to see your progress and claim anything that’s ready." },
     { q: "How do I upgrade to Premium?", a: "Go to Settings → Payments & Subscription → Subscription to see plan options." },
     { q: "How do I report someone?", a: "Tap the ⚑ Report button on any feed or forum post, the ••• menu on a match, or Report inside a chat conversation. Choose a reason and we'll review it — track your reports in Menu → Your Activity → Reports." },
-    { q: "How do I delete my account?", a: "Go to Settings → Legal → Delete Account. This permanently removes all your data." },
+    { q: "How do I delete my account?", a: "Go to Settings → Legal → Delete Account. Account access and associated content are removed immediately. We retain only records required for legal, safety, fraud, dispute, or recordkeeping obligations; see the Privacy Policy for details." },
   ];
 
   const renderRow = (item: { icon: React.ReactNode; label: string; desc: string; action: () => void; dot?: boolean }) => (
@@ -1462,21 +1463,27 @@ export const SettingsScreen = memo(function SettingsScreen({
           <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
             Control who can see your portfolio and how your work is presented.
           </div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", margin: "4px 0 8px" }}>Who can see your portfolio</div>
+          <div id="portfolio-visibility-label" style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", margin: "4px 0 8px" }}>Who can see your portfolio</div>
+          <div aria-labelledby="portfolio-visibility-label">
           {[
-            { k: "everyone", l: "Everyone", d: "Any Muse member can view your work" },
+            { k: "everyone", l: "Muse members", d: "Any signed-in Muse member can view your work" },
             { k: "matches", l: "Matches only", d: "Only people you've matched with" },
-            { k: "private", l: "Private", d: "Hidden from everyone" },
+            { k: "private", l: "Private", d: "Visible only to you" },
           ].map(o => (
-            <button key={o.k} onClick={() => setPortfolioVisibility(o.k)}
+            <button key={o.k} type="button" aria-pressed={portfolioVisibility === o.k} onClick={() => setPortfolioVisibility(o.k)}
               style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", marginBottom: 8, border: "1px solid var(--border-subtle)", borderRadius: 14, background: portfolioVisibility === o.k ? "var(--gold)" : "var(--glass)", color: portfolioVisibility === o.k ? "#0a0612" : "var(--text)", cursor: "pointer" }}>
               <div style={{ fontSize: 14, fontWeight: 700 }}>{o.l}</div>
               <div style={{ fontSize: 11, opacity: .75, marginTop: 2 }}>{o.d}</div>
             </button>
           ))}
+          </div>
           <ToggleRow label="Featured work" desc="Highlight your best pieces first" checked={portfolioFeatured} onToggle={() => setPortfolioFeatured(v => !v)} />
           <ToggleRow label="Show portfolio on my profile" checked={portfolioShowOnProfile} onToggle={() => setPortfolioShowOnProfile(v => !v)} />
           <button className="btn btn-gold" style={{ width: "100%", marginTop: 16 }} onClick={async () => {
+            if (DEMO_MODE) {
+              showToast("Portfolio settings saved for this demo session.");
+              return;
+            }
             try {
               await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { portfolioVisibility, portfolioFeatured, portfolioShowOnProfile } }) });
               showToast("Portfolio settings saved!");

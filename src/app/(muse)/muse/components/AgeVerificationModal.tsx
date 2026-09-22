@@ -10,12 +10,19 @@ type Props = {
   authFetch: (url: string, opts?: RequestInit) => Promise<Response>;
 };
 
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
+
 export default function AgeVerificationModal({ onVerified, onClose, purpose = "age_gate", authFetch }: Props) {
-  const [state, setState] = useState<"idle" | "loading" | "starting" | "redirected" | "checking" | "verified" | "error">("idle");
+  const [state, setState] = useState<"idle" | "loading" | "starting" | "redirected" | "checking" | "verified" | "error" | "demo">("idle");
   const [message, setMessage] = useState("");
   const trapRef = useFocusTrap<HTMLDivElement>(true, onClose);
 
   const startVerification = async () => {
+    if (DEMO_MODE) {
+      setState("demo");
+      setMessage("Identity verification is unavailable in this demo. No document, selfie, booking, or payment action will be started.");
+      return;
+    }
     setState("loading");
     setMessage("");
     try {
@@ -50,6 +57,11 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
   };
 
   const checkStatus = async () => {
+    if (DEMO_MODE) {
+      setState("demo");
+      setMessage("Identity verification is unavailable in this demo. No document, selfie, booking, or payment action will be started.");
+      return;
+    }
     setState("checking");
     try {
       const res = await authFetch("/api/muse/verification", {
@@ -94,18 +106,19 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
       <div style={{ background: "var(--card-bg)", border: "1px solid var(--gold)", borderRadius: 24, padding: 32, maxWidth: 440, width: "90%", textAlign: "center" }}>
         <div style={{ fontSize: 44, marginBottom: 12 }}>🪪</div>
         <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", marginBottom: 10 }}>
-          {state === "verified" ? "Verified!" : "Age Verification Required"}
+          {state === "verified" ? "Verified!" : "Age Verification for Paid Bookings"}
         </h2>
 
         {state === "verified" ? (
           <p style={{ fontSize: 14, color: "#3a9e3a", marginBottom: 20 }}>Your identity has been verified. You're all set for paid bookings.</p>
         ) : (
           <p style={{ fontSize: 13, color: "var(--text2)", marginBottom: 20, lineHeight: 1.6 }}>
-            Paid bookings require government ID + selfie verification (18+ only). This is a secure check via Stripe Identity. Your documents are encrypted and never stored on Muse servers. You can verify or skip at any time.
+            Paid bookings require an 18+ identity check administered by Stripe Identity. Stripe processes the government ID and selfie needed for that check; Muse receives the verification status needed to apply booking eligibility. See the Privacy Policy for details.
           </p>
         )}
 
         {state === "error" && <p style={{ fontSize: 12, color: "#ff6b6b", marginBottom: 14 }}>{message}</p>}
+        {state === "demo" && <p style={{ fontSize: 12, color: "var(--gold)", marginBottom: 14 }}>{message}</p>}
         {state === "redirected" && <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>{message}</p>}
         {state === "checking" && <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Checking verification status…</p>}
         {state === "loading" && <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Starting secure verification…</p>}
@@ -144,14 +157,14 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
             </button>
           )}
           {state !== "verified" && (
-            <button onClick={onClose} style={{ padding: "8px 0", background: "none", border: "none", color: "var(--muted)", fontSize: 13, cursor: "pointer" }}>
+            <button onClick={onClose} style={{ minHeight: 44, padding: "8px 0", background: "none", border: "none", color: "var(--muted)", fontSize: 13, cursor: "pointer" }}>
               Not now
             </button>
           )}
         </div>
 
         <p style={{ fontSize: 10, color: "var(--muted)", marginTop: 16, lineHeight: 1.5 }}>
-          Verification is provided by Stripe Identity. Your documents are encrypted and never stored on Muse servers. You can verify at any time. Paid bookings require it.
+          Verification is provided by Stripe Identity. Verification status is not shown to other members. Review the Privacy Policy for information about processing and retention.
         </p>
       </div>
     </div>

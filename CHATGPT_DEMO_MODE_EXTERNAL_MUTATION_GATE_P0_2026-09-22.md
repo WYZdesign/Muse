@@ -99,12 +99,71 @@ The remaining top-level endpoints were checked as well:
 - support remains usable, but demo requests use only the local FAQ fallback
   and never reach the AI provider.
 
+### Session hydration hardening
+
+Read-only demo sign-in/session checks remain available for walkthroughs, but
+session hydration no longer auto-creates a missing production profile and no
+longer writes the member's `last_seen_at` presence timestamp. This closes the
+remaining account-route database writes that could occur even when all explicit
+account changes were blocked.
+
 ## Demo UX compatibility follow-up
 
 The Discover Boost control now activates a local 30-minute demo indicator
 without calling the blocked server action. Its message explicitly says that no
 real promotion was purchased. This preserves the walkthrough while keeping the
 server boundary strict.
+
+The chat surface now also omits LiveKit voice/video call controls in demo mode,
+including for a preview record with a UUID-shaped ID. This adds a client-side
+guard in front of the server-side demo gate.
+
+The activity panel is read-only in demo mode: opening it does not mark
+notifications read, and its bulk read/clear controls and swipe-to-delete
+gesture are disabled. This protects real test-account notification fixtures
+while retaining read-only inspection.
+
+Sessions now short-circuit client-side before availability, Connect onboarding,
+refund, booking, listing, booking-response/completion/cancellation, payment,
+or review requests. Saved sessions remain a clearly labelled demo-session-only
+local preference.
+
+The subscription surface also skips boost-status reads and blocks promo
+application, plan checkout, boost activation, and boost-credit checkout in
+demo mode. Each blocked affordance states that no purchase or promotion was
+created.
+
+Connect now skips Stripe account-status lookup, embedded onboarding, and hosted
+onboarding redirects in demo mode. The panel explicitly says that it collects
+no payout, bank, tax, or payment information and directs real-flow testing to
+non-demo staging with Stripe test credentials.
+
+Community now short-circuits join/leave, RSVP/cancel, group/event creation,
+moderation, and join-request decisions in demo mode. Viewing a group or event
+also no longer writes quest telemetry in the demo environment.
+
+Feed now blocks demo camera permission, capture/upload, file upload, recorded
+media, post creation, non-static likes, and replies. Reply fields are disabled
+and describe the demo restriction rather than creating optimistic activity.
+
+Network now keeps saved professionals session-local and blocks server search,
+connection requests, forum votes/replies/posts, and forum pinning in demo
+mode. These actions no longer create recipient-facing or moderation activity.
+
+BTS now blocks demo recording/publishing, likes, and comments before media
+uploads or moment/comment writes can be attempted. Sharing remains a device-
+local affordance only.
+
+Muses now blocks demo swipe unmatch/block actions and message-request
+accept/decline/block decisions before any match, recipient, or account-state
+mutation is attempted.
+
+My Albums is unavailable in demo mode. It neither loads private album data nor
+allows create/delete, privacy/access changes, uploads, or invitation updates.
+
+Quest data and claims are disabled in demo mode so preview activity cannot
+grant entitlements. Referral data, history, links, and reward balances are
+also withheld, avoiding exposure of live account information.
 
 Saved Discovery searches now follow the same contract: saving and deleting a
 search in demo mode update session-local React state and never call the

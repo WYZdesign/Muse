@@ -24,6 +24,7 @@ export interface SubscriptionScreenProps {
 }
 
 const BOOST_PRICE_MAP: Record<string, string> = { "24h": "3.99", "72h": "9.99", "7d": "19.99" };
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 
 export const SubscriptionScreen = memo(function SubscriptionScreen({
   screen,
@@ -48,6 +49,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
   const [buyingBoost, setBuyingBoost] = useState(false);
 
   const loadBoost = async () => {
+    if (DEMO_MODE) return;
     if (!apiFetch) return;
     try {
       const r = await apiFetch("/api/muse?type=boost-status");
@@ -104,6 +106,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
             <button className="btn btn-outline" style={{ width: "100%", padding: "10px 16px", opacity: applyingPromo ? 0.6 : 1 }} disabled={applyingPromo} onClick={async () => {
               const p = promo.trim().toUpperCase();
               if (!p) { showToast("Enter a promo code first"); return; }
+              if (DEMO_MODE) { showToast("Promo codes are unavailable in this demo."); return; }
               if (!apiFetch) { showToast("Can't apply promo right now"); return; }
               setApplyingPromo(true);
               try {
@@ -153,6 +156,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
                   onClick={async () => {
                     if (isCurrent) return;
                     if (tier.name === "Free") { showToast("You're on the Free plan"); return; }
+                    if (DEMO_MODE) { showToast("Plan checkout is unavailable in this demo."); return; }
                     const url = await startSubscriptionCheckout(tierKey, authUser?.email, showToast, promo.trim() || undefined);
                     if (url) { window.location.href = url; }
                   }}
@@ -182,6 +186,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
                 ))}
               </div>
               <button className="btn btn-gold" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 800, borderRadius: 12 }} disabled={boosting} onClick={async () => {
+                if (DEMO_MODE) { showToast("Demo boost preview — no promotion was purchased."); return; }
                 if (!apiFetch) { showToast("Can't boost right now"); return; }
                 setBoosting(true);
                 try {
@@ -202,6 +207,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
 
           <button className="btn btn-outline" style={{ width: "100%", padding: "12px 0", fontSize: 12, fontWeight: 700, borderRadius: 12, borderColor: "rgba(255,215,0,0.3)", color: "var(--gold)" }} disabled={buyingBoost} onClick={async () => {
             if (buyingBoost) return;
+            if (DEMO_MODE) { showToast("Boost checkout is unavailable in this demo."); return; }
             setBuyingBoost(true);
             const result = await startBoostCheckout(1, boostDuration, showToast);
             if (result) {

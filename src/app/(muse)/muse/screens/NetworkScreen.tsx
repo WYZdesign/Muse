@@ -124,7 +124,8 @@ export const NetworkScreen = memo(function NetworkScreen({
     const isSaved = savedProfileIds.includes(id);
     const next = isSaved ? savedProfileIds.filter(x => x !== id) : [...savedProfileIds, id];
     setSavedProfileIds(next);
-    showToast(isSaved ? "Unsaved" : "Saved!");
+    showToast(demo ? (isSaved ? "Removed from this demo session" : "Saved for this demo session") : (isSaved ? "Unsaved" : "Saved!"));
+    if (demo) return;
     apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { savedProfileIds: next } }) }).catch(() => showToast(isSaved ? "Couldn't unsave — try again" : "Couldn't save — try again"));
   };
   const [netTab, setNetTab] = useState<"pros" | "forum">("pros");
@@ -247,6 +248,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   // Server-side search for professionals
   const handleProSearch = async (value: string) => {
     setProSearchServer(value);
+    if (demo) { setProServerResults([]); return; }
     if (value.trim().length >= 2) {
       try {
         const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "search", query: value, type: "users", limit: 50 }) });
@@ -263,6 +265,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   }
 
   function handleConnect(p: any) {
+    if (demo) { showToast("Connection requests are unavailable in this demo."); return; }
     if (connectedIds.has(p.id)) return;
     setConnectLoading(p.id);
     // muse_professionals rows aren't keyed by muse_profiles.id — the connect
@@ -308,6 +311,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   }
 
   function handleVote(postId: number, direction: "up" | "down") {
+    if (demo) { showToast("Forum voting is unavailable in this demo."); return; }
     const current = votedPosts[postId];
     setVotedPosts((prev) => ({ ...prev, [postId]: current === direction ? null : direction }));
     const applyDelta = (p: any) => {
@@ -376,6 +380,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   }
 
   function addComment(postId: any, parentReplyId: string | null = null) {
+    if (demo) { showToast("Forum replies are unavailable in this demo."); return; }
     const text = (commentTexts[postId] || "").trim();
     if (!text) return;
     const key = String(postId);
@@ -892,6 +897,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                       className="btn btn-gold"
                       style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 700, borderRadius: 12 }}
                       onClick={async () => {
+                        if (demo) { showToast("Forum posts are unavailable in this demo."); return; }
                         if (!newPostTitle.trim()) return;
                         const title = newPostTitle.trim();
                         const body = newPostBody.trim();
@@ -1162,6 +1168,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                             cursor: "pointer",
                           }}
                           onClick={async () => {
+                            if (demo) { showToast("Forum moderation is unavailable in this demo."); return; }
                             try {
                               const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum-post-pin", postId: post.id }) });
                               const d = await r.json();

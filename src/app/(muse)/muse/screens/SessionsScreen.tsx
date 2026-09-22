@@ -134,6 +134,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   const isHostOwned = (s: any) => !!s && (String(s.host_id) === String(currentUser?.id) || !!s.isMine);
   const sessionAvailable = (s: any) => availability[String(s.id)] ?? s.available;
   const toggleAvailability = async (s: any) => {
+    if (demo) { showToast("Session availability is read-only in this demo."); return; }
     const next = !sessionAvailable(s);
     setAvailability(p => ({ ...p, [String(s.id)]: next }));
     try {
@@ -159,6 +160,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   }, []);
 
   const connectStripe = async () => {
+    if (demo) { showToast("Stripe onboarding is unavailable in this demo."); return; }
     try {
       const r = await authFetch("/api/muse/connect", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-account" }) });
       const j = await r.json();
@@ -168,6 +170,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   };
 
   const requestRefund = async (bookingId: string) => {
+    if (demo) { showToast("Refund requests are unavailable in this demo."); return; }
     try {
       const r = await authFetch("/api/muse/connect", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "request-refund", bookingId, reason: "Requested by client" }) });
       const j = await r.json();
@@ -176,6 +179,7 @@ export const SessionsScreen = memo(function SessionsScreen({
     } catch { showToast("Couldn't file request"); }
   };
   const doBookSession = async (s: any, note?: { sizing: string; requirements: string; message: string }) => {
+    if (demo) { showToast("Demo booking preview — no request, payment, or notification was created."); return false; }
     try {
       // Best-effort availability probe (fire-and-forget — never blocks or
       // gates the booking action below). Torreé audit (2026-09-16): this
@@ -224,6 +228,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   };
 
   const submitSession = async () => {
+    if (demo) { showToast("Session listings are unavailable in this demo."); return; }
     if (!newSession.title.trim()) { showToast("Title is required"); return; }
     setCreating(true);
     try {
@@ -258,7 +263,8 @@ export const SessionsScreen = memo(function SessionsScreen({
     const isSaved = savedSessionIds.includes(sessionId);
     const next = isSaved ? savedSessionIds.filter(x => x !== sessionId) : [...savedSessionIds, sessionId];
     setSavedSessionIds(next);
-    showToast(isSaved ? "Unsaved" : "Saved!");
+    showToast(demo ? (isSaved ? "Removed from this demo session" : "Saved for this demo session") : (isSaved ? "Unsaved" : "Saved!"));
+    if (demo) return;
     apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { savedSessionIds: next } }) }).catch(() => showToast(isSaved ? "Couldn't unsave — try again" : "Couldn't save — try again"));
   };
 
@@ -276,6 +282,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   };
 
   const respondBooking = async (bookingId: string, response: "accept" | "decline") => {
+    if (demo) { showToast("Booking responses are unavailable in this demo."); return; }
     try {
       const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "respond-booking", bookingId, response }) });
       if (!r.ok) throw new Error("failed");
@@ -286,6 +293,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   };
 
   const completeBooking = async (bookingId: string) => {
+    if (demo) { showToast("Booking completion is unavailable in this demo."); return; }
     try {
       const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "complete-booking", bookingId }) });
       if (!r.ok) throw new Error("failed");
@@ -300,6 +308,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [cancelBusy, setCancelBusy] = useState(false);
   const doCancel = async (bookingId: string) => {
+    if (demo) { setCancelTarget(null); showToast("Booking cancellation is unavailable in this demo."); return; }
     setCancelBusy(true);
     setCancelTarget(null);
     try {
@@ -317,6 +326,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   const reviewTrap = useFocusTrap(reviewTarget !== null, () => setReviewTarget(null));
 
   const payBooking = async (booking: any) => {
+    if (demo) { showToast("Payment is unavailable in this demo."); return; }
     const host = booking.host_id;
     const session = booking.session_id;
     if (!host?.id) { showToast("Host unavailable"); return; }
@@ -337,6 +347,7 @@ export const SessionsScreen = memo(function SessionsScreen({
 
   const submitReview = async () => {
     if (!reviewTarget) return;
+    if (demo) { showToast("Reviews are unavailable in this demo."); return; }
     setReviewSending(true);
     try {
       const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit-review", bookingId: reviewTarget.id, rating: reviewRating, body: reviewBody }) });
@@ -424,7 +435,8 @@ export const SessionsScreen = memo(function SessionsScreen({
                           tabIndex={0}
                           title={`${tier.minSessions}+ completed sessions and a ${tier.minRating}+ average rating`}
                           onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: tier.label, desc: tier.key === "elite" ? "Muse's top tier — 25+ completed sessions and a 4.8+ average rating, among the most trusted hosts on Muse." : tier.key === "top" ? "Top Rated — 10+ completed sessions and a 4.5+ average rating, a proven and reliable host." : "Rising Muse — 3+ completed sessions and a 4.0+ average rating, building a strong track record.", icon: tier.icon, color: tier.color }); }}
-                          style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.3, padding: "2px 7px", borderRadius: 20, background: tier.bg, border: `1px solid ${tier.border}`, color: tier.color, textTransform: "uppercase", cursor: "pointer" }}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setBadgeInfo({ name: tier.label, desc: tier.key === "elite" ? "Muse's top tier — 25+ completed sessions and a 4.8+ average rating, among the most trusted hosts on Muse." : tier.key === "top" ? "Top Rated — 10+ completed sessions and a 4.5+ average rating, a proven and reliable host." : "Rising Muse — 3+ completed sessions and a 4.0+ average rating, building a strong track record.", icon: tier.icon, color: tier.color }); } }}
+                          style={{ minHeight: 44, display: "inline-flex", alignItems: "center", fontSize: 9.5, fontWeight: 800, letterSpacing: 0.3, padding: "2px 7px", borderRadius: 20, background: tier.bg, border: `1px solid ${tier.border}`, color: tier.color, textTransform: "uppercase", cursor: "pointer" }}
                         >{tier.icon} {tier.label}</span>
                       );
                     })()}

@@ -49,6 +49,7 @@ function timeAgo(ts: number): string {
 }
 
 const FILTER_TABS: FilterTab[] = ["All", "Photos", "Videos", "Trending", "New", "Liked"];
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 
 export const BtsScreen = memo(function BtsScreen({
   screen,
@@ -84,6 +85,7 @@ export const BtsScreen = memo(function BtsScreen({
   // recorder. Shares useRecorder with Chat/Feed (consent gate, 60s cap,
   // Whisper transcript).
   const postVoiceMoment = useCallback(async (url: string, kind: "voice" | "video", durationMs: number, mediaType: string, transcript?: string) => {
+    if (DEMO_MODE) { showToast("BTS media publishing is unavailable in this demo."); return; }
     const localId = uid || `m-${Date.now()}`;
     const optimistic = {
       id: localId, author: currentUser?.name || "You", avatar: currentUser?.avatar || "",
@@ -152,6 +154,7 @@ export const BtsScreen = memo(function BtsScreen({
 
   const handleLike = useCallback(
     (s: any) => {
+      if (DEMO_MODE) { showToast("BTS likes are unavailable in this demo."); return; }
       const newLiked = !s.liked;
       setStories((prev) =>
         prev.map((item) =>
@@ -197,6 +200,7 @@ export const BtsScreen = memo(function BtsScreen({
 
   const submitComment = useCallback(
     async (s: any) => {
+      if (DEMO_MODE) { showToast("BTS comments are unavailable in this demo."); return; }
       const text = commentDraft.trim();
       if (!text || sendingComment) return;
       setSendingComment(true);
@@ -766,8 +770,8 @@ export const BtsScreen = memo(function BtsScreen({
             Snap Moment
               </button>
               <button
-                onClick={() => (rec.recording ? rec.stop() : rec.start("voice"))}
-                disabled={rec.sending}
+                onClick={() => DEMO_MODE ? showToast("BTS recording is unavailable in this demo.") : (rec.recording ? rec.stop() : rec.start("voice"))}
+                disabled={DEMO_MODE || rec.sending}
                 style={{
                   marginTop: 8,
                   marginLeft: 8,

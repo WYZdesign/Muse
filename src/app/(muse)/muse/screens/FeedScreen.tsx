@@ -216,6 +216,7 @@ export const FeedScreen = memo(function FeedScreen({
   }, [recording]);
 
   const openCamera = async (mode: "photo" | "video") => {
+    if (demo) { showToast("BTS capture is unavailable in this demo."); return; }
     setCamMode(mode);
     setCameraOpen(true);
     setCamError("");
@@ -229,6 +230,7 @@ export const FeedScreen = memo(function FeedScreen({
   };
 
   const handleCaptured = async (blob: Blob, kind: "image/jpeg" | "video/webm") => {
+    if (demo) { showToast("BTS upload is unavailable in this demo."); return; }
     if (!blob.size) { showToast("Capture failed — try again"); return; }
     setCapturing(true);
     showToast(kind === "video/webm" ? "Uploading clip…" : "Uploading photo…");
@@ -392,8 +394,10 @@ export const FeedScreen = memo(function FeedScreen({
                   accept="image/*,video/*"
                   multiple
                   aria-label="Upload photo or video"
+                  disabled={demo}
                   style={{ display: "none" }}
                   onChange={async e => {
+                    if (demo) { showToast("Media upload is unavailable in this demo."); return; }
                     const files = Array.from(e.target.files || []);
                     if (!files.length) return;
                     showToast("Uploading " + files.length + " file(s)...");
@@ -407,13 +411,13 @@ export const FeedScreen = memo(function FeedScreen({
                 />
               </label>
               {/* Record a voice or video note straight into the post */}
-              <button type="button" aria-label="Record voice note" disabled={!!rec.recording || rec.sending}
-                onClick={() => rec.start("voice")}
+              <button type="button" aria-label="Record voice note" disabled={demo || !!rec.recording || rec.sending}
+                onClick={() => demo ? showToast("Media recording is unavailable in this demo.") : rec.start("voice")}
                 style={{ width: 44, height: 44, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}>
                 <FiMic size={16} />
               </button>
-              <button type="button" aria-label="Record video note" disabled={!!rec.recording || rec.sending}
-                onClick={() => rec.start("video")}
+              <button type="button" aria-label="Record video note" disabled={demo || !!rec.recording || rec.sending}
+                onClick={() => demo ? showToast("Media recording is unavailable in this demo.") : rec.start("video")}
                 style={{ width: 44, height: 44, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}>
                 <FiVideo size={16} />
               </button>
@@ -442,6 +446,7 @@ export const FeedScreen = memo(function FeedScreen({
                 style={{ flex: 1, padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap", opacity: (!feedText.trim() && !feedMedia.length && !feedClip) ? 0.5 : 1, cursor: (!feedText.trim() && !feedMedia.length && !feedClip) ? "not-allowed" : "pointer", minHeight: 44 }}
                 aria-disabled={!feedText.trim() && !feedMedia.length && !feedClip}
                 onClick={async () => {
+                  if (demo) { showToast("Posting is unavailable in this demo."); return; }
                   if (feedText.trim() || feedMedia.length || feedClip) {
                     const txt = feedText.trim();
                     const hasVideo = feedMedia.some(u => u.endsWith(".mp4") || u.includes("video"));
@@ -588,7 +593,7 @@ export const FeedScreen = memo(function FeedScreen({
                   {/* Equal flex:1 + minWidth:0 on all three (was 1.25/1.25/0.9 with
                       Report flexShrink:0) — uneven ratios could overflow the card's
                       rounded edge and clip Report. */}
-                  <button className={"feed-action-btn" + (post.liked ? " liked-pop" : "")} style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: post.liked ? "var(--gold)" : "var(--muted)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { const newLiked = !post.liked; const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) { setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); return; } updateFeedPostState(post.id, p => ({ ...p, liked: newLiked })); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "like-feed-post", postId: post.id, liked: newLiked }) }).then(r => { if (!r.ok) throw new Error("failed"); }).catch(() => { updateFeedPostState(post.id, p => ({ ...p, liked: !newLiked })); showToast("Failed to update like"); }); }}>✦ {post.likes + (post.liked ? 1 : 0)}</button>
+                  <button className={"feed-action-btn" + (post.liked ? " liked-pop" : "")} style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: post.liked ? "var(--gold)" : "var(--muted)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { if (demo) { showToast("Likes are unavailable in this demo."); return; } const newLiked = !post.liked; const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) { setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, liked: newLiked }) : p)); return; } updateFeedPostState(post.id, p => ({ ...p, liked: newLiked })); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "like-feed-post", postId: post.id, liked: newLiked }) }).then(r => { if (!r.ok) throw new Error("failed"); }).catch(() => { updateFeedPostState(post.id, p => ({ ...p, liked: !newLiked })); showToast("Failed to update like"); }); }}>✦ {post.likes + (post.liked ? 1 : 0)}</button>
                   <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => {
                     // Tapping Comment always gives a visible result: expand the
                     // inline reply composer AND open the full post detail (which
@@ -622,13 +627,15 @@ export const FeedScreen = memo(function FeedScreen({
                         <input
                             className="inp"
                             aria-label="Write a reply"
-                            placeholder="Write a reply..."
+                            placeholder={demo ? "Replies are disabled in this demo" : "Write a reply..."}
+                            disabled={demo}
                             value={postCommentTexts[post.id] || ""}
                             onChange={e => setPostCommentTexts(prev => ({ ...prev, [post.id]: e.target.value }))}
                             onKeyDown={async e => { if (e.key === "Enter" && (postCommentTexts[post.id] || "").trim()) { const txt = (postCommentTexts[post.id] || "").trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setPostCommentTexts(prev => ({ ...prev, [post.id]: "" })); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
                             style={{ width: "100%", margin: 0, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.06)", borderRadius: 99, padding: "10px 42px 10px 14px", fontSize: 13, color: "var(--text)" }}
                           />
                           <button
+                            disabled={demo}
                             onClick={async () => { if ((postCommentTexts[post.id] || "").trim()) { const txt = (postCommentTexts[post.id] || "").trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setPostCommentTexts(prev => ({ ...prev, [post.id]: "" })); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
                             style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", width: 30, height: 30, borderRadius: "50%", border: "none", background: (postCommentTexts[post.id] || "").trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: (postCommentTexts[post.id] || "").trim() ? "#fff" : "rgba(255,255,255,0.25)", cursor: (postCommentTexts[post.id] || "").trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
                           ><FiSend size={14} /></button>
@@ -646,6 +653,7 @@ export const FeedScreen = memo(function FeedScreen({
         if (!dp) return null;
         const replies = postReplies[dp.id] || [];
         const sendDetailReply = async () => {
+          if (demo) { showToast("Replies are unavailable in this demo."); return; }
           const txt = (postCommentTexts[dp.id] || "").trim();
           if (!txt) return;
           const optimistic = { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" };
@@ -722,13 +730,15 @@ export const FeedScreen = memo(function FeedScreen({
                   <input
                     className="inp"
                     aria-label="Post your reply"
-                    placeholder="Post your reply…"
+                    placeholder={demo ? "Replies are disabled in this demo" : "Post your reply…"}
+                    disabled={demo}
                     value={postCommentTexts[dp.id] || ""}
                     onChange={e => setPostCommentTexts(prev => ({ ...prev, [dp.id]: e.target.value }))}
                     onKeyDown={e => { if (e.key === "Enter") sendDetailReply(); }}
                     style={{ width: "100%", margin: 0, borderRadius: 99, padding: "10px 42px 10px 14px" }}
                   />
                   <button
+                    disabled={demo}
                     onClick={sendDetailReply}
                     style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", width: 30, height: 30, borderRadius: "50%", border: "none", background: (postCommentTexts[dp.id] || "").trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: (postCommentTexts[dp.id] || "").trim() ? "#fff" : "rgba(255,255,255,0.25)", cursor: (postCommentTexts[dp.id] || "").trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
                   ><FiSend size={14} /></button>

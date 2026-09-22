@@ -32,6 +32,7 @@ const FILTER_OPTIONS = [
   { key: "monthly", label: "Monthly" },
   { key: "weekly", label: "Weekly" },
 ];
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 
 // Concise one-line objective shown when a quest is expanded. Prefers the
 // backend description; when that's empty, derives a short sentence from the
@@ -65,6 +66,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
   const quests = rotateQuests(allQuests);
 
   const fetchQuests = useCallback(async () => {
+    if (DEMO_MODE) { setAllQuests([]); setXp({ total_xp: 0, level: 1 }); onClaimablesChange?.(0); return; }
     try {
       const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-quests" }) });
       const data = await res.json();
@@ -78,6 +80,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
   useEffect(() => { if (show) fetchQuests(); }, [show, fetchQuests]);
 
   const claimReward = async (questId: string) => {
+    if (DEMO_MODE) { showToast("Quest rewards are unavailable in this demo."); return; }
     setClaimingId(questId);
     try {
       const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "claim-quest", quest_id: questId }) });

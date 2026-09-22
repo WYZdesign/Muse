@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FiArrowLeft, FiX } from "react-icons/fi";
 import { ZE, CE, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti } from "./types";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 type TestKey = "zodiac" | "chinese" | "mbti" | "lifepath";
 
@@ -25,6 +26,7 @@ export default function SelfDiscoveryModal({ open, onClose, obData, onSaved, api
   const [birthDay, setBirthDay] = useState("");
   const [birthYear, setBirthYear] = useState("");
   const [mbtiAnswers, setMbtiAnswers] = useState<Record<string, string>>({});
+  const trapRef = useFocusTrap<HTMLDivElement>(open, onClose);
 
   if (!open) return null;
 
@@ -81,11 +83,11 @@ export default function SelfDiscoveryModal({ open, onClose, obData, onSaved, api
       onClick={onClose}
     >
       <div
+        ref={trapRef}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="self-discovery-title"
-        onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
         style={{ width: "100%", maxWidth: 480, maxHeight: "88vh", background: "var(--panel-bg-solid)", backdropFilter: "blur(30px)", borderRadius: "24px 24px 0 0", border: "1px solid var(--border-subtle)", borderBottom: "none", display: "flex", flexDirection: "column", overflow: "hidden" }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>

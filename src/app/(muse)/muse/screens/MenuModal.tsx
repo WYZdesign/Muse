@@ -12,6 +12,7 @@ import { STRINGS } from "@/lib/strings";
 
 interface ActivityPanelProps {
   authFetch: any;
+  demo?: boolean;
   appliedBriefs: (string | number)[];
   savedBriefs: (string | number)[];
   bookingsForHub: any;
@@ -39,12 +40,13 @@ function NotificationAvatar({ name, src, letter }: { name?: string; src?: string
 // then removes it (and fires the backend delete). Only one row is draggable at a
 // time (governed by activeDragId from the parent); while one is active, all other
 // rows' handlers short-circuit and stay inert.
-function SwipeableNotification({ a, notifIcon, activeDragId, setActiveDragId, onRemove }: {
+function SwipeableNotification({ a, notifIcon, activeDragId, setActiveDragId, onRemove, disabled = false }: {
   a: any;
   notifIcon: React.ReactNode;
   activeDragId: any;
   setActiveDragId: (id: any) => void;
   onRemove: (id: any) => void;
+  disabled?: boolean;
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
   const startRef = useRef<{ x: number; y: number } | null>(null);
@@ -72,7 +74,7 @@ function SwipeableNotification({ a, notifIcon, activeDragId, setActiveDragId, on
   }, []);
 
   const begin = (clientX: number, clientY: number) => {
-    if (doneRef.current || gone) return;
+    if (disabled || doneRef.current || gone) return;
     if (startRef.current) return; // already actively tracking this gesture
     if (activeDragId != null && activeDragId !== idStr) return; // another row is dragging — stay inert
     startRef.current = { x: clientX, y: clientY };
@@ -171,7 +173,7 @@ function SwipeableNotification({ a, notifIcon, activeDragId, setActiveDragId, on
   );
 }
 
-function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen, onStreakTap, onMarkAllRead, briefTitleById }: ActivityPanelProps) {
+function ActivityPanel({ authFetch, demo = false, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen, onStreakTap, onMarkAllRead, briefTitleById }: ActivityPanelProps) {
   const [hubTab, setHubTab] = useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
   const [myReports, setMyReports] = useState<any[] | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -185,13 +187,14 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
   const [activeDragId, setActiveDragId] = useState<any>(null);
   const pendingDeletionRef = useRef<Set<any>>(new Set());
   const removeNotification = useCallback((id: any) => {
+    if (demo) return;
     if (pendingDeletionRef.current.has(id)) return;
     pendingDeletionRef.current.add(id);
     setNotifications(prev => prev.filter(n => String(n.id) !== String(id)));
     if (authFetch) {
       authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete-notification", id }) }).catch(() => {});
     }
-  }, [authFetch]);
+  }, [authFetch, demo]);
   const [notifFilter, setNotifFilter] = useState<"all" | "unread" | "match" | "message" | "booking" | "quest" | "brief" | "community">("all");
   const [notifOffset, setNotifOffset] = useState(0);
   const [notifHasMore, setNotifHasMore] = useState(true);
@@ -272,6 +275,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
   }, [hubTab, notifFilter, loadNotifications]);
 
   const markAllRead = async () => {
+    if (demo) return;
     if (!authFetch) return;
     try {
       await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "mark-all-notifications-read" }) });
@@ -289,6 +293,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
   };
 
   const clearAll = async () => {
+    if (demo) return;
     if (!authFetch) return;
     try {
       await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "clear-all-notifications" }) });
@@ -325,8 +330,8 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <div style={{ fontSize: 12, color: "var(--text2)" }}>{notifications.filter(n => !n.read).length} unread</div>
             <div style={{ display: "flex", gap: 12 }}>
-              {notifications.some(n => !n.read) && <button onClick={markAllRead} style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>}
-              {notifications.length > 0 && <button onClick={clearAll} style={{ fontSize: 11, color: "#ff8a80", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>Clear all</button>}
+              {notifications.some(n => !n.read) && <button onClick={markAllRead} disabled={demo} title={demo ? "Notifications are read-only in this demo" : undefined} style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, background: "none", border: "none", cursor: demo ? "not-allowed" : "pointer", opacity: demo ? 0.55 : 1 }}>Mark all read</button>}
+              {notifications.length > 0 && <button onClick={clearAll} disabled={demo} title={demo ? "Notifications are read-only in this demo" : undefined} style={{ fontSize: 11, color: "#ff8a80", fontWeight: 600, background: "none", border: "none", cursor: demo ? "not-allowed" : "pointer", opacity: demo ? 0.55 : 1 }}>Clear all</button>}
             </div>
           </div>
           {notifications.length === 0
@@ -343,7 +348,7 @@ function ActivityPanel({ authFetch, appliedBriefs, savedBriefs, bookingsForHub, 
                 };
                 const notifIcon = typeIcons[a.type] || <FiBell size={16} color="var(--gold)" />;
                 return (
-                  <SwipeableNotification key={a.id} a={a} notifIcon={notifIcon} activeDragId={activeDragId} setActiveDragId={setActiveDragId} onRemove={removeNotification} />
+                  <SwipeableNotification key={a.id} a={a} notifIcon={notifIcon} activeDragId={activeDragId} setActiveDragId={setActiveDragId} onRemove={removeNotification} disabled={demo} />
                 );
               })}
           {/* Audit fix (2026-09-08): notifHasMore starts true and is only
@@ -505,6 +510,7 @@ nearQuests?: number;
   briefTitleById?: Record<string, string>;
   unreadCount?: number;
   activityFeed?: {id:number;from:string;avatar:string;text:string;time:string;read:boolean}[];
+  demo?: boolean;
   getReferralTier?: (count: number) => { tier: string; perks: string; discount?: number; nextThreshold?: number | null };
 }
 
@@ -583,6 +589,7 @@ export const MenuModal = memo(function MenuModal({
   briefTitleById,
   unreadCount,
   activityFeed = [],
+  demo = process.env.NEXT_PUBLIC_DEMO_MODE !== "false",
   liveProfessionals,
   getReferralTier,
 }: MenuModalProps) {
@@ -649,7 +656,7 @@ export const MenuModal = memo(function MenuModal({
         {!hamburgerScreen && (
           <button
             className="hamburger-bell"
-            onClick={() => { onOpenActivity?.(); setHamburgerScreen("activity"); }}
+            onClick={() => { if (!demo) onOpenActivity?.(); setHamburgerScreen("activity"); }}
             aria-label="Notifications"
           >
             <FiBell size={18} />
@@ -753,7 +760,7 @@ export const MenuModal = memo(function MenuModal({
           <>
             {hamburgerScreen === "activity" && (
               <div className="conn-scroll">
-                <ActivityPanel authFetch={authFetch} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={bookingsForHub} weeklyLogins={weeklyLogins} loginStreak={loginStreak} setShowHamburger={setShowHamburger} showScreen={showScreen} onStreakTap={() => { setShowHamburger(false); setShowQuests?.(true); }} onMarkAllRead={onMarkAllRead} briefTitleById={briefTitleById} />
+                <ActivityPanel authFetch={authFetch} demo={demo} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={bookingsForHub} weeklyLogins={weeklyLogins} loginStreak={loginStreak} setShowHamburger={setShowHamburger} showScreen={showScreen} onStreakTap={() => { setShowHamburger(false); setShowQuests?.(true); }} onMarkAllRead={onMarkAllRead} briefTitleById={briefTitleById} />
               </div>
             )}
           </>

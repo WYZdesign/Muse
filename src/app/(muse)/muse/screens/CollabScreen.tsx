@@ -277,10 +277,11 @@ export const CollabScreen = memo(function CollabScreen({
                 <Image loading="lazy" src={brief.authorImg} alt={brief.author} width={86} height={86} className={"brief-avatar brief-variant-" + (bi % 5)} />
                 <div className="brief-info" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <div className="brief-author"><strong>{brief.author}</strong></div>
+                  {demo && <span style={{ marginTop: 4, padding: "3px 8px", borderRadius: 99, background: "rgba(255,215,0,0.14)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)", fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>DEMO PREVIEW</span>}
                   <div className="brief-meta" style={{ flexDirection: "column", alignItems: "center", gap: 2 }}>
                     <span className="brief-meta-item"><strong>{brief.budget}</strong></span>
                     <span className="brief-meta-item">⏱ Timeline: {brief.deadline}</span>
-                    {isOwnBrief(brief) && brief.cat !== "concept" && (
+                    {!demo && isOwnBrief(brief) && brief.cat !== "concept" && (
                       <span className="brief-meta-item" style={{ color: "var(--gold)" }}>
                         👥 {brief.applicantCount || 0} applied
                       </span>
@@ -291,7 +292,7 @@ export const CollabScreen = memo(function CollabScreen({
                         so a creative can gauge their odds before applying. Only
                         shown once there's at least one applicant — "0 interested"
                         on a fresh post would read as a discouraging non-signal. */}
-                    {!isOwnBrief(brief) && brief.cat !== "concept" && !!brief.applicantCount && (
+                    {!demo && !isOwnBrief(brief) && brief.cat !== "concept" && !!brief.applicantCount && (
                       <span className="brief-meta-item" style={{ color: "var(--muted)" }}>
                         👥 {brief.applicantCount} interested
                       </span>
@@ -336,7 +337,7 @@ export const CollabScreen = memo(function CollabScreen({
                   // applicant count above is the useful signal here instead.
                   <span className="brief-meta-item" style={{ fontStyle: "italic", opacity: 0.7 }}>Your post</span>
                 ) : brief.cat === "concept" ? (
-                  <button className="brief-btn-apply" style={{ padding: "8px 14px", fontSize: 12 }} onClick={() => { setChatTarget({ id: brief.id, name: brief.author, type: "Creative", img: brief.authorImg, messages: [] }); showScreen("chat"); }}>Respond</button>
+                  <button className="brief-btn-apply" style={{ padding: "8px 14px", fontSize: 12 }} onClick={() => { if (demo) { showToast("Demo response preview — no message was sent."); return; } setChatTarget({ id: brief.id, name: brief.author, type: "Creative", img: brief.authorImg, messages: [] }); showScreen("chat"); }}>Respond</button>
                 ) : (
                   <button
                     className={"brief-btn-apply" + (appliedBriefs.includes(brief.id) ? " applied" : "")}
@@ -344,6 +345,10 @@ export const CollabScreen = memo(function CollabScreen({
                     onClick={async () => {
                       if (!appliedBriefs.includes(brief.id)) {
                         setAppliedBriefs([...appliedBriefs, brief.id]);
+                        if (demo) {
+                          showToast("Demo application preview — no creator was notified.");
+                          return;
+                        }
                         try {
                           const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "brief-apply", briefId: brief.id }) });
                           if (!r.ok) throw new Error("failed");
@@ -360,7 +365,7 @@ export const CollabScreen = memo(function CollabScreen({
                   </button>
                 )}
                 {brief.cat === "paid" && !isOwnBrief(brief) && (
-                  <button className={"brief-btn-apply lavender"} style={{ padding: "8px 14px", fontSize: 12 }} onClick={() => { setChatTarget({ id: brief.id, name: brief.author, type: "Creative", img: brief.authorImg, messages: [] }); showScreen("chat"); showToast("Message " + brief.author + " to book this paid brief"); }}>Book</button>
+                  <button className={"brief-btn-apply lavender"} style={{ padding: "8px 14px", fontSize: 12 }} onClick={() => { if (demo) { showToast("Demo booking preview — no message, booking, payment, or match was created."); return; } setChatTarget({ id: brief.id, name: brief.author, type: "Creative", img: brief.authorImg, messages: [] }); showScreen("chat"); showToast("Message " + brief.author + " to book this paid brief"); }}>Book</button>
                 )}
                 <button
                   className={"brief-btn-save" + (savedBriefs.includes(brief.id) ? " saved" : "")}
@@ -374,7 +379,7 @@ export const CollabScreen = memo(function CollabScreen({
                       setSavedBriefs([...savedBriefs, brief.id]);
                       showToast("Saved!");
                     }
-                    apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { savedBriefs: isSaved ? savedBriefs.filter(x => x !== brief.id) : [...savedBriefs, brief.id] } }) }).catch(() => showToast(isSaved ? "Couldn't unsave — try again" : "Couldn't save — try again"));
+                    if (!demo) apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { savedBriefs: isSaved ? savedBriefs.filter(x => x !== brief.id) : [...savedBriefs, brief.id] } }) }).catch(() => showToast(isSaved ? "Couldn't unsave — try again" : "Couldn't save — try again"));
                   }}
                 >
                   <FiBookmark size={16} fill={savedBriefs.includes(brief.id) ? "var(--gold)" : "none"} />

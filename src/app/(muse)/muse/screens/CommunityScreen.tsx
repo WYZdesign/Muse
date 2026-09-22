@@ -113,6 +113,7 @@ export const CommunityScreen = memo(function CommunityScreen({
   }, [screen]);
 
   const toggleJoin = async (c: any) => {
+    if (demo) { showToast("Community membership is unavailable in this demo."); return; }
     const isJoined = joinedIds.has(c.id);
     setJoinLoading(String(c.id));
     try {
@@ -128,6 +129,7 @@ export const CommunityScreen = memo(function CommunityScreen({
   };
 
   const handleRsvp = async (ev: any) => {
+    if (demo) { showToast("Event RSVPs are unavailable in this demo."); return; }
     const isRsvpd = rsvpdEvents.includes(ev.id);
     setRsvpLoading(ev.id);
     try {
@@ -143,6 +145,7 @@ export const CommunityScreen = memo(function CommunityScreen({
   };
 
   const submitCreate = async () => {
+    if (demo) { showToast("Creating groups and events is unavailable in this demo."); return; }
     try {
       if (commTab === "groups") {
         if (!form.name.trim()) { showToast("Name required"); return; }
@@ -163,7 +166,7 @@ export const CommunityScreen = memo(function CommunityScreen({
   const openGroupDetail = (c: any) => {
     setDetailItem(c);
     setDetailType("group");
-    apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_community"] }) }).catch(() => {});
+    if (!demo) apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_community"] }) }).catch(() => {});
     // Real member roster (with role) only exists for real, DB-backed groups —
     // the demo/fallback dataset has no real members to fetch.
     setGroupMembers([]);
@@ -183,7 +186,7 @@ export const CommunityScreen = memo(function CommunityScreen({
         .catch(() => setJoinRequests([]));
     }
   };
-  const openEventDetail = (ev: any) => { setDetailItem(ev); setDetailType("event"); apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_event"] }) }).catch(() => {}); };
+  const openEventDetail = (ev: any) => { setDetailItem(ev); setDetailType("event"); if (!demo) apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_event"] }) }).catch(() => {}); };
 
   // ─── MODERATION ───
   // Owner is the community creator (muse_communities.created_by === profile id);
@@ -197,6 +200,7 @@ export const CommunityScreen = memo(function CommunityScreen({
   const canManage = myRole === "admin" || myRole === "moderator";
 
   const memberAction = async (kind: "kick" | "ban" | "mute" | "make-mod" | "remove-mod", target: CommunityMember) => {
+    if (demo) { showToast("Community moderation is unavailable in this demo."); return; }
     if (!detailItem) return;
     const communityId = detailItem.id;
     const targetUserId = target.user_id;
@@ -234,6 +238,7 @@ export const CommunityScreen = memo(function CommunityScreen({
   };
 
   const handleJoinRequest = async (req: any, approve: boolean) => {
+    if (demo) { showToast("Join-request decisions are unavailable in this demo."); return; }
     if (!detailItem) return;
     const prevRequests = joinRequests;
     setJoinRequests((prev) => prev.filter((q) => q.id !== req.id));

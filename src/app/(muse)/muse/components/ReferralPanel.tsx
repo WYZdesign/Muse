@@ -18,6 +18,7 @@ type ReferralData = {
 type Props = {
   onClose: () => void;
 };
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 
 export default function ReferralPanel({ onClose }: Props) {
   const [data, setData] = useState<ReferralData | null>(null);
@@ -25,6 +26,7 @@ export default function ReferralPanel({ onClose }: Props) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    if (DEMO_MODE) { setLoading(false); return; }
     let cancelled = false;
     authFetch("/api/muse/referral", {
       method: "POST",
@@ -50,6 +52,15 @@ export default function ReferralPanel({ onClose }: Props) {
   if (loading) return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)" }}>
       <div style={{ color: "#f5f0ff", fontSize: 14 }}>Loading referral data...</div>
+    </div>
+  );
+
+  if (DEMO_MODE) return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", padding: 20 }}>
+      <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 28, maxWidth: 420, width: "100%" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}><h2 style={{ fontSize: 18, fontWeight: 800, color: "#ffd700" }}>🎁 Referrals</h2><button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 20, cursor: "pointer" }}>✕</button></div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", lineHeight: 1.6 }}>Referral links, reward balances, and referral history are unavailable in this demo. No referral data is loaded or shared.</div>
+      </div>
     </div>
   );
 

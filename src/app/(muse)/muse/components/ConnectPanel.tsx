@@ -17,6 +17,8 @@ type Props = {
   onClose: () => void;
 };
 
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
+
 export default function ConnectPanel({ onClose }: Props) {
   const [status, setStatus] = useState<ConnectStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,6 +26,11 @@ export default function ConnectPanel({ onClose }: Props) {
   const [embedded, setEmbedded] = useState(false);
 
   const refresh = useCallback(async () => {
+    if (DEMO_MODE) {
+      setStatus(null);
+      setLoading(false);
+      return;
+    }
     try {
       const r = await authFetch("/api/muse/connect", {
         method: "POST",
@@ -41,6 +48,7 @@ export default function ConnectPanel({ onClose }: Props) {
   useEffect(() => { refresh(); }, [refresh]);
 
   const startOnboarding = async () => {
+    if (DEMO_MODE) return;
     // Embedded ConnectJS flow — custom-styled in-app, no redirect.
     if (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
       setEmbedded(true);
@@ -88,7 +96,18 @@ export default function ConnectPanel({ onClose }: Props) {
 
         {connecting && <LoadingOverlay message="Redirecting to Stripe…" />}
 
-        {embedded ? (
+        {DEMO_MODE && (
+          <div style={{ padding: 12, marginBottom: 16, borderRadius: 10, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.28)", fontSize: 12, color: "var(--text2)", lineHeight: 1.55 }}>
+            <strong style={{ color: "var(--gold)" }}>Demo preview</strong><br />
+            Stripe onboarding and payout details are unavailable here. No account, bank, tax, or payment information is collected.
+          </div>
+        )}
+
+        {DEMO_MODE ? (
+          <div style={{ padding: 16, background: "var(--surface)", borderRadius: 12, fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
+            Payment onboarding is disabled for this demo. Use a non-demo staging environment with Stripe test credentials to verify the real payout flow.
+          </div>
+        ) : embedded ? (
           <EmbeddedConnect
             onExit={async () => {
               setEmbedded(false);
@@ -152,12 +171,12 @@ export default function ConnectPanel({ onClose }: Props) {
               • Tax information (W-9 for US)
             </div>
 
-            <button onClick={startOnboarding} disabled={connecting} style={{
+            <button onClick={startOnboarding} disabled={connecting || DEMO_MODE} title={DEMO_MODE ? "Stripe onboarding is unavailable in this demo" : undefined} style={{
               width: "100%", padding: "14px 24px", borderRadius: 12,
-              background: connecting ? "rgba(255,215,0,0.3)" : "linear-gradient(135deg, var(--gold), var(--amber))",
-              border: "none", color: "var(--bg)", fontSize: 14, fontWeight: 700, cursor: connecting ? "default" : "pointer",
+              background: connecting || DEMO_MODE ? "rgba(255,215,0,0.3)" : "linear-gradient(135deg, var(--gold), var(--amber))",
+              border: "none", color: "var(--bg)", fontSize: 14, fontWeight: 700, cursor: connecting || DEMO_MODE ? "not-allowed" : "pointer",
             }}>
-              {connecting ? "Connecting..." : status?.connected ? "Complete Onboarding" : "Connect with Stripe"}
+              {DEMO_MODE ? "Stripe unavailable in demo" : connecting ? "Connecting..." : status?.connected ? "Complete Onboarding" : "Connect with Stripe"}
             </button>
           </div>
         )}
