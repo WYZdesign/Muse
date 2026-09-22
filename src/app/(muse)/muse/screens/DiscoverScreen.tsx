@@ -48,6 +48,7 @@ export interface DiscoverScreenProps {
   myGeo: any;
   myStyles?: string[];
   apiFetch: (url: string, opts?: any) => Promise<any>;
+  demo?: boolean;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   doSwipe: (dir: "left" | "right" | "super") => void;
   setViewProfile: (p: any) => void;
@@ -121,6 +122,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   setBoostActive,
   setBoostEnd,
   apiFetch,
+  demo = process.env.NEXT_PUBLIC_DEMO_MODE !== "false",
   showToast,
   safeSetItem = () => {},
   safeRemoveItem = () => {},
