@@ -33,7 +33,7 @@ export function MatchGuideScreen({ screen, showScreen, goBack }: MatchGuideScree
       <div className="phone" id="muse-app">
         <div className={"screen-el" + (screen === "matchGuide" ? " active" : "")} style={{ display: "flex", flexDirection: "column", height: "100vh" }} data-screen="matchGuide">
           <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: "calc(12px + env(safe-area-inset-top,0px)) 18px 12px" }}>
-            <button className="chat-back" onClick={() => (goBack ? goBack() : showScreen("discover"))}><FiArrowLeft size={20} /></button>
+            <button className="chat-back" aria-label="Back" onClick={() => (goBack ? goBack() : showScreen("discover"))}><FiArrowLeft size={20} /></button>
             <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", color: "var(--gold)" }}>How Matching Works</div>
             <div style={{ width: 42 }} />
           </div>

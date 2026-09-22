@@ -258,7 +258,7 @@ export const CollabScreen = memo(function CollabScreen({
               )}
               {/* Report flag + safety info (top-right cluster) */}
               <div style={{ position: "absolute", top: 14, right: 14, zIndex: 3, display: "flex", gap: 4, alignItems: "center" }}>
-                {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ width: 22, height: 22, color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={14} /></button>)}
+                {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ width: 44, height: 44, color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={14} /></button>)}
                 {brief.cat !== "concept" && (
                   <button
                     aria-label="Safety info"
