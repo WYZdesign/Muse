@@ -85,11 +85,10 @@ export default function FocusTrap({
   // Restore focus on close
   useEffect(() => {
     if (open) return;
-    return () => {
-      requestAnimationFrame(() => {
-        openerRef.current?.focus();
-      });
-    };
+    const frame = requestAnimationFrame(() => {
+      openerRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
   }, [open]);
 
   // Focus trap via Tab/Shift+Tab

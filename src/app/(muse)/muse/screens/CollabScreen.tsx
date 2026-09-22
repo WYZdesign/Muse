@@ -269,7 +269,7 @@ export const CollabScreen = memo(function CollabScreen({
                     aria-label="Safety info"
                     title="Safety info"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSafetyInfoBriefId(brief.id); }}
-                    style={{ width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                     style={{ width: 44, height: 44, borderRadius: 10, border: "none", background: "transparent", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                   ><FiInfo size={15} /></button>
                 )}
               </div>
@@ -394,7 +394,7 @@ export const CollabScreen = memo(function CollabScreen({
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 340, width: "90%", padding: 20 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <div className="modal-title" style={{ display: "flex", alignItems: "center", gap: 8 }}><FiInfo size={16} color="var(--muted)" /> Safety reminder</div>
-              <button aria-label="Close" onClick={() => setSafetyInfoBriefId(null)} style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", padding: 4 }}><FiX size={18} /></button>
+               <button type="button" aria-label="Close safety reminder" title="Close" onClick={() => setSafetyInfoBriefId(null)} style={{ width: 44, height: 44, margin: "-10px -10px 0 0", background: "transparent", border: "none", borderRadius: 10, color: "var(--text2)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><FiX size={18} /></button>
             </div>
             <div style={{ fontSize: 13.5, color: "var(--text2)", lineHeight: 1.6 }}>
               Meet in public places and verify details before attending a session. Trust your instincts — you can back out of any shoot at any time, no explanation needed.
@@ -427,7 +427,7 @@ export const CollabScreen = memo(function CollabScreen({
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 22, textAlign: "left" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text)" }}>Safety at your shoot</div>
-              <button onClick={() => setSafetyInfoOpen(false)} aria-label="Close" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 20, lineHeight: 1 }}>✕</button>
+               <button type="button" onClick={() => setSafetyInfoOpen(false)} aria-label="Close safety guidelines" title="Close" style={{ width: 44, height: 44, margin: "-10px -10px 0 0", background: "transparent", border: "none", borderRadius: 10, color: "var(--muted)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><FiX size={19} /></button>
             </div>
             <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6 }}>
               <p style={{ marginBottom: 10 }}>Your safety comes first on Muse. Before any session:</p>

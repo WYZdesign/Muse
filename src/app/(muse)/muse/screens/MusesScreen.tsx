@@ -257,9 +257,9 @@ export const MusesScreen = memo(function MusesScreen({
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {!showLikesYou && (
-            <button className="hdr-btn" style={{ width: 34, height: 34, borderRadius: 10 }} onClick={() => setMatchesView(v => v === "list" ? "grid" : "list")} aria-label="Toggle view">{matchesView === "list" ? <FiGrid size={21} /> : <FiList size={21} />}</button>
+            <button className="hdr-btn" style={{ width: 44, height: 44, borderRadius: 10 }} onClick={() => setMatchesView(v => v === "list" ? "grid" : "list")} aria-label="Toggle view">{matchesView === "list" ? <FiGrid size={21} /> : <FiList size={21} />}</button>
           )}
-          <button className="hdr-btn" style={{ width: 34, height: 34, borderRadius: 10 }} onClick={() => setSearchOpen(!searchOpen)} aria-label="Search"><FiSearch size={16} /></button>
+          <button className="hdr-btn" style={{ width: 44, height: 44, borderRadius: 10 }} onClick={() => setSearchOpen(!searchOpen)} aria-label="Search"><FiSearch size={16} /></button>
         </div>
       </div>
 
@@ -301,10 +301,10 @@ export const MusesScreen = memo(function MusesScreen({
 
       {/* Search Bar when active */}
       {searchOpen && (
-        <div style={{ margin: "0 16px 12px", display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "6px 12px", animation: "fadeIn .2s ease" }}>
+          <div style={{ margin: "0 16px 12px", display: "flex", alignItems: "center", gap: 8, minHeight: 44, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "0 12px", animation: "fadeIn .2s ease" }}>
           <FiSearch size={14} color="var(--muted)" />
           <input className="inp search-input" aria-label="Search muses" placeholder="Search by name or style..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} autoFocus style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
-          {searchQuery && <button onClick={() => setSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
+            {searchQuery && <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear search" style={{ width: 44, height: 44, marginRight: -10, background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
         </div>
       )}
 

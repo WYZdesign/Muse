@@ -10,6 +10,8 @@ import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../comp
 import Lightbox from "../components/Lightbox";
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
+
 export interface ProfileScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
@@ -142,6 +144,10 @@ export const ProfileScreen = memo(function ProfileScreen({
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
 
   useEffect(() => {
+    if (DEMO_MODE) {
+      setLoadingReferral(false);
+      return;
+    }
     const fetchReferralData = async () => {
       try {
         // Was posting action:"get" (not a real action on this route — only
@@ -494,6 +500,8 @@ export const ProfileScreen = memo(function ProfileScreen({
                 <div>Platinum (50+): 20% off + priority support</div>
               </div>
             </>
+          ) : DEMO_MODE ? (
+            <div style={{ textAlign: "center", padding: "20px", color: "var(--muted)", lineHeight: 1.5 }}>Referral links, rewards, and history are unavailable in this demo.</div>
           ) : (
             <div style={{ textAlign: "center", padding: "20px", color: "var(--muted)" }}>Failed to load referral data</div>
           )}

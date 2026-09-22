@@ -2,7 +2,7 @@
 
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiBookmark, FiSearch, FiCompass, FiCalendar, FiInbox, FiEye } from "react-icons/fi";
+import { FiArrowLeft, FiBookmark, FiSearch, FiCompass, FiCalendar, FiInbox, FiEye, FiX } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { analytics } from "../lib/analytics";
 import { BADGE_COLORS } from "../components/badgeColors";
@@ -179,7 +179,10 @@ export const SessionsScreen = memo(function SessionsScreen({
     } catch { showToast("Couldn't file request"); }
   };
   const doBookSession = async (s: any, note?: { sizing: string; requirements: string; message: string }) => {
-    if (demo) { showToast("Demo booking preview — no request, payment, or notification was created."); return false; }
+    // A demo preview is a completed local interaction, not a failed booking.
+    // Returning success lets the form dismiss after its explanatory toast;
+    // returning false stranded visitors in the modal after "Send Request".
+    if (demo) { showToast("Demo booking preview — no request, payment, or notification was created."); return true; }
     try {
       // Best-effort availability probe (fire-and-forget — never blocks or
       // gates the booking action below). Torreé audit (2026-09-16): this
@@ -712,7 +715,17 @@ export const SessionsScreen = memo(function SessionsScreen({
       {bookFormTarget && (
         <div ref={bookFormTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Book session" onClick={() => { if (!bookSubmitting) setBookFormTarget(null); }}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, width: "90%", padding: 20 }}>
-            <div className="modal-title" style={{ marginBottom: 4 }}>{bookFormTarget.available ? "Book" : "Join Waitlist for"} {bookFormTarget.name}</div>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 4 }}>
+              <div className="modal-title" style={{ flex: 1 }}>{bookFormTarget.available ? "Book" : "Join Waitlist for"} {bookFormTarget.name}</div>
+              <button
+                type="button"
+                aria-label="Close booking form"
+                title="Close"
+                disabled={bookSubmitting}
+                onClick={() => setBookFormTarget(null)}
+                style={{ width: 44, height: 44, margin: "-10px -10px 0 0", border: "none", background: "transparent", color: "var(--text2)", cursor: bookSubmitting ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 10 }}
+              ><FiX size={19} /></button>
+            </div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>A quick note for the host — sizing/prep and anything they should know before accepting.</div>
             <input className="inp" aria-label="Sizing and preferences" placeholder="Sizing / preferences (optional)" value={bookForm.sizing} onChange={e => setBookForm(p => ({ ...p, sizing: e.target.value.slice(0, 100) }))} style={{ marginBottom: 8 }} />
             <input className="inp" aria-label="Special requirements" placeholder="Prep / special requirements (optional)" value={bookForm.requirements} onChange={e => setBookForm(p => ({ ...p, requirements: e.target.value.slice(0, 100) }))} style={{ marginBottom: 8 }} />

@@ -42,6 +42,11 @@ export async function fetchWithTimeout(url: string, options: RequestInit & { tim
   try { return await fetch(url, opts); } finally { cancel(); }
 }
 
+// Simple alias for compatibility with existing code
+export async function apiFetch(url: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<Response> {
+  return fetchWithTimeout(url, options);
+}
+
 export function getAccessToken(): string {
   if (typeof window === "undefined") return "";
   try { return JSON.parse(safeGetItem("muse_user") || "{}").access_token || ""; } catch { return ""; }

@@ -9,6 +9,8 @@
 // not just Discover's swipe cards — can wire the same tap → detail-popover
 // behavior instead of rendering a dead, non-interactive pill.
 import React from "react";
+import { FiX } from "react-icons/fi";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export const ZODIAC_FULL: Record<string, { icon: string; tag: string; desc: string }> = {
   Aries: { icon: "♈", tag: "The Pioneer", desc: "Bold, ambitious, and first to try something new. Great at kicking off projects and rallying collaborators." },
@@ -111,13 +113,15 @@ export interface BadgeInfo {
  *  `const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null)`,
  *  and pass `onClick={() => setBadgeInfo({...})}` on each badge/pill. */
 export function BadgeInfoModal({ info, onClose }: { info: BadgeInfo | null; onClose: () => void }) {
+  const trap = useFocusTrap(!!info, onClose);
   if (!info) return null;
   return (
-    <div role="dialog" aria-modal="true" aria-label="Badge info" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={onClose}>
+    <div ref={trap} role="dialog" aria-modal="true" aria-label="Badge info" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={onClose}>
       <div style={{ background: "#1a0a2e", border: `1px solid ${info.color}40`, borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
           <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, background: `${info.color}20`, border: `1px solid ${info.color}40`, color: info.color, flexShrink: 0 }}>{info.icon}</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{info.name}</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", flex: 1 }}>{info.name}</div>
+          <button type="button" aria-label="Close badge info" title="Close" onClick={onClose} style={{ width: 44, height: 44, margin: "-8px -8px 0 0", border: "none", borderRadius: 10, background: "transparent", color: "var(--text2)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><FiX size={19} /></button>
         </div>
         <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6 }}>{info.desc}</div>
         <button onClick={onClose} style={{ marginTop: 18, width: "100%", padding: "12px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))", color: "var(--gold)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Got it</button>

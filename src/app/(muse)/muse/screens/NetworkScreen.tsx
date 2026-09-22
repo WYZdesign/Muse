@@ -510,15 +510,18 @@ export const NetworkScreen = memo(function NetworkScreen({
                 ? "Your peers — network, co-hire, and trade talent."
                 : "Pros who can book, pay, and launch your career."}
             </div>
-            <input
-              className="inp search-input"
-              aria-label="Search professionals"
-              placeholder="Search pros — name, craft, skills, who they're looking for…"
-              value={proSearch}
-              onChange={(e) => setProSearch(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleProSearch(e.currentTarget.value); }}
-              style={{ margin: "0 0 10px", fontSize: 13 }}
-            />
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, margin: "0 0 10px", padding: "0 13px", background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)" }}>
+                <FiSearch size={16} aria-hidden="true" color="var(--muted)" style={{ flexShrink: 0 }} />
+                <input
+                  className="inp search-input"
+                  aria-label="Search professionals"
+                  placeholder="Search pros — name, craft, skills, who they're looking for…"
+                  value={proSearch}
+                  onChange={(e) => setProSearch(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleProSearch(e.currentTarget.value); }}
+                  style={{ minWidth: 0, margin: 0, padding: 0, border: "none", background: "transparent", boxShadow: "none", fontSize: 13, color: "var(--text)" }}
+                />
+              </div>
             {/* Filter bubbles row - horizontally scrollable.
                 Audit fix (2026-09-08, wyzmind's Torreé batch item 6): every category
                 pill used the same gold gradient when active, while each category's

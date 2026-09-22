@@ -1,4 +1,4 @@
-export type Profile = typeof PROFILES[number] & { photos?: string[]; badges?: {name:string;desc:string;icon:string;color:string}[]; matchScore?: number; rulesScore?: number; cosineScore?: number };
+export type Profile = typeof PROFILES[number] & { photos?: string[]; badges?: {name:string;desc:string;icon:string;color:string}[]; matchScore?: number; rulesScore?: number; cosineScore?: number; exp?: string; avatar?: string; stats?: { matches: number; likes: number; superLikes: number; passes: number; bookingsCompleted: number; matchesReceived: number; messagesSent: number }; createdAt?: number; referrals?: number; portfolios?: {img:string;title:string;type:string}[]; foundingTier?: string; proExpiresAt?: string; tier?: string; nsfw?: boolean; status?: string };
 export type Brief = typeof BRIEFS[number];
 export type Match = Partial<Profile> & {
   id: number; name: string; img: string; type: string;
@@ -7,6 +7,53 @@ export type Match = Partial<Profile> & {
   messages: { from: string; text: string; time: string; img?: string }[];
 };
 export type Screen = "auth"|"onboard"|"discover"|"connections"|"matches"|"chat"|"profile"|"briefs"|"portfolio"|"settings"|"subscription"|"community"|"sessions"|"bts"|"forum"|"network"|"codex"|"analytics"|"studios"|"matchGuide";
+
+export type CommunityGroup = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  isNsfw: boolean;
+  memberCount: number;
+  ownerId: string;
+  createdAt: string;
+};
+export type CommunityEvent = {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  location: string;
+  organizerId: string;
+  attendeeCount: number;
+  createdAt: string;
+};
+export type ForumPost = {
+  id: number;
+  author: string;
+  avatar: string;
+  title: string;
+  body: string;
+  category: string;
+  likes: number;
+  comments: number;
+  time: string;
+  tags: string[];
+};
+export type FeedPost = {
+  id: number;
+  author: string;
+  avatar: string;
+  type: string;
+  text: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  time: string;
+  liked: boolean;
+  saved: boolean;
+  img?: string;
+};
 
 // Hinge-style anchored like: which specific piece of content on a Discover
 // card (a prompt answer or a photo) a like-with-note was attached to. Sent

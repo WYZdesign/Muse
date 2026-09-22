@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { FiX } from "react-icons/fi";
 import { authFetch } from "../lib/auth-client";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 type ReferralData = {
   code: string;
@@ -21,6 +23,7 @@ type Props = {
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 
 export default function ReferralPanel({ onClose }: Props) {
+  const trap = useFocusTrap(true, onClose);
   const [data, setData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -50,26 +53,29 @@ export default function ReferralPanel({ onClose }: Props) {
   };
 
   if (loading) return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)" }}>
-      <div style={{ color: "#f5f0ff", fontSize: 14 }}>Loading referral data...</div>
+    <div ref={trap} role="dialog" aria-modal="true" aria-label="Referral data" style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", padding: 20 }} onClick={onClose}>
+      <div style={{ color: "#f5f0ff", fontSize: 14, display: "flex", alignItems: "center", gap: 12 }} onClick={(e) => e.stopPropagation()}>
+        <span>Loading referral data...</span>
+        <button type="button" onClick={onClose} aria-label="Close referrals" title="Close" style={{ width: 44, height: 44, border: "none", borderRadius: 10, background: "transparent", color: "rgba(255,255,255,0.72)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><FiX size={19} /></button>
+      </div>
     </div>
   );
 
   if (DEMO_MODE) return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", padding: 20 }}>
-      <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 28, maxWidth: 420, width: "100%" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}><h2 style={{ fontSize: 18, fontWeight: 800, color: "#ffd700" }}>🎁 Referrals</h2><button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 20, cursor: "pointer" }}>✕</button></div>
+    <div ref={trap} role="dialog" aria-modal="true" aria-label="Referrals" style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", padding: 20 }} onClick={onClose}>
+      <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 28, maxWidth: 420, width: "100%" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}><h2 style={{ fontSize: 18, fontWeight: 800, color: "#ffd700" }}>🎁 Referrals</h2><button type="button" onClick={onClose} aria-label="Close referrals" title="Close" style={{ width: 44, height: 44, border: "none", borderRadius: 10, background: "transparent", color: "rgba(255,255,255,0.72)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><FiX size={19} /></button></div>
         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", lineHeight: 1.6 }}>Referral links, reward balances, and referral history are unavailable in this demo. No referral data is loaded or shared.</div>
       </div>
     </div>
   );
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)" }}>
-      <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 28, maxWidth: 480, width: "90%", maxHeight: "85vh", overflowY: "auto" }}>
+    <div ref={trap} role="dialog" aria-modal="true" aria-label="Refer friends" style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)" }} onClick={onClose}>
+      <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 28, maxWidth: 480, width: "90%", maxHeight: "85vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <h2 style={{ fontSize: 18, fontWeight: 800, color: "#ffd700" }}>🎁 Refer Friends</h2>
-          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 20, cursor: "pointer" }}>✕</button>
+          <button type="button" onClick={onClose} aria-label="Close referrals" title="Close" style={{ width: 44, height: 44, border: "none", borderRadius: 10, background: "transparent", color: "rgba(255,255,255,0.72)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><FiX size={19} /></button>
         </div>
 
         {/* How it works */}
