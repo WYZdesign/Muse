@@ -13,6 +13,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    env: {
+      MUSE_DEMO_MODE: "false",
+    },
     coverage: {
       provider: "v8",
       include: ["src/lib/**/*.ts"],
