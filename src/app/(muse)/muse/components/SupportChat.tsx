@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { fetchWithTimeout } from "../lib/api";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 interface ChatMsg {
   role: "user" | "assistant";
@@ -40,6 +41,7 @@ export default function SupportChat({ open, onClose }: { open: boolean; onClose:
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const panelRef = useFocusTrap(open, onClose);
 
   useEffect(() => {
     if (open && messages.length === 0) {
@@ -87,7 +89,7 @@ export default function SupportChat({ open, onClose }: { open: boolean; onClose:
   if (!open) return null;
 
   return (
-    <div style={PANEL}>
+    <div ref={panelRef} style={PANEL} role="dialog" aria-modal="true" aria-label="Muse Assistant">
       <div style={{ padding: "16px 18px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #ffd700, #ff8c00)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, color: "#0a0612", fontSize: 16 }}>M</div>
@@ -97,7 +99,7 @@ export default function SupportChat({ open, onClose }: { open: boolean; onClose:
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button onClick={resetChat} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: 12, cursor: "pointer", padding: "4px 10px", borderRadius: 8 }} title="New conversation">New</button>
+          <button onClick={resetChat} aria-label="New conversation" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: 12, cursor: "pointer", padding: "4px 10px", borderRadius: 8 }} title="New conversation">New</button>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.6)", fontSize: 20, cursor: "pointer", padding: 4 }} aria-label="Close">✕</button>
         </div>
       </div>
@@ -144,9 +146,10 @@ export default function SupportChat({ open, onClose }: { open: boolean; onClose:
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder="Ask me anything..."
+          aria-label="Ask Muse Assistant a question"
           style={{ flex: 1, padding: "11px 14px", borderRadius: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 13.5, outline: "none" }}
         />
-        <button onClick={() => send()} disabled={loading || !input.trim()} style={{ padding: "11px 18px", borderRadius: 14, background: "linear-gradient(135deg, #ffd700, #ff8c00)", border: "none", color: "#0a0612", fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: loading || !input.trim() ? 0.5 : 1 }}>
+        <button onClick={() => send()} disabled={loading || !input.trim()} aria-label="Send message" style={{ padding: "11px 18px", borderRadius: 14, background: "linear-gradient(135deg, #ffd700, #ff8c00)", border: "none", color: "#0a0612", fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: loading || !input.trim() ? 0.5 : 1 }}>
           Send
         </button>
       </div>

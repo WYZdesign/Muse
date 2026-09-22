@@ -294,6 +294,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const shareProfileTrap = useFocusTrap(showShareProfile, () => setShowShareProfile(false));
   const intentPickerTrap = useFocusTrap(showIntentPicker, () => setShowIntentPicker(false));
   const filterModalTrap = useFocusTrap(showFilterModal, () => setShowFilterModal(false));
+  const unmatchTrap = useFocusTrap(!!unmatchTarget, () => setUnmatchTarget(null));
+  const editProfileTrap = useFocusTrap(showEditProfile, () => setShowEditProfile(false));
   // Which screen's first-visit tutorial (if any) is currently open — see
   // the "Per-page tutorials" effect below.
   const [activePageTour, setActivePageTour] = useState<TourScreenId | null>(null);
@@ -437,6 +439,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [publicProfileUser, setPublicProfileUser] = useState<any>(null);
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
    const [blockTarget, setBlockTarget] = useState<{id:string;name:string}|null>(null);
+   const blockTrap = useFocusTrap(!!blockTarget, () => setBlockTarget(null));
    const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const loadStateRef = useRef(false);
@@ -3392,7 +3395,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* REPORT MODAL */}
       {showReport && (
-        <div className="modal-overlay" ref={reportTrap}>
+        <div className="modal-overlay" ref={reportTrap} role="dialog" aria-modal="true" aria-label="Report">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setShowReport(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Report</div>
@@ -3421,7 +3424,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* LIKE + NOTE MODAL */}
       {showLikeNote && noteTargetProfile && (
-        <div className="modal-overlay" style={{zIndex:500}} ref={likeNoteTrap}>
+        <div className="modal-overlay" style={{zIndex:500}} ref={likeNoteTrap} role="dialog" aria-modal="true" aria-label="Like and note">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>{setShowLikeNote(false);setLikeNoteAnchor(null);}}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Like + Note</div>
@@ -3577,7 +3580,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* DISCOVERY PREFERENCES MODAL */}
       {showDiscoveryPrefs && (
-        <div className="modal-overlay" ref={discoveryPrefsTrap} onClick={(e) => { if (e.target === e.currentTarget) setShowDiscoveryPrefs(false); }}>
+        <div className="modal-overlay" ref={discoveryPrefsTrap} role="dialog" aria-modal="true" aria-label="Discovery preferences" onClick={(e) => { if (e.target === e.currentTarget) setShowDiscoveryPrefs(false); }}>
           <div className="modal-header" onClick={e=>e.stopPropagation()}>
             <button className="modal-back" onClick={()=>setShowDiscoveryPrefs(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title" style={{fontSize:16.5,whiteSpace:"nowrap"}}>Discovery Preferences</div>
@@ -3658,7 +3661,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* UNMATCH CONFIRMATION */}
       {unmatchTarget && (
-        <div className="modal-overlay">
+        <div ref={unmatchTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Unmatch">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setUnmatchTarget(null)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Unmatch</div>
@@ -3690,7 +3693,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         </div>
       )}
       {blockTarget && (
-        <div className="modal-overlay">
+        <div ref={blockTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Block user">
           <div className="modal-header">
             <button className="modal-back" onClick={()=>setBlockTarget(null)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Block</div>
@@ -3898,7 +3901,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       )}
       {/* ══════ EDIT PROFILE MODAL ══════ */}
       {showEditProfile && (
-        <div className="modal-overlay">
+        <div ref={editProfileTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Edit profile">
           <div className="modal-header" style={{ position: "relative" }}>
             <button className="modal-back" onClick={()=>setShowEditProfile(false)} aria-label="Back"><FiArrowLeft size={20} /></button>
             <div className="modal-title" style={{ flex: 1, textAlign: "center" }}>Edit Profile</div>
@@ -3912,10 +3915,10 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                 <input ref={editAvatarInputRef} type="file" accept="image/*" aria-label="Upload profile photo" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setEditAvatar(url);showToast("Photo added!")}}}} />
               </div>
             </div>
-            <input className="inp" placeholder="Display Name" value={editName} onChange={e=>setEditName(e.target.value)} />
-            <textarea className="inp" placeholder="Bio" rows={3} value={editBio} onChange={e=>setEditBio(e.target.value)} />
-            <input className="inp" placeholder="Location" value={editLoc} onChange={e=>setEditLoc(e.target.value)} />
-            <input className="inp" placeholder="Media Kit link (PDF or portfolio one-pager)" value={editMediaKit} onChange={e=>setEditMediaKit(e.target.value)} />
+            <input className="inp" aria-label="Display name" placeholder="Display Name" value={editName} onChange={e=>setEditName(e.target.value)} />
+            <textarea className="inp" aria-label="Bio" placeholder="Bio" rows={3} value={editBio} onChange={e=>setEditBio(e.target.value)} />
+            <input className="inp" aria-label="Location" placeholder="Location" value={editLoc} onChange={e=>setEditLoc(e.target.value)} />
+            <input className="inp" aria-label="Media kit link" placeholder="Media Kit link (PDF or portfolio one-pager)" value={editMediaKit} onChange={e=>setEditMediaKit(e.target.value)} />
             <div style={{ marginBottom: 12 }}>
               <div className="side-label">Creative Type</div>
               <div className="side-sub" style={{ marginBottom: 6 }}>🎬 Behind the Camera</div>

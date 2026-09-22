@@ -4,6 +4,7 @@ import React from "react";
 import type { Screen } from "./types";
 import { TIERS, TIERS_BY_SIDE } from "./types";
 import { viewerSideOf } from "@/lib/role";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 // Reusable contextual upsell modal — shown at the moment a free-tier user
 // hits a Pro-gated limit (Rewind, Boost, daily/super likes, viewing "Likes
@@ -26,18 +27,16 @@ export interface UpsellModalProps {
 }
 
 export default function UpsellModal({ open, onClose, feature, reason, icon = "✨", currentUser, showScreen }: UpsellModalProps) {
+  const trapRef = useFocusTrap(open, onClose);
   if (!open) return null;
 
   const tiers = TIERS_BY_SIDE[viewerSideOf(currentUser) as "creative" | "industry"] || TIERS;
   const unlockTiers = tiers.filter(t => t.name !== "Free");
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Upgrade" onClick={onClose} style={{ zIndex: 600 }}>
+    <div ref={trapRef} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Upgrade" onClick={onClose} style={{ zIndex: 600 }}>
       <div
         className="modal-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-label={feature}
         onClick={e => e.stopPropagation()}
         style={{ maxWidth: 400, width: "90%", maxHeight: "85vh", overflowY: "auto", borderRadius: 24, padding: "26px 22px", background: "var(--panel-bg-solid)", textAlign: "center", border: "1px solid var(--border-subtle)" }}
       >

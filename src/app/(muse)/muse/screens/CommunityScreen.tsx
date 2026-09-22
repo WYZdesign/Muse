@@ -12,6 +12,7 @@ import type { Screen, CommunityRule, CommunityMember } from "../components/types
 import { COMMUNITIES, EVENTS } from "../components/types";
 import { getCommunityShareUrl, getEventShareUrl } from "@/lib/urls";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 // Real (DB-backed) communities have a UUID id; the demo/fallback COMMUNITIES
 // dataset uses small numeric ids. Only real groups have a real member roster
@@ -82,6 +83,8 @@ export const CommunityScreen = memo(function CommunityScreen({
   const [joinedIds, setJoinedIds] = useState<Set<number | string>>(new Set());
   const [detailItem, setDetailItem] = useState<any>(null);
   const [detailType, setDetailType] = useState<"group" | "event" | null>(null);
+  const detailTrap = useFocusTrap(detailItem !== null, () => setDetailItem(null));
+  const createCommTrap = useFocusTrap(showCreate, () => setShowCreate(false));
   const [rsvpLoading, setRsvpLoading] = useState<number | null>(null);
   const [joinLoading, setJoinLoading] = useState<string | null>(null);
   const [groupMembers, setGroupMembers] = useState<CommunityMember[]>([]);
@@ -297,8 +300,8 @@ export const CommunityScreen = memo(function CommunityScreen({
 
       {/* DETAIL MODAL */}
       {detailItem && detailType && (
-        <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
-          <div role="dialog" aria-modal="true" aria-label="Group detail" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} onClick={() => setDetailItem(null)} />
+        <div ref={detailTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Group detail" style={{ position: "fixed", zIndex: 500 }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} onClick={() => setDetailItem(null)} />
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxHeight: "85vh", background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: "24px 24px 0 0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 20px 0" }}>
               <div>
@@ -451,7 +454,7 @@ export const CommunityScreen = memo(function CommunityScreen({
       )}
 
       {showCreate && (
-        <div className="modal-overlay" style={{ position: "fixed", zIndex: 400 }}>
+        <div ref={createCommTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label={commTab === "groups" ? "Create group" : "Create event"} style={{ position: "fixed", zIndex: 400 }}>
           <div className="modal-header">
             <button className="modal-back" onClick={() => setShowCreate(false)} aria-label="Back"><FiArrowLeft size={20} /></button>
             <div className="modal-title">{commTab === "groups" ? "Create Group" : "Create Event"}</div>

@@ -346,6 +346,7 @@ export const NetworkScreen = memo(function NetworkScreen({
     threadPost != null,
     () => { setThreadId(null); setReplyTo(null); setReplyToId(null); },
   );
+  const newPostTrap = useFocusTrap(showNewPost, () => setShowNewPost(false));
 
   // Open a post's thread and lazily load its real replies (nested via
   // parentReplyId/depth). Demo/numeric posts keep using inline `comments`.
@@ -858,7 +859,7 @@ export const NetworkScreen = memo(function NetworkScreen({
         {netTab === "forum" && (
           <>
             {showNewPost && (
-              <div className="modal-overlay" style={{ position: "fixed", zIndex: 400 }}>
+              <div ref={newPostTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="New forum post" style={{ position: "fixed", zIndex: 400 }}>
                 <div className="modal-header">
                   <button className="modal-back" onClick={() => setShowNewPost(false)} aria-label="Back">
                     <FiArrowLeft size={20} />
@@ -1257,7 +1258,7 @@ export const NetworkScreen = memo(function NetworkScreen({
 
         {/* ─── THREAD DETAIL (Reddit-style) ─── */}
         {threadPost && createPortal(
-          <div ref={threadModalRef} className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
+          <div ref={threadModalRef} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Forum thread" style={{ position: "fixed", zIndex: 500 }}>
             <div className="modal-header">
               <button className="modal-back" onClick={() => { setThreadId(null); setReplyTo(null); setReplyToId(null); }} aria-label="Back">
                 <FiArrowLeft size={20} />

@@ -12,6 +12,7 @@ import Image from "next/image";
 import { STRINGS } from "@/lib/strings";
 import type { Screen } from "../components/types";
 import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export interface FeedScreenProps {
   screen: Screen;
@@ -110,6 +111,7 @@ export const FeedScreen = memo(function FeedScreen({
   const [postReplies, setPostReplies] = useState<Record<number, any[]>>({});
   const [postCommentTexts, setPostCommentTexts] = useState<Record<number, string>>({});
   const [detailPostId, setDetailPostId] = useState<number | null>(null);
+  const detailPostTrap = useFocusTrap(detailPostId !== null, () => setDetailPostId(null));
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
 
   // ── Recorded voice / video post ──
@@ -664,7 +666,7 @@ export const FeedScreen = memo(function FeedScreen({
           }
         };
         return createPortal(
-          <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
+          <div ref={detailPostTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Post detail" style={{ position: "fixed", zIndex: 500 }}>
             <div className="modal-header">
               <button className="modal-back" onClick={() => setDetailPostId(null)} aria-label="Back"><FiArrowLeft size={20} /></button>
               <div className="modal-title">Post</div>
