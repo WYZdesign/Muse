@@ -219,6 +219,7 @@ export const ProfileScreen = memo(function ProfileScreen({
 
   return (
     <div className={"screen-el" + (screen === "profile" ? " active" : "")} data-screen="profile">
+      <h1 className="sr-only">Profile</h1>
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="hdr-btn" onClick={() => (goBack ? goBack() : showScreen("discover"))} aria-label="Back"><FiArrowLeft size={18} /></button>
         <div className="logo-link" style={{ position: "relative", margin: 0, padding: 0, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 37.5, fontWeight: 800, backgroundImage: "linear-gradient(135deg,var(--gold),var(--lavender),var(--pink),var(--gold))", backgroundSize: "400% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", animation: "gradientShift 6s ease-in-out infinite", lineHeight: "38px", whiteSpace: "nowrap", width: "max-content", textAlign: "center" }}>Profile</div>

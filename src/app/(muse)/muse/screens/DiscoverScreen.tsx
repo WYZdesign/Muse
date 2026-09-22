@@ -287,6 +287,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
 
   return (
     <div className={"screen-el" + (screen === "discover" ? " active" : "")} data-screen="discover">
+      <h1 className="sr-only">Discover</h1>
       <div className="discover-wrap">
         <div className="hdr" ref={hdrRef}>
           {/* Audit fix: opening search used to leave the title + spacer in
@@ -318,8 +319,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                       glasses on screen at once. Removed; the header button above already
                       handles open/close. */}
                   {discoverSearch.trim() && (
-                    <button className="hdr-btn" aria-label="Clear search" title="Clear" style={{ width: 26, height: 26, borderRadius: "50%", flexShrink: 0, fontSize: 10 }} onClick={() => setDiscoverSearch("")}>
-                      <FiX size={13} />
+                    <button className="hdr-btn" aria-label="Clear search" title="Clear" style={{ width: 44, height: 44, borderRadius: "50%", flexShrink: 0, fontSize: 12 }} onClick={() => setDiscoverSearch("")}>
+                      <FiX size={14} />
                     </button>
                   )}
                 </div>
@@ -626,7 +627,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                   );
                                 })()}
                               </div>
-                              <div className="match-score" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}><div className="score-bar" style={{ flex: 1 }}><div className="score-fill" style={{ width: profile.score + "%" }} /></div><span className="score-text">{profile.score}%</span>{(profile as any).matchReasons?.length > 0 && <button onClick={(e) => { e.stopPropagation(); setWhyInfo({ score: profile.score, reasons: (profile as any).matchReasons }); }} aria-label="Why this match?" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, flexShrink: 0, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: "var(--muted)", cursor: "pointer", padding: 0 }}><FiInfo size={12} /></button>}</div>
+                              <div className="match-score" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}><div className="score-bar" style={{ flex: 1 }}><div className="score-fill" style={{ width: profile.score + "%" }} /></div><span className="score-text">{profile.score}%</span>{(profile as any).matchReasons?.length > 0 && <button onClick={(e) => { e.stopPropagation(); setWhyInfo({ score: profile.score, reasons: (profile as any).matchReasons }); }} aria-label="Why this match?" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: "var(--muted)", cursor: "pointer", padding: 0 }}><FiInfo size={14} /></button>}</div>
                               {(profile as any).badges?.length > 0 && <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges.map((b: any, i: number) => <button key={i} className="tag" onClick={(e) => { e.stopPropagation(); setBadgeInfo(b); }} style={{ background: `${b.color}20`, border: `1px solid ${b.color}40`, color: b.color, cursor: "pointer" }}>{b.icon} {b.name}</button>)}</div></div>}
                               <div className="card-section" style={{ fontSize: 12, color: "var(--muted)" }}>📍 {profile.loc}</div>
                             </div>

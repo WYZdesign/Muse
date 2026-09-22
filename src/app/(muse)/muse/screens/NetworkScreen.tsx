@@ -437,6 +437,7 @@ export const NetworkScreen = memo(function NetworkScreen({
 
   return (
     <div className={"screen-el" + (screen === "network" ? " active" : "")} data-screen="network">
+      <h1 className="sr-only">Network</h1>
       <div
         className="hdr"
         style={{

@@ -153,6 +153,7 @@ export const CollabScreen = memo(function CollabScreen({
 
   return (
     <div className={"screen-el" + (screen === "briefs" ? " active" : "")} data-screen="briefs">
+      <h1 className="sr-only">Collaborations</h1>
       <div className="hdr" style={{ display: "grid", gridTemplateColumns: "42px 1fr 42px", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="hdr-btn" onClick={() => (goBack ? goBack() : showScreen("discover"))} aria-label="Back"><FiArrowLeft size={18} /></button>
         <div
@@ -253,7 +254,7 @@ export const CollabScreen = memo(function CollabScreen({
                   aria-label="Not interested"
                   title="Not interested"
                   onClick={() => hideBrief(brief.id)}
-                  style={{ position: "absolute", top: 14, left: 14, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  style={{ position: "absolute", top: 8, left: 8, zIndex: 2, width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text)", fontSize: 14, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >✕</button>
               )}
               {/* Report flag + safety info (top-right cluster) */}
@@ -264,8 +265,8 @@ export const CollabScreen = memo(function CollabScreen({
                     aria-label="Safety info"
                     title="Safety info"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSafetyInfoBriefId(brief.id); }}
-                    style={{ width: 22, height: 22, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                  ><FiInfo size={13} /></button>
+                    style={{ width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  ><FiInfo size={15} /></button>
                 )}
               </div>
               <div className="brief-header" style={{ flexWrap: "wrap", gap: 6 }}>

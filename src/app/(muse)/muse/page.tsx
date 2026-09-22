@@ -2887,6 +2887,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
   </div>
 )}
 
+<main id="muse-main" role="main" tabIndex={-1} style={{flex:1,display:"flex",flexDirection:"column",minHeight:0}}>
+{/* Live status region — non-blocking announcements for async actions */}
+<div role="status" aria-live="polite" aria-atomic="true" id="muse-live-status" className="sr-only" />
 <div className={"screen-el"+(screen==="onboard"?" active":"")}>
   <div className="onboard">
     {obStep === 0 && (
@@ -3173,7 +3176,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                   <div className="onboard-content">
                     <div className="step-title">Your Photo</div>
                     <div className="step-sub">Add a profile picture so people can see the real you</div>
-                    <input ref={photoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setObProfilePic(url);showToast("Photo added!")}}}} />
+                    <input ref={photoInputRef} type="file" accept="image/*" aria-label="Upload profile photo" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setObProfilePic(url);showToast("Photo added!")}}}} />
                     <div className="ob-upload-zone" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); photoInputRef.current?.click(); } }} onClick={() => photoInputRef.current?.click()}>
                       {obProfilePic ? <Image loading="lazy" src={obProfilePic} alt="Profile" fill sizes="130px" style={{ objectFit: "cover", borderRadius: "50%" }} /> : (
                         <>
@@ -3191,7 +3194,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                   <div className="onboard-content">
                     <div className="step-title">Your Portfolio</div>
                     <div className="step-sub">Show off your best work</div>
-                    <input ref={portfolioInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={async (e)=>{
+                    <input ref={portfolioInputRef} type="file" accept="image/*" aria-label="Upload portfolio photo" style={{display:"none"}} onChange={async (e)=>{
                       const f=e.target.files?.[0];
                       const slot=obPortfolioSlot;
                       if(e.target) e.target.value="";
@@ -3357,8 +3360,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             <ScreenErrorBoundary name="Profile">
             <ProfileScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditType={setEditType} setEditLooking={setEditLooking} setEditNsfw={setEditNsfw} setEditMediaKit={setEditMediaKit} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} setShowAgeVerification={setShowAgeVerification} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={_setSelectedPortfolio} lightboxPhotos={lightboxPhotos} lightboxIdx={lightboxIdx} setLightboxPhotos={setLightboxPhotos} setLightboxIdx={setLightboxIdx} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} setShowQuests={setShowQuests} loginStreak={loginStreak} weeklyLogins={weeklyLogins} questClaimables={claimableQuests} />
             </ScreenErrorBoundary>
-          </div>
+          </main>
         </div>
+      </div>
       )}
 
       
@@ -3890,7 +3894,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               <div style={{position:"relative"}}>
                 <Image src={editAvatar || currentUser.avatar} alt="Avatar" width={88} height={88} style={{borderRadius:"50%",objectFit:"cover",border:"3px solid var(--gold)",background:"#1a0a2e"}} onError={handleImgError} />
                 <button type="button" onClick={()=>editAvatarInputRef.current?.click()} style={{position:"absolute",bottom:0,right:0,width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#ffd700,#ff8a80)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#0a0612"}} title="Upload profile photo" aria-label="Upload profile photo">+</button>
-                <input ref={editAvatarInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setEditAvatar(url);showToast("Photo added!")}}}} />
+                <input ref={editAvatarInputRef} type="file" accept="image/*" aria-label="Upload profile photo" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setEditAvatar(url);showToast("Photo added!")}}}} />
               </div>
             </div>
             <input className="inp" placeholder="Display Name" value={editName} onChange={e=>setEditName(e.target.value)} />

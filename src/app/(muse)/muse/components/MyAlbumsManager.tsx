@@ -197,7 +197,7 @@ export default function MyAlbumsManager({
 
         <label className="album-upload-btn">
           <FiPlus size={16} /> Add Photo
-          <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) addPhoto(f); e.target.value = ""; }} />
+          <input type="file" accept="image/*" aria-label="Add album photo" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) addPhoto(f); e.target.value = ""; }} />
         </label>
 
         <div className="album-grid" style={{ marginTop: 14 }}>

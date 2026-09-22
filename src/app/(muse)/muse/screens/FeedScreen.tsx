@@ -315,6 +315,7 @@ export const FeedScreen = memo(function FeedScreen({
 
   return (
     <div className={"screen-el" + (screen === "connections" ? " active" : "")} data-screen="connections">
+      <h1 className="sr-only">Feed</h1>
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" aria-label="Back" onClick={() => showScreen("discover")} style={{ width: 44, height: 44 }}><FiArrowLeft size={20} /></button>
         <div
@@ -388,6 +389,7 @@ export const FeedScreen = memo(function FeedScreen({
                   type="file"
                   accept="image/*,video/*"
                   multiple
+                  aria-label="Upload photo or video"
                   style={{ display: "none" }}
                   onChange={async e => {
                     const files = Array.from(e.target.files || []);

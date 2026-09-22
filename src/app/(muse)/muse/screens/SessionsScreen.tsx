@@ -344,12 +344,14 @@ export const SessionsScreen = memo(function SessionsScreen({
   };
   return (
     <div className={"screen-el" + (screen === "sessions" ? " active" : "")} data-screen="sessions">
+      <h1 className="sr-only">Sessions</h1>
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" aria-label="Back" onClick={() => (goBack ? goBack() : showScreen("discover"))}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#F2CC8F,#E07A5F,#F4A261,#F2CC8F,#E07A5F,#F2CC8F)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Sessions</div>
         <div style={{ width: 42 }} />
       </div>
-      <HScroll className="conn-tabs" role="tablist" aria-label="Session tabs" gap={0} style={{ padding: "0 16px", justifyContent: "center" }}>
+      <div role="tablist" aria-label="Session tabs">
+      <HScroll className="conn-tabs" gap={0} style={{ padding: "0 16px", justifyContent: "center" }}>
         {/* Small leading icon per tab (audit finding tu-2) — same treatment as
             Collab's category row, for the same glance-ability reason. */}
         {([["sessions", "Browse", FiCompass], ["bookings", "My Bookings", FiCalendar], ["requests", "Requests", FiInbox]] as const).map(([t, label, Icon]) => (
@@ -358,6 +360,7 @@ export const SessionsScreen = memo(function SessionsScreen({
           </div>
         ))}
       </HScroll>
+      </div>
       {sessTab === "sessions" && (
         <div style={{ margin: "0 16px 12px", display: "flex", alignItems: "center", gap: 8, background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, padding: "6px 12px", animation: "fadeIn .2s ease" }}>
           <FiSearch size={14} color="var(--muted)" />

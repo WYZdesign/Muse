@@ -147,6 +147,7 @@ export const ChatScreen = memo(function ChatScreen({
 
   return (
     <div className={"screen-el" + (screen === "chat" && chatTarget ? " active" : "")} data-screen="chat">
+      <h1 className="sr-only">Chat{chatTarget?.name ? ` with ${chatTarget.name}` : ""}</h1>
       {showConsent && (
         <div role="dialog" aria-modal="true" aria-label="Recording consent" style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", padding: 20 }}>
           <div style={{ background: "var(--panel-bg-solid, #0f0a1a)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 24, maxWidth: 380, width: "100%" }}>
@@ -423,7 +424,7 @@ export const ChatScreen = memo(function ChatScreen({
           <div className="chat-input-wrap">
             <label style={{ cursor: "pointer", color: "var(--muted)", fontSize: 18, display: "flex", alignItems: "center", alignSelf: "center" }}>
               <FiImage size={22} />
-              <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
+              <input type="file" accept="image/*" aria-label="Upload image" style={{ display: "none" }} onChange={async (e) => {
                 const f = e.target.files?.[0];
                 if (!f) return;
                 e.target.value = "";

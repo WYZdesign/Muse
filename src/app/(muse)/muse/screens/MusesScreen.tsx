@@ -224,6 +224,7 @@ export const MusesScreen = memo(function MusesScreen({
 
   return (
     <div className={"screen-el" + (screen === "matches" ? " active" : "")} data-screen="matches">
+      <h1 className="sr-only">Matches</h1>
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" onClick={() => (goBack ? goBack() : showScreen("discover"))} aria-label="Go back"><FiArrowLeft size={20} /></button>
         <div

@@ -274,6 +274,7 @@ export const BtsScreen = memo(function BtsScreen({
 
   return (
     <div className={"screen-el" + (screen === "bts" ? " active" : "")} data-screen="bts">
+      <h1 className="sr-only">Behind the Scenes</h1>
       {/* Header — normalized to the same treatment every other main screen
           uses for its title (Discover, Muses, Feed, etc): plain .hdr bar,
           no standalone decorative gradient-bar background, and the title
