@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { sendEmail, waitlistWelcome } from "@/lib/email";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 export async function POST(req: NextRequest) {
   const sb = getServiceClient();
   try {
+    // Waitlist signup persists personal data and sends a real email.
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Waitlist signup"), { status: 409 });
     // Rate limit signups to prevent waitlist spam / DB abuse.
     const ip = clientIp(req);
     if (!await checkRate(ip, "waitlist", 10)) {

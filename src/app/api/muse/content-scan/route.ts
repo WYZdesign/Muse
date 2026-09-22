@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { scanWithRekognition, logScan, reportIncident, escalateToNcmec } from "@/lib/contentScan";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 // ═══ Content moderation endpoint ═══
 // Thin delegate of the shared src/lib/contentScan.ts pipeline — no duplicated
@@ -25,6 +26,7 @@ async function authedProfileId(req: NextRequest): Promise<string | null> {
 
 export async function POST(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Media scanning"), { status: 409 });
     // Rate limit — Rekognition is a paid API; prevent cost abuse.
     const ip = clientIp(req);
     if (!await checkRate(ip, "content-scan", 20)) {

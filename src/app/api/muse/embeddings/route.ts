@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { embedText, cosineSimilarity, aiEnabled } from "@/lib/ai";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 /**
  * Muse Embeddings API — OpenRouter + Supabase (replaces Ollama + Qdrant).
@@ -10,6 +11,7 @@ import { embedText, cosineSimilarity, aiEnabled } from "@/lib/ai";
  */
 export async function POST(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("AI embeddings"), { status: 409 });
     if (!await checkRate(clientIp(req), "embeddings", 30)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }

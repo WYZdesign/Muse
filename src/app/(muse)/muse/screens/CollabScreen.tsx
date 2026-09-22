@@ -406,7 +406,7 @@ export const CollabScreen = memo(function CollabScreen({
             <textarea className="inp" aria-label="Brief description" placeholder="Describe the project" rows={3} value={briefDesc} onChange={e => setBriefDesc(e.target.value)} style={{ marginBottom: 8, resize: "none" }} />
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
               <input className="inp" aria-label="Budget" placeholder="Budget" value={briefBudget} onChange={e => setBriefBudget(e.target.value)} style={{ flex: 1 }} />
-              <select className="inp" value={briefCat} onChange={e => setBriefCat(e.target.value as any)} style={{ flex: 1 }}>
+              <select className="inp" aria-label="Project category" value={briefCat} onChange={e => setBriefCat(e.target.value as any)} style={{ flex: 1 }}>
                 <option value="concept">Concept</option>
                 <option value="tfp">TFP</option>
                 <option value="paid">Paid</option>

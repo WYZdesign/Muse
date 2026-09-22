@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { safeServerError } from "@/lib/http";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 /**
  * Transcribe a recorded voice note.
@@ -16,6 +17,7 @@ import { safeServerError } from "@/lib/http";
  */
 export async function POST(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Transcription"), { status: 409 });
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "transcription_not_configured" }, { status: 503 });

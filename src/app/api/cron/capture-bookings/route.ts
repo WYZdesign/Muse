@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getServiceClient } from "@/lib/supabase";
+import { isDemoMode } from "@/lib/demo-mode";
 
 /**
  * Safety net for booking payments authorized with capture_method: "manual".
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest) {
   if (!process.env.CRON_SECRET || authHeader !== expected) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (isDemoMode()) return NextResponse.json({ success: true, demo: true, captured: 0, skipped: 0, failed: 0 });
 
   const sb = getServiceClient();
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");

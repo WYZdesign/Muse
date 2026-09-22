@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { sendEmail, betaAccess } from "@/lib/email";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 /**
  * Admin endpoint: promote waitlist members to beta access.
@@ -9,6 +10,7 @@ import { sendEmail, betaAccess } from "@/lib/email";
  * Protected by rate limiting + service-role auth check.
  */
 export async function POST(req: NextRequest) {
+  if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Waitlist promotion"), { status: 409 });
   const ip = clientIp(req);
   if (!await checkRate(ip, "admin-promote", 10)) {
     return NextResponse.json({ error: "Rate limited" }, { status: 429 });

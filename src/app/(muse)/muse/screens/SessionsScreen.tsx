@@ -400,7 +400,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                     read far more prominent than the card's other icon buttons (Eye,
                     Bookmark — both var(--text2)) below it. Matched to the same pattern
                     CommunityScreen's identical report button already uses. */}
-                <button aria-label="Report session" title="Report" onClick={() => { setReportTarget({ id: s.id, type: "session", name: s.name || "session" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 22, height: 22, borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "rgba(20,15,25,0.15)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
+                <button aria-label="Report session" title="Report" onClick={() => { setReportTarget({ id: s.id, type: "session", name: s.name || "session" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 44, height: 44, borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "rgba(20,15,25,0.15)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
                 {/* Torreé audit item 4: tapping the card (image + name/meta/skills
                     area) opens the full-detail modal. Deliberately excludes the
                     button row below — those buttons keep their own actions

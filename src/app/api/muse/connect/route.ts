@@ -5,6 +5,7 @@ import { parseRateToCents } from "@/lib/money";
 import { MUSE_HOST_COMMISSION_RATE, MUSE_BUYER_SERVICE_FEE_RATE } from "@/lib/config";
 import { isAgeVerificationCurrent } from "@/lib/muse-actions/shared";
 import Stripe from "stripe";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 export const runtime = "nodejs";
 
@@ -35,12 +36,17 @@ export async function POST(req: NextRequest) {
       .eq("auth_id", authData.user.id).maybeSingle();
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
+    const body = await req.json();
+    const { action } = body;
+
+    // Connect account setup, checkout, refunds, and transfers are all real
+    // financial workflows. Keep demo mode server-side and fail closed even if
+    // a caller bypasses disabled UI controls.
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Payments and Stripe Connect"), { status: 409 });
+
     const secret = process.env.STRIPE_SECRET_KEY;
     if (!secret) return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
     const stripe = new Stripe(secret);
-
-    const body = await req.json();
-    const { action } = body;
 
     // Rate limit financial operations
     const ip = clientIp(req);

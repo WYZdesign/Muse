@@ -13,6 +13,8 @@ import { validateInput, type ActionContext } from "./shared";
 const PRIVATE_ALBUM_PREFIX = "storage://muse-private/";
 const isPrivateAlbumObject = (value: unknown): value is string =>
   typeof value === "string" && value.startsWith(PRIVATE_ALBUM_PREFIX) && value.length > PRIVATE_ALBUM_PREFIX.length;
+const isPrivateAlbumObjectForOwner = (value: unknown, profileId: unknown): value is string =>
+  isPrivateAlbumObject(value) && value.slice(PRIVATE_ALBUM_PREFIX.length).startsWith(`${String(profileId)}/`);
 
 export async function albumCreate({ sb, profile, rest, ip }: ActionContext) {
   if (!await checkRate(ip, "create-album", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
@@ -21,6 +23,9 @@ export async function albumCreate({ sb, profile, rest, ip }: ActionContext) {
   const { title, description, cover_url, access_level, tags } = rest;
   if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
   const level = ["public", "private", "invite"].includes(access_level as string) ? access_level : "public";
+  if (level !== "public" && cover_url && !isPrivateAlbumObjectForOwner(cover_url, profile.id)) {
+    return NextResponse.json({ error: "Private and invite albums require private Muse media" }, { status: 400 });
+  }
   const { data, error } = await sb.from("muse_albums").insert({
     profile_id: profile.id, title: (title as string).trim(), description: description || "",
     cover_url: cover_url || "", access_level: level, tags: Array.isArray(tags) ? tags.slice(0, 20) : [],
@@ -32,17 +37,26 @@ export async function albumCreate({ sb, profile, rest, ip }: ActionContext) {
 export async function albumUpdate({ sb, profile, rest }: ActionContext) {
   const { albumId, title, description, cover_url, access_level, tags } = rest;
   if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
-  const { data: existing } = await sb.from("muse_albums").select("profile_id, cover_url").eq("id", albumId).maybeSingle();
+  const { data: existing } = await sb.from("muse_albums").select("profile_id, cover_url, access_level").eq("id", albumId).maybeSingle();
   if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (title !== undefined) updates.title = String(title).slice(0, 200);
   if (description !== undefined) updates.description = String(description).slice(0, 2000);
-  if (cover_url !== undefined) updates.cover_url = cover_url;
+  const nextAccessLevel = access_level !== undefined && ["public", "private", "invite"].includes(access_level as string)
+    ? access_level as string
+    : existing.access_level;
+  if (cover_url !== undefined) {
+    if (nextAccessLevel !== "public" && cover_url && !isPrivateAlbumObjectForOwner(cover_url, profile.id)) {
+      return NextResponse.json({ error: "Private and invite albums require private Muse media" }, { status: 400 });
+    }
+    updates.cover_url = cover_url;
+  }
   if (access_level !== undefined && ["public", "private", "invite"].includes(access_level as string)) {
     if (access_level !== "public") {
       const { data: photos } = await sb.from("muse_album_photos").select("img_url").eq("album_id", albumId);
-      const hasPublicMedia = (photos || []).some((photo: any) => !isPrivateAlbumObject(photo.img_url));
-      if (hasPublicMedia || ((existing as any).cover_url && !isPrivateAlbumObject((existing as any).cover_url))) {
+      const nextCoverUrl = cover_url !== undefined ? cover_url : (existing as any).cover_url;
+      const hasPublicMedia = (photos || []).some((photo: any) => !isPrivateAlbumObjectForOwner(photo.img_url, profile.id));
+      if (hasPublicMedia || (nextCoverUrl && !isPrivateAlbumObjectForOwner(nextCoverUrl, profile.id))) {
         return NextResponse.json({ error: "Re-upload existing album media before making this album private" }, { status: 409 });
       }
     }
@@ -73,8 +87,11 @@ export async function albumAddPhoto({ sb, profile, rest, ip }: ActionContext) {
   if (!isPrivateAlbumObject(img_url) && storageHost && !String(img_url).includes(storageHost)) {
     return NextResponse.json({ error: "Images must be uploaded through Muse" }, { status: 400 });
   }
-  const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
+  const { data: existing } = await sb.from("muse_albums").select("profile_id, access_level").eq("id", albumId).maybeSingle();
   if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (existing.access_level !== "public" && !isPrivateAlbumObjectForOwner(img_url, profile.id)) {
+    return NextResponse.json({ error: "Private and invite albums require private Muse media" }, { status: 400 });
+  }
   const { count } = await sb.from("muse_album_photos").select("*", { count: "exact", head: true }).eq("album_id", albumId);
   const { data, error } = await sb.from("muse_album_photos").insert({ album_id: albumId, img_url, caption: String(caption || "").slice(0, 500), position: count ?? 0 }).select().single();
   if (error) return safeServerError(error, "db op");
@@ -135,7 +152,9 @@ export async function albumView({ sb, profile, rest, ip }: ActionContext) {
   if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
   const { data: album } = await sb.from("muse_albums").select("view_count, access_level, profile_id").eq("id", albumId).maybeSingle();
   if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (album.access_level === "private") return NextResponse.json({ error: "Album is private" }, { status: 403 });
+  if (album.access_level === "private" && String(album.profile_id) !== String(profile.id)) {
+    return NextResponse.json({ error: "Album is private" }, { status: 403 });
+  }
   if (album.access_level === "invite") {
     const { data: access } = await sb.from("muse_album_access").select("id").eq("album_id", albumId).eq("viewer_profile_id", profile.id).limit(1);
     if (!access || access.length === 0) return NextResponse.json({ error: "Album is invite-only" }, { status: 403 });

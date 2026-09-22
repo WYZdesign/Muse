@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getUserScopedClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 // ═══ MFA / 2FA (Supabase Auth TOTP) ═══
 // Supabase Auth has TOTP MFA enabled for this project (mfa_totp_enroll_enabled,
@@ -64,6 +65,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Two-factor authentication changes"), { status: 409 });
     const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
     if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRate, clientIp } from "@/lib/rate-limit";
+import { isDemoMode } from "@/lib/demo-mode";
 
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";
 
@@ -11,6 +12,7 @@ const AGE_VERIFICATION_STATES = new Set([
 
 export async function GET(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json({ city: "", state: "", requiresIdVerification: false, demo: true });
     // Nominatim requires ≤1 req/sec — rate limit to avoid IP ban.
     const ip = clientIp(req);
     if (!await checkRate(ip, "geocode", 45)) {

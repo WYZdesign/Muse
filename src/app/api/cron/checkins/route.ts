@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { sendEmail, notify } from "@/lib/email";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export async function GET(req: NextRequest) {
   // Verify cron secret. The `!process.env.CRON_SECRET ||` guard matters — without
@@ -11,6 +12,7 @@ export async function GET(req: NextRequest) {
   if (!process.env.CRON_SECRET || authHeader !== expected) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (isDemoMode()) return NextResponse.json({ success: true, demo: true, checkinsCreated: 0, escalated: 0 });
 
   const sb = getServiceClient();
 

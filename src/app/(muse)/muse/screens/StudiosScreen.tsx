@@ -105,7 +105,7 @@ export const StudiosScreen = memo(function StudiosScreen({
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 700 }}>{s.name}</div>
-                <div role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: s.feature, desc: "A standout feature of this studio space — what makes it unique for your shoot.", icon: "🏠", color: studio.color[0] })} style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 1, lineHeight: 1.35, cursor: "pointer" }}>{s.feature}</div>
+                <button type="button" onClick={() => setBadgeInfo({ name: s.feature, desc: "A standout feature of this studio space — what makes it unique for your shoot.", icon: "🏠", color: studio.color[0] })} style={{ minHeight: 44, padding: 0, background: "none", border: "none", textAlign: "left", fontSize: 10.5, color: "var(--muted)", marginTop: 1, lineHeight: 1.35, cursor: "pointer" }}>{s.feature}</button>
                 {/* Audit fix (2026-09-08): OTHER_STUDIOS (Apex, Hubble) use price:"hourly"
                     as a placeholder for pending-partnership listings, since their real
                     rates aren't in yet (see studios.ts comments). This unconditionally

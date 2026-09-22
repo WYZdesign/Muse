@@ -5,6 +5,7 @@ import { safeServerError } from "@/lib/http";
 import { sendEmail, notify } from "@/lib/email";
 import { setReferralQuestProgress } from "@/lib/questEngine";
 import Stripe from "stripe";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 /**
  * Muse Referral System — double-sided referral codes.
@@ -13,6 +14,7 @@ import Stripe from "stripe";
  */
 export async function POST(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Referrals"), { status: 409 });
     const header = req.headers.get("authorization") || "";
     const bearer = header.replace(/^Bearer\s+/i, "").trim();
     if (!bearer) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

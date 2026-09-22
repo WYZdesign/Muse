@@ -191,16 +191,16 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginBottom: 10 }}>Emergency Contact</div>
             <div style={{ marginBottom: 10 }}>
               <label style={labelStyle}>Name</label>
-              <input value={sp.emergency_contact_name} onChange={e => setSp(p => ({ ...p, emergency_contact_name: e.target.value }))} style={inputStyle} placeholder="Full name" />
+              <input aria-label="Emergency contact name" value={sp.emergency_contact_name} onChange={e => setSp(p => ({ ...p, emergency_contact_name: e.target.value }))} style={inputStyle} placeholder="Full name" />
             </div>
             <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
               <div style={{ flex: 1 }}>
                 <label style={labelStyle}>Phone</label>
-                <input value={sp.emergency_contact_phone} onChange={e => setSp(p => ({ ...p, emergency_contact_phone: e.target.value }))} style={inputStyle} placeholder="(555) 123-4567" />
+                <input aria-label="Emergency contact phone" value={sp.emergency_contact_phone} onChange={e => setSp(p => ({ ...p, emergency_contact_phone: e.target.value }))} style={inputStyle} placeholder="(555) 123-4567" />
               </div>
               <div style={{ flex: 1 }}>
                 <label style={labelStyle}>Relationship</label>
-                <input value={sp.emergency_contact_relation} onChange={e => setSp(p => ({ ...p, emergency_contact_relation: e.target.value }))} style={inputStyle} placeholder="e.g. Partner, Mom, Friend" />
+                <input aria-label="Emergency contact relationship" value={sp.emergency_contact_relation} onChange={e => setSp(p => ({ ...p, emergency_contact_relation: e.target.value }))} style={inputStyle} placeholder="e.g. Partner, Mom, Friend" />
               </div>
             </div>
 
@@ -210,21 +210,21 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
             </p>
             <div style={{ marginBottom: 10 }}>
               <label style={labelStyle}>Name</label>
-              <input value={sp.trusted_friend_name} onChange={e => setSp(p => ({ ...p, trusted_friend_name: e.target.value }))} style={inputStyle} placeholder="Full name" />
+              <input aria-label="Trusted friend name" value={sp.trusted_friend_name} onChange={e => setSp(p => ({ ...p, trusted_friend_name: e.target.value }))} style={inputStyle} placeholder="Full name" />
             </div>
             <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
               <div style={{ flex: 1 }}>
                 <label style={labelStyle}>Phone</label>
-                <input value={sp.trusted_friend_phone} onChange={e => setSp(p => ({ ...p, trusted_friend_phone: e.target.value }))} style={inputStyle} placeholder="(555) 123-4567" />
+                <input aria-label="Trusted friend phone" value={sp.trusted_friend_phone} onChange={e => setSp(p => ({ ...p, trusted_friend_phone: e.target.value }))} style={inputStyle} placeholder="(555) 123-4567" />
               </div>
               <div style={{ flex: 1 }}>
                 <label style={labelStyle}>Email</label>
-                <input value={sp.trusted_friend_email} onChange={e => setSp(p => ({ ...p, trusted_friend_email: e.target.value }))} style={inputStyle} placeholder="friend@email.com" />
+                <input aria-label="Trusted friend email" value={sp.trusted_friend_email} onChange={e => setSp(p => ({ ...p, trusted_friend_email: e.target.value }))} style={inputStyle} placeholder="friend@email.com" />
               </div>
             </div>
 
             <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "rgba(255,215,0,0.06)", borderRadius: 8, border: "1px solid rgba(255,215,0,0.15)", cursor: "pointer", marginTop: 16, marginBottom: 20 }}>
-              <input type="checkbox" checked={sp.auto_share_enabled} onChange={e => setSp(p => ({ ...p, auto_share_enabled: e.target.checked }))} style={{ accentColor: "var(--gold)", width: 16, height: 16 }} />
+              <input type="checkbox" aria-label="Auto-share with trusted friend" checked={sp.auto_share_enabled} onChange={e => setSp(p => ({ ...p, auto_share_enabled: e.target.checked }))} style={{ accentColor: "var(--gold)", width: 16, height: 16 }} />
               <div>
                 <div style={{ fontSize: 12, color: "var(--text)", fontWeight: 600 }}>Auto-share with trusted friend</div>
                 <div style={{ fontSize: 11, color: "var(--muted)" }}>Automatically send shoot details when you confirm a booking</div>

@@ -82,16 +82,20 @@ export default function SelfDiscoveryModal({ open, onClose, obData, onSaved, api
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="self-discovery-title"
+        onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
         style={{ width: "100%", maxWidth: 480, maxHeight: "88vh", background: "var(--panel-bg-solid)", backdropFilter: "blur(30px)", borderRadius: "24px 24px 0 0", border: "1px solid var(--border-subtle)", borderBottom: "none", display: "flex", flexDirection: "column", overflow: "hidden" }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {view !== "menu" && (
-              <button onClick={goBackToMenu} aria-label="Back" style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", padding: 6, display: "flex" }}><FiArrowLeft size={20} /></button>
+              <button onClick={goBackToMenu} aria-label="Back" style={{ width: 44, height: 44, background: "none", border: "none", color: "var(--text2)", cursor: "pointer", padding: 6, display: "flex", alignItems: "center", justifyContent: "center" }}><FiArrowLeft size={20} /></button>
             )}
-            <div style={{ fontSize: 17, fontWeight: 800, color: "var(--text)" }}>Self Discovery</div>
+            <h2 id="self-discovery-title" style={{ fontSize: 17, fontWeight: 800, color: "var(--text)", margin: 0 }}>Self Discovery</h2>
           </div>
-          <button onClick={onClose} aria-label="Close Self Discovery" style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", padding: 6 }}><FiX size={20} /></button>
+          <button onClick={onClose} aria-label="Close Self Discovery" style={{ width: 44, height: 44, background: "none", border: "none", color: "var(--text2)", cursor: "pointer", padding: 6 }}><FiX size={20} /></button>
         </div>
 
         <div style={{ padding: "16px 20px 28px", overflowY: "auto" }}>

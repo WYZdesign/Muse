@@ -106,7 +106,7 @@ export default function PromptBankModal({ prompts, responses, onSaveResponse, on
 
             {/* Response input */}
             {current.prompt_type === "text" ? (
-              <textarea value={textInput} onChange={e => setTextInput(e.target.value)} placeholder="Type your answer..." rows={4} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text)", fontSize: 14, resize: "vertical", lineHeight: 1.5 }} />
+              <textarea aria-label="Response" value={textInput} onChange={e => setTextInput(e.target.value)} placeholder="Type your answer..." rows={4} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text)", fontSize: 14, resize: "vertical", lineHeight: 1.5 }} />
             ) : current.prompt_type === "single_choice" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {current.choices.map(choice => (

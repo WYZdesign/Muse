@@ -1286,7 +1286,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {threadPost.cat && (
-                    <span role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: threadPost.cat, desc: "The topic category this forum post belongs to.", icon: "🏷", color: "#FFD700" })} style={{ display: "inline-block", fontSize: 10, padding: "3px 10px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "var(--gold)", fontWeight: 700, marginBottom: 8, cursor: "pointer" }}>{threadPost.cat}</span>
+                    <button type="button" onClick={() => setBadgeInfo({ name: threadPost.cat, desc: "The topic category this forum post belongs to.", icon: "🏷", color: "#FFD700" })} style={{ display: "inline-block", minHeight: 44, fontSize: 10, padding: "3px 10px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "var(--gold)", fontWeight: 700, marginBottom: 8, cursor: "pointer" }}>{threadPost.cat}</button>
                   )}
                   <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", lineHeight: 1.3, marginBottom: 6 }}>{threadPost.title}</div>
                   <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 10 }}>{threadPost.author} · {threadPost.time}</div>
@@ -1563,12 +1563,12 @@ export const NetworkScreen = memo(function NetworkScreen({
                   {(proDetail.skills || []).map((s: string, i: number) => {
                     const sc = getSkillColor(i);
                     return (
-                      <span
+                      <button
+                        type="button"
                         key={s}
-                        role="button"
-                        tabIndex={0}
                         onClick={() => setBadgeInfo({ name: s, desc: STYLE_FULL[s] || `A skill this professional brings to a project.`, icon: "🛠", color: sc.color })}
                         style={{
+                          minHeight: 44,
                           fontSize: 12,
                           padding: "5px 14px",
                           borderRadius: 99,
@@ -1580,7 +1580,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                         }}
                       >
                         {s}
-                      </span>
+                      </button>
                     );
                   })}
                 </div>
@@ -1607,9 +1607,9 @@ export const NetworkScreen = memo(function NetworkScreen({
                     if (proDetail.skills?.includes("Photography") || proDetail.skills?.includes("Editorial")) badges.push({ icon: "📸", label: "Photo", color: "#90CAF9", bg: "rgba(144,202,249,0.12)", border: "rgba(144,202,249,0.25)" });
                     if (connectedIds.has(proDetail.id)) badges.push({ icon: "🤝", label: "Connected", color: "#81C784", bg: "rgba(129,199,132,0.12)", border: "rgba(129,199,132,0.25)" });
                     return badges.map((b) => (
-                      <span key={b.label} role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: b.label, desc: STYLE_FULL[b.label] || `A signal about this pro: ${b.label}.`, icon: b.icon, color: b.color })} style={{ fontSize: 11, padding: "4px 11px", borderRadius: 99, background: b.bg, border: `1px solid ${b.border}`, color: b.color, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+                      <button type="button" key={b.label} onClick={() => setBadgeInfo({ name: b.label, desc: STYLE_FULL[b.label] || `A signal about this pro: ${b.label}.`, icon: b.icon, color: b.color })} style={{ minHeight: 44, fontSize: 11, padding: "4px 11px", borderRadius: 99, background: b.bg, border: `1px solid ${b.border}`, color: b.color, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
                         {b.icon} {b.label}
-                      </span>
+                      </button>
                     ));
                   })()}
                 </div>

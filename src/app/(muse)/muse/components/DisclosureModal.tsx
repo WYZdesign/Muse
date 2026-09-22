@@ -111,7 +111,7 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
 
   const checkbox = (label: string, checked: boolean, onChange: (v: boolean) => void, subtext?: string) => (
     <label style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 12px", borderRadius: 8, background: checked ? "rgba(255,215,0,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${checked ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.08)"}`, cursor: "pointer", marginBottom: 6, transition: "all 0.2s" }}>
-      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} style={{ marginTop: 2, accentColor: "#ffd700", width: 16, height: 16, flexShrink: 0 }} />
+      <input type="checkbox" aria-label={label} checked={checked} onChange={e => onChange(e.target.checked)} style={{ marginTop: 2, accentColor: "#ffd700", width: 16, height: 16, flexShrink: 0 }} />
       <div>
         <div style={{ fontSize: 13, color: "#f5f0ff" }}>{label}</div>
         {subtext && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{subtext}</div>}
@@ -122,7 +122,7 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
   const select = (label: string, value: string, options: string[], onChange: (v: string) => void) => (
     <div style={{ marginBottom: 10 }}>
       <label style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 4, display: "block" }}>{label}</label>
-      <select value={value} onChange={e => onChange(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 13 }}>
+      <select aria-label={label} value={value} onChange={e => onChange(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 13 }}>
         <option value="">Select...</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
@@ -132,7 +132,7 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
   const input = (label: string, value: string, onChange: (v: string) => void, placeholder?: string) => (
     <div style={{ marginBottom: 10 }}>
       <label style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 4, display: "block" }}>{label}</label>
-      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 13 }} />
+      <input aria-label={label} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 13 }} />
     </div>
   );
 
@@ -286,7 +286,7 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
                 <div style={{ marginLeft: 26, marginTop: 8 }}>
                   <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                     <label style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>How many?</label>
-                    <input type="number" min={0} max={20} value={form.othersCount} onChange={e => set("othersCount", parseInt(e.target.value) || 0)} style={{ width: 60, padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 13 }} />
+                    <input type="number" aria-label="How many others will be present?" min={0} max={20} value={form.othersCount} onChange={e => set("othersCount", parseInt(e.target.value) || 0)} style={{ width: 60, padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 13 }} />
                   </div>
                   {input("Who will be present?", form.othersDesc, v => set("othersDesc", v), "e.g. Makeup artist, assistant, chaperone")}
                 </div>
@@ -307,7 +307,7 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
 
             <div style={{ marginTop: 20, padding: 14, background: "rgba(255,215,0,0.06)", borderRadius: 10, border: "1px solid rgba(255,215,0,0.15)" }}>
               <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
-                <input type="checkbox" checked={form.agreeTerms} onChange={e => set("agreeTerms", e.target.checked)} style={{ marginTop: 2, accentColor: "#ffd700", width: 16, height: 16, flexShrink: 0 }} />
+                <input type="checkbox" aria-label="I agree to the Muse Community Guidelines and Terms of Service" checked={form.agreeTerms} onChange={e => set("agreeTerms", e.target.checked)} style={{ marginTop: 2, accentColor: "#ffd700", width: 16, height: 16, flexShrink: 0 }} />
                 <span style={{ fontSize: 12, color: "#f5f0ff", lineHeight: 1.5 }}>
                   I have read and agree to the <a href="/muse" style={{ color: "#ffd700" }}>Muse Community Guidelines</a> and <a href="/muse" style={{ color: "#ffd700" }}>Terms of Service</a>. I understand that this disclosure is a binding agreement between both parties for this specific shoot.
                 </span>

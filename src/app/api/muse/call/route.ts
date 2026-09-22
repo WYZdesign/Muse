@@ -4,6 +4,7 @@ import { AccessToken, RoomServiceClient, EgressClient, EncodedFileOutput, Encode
 import { checkRateUser } from "@/lib/rate-limit";
 import { safeServerError } from "@/lib/http";
 import { UUID_RE } from "@/lib/muse-actions/shared";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 /**
  * Muse calls — LiveKit.
@@ -58,6 +59,7 @@ async function mint(profile: { id: string; name?: string }, room: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Calls"), { status: 409 });
     if (!configured()) {
       return NextResponse.json({ error: "Calls are not configured yet" }, { status: 503 });
     }

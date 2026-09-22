@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getServiceClient } from "@/lib/supabase";
 import { sendEmail, notify } from "@/lib/email";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export const runtime = "nodejs";
 
@@ -46,6 +47,10 @@ async function grantReferralReward(sb: ReturnType<typeof getServiceClient>, auth
 }
 
 export async function POST(req: NextRequest) {
+  // A live Stripe event must never mutate demo accounts, tiers, bookings, or
+  // payouts. Return success so Stripe does not endlessly retry a deliberately
+  // disabled integration.
+  if (isDemoMode()) return NextResponse.json({ received: true, demo: true });
   const sig = req.headers.get("stripe-signature");
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!sig || !secret) {

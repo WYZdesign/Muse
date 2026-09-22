@@ -4,6 +4,7 @@ import { getMuseUrl } from "@/lib/urls";
 import { verifyState } from "@/lib/oauth-state";
 import { encryptToken } from "@/lib/token-crypto";
 import { checkRate } from "@/lib/rate-limit";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export const runtime = "nodejs";
 
@@ -82,6 +83,7 @@ async function fetchUserInfo(provider: string, accessToken: string) {
 
 export async function GET(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.redirect(`${getMuseUrl()}?error=demo_mode`);
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 
     // Rate-limit OAuth callback to prevent SSRF/token-exchange abuse

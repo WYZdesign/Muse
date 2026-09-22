@@ -2684,7 +2684,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     </div>
   ) : (
     <div style={{"display":"contents"}}>
-      <a href="#muse-main" className="sr-only" style={{zIndex:99999}} onFocus={(e)=>{e.currentTarget.style.cssText="position:fixed;top:0;left:0;padding:8px 16px;background:var(--gold);color:#0a0612;fontWeight:700;borderRadius:0 0 8px 0;width:auto;height:auto;clip:auto;overflow:visible;margin:0"}} onBlur={(e)=>{e.currentTarget.removeAttribute("style")}}>Skip to main content</a>
+      <a href="#muse-main" className="sr-only" style={{zIndex:99999}} onClick={()=>{requestAnimationFrame(()=>document.getElementById("muse-main")?.focus())}} onFocus={(e)=>{e.currentTarget.style.cssText="position:fixed;top:0;left:0;padding:8px 16px;background:var(--gold);color:#0a0612;fontWeight:700;borderRadius:0 0 8px 0;width:auto;height:auto;clip:auto;overflow:visible;margin:0"}} onBlur={(e)=>{e.currentTarget.removeAttribute("style")}}>Skip to main content</a>
       <CardPreloader currentIdx={currentIdx} profiles={filteredProfiles} />
       <Confetti active={showConfetti} />
       
@@ -3397,7 +3397,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       {showReport && (
         <div className="modal-overlay" ref={reportTrap} role="dialog" aria-modal="true" aria-label="Report">
           <div className="modal-header">
-            <button className="modal-back" onClick={()=>setShowReport(false)}><FiArrowLeft size={20} /></button>
+            <button className="modal-back" aria-label="Back" onClick={()=>setShowReport(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Report</div>
             <button className="modal-close" onClick={()=>setShowReport(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
@@ -3426,7 +3426,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       {showLikeNote && noteTargetProfile && (
         <div className="modal-overlay" style={{zIndex:500}} ref={likeNoteTrap} role="dialog" aria-modal="true" aria-label="Like and note">
           <div className="modal-header">
-            <button className="modal-back" onClick={()=>{setShowLikeNote(false);setLikeNoteAnchor(null);}}><FiArrowLeft size={20} /></button>
+            <button className="modal-back" aria-label="Back" onClick={()=>{setShowLikeNote(false);setLikeNoteAnchor(null);}}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Like + Note</div>
             <button className="modal-close" onClick={()=>{setShowLikeNote(false);setLikeNoteAnchor(null);}} aria-label="Close"><FiX size={18} /></button>
           </div>
@@ -3487,9 +3487,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* TERMS OF SERVICE MODAL */}
       {showTerms && (
-        <div className="modal-overlay lighter" ref={termsTrap}>
+        <div className="modal-overlay lighter" ref={termsTrap} role="dialog" aria-modal="true" aria-label="Terms of Service">
           <div className="modal-header">
-            <button className="modal-back" onClick={()=>setShowTerms(false)}><FiArrowLeft size={20} /></button>
+            <button className="modal-back" aria-label="Back" onClick={()=>setShowTerms(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Terms of Service</div>
             <button className="modal-close" onClick={()=>setShowTerms(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
@@ -3512,9 +3512,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       )}
 
       {showPrivacy && (
-        <div className="modal-overlay lighter" ref={privacyTrap}>
+        <div className="modal-overlay lighter" ref={privacyTrap} role="dialog" aria-modal="true" aria-label="Privacy Policy">
           <div className="modal-header">
-            <button className="modal-back" onClick={()=>setShowPrivacy(false)}><FiArrowLeft size={20} /></button>
+            <button className="modal-back" aria-label="Back" onClick={()=>setShowPrivacy(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Privacy Policy</div>
             <button className="modal-close" onClick={()=>setShowPrivacy(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
@@ -3536,9 +3536,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       )}
 
       {showGuidelines && (
-        <div className="modal-overlay lighter" ref={guidelinesTrap}>
+        <div className="modal-overlay lighter" ref={guidelinesTrap} role="dialog" aria-modal="true" aria-label="Community Guidelines">
           <div className="modal-header">
-            <button className="modal-back" onClick={()=>setShowGuidelines(false)}><FiArrowLeft size={20} /></button>
+            <button className="modal-back" aria-label="Back" onClick={()=>setShowGuidelines(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Community Guidelines</div>
             <button className="modal-close" onClick={()=>setShowGuidelines(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
@@ -3560,9 +3560,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* DELETE ACCOUNT CONFIRMATION */}
       {showDeleteConfirm && (
-        <div className="modal-overlay lighter" ref={deleteConfirmTrap}>
+        <div className="modal-overlay lighter" ref={deleteConfirmTrap} role="dialog" aria-modal="true" aria-label="Confirm account deletion">
           <div className="modal-header">
-            <button className="modal-back" onClick={()=>setShowDeleteConfirm(false)}><FiArrowLeft size={20} /></button>
+            <button className="modal-back" aria-label="Back" onClick={()=>setShowDeleteConfirm(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Delete Account</div>
             <button className="modal-close" onClick={()=>setShowDeleteConfirm(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
@@ -3582,26 +3582,26 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       {showDiscoveryPrefs && (
         <div className="modal-overlay" ref={discoveryPrefsTrap} role="dialog" aria-modal="true" aria-label="Discovery preferences" onClick={(e) => { if (e.target === e.currentTarget) setShowDiscoveryPrefs(false); }}>
           <div className="modal-header" onClick={e=>e.stopPropagation()}>
-            <button className="modal-back" onClick={()=>setShowDiscoveryPrefs(false)}><FiArrowLeft size={20} /></button>
+            <button className="modal-back" aria-label="Close discovery preferences" onClick={()=>setShowDiscoveryPrefs(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title" style={{fontSize:16.5,whiteSpace:"nowrap"}}>Discovery Preferences</div>
           </div>
           <div className="modal-body" onClick={e=>e.stopPropagation()}>
             <div style={{marginBottom:20}}>
               <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Age Range: {discoveryPrefs.ageMin} to {discoveryPrefs.ageMax}</div>
               <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                <input type="range" min={18} max={65} value={discoveryPrefs.ageMin} onChange={e=>setDiscoveryPrefs(p=>({...p,ageMin:Math.min(Number(e.target.value),p.ageMax-1)}))} style={{flex:1,accentColor:"var(--gold)"}} />
-                <input type="range" min={18} max={65} value={discoveryPrefs.ageMax} onChange={e=>setDiscoveryPrefs(p=>({...p,ageMax:Math.max(Number(e.target.value),p.ageMin+1)}))} style={{flex:1,accentColor:"var(--gold)"}} />
+              <input type="range" aria-label="Minimum age" min={18} max={65} value={discoveryPrefs.ageMin} onChange={e=>setDiscoveryPrefs(p=>({...p,ageMin:Math.min(Number(e.target.value),p.ageMax-1)}))} style={{flex:1,accentColor:"var(--gold)"}} />
+              <input type="range" aria-label="Maximum age" min={18} max={65} value={discoveryPrefs.ageMax} onChange={e=>setDiscoveryPrefs(p=>({...p,ageMax:Math.max(Number(e.target.value),p.ageMin+1)}))} style={{flex:1,accentColor:"var(--gold)"}} />
               </div>
             </div>
             <div style={{marginBottom:20}}>
               <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Max Distance: {discoveryPrefs.distance} mi</div>
-              <input type="range" min={1} max={100} value={discoveryPrefs.distance} onChange={e=>setDiscoveryPrefs(p=>({...p,distance:Number(e.target.value)}))} style={{width:"100%",accentColor:"var(--gold)"}} />
+              <input type="range" aria-label="Maximum distance in miles" min={1} max={100} value={discoveryPrefs.distance} onChange={e=>setDiscoveryPrefs(p=>({...p,distance:Number(e.target.value)}))} style={{width:"100%",accentColor:"var(--gold)"}} />
             </div>
             <div style={{marginBottom:20}}>
               <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Show Me</div>
               <div style={{display:"flex",gap:8,overflowX:"auto",whiteSpace:"nowrap",scrollbarWidth:"none",paddingBottom:4,WebkitOverflowScrolling:"touch"}}>
                 {["all","women","men","non-binary"].map(g=>(
-                   <div key={g} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDiscoveryPrefs(p=>({...p,gender:g})); } }} onClick={()=>setDiscoveryPrefs(p=>({...p,gender:g}))} style={{padding:"8px 16px",borderRadius:99,cursor:"pointer",fontSize:12,fontWeight:600,transition:"all .25s",whiteSpace:"nowrap",flexShrink:0,background:discoveryPrefs.gender===g?"rgba(255,215,0,0.12)":"rgba(255,255,255,0.04)",border:"1px solid "+(discoveryPrefs.gender===g?"rgba(255,215,0,0.3)":"rgba(255,255,255,0.06)"),color:discoveryPrefs.gender===g?"var(--gold)":"var(--muted)"}}>{g.charAt(0).toUpperCase()+g.slice(1)}</div>
+                   <button key={g} type="button" aria-pressed={discoveryPrefs.gender===g} onClick={()=>setDiscoveryPrefs(p=>({...p,gender:g}))} style={{minWidth:44,minHeight:44,padding:"8px 16px",borderRadius:99,cursor:"pointer",fontSize:12,fontWeight:600,transition:"all .25s",whiteSpace:"nowrap",flexShrink:0,background:discoveryPrefs.gender===g?"rgba(255,215,0,0.12)":"rgba(255,255,255,0.04)",border:"1px solid "+(discoveryPrefs.gender===g?"rgba(255,215,0,0.3)":"rgba(255,255,255,0.06)"),color:discoveryPrefs.gender===g?"var(--gold)":"var(--muted)"}}>{g.charAt(0).toUpperCase()+g.slice(1)}</button>
                 ))}
               </div>
             </div>
@@ -3610,8 +3610,14 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               // when the user has typed one (same convention as search).
               const autoName = `${discoveryPrefs.gender==="all"?"Anyone":discoveryPrefs.gender.charAt(0).toUpperCase()+discoveryPrefs.gender.slice(1)} · ${discoveryPrefs.ageMin}-${discoveryPrefs.ageMax} · ${discoveryPrefs.distance}mi`;
               const name = (searchQuery||"").trim() || autoName;
+              const filters = { ...discoveryPrefs, filterStyles, filterScore };
+              if (DEMO_MODE) {
+                setSavedSearches(prev => [...prev, { id: `demo-search-${Date.now()}`, name, query: (searchQuery||"").trim(), filters }]);
+                showToast("Search saved for this demo session");
+                return;
+              }
               try {
-                const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "saved-search-save", name, query: (searchQuery||"").trim(), filters: { ...discoveryPrefs, filterStyles, filterScore } }) });
+                const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "saved-search-save", name, query: (searchQuery||"").trim(), filters }) });
                 if (!r.ok) throw new Error("failed");
                 showToast("Search saved");
                 try { const lr = await apiFetch("/api/muse?type=saved-search-list"); const ld = await lr.json(); setSavedSearches(Array.isArray(ld.searches)?ld.searches:[]); } catch {}
@@ -3625,7 +3631,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               // filterStyles/filterScore, which do have their own persistence
               // effect), they just were never sent. Persist on this explicit Save
               // click rather than debouncing every slider tick.
-              apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: discoveryPrefs }) }).catch(() => {});
+              if (!DEMO_MODE) apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: discoveryPrefs }) }).catch(() => {});
             }}>{STRINGS.save}</button>
             {savedSearches.length > 0 && (
               <div style={{marginTop:16}}>
@@ -3640,16 +3646,17 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                         if (typeof f.filterScore==="number") setFilterScore(f.filterScore);
                         setShowDiscoveryPrefs(false);
                         showToast("Search applied");
-                      }} style={{flex:1,textAlign:"left",background:"none",border:"none",color:"var(--text)",fontSize:13,fontWeight:600,cursor:"pointer",padding:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.name}</button>
+                      }} style={{flex:1,minHeight:44,textAlign:"left",background:"none",border:"none",color:"var(--text)",fontSize:13,fontWeight:600,cursor:"pointer",padding:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.name}</button>
                       <button aria-label="Delete saved search" title="Delete" onClick={async (e)=>{
                         e.stopPropagation();
                         const prev = savedSearches;
                         setSavedSearches(p=>p.filter(x=>x.id!==s.id));
+                        if (DEMO_MODE) return;
                         try {
                           const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "saved-search-delete", searchId: s.id, id: s.id }) });
                           if (!r.ok) throw new Error("failed");
                         } catch { setSavedSearches(prev); showToast("Couldn't delete"); }
-                      }} style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:14,lineHeight:1,padding:"2px 4px"}}>✕</button>
+                      }} style={{width:44,minWidth:44,height:44,background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:14,lineHeight:1,padding:"2px 4px"}}>✕</button>
                     </div>
                   ))}
                 </div>
@@ -3663,7 +3670,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       {unmatchTarget && (
         <div ref={unmatchTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Unmatch">
           <div className="modal-header">
-            <button className="modal-back" onClick={()=>setUnmatchTarget(null)}><FiArrowLeft size={20} /></button>
+            <button className="modal-back" aria-label="Back" onClick={()=>setUnmatchTarget(null)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Unmatch</div>
             <button className="modal-close" onClick={()=>setUnmatchTarget(null)} aria-label="Close"><FiX size={18} /></button>
           </div>
@@ -3695,7 +3702,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       {blockTarget && (
         <div ref={blockTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Block user">
           <div className="modal-header">
-            <button className="modal-back" onClick={()=>setBlockTarget(null)}><FiArrowLeft size={20} /></button>
+            <button className="modal-back" aria-label="Back" onClick={()=>setBlockTarget(null)}><FiArrowLeft size={20} /></button>
             <div className="modal-title">Block</div>
             <button className="modal-close" onClick={()=>setBlockTarget(null)} aria-label="Close"><FiX size={18} /></button>
           </div>

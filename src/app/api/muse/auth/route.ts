@@ -5,6 +5,7 @@ import { safeServerError } from "@/lib/http";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { enforceRequestSafety, sanitizeText } from "@/lib/request-safety";
 import { signupWelcome, sendEmail } from "@/lib/email";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 function validatePassword(pw: string): string | null {
   if (pw.length < 6) return "Password must be at least 6 characters";
@@ -42,6 +43,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action } = body;
     const ip = clientIp(req);
+
+    // Demo accounts are read-only at the server boundary. Login/session/logout
+    // remain available to exercise the UI, but registration, email/password,
+    // profile, and deletion actions must not create or alter real accounts.
+    if (isDemoMode() && !["login", "session", "logout"].includes(String(action))) {
+      return NextResponse.json(demoModeUnavailable("Account changes"), { status: 409 });
+    }
 
     // Brute-force protection: cap auth attempts per IP.
     if (action === "register" && !await checkRate(ip, "register", 5)) {

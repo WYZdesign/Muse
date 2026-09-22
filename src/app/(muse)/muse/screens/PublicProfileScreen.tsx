@@ -227,7 +227,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                   <span style={{ fontSize: 26, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", color: "#fff" }}>{displayName}</span>
                   {user.age && (user as any).showAge !== false && <span style={{ fontSize: 22, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>{user.age}</span>}
-                  {(user.isVerified || user.verified) && <span role="button" tabIndex={0} title="Identity verified" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Identity Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#22c55e" }); }} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: "rgba(34,197,94,0.2)", border: "1.5px solid rgba(34,197,94,0.5)", fontSize: 12, fontWeight: 800, color: "#22c55e", pointerEvents: "auto", cursor: "pointer" }}>✓</span>}
+                  {(user.isVerified || user.verified) && <button type="button" aria-label="About identity verification" title="Identity verified" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Identity Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#22c55e" }); }} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, margin: -11, padding: 0, borderRadius: "50%", background: "rgba(34,197,94,0.2)", border: "1.5px solid rgba(34,197,94,0.5)", fontSize: 12, fontWeight: 800, color: "#22c55e", pointerEvents: "auto", cursor: "pointer" }}>✓</button>}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>
                   {/* Role badge */}
@@ -244,17 +244,17 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
                   )}
                 </div>
                 {user.online && (user as any).showOnline !== false && (
-                  <div role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Online", desc: "This member is online right now — a good time to reach out.", icon: "🟢", color: "#4ade80" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "#4ade80", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: 99, padding: "4px 10px", pointerEvents: "auto", cursor: "pointer" }}>
+                  <button type="button" aria-label="About online status" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Online", desc: "This member is online right now — a good time to reach out.", icon: "🟢", color: "#4ade80" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 5, minHeight: 44, fontSize: 12, fontWeight: 600, color: "#4ade80", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: 99, padding: "4px 10px", pointerEvents: "auto", cursor: "pointer" }}>
                     <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 6px rgba(74,222,128,0.5)" }} />
                     Online
-                  </div>
+                  </button>
                 )}
               </div>
               {/* Photo carousel dots */}
               {photos.length > 1 && (
                 <div style={{ position: "absolute", bottom: 16, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 6, zIndex: 4 }}>
                   {photos.map((_: string, i: number) => (
-                    <div key={i} onClick={() => setPhotoIdx(i)} role="button" tabIndex={0} aria-label={`Show photo ${i + 1}`} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPhotoIdx(i); } }} style={{ width: 7, height: 7, borderRadius: "50%", background: i === photoIdx ? "#FFD700" : "rgba(255,255,255,0.4)", cursor: "pointer", transition: "all .2s" }} />
+                    <span key={i} aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: i === photoIdx ? "#FFD700" : "rgba(255,255,255,0.4)", transition: "all .2s" }} />
                   ))}
                 </div>
               )}
@@ -367,19 +367,19 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.05 }}>Badges</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {user.isVerified && (
-                <span role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: "Identity Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "🛡", color: "#22c55e" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e", cursor: "pointer" }}>
+                <button type="button" onClick={() => setBadgeInfo({ name: "Identity Verified", desc: "Identity verified by Muse — we confirmed this member's government ID and professional credentials.", icon: "🛡", color: "#22c55e" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 44, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e", cursor: "pointer" }}>
                   <FiShield size={12} /> Identity Verified
-                </span>
+                </button>
               )}
               {user.isAgeVerified && (
-                <span role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: "Age Verified", desc: "This member has verified they're a legal adult — required for 18+ work and age-gated content.", icon: "✅", color: "#3b82f6" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.3)", color: "#3b82f6", cursor: "pointer" }}>
+                <button type="button" onClick={() => setBadgeInfo({ name: "Age Verified", desc: "This member has verified they're a legal adult — required for 18+ work and age-gated content.", icon: "✅", color: "#3b82f6" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 44, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.3)", color: "#3b82f6", cursor: "pointer" }}>
                   <FiCheck size={12} /> Age Verified
-                </span>
+                </button>
               )}
               {(user.badges || []).map((b: string) => (
-                <span key={b} role="button" tabIndex={0} onClick={() => setBadgeInfo({ name: b, desc: `A recognition badge earned by ${displayName} on Muse.`, icon: "🏅", color: "var(--gold)" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", cursor: "pointer" }}>
+                <button type="button" key={b} onClick={() => setBadgeInfo({ name: b, desc: `A recognition badge earned by ${displayName} on Muse.`, icon: "🏅", color: "var(--gold)" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 44, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", cursor: "pointer" }}>
                   {b}
-                </span>
+                </button>
               ))}
             </div>
           </div>

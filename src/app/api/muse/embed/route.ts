@@ -3,6 +3,7 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { embedText, aiEnabled } from "@/lib/ai";
 import { seedKnowledgeBase } from "@/lib/aiDocs";
+import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 /**
  * Muse Embedding Pipeline — OpenRouter + Supabase (replaces Ollama + Qdrant).
@@ -14,6 +15,7 @@ import { seedKnowledgeBase } from "@/lib/aiDocs";
  */
 export async function POST(req: NextRequest) {
   try {
+    if (isDemoMode()) return NextResponse.json(demoModeUnavailable("AI embedding"), { status: 409 });
     if (!await checkRate(clientIp(req), "embed", 30)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
