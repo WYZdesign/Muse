@@ -113,7 +113,7 @@ export interface BadgeInfo {
 export function BadgeInfoModal({ info, onClose }: { info: BadgeInfo | null; onClose: () => void }) {
   if (!info) return null;
   return (
-    <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={onClose}>
+    <div role="dialog" aria-modal="true" aria-label="Badge info" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={onClose}>
       <div style={{ background: "#1a0a2e", border: `1px solid ${info.color}40`, borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
           <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, background: `${info.color}20`, border: `1px solid ${info.color}40`, color: info.color, flexShrink: 0 }}>{info.icon}</div>

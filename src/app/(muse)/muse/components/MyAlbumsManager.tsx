@@ -211,7 +211,7 @@ export default function MyAlbumsManager({
         {photos.length === 0 && <div className="album-loading">No photos yet. Add your first one above.</div>}
 
         {showInviteManager && (
-          <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setShowInviteManager(false)}>
+          <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Invite manager" onClick={() => setShowInviteManager(false)}>
             <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 380, width: "90%", padding: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Album Access</div>
               <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Only people you toggle on below can see this album. Everyone else, including people you've matched with, cannot.</div>
@@ -260,7 +260,7 @@ export default function MyAlbumsManager({
       </button>
 
       {showCreate && (
-        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setShowCreate(false)}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Create album" onClick={() => setShowCreate(false)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 380, width: "90%", padding: 20 }}>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 14 }}>New Album</div>
             <input

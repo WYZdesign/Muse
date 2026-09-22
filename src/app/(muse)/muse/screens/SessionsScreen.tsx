@@ -349,7 +349,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#F2CC8F,#E07A5F,#F4A261,#F2CC8F,#E07A5F,#F2CC8F)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "relative", margin: 0, padding: 0, animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Sessions</div>
         <div style={{ width: 42 }} />
       </div>
-      <HScroll className="conn-tabs" gap={0} style={{ padding: "0 16px", justifyContent: "center" }}>
+      <HScroll className="conn-tabs" role="tablist" aria-label="Session tabs" gap={0} style={{ padding: "0 16px", justifyContent: "center" }}>
         {/* Small leading icon per tab (audit finding tu-2) — same treatment as
             Collab's category row, for the same glance-ability reason. */}
         {([["sessions", "Browse", FiCompass], ["bookings", "My Bookings", FiCalendar], ["requests", "Requests", FiInbox]] as const).map(([t, label, Icon]) => (
@@ -361,7 +361,7 @@ export const SessionsScreen = memo(function SessionsScreen({
       {sessTab === "sessions" && (
         <div style={{ margin: "0 16px 12px", display: "flex", alignItems: "center", gap: 8, background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, padding: "6px 12px", animation: "fadeIn .2s ease" }}>
           <FiSearch size={14} color="var(--muted)" />
-          <input className="inp search-input" placeholder="Name, type, or skill..." value={sessionSearchQuery} onChange={e => setSessionSearchQuery(e.target.value)} autoFocus style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
+          <input className="inp search-input" aria-label="Search sessions" placeholder="Name, type, or skill..." value={sessionSearchQuery} onChange={e => setSessionSearchQuery(e.target.value)} autoFocus style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
           {sessionSearchQuery && <button onClick={() => setSessionSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
         </div>
       )}
@@ -627,27 +627,27 @@ export const SessionsScreen = memo(function SessionsScreen({
         )}
       </div>
       {showCreate && (
-        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setShowCreate(false)}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Create session" onClick={() => setShowCreate(false)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 20 }}>
             <div className="modal-title" style={{ marginBottom: 4 }}>List a Session</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Become bookable — set your rate and availability.</div>
-            <input className="inp" placeholder="Title (e.g. Portrait Photoshoot)" value={newSession.title} onChange={e => setNewSession(p => ({ ...p, title: e.target.value }))} style={{ marginBottom: 8 }} />
+            <input className="inp" aria-label="Session title" placeholder="Title (e.g. Portrait Photoshoot)" value={newSession.title} onChange={e => setNewSession(p => ({ ...p, title: e.target.value }))} style={{ marginBottom: 8 }} />
             <textarea className="inp" placeholder="Description" rows={3} value={newSession.description} onChange={e => setNewSession(p => ({ ...p, description: e.target.value }))} style={{ marginBottom: 8, resize: "none" }} />
             <div style={{ display: "flex", gap: 8 }}>
-              <input className="inp" placeholder="Type" value={newSession.type} onChange={e => setNewSession(p => ({ ...p, type: e.target.value }))} style={{ flex: 1 }} />
-              <input className="inp" placeholder="Rate (e.g. $200)" value={newSession.rate} onChange={e => setNewSession(p => ({ ...p, rate: e.target.value }))} style={{ flex: 1 }} />
+              <input className="inp" aria-label="Session type" placeholder="Type" value={newSession.type} onChange={e => setNewSession(p => ({ ...p, type: e.target.value }))} style={{ flex: 1 }} />
+              <input className="inp" aria-label="Session rate" placeholder="Rate (e.g. $200)" value={newSession.rate} onChange={e => setNewSession(p => ({ ...p, rate: e.target.value }))} style={{ flex: 1 }} />
             </div>
-            <input className="inp" placeholder="Duration (e.g. 90 min)" value={newSession.duration} onChange={e => setNewSession(p => ({ ...p, duration: e.target.value }))} style={{ margin: "8px 0" }} />
+            <input className="inp" aria-label="Session duration" placeholder="Duration (e.g. 90 min)" value={newSession.duration} onChange={e => setNewSession(p => ({ ...p, duration: e.target.value }))} style={{ margin: "8px 0" }} />
             <div style={{ display: "flex", gap: 8 }}>
-              <input className="inp" placeholder="Date" value={newSession.date} onChange={e => setNewSession(p => ({ ...p, date: e.target.value }))} style={{ flex: 1 }} />
-              <input className="inp" placeholder="Location" value={newSession.location} onChange={e => setNewSession(p => ({ ...p, location: e.target.value }))} style={{ flex: 1 }} />
+              <input className="inp" aria-label="Session date" placeholder="Date" value={newSession.date} onChange={e => setNewSession(p => ({ ...p, date: e.target.value }))} style={{ flex: 1 }} />
+              <input className="inp" aria-label="Session location" placeholder="Location" value={newSession.location} onChange={e => setNewSession(p => ({ ...p, location: e.target.value }))} style={{ flex: 1 }} />
             </div>
             <button className="btn btn-gold" style={{ width: "100%", marginTop: 12, fontWeight: 700 }} onClick={submitSession} disabled={creating}>{creating ? "Listing..." : "List Session"}</button>
           </div>
         </div>
       )}
       {detailSession && (
-        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setDetailSession(null)}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Session details" onClick={() => setDetailSession(null)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 440, width: "90%", padding: 20, maxHeight: "80vh", overflowY: "auto" }}>
             {detailSession.img && (
               <div style={{ position: "relative", width: "100%", height: 160, borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
@@ -689,12 +689,12 @@ export const SessionsScreen = memo(function SessionsScreen({
         </div>
       )}
       {bookFormTarget && (
-        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => { if (!bookSubmitting) setBookFormTarget(null); }}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Book session" onClick={() => { if (!bookSubmitting) setBookFormTarget(null); }}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, width: "90%", padding: 20 }}>
             <div className="modal-title" style={{ marginBottom: 4 }}>{bookFormTarget.available ? "Book" : "Join Waitlist for"} {bookFormTarget.name}</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>A quick note for the host — sizing/prep and anything they should know before accepting.</div>
-            <input className="inp" placeholder="Sizing / preferences (optional)" value={bookForm.sizing} onChange={e => setBookForm(p => ({ ...p, sizing: e.target.value.slice(0, 100) }))} style={{ marginBottom: 8 }} />
-            <input className="inp" placeholder="Prep / special requirements (optional)" value={bookForm.requirements} onChange={e => setBookForm(p => ({ ...p, requirements: e.target.value.slice(0, 100) }))} style={{ marginBottom: 8 }} />
+            <input className="inp" aria-label="Sizing and preferences" placeholder="Sizing / preferences (optional)" value={bookForm.sizing} onChange={e => setBookForm(p => ({ ...p, sizing: e.target.value.slice(0, 100) }))} style={{ marginBottom: 8 }} />
+            <input className="inp" aria-label="Special requirements" placeholder="Prep / special requirements (optional)" value={bookForm.requirements} onChange={e => setBookForm(p => ({ ...p, requirements: e.target.value.slice(0, 100) }))} style={{ marginBottom: 8 }} />
             <textarea className="inp" placeholder="A short message to the host (optional)" rows={2} value={bookForm.message} onChange={e => setBookForm(p => ({ ...p, message: e.target.value.slice(0, 200) }))} style={{ resize: "none", marginBottom: 12 }} />
             <div style={{ display: "flex", gap: 8 }}>
               <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setBookFormTarget(null)} disabled={bookSubmitting}>{STRINGS.cancel}</button>
@@ -717,7 +717,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         </div>
       )}
       {cancelTarget && (
-        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setCancelTarget(null)}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Cancel booking" onClick={() => setCancelTarget(null)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 380, width: "90%", padding: 20 }}>
             <div className="modal-title" style={{ marginBottom: 6 }}>Cancel this booking?</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 18 }}>Any held payment will be released back to the client.</div>
@@ -729,7 +729,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         </div>
       )}
       {reviewTarget && (
-        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setReviewTarget(null)}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Leave review" onClick={() => setReviewTarget(null)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, width: "90%", padding: 20 }}>
             <div className="modal-title" style={{ marginBottom: 4 }}>Leave a Review</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>How was your shoot with {reviewTarget.host_id?.name || reviewTarget.user_id?.name || "them"}?</div>

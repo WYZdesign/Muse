@@ -260,7 +260,7 @@ export const CommunityScreen = memo(function CommunityScreen({
         <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#FF8A80,#FF4757,#FFD700,#FF8A80,#FF4757,#FF8A80)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", fontWeight: 800, animation: "shimmer 8s ease-in-out infinite" }}>Community</div>
         <button className="hdr-btn" onClick={() => setShowCreate(v => !v)} aria-label="Create" style={{ width: 34, height: 34 }}>+</button>
       </div>
-      <div className="conn-tabs" style={{ padding: "0 16px" }}>
+      <div className="conn-tabs" role="tablist" aria-label="Community tabs" style={{ padding: "0 16px" }}>
         {(["groups", "events"] as const).map(t => (
           <button key={t} role="tab" tabIndex={0} aria-selected={commTab === t} className={"conn-tab" + (commTab === t ? " active" : "")} onClick={() => setCommTab(t)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCommTab(t); } }}>{t === "groups" ? "Groups" : "Events"}</button>
         ))}
@@ -271,7 +271,7 @@ export const CommunityScreen = memo(function CommunityScreen({
           Community reads as the same control instead of a screen with no filtering
           at all. */}
       {commTab === "groups" && groupCategories.length > 1 && (
-        <div className="filter-scroll-row" style={{ padding: "10px 16px 2px" }}>
+        <div className="filter-scroll-row" role="tablist" aria-label="Group category filter" style={{ padding: "10px 16px 2px" }}>
           <button
             type="button"
             role="tab"
@@ -297,7 +297,7 @@ export const CommunityScreen = memo(function CommunityScreen({
       {/* DETAIL MODAL */}
       {detailItem && detailType && (
         <div className="modal-overlay" style={{ position: "fixed", zIndex: 500 }}>
-          <div role="presentation" aria-hidden="true" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} onClick={() => setDetailItem(null)} />
+          <div role="dialog" aria-modal="true" aria-label="Group detail" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} onClick={() => setDetailItem(null)} />
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxHeight: "85vh", background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: "24px 24px 0 0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 20px 0" }}>
               <div>
@@ -459,19 +459,19 @@ export const CommunityScreen = memo(function CommunityScreen({
           <div className="modal-body" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
             {commTab === "groups" ? (
               <>
-                <input className="inp" placeholder="Group name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} style={{ marginBottom: 8 }} />
-                <input className="inp" placeholder="Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} style={{ marginBottom: 8 }} />
-                <input className="inp" placeholder="Category (e.g. Photography, Fashion)" value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} style={{ marginBottom: 10 }} />
+                <input className="inp" aria-label="Group name" placeholder="Group name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} style={{ marginBottom: 8 }} />
+                <input className="inp" aria-label="Description" placeholder="Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} style={{ marginBottom: 8 }} />
+                <input className="inp" aria-label="Category" placeholder="Category (e.g. Photography, Fashion)" value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} style={{ marginBottom: 10 }} />
                 <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text2)", marginBottom: 12, cursor: "pointer" }}>
                   <input type="checkbox" checked={form.isNsfw} onChange={e => setForm(p => ({ ...p, isNsfw: e.target.checked }))} style={{ accentColor: "#ffd700", width: 16, height: 16 }} /> 18+ / NSFW group
                 </label>
               </>
             ) : (
               <>
-                <input className="inp" placeholder="Event title" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} style={{ marginBottom: 8 }} />
-                <input className="inp" placeholder="Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} style={{ marginBottom: 8 }} />
-                <input className="inp" placeholder="Date (e.g. Aug 28, 2026)" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={{ marginBottom: 8 }} />
-                <input className="inp" placeholder="Location" value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} style={{ marginBottom: 10 }} />
+                <input className="inp" aria-label="Event title" placeholder="Event title" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} style={{ marginBottom: 8 }} />
+                <input className="inp" aria-label="Event description" placeholder="Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} style={{ marginBottom: 8 }} />
+                <input className="inp" aria-label="Event date" placeholder="Date (e.g. Aug 28, 2026)" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={{ marginBottom: 8 }} />
+                <input className="inp" aria-label="Event location" placeholder="Location" value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} style={{ marginBottom: 10 }} />
               </>
             )}
             <div style={{ display: "flex", gap: 8 }}>

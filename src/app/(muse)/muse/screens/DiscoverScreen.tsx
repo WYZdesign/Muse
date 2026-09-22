@@ -311,7 +311,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
             {discoverSearchOpen && (
               <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0, animation: "fadeIn .25s ease" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 2, background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: "3px 5px 3px 14px", flex: 1, minWidth: 0 }}>
-                  <input className="inp search-input" placeholder="Name, style, type, or city..." value={discoverSearch} onChange={e => setDiscoverSearch(e.target.value)} autoFocus style={{ margin: 0, padding: "8px 0", fontSize: 14, flex: 1, minWidth: 0, border: "none", background: "transparent", boxShadow: "none" }} />
+                  <input className="inp search-input" aria-label="Search profiles" placeholder="Name, style, type, or city..." value={discoverSearch} onChange={e => setDiscoverSearch(e.target.value)} autoFocus style={{ margin: 0, padding: "8px 0", fontSize: 14, flex: 1, minWidth: 0, border: "none", background: "transparent", boxShadow: "none" }} />
                   {/* M7: this used to render a second, purely decorative search-icon
                       button here (it only blurred the input, didn't search or close
                       anything) alongside the real toggle button above — two magnifying
@@ -719,7 +719,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
       <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
       {/* Why this match? popover — traces the score back to the real calcMatch factors */}
       {whyInfo && (
-        <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setWhyInfo(null)}>
+        <div role="dialog" aria-modal="true" aria-label="Why this match" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setWhyInfo(null)}>
           <div style={{ background: "#1a0a2e", border: "1px solid rgba(255,215,0,0.25)", borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
               <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)", flexShrink: 0 }}>{whyInfo.score}%</div>

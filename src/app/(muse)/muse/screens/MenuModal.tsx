@@ -634,7 +634,7 @@ export const MenuModal = memo(function MenuModal({
 
   return (
     <div className={"hamburger-overlay" + (closing ? " closing" : "")} role="dialog" aria-modal="true" aria-label="Menu">
-      <div className="hamburger-backdrop" role="presentation" aria-hidden="true" onClick={() => setShowHamburger(false)} />
+      <div className="hamburger-backdrop" role="dialog" aria-modal="true" aria-label="Menu" onClick={() => setShowHamburger(false)} />
       <div className="hamburger-panel" ref={hamburgerRef}>
         <div
           className="hamburger-close"

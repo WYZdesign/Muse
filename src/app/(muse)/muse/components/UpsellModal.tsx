@@ -32,7 +32,7 @@ export default function UpsellModal({ open, onClose, feature, reason, icon = "âœ
   const unlockTiers = tiers.filter(t => t.name !== "Free");
 
   return (
-    <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={onClose} style={{ zIndex: 600 }}>
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Upgrade" onClick={onClose} style={{ zIndex: 600 }}>
       <div
         className="modal-panel"
         role="dialog"

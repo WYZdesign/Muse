@@ -340,7 +340,7 @@ export const FeedScreen = memo(function FeedScreen({
             (pill, 6px 14px padding, 11px/600 weight, colored fill on active) so this reads
             as the same control system-wide, tinted with Feed's own nebula-blue accent
             rather than Network's per-category rainbow (this row is one facet, not many). */}
-        <div className="filter-scroll-row" style={{ margin: "0 20px 10px", justifyContent: "center" }}>
+        <div className="filter-scroll-row" role="tablist" aria-label="Feed filter" style={{ margin: "0 20px 10px", justifyContent: "center" }}>
           {([
             { k: "all", l: "All" },
             { k: "photos", l: "Photos" },
@@ -617,6 +617,7 @@ export const FeedScreen = memo(function FeedScreen({
                       <div style={{ position: "relative" }}>
                         <input
                             className="inp"
+                            aria-label="Write a reply"
                             placeholder="Write a reply..."
                             value={postCommentTexts[post.id] || ""}
                             onChange={e => setPostCommentTexts(prev => ({ ...prev, [post.id]: e.target.value }))}
@@ -716,6 +717,7 @@ export const FeedScreen = memo(function FeedScreen({
                 <div style={{ position: "relative" }}>
                   <input
                     className="inp"
+                    aria-label="Post your reply"
                     placeholder="Post your reply…"
                     value={postCommentTexts[dp.id] || ""}
                     onChange={e => setPostCommentTexts(prev => ({ ...prev, [dp.id]: e.target.value }))}

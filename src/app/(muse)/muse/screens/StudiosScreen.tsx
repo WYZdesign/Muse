@@ -142,7 +142,7 @@ export const StudiosScreen = memo(function StudiosScreen({
         {/* Oracle — FD tab only (has scraped knowledge); others show general FAQ */}
         <div style={{ marginTop: 16, padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>🔮 {studio.name} Oracle</div>
-          <input className="inp" placeholder={studio.id === "fd" ? "Ask about booking, pricing, what's included…" : "Ask about this studio…"} value={oracleQ} onChange={(e) => setOracleQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") askOracle(); }} style={{ margin: 0 }} />
+          <input className="inp" aria-label="Ask about studio" placeholder={studio.id === "fd" ? "Ask about booking, pricing, what's included…" : "Ask about this studio…"} value={oracleQ} onChange={(e) => setOracleQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") askOracle(); }} style={{ margin: 0 }} />
           <button className="btn btn-gold" style={{ marginTop: 8, padding: "10px 0", borderRadius: 10, fontWeight: 700, fontSize: 12.5 }} onClick={askOracle}>Ask</button>
           {oracleAnswer && <div style={{ marginTop: 10, fontSize: 12, color: "var(--text2)", lineHeight: 1.6, padding: "10px 12px", borderRadius: 10, background: "rgba(255,215,0,0.06)" }}>{oracleAnswer}</div>}
         </div>

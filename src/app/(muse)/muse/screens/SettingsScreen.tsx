@@ -198,6 +198,7 @@ function OpacitySlider({ label, storageKey, cssVar }: { label: string; storageKe
       </div>
       <input
         type="range"
+        aria-label={label}
         min={0}
         max={4}
         step={1}
@@ -623,15 +624,15 @@ export const SettingsScreen = memo(function SettingsScreen({
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Age Range</div>
               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{discoveryPrefs.ageMin}</span>
-                <input type="range" min={18} max={65} value={discoveryPrefs.ageMin} onChange={e => setDiscoveryPrefs(p => ({ ...p, ageMin: Number(e.target.value) }))} style={{ flex: 1, minWidth: 0, accentColor: "var(--gold)" }} />
+                <input type="range" aria-label="Minimum age" min={18} max={65} value={discoveryPrefs.ageMin} onChange={e => setDiscoveryPrefs(p => ({ ...p, ageMin: Number(e.target.value) }))} style={{ flex: 1, minWidth: 0, accentColor: "var(--gold)" }} />
                 <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>to</span>
-                <input type="range" min={18} max={65} value={discoveryPrefs.ageMax} onChange={e => setDiscoveryPrefs(p => ({ ...p, ageMax: Number(e.target.value) }))} style={{ flex: 1, minWidth: 0, accentColor: "var(--gold)" }} />
+                <input type="range" aria-label="Maximum age" min={18} max={65} value={discoveryPrefs.ageMax} onChange={e => setDiscoveryPrefs(p => ({ ...p, ageMax: Number(e.target.value) }))} style={{ flex: 1, minWidth: 0, accentColor: "var(--gold)" }} />
                 <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{discoveryPrefs.ageMax}</span>
               </div>
             </div>
             <div style={{ padding: "0 0 10px" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Max Distance: {discoveryPrefs.distance} mi</div>
-              <input type="range" min={1} max={100} value={discoveryPrefs.distance} onChange={e => setDiscoveryPrefs(p => ({ ...p, distance: Number(e.target.value) }))} style={{ width: "100%", accentColor: "var(--gold)" }} />
+              <input type="range" aria-label="Maximum distance in miles" min={1} max={100} value={discoveryPrefs.distance} onChange={e => setDiscoveryPrefs(p => ({ ...p, distance: Number(e.target.value) }))} style={{ width: "100%", accentColor: "var(--gold)" }} />
             </div>
             <div style={{ padding: "0 0 10px" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Show Me</div>
@@ -897,8 +898,8 @@ export const SettingsScreen = memo(function SettingsScreen({
                     <option value="partnership">Partnership Idea</option>
                     <option value="other">Other</option>
                   </select>
-                  <input value={ideaTitle} onChange={e => setIdeaTitle(e.target.value)} placeholder="Give it a name*" style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
-                  <textarea value={ideaDescription} onChange={e => setIdeaDescription(e.target.value)} placeholder="Describe your idea — what should it do? What problem does it solve?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
+                  <input aria-label="Idea title" value={ideaTitle} onChange={e => setIdeaTitle(e.target.value)} placeholder="Give it a name*" style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
+                  <textarea aria-label="Idea description" value={ideaDescription} onChange={e => setIdeaDescription(e.target.value)} placeholder="Describe your idea — what should it do? What problem does it solve?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
                   <div style={{ display: "flex", gap: 8 }}>
                     <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)" }} disabled={ideaSubmitting || !ideaTitle.trim() || !ideaDescription.trim() || !authFetch} onClick={async () => { if (!authFetch) return; setIdeaSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit-idea", title: ideaTitle, description: ideaDescription, category: ideaCategory }) }); if (!r.ok) throw new Error("failed");
       showToast("Idea submitted — we appreciate it!"); setShowIdeaForm(false); setIdeaTitle(""); setIdeaDescription(""); } catch { showToast("Failed to submit idea"); } setIdeaSubmitting(false); }}>{ideaSubmitting ? "Sending…" : "Submit Idea"}</button>
@@ -988,6 +989,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             <input
               className="inp"
               type="password"
+              aria-label="Current password"
               placeholder="Current password (optional session)"
               value={pwCurrent}
               onChange={(e) => setPwCurrent(e.target.value)}
@@ -996,6 +998,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             <input
               className="inp"
               type="password"
+              aria-label="New password"
               placeholder="New password"
               value={pwNew}
               onChange={(e) => setPwNew(e.target.value)}
@@ -1110,7 +1113,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                       onClick={() => { setCpType(""); setCpCustomTypePending(true); }}><span>Add New +</span></div>
                   </div>
                   {cpCustomTypePending && (
-                    <input className="inp" placeholder="Type your creative role..." value={cpType} onChange={e => setCpType(e.target.value)} style={{ marginTop: 10 }} autoFocus />
+                    <input className="inp" aria-label="Creative role" placeholder="Type your creative role..." value={cpType} onChange={e => setCpType(e.target.value)} style={{ marginTop: 10 }} autoFocus />
                   )}
                 </div>
                 {row("Looking For", lookingForOptions(cpType), cpLooking, (v) => toggle(cpLooking, v, setCpLooking, 4), true)}
@@ -1128,7 +1131,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                   </div>
                   {cpShowCustomStyleInput && (
                     <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                      <input className="inp" placeholder="Type your own aesthetic..." value={cpCustomStyleDraft} onChange={e => setCpCustomStyleDraft(e.target.value)} style={{ margin: 0, flex: 1 }} autoFocus />
+                      <input className="inp" aria-label="Custom aesthetic" placeholder="Type your own aesthetic..." value={cpCustomStyleDraft} onChange={e => setCpCustomStyleDraft(e.target.value)} style={{ margin: 0, flex: 1 }} autoFocus />
                       <button className="btn btn-outline" style={{ padding: "0 16px" }} onClick={() => {
                         const v = cpCustomStyleDraft.trim();
                         if (!v) return;
@@ -1190,6 +1193,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                 className="inp"
                 type="text"
                 inputMode="numeric"
+                aria-label="Two-factor authentication code"
                 placeholder="Enter 6-digit code"
                 value={mfaVerifyCode}
                 onChange={e => setMfaVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -1314,12 +1318,12 @@ export const SettingsScreen = memo(function SettingsScreen({
           )}
           {briefTemplates.map((t, i) => (
             <div key={i} style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)" }}>
-              <input value={t.title} placeholder="Template name" onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, title: e.target.value } : x))}
+              <input aria-label="Template name" value={t.title} placeholder="Template name" onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, title: e.target.value } : x))}
                 style={{ width: "100%", marginBottom: 8, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
               <textarea value={t.desc} placeholder="What you're looking for" rows={2} onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, desc: e.target.value } : x))}
                 style={{ width: "100%", marginBottom: 8, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
               <div style={{ display: "flex", gap: 8 }}>
-                <input value={t.budget} placeholder="Budget (e.g. $500)" onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, budget: e.target.value } : x))}
+                <input aria-label="Template budget" value={t.budget} placeholder="Budget (e.g. $500)" onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, budget: e.target.value } : x))}
                   style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
                 <button onClick={() => setBriefTemplates((prev) => prev.filter((_, j) => j !== i))} aria-label="Delete template"
                   style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,138,128,0.4)", background: "transparent", color: "#ff8a80", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Delete</button>
@@ -1388,7 +1392,7 @@ export const SettingsScreen = memo(function SettingsScreen({
           ].map((f) => (
             <div key={f.label} style={{ marginTop: 12 }}>
               <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>{f.label}</div>
-              <input value={f.value} placeholder={f.ph} onChange={(e) => f.set(e.target.value)}
+              <input aria-label={f.label} value={f.value} placeholder={f.ph} onChange={(e) => f.set(e.target.value)}
                 style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
             </div>
           ))}
@@ -1428,7 +1432,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>{f.label}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 700 }}>{rateCurrency}</span>
-                <input type="number" min={0} placeholder={f.ph} value={f.value} onChange={(e) => f.set(e.target.value)}
+                <input type="number" min={0} aria-label={f.label} placeholder={f.ph} value={f.value} onChange={(e) => f.set(e.target.value)}
                   style={{ flex: 1, padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
               </div>
             </div>
@@ -1502,7 +1506,7 @@ export const SettingsScreen = memo(function SettingsScreen({
           ].map(f => (
             <div key={f.label} style={{ marginTop: 12 }}>
               <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>{f.label}</div>
-              <input type={f.type} placeholder={f.ph} value={f.value} onChange={e => f.set(e.target.value)}
+              <input type={f.type} aria-label={f.label} placeholder={f.ph} value={f.value} onChange={e => f.set(e.target.value)}
                 style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
             </div>
           ))}

@@ -297,7 +297,7 @@ export const ChatScreen = memo(function ChatScreen({
               ><FiMoreVertical size={20} /></button>
               {showChatMenu && (
                 <>
-                  <div role="presentation" aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 998 }} onClick={() => setShowChatMenu(false)} />
+                  <div role="dialog" aria-modal="true" aria-label="Chat menu" style={{ position: "fixed", inset: 0, zIndex: 998 }} onClick={() => setShowChatMenu(false)} />
                   <div role="menu" style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 999, minWidth: 168, background: "var(--panel-bg)", border: "1px solid var(--border-med)", borderRadius: 14, padding: 6, boxShadow: "0 12px 32px rgba(0,0,0,0.5)" }}>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setShowGallery(true); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiImage size={14} /> Media &amp; clips</button>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setShowChatSearch(true); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiSearch size={14} /> Search this chat</button>
@@ -441,7 +441,7 @@ export const ChatScreen = memo(function ChatScreen({
               style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 18, display: "flex", alignItems: "center", alignSelf: "center", cursor: "pointer", padding: 0 }}>
               <FiVideo size={20} />
             </button>
-            <input className="chat-inp" placeholder="Type a message..." value={chatText} onChange={e => { setChatText(e.target.value); if (sendTyping) sendTyping(); }} onKeyDown={e => { if (e.key === "Enter" && chatText.trim()) { sendChat(); } }} />
+            <input className="chat-inp" aria-label="Type a message" placeholder="Type a message..." value={chatText} onChange={e => { setChatText(e.target.value); if (sendTyping) sendTyping(); }} onKeyDown={e => { if (e.key === "Enter" && chatText.trim()) { sendChat(); } }} />
             <button className="send-btn" onClick={() => sendChat()}><FiSend size={18} /></button>
           </div>
         </div>

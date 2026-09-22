@@ -475,7 +475,7 @@ export const NetworkScreen = memo(function NetworkScreen({
       </div>
 
       {!MUSE_CLOSED_BETA_HIDE_SOCIAL && (
-      <div className="conn-tabs" style={{ padding: "0 16px" }}>
+      <div className="conn-tabs" role="tablist" aria-label="Network tabs" style={{ padding: "0 16px" }}>
         {(["pros", "forum"] as const).map((t) => (
           <div
             key={t}
@@ -556,7 +556,7 @@ export const NetworkScreen = memo(function NetworkScreen({
             </div>
             {/* Expanded filter panels — single-line horizontal scroll, color-coded per category */}
             {filterSections.experience && (
-              <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
+              <div className="filter-scroll-row" role="tablist" aria-label="Experience level filter" style={{ marginBottom: 10 }}>
                 {([
                   { k: "all", label: "All levels", color: "var(--muted)", accent: "rgba(255,255,255,0.1)" },
                   { k: "rising", label: "Rising", color: "#BBDEFB", accent: "rgba(187,222,251,0.3)" },
@@ -874,6 +874,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 >
                   <input
                     className="inp"
+                    aria-label="Forum post title"
                     placeholder="Title"
                     value={newPostTitle}
                     onChange={(e) => setNewPostTitle(e.target.value)}
@@ -953,7 +954,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               </div>
             )}
 
-            <div className="conn-tab-sub-scroll" style={{ display: "flex", gap: 6, alignItems: "center", margin: "0 20px 10px", flexWrap: "nowrap", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch", paddingTop: 10 }}>
+            <div className="conn-tab-sub-scroll" role="tablist" aria-label="Forum sort" style={{ display: "flex", gap: 6, alignItems: "center", margin: "0 20px 10px", flexWrap: "nowrap", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch", paddingTop: 10 }}>
               {!forumSearchOpen && (
                 <>
                   {(["hot", "new", "top"] as const).map((s) => (
@@ -975,6 +976,7 @@ export const NetworkScreen = memo(function NetworkScreen({
               {forumSearchOpen && (
                 <input
                   className="inp search-input"
+                  aria-label="Search the forum"
                   placeholder="Search the forum…"
                   value={forumSearch}
                   onChange={(e) => setForumSearch(e.target.value)}

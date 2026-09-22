@@ -100,7 +100,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
               visibly bled up into/behind the Apply button. Bumped clearance to 20px
               so the glow has room. */}
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
-            <input className="inp" placeholder="Promo code" value={promo} onChange={e => { setPromo(e.target.value); setPromoApplied(false); }} style={{ width: "100%", textTransform: "uppercase", letterSpacing: 1 }} />
+            <input className="inp" aria-label="Promo code" placeholder="Promo code" value={promo} onChange={e => { setPromo(e.target.value); setPromoApplied(false); }} style={{ width: "100%", textTransform: "uppercase", letterSpacing: 1 }} />
             <button className="btn btn-outline" style={{ width: "100%", padding: "10px 16px", opacity: applyingPromo ? 0.6 : 1 }} disabled={applyingPromo} onClick={async () => {
               const p = promo.trim().toUpperCase();
               if (!p) { showToast("Enter a promo code first"); return; }

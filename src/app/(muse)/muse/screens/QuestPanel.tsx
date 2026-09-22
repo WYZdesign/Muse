@@ -109,7 +109,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
   if (!show) return null;
 
   return (
-      <div className="quest-overlay" role="presentation" aria-hidden="true" onClick={onClose}>
+      <div className="quest-overlay" role="dialog" aria-modal="true" aria-label="Quests" onClick={onClose}>
         <div ref={panelRef} className="quest-panel" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="quest-header">

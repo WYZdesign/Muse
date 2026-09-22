@@ -2741,7 +2741,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         );
       })()}
       {showIntentPicker && intentProfile && (
-        <div className="intent-overlay" role="presentation" aria-hidden="true" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null);setIntentSelection([])}}>
+        <div className="intent-overlay" role="dialog" aria-modal="true" aria-label="Intent picker" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null);setIntentSelection([])}}>
           <div className="intent-modal" onClick={e=>e.stopPropagation()}>
             <div style={{textAlign:"center",marginBottom:16}}>
               <Image loading="lazy" src={intentProfile.img} alt="Avatar" width={60} height={60} style={{borderRadius:"50%",objectFit:"cover",marginBottom:8}} onError={handleImgError} />
@@ -3716,7 +3716,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         </div>
       )}
       {viewProfile && (
-        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={()=>setViewProfile(null)}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="View profile" onClick={()=>setViewProfile(null)}>
           <div className="modal-panel" onClick={e=>e.stopPropagation()} style={{maxWidth:420,width:"90%",maxHeight:"88vh",overflowY:"auto",borderRadius:24,padding:0,background:"linear-gradient(180deg,#0f081e,#0a0612)"}}>
             <div style={{position:"relative",width:"100%",aspectRatio:"3/4",overflow:"hidden"}}>
               {(() => {
@@ -3836,7 +3836,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       )}
       {/* ══════ SHARE MODAL ══════ */}
       {shareTarget && (
-        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setShareTarget(null)}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Share" onClick={() => setShareTarget(null)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", borderRadius: 24, padding: "24px 20px", background: "linear-gradient(180deg,#0f081e,#0a0612)" }}>
             <div style={{ textAlign: "center", marginBottom: 20 }}>
               <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", color: "var(--gold)" }}>Share</div>
@@ -3938,7 +3938,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       )}
       {/* ══════ SHARE PROFILE SHEET ══════ */}
       {showShareProfile && (
-        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={()=>setShowShareProfile(false)}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Share profile" onClick={()=>setShowShareProfile(false)}>
           <div className="share-sheet" onClick={e=>e.stopPropagation()}>
             <div className="share-title">Share Profile</div>
             <div className="share-options">

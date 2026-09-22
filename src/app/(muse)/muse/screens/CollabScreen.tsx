@@ -182,7 +182,7 @@ export const CollabScreen = memo(function CollabScreen({
           below the category tabs, with the search button INSIDE the bar. */}
       <div style={{ margin: "0 12px 10px", display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "6px 12px" }}>
         <FiSearch size={14} color="var(--muted)" />
-        <input className="inp search-input" placeholder="Describe what you're looking for..." value={briefSearchQuery} onChange={e => setBriefSearchQuery(e.target.value)} style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
+        <input className="inp search-input" aria-label="Search briefs" placeholder="Describe what you're looking for..." value={briefSearchQuery} onChange={e => setBriefSearchQuery(e.target.value)} style={{ flex: 1, margin: 0, padding: "4px 0", border: "none", background: "transparent", fontSize: 13, color: "var(--text)" }} />
         {briefSearchQuery && <button onClick={() => setBriefSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
       </div>
       {/* Audit fix (2026-09-08, wyzmind's Torreé batch item 3): .conn-tabs is a
@@ -193,7 +193,7 @@ export const CollabScreen = memo(function CollabScreen({
           exactly the "leaks out the left edge" Torreé flagged. Left-aligning
           (dropping the center) puts the first tab flush at the page edge like
           every other scrollable tab/chip row in the app. */}
-      <div className="conn-tabs" style={{ padding: "0 12px" }}>
+      <div className="conn-tabs" role="tablist" aria-label="Collaboration categories" style={{ padding: "0 12px" }}>
         {/* Small leading icon per tab (audit finding tu-2) — text-only tabs
             work fine at this row length, but a glance-able icon removes a
             beat of reading for a frequently-tapped row like this one. Kept
@@ -380,7 +380,7 @@ export const CollabScreen = memo(function CollabScreen({
         })()}
       </div>
       {safetyInfoBriefId !== null && (
-        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setSafetyInfoBriefId(null)}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Safety info" onClick={() => setSafetyInfoBriefId(null)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 340, width: "90%", padding: 20 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <div className="modal-title" style={{ display: "flex", alignItems: "center", gap: 8 }}><FiInfo size={16} color="var(--muted)" /> Safety reminder</div>
@@ -393,14 +393,14 @@ export const CollabScreen = memo(function CollabScreen({
         </div>
       )}
       {showPostBrief && (
-        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setShowPostBrief(false)}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Post brief" onClick={() => setShowPostBrief(false)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 20 }}>
             <div className="modal-title" style={{ marginBottom: 4 }}>{viewerSide(currentUser?.type) === "industry" ? "Post a Brief — find talent" : "Post a Brief"}</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Share a project, collab, or open call.</div>
-            <input className="inp" placeholder="Title" value={briefTitle} onChange={e => setBriefTitle(e.target.value)} style={{ marginBottom: 8 }} />
+            <input className="inp" aria-label="Brief title" placeholder="Title" value={briefTitle} onChange={e => setBriefTitle(e.target.value)} style={{ marginBottom: 8 }} />
             <textarea className="inp" placeholder="Describe the project" rows={3} value={briefDesc} onChange={e => setBriefDesc(e.target.value)} style={{ marginBottom: 8, resize: "none" }} />
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-              <input className="inp" placeholder="Budget" value={briefBudget} onChange={e => setBriefBudget(e.target.value)} style={{ flex: 1 }} />
+              <input className="inp" aria-label="Budget" placeholder="Budget" value={briefBudget} onChange={e => setBriefBudget(e.target.value)} style={{ flex: 1 }} />
               <select className="inp" value={briefCat} onChange={e => setBriefCat(e.target.value as any)} style={{ flex: 1 }}>
                 <option value="concept">Concept</option>
                 <option value="tfp">TFP</option>
@@ -413,7 +413,7 @@ export const CollabScreen = memo(function CollabScreen({
         </div>
       )}
       {safetyInfoOpen && (
-        <div className="modal-overlay" role="presentation" aria-hidden="true" onClick={() => setSafetyInfoOpen(false)}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Safety guidelines" onClick={() => setSafetyInfoOpen(false)}>
           <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", padding: 22, textAlign: "left" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text)" }}>Safety at your shoot</div>
