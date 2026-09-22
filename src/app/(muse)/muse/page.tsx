@@ -2925,9 +2925,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                   <div className="onboard-content">
                     <div className="step-title">Your Info</div>
                     <div className="step-sub">Tell us about yourself</div>
-                    <input className="inp" placeholder="Display Name" value={obData.name||""} onChange={e=>setObData(d=>({...d,name:e.target.value}))} />
-                    <input className="inp" placeholder="Location (City, State)" value={obData.loc||""} onChange={e=>setObData(d=>({...d,loc:e.target.value}))} />
-                    <textarea className="inp" placeholder="Who are you as a creative?" rows={3} value={obData.bio||""} onChange={e=>setObData(d=>({...d,bio:e.target.value}))} />
+                    <input className="inp" aria-label="Display name" placeholder="Display Name" value={obData.name||""} onChange={e=>setObData(d=>({...d,name:e.target.value}))} />
+                    <input className="inp" aria-label="Location" placeholder="Location (City, State)" value={obData.loc||""} onChange={e=>setObData(d=>({...d,loc:e.target.value}))} />
+                    <textarea className="inp" aria-label="Bio" placeholder="Who are you as a creative?" rows={3} value={obData.bio||""} onChange={e=>setObData(d=>({...d,bio:e.target.value}))} />
                     <button className="btn btn-gold" disabled={!(obData.name||"").trim()} style={!(obData.name||"").trim()?{opacity:0.5}:undefined} onClick={()=>setObStep(2)}>Next</button>
                     <button className="back-link" onClick={()=>setObStep(0)}>Back</button>
                   </div>
@@ -2965,7 +2965,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                       </div>
                     </div>
                     {(obData as any).customTypePending && (
-                      <input className="inp" placeholder="Type your creative role..." value={obData.type||""} onChange={e=>setObData(d=>({...d,type:e.target.value} as any))} style={{ marginTop: 10 }} autoFocus />
+                      <input className="inp" aria-label="Creative role" placeholder="Type your creative role..." value={obData.type||""} onChange={e=>setObData(d=>({...d,type:e.target.value} as any))} style={{ marginTop: 10 }} autoFocus />
                     )}
                     {!obData.type && <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", margin: "6px 0 2px" }}>Select one to continue</div>}
                     <button className="btn btn-gold" disabled={!obData.type} style={!obData.type?{opacity:0.5}:undefined} onClick={()=>setObStep(3)}>Next</button>
@@ -3001,7 +3001,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                     </div>
                     {(obData as any).showCustomStyleInput && (
                       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                        <input className="inp" placeholder="Type your own aesthetic..." value={(obData as any).customStyleDraft||""} onChange={e=>setObData(d=>({...d,customStyleDraft:e.target.value} as any))} style={{ margin: 0, flex: 1 }} autoFocus />
+                        <input className="inp" aria-label="Custom aesthetic" placeholder="Type your own aesthetic..." value={(obData as any).customStyleDraft||""} onChange={e=>setObData(d=>({...d,customStyleDraft:e.target.value} as any))} style={{ margin: 0, flex: 1 }} autoFocus />
                         <button className="btn btn-outline" style={{ padding: "0 16px" }} onClick={() => {
                           const v = ((obData as any).customStyleDraft || "").trim();
                           if (!v) return;
@@ -3116,11 +3116,11 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                       <div>
                         <div className="step-title">Zodiac Calculator</div>
                         <div className="step-sub">Enter your birth date</div>
-                        <select className="inp" value={testBirthMonth} onChange={e=>setTestBirthMonth(e.target.value)}>
+                        <select className="inp" aria-label="Birth month" value={testBirthMonth} onChange={e=>setTestBirthMonth(e.target.value)}>
                           <option value="">Month</option>
                           {["January","February","March","April","May","June","July","August","September","October","November","December"].map((m,i)=><option key={i} value={String(i+1)}>{m}</option>)}
                         </select>
-                        <input className="inp" placeholder="Day" type="number" min={1} max={31} value={testBirthDay} onChange={e=>setTestBirthDay(e.target.value)} />
+                        <input className="inp" aria-label="Birth day" placeholder="Day" type="number" min={1} max={31} value={testBirthDay} onChange={e=>setTestBirthDay(e.target.value)} />
                         <button className="btn btn-gold" onClick={()=>{if(testBirthMonth&&testBirthDay){const z=calcZodiac(parseInt(testBirthMonth),parseInt(testBirthDay));setObData(d=>({...d,zodiac:z}));showToast("You are a "+z+"! "+ZE[z]);setObStep(14)}}}>Calculate</button>
                         <button className="back-link" onClick={()=>setObStep(10)}>Back</button>
                       </div>
@@ -3129,7 +3129,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                       <div>
                         <div className="step-title">Chinese Zodiac</div>
                         <div className="step-sub">Enter your birth year</div>
-                        <input className="inp" placeholder="Year (e.g. 1995)" type="number" min={1900} max={2026} value={testBirthYear} onChange={e=>setTestBirthYear(e.target.value)} />
+                        <input className="inp" aria-label="Birth year" placeholder="Year (e.g. 1995)" type="number" min={1900} max={2026} value={testBirthYear} onChange={e=>setTestBirthYear(e.target.value)} />
                         <button className="btn btn-gold" onClick={()=>{if(testBirthYear){const c=calcChineseZodiac(parseInt(testBirthYear));setObData(d=>({...d,chinese:c}));showToast("You are the "+c+"! "+CE[c]);setObStep(14)}}}>Calculate</button>
                         <button className="back-link" onClick={()=>setObStep(10)}>Back</button>
                       </div>
@@ -3168,12 +3168,12 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                       <div>
                         <div className="step-title">Life Path Number</div>
                         <div className="step-sub">Enter your full birth date</div>
-                        <select className="inp" value={testBirthMonth} onChange={e=>setTestBirthMonth(e.target.value)}>
+                        <select className="inp" aria-label="Birth month" value={testBirthMonth} onChange={e=>setTestBirthMonth(e.target.value)}>
                           <option value="">Month</option>
                           {["January","February","March","April","May","June","July","August","September","October","November","December"].map((m,i)=><option key={i} value={String(i+1)}>{m}</option>)}
                         </select>
-                        <input className="inp" placeholder="Day" type="number" min={1} max={31} value={testBirthDay} onChange={e=>setTestBirthDay(e.target.value)} />
-                        <input className="inp" placeholder="Year" type="number" min={1900} max={2026} value={testBirthYear} onChange={e=>setTestBirthYear(e.target.value)} />
+                        <input className="inp" aria-label="Birth day" placeholder="Day" type="number" min={1} max={31} value={testBirthDay} onChange={e=>setTestBirthDay(e.target.value)} />
+                        <input className="inp" aria-label="Birth year" placeholder="Year" type="number" min={1900} max={2026} value={testBirthYear} onChange={e=>setTestBirthYear(e.target.value)} />
                         <button className="btn btn-gold" onClick={()=>{if(testBirthMonth&&testBirthDay&&testBirthYear){const lp=calcLifePath(parseInt(testBirthMonth),parseInt(testBirthDay),parseInt(testBirthYear));setObData(d=>({...d,lifePath:lp}));showToast("Life Path "+lp+"!");setObStep(14)}}}>Calculate</button>
                         <button className="back-link" onClick={()=>setObStep(10)}>Back</button>
                       </div>
@@ -3281,7 +3281,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                       <div style={{fontSize:12,fontWeight:700,color:"var(--gold)",letterSpacing:0.4,textTransform:"uppercase",marginBottom:4}}>Have a referral code?</div>
                       <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginBottom:10}}>Optional — you and a friend both get a free month.</div>
                       <div style={{display:"flex",gap:8}}>
-                        <input className="inp" placeholder="MUSE-XXXXXX" value={obData.referralCode || ""} onChange={e=>setObData(prev=>({...prev,referralCode:e.target.value}))} style={{margin:0,flex:1,textTransform:"uppercase",letterSpacing:1,fontFamily:"monospace"}} />
+                        <input className="inp" aria-label="Referral code" placeholder="MUSE-XXXXXX" value={obData.referralCode || ""} onChange={e=>setObData(prev=>({...prev,referralCode:e.target.value}))} style={{margin:0,flex:1,textTransform:"uppercase",letterSpacing:1,fontFamily:"monospace"}} />
                       </div>
                       {obData.referralCode && obData.referralCode.length >= 6 && (
                         <div style={{fontSize:11,color:"#4ecdc4",marginTop:8}}>🎉 You and your friend will both get a free month when you subscribe!</div>
@@ -3443,7 +3443,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                 ✦ Liking {likeNoteAnchor.type === "prompt" ? `their prompt: "${likeNoteAnchor.value}"` : likeNoteAnchor.value.toLowerCase()}
               </div>
             )}
-            <textarea className="inp" placeholder="Send a note with your like…" rows={4} value={likeNoteText} onChange={e=>setLikeNoteText(e.target.value)} style={{fontSize:14,resize:"none",borderRadius:12}} />
+            <textarea className="inp" aria-label="Like note" placeholder="Send a note with your like…" rows={4} value={likeNoteText} onChange={e=>setLikeNoteText(e.target.value)} style={{fontSize:14,resize:"none",borderRadius:12}} />
             <div style={{fontSize:12,color:"var(--muted)",textAlign:"right"}}>{likeNoteText.length}/200</div>
             <button className="btn btn-gold" onClick={async ()=>{
               if (!noteTargetProfile) return;
@@ -3932,7 +3932,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                 <div key="other" className={"chip"+(editCustomTypePending?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(""); setEditCustomTypePending(true); } }} onClick={()=>{setEditType("");setEditCustomTypePending(true);}}><span>Add New +</span></div>
               </div>
               {editCustomTypePending && (
-                <input className="inp" placeholder="Type your creative role..." value={editType} onChange={e=>setEditType(e.target.value)} style={{ marginTop: 10 }} />
+                <input className="inp" aria-label="Creative role" placeholder="Type your creative role..." value={editType} onChange={e=>setEditType(e.target.value)} style={{ marginTop: 10 }} />
               )}
             </div>
             <div style={{ marginBottom: 14 }}>

@@ -1325,7 +1325,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             <div key={i} style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)" }}>
               <input aria-label="Template name" value={t.title} placeholder="Template name" onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, title: e.target.value } : x))}
                 style={{ width: "100%", marginBottom: 8, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
-              <textarea value={t.desc} placeholder="What you're looking for" rows={2} onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, desc: e.target.value } : x))}
+              <textarea aria-label="Template description" value={t.desc} placeholder="What you're looking for" rows={2} onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, desc: e.target.value } : x))}
                 style={{ width: "100%", marginBottom: 8, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
               <div style={{ display: "flex", gap: 8 }}>
                 <input aria-label="Template budget" value={t.budget} placeholder="Budget (e.g. $500)" onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, budget: e.target.value } : x))}
@@ -1360,7 +1360,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                 { k: "name" as const, ph: "Name" },
                 { k: "email" as const, ph: "Email" },
               ].map((f) => (
-                <input key={f.k} value={m[f.k]} placeholder={f.ph} onChange={(e) => setTeamMembers((prev) => prev.map((x, j) => j === i ? { ...x, [f.k]: e.target.value } : x))}
+                <input key={f.k} aria-label={f.ph} value={m[f.k]} placeholder={f.ph} onChange={(e) => setTeamMembers((prev) => prev.map((x, j) => j === i ? { ...x, [f.k]: e.target.value } : x))}
                   style={{ width: "100%", marginBottom: 8, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
               ))}
               <div style={{ display: "flex", gap: 8 }}>
@@ -1445,7 +1445,7 @@ export const SettingsScreen = memo(function SettingsScreen({
 
           <div style={{ marginTop: 12 }}>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Notes shown to clients (optional)</div>
-            <input type="text" placeholder="e.g. Travel billed separately" value={rateNotes} onChange={(e) => setRateNotes(e.target.value)}
+            <input type="text" aria-label="Rate notes" placeholder="e.g. Travel billed separately" value={rateNotes} onChange={(e) => setRateNotes(e.target.value)}
               style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
           </div>
 

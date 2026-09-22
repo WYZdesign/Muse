@@ -116,11 +116,11 @@ export default function SelfDiscoveryModal({ open, onClose, obData, onSaved, api
             <div>
               <div className="step-title">Zodiac Calculator</div>
               <div className="step-sub">Enter your birth date</div>
-              <select className="inp" value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)}>
+              <select className="inp" aria-label="Birth month" value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)}>
                 <option value="">Month</option>
                 {MONTHS.map((m, i) => <option key={i} value={String(i + 1)}>{m}</option>)}
               </select>
-              <input className="inp" placeholder="Day" type="number" min={1} max={31} value={birthDay} onChange={(e) => setBirthDay(e.target.value)} />
+              <input className="inp" aria-label="Birth day" placeholder="Day" type="number" min={1} max={31} value={birthDay} onChange={(e) => setBirthDay(e.target.value)} />
               <button className="btn btn-gold" disabled={saving} onClick={() => { if (birthMonth && birthDay) { const z = calcZodiac(parseInt(birthMonth), parseInt(birthDay)); save("zodiac", "zodiac", z, "You are a " + z + "! " + ZE[z]); } }}>Calculate</button>
               <button className="back-link" onClick={goBackToMenu}>Back</button>
             </div>
@@ -130,7 +130,7 @@ export default function SelfDiscoveryModal({ open, onClose, obData, onSaved, api
             <div>
               <div className="step-title">Chinese Zodiac</div>
               <div className="step-sub">Enter your birth year</div>
-              <input className="inp" placeholder="Year (e.g. 1995)" type="number" min={1900} max={2026} value={birthYear} onChange={(e) => setBirthYear(e.target.value)} />
+              <input className="inp" aria-label="Birth year" placeholder="Year (e.g. 1995)" type="number" min={1900} max={2026} value={birthYear} onChange={(e) => setBirthYear(e.target.value)} />
               <button className="btn btn-gold" disabled={saving} onClick={() => { if (birthYear) { const c = calcChineseZodiac(parseInt(birthYear)); save("chinese", "chinese", c, "You are the " + c + "! " + CE[c]); } }}>Calculate</button>
               <button className="back-link" onClick={goBackToMenu}>Back</button>
             </div>
@@ -171,12 +171,12 @@ export default function SelfDiscoveryModal({ open, onClose, obData, onSaved, api
             <div>
               <div className="step-title">Life Path Number</div>
               <div className="step-sub">Enter your full birth date</div>
-              <select className="inp" value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)}>
+              <select className="inp" aria-label="Birth month" value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)}>
                 <option value="">Month</option>
                 {MONTHS.map((m, i) => <option key={i} value={String(i + 1)}>{m}</option>)}
               </select>
-              <input className="inp" placeholder="Day" type="number" min={1} max={31} value={birthDay} onChange={(e) => setBirthDay(e.target.value)} />
-              <input className="inp" placeholder="Year" type="number" min={1900} max={2026} value={birthYear} onChange={(e) => setBirthYear(e.target.value)} />
+              <input className="inp" aria-label="Birth day" placeholder="Day" type="number" min={1} max={31} value={birthDay} onChange={(e) => setBirthDay(e.target.value)} />
+              <input className="inp" aria-label="Birth year" placeholder="Year" type="number" min={1900} max={2026} value={birthYear} onChange={(e) => setBirthYear(e.target.value)} />
               <button className="btn btn-gold" disabled={saving} onClick={() => { if (birthMonth && birthDay && birthYear) { const lp = calcLifePath(parseInt(birthMonth), parseInt(birthDay), parseInt(birthYear)); save("life_path", "lifePath", lp, "Life Path " + lp + "!"); } }}>Calculate</button>
               <button className="back-link" onClick={goBackToMenu}>Back</button>
             </div>

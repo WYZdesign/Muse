@@ -641,7 +641,7 @@ export const SessionsScreen = memo(function SessionsScreen({
             <div className="modal-title" style={{ marginBottom: 4 }}>List a Session</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Become bookable — set your rate and availability.</div>
             <input className="inp" aria-label="Session title" placeholder="Title (e.g. Portrait Photoshoot)" value={newSession.title} onChange={e => setNewSession(p => ({ ...p, title: e.target.value }))} style={{ marginBottom: 8 }} />
-            <textarea className="inp" placeholder="Description" rows={3} value={newSession.description} onChange={e => setNewSession(p => ({ ...p, description: e.target.value }))} style={{ marginBottom: 8, resize: "none" }} />
+            <textarea className="inp" aria-label="Session description" placeholder="Description" rows={3} value={newSession.description} onChange={e => setNewSession(p => ({ ...p, description: e.target.value }))} style={{ marginBottom: 8, resize: "none" }} />
             <div style={{ display: "flex", gap: 8 }}>
               <input className="inp" aria-label="Session type" placeholder="Type" value={newSession.type} onChange={e => setNewSession(p => ({ ...p, type: e.target.value }))} style={{ flex: 1 }} />
               <input className="inp" aria-label="Session rate" placeholder="Rate (e.g. $200)" value={newSession.rate} onChange={e => setNewSession(p => ({ ...p, rate: e.target.value }))} style={{ flex: 1 }} />
@@ -704,7 +704,7 @@ export const SessionsScreen = memo(function SessionsScreen({
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>A quick note for the host — sizing/prep and anything they should know before accepting.</div>
             <input className="inp" aria-label="Sizing and preferences" placeholder="Sizing / preferences (optional)" value={bookForm.sizing} onChange={e => setBookForm(p => ({ ...p, sizing: e.target.value.slice(0, 100) }))} style={{ marginBottom: 8 }} />
             <input className="inp" aria-label="Special requirements" placeholder="Prep / special requirements (optional)" value={bookForm.requirements} onChange={e => setBookForm(p => ({ ...p, requirements: e.target.value.slice(0, 100) }))} style={{ marginBottom: 8 }} />
-            <textarea className="inp" placeholder="A short message to the host (optional)" rows={2} value={bookForm.message} onChange={e => setBookForm(p => ({ ...p, message: e.target.value.slice(0, 200) }))} style={{ resize: "none", marginBottom: 12 }} />
+            <textarea className="inp" aria-label="Message to host" placeholder="A short message to the host (optional)" rows={2} value={bookForm.message} onChange={e => setBookForm(p => ({ ...p, message: e.target.value.slice(0, 200) }))} style={{ resize: "none", marginBottom: 12 }} />
             <div style={{ display: "flex", gap: 8 }}>
               <button className="btn btn-outline" style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 12 }} onClick={() => setBookFormTarget(null)} disabled={bookSubmitting}>{STRINGS.cancel}</button>
               <button
@@ -747,7 +747,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                 <button key={n} onClick={() => setReviewRating(n)} style={{ background: "none", border: "none", fontSize: 30, cursor: "pointer", color: n <= reviewRating ? "var(--gold)" : "var(--border-subtle)", lineHeight: 1 }}>{n <= reviewRating ? "★" : "☆"}</button>
               ))}
             </div>
-            <textarea className="inp" placeholder="Share your experience (optional)" rows={3} value={reviewBody} onChange={e => setReviewBody(e.target.value)} style={{ resize: "none" }} />
+            <textarea className="inp" aria-label="Review" placeholder="Share your experience (optional)" rows={3} value={reviewBody} onChange={e => setReviewBody(e.target.value)} style={{ resize: "none" }} />
             <button className="btn btn-gold" style={{ width: "100%", marginTop: 12, fontWeight: 700 }} onClick={submitReview} disabled={reviewSending}>{reviewSending ? "Submitting..." : "Submit Review"}</button>
           </div>
         </div>

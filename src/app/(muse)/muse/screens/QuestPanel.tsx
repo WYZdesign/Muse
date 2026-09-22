@@ -122,7 +122,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
               <div style={{ fontSize: 12, color: "var(--text2)" }}>Complete challenges, earn rewards</div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", padding: 8 }}><FiX size={20} /></button>
+          <button onClick={onClose} aria-label="Close quests" style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", padding: 8 }}><FiX size={20} /></button>
         </div>
 
         {/* XP + Streak Row */}
