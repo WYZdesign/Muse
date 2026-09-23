@@ -7,6 +7,12 @@ import { enforceRequestSafety, sanitizeText } from "@/lib/request-safety";
 import { signupWelcome, sendEmail } from "@/lib/email";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
+const ACCOUNT_DELETION_RETENTION_DAYS = 30;
+
+function deletionPurgeAt(now = new Date()): string {
+  return new Date(now.getTime() + ACCOUNT_DELETION_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+
 function validatePassword(pw: string): string | null {
   if (pw.length < 6) return "Password must be at least 6 characters";
   if (!/[A-Z]/.test(pw)) return "Password needs a capital letter";
@@ -128,6 +134,15 @@ export async function POST(req: NextRequest) {
 
       const sb = getServiceClient();
       const { data: profile } = await sb.from("muse_profiles").select("*").eq("auth_id", authData.user.id).maybeSingle();
+
+      // Supabase can still authenticate an account during the retention
+      // window. Do not issue an application session while deletion is pending.
+      if (profile?.suspended) {
+        return NextResponse.json({
+          error: (profile as any).deletion_requested_at ? "Account deletion is pending" : "Account suspended",
+          code: (profile as any).deletion_requested_at ? "ACCOUNT_DELETION_PENDING" : "ACCOUNT_SUSPENDED",
+        }, { status: 403 });
+      }
 
       return NextResponse.json({ success: true, user: authData.user, profile: pubProfile(profile), session: authData.session });
     }
@@ -270,26 +285,16 @@ export async function POST(req: NextRequest) {
       // Suspended accounts cannot self-delete — this preserves the evidence
       // trail for moderation investigation.
       if ((profile as any).suspended) return NextResponse.json({ error: "Account suspended — cannot delete", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
-      const pid = profile.id;
-      await sb.from("muse_messages").delete().or(`sender_id.eq.${pid},receiver_id.eq.${pid}`);
-      await sb.from("muse_matches").delete().or(`user_id.eq.${pid},target_id.eq.${pid}`);
-      await sb.from("muse_feed_posts").delete().eq("author_id", pid);
-      await sb.from("muse_briefs").delete().eq("author_id", pid);
-      await sb.from("muse_brief_applications").delete().eq("user_id", pid);
-      await sb.from("muse_forum_posts").delete().eq("author_id", pid);
-      await sb.from("muse_forum_replies").delete().eq("user_id", pid);
-      await sb.from("muse_connections").delete().or(`user_id.eq.${pid},target_id.eq.${pid}`);
-      await sb.from("muse_community_members").delete().eq("user_id", pid);
-      await sb.from("muse_bookings").delete().eq("user_id", pid);
-      await sb.from("muse_notifications").delete().or(`user_id.eq.${pid},from_id.eq.${pid}`);
-      await sb.from("muse_push_subscriptions").delete().eq("user_id", pid);
-      await sb.from("muse_activity_log").delete().eq("user_id", pid);
-      await sb.from("muse_reports").delete().eq("reporter_id", pid);
-      await sb.from("muse_blocks").delete().eq("user_id", pid);
-      await sb.from("muse_verification_sessions").delete().eq("user_id", pid);
-      await sb.from("muse_profiles").delete().eq("id", pid);
-      await sb.auth.admin.deleteUser(user.id);
-      return NextResponse.json({ success: true });
+      const requestedAt = new Date().toISOString();
+      const purgeAt = deletionPurgeAt();
+      const { error: scheduleError } = await sb.from("muse_profiles").update({
+        suspended: true,
+        suspended_at: requestedAt,
+        deletion_requested_at: requestedAt,
+        deletion_purge_after: purgeAt,
+      }).eq("id", profile.id);
+      if (scheduleError) return safeServerError(scheduleError, "schedule account deletion");
+      return NextResponse.json({ success: true, deletionScheduledFor: purgeAt });
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });

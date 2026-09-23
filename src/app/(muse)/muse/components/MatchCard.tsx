@@ -197,17 +197,6 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
             {typeof m.distanceMi === "number" && <span style={{ fontSize: 11, color: "var(--muted)" }}>{m.distanceMi} mi</span>}
           </div>
         )}
-        {/* Audit fix (2026-09-08, wyzmind's Torreé batch item 4): list-view
-            preview was name/type/location/badges but never the actual last
-            message, even though every card already shows a message TIME on
-            the far right (.match-time) implying there's something to preview.
-            Adds a one-line, ellipsis-truncated preview of the last chat
-            message when a conversation exists. */}
-        {isList && !!m.messages?.length && (
-          <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {m.messages[m.messages.length - 1]?.text || ""}
-          </div>
-        )}
         {isList && (
           // Audit fix (2026-09-08, same batch item 4): "Bubble badges
           // inconsistent on some matches (list view) only" — the trait
@@ -227,8 +216,13 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
             if (m.lifePath) items.push(<button key="lp" className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `Life Path ${m.lifePath}`, desc: LIFE_PATH_FULL[String(m.lifePath)] || "", icon: <LifePathIcon n={Number(m.lifePath)} size={20} />, color: "#98FB98" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><LifePathIcon n={Number(m.lifePath)} size={11} /> LP {m.lifePath}</button>);
             (m.skills || []).forEach((s: string) => items.push(<span key={"s-" + s} className="match-badge">{s}</span>));
             (m.looking || []).forEach((l: string) => items.push(<span key={"l-" + l} className="match-badge" style={{ background: "rgba(255,105,180,0.12)", color: "#FF69B4", border: "1px solid rgba(255,105,180,0.2)" }}>looking for {l}</span>));
-            const shown = items.slice(0, 4);
-            return shown.length > 0 ? <div className="match-badges" style={{ marginTop: 4 }}>{shown}</div> : null;
+            // A list card is a scan surface, not a profile summary. Three
+            // chips keep the metadata to one calm row on mobile; the count
+            // preserves the fact that more context is available after opening
+            // the match instead of forcing a noisy second wrapped row.
+            const shown = items.slice(0, 3);
+            const remaining = items.length - shown.length;
+            return shown.length > 0 ? <div className="match-badges match-badges-list">{shown}{remaining > 0 && <span className="match-badge match-badge-more">+{remaining}</span>}</div> : null;
           })()
         )}
         {!isList && (

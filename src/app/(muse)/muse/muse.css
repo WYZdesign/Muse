@@ -528,6 +528,7 @@ img{background-color:var(--card-bg)}
 .match-list::-webkit-scrollbar{width:0}
 .section-header{padding:10px 20px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:2px}
 .match-card{display:flex;align-items:center;padding:24px 20px;min-height:150px;border-radius:20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);gap:20px;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);animation:matchCardIn .35s cubic-bezier(.4,0,.2,1);position:relative}
+.match-card:not(.match-card-grid){padding:18px 16px;min-height:128px;border-radius:18px;gap:16px}
 /* "New match" vertical color tab on the right edge of list rows */
 .match-new-tab{position:absolute;top:12px;bottom:12px;right:0;width:4px;border-radius:4px 0 0 4px;background:linear-gradient(180deg,var(--gold),var(--coral),var(--pink),var(--gold));background-size:100% 320%;animation:lavaFlow 5s ease-in-out infinite;box-shadow:0 0 8px rgba(255,215,0,0.35)}
 .match-card:hover{background:rgba(255,215,0,0.03)}
@@ -557,8 +558,10 @@ img{background-color:var(--card-bg)}
 .match-msg{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px;background:transparent}
 .match-loc-dist{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;font-size:12px;color:var(--text2)}
 .match-loc-dist span{white-space:nowrap}
-.match-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
-.match-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(var(--gold),0.15);color:var(--gold)}
+.match-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.match-badges-list{align-items:center;min-height:28px;overflow:hidden}
+.match-badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:99px;background:rgba(var(--gold),0.15);color:var(--gold);line-height:1.2}
+.match-badge-more{background:transparent;border:1px solid rgba(255,255,255,0.12);color:var(--text2);white-space:nowrap}
 .match-badge-trait{background:rgba(255,255,255,0.85);color:var(--gold);text-shadow:none}
 .match-card-grid .match-loc-dist{color:rgba(255,255,255,0.8);font-size:11px;text-shadow:0 1px 4px rgba(0,0,0,0.8)}
 .match-card-grid .match-badge{background:rgba(255,255,255,0.15);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.6);font-size:9px}
@@ -1210,9 +1213,9 @@ img{background-color:var(--card-bg)}
 .daily-login-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px}
 .daily-login-streak{font-size:16px;font-weight:700;color:var(--gold);margin-bottom:8px}
 .daily-login-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
-.daily-login-btn{width:100%;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--coral));color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
+.daily-login-btn{width:100%;min-height:44px;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--coral));color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
 .daily-login-btn:hover{transform:scale(1.02)}
-.daily-login-dismiss{width:100%;padding:10px;border:none;border-radius:12px;background:transparent;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;margin-top:8px}
+.daily-login-dismiss{width:100%;min-height:44px;padding:10px;border:none;border-radius:12px;background:transparent;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;margin-top:8px}
 .daily-login-dismiss:hover{color:var(--text)}
 .pro-skill-row{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;margin-bottom:10px;padding-bottom:2px}
 .pro-skill-row::-webkit-scrollbar{display:none}
@@ -2391,7 +2394,7 @@ img{background-color:var(--card-bg)}
 .tour-overlay{position:fixed;inset:0;z-index:100000;background:rgba(6,3,14,0.82);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px;animation:tourFadeIn .25s ease}
 .tour-card{position:relative;width:100%;max-width:360px;max-height:calc(100vh - 40px);overflow:hidden;border-radius:26px;background:linear-gradient(160deg,#160b2a,#241238 60%,#1a0e2c);border:1px solid rgba(255,215,0,0.18);box-shadow:0 30px 90px rgba(0,0,0,0.6),0 0 60px rgba(255,215,0,0.06);padding:30px 24px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;animation:tourCardIn .35s cubic-bezier(.22,1,.36,1)}
 .tour-card-wash{position:absolute;inset:0;background:linear-gradient(120deg,var(--tour-a,#FFD700)22,transparent 40%,var(--tour-b,#FF8A80)18);background-size:220% 220%;animation:tourWash 8s ease-in-out infinite;pointer-events:none;transition:background .3s ease}
-.tour-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;transition:all .15s}
+.tour-close{position:absolute;top:8px;right:8px;min-width:44px;min-height:44px;width:44px;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;transition:all .15s}
 .tour-close:hover{background:rgba(255,255,255,0.12);color:#fff}
 
 .tour-page{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;animation:tourPageIn .32s cubic-bezier(.22,1,.36,1)}
@@ -2420,10 +2423,11 @@ img{background-color:var(--card-bg)}
 
 .tour-footer{position:relative;z-index:1;width:100%;margin-top:24px}
 .tour-dots{display:flex;justify-content:center;gap:6px;margin-bottom:18px}
-.tour-dot{width:7px;height:7px;padding:0;border-radius:4px;border:none;background:rgba(255,255,255,0.18);cursor:pointer;transition:all .25s}
-.tour-dot.active{width:22px;background:linear-gradient(90deg,var(--tour-a,#FFD700),var(--tour-b,#FF8A80));animation:tourDotPop .3s ease}
+.tour-dot{min-width:44px;min-height:44px;width:44px;height:44px;padding:0;border-radius:12px;border:none;background:transparent;cursor:pointer;transition:all .25s;position:relative}
+.tour-dot::after{content:"";position:absolute;width:7px;height:7px;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:4px;background:rgba(255,255,255,0.18);transition:all .25s}
+.tour-dot.active::after{width:22px;background:linear-gradient(90deg,var(--tour-a,#FFD700),var(--tour-b,#FF8A80));animation:tourDotPop .3s ease}
 .tour-nav-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.tour-btn{display:flex;align-items:center;gap:6px;justify-content:center;padding:12px 20px;border-radius:14px;border:none;font-size:13.5px;font-weight:700;cursor:pointer;transition:all .2s}
+.tour-btn{display:flex;min-height:44px;height:44px;align-items:center;gap:6px;justify-content:center;padding:0 20px;border-radius:14px;border:none;font-size:13.5px;font-weight:700;cursor:pointer;transition:all .2s}
 .tour-btn-ghost{background:transparent;color:rgba(255,255,255,0.5)}
 .tour-btn-ghost:hover{color:#fff}
 .tour-btn-primary{flex:1;background:linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFD700);background-size:300% 300%;color:var(--bg);animation:lavaFlow 4s ease-in-out infinite}

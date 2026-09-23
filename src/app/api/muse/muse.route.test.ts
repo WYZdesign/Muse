@@ -63,6 +63,17 @@ describe("muse dispatcher (integration)", () => {
     expect(state.inserts).toEqual([]);
   });
 
+  it.each([
+    "profile", "match", "message", "block-user", "feed-comment",
+    "brief", "forum", "join-community", "book-session", "boost",
+    "create-album", "create-disclosure", "claim-quest", "report",
+  ])("fails closed for the %s mutation family in demo mode", async (action) => {
+    vi.stubEnv("MUSE_DEMO_MODE", "true");
+    const r = await POST(req({ action, target_id: "demo-target", body: "must not persist" }));
+    expect(r.status).toBe(409);
+    expect(state.inserts).toEqual([]);
+  });
+
   it("acknowledges analytics without retaining it in demo mode", async () => {
     vi.stubEnv("MUSE_DEMO_MODE", "true");
     const r = await POST(req({ action: "track-event", name: "demo_event" }));

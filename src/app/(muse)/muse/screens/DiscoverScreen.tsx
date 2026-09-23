@@ -531,7 +531,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                             <div style={{ textAlign: "center", padding: "4px 16px 0", animation: "tooltipIn .4s ease" }}>
                               <div style={{ display: "inline-block", background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", borderRadius: 10, padding: "8px 14px", fontSize: 12, color: "var(--text2)", maxWidth: 280 }}>
                                 💬 <b>Send a note</b> with your like to stand out. Introduce yourself or mention why you want to connect.
-                                <button onClick={() => { setShowNoteTooltip?.(false); safeSetItem?.("muse_note_seen", "1"); }} style={{ display: "block", width: "100%", marginTop: 6, background: "none", border: "none", color: "var(--gold)", fontSize: 11, cursor: "pointer", fontWeight: 600 }}>Got it</button>
+                                <button aria-label="Dismiss note tip" onClick={() => { setShowNoteTooltip?.(false); safeSetItem?.("muse_note_seen", "1"); }} style={{ display: "block", width: "100%", minHeight: 44, marginTop: 6, background: "none", border: "none", color: "var(--gold)", fontSize: 11, cursor: "pointer", fontWeight: 600 }}>Got it</button>
                               </div>
                             </div>
                           )}

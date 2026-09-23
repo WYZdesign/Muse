@@ -124,7 +124,7 @@ export function BadgeInfoModal({ info, onClose }: { info: BadgeInfo | null; onCl
           <button type="button" aria-label="Close badge info" title="Close" onClick={onClose} style={{ width: 44, height: 44, margin: "-8px -8px 0 0", border: "none", borderRadius: 10, background: "transparent", color: "var(--text2)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><FiX size={19} /></button>
         </div>
         <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6 }}>{info.desc}</div>
-        <button onClick={onClose} style={{ marginTop: 18, width: "100%", padding: "12px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))", color: "var(--gold)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Got it</button>
+        <button onClick={onClose} style={{ marginTop: 18, width: "100%", minHeight: 44, padding: "12px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg,rgba(255,69,0,0.25),rgba(255,215,0,0.15))", color: "var(--gold)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Got it</button>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 # Muse comprehensive 1,000-point audit
 
-**Audit state:** source and test evidence as of 2026-09-22. This is deliberately *not* a production sign-off: Wyzmind's `page.tsx` split is in progress, current cache-free TypeScript fails in the new extraction, the browser bridge was unavailable for this pass, and no deployment SHA for the current source has been supplied.
+**Audit state:** source, tests, and live-render evidence through 2026-09-23. This remains deliberately *not* a production sign-off: the placeholder regression has been restored and deployed as SHA `a15e9ad`, but the complete authenticated mobile, modal, demo-negative, provider-isolation, storage/RLS, and performance matrix has not yet been proven.
 
 ## How to read this scorecard
 
@@ -16,14 +16,14 @@
 | 1. Core product interaction | 6.41 | mixed V/U | complete transition and error-state coverage |
 | 2. Mobile visual UX | 6.10 | source + old live observation | post-deploy viewport/touch regression matrix |
 | 3. Accessibility | 6.52 | V, partial T | modal/focus/announcement automated checks |
-| 4. Frontend architecture | 5.35 | V | finish split and reduce weak typing |
+| 4. Frontend architecture | 5.35 | V | preserve restored composition; restart extraction only behind parity tests |
 | 5. API/backend correctness | 6.71 | V/T | broaden contract/integration coverage |
 | 6. Security/auth/privacy | 6.31 | V/T | RLS/storage/deployed-negative proof |
-| 7. Demo-mode safety | 8.04 | V/T | deploy and direct endpoint proof |
+| 7. Demo-mode safety | 8.04 | V/T | prove deployed env and direct endpoint/provider isolation |
 | 8. Media/data lifecycle | 5.69 | V | schema/storage/retention verification |
 | 9. Reliability/performance | 5.67 | V/T | observable build, E2E, and performance gates |
 | 10. Release engineering/quality | 4.68 | V/T | activate lint, extend CI, deploy observability |
-| **Overall** | **6.15 / 10** | **not release-ready until U items are proven** | finish split, validate, deploy, smoke |
+| **Overall** | **6.15 / 10** | **not release-ready until U items are proven** | mobile/modal/API-negative verification and incremental remediation |
 
 ### Live addendum (414 × 896 viewport, same date)
 
@@ -31,6 +31,13 @@
 - A remaining mobile target sweep found several 40–42 px controls on Discover, below the 44 px baseline.
 - Live console exposed expected demo referral denial (`409`) being logged as an application error; Profile now skips that request in demo and presents an intentional unavailable state.
 - The live-browser controller can inspect/render/read console reliably but programmatic click dispatch is intermittent, so interaction claims beyond the verified deck state remain unverified until a post-deploy manual/automated smoke pass.
+
+### Live addendum — authenticated deployment (452 × 854 viewport, 2026-09-23)
+
+- SHA `a15e9ad` renders the real Muse authentication and authenticated Discover shell; the placeholder is absent. The queued Discover cards remain `aria-hidden`, `inert`, and pointer-disabled.
+- Measured remaining target defects were tutorial close/dots/navigation, daily-streak actions, and a note-tip acknowledgement. The source bundle now gives PageTour focus trapping, Escape/backdrop exit, focus restoration, and 44px semantic targets; it makes the Discover acknowledgement a named 44px control. Await the post-deploy measurement before changing their leaf scores.
+- Muses list density is remediated in source by removing duplicate last-message rendering, limiting metadata to one three-chip row with `+N` overflow, and tightening list-only framing. Await visual sign-off at 375–452px before scoring the outcome.
+- Demo dispatcher coverage now proves 14 representative mutation families return 409 and create no mocked writes. Deployed environment configuration and route/provider negative evidence remain required.
 
 ---
 

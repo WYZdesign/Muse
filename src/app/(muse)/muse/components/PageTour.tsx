@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { FiX, FiArrowRight, FiArrowLeft } from "react-icons/fi";
+import FocusTrap from "./FocusTrap";
 
 export interface PageTourSlide {
   eyebrow: string;
@@ -99,10 +100,16 @@ export default function PageTour({
   };
 
   return (
-    <div className="tour-overlay" role="dialog" aria-modal="true" aria-label={ariaLabel} onClick={onClose}>
+    <FocusTrap
+      open={open}
+      onClose={onClose}
+      label={ariaLabel}
+      className="tour-overlay"
+      style={{ background: "transparent" }}
+      onBackdropClick={onClose}
+    >
       <div
         className="tour-card"
-        onClick={e => e.stopPropagation()}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         style={{ ["--tour-a" as any]: from, ["--tour-b" as any]: to }}
@@ -151,6 +158,6 @@ export default function PageTour({
           </div>
         </div>
       </div>
-    </div>
+    </FocusTrap>
   );
 }

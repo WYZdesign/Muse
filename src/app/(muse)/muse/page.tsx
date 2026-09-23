@@ -3567,9 +3567,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           <div className="modal-body" style={{textAlign:"center"}}>
             <div style={{fontSize:48,marginBottom:16}}>⚠️</div>
             <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Are you sure?</div>
-            <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>Your account access and associated content will be removed immediately. We retain only records required for legal, safety, fraud, dispute, or recordkeeping obligations. See the Privacy Policy for details.</div>
+            <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>Your access is removed immediately. Your account data is scheduled for permanent deletion after 30 days, except records we must retain for legal, safety, fraud, dispute, or recordkeeping obligations. See the Privacy Policy for details.</div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-               <button className="btn btn-gold" style={{width:"100%",borderColor:"var(--coral)",background:"linear-gradient(135deg,var(--coral),#ff4444)"}} onClick={async()=>{try{const res=await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"delete-account"})});if(!res.ok) throw new Error("failed");safeRemoveItem("muse_user");safeRemoveItem("muse_v1");safeRemoveItem("muse_geo");safeRemoveItem("muse_boost");safeRemoveItem("muse_last_reset");safeRemoveItem("muse_local");safeRemoveItem("muse_premium");safeRemoveItem("muse_referral_code");safeRemoveItem("muse_open_count");safeRemoveItem("muse_hide_premium");setAuthUser(null);setShowDeleteConfirm(false);setScreen("auth");showToast("Account deleted. We're sorry to see you go.");return}catch{showToast("Delete failed. Try again")}}}>Yes, Delete My Account</button>
+               <button className="btn btn-gold" style={{width:"100%",borderColor:"var(--coral)",background:"linear-gradient(135deg,var(--coral),#ff4444)"}} onClick={async()=>{try{const res=await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"delete-account"})});if(!res.ok) throw new Error("failed");safeRemoveItem("muse_user");safeRemoveItem("muse_v1");safeRemoveItem("muse_geo");safeRemoveItem("muse_boost");safeRemoveItem("muse_last_reset");safeRemoveItem("muse_local");safeRemoveItem("muse_premium");safeRemoveItem("muse_referral_code");safeRemoveItem("muse_open_count");safeRemoveItem("muse_hide_premium");setAuthUser(null);setShowDeleteConfirm(false);setScreen("auth");showToast("Account deletion is scheduled. Access is removed now; data is purged after 30 days.");return}catch{showToast("Delete failed. Try again")}}}>Schedule Account Deletion</button>
               <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setShowDeleteConfirm(false)}>{STRINGS.cancel}</button>
             </div>
           </div>
@@ -4207,6 +4207,5 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     </div>
   );
 }
-
 
 

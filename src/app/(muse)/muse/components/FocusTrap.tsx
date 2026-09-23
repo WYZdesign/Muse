@@ -23,6 +23,7 @@ export default function FocusTrap({
   initialFocusRef,
   className,
   style,
+  onBackdropClick,
 }: {
   open: boolean;
   onClose: () => void;
@@ -33,6 +34,7 @@ export default function FocusTrap({
   initialFocusRef?: React.RefObject<HTMLElement>;
   className?: string;
   style?: React.CSSProperties;
+  onBackdropClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -133,6 +135,9 @@ export default function FocusTrap({
       aria-label={label}
       aria-labelledby={labelledBy}
       onKeyDown={handleKeyDown}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onBackdropClick?.(event);
+      }}
       className={className}
       style={{
         position: "fixed",

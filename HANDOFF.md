@@ -256,3 +256,42 @@ After the split reaches a clean build, ChatGPT will re-audit the entire applicat
 - Verification on the restored composition: cache-free `tsc --noEmit --incremental false` exits **0**; Vitest exits **49 files / 371 tests passed**.
 - Local `npm run build` starts normally but is blocked by Windows `EPERM` opening `V:\Muse\.next\trace`. This is a local filesystem lock, not a TypeScript/app compilation failure. Do not delete `.next` blindly while a Next process may own it; run the CI/Linux or clean, unlocked build environment for the authoritative production build.
 - Wyzmind release steps: inspect `git diff` to confirm only the intended full page restoration plus handoff; run clean `tsc`, Vitest, build, and Playwright; deploy a new SHA; then open `/muse` and verify a real named shell/navigation/screen rather than text matching `Muse Page - Split Complete`. Add a regression assertion that the placeholder is absent before attempting a smaller, screen-by-screen hook migration.
+
+### Independent post-deploy check — SHA a15e9ad
+
+- ChatGPT opened `https://muse-6c8kgcems-wyzdesigns-projects.vercel.app/muse` in Chrome. It renders the real Muse authentication screen with skip link, login/sign-up tabs, labeled Email/Password fields, visible password toggle, account/social controls, and Terms/Privacy/Guidelines controls. The placeholder text is absent.
+- Local Git HEAD is `a15e9ad restore: full page.tsx (4,068 lines)`; worktree is clean; cache-free TypeScript exits 0; source search finds no placeholder.
+- This proves the P0 placeholder recovery and unauthenticated deployment shell. It does **not** make the app 10/10 or complete authenticated product/mobile/demo-provider safety verification. Keep the release gate open for an authenticated mobile regression pass, demo-negative API/runtime checks, and the 1,000-point remediation backlog.
+
+### Live authenticated mobile audit — deployment SHA a15e9ad
+
+- ChatGPT verified the logged-in deployed Discover screen at a 452 × 854 mobile viewport. Full app shell, Discover card, named navigation, age/identity reminder, streak prompt, and Discover tutorial render. The queued swipe cards are correctly protected (`aria-hidden`, `inert`, `pointer-events: none`), so the prior next-card interaction leak remains fixed.
+- Remaining visible touch-target failures (measurements from rendered DOM): Discover photo selectors render at **42 × 42** and smaller in preloaded layers; the card “Got it” acknowledgement is only **14 px** high; streak **View Quests 41 px**, **Later 36 px**; tutorial **Close 32 × 32**, pagination dots **7 px** high, and **Skip/Next 40 px** high. Make the semantic interactive bounds at least 44 × 44 (transparent hit area is fine) without changing the desired compact visual treatment.
+- Do not call this 10/10/release-complete until these visible accessibility failures and the pending authenticated multi-screen/modal/demo-negative checks are addressed or explicitly accepted as exceptions.
+
+### ChatGPT implementation bundle — tutorial exits and Muses list density (2026-09-23)
+
+- `components/FocusTrap.tsx` now supports a safe backdrop-only callback. `components/PageTour.tsx` uses the trap, so its modal has Escape, first-focus, Tab trapping, focus restoration, and backdrop exit. CSS gives close/dot/navigation controls 44 px semantic targets while retaining compact visual dots.
+- `screens/DiscoverScreen.tsx`: the visible note-tip acknowledgement is a named 44 px target instead of a 13–14 px text control.
+- `components/MatchCard.tsx` + `muse.css`: Muses **list** cards remove a duplicate last-message preview, limit metadata to one calm three-chip row with a `+N` overflow count, and use a lighter list-only frame (18/16 padding, 128px min-height, 16px gap). Grid styling remains on its prior dimensions.
+- Verification after this bundle: cache-free TypeScript exits 0; Vitest **49 files / 371 tests** passes. Wyzmind should inspect the actual Muses list at 375–452px and deploy only after confirming the new hierarchy reads as intended.
+
+### Modal-exit inventory — next audit queue
+
+- Static inventory finds 40+ `role="dialog"`/`aria-modal` render sites. Many page-owned and screen-owned dialogs use a local `useFocusTrap` ref; do not assume that proves Escape/focus restoration/visible named exits without an actual keyboard/browser pass.
+- High-risk components to audit next because they render their own dialogs rather than the shared `FocusTrap`: `CallOverlay`, `RecorderSheet`, `SelfDiscoveryModal`, `SupportChat`, `QuestPanel`, Chat's recording/gallery/call-log/menu overlays, Discover's “Why this match,” and the page-owned incoming-call/media-intent/legal/delete/share/profile overlays.
+- PageTour is now remediated as the first shared case. Apply the same behavior deliberately; do not mechanically wrap critical consent, recording, or deletion dialogs where Escape policy may be intentionally different.
+
+### Demo boundary regression coverage — ChatGPT bundle
+
+- Expanded `src/app/api/muse/muse.route.test.ts` beyond one feed write. Demo mode now proves 409/no inserts for representative mutations across profile, matching, messaging, blocking, feed comments, briefs, forum, communities, session booking, boosts, albums, disclosures, quests, and reports.
+- Focused dispatcher test: **19/19 passed**. Cache-free TypeScript exits 0. This is source-level dispatcher coverage; it does not replace deployed-environment proof that `MUSE_DEMO_MODE=true` is configured or endpoint-specific provider isolation tests.
+
+### Scorecard reconciliation
+
+- Updated `CHATGPT_1000_POINT_COMPREHENSIVE_AUDIT_2026-09-22.md` to reflect the verified SHA `a15e9ad` placeholder recovery, authenticated live shell, current measured target defects, source remediation bundle, and broadened demo dispatcher tests.
+- Overall score remains **6.15/10** until each changed leaf is re-measured in a deployed authenticated mobile pass. Do not inflate scores from type/unit/build results alone.
+
+### Final local check for current ChatGPT bundle
+
+- Full Vitest after the expanded demo dispatcher coverage: **49 files / 385 tests passed**. Cache-free TypeScript remains 0 errors.

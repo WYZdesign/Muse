@@ -36,23 +36,14 @@ export const profileUpdate = async ({ sb, profile, rest }: ActionContext) => {
 
 export const profileDelete = async ({ sb, profile, ip }: ActionContext) => {
   if (!await checkRateUser(profile.id, "delete-account", 1)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-  const pid = profile.id;
-  await sb.from("muse_messages").delete().or(`sender_id.eq.${pid},receiver_id.eq.${pid}`);
-  await sb.from("muse_matches").delete().or(`user_id.eq.${pid},target_id.eq.${pid}`);
-  await sb.from("muse_feed_posts").delete().eq("author_id", pid);
-  await sb.from("muse_briefs").delete().eq("author_id", pid);
-  await sb.from("muse_forum_posts").delete().eq("author_id", pid);
-  await sb.from("muse_forum_replies").delete().eq("user_id", pid);
-  await sb.from("muse_connections").delete().or(`user_id.eq.${pid},target_id.eq.${pid}`);
-  await sb.from("muse_community_members").delete().eq("user_id", pid);
-  await sb.from("muse_bookings").delete().eq("user_id", pid);
-  await sb.from("muse_notifications").delete().eq("user_id", pid);
-  await sb.from("muse_blocks").delete().or(`user_id.eq.${pid},target_id.eq.${pid}`);
-  await sb.from("muse_reports").delete().eq("reporter_id", pid);
-  await sb.from("muse_push_subscriptions").delete().eq("user_id", pid);
-  await sb.from("muse_message_requests").delete().or(`request_from.eq.${pid},request_to.eq.${pid}`);
-  await sb.from("muse_saved_searches").delete().eq("user_id", pid);
-  await sb.from("muse_activity_log").delete().eq("user_id", pid);
-  await sb.from("muse_profiles").update({ name: "Deleted User", bio: "", avatar: "", photos: [], suspended: true, suspended_at: new Date().toISOString() }).eq("id", pid);
-  return NextResponse.json({ success: true, message: "Account data deleted. Profile anonymized." });
+  const requestedAt = new Date().toISOString();
+  const purgeAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { error } = await sb.from("muse_profiles").update({
+    suspended: true,
+    suspended_at: requestedAt,
+    deletion_requested_at: requestedAt,
+    deletion_purge_after: purgeAt,
+  }).eq("id", profile.id);
+  if (error) return safeServerError(error, "schedule account deletion");
+  return NextResponse.json({ success: true, deletionScheduledFor: purgeAt, message: "Account deletion scheduled." });
 };
