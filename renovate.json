@@ -1,0 +1,63 @@
+{
+  "extends": ["config:recommended"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "schedule": ["after 10pm", "before 5am", "every weekend"],
+      "labels": ["dependencies", "automerge"]
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "schedule": ["every weekend"],
+      "labels": ["dependencies", "major"]
+    },
+    {
+      "matchPackageNames": ["next", "react", "react-dom", "typescript"],
+      "automerge": false,
+      "schedule": ["every weekend"],
+      "labels": ["dependencies", "core-framework"]
+    },
+    {
+      "matchPackageNames": ["eslint", "@eslint/*", "@typescript-eslint/*"],
+      "automerge": false,
+      "labels": ["dependencies", "linting"]
+    },
+    {
+      "matchPackageNames": ["playwright", "@playwright/*"],
+      "automerge": false,
+      "labels": ["dependencies", "testing"]
+    },
+    {
+      "matchPackageNames": ["lighthouse", "@lhci/*"],
+      "automerge": false,
+      "labels": ["dependencies", "performance"]
+    },
+    {
+      "matchPackageNames": ["semgrep"],
+      "automerge": false,
+      "labels": ["dependencies", "security"]
+    },
+    {
+      "matchDatasources": ["npm"],
+      "minimumReleaseAge": "7 days",
+      "schedule": ["every weekend"]
+    }
+  ],
+  "postUpdateOptions": ["npmDedupe", "npmAudit"],
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 5,
+  "timezone": "America/Los_Angeles",
+  "minimumReleaseAge": "7 days",
+  "separateMajorMinor": true,
+  "separateMinorPatch": true,
+  "ignoreUnstable": true,
+  "ignoreUnpublished": true,
+  "prCreation": "not-pending",
+  "automerge": false,
+  "automergeType": "pr",
+  "platformAutomerge": true
+}

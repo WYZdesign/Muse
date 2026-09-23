@@ -1,0 +1,91 @@
+# Gitleaks Configuration
+# https://github.com/gitleaks/gitleaks
+
+[allowlist]
+description = "Allowlisted secrets"
+paths = [
+  "*.md",
+  "*.txt",
+  "*.json",
+  "*.lock",
+  "package-lock.json",
+  "pnpm-lock.yaml",
+  "yarn.lock",
+  ".gitignore",
+  ".eslintignore",
+  ".prettierignore",
+  "*.test.ts",
+  "*.spec.ts",
+  "tests/**/*",
+  "tests/**/*.ts",
+  "playwright.config.ts",
+  "vitest.config.ts",
+  "vitest.config.mts",
+  "eslint.config.mjs",
+  "renovate.json",
+  ".gitleaks.toml",
+  "HANDOFF.md",
+  "OPEN_SOURCE_FIRST_AUDIT_CROSS_REFERENCE_2026-09-22.md",
+  "CHATGPT_1000_POINT_COMPREHENSIVE_AUDIT_2026-09-22.md",
+  "*.md",
+]
+
+[[rules]]
+description = "AWS Access Key"
+regex = '''(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}'''
+tags = ["key", "AWS"]
+
+[[rules]]
+description = "AWS Secret Key"
+regex = '''(?i)aws(.{0,20})?(secret|key)(.{0,20})?["\']?\s*(?:=|:)\s*["\']?[A-Za-z0-9/+=]{40}["\']?'''
+tags = ["key", "AWS"]
+
+[[rules]]
+description = "Generic API Key"
+regex = '''(?i)(api[_-]?key|apikey)(.{0,20})?["\']?\s*(?:=|:)\s*["\']?[A-Za-z0-9_\-]{20,}["\']?'''
+tags = ["key", "api"]
+
+[[rules]]
+description = "Generic Secret"
+regex = '''(?i)(secret|password|passwd|pwd)(.{0,20})?["\']?\s*(?:=|:)\s*["\']?[A-Za-z0-9_\-]{8,}["\']?'''
+tags = ["secret", "password"]
+
+[[rules]]
+description = "GitHub Token"
+regex = '''gh[ps]_[A-Za-z0-9_]{36,}'''
+tags = ["token", "github"]
+
+[[rules]]
+description = "GitLab Token"
+regex = '''glpat-[A-Za-z0-9_\-]{20,}'''
+tags = ["token", "gitlab"]
+
+[[rules]]
+description = "Slack Token"
+regex = '''xox[baprs]-[A-Za-z0-9-]{10,}'''
+tags = ["token", "slack"]
+
+[[rules]]
+description = "Stripe Key"
+regex = '''sk_live_[A-Za-z0-9]{24,}'''
+tags = ["key", "stripe"]
+
+[[rules]]
+description = "Supabase Key"
+regex = '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+'''
+tags = ["key", "supabase", "jwt"]
+
+[[rules]]
+description = "Private Key"
+regex = '''-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'''
+tags = ["key", "private"]
+
+[[rules]]
+description = "Database URL"
+regex = '''(postgres|postgresql|mysql|mongodb|redis)://[^\s]+'''
+tags = ["database", "url"]
+
+[[rules]]
+description = "Generic Bearer Token"
+regex = '''Bearer\s+[A-Za-z0-9_\-\.]{20,}'''
+tags = ["token", "bearer"]

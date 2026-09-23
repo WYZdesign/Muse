@@ -44,7 +44,9 @@ export function trackError(name: string, params?: Record<string, unknown>) {
 
   try {
     entry.url = window.location.href;
-  } catch {}
+  } catch {
+    // intentionally ignored - window.location may not be available
+  }
 
   if (typeof console !== "undefined") {
     console.error("[muse:error]", name, params || "", entry.time);

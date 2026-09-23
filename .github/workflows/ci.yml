@@ -5,9 +5,23 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '0 2 * * 0'
+
+env:
+  NODE_VERSION: '20'
+  PLAYWRIGHT_BASE_URL: http://localhost:3000
+  NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+  SUPABASE_SERVICE_ROLE_KEY: placeholder
+  SUPABASE_SECRET_KEY: placeholder
+  STRIPE_SECRET_KEY: placeholder
+  NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
+  MUSE_DEMO_MODE: 'true'
 
 jobs:
-  build:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,17 +36,85 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
+      - name: Run ESLint
         run: npm run lint
 
-      - name: Type check
-        run: npx tsc --noEmit
+      - name: Run Semgrep (SAST)
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/ci
+            p/typescript
+            p/nodejs
+            p/secrets
+          generateSarif: true
 
-      - name: Unit tests
-        run: npm test
+      - name: Upload Semgrep SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
 
-      - name: Dependency audit
-        run: npm audit --audit-level=high
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript Check (cache-free)
+        run: npx tsc --noEmit --incremental false
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Unit Tests
+        run: npm test -- --coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, unit-tests]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build
         run: npm run build
@@ -44,17 +126,10 @@ jobs:
           STRIPE_SECRET_KEY: placeholder
           NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
 
-  # Playwright specs existed (tests/*.spec.ts, npm run test:e2e) but were never
-  # wired into CI — they only ran when someone remembered to run them by hand
-  # against the LIVE site (playwright.config.ts's default baseURL). That's how
-  # the MutationObserver freeze (tests/discover-freeze.spec.ts, added as its
-  # regression test) could have shipped even with a test written for it: the
-  # test existing didn't mean it ran. This job builds once, serves it locally
-  # (never touches production), and runs the subset of specs that are fully
-  # self-contained — no real Supabase/Stripe credentials needed, matching the
-  # placeholder env the build job above already uses successfully.
   e2e-smoke:
+    name: E2E Smoke Tests
     runs-on: ubuntu-latest
+    needs: build
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -93,7 +168,452 @@ jobs:
           echo "Server never came up" >&2
           exit 1
 
-      - name: Run self-contained e2e specs against the local build
-        run: npx playwright test tests/smoke.spec.ts tests/discover-freeze.spec.ts
+      - name: Run self-contained e2e specs
+        run: npx playwright test tests/e2e/smoke.spec.ts tests/e2e/discover-deck.spec.ts
         env:
-          E2E_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+  e2e-full:
+    name: Full E2E Tests
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        project: [chromium-desktop, firefox-desktop, webkit-desktop, mobile-chrome-375, mobile-chrome-452, chromium-reduced-motion]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          SUPABASE_SECRET_KEY: placeholder
+          STRIPE_SECRET_KEY: placeholder
+          NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
+
+      - name: Start server
+        run: nohup npx next start -p 3000 &
+
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/muse -o /dev/null && exit 0
+            sleep 1
+          done
+          echo "Server never came up" >&2
+          exit 1
+
+      - name: Run full E2E suite
+        run: npx playwright test --project=${{ matrix.project }}
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: playwright-report/
+          retention-days: 7
+
+  e2e-mobile:
+    name: Mobile Visual Regression
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        viewport: [320, 375, 390, 452, 768]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          SUPABASE_SECRET_KEY: placeholder
+          STRIPE_SECRET_KEY: placeholder
+          NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
+
+      - name: Start server
+        run: nohup npx next start -p 3000 &
+
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/muse -o /dev/null && exit 0
+            sleep 1
+          done
+          echo "Server never came up" >&2
+          exit 1
+
+      - name: Run mobile viewport tests
+        run: npx playwright test tests/e2e/visual-regression.spec.ts --grep "${{ matrix.viewport }}px"
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-${{ matrix.viewport }}
+          path: tests/__snapshots__/
+          retention-days: 7
+
+  e2e-accessibility:
+    name: Accessibility Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          SUPABASE_SECRET_KEY: placeholder
+          STRIPE_SECRET_KEY: placeholder
+          NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
+
+      - name: Start server
+        run: nohup npx next start -p 3000 &
+
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/muse -o /dev/null && exit 0
+            sleep 1
+          done
+          echo "Server never came up" >&2
+          exit 1
+
+      - name: Run accessibility tests
+        run: npx playwright test tests/e2e/visual-regression.spec.ts --grep "Accessibility"
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+      - name: Upload axe results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: axe-results
+          path: tests/axe-results/
+          retention-days: 7
+
+  e2e-demo-mode:
+    name: Demo Mode Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          SUPABASE_SECRET_KEY: placeholder
+          STRIPE_SECRET_KEY: placeholder
+          NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
+          MUSE_DEMO_MODE: 'true'
+
+      - name: Start server
+        run: nohup npx next start -p 3000 &
+
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/muse -o /dev/null && exit 0
+            sleep 1
+          done
+          echo "Server never came up" >&2
+          exit 1
+
+      - name: Run demo mode tests
+        run: npx playwright test tests/e2e/demo-mode.spec.ts
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          MUSE_DEMO_MODE: 'true'
+
+  e2e-demo-negative:
+    name: Demo Mode Negative Tests
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          SUPABASE_SECRET_KEY: placeholder
+          STRIPE_SECRET_KEY: placeholder
+          NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
+          MUSE_DEMO_MODE: 'true'
+
+      - name: Start server
+        run: nohup npx next start -p 3000 &
+
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/muse -o /dev/null && exit 0
+            sleep 1
+          done
+          echo "Server never came up" >&2
+          exit 1
+
+      - name: Run demo negative mutation tests
+        run: npx playwright test tests/e2e/demo-mode.spec.ts --grep "Demo Mode Negative"
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          MUSE_DEMO_MODE: 'true'
+
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          SUPABASE_SECRET_KEY: placeholder
+          STRIPE_SECRET_KEY: placeholder
+          NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
+
+      - name: Start server
+        run: nohup npx next start -p 3000 &
+
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/muse -o /dev/null && exit 0
+            sleep 1
+          done
+          echo "Server never came up" >&2
+          exit 1
+
+      - name: Run Lighthouse CI
+        run: npx lhci autorun --upload.target=temporary-public-storage
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: npm audit
+        run: npm audit --audit-level=high
+
+      - name: Run OpenSSF Scorecard
+        uses: ossf/scorecard-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          checks: --checks=Branch-Protection,Code-Review,Dependency-Update-Tool,Maintained,Pinned-Dependencies,SAST,Security-Policy,Token-Permissions,Vulnerabilities
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          config: .gitleaks.toml
+
+      - name: Run OWASP ZAP Baseline Scan
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'http://localhost:3000/muse'
+          fail_action: false
+          issue_output: 'zap-report.xml'
+
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-report
+          path: zap-report.xml
+          retention-days: 7
+
+  sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
+          retention-days: 30
+
+  deploy-check:
+    name: Deploy Verification
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, unit-tests, build, e2e-smoke]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Vercel Deployment
+        run: |
+          python wyz_deploy_check.py --sha ${{ github.sha }} --wait
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Verify Deployed SHA Matches
+        run: |
+          python wyz_deploy_check.py --sha ${{ github.sha }} --verify
+
+  renovate:
+    name: Renovate Dependency Updates
+    runs-on: ubuntu-latest
+    if: github.repository == 'WYZdesign/Muse'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Run Renovate
+        uses: renovatebot/github-action@v40
+        with:
+          configurationFile: renovate.json
+          token: ${{ secrets.RENOVATE_TOKEN }}
+
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, unit-tests, build, e2e-smoke, e2e-full, e2e-mobile, e2e-accessibility, e2e-demo-mode, e2e-demo-negative, lighthouse, security-audit, sbom, deploy-check]
+    if: always()
+    steps:
+      - name: Send notification
+        if: failure()
+        run: |
+          echo "CI pipeline failed"
+          # Add Slack/Discord/email notification here
