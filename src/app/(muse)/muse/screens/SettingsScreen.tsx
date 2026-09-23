@@ -568,7 +568,7 @@ export const SettingsScreen = memo(function SettingsScreen({
     { q: "What are Quests?", a: "Quests are small challenges that reward you for using Muse — like swiping on profiles, posting, or messaging someone. They refresh daily, weekly and monthly. Finishing one earns XP plus a reward such as free likes or a profile boost. Open Quests (Menu → Quests, or Settings → Rewards → Quests) to see your progress and claim anything that’s ready." },
     { q: "How do I upgrade to Premium?", a: "Go to Settings → Payments & Subscription → Subscription to see plan options." },
     { q: "How do I report someone?", a: "Tap the ⚑ Report button on any feed or forum post, the ••• menu on a match, or Report inside a chat conversation. Choose a reason and we'll review it — track your reports in Menu → Your Activity → Reports." },
-    { q: "How do I delete my account?", a: "Go to Settings → Legal → Delete Account. Account access and associated content are removed immediately. We retain only records required for legal, safety, fraud, dispute, or recordkeeping obligations; see the Privacy Policy for details." },
+    { q: "How do I delete my account?", a: "Go to Settings → Legal → Delete Account. Access is removed immediately and your account data is permanently deleted after 30 days, except records required for legal, safety, fraud, dispute, or recordkeeping obligations; see the Privacy Policy for details." },
   ];
 
   const renderRow = (item: { icon: React.ReactNode; label: string; desc: string; action: () => void; dot?: boolean }) => (

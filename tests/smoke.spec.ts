@@ -28,6 +28,10 @@ test.describe("main app renders", () => {
     await page.goto("/muse", { waitUntil: "domcontentloaded" });
     // The app mounts a scene + app container; wait for any main content.
     await expect(page.locator(".app, .phone, main, .scene").first()).toBeVisible({ timeout: 15000 });
+    // Regression: the hook-split placeholder had enough page chrome to look
+    // alive to the generic shell check, but rendered no product UI at all.
+    await expect(page.getByText("Muse Page - Split Complete")).toHaveCount(0);
+    await expect(page.getByRole("tab", { name: "Sign Up" })).toBeVisible({ timeout: 15000 });
   });
 
   test("/terms scrolls (overflow fix)", async ({ page }) => {

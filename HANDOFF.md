@@ -295,3 +295,73 @@ After the split reaches a clean build, ChatGPT will re-audit the entire applicat
 ### Final local check for current ChatGPT bundle
 
 - Full Vitest after the expanded demo dispatcher coverage: **49 files / 385 tests passed**. Cache-free TypeScript remains 0 errors.
+
+### P0 completed locally — 30-day account-deletion retention
+
+- The previous implementation immediately deleted/anonymized account data in both `/api/muse/auth` (`delete-account`) and dispatcher `profile-delete`, contradicting the public 30-day policy. Both paths now schedule deletion instead: they set `suspended`, `suspended_at`, `deletion_requested_at`, and `deletion_purge_after` (30 days), so access is removed immediately but data remains through the published window.
+- Login now rejects a profile with pending deletion as `ACCOUNT_DELETION_PENDING`; the dispatcher already blocks suspended profiles. The delete confirmation, Settings FAQ, in-app privacy text, and public Muse privacy page consistently say immediate access removal + permanent deletion after 30 days (legal/safety/fraud exceptions preserved).
+- Added migration `sql/migrations/0024_add_account_deletion_schedule.sql`; **Wyzmind must apply it** before deploying code that writes these columns. Added `/api/cron/purge-deleted-accounts` (CRON_SECRET-authenticated, demo no-op) and `vercel.json` daily schedule `30 7 * * *`. It permanently clears the related application rows then the auth user after due date, with per-account failure isolation.
+- Added an auth-route regression test proving deletion schedules a 30-day purge instead of immediate destructive calls. Current full validation: cache-free TypeScript **0 errors**; Vitest **49 files / 386 tests passed**.
+- Release verification required: apply migration in the intended environment; confirm `CRON_SECRET` is configured in Vercel; exercise a non-production/test account deletion and verify access is denied immediately, scheduled timestamps are correct, and the purge cron safely reports no-op in demo.
+
+### Retention purge hardening — storage included
+
+- The account purge cron now recursively removes the deleted profile's prefixes from both `muse-uploads` and `muse-private` before removing database/auth records. If storage removal fails, the profile remains scheduled and the next daily run retries rather than silently leaving orphaned media.
+- It also deletes profile-owned albums; expected album-photo/access cleanup relies on the existing FK cascade and must be verified during the staging purge test. Cache-free TypeScript remains 0 errors after this hardening.
+
+## WYZMIND ACTION BUNDLE — account-deletion retention P0 (ready now)
+
+### Pick up these uncommitted files
+
+- `src/app/api/muse/auth/route.ts` and `src/lib/muse-actions/profile.ts`: schedule, rather than immediately delete, account data for 30 days; deny pending-deletion login/session access.
+- `src/app/(muse)/muse/page.tsx`, `screens/SettingsScreen.tsx`, `src/app/muse/privacy/page.tsx`: consistent user-facing immediate-access-removal / 30-day permanent-purge language.
+- `sql/migrations/0024_add_account_deletion_schedule.sql`: required new profile timestamps/index.
+- `src/app/api/cron/purge-deleted-accounts/route.ts` and `vercel.json`: CRON_SECRET-authenticated daily purge plus storage cleanup in `muse-uploads` and `muse-private`.
+- `src/app/api/muse/auth/auth.route.test.ts` and `src/app/api/cron/purge-deleted-accounts/route.test.ts`: scheduling and cron auth/demo no-op coverage.
+
+### Required Wyzmind actions
+
+1. Review the diff as one atomic retention change; preserve unrelated ChatGPT/mobile work already in commit `960f5ec`.
+2. Run cache-free TypeScript and full Vitest, then commit this bundle separately.
+3. Apply `0024_add_account_deletion_schedule.sql` in the target Supabase environment **before** deploying the route changes.
+4. Confirm Vercel has `CRON_SECRET`; deploy and confirm the new daily Vercel cron is registered.
+5. In staging/non-production only, create a disposable account, schedule deletion, verify immediate 403 access denial and `deletion_purge_after` ≈ 30 days, then exercise the purge path with a due fixture. Verify both storage prefixes and related album rows are gone only after the retention deadline.
+
+### Verified locally
+
+- Cache-free TypeScript: **0 errors**.
+- Direct account scheduling regression: **8/8 auth tests passed**.
+- Purge cron auth/demo no-op regression: **2/2 passed**.
+- A full suite rerun remains required after Wyzmind stages/commits this final bundle.
+
+## WYZMIND ACTION BUNDLE — activate meaningful source lint
+
+- Evidence: `eslint.config.mjs` currently loads only a generic unused-variable warning and does not include the Next 16 / TypeScript flat config. CI runs lint but it is not a meaningful `src/**/*.ts(x)` quality gate.
+- Implement separately: load the official `eslint-config-next/core-web-vitals` flat config; retain only generated/vendor ignores; inventory the resulting source findings; fix correctness errors first and stage additional strict rules as warnings only temporarily.
+- CI requirement: lint must explicitly cover `src`, fail on source errors, and never solve failures by broadly ignoring source files. Preserve its existing typecheck, unit, audit, build, and local Playwright smoke gates.
+
+### Latest full local regression gate
+
+- Vitest: **50 files / 388 tests passed** (includes the new deletion scheduling and purge-cron safety tests). Cache-free TypeScript remains 0 errors.
+
+## WYZMIND ACTION BUNDLE — placeholder-deployment regression guard
+
+- `tests/smoke.spec.ts` now explicitly asserts that `/muse` does **not** contain `Muse Page - Split Complete` and that the real unauthenticated authentication tab UI renders. This closes the gap where a generic shell selector could pass even when product composition was replaced by a placeholder.
+- The focused Playwright smoke check passed against `https://muse-6c8kgcems-wyzdesigns-projects.vercel.app`. Keep this assertion in the existing CI `e2e-smoke` job; do not loosen it during the next page split.
+
+## WYZMIND ACTION BUNDLE — storage privacy deployment proof
+
+- Source review: `MyAlbumsManager` uploads with folder `album`; `/api/muse/upload` routes exactly that folder to the non-public `muse-private` bucket and stores `storage://muse-private/...` locators. Album reads exchange private locators for signed URLs only after server-side access checks.
+- Required environment proof (not inferable from source): apply migration `0022_secure_album_storage_and_webm.sql`; confirm `muse-private.public = false`; verify a raw private-object URL returns 401/403; then verify public/private/invite album viewers respectively receive permitted/denied signed URLs. Recheck allowed WebM MIME types in `muse-uploads` after migration.
+- Do not mark the storage P0 complete from unit/type checks alone. Capture the Supabase dashboard/API evidence in the release handover.
+
+## WYZMIND ACTION BUNDLE — call safety regression coverage
+
+- Independent source review confirms direct-call age verification fails closed on lookup error/missing rows (`503 AGE_VERIFICATION_UNAVAILABLE`) and the recording branch requires both caller and callee consent before LiveKit Egress is started (`403 RECORDING_CONSENT_REQUIRED`). Community rooms deny missing/invalid verification too.
+- Added `call.route.test.ts` regression: even with R2 configured, missing/unavailable consent data returns 403 before writing a recording Egress id. Focused call route suite: **10/10 passed**.
+- Pick up `src/app/api/muse/call/call.route.test.ts` with the retention/test bundle. Keep the deployed negative test requirement: in a non-production environment, force consent lookup failure and verify no Egress/R2 object is created.
+
+### Live mobile correction — Discover photo selectors (375 × 667)
+
+- Re-measured the current live Discover deck: the active card's three photo selectors are all **44 × 44**. Lower queued cards visually scale to 42/40 px but are `aria-hidden`, `inert`, and `pointer-events:none`; they cannot be reached by pointer, keyboard, or assistive tech.
+- Therefore do **not** treat scaled queued-card dimensions as an active touch-target defect. The active-card Discover selector requirement is satisfied; preserve the existing inert/card-stack isolation behavior.

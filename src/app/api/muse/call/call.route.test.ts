@@ -122,6 +122,20 @@ describe("call route", () => {
     expect(body.code).toBe("AGE_VERIFICATION_REQUIRED");
   });
 
+  it("fails closed before recording when either participant consent is unavailable", async () => {
+    process.env.R2_ENDPOINT = "https://r2.example.test";
+    process.env.R2_BUCKET = "recordings";
+    process.env.R2_ACCESS_KEY = "key";
+    process.env.R2_SECRET_KEY = "secret";
+    state.tables.muse_calls = { id: "44444444-4444-4444-4444-444444444444", caller_id: ME, callee_id: PEER };
+    state.tables.muse_call_recording_consents = null;
+
+    const r = await POST(req({ action: "start-recording", toId: PEER, callId: "44444444-4444-4444-4444-444444444444" }));
+    expect(r.status).toBe(403);
+    expect((await r.json()).code).toBe("RECORDING_CONSENT_REQUIRED");
+    expect(state.inserts.some((i: any) => i.tbl === "muse_calls" && i.v?.recording_egress_id)).toBe(false);
+  });
+
   it("records a lifecycle update", async () => {
     const r = await POST(req({ action: "answer", toId: PEER, kind: "voice", callId: "44444444-4444-4444-4444-444444444444" }));
     expect(r.status).toBe(200);
