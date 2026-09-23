@@ -10,7 +10,7 @@ function notifyQuota(): void {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("muse:storage-quota"));
     }
-  } catch {}
+  } catch (e) { console.debug("[safeStorage] quota event ignore", e); }
 }
 
 function getDB(): Promise<IDBDatabase> {
@@ -50,7 +50,7 @@ async function idbGet(key: string): Promise<string | null> {
 }
 
 async function idbRemove(key: string): Promise<void> {
-  try { const db = await getDB(); db.transaction(IDB_STORE, "readwrite").objectStore(IDB_STORE).delete(key); } catch {}
+  try { const db = await getDB(); db.transaction(IDB_STORE, "readwrite").objectStore(IDB_STORE).delete(key); } catch (e) { console.debug("[safeStorage] idbRemove ignore", e); }
 }
 
 // In-memory cache for fast reads of IndexedDB-backed values
@@ -75,7 +75,7 @@ export function safeGetItem(key: string): string | null {
 
 export function safeRemoveItem(key: string): void {
   _memCache.delete(key);
-  try { localStorage.removeItem(key); } catch {}
+  try { localStorage.removeItem(key); } catch (e) { console.debug("[safeStorage] removeItem ignore", e); }
   idbRemove(key);
 }
 
@@ -83,13 +83,13 @@ export function safeRemoveItem(key: string): void {
 // localStorage/IndexedDB (an XSS target). Keep it in sessionStorage so it's
 // cleared when the tab/window closes, reducing the blast radius.
 export function setRefreshToken(tok: string): void {
-  try { sessionStorage.setItem("muse_refresh_token", tok); } catch {}
+  try { sessionStorage.setItem("muse_refresh_token", tok); } catch (e) { console.debug("[safeStorage] setRefreshToken ignore", e); }
 }
 export function getRefreshToken(): string {
-  try { return sessionStorage.getItem("muse_refresh_token") || ""; } catch { return ""; }
+  try { return sessionStorage.getItem("muse_refresh_token") || ""; } catch (e) { return ""; }
 }
 export function clearRefreshToken(): void {
-  try { sessionStorage.removeItem("muse_refresh_token"); } catch {}
+  try { sessionStorage.removeItem("muse_refresh_token"); } catch (e) { console.debug("[safeStorage] clearRefreshToken ignore", e); }
 }
 
 export async function safeGetItemAsync(key: string): Promise<string | null> {

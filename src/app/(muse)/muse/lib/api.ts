@@ -49,7 +49,7 @@ export async function apiFetch(url: string, options: RequestInit & { timeoutMs?:
 
 export function getAccessToken(): string {
   if (typeof window === "undefined") return "";
-  try { return JSON.parse(safeGetItem("muse_user") || "{}").access_token || ""; } catch { return ""; }
+  try { return JSON.parse(safeGetItem("muse_user") || "{}").access_token || ""; } catch (e) { return ""; }
 }
 
 // Try to refresh the Supabase access token using the refresh token stored
@@ -115,6 +115,10 @@ export async function authFetch(url: string, options: RequestInit & { timeoutMs?
       headers.set("Authorization", `Bearer ${newToken}`);
       attempt = withTimeout({ ...rest, headers }, timeoutMs);
       try { res = await fetch(url, attempt.options); } finally { attempt.cancel(); }
+    } if (newToken && newToken !== token) {
+      headers.set("Authorization", `Bearer ${newToken}`);
+      attempt = withTimeout({ ...rest, headers }, timeoutMs);
+      try { res = await fetch(url, attempt.options); } finally { attempt.cancel(); }
     } else if (token) {
       // We HAD a token (the user believed they were logged in) but neither
       // the original request nor a refresh attempt worked — the session is
@@ -125,7 +129,7 @@ export async function authFetch(url: string, options: RequestInit & { timeoutMs?
       // that re-login is what's actually needed. Surface it once, globally,
       // instead — page.tsx listens for this and logs the user out cleanly
       // with a clear message rather than leaving them retrying a dead session.
-      try { window.dispatchEvent(new CustomEvent("muse:session-expired")); } catch {}
+      try { window.dispatchEvent(new CustomEvent("muse:session-expired")); } catch (e) { console.debug("[api] session-expired event ignore", e); }
     }
   }
   return res;

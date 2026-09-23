@@ -52,7 +52,7 @@ export function createSafeObserver(
 
   const trip = () => {
     tripped = true;
-    try { observer?.disconnect(); } catch {}
+    try { observer?.disconnect(); } catch (e) { console.debug("[safeObserver] observer disconnect ignore", e); }
     const message = `[safeObserver] "${label}" exceeded ${maxFiringsPerWindow} firings/${windowMs}ms — disconnected to prevent a main-thread freeze. This observer (or something it watches) likely needs a narrower target/attributeFilter.`;
     console.error(message);
     try {
@@ -86,9 +86,7 @@ export function createSafeObserver(
     },
     disconnect: () => {
       firingTimestamps = [];
-      try { observer?.disconnect(); } catch {
-        // intentionally ignored - observer already dead
-      }
+      try { observer?.disconnect(); } catch (e) { console.debug("[safeObserver] observer disconnect ignore", e); }
     },
   };
 }
