@@ -198,7 +198,7 @@ export const FeedScreen = memo(function FeedScreen({
   };
   const closeCamera = () => {
     if (recTimeoutRef.current) { clearTimeout(recTimeoutRef.current); recTimeoutRef.current = null; }
-    try { recorderRef.current?.state !== "inactive" && recorderRef.current?.stop(); } catch {}
+    try { if (recorderRef.current && recorderRef.current.state !== "inactive") recorderRef.current.stop(); } catch { console.debug("[feed] recorder could not be stopped"); }
     recorderRef.current = null;
     setRecording(false); setRecSecs(0);
     stopStream();
@@ -295,7 +295,7 @@ export const FeedScreen = memo(function FeedScreen({
       setRecording(true);
       setRecSecs(0);
       if (recTimeoutRef.current) clearTimeout(recTimeoutRef.current);
-      recTimeoutRef.current = setTimeout(() => { try { if (recorderRef.current === rec && rec.state !== "inactive") rec.stop(); } catch {} }, 30000);
+      recTimeoutRef.current = setTimeout(() => { try { if (recorderRef.current === rec && rec.state !== "inactive") rec.stop(); } catch { console.debug("[feed] timed-out recording could not be stopped"); } }, 30000);
     } catch {
       showToast("Couldn't start recording");
     }
@@ -391,9 +391,9 @@ export const FeedScreen = memo(function FeedScreen({
                 <FiImage size={16} />
                 <input
                   type="file"
-                  accept="image/*,video/*"
+                  accept="image/*"
                   multiple
-                  aria-label="Upload photo or video"
+                  aria-label="Upload photos"
                   disabled={demo}
                   style={{ display: "none" }}
                   onChange={async e => {
@@ -410,14 +410,15 @@ export const FeedScreen = memo(function FeedScreen({
                   }}
                 />
               </label>
-              {/* Record a voice or video note straight into the post */}
+              {/* Video stays unavailable until its moderation pipeline can
+                  quarantine, review, and safely promote a clip. */}
               <button type="button" aria-label="Record voice note" disabled={demo || !!rec.recording || rec.sending}
                 onClick={() => demo ? showToast("Media recording is unavailable in this demo.") : rec.start("voice")}
                 style={{ width: 44, height: 44, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}>
                 <FiMic size={16} />
               </button>
-              <button type="button" aria-label="Record video note" disabled={demo || !!rec.recording || rec.sending}
-                onClick={() => demo ? showToast("Media recording is unavailable in this demo.") : rec.start("video")}
+              <button type="button" aria-label="Video recording unavailable while moderation is being completed" title="Video recording is temporarily unavailable while moderation is being completed" disabled
+                onClick={() => showToast("Video recording is temporarily unavailable while moderation is being completed.")}
                 style={{ width: 44, height: 44, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}>
                 <FiVideo size={16} />
               </button>

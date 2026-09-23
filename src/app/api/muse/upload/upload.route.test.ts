@@ -89,4 +89,13 @@ describe("upload route", () => {
     const body = await r.json();
     expect(body.error).toBeDefined();
   });
+
+  it("rejects video before it can be moderated or stored", async () => {
+    const fd = new FormData();
+    fd.append("file", new Blob([new Uint8Array([0x1A, 0x45, 0xDF, 0xA3])], { type: "video/webm" }), "clip.webm");
+    fd.append("mediaKind", "video");
+    const r = await POST(req(fd));
+    expect(r.status).toBe(415);
+    await expect(r.json()).resolves.toMatchObject({ code: "VIDEO_UPLOAD_UNAVAILABLE" });
+  });
 });

@@ -26,13 +26,14 @@ beforeEach(() => {
 });
 
 describe("contentScan", () => {
-  it("scanWithRekognition fails open when no AWS creds (dev/test)", async () => {
-    // Without AWS creds, getRekognition() returns undefined → fail-open
+  it("scanWithRekognition fails closed when no AWS creds", async () => {
+    // Without AWS creds, getRekognition() returns undefined. User media must
+    // not become public merely because the production scanner is unavailable.
     const result = await scanWithRekognition(Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]));
-    expect(result.safe).toBe(true);
+    expect(result.safe).toBe(false);
     expect(result.scanned).toBe(false);
-    expect(result.flaggedCategories).toEqual([]);
-    expect(result.shouldBlock).toBe(false);
+    expect(result.flaggedCategories).toEqual(["SCAN_UNAVAILABLE"]);
+    expect(result.shouldBlock).toBe(true);
     expect(result.isCSAM).toBe(false);
   });
 

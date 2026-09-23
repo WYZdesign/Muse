@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
 import { checkRateUser } from "@/lib/rate-limit";
-import { scanWithRekognition, scanWithSightengine, startVideoModeration, logScan, reportIncident, escalateToNcmec } from "@/lib/contentScan";
+import { scanWithRekognition, scanWithSightengine, logScan, reportIncident, escalateToNcmec } from "@/lib/contentScan";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 const ALLOWED_SIGNATURES: Record<string, { bytes: number[]; ext: string }> = {
@@ -81,6 +81,16 @@ export async function POST(req: NextRequest) {
     const isVideo = ext === "webm" && !isAudio;
     if (file.size > (ext === "webm" ? 25 : 10) * 1024 * 1024) return NextResponse.json({ error: ext === "webm" ? "Clip too large (max 25MB)" : "File too large (max 10MB)" }, { status: 400 });
 
+    // Rekognition's stored-video API requires an S3 object and this route has
+    // neither a private quarantine nor a result-consumer/promotion pipeline.
+    // Never persist a video that has not been safely moderated.
+    if (isVideo) {
+      return NextResponse.json({
+        error: "Video uploads are temporarily unavailable while moderation is being completed",
+        code: "VIDEO_UPLOAD_UNAVAILABLE",
+      }, { status: 415 });
+    }
+
     const blocklistedExts = ["svg","html","xml","js","php","exe","sh"];
     if (blocklistedExts.includes(file.name.toLowerCase().split(".").pop() || "")) {
       return NextResponse.json({ error: "Invalid file extension" }, { status: 400 });
@@ -99,12 +109,9 @@ export async function POST(req: NextRequest) {
       : getServiceClient().storage.from(bucket).getPublicUrl(path).data.publicUrl;
 
     // Content moderation — scan image uploads with AWS Rekognition before
-    // storing. Video (webm) can't go through the image scanner yet; instead
-    // we log the upload, create a safety incident for manual admin review,
-    // and auto-mark the profile as NSFW until the video is reviewed.
+    // storing. Video is rejected above until a quarantined moderation and
+    // promotion pipeline exists.
     let autoNsfw = false;
-    let videoPendingReview = false;
-    let videoJobId: string | null = null;
     if (isAudio) {
       // Voice notes carry no visual content, so there is nothing for Rekognition
       // to scan — and crucially the video path below marks the uploader's profile
@@ -117,46 +124,6 @@ export async function POST(req: NextRequest) {
         context: folder,
         result: { safe: true, scanned: true, flaggedCategories: [], confidence: 1, shouldBlock: false, shouldReport: false, isCSAM: false, details: [{ kind: "voice", url: storedUrl }] },
       });
-    } else if (isVideo) {
-      // Start async video moderation via Rekognition
-      const videoResult = await startVideoModeration(buffer);
-      if ("jobId" in videoResult) {
-        videoJobId = videoResult.jobId;
-        // Log the video upload with job ID for later polling
-        await logScan({
-          userId: profileId,
-          fileName: file.name,
-          fileType: "video/webm",
-          fileSize: file.size,
-          context: folder,
-          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PROCESSING"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ jobId: videoJobId, url: storedUrl }] },
-        });
-        // Store job ID for async result polling (could use cron or webhook)
-        // For now, mark as pending and allow upload - results checked via separate endpoint
-        videoPendingReview = true;
-      } else {
-        // Moderation service unavailable - fall back to manual review
-        await logScan({
-          userId: profileId,
-          fileName: file.name,
-          fileType: "video/webm",
-          fileSize: file.size,
-          context: folder,
-          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_PENDING_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ url: storedUrl }] },
-        });
-        await reportIncident({
-          userId: profileId,
-          context: `video-upload:${folder}`,
-          result: { safe: false, scanned: false, flaggedCategories: ["VIDEO_NEEDS_REVIEW"], confidence: 0, shouldBlock: false, shouldReport: true, isCSAM: false, details: [{ url: storedUrl }] },
-        });
-        try {
-          await getServiceClient().from("muse_profiles").update({ nsfw: true }).eq("id", profileId);
-          autoNsfw = true;
-        } catch (e) {
-          console.error("[upload] failed to mark profile NSFW after video upload:", e);
-        }
-        videoPendingReview = true;
-      }
     } else {
       // Two engines, merged: Rekognition (only one that asserts CSAM
       // categories) + Sightengine (much better explicit-content recall).
@@ -201,7 +168,7 @@ export async function POST(req: NextRequest) {
     const sb = getServiceClient();
     const mimeExt = ext === "jpg" ? "jpeg" : ext;
     const { data, error } = await sb.storage.from(bucket).upload(path, buffer, {
-      contentType: isAudio ? "audio/webm" : isVideo ? "video/webm" : `image/${mimeExt}`,
+      contentType: isAudio ? "audio/webm" : `image/${mimeExt}`,
       upsert: false,
     });
 
@@ -210,7 +177,7 @@ export async function POST(req: NextRequest) {
     const url = bucket === "muse-private"
       ? `storage://${bucket}/${data.path}`
       : sb.storage.from(bucket).getPublicUrl(data.path).data.publicUrl;
-    return NextResponse.json({ success: true, url, path: data.path, moderation: isAudio ? "audio" : isVideo ? (videoJobId ? "video_processing" : "pending_review") : "scanned", autoNsfw: autoNsfw || undefined, videoPendingReview: videoPendingReview || undefined, videoJobId: videoJobId || undefined });
+    return NextResponse.json({ success: true, url, path: data.path, moderation: isAudio ? "audio" : "scanned", autoNsfw: autoNsfw || undefined });
   } catch (e: unknown) {
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }

@@ -57,11 +57,10 @@ export interface ModerationResult {
 export async function scanWithRekognition(imageBuffer: Buffer): Promise<ModerationResult> {
   const client = await getRekognition();
   if (!client || !DetectModerationLabelsCommand) {
-    // Fail-open: if moderation is unavailable (missing AWS creds / SDK load
-    // failure), allow the upload through rather than blocking all images.
-    // This lets the app work in dev/test without AWS configured.
-    console.warn("[muse:safety] AWS Rekognition unavailable — upload allowed without scan. Set AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION for production content moderation.");
-    return { safe: true, scanned: false, flaggedCategories: [], confidence: 0, shouldBlock: false, shouldReport: false, isCSAM: false, details: [] };
+    // A missing scanner is not evidence that user media is safe. The caller
+    // turns this into a retryable 503 and must not persist the image.
+    console.warn("[muse:safety] AWS Rekognition unavailable — rejecting unscanned upload.");
+    return { safe: false, scanned: false, flaggedCategories: ["SCAN_UNAVAILABLE"], confidence: 0, shouldBlock: true, shouldReport: false, isCSAM: false, details: [] };
   }
   try {
     const command = new DetectModerationLabelsCommand({
