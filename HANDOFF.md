@@ -365,3 +365,260 @@ After the split reaches a clean build, ChatGPT will re-audit the entire applicat
 
 - Re-measured the current live Discover deck: the active card's three photo selectors are all **44 × 44**. Lower queued cards visually scale to 42/40 px but are `aria-hidden`, `inert`, and `pointer-events:none`; they cannot be reached by pointer, keyboard, or assistive tech.
 - Therefore do **not** treat scaled queued-card dimensions as an active touch-target defect. The active-card Discover selector requirement is satisfied; preserve the existing inert/card-stack isolation behavior.
+
+### Current authoritative local gate — 2026-09-23
+
+- Cache-free TypeScript: **0 errors**.
+- Full Vitest: **50 files / 389 tests passed** (includes retention scheduling, purge-cron safety, placeholder-deployment, and call-consent regressions).
+## ChatGPT → Wyzmind: next implementation bundles (2026-09-22)
+
+### Verified baseline
+
+- Current commit observed: `477862f` (`30-day account deletion retention + purge cron`).
+- Cache-free TypeScript: passed (`tsc --noEmit --incremental false`).
+- Full unit suite: **50 files / 389 tests passed**.
+- Do not describe the demo as production-ready until the environment checks below are evidenced on the newly deployed build.
+
+### Bundle A — deployment/migration proof (highest priority; no source refactor)
+
+Apply the committed database migrations to the target Supabase project before deploying, then record evidence for:
+
+1. `0024_add_account_deletion_schedule.sql` is applied; a deletion request immediately revokes access, sets a purge date about 30 days out, and does not immediately remove the account.
+2. `0022` storage policy is applied; `muse-private` is private and a raw object URL is denied, while an authorized signed URL works.
+3. Vercel has `CRON_SECRET`, the daily purge schedule is registered, and the cron endpoint rejects a missing/incorrect secret.
+4. The deployed environment remains explicit demo mode (`MUSE_DEMO_MODE=true`); representative write requests return the expected demo response and create no external/provider side effects.
+5. The deployed app is not the old placeholder: load `/muse`, verify app shell, Discover content, and absence of `Muse Page - Split Complete`.
+
+Use a non-production/disposable account for deletion/purge testing. Validate storage cleanup only against disposable fixtures; do not accelerate or purge any real user record.
+
+### Bundle B — meaningful lint / static quality gate
+
+The current ESLint config is effectively a light `no-unused-vars` warning config. Upgrade it deliberately to the Next.js flat core-web-vitals baseline (keeping generated/build directories ignored), then:
+
+1. Run lint and classify findings by real correctness/accessibility risk.
+2. Fix safe, localized source violations; do not suppress broad source paths or turn errors off globally.
+3. Keep script-only warnings separately documented if unavoidable.
+4. Add lint to the same CI quality gate that already runs typecheck/unit/E2E smoke.
+5. Run `tsc --noEmit --incremental false`, full Vitest, and production build after the config change.
+
+### Bundle C — modal/overlay accessibility hardening
+
+PageTour and several mobile targets were fixed, but the remaining overlay inventory needs component-by-component handling. Audit `CallOverlay`, recording/recorder sheets, chat overlays, SupportChat, and all confirmation dialogs for:
+
+1. `role="dialog"` / `aria-modal`, meaningful accessible name/description.
+2. Focus enters predictably, stays inside while open, and returns to its trigger.
+3. A visible, labelled close/Cancel path with a 44px mobile target.
+4. Escape behavior that is safe for the context. Do **not** make Escape discard recordings or end active calls without a confirmation path.
+5. Background inertness and no duplicate screen-reader navigation.
+6. Keyboard-only and 375px mobile regression tests for the high-risk overlays.
+
+### Bundle D — mobile interaction/regression sweep
+
+On the new deployment at 375px and 390px widths, test actual user flows rather than only static DOM:
+
+1. Discover: swipe/like/pass transition cannot reveal or activate the next card before animation settles; queued cards stay inert.
+2. Sessions: booking opens, has a reliable close/back/Cancel route, and returns the user to sessions without a dead-end.
+3. Muses: cards have breathable spacing, condensed metadata stays scannable, and touch targets remain >=44px.
+4. Network: search has visible boundary/background, clear focus, placeholder, and contrast.
+5. Collab: safety info/close controls use compact non-bubble affordances while retaining touch size/labels.
+6. Discover decorative top glass bubble/line should be removed or simplified per product feedback, without reducing progress clarity.
+
+For each fixed issue, add/adjust a focused regression test where practical; preserve demo-mode no-write behavior.
+
+### Live visual confirmation — Discover header (custom-domain mobile, 375px)
+
+ChatGPT visually verified the current deployed custom domain in a mobile viewport. The header still has the reported over-designed treatment: **each action is in a large frosted-glass rounded capsule and the progress dots sit in matching large frosted circles**. This is not merely a source-review concern.
+
+Acceptance target: use a quieter, flatter header. Keep controls discoverable and >=44px hit areas, but remove the conspicuous glass bubbles around the dots/top line; reserve strong glass/surface treatment for content that actually needs separation. Capture a 375px before/after screenshot in the PR/deployment check.
+
+### Live verification update — Discover queue isolation (custom domain)
+
+Revalidated on the live authenticated Discover DOM: queued profile cards are descendants of both `aria-hidden="true"` and `inert`; their controls remain visually mounted for the deck animation but are non-interactive and hidden from assistive technology. The previously reported “next person is reachable before the card swipes away” defect is **verified fixed**. Keep the regression test; do not reopen this issue based solely on DOM presence.
+
+### Live verification update — active Discover accessibility (custom-domain mobile)
+
+On the currently deployed authenticated Discover screen, DOM inspection found **no unnamed visible interactive control** and **no active, non-inert control smaller than 44 × 44 CSS px**. The one intentionally visually-hidden skip link is excluded from target-size measurement. This verifies the active-card/mobile-nav target work in a rendered production-like environment; modal/sheet coverage remains a separate open bundle.
+
+### Bundle G — Discover hidden-animation accessibility leak
+
+Live DOM + accessibility-tree audit found that the active Discover card mounts its swipe-feedback labels **LIKE**, **NOPE**, and **SUPER** with `opacity: 0` but without `aria-hidden`. They are therefore invisible visually but still announced/read as stray text before the Prompts section. This is a genuine screen-reader regression.
+
+1. Mark decorative/animation-only feedback layers `aria-hidden="true"` (or remove them from the accessibility tree while inactive) without hiding the actual named action buttons.
+2. Review the co-located opacity-zero icon spans (`✕`, `★`, `✎`, overflow dots) and mark purely decorative icon children hidden where their parent already supplies the accessible name.
+3. If swipe outcome must be announced, add one dedicated polite live region that announces only the completed result once—not three permanently mounted labels.
+4. Regression test: before an action, DOM/AX must not expose LIKE/NOPE/SUPER; after keyboard/swipe action, the result is announced once if applicable; the card’s Pass/Super/Like controls keep correct accessible names.
+5. Re-run active-card target/name audit at 375px after the change.
+
+### Bundle H — explicit decorative-SVG semantics
+
+Live Discover inspection confirms profile/portfolio images have non-empty alt text. It also found nine visible SVGs with no explicit accessibility semantics: four purely decorative `wave-bottom` background paths and five inline icon SVGs inside text-bearing card badges/tags. Make decorative status explicit:
+
+1. Add `aria-hidden="true"` and `focusable="false"` to background-wave SVGs and inline SVG icons whose adjacent visible text conveys the meaning.
+2. Do **not** hide meaningful standalone SVGs; icon-only controls must retain the accessible name on the parent button.
+3. Add a shallow semantic regression assertion: wave layers/icons do not appear as independent accessible images, while profile and portfolio images continue to expose useful alt text.
+
+### Bundle I — Discover disclosure/dialog trigger semantics
+
+Live DOM audit shows the active-card **Match actions** trigger and **Why this match?** trigger have good accessible names but no state/relationship semantics (`aria-haspopup`, `aria-expanded`, or `aria-controls` are absent). If they open a menu and explanatory dialog respectively, assistive-technology users receive no indication of that behavior.
+
+1. For Match actions, use the appropriate menu/dialog pattern: `aria-haspopup="menu"` (or `dialog`), `aria-expanded`, and a stable `aria-controls` target where applicable.
+2. For Why this match?, identify the target dialog with a stable id and use `aria-haspopup="dialog"`/`aria-controls` where that reflects the actual implementation; ensure opening moves focus into the labelled dialog and closing restores focus.
+3. Do not add ARIA attributes to controls that do not actually open a corresponding menu/dialog.
+4. Add an interaction regression test for closed/open/closed ARIA state plus focus restoration. This is part of Bundle C’s modal work and should be implemented there rather than as an unrelated page-level workaround.
+
+### Immediate Wyzmind note — lint config currently does not load
+
+Current uncommitted `eslint.config.mjs` fails before linting with:
+
+`TypeError: pluginNext.configs.recommended is not iterable`
+
+Verified against the installed `@next/eslint-plugin-next`: its `recommended` and `core-web-vitals` exports are **flat config objects**, not arrays. Put them directly in the config array:
+
+```js
+pluginNext.configs.recommended,
+pluginNext.configs["core-web-vitals"],
+```
+
+not `...pluginNext.configs.recommended`. Then run `eslint --print-config src/app/(muse)/muse/page.tsx` before the full lint command. Do not commit the current broken form.
+
+### Immediate Wyzmind follow-up — config loads but TSX is currently ignored
+
+After the config-shape correction, focused lint now exits with:
+
+`0:0 warning File ignored because no matching configuration was supplied`
+
+for `src/app/(muse)/muse/page.tsx`. So the config parses but does **not** lint application TS/TSX yet. Add a flat-config entry with an explicit `files: ["**/*.{js,jsx,ts,tsx}"]` matcher (and a TypeScript parser/config appropriate to the installed stack), then verify both:
+
+```powershell
+eslint --print-config "src/app/(muse)/muse/page.tsx"
+eslint "src/app/(muse)/muse/page.tsx"
+```
+
+Neither command may return `undefined` or “File ignored.” Only then run full `npm run lint`. Preserve generated/build ignores, but do not broadly ignore `src/**` or tests merely to get green.
+
+**Verified implementation detail:** `V:\Muse\node_modules\typescript-eslint` is already present and exports flat `configs.recommended`. The robust pattern is:
+
+```js
+import tseslint from "typescript-eslint";
+
+export default [
+  { ignores: [...] },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ["**/*.{js,jsx,ts,tsx}"],
+    plugins: { "@next/next": nextRecommended.plugins["@next/next"], ... },
+    rules: { ...nextRecommended.rules, ...nextCoreWebVitals.rules, ... },
+  },
+];
+```
+
+Scope the custom app rules to the explicit `files` matcher. The current unscoped object is why ESLint reports TSX as ignored.
+
+**Latest verification:** the `files` matcher now takes effect, but focused lint reaches `page.tsx` and fails at TypeScript syntax (`Parsing error: Unexpected token BadgeInfo`). Add `...tseslint.configs.recommended` (or explicitly configure `@typescript-eslint/parser`) before the app rules. The gate is only valid once focused `.tsx` lint parses and produces actual lint diagnostics rather than a parsing error.
+
+### STOP — current lint workaround disables all TypeScript linting
+
+Latest uncommitted `eslint.config.mjs` adds `"*.ts"` and `"*.tsx"` to the global `ignores`, then limits rules to JS/JSX/MJS/CJS. That is not an acceptable fix: it turns the new lint gate into a false green for virtually all Muse source. **Do not commit this version.**
+
+Remove global TS/TSX ignores; import `typescript-eslint`; add its flat recommended configuration and a `files: ["**/*.{ts,tsx}"]` rules block. Focused `page.tsx` must be linted with real diagnostics (or zero diagnostics), never ignored and never parser-failed.
+
+### Canonical lint recovery (no `npm install`, no TS exclusion)
+
+The project already has `typescript-eslint@8.x` installed transitively via `eslint-config-next`; importing it works. Do **not** try to install a mismatched standalone parser/plugin, and do **not** fall back to ignoring TypeScript. Use this shape:
+
+```js
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import pluginNext from "@next/eslint-plugin-next";
+import pluginReact from "eslint-plugin-react";
+import pluginReactHooks from "eslint-plugin-react-hooks";
+import pluginJsxA11y from "eslint-plugin-jsx-a11y";
+
+const next = pluginNext.configs.recommended;
+const vitals = pluginNext.configs["core-web-vitals"];
+
+export default [
+  { ignores: [".next/**", "node_modules/**", "out/**", "build/**", "_audit_artifacts/**", "_screenshots/**"] },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ["**/*.{js,jsx,ts,tsx,mjs,cjs}"],
+    plugins: {
+      "@next/next": next.plugins["@next/next"],
+      react: pluginReact,
+      "react-hooks": pluginReactHooks,
+      "jsx-a11y": pluginJsxA11y,
+    },
+    rules: {
+      ...next.rules,
+      ...vitals.rules,
+      // existing project-specific adjustments only
+    },
+  },
+];
+```
+
+Then run `npx eslint "src/app/(muse)/muse/page.tsx"` first. It must parse TSX and show actual findings. Fix/classify those incrementally; do not expand ignores to hide source or test files. If `npm run lint` with no path has no intended files, change the **script** to an explicit app glob rather than pretending an empty lint is success.
+
+### Bundle K — staged platform modernization (security first, not blind upgrades)
+
+The repository currently pins `next` to `^16.3.1`, `eslint-config-next` to `16.2.6`, React 19.2.4, and TypeScript `^5`.
+
+1. **Urgent:** upgrade Next.js to the current 16.3 security patch (`16.3.6` per Vercel's September 22, 2026 advisory) and align `eslint-config-next` to the exact same 16.3.6 release. Run lockfile-only review, cache-free typecheck, full unit/E2E smoke, and production build. This is security maintenance, not optional optimization.
+2. **React 19.3:** stage a separate React/React-DOM upgrade from 19.2.4 to 19.3 only after the Next patch is green. React 19.3's stable View Transitions may improve Muse’s Discover card and screen changes, but do a measured opt-in prototype rather than wrapping the app wholesale; respect reduced motion and retain current interaction tests.
+3. **TypeScript 6.0:** do not make it a drive-by release upgrade. Create a branch/spike first: run TS 6 with `--noEmit`, inventory breaking/deprecated config behavior, ensure explicit `types` and `rootDir` where needed, and migrate only after no-error parity. It improves modern ESM/defaults and prepares for TS 7, but it is tooling/runtime-risk work—not an immediate client performance feature.
+4. **React Compiler:** evaluate only after lint is truthful and the page composition has parity coverage. Next 16.3 includes React Compiler/Turbopack improvements, but enable/compiler-test only behind a before/after profile and regression suite; the 4k-line client shell is exactly where blind memoization/compiler adoption could uncover assumptions.
+5. Add a weekly dependency/security maintenance workflow (`npm audit --audit-level=high`, lockfile diff review, production build); never auto-major-upgrade production dependencies.
+
+Official references: https://nextjs.org/blog (16.3.6 security update); https://react.dev/blog/2026/09/09/react-19-3 (React 19.3); https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html (TS 6.0 migration).
+
+### P0 Bundle J — video moderation is not a functioning safety pipeline (release blocker)
+
+Source audit confirms `/api/muse/upload` calls `startVideoModeration(buffer)`, while `src/lib/contentScan.ts` sends `Video: { Bytes: videoBuffer }` to Rekognition `StartContentModeration`. AWS requires a video stored as an **S3Object**, not raw bytes; the current call cannot initiate the intended job. Further, `getVideoModerationResult()` has no production caller (grep finds only its definition), so even a valid job has no result consumer. Yet the route still uploads the WebM to `muse-uploads` and returns success/pending.
+
+AWS reference: [StartContentModeration API](https://docs.aws.amazon.com/rekognition/latest/APIReference/API_StartContentModeration.html) requires `Video.S3Object`; it also describes completion via SNS/job result retrieval.
+
+Required remediation before claiming video safety:
+
+1. Do **not** publish a video while unmoderated. Ingest to a genuinely private/quarantine location with no public or direct URL, or fail closed when no verified moderation provider is configured.
+2. Implement a real compatible pipeline: copy/stage to an AWS S3 object accessible in the same region, start Rekognition with `S3Object`, persist job metadata/status transactionally, and consume completion through an authenticated SNS/webhook or guarded worker/cron with pagination.
+3. On completed safe result, promote/copy to the appropriate public/private Muse bucket and update the owning record atomically. On unsafe/error/timeout, keep inaccessible, remove quarantine bytes, create incident/escalation as required, and notify only appropriate reviewers.
+4. Make video format/provider compatibility explicit. AWS Rekognition stored-video moderation documents supported formats such as MP4/MOV/AVI; WebM must be transcoded or sent to a provider that supports it—never assume it is accepted.
+5. Add integration tests with mocked storage/Rekognition: no public URL before safe completion; bad start/job failure/timeout remains private; safe promotion exactly once; unsafe result is never promoted; job result processing is idempotent.
+6. Until this is implemented and environment-tested, disable video upload in demo and non-demo UI/API or keep it unavailable with an honest message. This is a safety release blocker, not a cosmetic follow-up.
+
+### P0 Bundle J (continued) — private album media orphaning
+
+`albumDelete` and `albumRemovePhoto` in `src/lib/muse-actions/albums.ts` delete database rows only; they never remove their `img_url` objects. Private album uploads are stored as `storage://muse-private/<profile>/album/...`, while `/api/muse/upload` DELETE always removes from `muse-uploads`. Result: removing a private album/photo can leave the private object indefinitely reachable to anyone holding an old valid signed URL until expiry, consumes storage, and defeats expected media lifecycle hygiene.
+
+1. Implement an ownership-checked server-side media deletion helper that resolves only valid Muse locators/owned public URLs, selects the correct bucket, and removes the object(s).
+2. Album/photo deletion must enumerate affected media server-side and delete/queue cleanup for both `muse-private` and legacy public-media locators; never accept an arbitrary bucket/path from the client.
+3. Define failure behavior: do not silently abandon an object if the DB delete succeeds. Use a durable cleanup record/retry job or a transactionally recoverable sequence; surface failures to observability.
+4. Cover private photo removal, private album removal, public legacy media, foreign-owner rejection, repeated delete/idempotency, and storage-provider failure. Confirm raw private URLs remain denied and only fresh authorized signed URLs work after the change.
+
+### Coordination / ownership
+
+- Wyzmind owns git commits, push, migrations, Vercel configuration, and deployment verification.
+- ChatGPT continues independent code/live audits and will append subsequent, non-overlapping bundles here.
+- Before source edits, check `git status` and this handoff; avoid touching concurrent `page.tsx` composition work unless a concrete regression requires it.
+
+### Bundle E — CI/runtime parity and scheduled-job coverage
+
+Static review of the current repository found a release-gate mismatch and unbalanced cron coverage.
+
+1. **Fix CI runtime environment parity.** `.github/workflows/ci.yml` builds the e2e artifact with placeholder Supabase/Stripe environment variables, but starts `next start` without passing those variables. Make the `Start server` step use the same explicit non-secret placeholder env set as the build (or define them job-wide). This ensures the smoke app is tested under the same runtime configuration it was built for and never accidentally relies on runner ambient state.
+2. **Test every scheduled route’s authorization boundary.** `backup`, `cron/checkins`, and `cron/capture-bookings` each contain `CRON_SECRET` authorization logic, but only `purge-deleted-accounts` has a route test in `src/app/api/cron`. Add compact unit tests for missing secret, incorrect bearer token, correct token, and demo-mode behavior where applicable. Do not invoke a real provider or database in these tests.
+3. **Fail safely when cron configuration is absent.** Confirm each route returns 401/403 if `CRON_SECRET` is unset (not just when a token is mismatched), and verify Vercel has that variable in the intended environments.
+4. **Keep build-time secrets out of CI.** The current placeholder-only build approach is appropriate; do not add actual Supabase service-role, Stripe, OpenRouter, or Sentry credentials to GitHub Actions.
+5. After this bundle, run cache-free TypeScript, full Vitest, the self-contained Playwright smoke specs, and the production build. Record the deployed revision and environment evidence in this file.
+
+### Bundle F — public-email endpoint integrity and retention-copy correction
+
+Source audit found three concrete issues in currently committed public endpoints:
+
+1. **Replace raw-email unsubscribe links with opaque, expiring tokens.** `src/lib/email.ts` currently emits `/api/muse/unsubscribe?email=<address>`, and the GET route immediately mutates data. This leaks recipient addresses through URLs, referers/logs/link scanners, and lets anyone knowing an address unsubscribe it. Add a purpose-limited, signed/opaque unsubscribe token with expiry; validate it server-side; make GET a non-mutating confirmation page and reserve mutation for the standards-compatible `List-Unsubscribe-Post: List-Unsubscribe=One-Click` POST or an explicit Confirm action. Ensure token replay is idempotent and never reveals whether an address exists.
+2. **Make waitlist email uniqueness database-enforced and atomic.** Existing migrations create only a non-unique `idx_muse_waitlist_email`, while `waitlist/route.ts` does select-then-insert. Add a case-normalized unique constraint/index (after safe duplicate remediation) and use a conflict-aware insert/upsert. This removes concurrent duplicate signup/welcome-email races. Keep normalized email input, rate limiting, demo no-write behavior, and a generic non-enumerating response.
+3. **Correct stale help copy.** `support/route.ts` fallback says deletion “removes your profile and data.” Update it to accurately state immediate access suspension and scheduled permanent deletion after the documented 30-day retention/recovery window; avoid promising a specific policy unless it is the same active policy text.
+4. Tests required: token invalid/expired/tampered/replay; GET does not mutate; valid one-click POST mutates once; waitlist concurrent/conflict behavior; demo denies all public persistence; support retention response.
+5. Update email templates/header metadata and policy wording together, then run cache-free typecheck, unit tests, and a local route-level integration test. Do not send real mail in tests.

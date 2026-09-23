@@ -39,7 +39,9 @@ export function useRecorder(opts: {
   }, []);
 
   useEffect(() => () => {
-    try { mrRef.current?.stop(); } catch { /* already stopped */ }
+    try { mrRef.current?.stop(); } catch {
+      // intentionally ignored - already stopped
+    }
     streamRef.current?.getTracks().forEach((t) => t.stop());
     if (timerRef.current) window.clearInterval(timerRef.current);
   }, []);
@@ -86,7 +88,9 @@ export function useRecorder(opts: {
               const tj = await tr.json();
               transcript = typeof tj.transcript === "string" && tj.transcript.trim() ? tj.transcript.trim() : undefined;
             }
-          } catch { /* transcription is best-effort */ }
+          } catch {
+        // transcription is best-effort - intentionally ignored
+      }
         }
         setSending(false);
         onDone(url, kind, durationMs, type, transcript);
@@ -116,17 +120,23 @@ export function useRecorder(opts: {
         setShowConsent(true);
         return;
       }
-    } catch { /* localStorage unavailable */ }
+    } catch {
+      // intentionally ignored - localStorage unavailable
+    }
     await begin(kind);
   }, [begin]);
 
   const acceptConsent = useCallback(() => {
-    try { window.localStorage.setItem("muse_rec_consent", "1"); } catch { /* ignore */ }
+    try { window.localStorage.setItem("muse_rec_consent", "1"); } catch {
+      // intentionally ignored - localStorage unavailable
+    }
     setShowConsent(false);
     void begin(consentKind);
   }, [begin, consentKind]);
 
-  const stop = useCallback(() => { try { mrRef.current?.stop(); } catch { /* noop */ } }, []);
+  const stop = useCallback(() => { try { mrRef.current?.stop(); } catch {
+    // intentionally ignored - noop
+  } }, []);
   const cancel = useCallback(() => { cancelRef.current = true; stop(); }, [stop]);
   const fmt = useCallback((ms?: number) => {
     if (!ms || ms < 0) return "";

@@ -29,7 +29,7 @@ export type DeviceTilt = { x: number; y: number };
 let started = false;
 let permissionRequested = false;
 let raw: DeviceTilt = { x: 0, y: 0 };
-let smoothed: DeviceTilt = { x: 0, y: 0 };
+const smoothed: DeviceTilt = { x: 0, y: 0 };
 let smoothRaf = 0;
 let reducedMotion = false;
 
@@ -94,6 +94,7 @@ export function requestMotionPermission() {
     // Denied or unsupported — getDeviceTilt() just keeps returning the mouse
     // fallback (or {0,0} on a touch device with no mouse), no error surfaced
     // to the user. This is ambient polish, not a feature anything depends on.
+    // intentionally ignored
   });
 }
 

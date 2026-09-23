@@ -55,7 +55,9 @@ export async function checkRate(ip: string, action: string, maxPerMin: number): 
     const sb = getServiceClient();
     const { data, error } = await sb.rpc("check_rate", { p_key: key, p_limit: maxPerMin });
     if (error) {
-      try { console.error("[rate-limit] fail-closed on RPC error for", key, error.message); } catch {}
+      try { console.error("[rate-limit] fail-closed on RPC error for", key, error.message); } catch {
+        // intentionally ignored
+      }
       return false;
     }
     // check_rate() always RETURNS BOOLEAN from a single-row upsert, so a
@@ -66,10 +68,14 @@ export async function checkRate(ip: string, action: string, maxPerMin: number): 
     // the returned value). Require an explicit `true`; anything else denies.
     if (data === true) return true;
     if (data === false) return false;
-    try { console.error("[rate-limit] fail-closed on unexpected RPC result for", key, JSON.stringify(data)); } catch {}
+    try { console.error("[rate-limit] fail-closed on unexpected RPC result for", key, JSON.stringify(data)); } catch {
+      // intentionally ignored
+    }
     return false;
   } catch (e) {
-    try { console.error("[rate-limit] fail-closed on exception for", key, (e as Error)?.message); } catch {}
+    try { console.error("[rate-limit] fail-closed on exception for", key, (e as Error)?.message); } catch {
+      // intentionally ignored
+    }
     return false;
   }
 }

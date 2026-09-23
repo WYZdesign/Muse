@@ -57,7 +57,9 @@ export function createSafeObserver(
     console.error(message);
     try {
       window.dispatchEvent(new CustomEvent("muse:observer-tripped", { detail: { label, maxFiringsPerWindow, windowMs } }));
-    } catch {}
+    } catch {
+      // intentionally ignored - observer already dead
+    }
   };
 
   const guardedCallback: MutationCallback = (mutations, obs) => {
@@ -84,7 +86,9 @@ export function createSafeObserver(
     },
     disconnect: () => {
       firingTimestamps = [];
-      try { observer?.disconnect(); } catch {}
+      try { observer?.disconnect(); } catch {
+        // intentionally ignored - observer already dead
+      }
     },
   };
 }

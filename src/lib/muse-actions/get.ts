@@ -304,7 +304,7 @@ export async function GET(req: NextRequest) {
       // counts, not derived from the session's own (self-reported) `rating`.
       const hostIds = [...new Set(rows.map((s: any) => s.host_id).filter(Boolean))];
       let verifiedByHost = new Map<string, boolean>();
-      let completedByHost = new Map<string, number>();
+      const completedByHost = new Map<string, number>();
       if (hostIds.length) {
         const { data: hosts } = await sb.from("muse_profiles").select("id, verified").in("id", hostIds);
         verifiedByHost = new Map((hosts || []).map((h: any) => [h.id, !!h.verified]));
@@ -493,7 +493,7 @@ export async function GET(req: NextRequest) {
       for (const u of urls) counts[u] = 0;
       for (const r of rows || []) { const u = (r as any).photo_url; if (counts[u] != null) counts[u]++; }
       // Whether the viewer liked each (if authed).
-      let likedByMe: Record<string, boolean> = {};
+      const likedByMe: Record<string, boolean> = {};
       if (profileId) {
         const { data: mine } = await sb.from("muse_photo_likes").select("photo_url").eq("user_id", profileId).in("photo_url", urls);
         for (const r of mine || []) likedByMe[(r as any).photo_url] = true;
@@ -523,7 +523,7 @@ export async function GET(req: NextRequest) {
       // paid, rather than staying visible forever since a booking's own
       // `status` tracks session confirmation, not payment.
       const bookingIds = [...(asBooker || []), ...(asHost || [])].map((b: any) => b.id);
-      let paymentStatusByBooking: Record<string, string> = {};
+      const paymentStatusByBooking: Record<string, string> = {};
       if (bookingIds.length) {
         const { data: payments } = await sb.from("muse_booking_payments").select("booking_id, status").in("booking_id", bookingIds);
         for (const p of payments || []) paymentStatusByBooking[String((p as any).booking_id)] = (p as any).status;
@@ -816,7 +816,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ albums: [] });
       }
       const isOwner = !!profileId && String(profileId) === String(targetProfileId);
-      let query = sb.from("muse_albums").select("id, profile_id, title, description, cover_url, access_level, tags, position, view_count, like_count, created_at").eq("profile_id", targetProfileId).order("position");
+      const query = sb.from("muse_albums").select("id, profile_id, title, description, cover_url, access_level, tags, position, view_count, like_count, created_at").eq("profile_id", targetProfileId).order("position");
       const { data: albums, error } = await query;
       if (error) return safeServerError(error, "db op");
       let visible = albums || [];
@@ -831,7 +831,7 @@ export async function GET(req: NextRequest) {
       }
       // Attach photo counts without exposing photo rows for albums the viewer can't open.
       const albumIds = visible.map((a: any) => a.id);
-      let counts: Record<string, number> = {};
+      const counts: Record<string, number> = {};
       if (albumIds.length) {
         const { data: photoRows } = await sb.from("muse_album_photos").select("album_id").in("album_id", albumIds);
         for (const row of photoRows || []) counts[row.album_id] = (counts[row.album_id] || 0) + 1;

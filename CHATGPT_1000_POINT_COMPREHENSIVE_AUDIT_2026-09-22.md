@@ -39,6 +39,14 @@
 - Muses list density is remediated in source by removing duplicate last-message rendering, limiting metadata to one three-chip row with `+N` overflow, and tightening list-only framing. Await visual sign-off at 375–452px before scoring the outcome.
 - Demo dispatcher coverage now proves 14 representative mutation families return 409 and create no mocked writes. Deployed environment configuration and route/provider negative evidence remain required.
 
+### Live/source addendum — ongoing remediation evidence (2026-09-23)
+
+- Live authenticated Discover DOM now verifies queued cards are both `aria-hidden` and `inert`; their controls are visually mounted only for deck animation and are not usable by assistive technology or pointer input. The prior early-next-card regression is closed with runtime evidence.
+- The active Discover surface now has no unnamed visible interactive controls and no active/non-inert target under 44 × 44 CSS pixels. The visually-hidden skip link remains reachable by keyboard and is intentionally exempt from touch-target measurement.
+- New runtime accessibility defects were found and queued: opacity-zero swipe words (`LIKE`, `NOPE`, `SUPER`) still enter the accessibility tree; decorative background/badge SVGs lack explicit decorative semantics; menu/dialog trigger state is incomplete. These keep the modal/disclosure and animation leaf checks below release grade.
+- New source-verified P0 media blockers were found: video moderation sends unsupported raw bytes to Rekognition's stored-video API and has no result-consumption path; pending videos can still be uploaded. Private album/photo deletion also deletes database rows without removing the associated private storage object. Both must be resolved and environment-tested before materially increasing media/safety scores.
+- Therefore the overall score remains **6.15 / 10**. Positive Discover findings improve evidence confidence for specific mobile/accessibility leaves; they do not offset unresolved media-safety and storage-lifecycle release blockers.
+
 ---
 
 ## 1. Core product interaction — 6.5/10

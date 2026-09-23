@@ -85,7 +85,7 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
       });
       prevFocus.current?.focus?.();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [active]);
 
   return ref;

@@ -47,6 +47,8 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@eslint/compat": "^2.1.1",
+    "@eslint/eslintrc": "^3.3.7",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
@@ -58,6 +60,9 @@
     "canvas": "^3.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "playwright": "^1.62.1",
     "tailwindcss": "^4",
     "typescript": "^5",

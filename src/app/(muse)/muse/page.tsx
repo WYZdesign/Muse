@@ -1956,7 +1956,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       // don't compute/attach a distance figure for someone who opted out.
       const targetAllowsDistance = (p as any).showDistance !== false;
       const distMi = myGeo && geo && targetAllowsDistance ? distanceMiles(myGeo, geo) : null;
-      let boosted = geo ? { ...p, lat: geo.lat, lng: geo.long } : { ...p };
+      const boosted = geo ? { ...p, lat: geo.lat, lng: geo.long } : { ...p };
       if (distMi !== null) (boosted as any).distanceMi = distMi;
       // Recompute live match % from the user's current type/looking (the duality
       // change). calcMatch is source-of-truth; static seed score is a floor only
