@@ -407,10 +407,10 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   useEffect(() => {
     try {
-      const c = safeGetItem("muse_open_count");
-      const count = c ? parseInt(c) + 1 : 1;
-      safeSetItem("muse_open_count", String(count));
-    } catch {}
+        const c = safeGetItem("muse_open_count");
+        const count = c ? parseInt(c) + 1 : 1;
+        safeSetItem("muse_open_count", String(count));
+      } catch (e) { console.debug("[page.tsx] open count storage ignore", e); }
   }, []);
 
   const [viewProfile, setViewProfileRaw] = useState<any>(null);
@@ -430,7 +430,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (viewedSessionRef.current.has(id)) return;
       viewedSessionRef.current.add(id);
       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-view", target_id: id }) }).catch(() => {});
-    } catch {}
+    } catch (e) { console.debug("[page.tsx] viewProfile tracking ignore", e); }
   }, [authUser]);
   const viewProfileTrap = useFocusTrap(!!viewProfile, () => setViewProfile(null));
   const shareTargetTrap = useFocusTrap(!!shareTarget, () => setShareTarget(null));
@@ -629,7 +629,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // arrays when the table is empty or the request fails (graceful fallback).
   const bootstrapData = useCallback(async () => {    try {
       let token = "";
-      try { token = JSON.parse(localStorage.getItem("muse_user") || "{}")?.access_token || ""; } catch {}
+      try { token = JSON.parse(localStorage.getItem("muse_user") || "{}")?.access_token || ""; } catch { console.debug("[muse] ignored unreadable persisted session"); }
       // Match recommendations require auth — skip when there's no session yet
       // (avoids a 401 on the pre-login boot).
       const matchPromise = token
@@ -709,7 +709,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (communities?.communities?.length) setLiveCommunities(communities.communities.map(normalizeCommunity));
       if (sessions?.sessions?.length) setLiveSessions(sessions.sessions.map(normalizeSession));
       if (professionals?.professionals?.length) setLiveProfessionals(professionals.professionals);
-    } catch {}
+    } catch { console.debug("[muse] initial recommendation refresh failed"); }
     setBootstrapped(true);
     setDiscoverLoading(false);
   }, [apiFetch]);
@@ -738,7 +738,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         lastSyncRef.current = now;
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs, stats: currentUser.stats }) }).catch(() => {});
       }
-    } catch(e) {}
+    } catch { console.debug("[muse] persisted client state could not be saved"); }
   }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,savedSessionIds,savedProfileIds,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,showZodiac,showAge,showMbti,showLifePath,showChinese,showMatchPercent,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,authUser,chatTarget]);
 
   const loadState = useCallback(async () => {
@@ -827,11 +827,11 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       }
       if (d.authUser) setAuthUser(d.authUser);
       if (d.authUser && !VALID_SCREENS.includes(d.screen||"")) setScreen("discover");
-    } catch(e) {}
-    try { const b=safeGetItem("muse_boost"); if(b){const e=parseInt(b);if(e>Date.now()){setBoostActive(true);setBoostEnd(e);}else{safeRemoveItem("muse_boost");}} } catch(e) {}
+    } catch { console.debug("[muse] persisted client state could not be restored"); }
+    try { const b=safeGetItem("muse_boost"); if(b){const e=parseInt(b);if(e>Date.now()){setBoostActive(true);setBoostEnd(e);}else{safeRemoveItem("muse_boost");}} } catch { console.debug("[muse] persisted boost state could not be restored"); }
   }, []);
 
-  useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{safeRemoveItem("muse_boost");}catch{}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd]);
+  useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{safeRemoveItem("muse_boost");}catch{console.debug("[muse] expired boost state could not be cleared");}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd]);
 
   // Fetch connected accounts status from server on mount (overrides stale localStorage)
   useEffect(() => {
@@ -899,7 +899,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                   const sub = await reg?.pushManager.getSubscription();
                   if (sub) setPushEnabled(true);
                 }
-              } catch {}
+              } catch { console.debug("[muse] deferred client refresh failed"); }
             })();
             if (d.profile) {
               const isOwner = d.user.email === OWNER_EMAIL;
@@ -1010,7 +1010,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           } else {
             // Retry once before giving up — network hiccup, not invalid token
             if (attempt < 1) {
-              setTimeout(() => { try { applySession(accessToken, refreshToken, attempt + 1); } catch {} }, 1000);
+              setTimeout(() => { try { applySession(accessToken, refreshToken, attempt + 1); } catch { console.debug("[muse] session retry could not be scheduled"); } }, 1000);
               return;
             }
             // Suspended accounts were silently bounced to the login screen with no
@@ -1018,9 +1018,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             // don't loop through the same rejection. (Event, not showToast: this
             // callback is defined before showToast's declaration.)
             if (d.code === "ACCOUNT_SUSPENDED") {
-              try { safeRemoveItem("muse_user"); } catch {}
+              try { safeRemoveItem("muse_user"); } catch { console.debug("[muse] suspended session could not be cleared from storage"); }
               clearRefreshToken();
-              try { window.dispatchEvent(new CustomEvent("muse:toast", { detail: "Your account has been suspended. Contact support@wyzdesign.com" })); } catch {}
+              try { window.dispatchEvent(new CustomEvent("muse:toast", { detail: "Your account has been suspended. Contact support@wyzdesign.com" })); } catch { console.debug("[muse] suspension toast event could not be dispatched"); }
               setAuthUser(null);
               setScreen("auth");
             } else if (status === 401) {
@@ -1040,18 +1040,18 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               // alone; real API calls elsewhere already handle their own 401s via
               // authFetch's refresh-and-retry, and a genuinely dead token will
               // surface there instead of on every load.
-              try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
+              try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch { console.debug("[muse] ready event could not be dispatched"); }
               return;
             }
           }
           // Session resolved — splash can hide regardless of outcome
-          try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
+          try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch { console.debug("[muse] ready event could not be dispatched"); }
         })
         .catch(() => {
           if (attempt < 1) {
-            setTimeout(() => { try { applySession(accessToken, refreshToken, attempt + 1); } catch {} }, 1000);
+            setTimeout(() => { try { applySession(accessToken, refreshToken, attempt + 1); } catch { console.debug("[muse] session retry could not be scheduled"); } }, 1000);
           } else {
-            try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
+            try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch { console.debug("[muse] ready event could not be dispatched"); }
           }
         });
     };
@@ -1108,16 +1108,16 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             return;
           }
         }
-      } catch {}
-      try { safeRemoveItem("muse_user"); } catch {}
-      try { clearRefreshToken(); } catch {}
+      } catch { console.debug("[muse] remote sign-out cleanup failed"); }
+      try { safeRemoveItem("muse_user"); } catch { console.debug("[muse] local session could not be cleared"); }
+      try { clearRefreshToken(); } catch { console.debug("[muse] refresh token could not be cleared"); }
       // scope:'local' clears the SDK's own in-memory/persisted session and
       // cancels its autoRefreshToken timer without a network round-trip —
       // exactly what's needed here since the token is already known-dead.
-      try { supabase.auth.signOut({ scope: "local" }).catch(() => {}); } catch {}
+      try { supabase.auth.signOut({ scope: "local" }).catch(() => console.debug("[muse] local Supabase sign-out failed")); } catch { console.debug("[muse] local Supabase sign-out could not start"); }
       setAuthUser(null);
       setScreen("auth");
-      try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {}
+      try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch { console.debug("[muse] ready event could not be dispatched"); }
     };
     if (pendingRefresh) {
       supabase.auth.refreshSession({ refresh_token: pendingRefresh })
@@ -1204,13 +1204,13 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         }
         sessionStorage.setItem("muse_build", bid);
       }
-    } catch {}
+    } catch { console.debug("[muse] startup data refresh failed"); }
 
-    try { sessionStorage.setItem("muse_loaded", "1"); } catch {}
+    try { sessionStorage.setItem("muse_loaded", "1"); } catch { console.debug("[muse] load marker could not be persisted"); }
     loadState();
     initAnalyticsSession();
     setHydrated(true);
-    try { window.dispatchEvent(new CustomEvent("muse:hydrated")); } catch {}
+    try { window.dispatchEvent(new CustomEvent("muse:hydrated")); } catch { console.debug("[muse] hydrated event could not be dispatched"); }
 
     // Remote kill-switch: if MUSE_CACHE_VERSION changed server-side, purge SW +
     // caches and reload once. Non-blocking; only acts on an actual mismatch.
@@ -1241,10 +1241,10 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           sessionStorage.setItem("muse_cache_version", d.version);
         })
         .catch(() => {});
-    } catch {}
+    } catch { console.debug("[muse] scene preference could not be restored"); }
 
     // Capture geolocation for distance matching (best-effort, silent on denial).
-    getGeolocation().then(g => { if (g) { setMyGeo(g); try { safeSetItem("muse_geo", JSON.stringify(g)); } catch {} } })
+    getGeolocation().then(g => { if (g) { setMyGeo(g); try { safeSetItem("muse_geo", JSON.stringify(g)); } catch { console.debug("[muse] location could not be persisted"); } } })
       .catch(() => { /* silently handled */ });
 
     // Handle post-checkout return: refresh tier from server
@@ -1277,12 +1277,12 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             else showToast(d?.error || "Couldn't confirm boost purchase — contact support if you were charged");
           })
           .catch(() => showToast("Couldn't confirm boost purchase — contact support if you were charged"))
-          .finally(() => { try { safeRemoveItem("muse_pending_boost_purchase"); } catch {} });
+          .finally(() => { try { safeRemoveItem("muse_pending_boost_purchase"); } catch { console.debug("[muse] pending boost marker could not be cleared"); } });
       } else {
         showToast("Boost purchase successful! ⚡");
       }
     } else if (boostResult === "cancelled") {
-      try { safeRemoveItem("muse_pending_boost_purchase"); } catch {}
+    try { safeRemoveItem("muse_pending_boost_purchase"); } catch { console.debug("[muse] pending boost marker could not be cleared"); }
       showToast("Boost purchase cancelled");
     }
 
@@ -1296,7 +1296,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       try {
         const stored = safeGetItem("muse_referral_code");
         if (stored) setObData(prev => ({ ...prev, referralCode: stored }));
-      } catch {}
+      } catch { console.debug("[muse] referral code could not be restored"); }
     }
 
     // Handle OAuth redirect: Supabase returns tokens in URL hash or via getSession
@@ -1311,17 +1311,17 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           }
           return;
         }
-      } catch {}
+      } catch { console.debug("[muse] persisted auth state could not be restored"); }
 
       const savedUser = safeGetItem("muse_user");
       if (savedUser) {
         try {
           const parsed = JSON.parse(savedUser);
           if (parsed?.access_token && !sessionAppliedRef.current) { sessionAppliedRef.current = true; applySession(parsed.access_token, getRefreshToken() || parsed.refresh_token || ""); }
-        } catch(e) {}
+        } catch { console.debug("[muse] persisted session could not be parsed"); }
       } else {
         // No session and no saved user — new visitor, show auth after brief splash
-        setTimeout(() => { try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch {} }, 1500);
+        setTimeout(() => { try { window.dispatchEvent(new CustomEvent("muse:ready")); } catch { console.debug("[muse] ready event could not be dispatched"); } }, 1500);
       }
     })();
 
@@ -1369,7 +1369,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               }));
             }
           }
-        } catch {}
+    } catch { console.debug("[muse] safety state refresh failed"); }
       }
     });
     return () => { authListener?.subscription?.unsubscribe(); };
@@ -1395,7 +1395,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           if (parsed.refresh_token) setRefreshToken(parsed.refresh_token);
           applySession(parsed.access_token, parsed.refresh_token || "");
         }
-      } catch {}
+      } catch { console.debug("[muse] client preference refresh failed"); }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
@@ -1420,7 +1420,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         if (cancelled) return;
         const d = await r.json();
         if (d && typeof d.count === "number") setServerNotifCount(d.count);
-      } catch {}
+      } catch { console.debug("[muse] client preference refresh failed"); }
     };
     poll();
     const iv = setInterval(poll, 20000);
@@ -1459,7 +1459,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             return [...newItems, ...prev];
           });
         }
-      } catch {}
+      } catch { console.debug("[muse] notification count refresh failed"); }
     };
     pull();
     const iv = setInterval(pull, 60000);
@@ -1471,7 +1471,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     try {
       const stored = localStorage.getItem("muse_bg_opacity");
       if (stored) document.documentElement.style.setProperty("--scene-opacity", stored);
-    } catch {}
+    } catch { console.debug("[muse] screen scroll restoration failed"); }
   }, []);
 
   // Show the tide waves only when the user scrolls to the very bottom of the
@@ -1516,7 +1516,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       if (!active) return;
       active.scrollTop = 0;
       active.querySelectorAll<HTMLElement>('[style*="overflow"],.match-list,.messages,.profile-scroll,.portfolio-scroll,.settings-scroll,.briefs-scroll,.conn-scroll,.sub-scroll,.modal-body,.card-info-scroll').forEach(el => { el.scrollTop = 0; });
-    } catch {}
+    } catch { console.debug("[muse] streak refresh failed"); }
   }, [screen]);
 
   // Also always show waves on the swipe card (Discover) as a gradient accent.
@@ -1603,7 +1603,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         setTopQuests(top);
       }
       if (typeof d?.streak === "number") setLoginStreak(d.streak);
-    } catch {}
+    } catch { console.debug("[muse] quest refresh failed"); }
   }, [apiFetch]);
 
   // Quest tracking — call after successful actions. Batches multiple keys into
@@ -1622,7 +1622,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         if (leveled) showToast("🎉 Level up! Keep completing quests for rewards");
       }
       if (completed) setClaimableQuests(n => n + 1);
-    } catch {}
+    } catch { console.debug("[muse] safety preference refresh failed"); }
   }, [apiFetch, showToast]);
 
   // Surface storage quota failures to the user instead of failing silently.
@@ -1649,12 +1649,12 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     questBootRef.current = true;
     const today = new Date().toISOString().slice(0, 10);
     let lastLoginDay = "";
-    try { lastLoginDay = safeGetItem("muse_quest_login_day") || ""; } catch {}
+    try { lastLoginDay = safeGetItem("muse_quest_login_day") || ""; } catch { console.debug("[muse] quest login state could not be read"); }
     if (lastLoginDay !== today) {
-      try { safeSetItem("muse_quest_login_day", today); } catch {}
+      try { safeSetItem("muse_quest_login_day", today); } catch { console.debug("[muse] quest login state could not be saved"); }
       try {
         let days: string[] = [];
-        try { days = JSON.parse(safeGetItem("muse_login_days") || "[]"); } catch {}
+        try { days = JSON.parse(safeGetItem("muse_login_days") || "[]"); } catch { console.debug("[muse] login history could not be read"); }
         if (!days.includes(today)) { days.push(today); }
         const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
         days = days.filter(d => new Date(d) >= cutoff);
@@ -1665,7 +1665,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           weekDays.push(days.includes(dt.toISOString().slice(0, 10)));
         }
         setWeeklyLogins(weekDays);
-      } catch {}
+      } catch { console.debug("[muse] activity refresh failed"); }
       trackQuest("login", "login_streak");
       setTimeout(() => setShowDailyLogin(true), 800);
     }
@@ -1708,7 +1708,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     // then immediately discarded — harmless but confusing; cleaner to gate
     // the localStorage check before any ref mutation.)
     let seen = "";
-    try { seen = safeGetItem(tourSeenKey(id)) || ""; } catch {}
+    try { seen = safeGetItem(tourSeenKey(id)) || ""; } catch { console.debug("[muse] tour state could not be read"); }
     if (seen) return;
     pageTourShownRef.current.add(id);
     setActivePageTour(id);
@@ -1725,25 +1725,25 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     if (!bootstrapped || !authUser) return;
     try {
       let days: string[] = [];
-      try { days = JSON.parse(safeGetItem("muse_login_days") || "[]"); } catch {}
+      try { days = JSON.parse(safeGetItem("muse_login_days") || "[]"); } catch { console.debug("[muse] login history could not be read"); }
       const weekDays: boolean[] = [];
       for (let i = 6; i >= 0; i--) {
         const dt = new Date(); dt.setDate(dt.getDate() - i);
         weekDays.push(days.includes(dt.toISOString().slice(0, 10)));
       }
       setWeeklyLogins(weekDays);
-    } catch {}
+    } catch { console.debug("[muse] weekly login state could not be updated"); }
   }, [bootstrapped, authUser]);
 
   const doLogout = useCallback(async (message: string = "Logged out") => {
-    try { await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "logout" }) }); } catch(e) {}
+    try { await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "logout" }) }); } catch { console.debug("[muse] remote logout request failed"); }
     // Kill the CLIENT-side supabase session too — without this, the persisted
     // supabase-js session survives and silently re-logs the user on next load
     // (shared-device risk). The backend call alone was a no-op for this.
-    try { await supabase.auth.signOut(); } catch {}
+    try { await supabase.auth.signOut(); } catch { console.debug("[muse] local logout cleanup failed"); }
     clearRefreshToken();
     const keys = ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium","muse_referral_code","muse_open_count","muse_hide_premium"];
-    keys.forEach(k => { try { safeRemoveItem(k); } catch {} });
+    keys.forEach(k => { try { safeRemoveItem(k); } catch { console.debug("[muse] local logout key could not be cleared"); } });
     setAuthUser(null); setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free", foundingTier:"", proExpiresAt:"" })); setUserTier("free"); setScreen("auth"); screenHistoryRef.current = []; showToast(message);
   }, [showToast]);
 
@@ -1966,7 +1966,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         const liveScore = calcMatch(meForMatch, p as any);
         if (obData.type) boosted.score = Math.min(99, Math.max(boosted.score, liveScore));
         (boosted as any).matchReasons = matchReasons(meForMatch, p as any);
-      } catch {}
+      } catch { console.debug("[muse] match explanation could not be calculated"); }
       if (boosted.badges?.length) {
         const badgeBoost = boosted.badges.reduce((acc: number, b: any) => {
           if (b.name === "Verified Pro") return acc + 5;
@@ -2040,14 +2040,14 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       return s;
     });
     analytics.screenView(s);
-    try { window.scrollTo({ top: 0, behavior: "instant" }); } catch {}
+    try { window.scrollTo({ top: 0, behavior: "instant" }); } catch { console.debug("[muse] screen scroll reset failed"); }
   }, []);
   const goBack = useCallback(() => {
     const prev = screenHistoryRef.current.pop();
     const dest = prev && prev !== "auth" ? prev : "discover";
     setScreen(dest);
     analytics.screenView(dest);
-    try { window.scrollTo({ top: 0, behavior: "instant" }); } catch {}
+    try { window.scrollTo({ top: 0, behavior: "instant" }); } catch { console.debug("[muse] screen scroll reset failed"); }
   }, []);
 
   const matchActions = useMemo(() => ({
@@ -2587,7 +2587,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     setCurrentUser(prev => ({ ...prev, name: editName || prev.name, avatar: editAvatar || prev.avatar, type: editType || prev.type }));
     setObData(prev => ({ ...prev, bio: editBio, loc: editLoc, type: editType || prev.type, looking: editLooking.length ? editLooking : prev.looking, mediaKitUrl: editMediaKit }));
     let geo: { lat: number; long: number; city?: string } | null = null;
-    try { geo = await getGeolocation(); } catch {}
+    try { geo = await getGeolocation(); } catch { console.debug("[muse] profile location lookup failed"); }
     setShowEditProfile(false);
     // Auto-detect NSFW from bio keywords (matches the chat disclosure trigger regex)
     const bioLower = (editBio || "").toLowerCase();
@@ -3319,10 +3319,10 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                             const ad = await ar.json();
                             if (ad?.success && ad?.album?.id) {
                               for (const item of realPortfolioPhotos) {
-                                try { await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "add-album-photo", albumId: ad.album.id, img_url: item.img }) }); } catch {}
+                                try { await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "add-album-photo", albumId: ad.album.id, img_url: item.img }) }); } catch { console.debug("[muse] portfolio photo could not be added to album"); }
                               }
                             }
-                          } catch {}
+                          } catch { console.debug("[muse] album photo import failed"); }
                         }
                       }
                       setScreen("discover");showToast("Welcome to Muse!")
@@ -3408,7 +3408,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               {icon:"💼",label:"Scam or Fraud",desc:"Selling, soliciting, or phishing"},
               {icon:"📋",label:"Other",desc:"Something else not listed above"},
             ].map(r=>(
-               <div key={r.label} className="report-option" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); (async()=>{if(reportTarget){let ok=false;try{const res=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"report",target_id:reportTarget.id,target_type:reportTarget.type,reason:r.label})});ok=res.ok}catch{}showToast(ok?"Reported: "+r.label:"Failed to report")}setShowReport(false);setReportTarget(null)})(); } }} onClick={async()=>{if(reportTarget){let ok=false;try{const res=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"report",target_id:reportTarget.id,target_type:reportTarget.type,reason:r.label})});ok=res.ok}catch{}showToast(ok?"Reported: "+r.label:"Failed to report")}setShowReport(false);setReportTarget(null)}}>
+               <div key={r.label} className="report-option" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); (async()=>{if(reportTarget){let ok=false;try{const res=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"report",target_id:reportTarget.id,target_type:reportTarget.type,reason:r.label})});ok=res.ok}catch{console.debug("[muse] report request failed")}showToast(ok?"Reported: "+r.label:"Failed to report")}setShowReport(false);setReportTarget(null)})(); } }} onClick={async()=>{if(reportTarget){let ok=false;try{const res=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"report",target_id:reportTarget.id,target_type:reportTarget.type,reason:r.label})});ok=res.ok}catch{console.debug("[muse] report request failed")}showToast(ok?"Reported: "+r.label:"Failed to report")}setShowReport(false);setReportTarget(null)}}>
                 <div className="report-option-icon">{r.icon}</div>
                 <div>
                   <div className="report-option-text">{r.label}</div>
@@ -3618,7 +3618,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                 const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "saved-search-save", name, query: (searchQuery||"").trim(), filters }) });
                 if (!r.ok) throw new Error("failed");
                 showToast("Search saved");
-                try { const lr = await apiFetch("/api/muse?type=saved-search-list"); const ld = await lr.json(); setSavedSearches(Array.isArray(ld.searches)?ld.searches:[]); } catch {}
+                try { const lr = await apiFetch("/api/muse?type=saved-search-list"); const ld = await lr.json(); setSavedSearches(Array.isArray(ld.searches)?ld.searches:[]); } catch { console.debug("[muse] saved searches could not be refreshed"); }
               } catch { showToast("Couldn't save search"); }
             }}>Save this search</button>
             <button className="btn btn-gold" style={{width:"100%"}} onClick={()=>{
@@ -4143,7 +4143,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         <PageTour
           open
           onClose={() => {
-            try { safeSetItem(tourSeenKey(activePageTour), "1"); } catch {}
+            try { safeSetItem(tourSeenKey(activePageTour), "1"); } catch { console.debug("[muse] tour completion could not be persisted"); }
             setActivePageTour(null);
           }}
           icon={PAGE_TOURS[activePageTour].icon}
@@ -4207,4 +4207,3 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     </div>
   );
 }
-
