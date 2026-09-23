@@ -48,6 +48,233 @@ These are ALL user-side tasks, not code fixes.
 ## How to work
 - Edit files in V:\Muse directly
 - Run `npx tsc --noEmit` and `npx vitest run` before asking me to push
+
+## 📋 RESOURCE INDEX — READ THESE, DO NOT GUESS
+
+### LIVE APP / DEPLOYMENTS
+- Primary live app: https://muse.wyzdesign.com/muse
+- Previously reported Vercel deployment: https://muse-ik23kdxs2-wyzdesigns-projects.vercel.app/muse/
+- Previously reported restored-page deployment: https://muse-6c8kgcems-wyzdesigns-projects.vercel.app
+- Do not assume any URL is current. Verify deployment SHA, URL, environment, and actual live behavior.
+
+### LOCAL PROJECT ROOT
+- V:\Muse
+
+### MANDATORY COLLABORATION / AUDIT DOCUMENTS
+- V:\Muse\AGENT_COLLABORATION_PROTOCOL.md
+  Binding operating rules for every model/agent.
+- V:\Muse\HANDOFF.md
+  Current shared queue, agent communication, acceptance criteria, and verification records.
+- V:\Muse\CHATGPT_1000_POINT_COMPREHENSIVE_AUDIT_2026-09-22.md
+  Full 10 × 10 × 10 audit; conservative overall score was 6.15/10, not release-ready.
+- V:\Muse\OPEN_SOURCE_FIRST_AUDIT_CROSS_REFERENCE_2026-09-22.md
+  Full mapping from audit areas to maintained open-source tooling, licenses, adoption order, and rejected/deferred options.
+
+### GIT HISTORY TO REVIEW
+- 0b7ed7f — claimed lint cleanup; independently shown NOT to make page.tsx lint-green.
+- 406260f — accessibility/testing/deployment pipeline commit; do not treat as complete evidence.
+- 5c98537 — ESLint configuration changes.
+- 477862f — 30-day account deletion retention/purge.
+- 960f5ec — mobile touch-target changes.
+- a15e9ad — restored full page.tsx after placeholder regression.
+- 22d9a5a — page.tsx hook split/refactor.
+
+### CURRENT CRITICAL SOURCE FILES / DIRECTORIES
+- V:\Muse\src\app\(muse)\muse\page.tsx
+  Large client shell; focused lint was previously 64 errors / 221 warnings. Do not exclude it.
+- V:\Muse\eslint.config.mjs
+- V:\Muse\package.json
+- V:\Muse\package-lock.json
+- V:\Muse\.github\workflows\ci.yml
+- V:\Muse\playwright.config.ts
+- V:\Muse\lighthouserc.js
+- V:\Muse\renovate.json
+- V:\Muse\.gitleaks.toml
+- V:\Muse\src\lib\contentScan.ts
+  Video moderation audit finding: current Rekognition stored-video implementation used raw bytes and had no result consumer.
+- V:\Muse\src\app\api\muse\upload\route.ts
+  Upload, MIME, image/video scan, storage, and deletion behavior.
+- V:\Muse\src\lib\muse-actions\albums.ts
+  Album/photo deletion audit finding: database deletion without full storage lifecycle cleanup.
+- V:\Muse\src\lib\rate-limit.ts
+- V:\Muse\src\app\api\muse\mfa\route.ts
+- V:\Muse\src\app\api\muse\call\
+- V:\Muse\src\app\api\cron\
+- V:\Muse\supabase\
+- V:\Muse\tests\e2e\
+- V:\Muse\tests\fixtures\
+- V:\Muse\tests\helpers\
+
+### KNOWN MIGRATION / INFRASTRUCTURE ITEMS
+- 0022 storage/private-bucket migration — verify actually applied.
+- 0024 retention/deletion migration — verify actually applied.
+- Vercel must have CRON_SECRET in intended environments.
+- Verify Supabase storage privacy, signed URL behavior, RLS, cron authorization, and retention/purge behavior against a disposable/local database before production claims.
+
+### REQUIRED EXACT COMMANDS
+Run against the actual current revision, not a remembered result:
+
+- git status --short
+- git log --oneline -10
+- npx tsc --noEmit --incremental false
+- npx eslint "src/app/(muse)/muse/page.tsx"
+- npm run lint
+- npx vitest run
+- npm run test:e2e
+- npm run build
+
+If npx is unavailable because of Windows shell permissions, use the project-local commands:
+- V:\Muse\node_modules\.bin\tsc.cmd --noEmit --incremental false
+- V:\Muse\node_modules\.bin\eslint.cmd "src/app/(muse)/muse/page.tsx"
+- V:\Muse\node_modules\.bin\vitest.cmd run
+- V:\Muse\node_modules\.bin\playwright.cmd test
+
+### REQUIRED LIVE BROWSER SCOPES
+- Discover
+- Feed
+- Collab
+- Muses — list and grid
+- BTS
+- Menu
+- Sessions — Browse, My Bookings, Requests, book/cancel/back paths
+- Network — search, filters, result interaction
+- Profile
+- Settings
+- All visible modals, drawers, banners, filters, empty states, loading/error states
+- Mobile widths: 390px, 375px, 320px
+
+### REPRODUCED LIVE MOBILE DEFECTS
+- Identity verification Dismiss did not remove the banner; it overlaid Muses, BTS, Network, Profile, and Sessions.
+- Discover has excessive glass bubbles around header controls and photo-position dots.
+- Discover title needs narrow-screen fit.
+- Discover Creative Type/role should use glowing yellow/gold.
+- Muses list is dense and clips/truncates metadata around 375px.
+- Feed Photos filter showed no content despite image posts in All and lacked an explanatory empty state.
+- Collab Safety reminder close control lacked an accessible name.
+- Book Session modal close control lacked an accessible name.
+- Network search visual boundary appeared improved, but must be rechecked after deployment.
+- Book Session opened correctly during last live audit, but all close/cancel/back/error states still require coverage.
+
+### AUTHORITATIVE EXTERNAL REFERENCES
+
+#### Accessibility / browser testing
+- Playwright accessibility testing:
+  https://playwright.dev/docs/accessibility-testing
+- Playwright visual snapshots:
+  https://playwright.dev/docs/test-snapshots
+- Playwright screenshot assertions:
+  https://playwright.dev/docs/api/class-pageassertions
+- Axe Core:
+  https://github.com/dequelabs/axe-core
+- Axe + Playwright:
+  https://github.com/dequelabs/axe
+- WCAG 2.2:
+  https://www.w3.org/TR/WCAG22/
+
+#### Database / Supabase / RLS
+- Supabase local testing:
+  https://supabase.com/docs/guides/local-development/testing/overview
+- Supabase:
+  https://github.com/supabase/supabase
+- pgTAP:
+  https://pgtap.org/
+- pgTAP documentation:
+  https://pgtap.org/documentation.html
+- rlsautotest — Apache-2.0, beta; LOCAL/DISPOSABLE DATABASE ONLY:
+  https://github.com/unitautogen/rlsautotest
+
+#### Security / supply chain
+- OWASP ZAP:
+  https://github.com/zaproxy/zaproxy
+- Semgrep Community Edition:
+  https://semgrep.dev/products/community-edition
+- OpenSSF Scorecard:
+  https://github.com/ossf/scorecard
+- Renovate:
+  https://github.com/renovatebot/renovate
+- Renovate upgrade best practices:
+  https://docs.renovatebot.com/key-concepts/merge-confidence/
+- Lighthouse CI:
+  https://github.com/GoogleChrome/lighthouse-ci
+- Lighthouse:
+  https://github.com/GoogleChrome/lighthouse
+- Syft / SBOM:
+  https://github.com/anchore/syft
+- CycloneDX:
+  https://cyclonedx.org/
+- Gitleaks:
+  https://github.com/gitleaks/gitleaks
+- OSV:
+  https://osv.dev/
+
+#### Performance / observability
+- OpenTelemetry JavaScript:
+  https://opentelemetry.io/docs/languages/js/
+- Grafana OSS:
+  https://grafana.com/oss/
+- Grafana Faro:
+  https://grafana.com/oss/faro/
+- k6:
+  https://github.com/grafana/k6
+- Next.js bundle analyzer:
+  https://nextjs.org/docs/app/guides/package-bundling
+
+#### Media / video safety
+- AWS Rekognition StartContentModeration:
+  https://docs.aws.amazon.com/rekognition/latest/APIReference/API_StartContentModeration.html
+- AWS Rekognition video moderation guide:
+  https://docs.aws.amazon.com/rekognition/latest/dg/procedure-moderate-videos.html
+- FFmpeg:
+  https://github.com/FFmpeg/FFmpeg
+- FFmpeg licensing:
+  https://github.com/FFmpeg/FFmpeg/blob/master/LICENSE.md
+
+#### Platform modernization
+- Next.js blog/security notices:
+  https://nextjs.org/blog
+- React 19.3:
+  https://react.dev/blog/2026/09/09/react-19-3
+- TypeScript 6:
+  https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html
+- React Compiler:
+  https://react.dev/learn/react-compiler
+
+#### API mocking
+- MSW:
+  https://github.com/mswjs/msw
+- MSW + Playwright:
+  https://github.com/mswjs/playwright
+
+#### OPEN-SOURCE / LICENSE RULE
+Before adding any dependency, document:
+- exact purpose and demonstrated Muse problem;
+- license;
+- maintenance/maturity;
+- browser/server/bundle impact;
+- personal-data path;
+- operating owner;
+- removal plan;
+- whether an existing dependency/tool already solves the problem.
+
+Important license notes:
+- Playwright: Apache-2.0.
+- Supabase: Apache-2.0.
+- MSW: MIT.
+- Axe Core: MPL-2.0.
+- Semgrep CE: LGPL-2.1.
+- OWASP ZAP: Apache-2.0.
+- rlsautotest: Apache-2.0 but beta.
+- k6: AGPL-3.0.
+- Unleash: AGPL-3.0.
+- FFmpeg: LGPL by default, but optional GPL components alter obligations.
+- Do not introduce AGPL/GPL tooling into shipped/distributed product paths without explicit license review.
+
+#### BROWSER / TOOLING NOTE
+The prior chat had intermittent Codex browser/filesystem bridge failures:
+- Chrome bridge: `failed to write kernel assets`
+- filesystem runner: `helper_unknown_error: setup refresh had errors`
+
+Do not mistake those failures for passing or failing Muse behavior. If the current chat has working tools, use them. If a tool fails, record exact error and continue with independent work. Never claim browser testing occurred if the browser tool never reached the page.
 - Write changes here or in CHATGPT_P0_IMPLEMENTATION_HANDOFF_2026-09-21.md
 - I handle git commit + push + deploy + verification
 
@@ -603,6 +830,80 @@ Required remediation before claiming video safety:
 - ChatGPT continues independent code/live audits and will append subsequent, non-overlapping bundles here.
 - Before source edits, check `git status` and this handoff; avoid touching concurrent `page.tsx` composition work unless a concrete regression requires it.
 
+### Verification correction — `0b7ed7f` is not lint-green
+
+### Non-negotiable working standard (ChatGPT + Wyzmind)
+
+**Mandatory for every agent/model handoff:** Read and follow [`AGENT_COLLABORATION_PROTOCOL.md`](./AGENT_COLLABORATION_PROTOCOL.md) before acting. This document is the durable procedure across model switches; the rules below are a concise reminder, not a replacement. Every substantive handoff must end with its required Verification record footer.
+
+Every status report must be evidence-led, practical, and complete:
+
+1. Never call a result “10/10,” “complete,” “production ready,” or “passing” without the exact scope, command, revision, and output that justify it. A focused gate failure overrides a broad claimed success.
+2. Do not hide a defect by excluding source/tests, weakening a test, expanding ignores, or relabeling it as low priority. Classify risk and either fix it or leave an explicit, owned follow-up with a testable acceptance criterion.
+3. Prefer the smallest safe, maintainable change; do not add infrastructure, dependencies, or abstractions that do not address a demonstrated Muse need.
+4. Validate all interactive/mobile UI changes at iPhone 13 CSS viewport (390px wide) and 375px; where content is denser, also check 320px. Verify visual layout, touch/keyboard path, empty/error state, and accessibility name/focus behavior.
+5. Before commit/deploy, record: `git status`, cache-free typecheck, truthful focused/full lint, relevant unit/browser tests, build, and live/preview smoke. A test run that did not execute is not evidence.
+6. When one agent changes code, the other reviews the actual diff and reruns the affected gate. Report failures plainly and immediately.
+
+### Requested Discover/mobile fixes (ChatGPT implementation bundle)
+
+1. Remove the glass/bubble background around the Discover match-card pagination dots; retain a simple, high-contrast current-position indicator with accessible `Show photo N` controls.
+2. Ensure the Discover title fits cleanly at 390px, 375px and 320px: no clip, overlap, horizontal scroll, or collision with header actions. Use responsive typography/spacing rather than text truncation.
+3. Render the Discover match-card Creative Type/role in the established glowing yellow/gold accent. Preserve readable contrast over every image/overlay.
+4. Apply the same narrow-screen audit to every route and overlay; no critical content may sit behind the identity-verification banner or fixed bottom navigation.
+
+### Waterfall Bundle M — verified live mobile remediation (Wyzmind implementation)
+
+This bundle is based on reproduced 375px/390px live behavior, not a speculative visual review. Implement it as one coherent mobile patch, then provide a preview URL and exact revision for ChatGPT re-audit.
+
+**M1. Verification banner must dismiss correctly.** The visible `Dismiss` control currently leaves the banner painted and covering core content. On dismiss: update state, persist only the intended scope (session/account, document choice), remove banner from the layout and accessibility tree, and retain a non-obstructive path to verification in the relevant booking/pay action. Test first visit, dismiss, reload/new app state according to intended persistence, authenticated/anonymous/demo states, and keyboard activation. Fixed bottom navigation and content must never be obscured.
+
+**M2. Discover header/card chrome.** Remove the glass bubble/capsule background around the image-pagination dots; retain simple visible current-position indication and existing named photo controls. Make the Discover title/header actions fit at 390px, 375px and 320px without clipping, collision, `nowrap` overflow, or reducing tap targets. Render Creative Type/role as the established yellow/gold accent with adequate contrast over image gradients. Do not make photo controls inaccessible while simplifying presentation.
+
+**M3. Muses density.** At 375px, list cards currently truncate visual metadata and grid cards are covered by M1. Reduce secondary content, establish line clamps/overflow only where full details remain available after opening the card, and preserve name, primary creative role, location or match score, unread/new state, and primary navigation. Verify both view modes.
+
+**M4. Feed filter integrity.** `All` visibly contains image posts but `Photos` showed no content and no intentional empty state. Correct data classification/filter matching if incorrect. If empty is truly valid, render an explicit empty state with a clear All/reset action. Cover All/Photos/Text/Videos/BTS filters with deterministic test data.
+
+**M5. Dialog accessible close controls.** Add a meaningful accessible name to the Collab Safety reminder and Book Session close buttons; preserve close, Escape, focus trap, and opener-focus restoration. Add axe/browser test evidence.
+
+**Acceptance evidence required:** exact changed files; screenshot/video at 390/375/320 for Discover/Muses/Feed/Network/Sessions/BTS/Profile; focused lint on changed source and truthful full lint; cache-free typecheck; relevant unit/Playwright tests; production build; preview URL + SHA. Do not claim completion from a Vercel build alone.
+
+### Waterfall Bundle N — backend safety and release-evidence closure (non-overlapping with mobile work)
+
+Work this bundle independently from Bundle M. It closes already-audited trust-boundary gaps; do not replace them with client-side UI checks.
+
+**N1. Private media lifecycle.** Implement and test an ownership-scoped server helper for removing Muse media from the correct bucket/path. Album photo/album deletion must safely cover private `storage://muse-private/...` locators and legacy owned public media, reject foreign/arbitrary paths, and leave a durable cleanup/retry record when storage deletion fails. Verify raw private object URLs are denied and only authorized fresh signed URLs work.
+
+**N2. Video safety.** Until a real quarantined, persisted, idempotent moderation/promotion pipeline exists, disable video upload with an honest UI/API response. The current Rekognition stored-video call cannot accept raw bytes as a valid `StartContentModeration` input, and no job-result consumer was identified. Do not expose a pending/unmoderated video. This is a release blocker, not an optimization.
+
+**N3. Public email correctness.** Implement opaque expiring unsubscribe tokens; GET must only render confirmation, with idempotent POST confirmation mutation. Add a normalized database uniqueness constraint plus conflict-safe waitlist insert. Correct retention copy to state access suspension and 30-day scheduled deletion/recovery accurately.
+
+**N4. CI truthfulness.** Make CI runtime env at `next start` match its non-secret build placeholders. Exercise every cron authorization branch (missing secret, wrong bearer, correct bearer, demo mode) without real provider calls. A test summary must list the individual command result and test count.
+
+**N5. Gate remediation.** `0b7ed7f` did not resolve `page.tsx` lint: independent focused lint still showed 64 errors/221 warnings. Fix actual empty blocks and interactive-element semantics; do not ignore/exclude TSX or test files to force green.
+
+**Acceptance evidence required:** source/migration list; route/unit/integration tests for each failure branch; exact focused+full lint outcome; cache-free typecheck; test count; build; migration/environment status; preview SHA/URL; a concise statement of what remains unverified. If any one is missing, label the bundle PARTIAL, not complete.
+
+Independent run on the current `0b7ed7f` checkout:
+
+```powershell
+& 'V:\Muse\node_modules\.bin\eslint.cmd' 'src/app/(muse)/muse/page.tsx'
+```
+
+returns **exit 1: 64 errors and 221 warnings**. The three files fixed in `0b7ed7f` (`lib/api.ts`, `safe-observer.ts`, `safe-storage.ts`) are not the remaining problem. `page.tsx` still contains multiple `no-empty` errors, including at lines 3322, 3325, 3411, 3621, and 4146 (and earlier errors omitted by truncated console output).
+
+Do not call ESLint green or treat the global lint script as a release gate until this focused command exits 0. Preserve TSX linting; replace every intentional empty catch with a concise documented handling path or safe debug logging, and correct actual interactive-element a11y warnings rather than excluding `page.tsx`.
+
+### Live mobile audit — reproduced release defects (September 23)
+
+1. **Identity verification banner:** pressing its visible `Dismiss` control does not remove it in a fresh session. It persists and visually overlays the Muses grid/list, BTS feed, Network first result, Profile below the stat row, and Sessions lower content. This is a P0 usability defect. Make dismissal durable for the appropriate session/account scope, remove it from layout/paint/accessibility tree after dismissal, and test it at mobile widths.
+2. **Muses at 375px:** list cards clip/truncate dense metadata; grid view scans better but is still obscured by the persistent banner. Reduce visible metadata or provide overflow/detail disclosure; ensure text is not cut off.
+3. **Feed filter:** `Photos` showed no results after `All` visibly contained image posts, and presented no intentional empty-state explanation. Verify filter data classification and add an honest empty state.
+4. **Unnamed dialog controls:** Collab Safety reminder and the Sessions booking dialog exposed close buttons without accessible names in the live accessibility tree. Give every close control `aria-label="Close"` (or localized equivalent), retain focus-return, and cover via axe/Playwright.
+5. **Discover header:** remove/simplify the frosted capsule/bubble grouping around Search, Preferences, Map, Boost and pagination; this is a deliberate visual direction request from the user, not a functional failure.
+
+Verified positives: Network search is visibly delineated; Book Session opens a usable request dialog; primary navigation reaches Discover, Feed, Collab, Muses, BTS, Menu, Sessions, Network and Profile in live browser testing.
+
 ### Bundle E — CI/runtime parity and scheduled-job coverage
 
 Static review of the current repository found a release-gate mismatch and unbalanced cron coverage.
@@ -622,3 +923,122 @@ Source audit found three concrete issues in currently committed public endpoints
 3. **Correct stale help copy.** `support/route.ts` fallback says deletion “removes your profile and data.” Update it to accurately state immediate access suspension and scheduled permanent deletion after the documented 30-day retention/recovery window; avoid promising a specific policy unless it is the same active policy text.
 4. Tests required: token invalid/expired/tampered/replay; GET does not mutate; valid one-click POST mutates once; waitlist concurrent/conflict behavior; demo denies all public persistence; support retention response.
 5. Update email templates/header metadata and policy wording together, then run cache-free typecheck, unit tests, and a local route-level integration test. Do not send real mail in tests.
+
+## ChatGPT → Wyzmind: P0 media fail-closed bundle (2026-09-23)
+
+### Pick up these non-overlapping files
+
+- `src/app/api/muse/upload/route.ts`
+- `src/app/api/muse/upload/upload.route.test.ts`
+- `src/lib/contentScan.ts`
+- `src/lib/contentScan.test.ts`
+- `src/app/(muse)/muse/screens/FeedScreen.tsx`
+
+### Behavior changed
+
+1. The upload endpoint now rejects non-audio WebM with `415` and `VIDEO_UPLOAD_UNAVAILABLE` **before** moderation logging or storage. This removes the unsafe path that called Rekognition stored-video moderation with raw bytes and then made unmoderated media publicly addressable.
+2. A missing Rekognition client/credentials now returns `SCAN_UNAVAILABLE` as a fail-closed result. The existing upload route converts it into a retryable rejection; unscanned images are not stored.
+3. Feed file selection is limited to images, and its video-recording control visibly communicates that video is temporarily unavailable pending a quarantined moderation/promotion pipeline. Voice recording remains unchanged.
+
+### Required Wyzmind review
+
+- Review the exact diff; do not combine it with the active `page.tsx` bulk lint work.
+- Run the focused tests and cache-free typecheck from a writable/clean test environment. The local sandbox result was `2 files / 9 tests passed` using `vitest --configLoader runner`; the normal Vitest loader was blocked by `EPERM` creating `node_modules/.vite-temp/*`. This is not a substitute for Wyzmind's rerun.
+- Run focused lint on the five files, then truthful full lint, full Vitest, Playwright, and production build. Current `page.tsx` lint remains independently failing (observed `62 errors / 221 warnings` on the modified shared worktree), so do not claim full lint green.
+- Review all other upload call sites (notably `RecorderSheet` and `page.tsx`'s `uploadMedia`) to make their video UI equally unavailable before deployment. This bundle only changed the independently rendered Feed composer and the server trust boundary.
+
+### Collaboration process — required from the next clean integration baseline
+
+1. Wyzmind creates the integration commit/branch and is the only agent allowed to stage, commit, push, migrate, configure Vercel, or deploy.
+2. Each implementation agent receives a dedicated `git worktree` and branch from that exact baseline, with an exclusive file manifest recorded here before edits. One issue bundle per branch.
+3. The agent returns a diff, exact commands/output, changed-file list, and unresolved risks. It does not touch another agent's files or amend integration history.
+4. Wyzmind reviews/cherry-picks one bundle at a time, reruns affected tests plus integration gates, and resolves any conflict deliberately. The live/preview check is recorded against the resulting SHA.
+5. Do not use broad text-rewrite scripts on shared product files. A catch block's fallback behavior is application-specific; bulk rewrite can alter syntax, suppress telemetry, or hide an error without proving behavior.
+
+## Verification record
+- Revision/worktree: `V:\Muse`, `main` at `0b7ed7f`; shared worktree has concurrent uncommitted `page.tsx` and HANDOFF edits.
+- Files changed: the five P0 media files listed above.
+- Commands actually run + exact result: `vitest run --configLoader runner src/app/api/muse/upload/upload.route.test.ts src/lib/contentScan.test.ts` — **2 files / 9 tests passed**. Normal Vitest loader — **BLOCKED** by `EPERM` opening `V:\Muse\node_modules\.vite-temp\vitest.config.mts.timestamp-...mjs`. Focused `page.tsx` ESLint — **62 errors / 221 warnings**; not a pass. Cache-free typecheck — **UNVERIFIED in this sandbox**; its wrapper did not return a reliable exit record.
+- Browser/mobile widths and flows verified: **UNVERIFIED** for this local bundle; existing custom-domain Discover tab was only connected/read.
+- Migration/environment/deploy state: no migration, Vercel, or deployment action taken. DEMO MODE unchanged.
+- Known failures or unverified assumptions: all deploy, storage-RLS, private bucket, and full UI/video call-site verification remains UNVERIFIED.
+- Next concrete owner/action: Wyzmind reviews/stages this five-file bundle separately, reruns gates in its writable environment, then integrates/deploys only after the remaining upload-video UI call sites are made honest.
+
+### Fresh live mobile evidence — current custom-domain deployment (2026-09-23)
+
+- Browser: `https://muse.wyzdesign.com/muse`, authenticated Discover; no deployment SHA was exposed in the rendered page, therefore SHA is **UNVERIFIED**.
+- At **390 × 844**, the header title and action controls render, but the four action controls and image selectors retain the owner-rejected frosted/glass capsule treatment.
+- At **375 × 667**, `Discover` is visibly clipped by the adjacent action controls (rendered approximately as `Discove…`).
+- At **320 × 640**, the title is materially obscured (rendered approximately as `Disc…`), while the four header controls remain in a fixed single row.
+- These are rendered screenshots, not source inference. Bundle M2 must use a responsive header layout that preserves the full title, 44px semantic targets, and named controls at 390/375/320; it must simplify—not merely recolor—the frosted bubbles. Re-audit only on Wyzmind's exact preview SHA after integration.
+
+## ChatGPT → Wyzmind: cron authorization coverage bundle (2026-09-23)
+
+### Files added
+
+- `src/app/api/cron/checkins/route.test.ts`
+- `src/app/api/cron/capture-bookings/route.test.ts`
+
+### Evidence and behavior covered
+
+Both previously untested cron routes already contain the correct fail-closed guard (`!CRON_SECRET || bearer mismatch`), but had no regression coverage. Each new test suite proves:
+
+1. missing and wrong Bearer credentials return `401`;
+2. `CRON_SECRET` unset rejects even `Bearer undefined`;
+3. a valid secret in `MUSE_DEMO_MODE=true` produces an explicit no-op without constructing a database/provider operation.
+
+### Verification record
+- Revision/worktree: `V:\Muse`, `main` at `0b7ed7f`; shared worktree is concurrently modified.
+- Files changed: the two test files above only.
+- Commands actually run + exact result: `vitest run --configLoader runner src/app/api/cron/checkins/route.test.ts src/app/api/cron/capture-bookings/route.test.ts` — **2 files / 6 tests passed**.
+- Browser/mobile widths and flows verified: not applicable.
+- Migration/environment/deploy state: no migration, environment, deploy, or provider action taken.
+- Known failures or unverified assumptions: normal Vitest loader has previously been blocked in this sandbox by an `EPERM` write under `node_modules/.vite-temp`; Wyzmind must rerun the ordinary suite in its own environment. `backup` cron coverage is still **UNVERIFIED** because this checkout has no discovered backup route under `src/app/api`.
+- Next concrete owner/action: Wyzmind reviews and integrates this two-file bundle with the next CI-focused change; run full Vitest plus typecheck, then keep `CRON_SECRET` configured in Vercel before any non-demo cron use.
+
+### Browser audit limitation — Feed at 375px (2026-09-23)
+
+- The live authenticated Muse tab was successfully rendered at a 375 × 667 override on Discover.
+- A single semantic navigation attempt to the named **Feed** control timed out in Chrome before `Input.dispatchMouseEvent` was dispatched. No page-state change was observed.
+- Therefore Feed filter behavior, Photos empty state, and Feed mobile layout are **UNVERIFIED** in this browser pass. This is a browser-control failure, not evidence of an app failure or success. Do not retry this exact interaction blindly; verify with Wyzmind's Playwright/local suite or a fresh browser session after deployment.
+
+## ChatGPT → Wyzmind: page.tsx focused lint error cleanup (2026-09-23)
+
+### Files changed
+
+- `src/app/(muse)/muse/page.tsx`
+- `eslint.config.mjs` (declares browser globals already used by the client shell: `Event`, `StorageEvent`, `HTMLScriptElement`)
+
+### Behavior changed
+
+The focused page lint gate previously reported 62 errors. All were audited and addressed without excluding TS/TSX or weakening `no-empty`: best-effort storage, session, event, telemetry, scroll, album-import, report, and tour-completion paths now contain explicit non-sensitive diagnostics. The final inline report paths preserve their existing failure toast behavior and also record a debug event.
+
+### Verification record
+- Revision/worktree: `V:\Muse`, `main` at `0b7ed7f`; uncommitted shared worktree.
+- Files changed: `page.tsx`, `eslint.config.mjs`.
+- Commands actually run + exact result: `eslint src/app/(muse)/muse/page.tsx` — **exit 0, 0 errors, 211 warnings**. This is focused lint only.
+- Browser/mobile widths and flows verified: no browser re-test for this lint-only change; earlier live 390/375/320 Discover evidence remains in this handoff.
+- Migration/environment/deploy state: no migration, environment, commit, push, or deployment action taken.
+- Known failures or unverified assumptions: the 211 warnings remain; they include `any`, unused values, and `jsx-a11y` interactive-element findings and must not be relabeled as resolved. Full `npm run lint`, cache-free typecheck, Vitest, E2E, build, and preview verification are **UNVERIFIED** for this combined shared worktree.
+- Typecheck attempt detail: global `npx` was blocked by sandbox access to its AppData CLI; the project-local TypeScript entry point emitted no diagnostics but the runner did not return a reliable exit record. This remains **UNVERIFIED**, not a pass.
+- Next concrete owner/action: Wyzmind review the exact diff, run focused/full lint plus required gates on its clean integration worktree, then take warning remediation in semantic UI-component bundles rather than suppressing rules.
+
+## Wyzmind integration - 2026-09-23
+
+### Bundles integrated (separate commits)
+
+1. `477b1c2` - P0 media fail-closed (5 files: upload route/test, contentScan/test, FeedScreen) + integrator fix of 3 focused lint errors in FeedScreen (empty catch x2, unused expression)
+2. `b19c712` - page.tsx empty-catch lint cleanup + eslint browser globals
+3. `8dbb553` - cron authorization coverage (checkins, capture-bookings tests)
+
+### Verification record
+- Revision/worktree: `V:\Muse`, `main` at `8dbb553` (docs commit follows)
+- Files changed: the three bundles above + HANDOFF.md + AGENT_COLLABORATION_PROTOCOL.md
+- Commands actually run + exact result:
+  - `tsc --noEmit --incremental false` - **exit 0**
+  - `vitest run --configLoader runner` - **52 files / 396 tests passed**
+  - focused eslint on 6 changed source files - **exit 0, 0 errors / 347 warnings** (after FeedScreen fix; 3 errors present pre-fix)
+- Browser/mobile widths and flows verified: UNVERIFIED this round (no browser session)
+- Migration/environment/deploy state: no migration, Vercel, or deploy action; demo mode unchanged. Push: repo auto-push hook triggered on each commit - SHAs to be confirmed against origin.
+- Known failures or unverified assumptions: full `npm run lint`, production build, E2E, migrations 0022/0024, CRON_SECRET, and remaining video UI call sites (RecorderSheet, page.tsx uploadMedia) remain UNVERIFIED/open.
+- Next concrete owner/action: confirm push, run full lint + build + e2e-smoke, then continue Bundles M/N as queued.
