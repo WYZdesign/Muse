@@ -189,12 +189,12 @@ function OpacitySlider({ label, storageKey, cssVar }: { label: string; storageKe
     } catch { return 4; }
   });
   useEffect(() => {
-    try { document.documentElement.style.setProperty(cssVar, String(STEPS[idx])); } catch {}
+    try { document.documentElement.style.setProperty(cssVar, String(STEPS[idx])); } catch { /* CSSOM may be unavailable */ }
   }, [cssVar, idx]);
   const handleSlide = (i: number) => {
     setIdx(i);
-    try { localStorage.setItem(storageKey, String(STEPS[i])); } catch {}
-    try { document.documentElement.style.setProperty(cssVar, String(STEPS[i])); } catch {}
+    try { localStorage.setItem(storageKey, String(STEPS[i])); } catch { /* storage may be unavailable */ }
+    try { document.documentElement.style.setProperty(cssVar, String(STEPS[i])); } catch { /* CSSOM may be unavailable */ }
   };
   return (
     <div style={{ padding: "10px 0" }}>
@@ -478,7 +478,7 @@ export const SettingsScreen = memo(function SettingsScreen({
     try {
       if (!apiFetch) { showToast("Can't update password right now"); setPwBusy(false); return; }
       let access_token = "";
-      try { access_token = JSON.parse(localStorage.getItem("muse_user") || "{}")?.access_token || ""; } catch {}
+      try { access_token = JSON.parse(localStorage.getItem("muse_user") || "{}")?.access_token || ""; } catch { /* keep empty token */ }
       const res = await apiFetch("/api/muse/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-password", access_token, new_password: pwNew }) });
       const data = await res.json();
       if (res.ok && data.success) {

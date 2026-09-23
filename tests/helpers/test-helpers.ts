@@ -119,19 +119,27 @@ export async function loginAsDemoUser(page: Page) {
   await page.waitForSelector('[data-screen="discover"], .discover-screen', { timeout: 10000 }).catch(() => {});
 }
 
+// proxy.ts origin-gates every non-GET /api/* call. ALLOWED_ORIGINS always
+// includes PROD_ORIGIN (https://muse.wyzdesign.com); localhost is only
+// allowed when NEXT_PUBLIC_APP_URL is set. Send PROD_ORIGIN so the demo-gate
+// assertion is reachable in CI and local runs without weakening the proxy.
+const ALLOWED_TEST_ORIGIN = 'https://muse.wyzdesign.com';
+
 export async function checkDemoModeMutationDenial(page: Page, action: string) {
-  const responsePromise = page.waitForResponse(response => 
-    response.url().includes('/api/muse') && response.request().method() === 'POST'
-  );
-  
-  await page.evaluate(action => {
-    const event = new CustomEvent('muse-demo-action', { detail: { action } });
-    window.dispatchEvent(event);
-  }, action);
-  
-  const response = await responsePromise;
+  const response = await page.request.post('/api/muse', {
+    data: { action },
+    failOnStatusCode: false,
+    headers: {
+      Origin: ALLOWED_TEST_ORIGIN,
+      Referer: `${ALLOWED_TEST_ORIGIN}/muse`,
+    },
+  });
+
   expect(response.status()).toBe(409);
-  
+
   const body = await response.json();
-  expect(body.error).toContain('DEMO_MODE');
+  expect(body.code).toBe('DEMO_MODE');
+  expect(body.error).toMatch(/unavailable in demo mode/i);
+  expect(body.error).not.toMatch(/\/(home|Users|home\/|[A-Za-z]:\\)/i);
+  expect(body.error).not.toMatch(/stack|trace|internal|exception|\/src\/|node_modules/i);
 }

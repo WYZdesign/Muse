@@ -215,7 +215,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
               // page.tsx reads this on return (?boost=success) and calls
               // boost-purchase-complete, which is what actually grants the
               // boost credits (the webhook only marks the purchase "paid").
-              if (result.purchaseId) { try { safeSetItem("muse_pending_boost_purchase", result.purchaseId); } catch {} }
+              if (result.purchaseId) { try { safeSetItem("muse_pending_boost_purchase", result.purchaseId); } catch { /* storage may be unavailable */ } }
               window.location.href = result.url;
             }
             setBuyingBoost(false);

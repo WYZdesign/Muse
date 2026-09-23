@@ -201,7 +201,7 @@ export const SessionsScreen = memo(function SessionsScreen({
             if (n >= 3) showToast(`Heads up — ${s.name || "this host"} has ${n} active bookings right now, response may take a bit longer`);
           })
           .catch(() => {});
-      } catch {}
+      } catch { /* booking-count peek is best-effort */ }
       const noteText = note ? [note.sizing && `Sizing/prefs: ${note.sizing}`, note.requirements && `Requirements: ${note.requirements}`, note.message && `Note: ${note.message}`].filter(Boolean).join(" · ") : "";
       // Round 45 fix: this used to call apiFetch, which throws on any
       // non-2xx response (see page.tsx's apiFetch — `if (!res.ok) throw`).

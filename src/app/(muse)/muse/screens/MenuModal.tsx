@@ -150,7 +150,7 @@ function SwipeableNotification({ a, notifIcon, activeDragId, setActiveDragId, on
       </div>
       <div
         ref={rowRef}
-        onPointerDown={(e) => { if (e.pointerType === "mouse" && e.button !== 0) return; begin(e.clientX, e.clientY); if (startRef.current) { try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {} } }}
+        onPointerDown={(e) => { if (e.pointerType === "mouse" && e.button !== 0) return; begin(e.clientX, e.clientY); if (startRef.current) { try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* capture may fail */ } } }}
         onPointerMove={(e) => moveTo(e.clientX, e.clientY)}
         onPointerUp={end}
         onPointerCancel={cancel}
@@ -288,8 +288,8 @@ function ActivityPanel({ authFetch, demo = false, appliedBriefs, savedBriefs, bo
       // ("do I have unread notifications"), two disconnected sources of
       // truth — the same class of bug already fixed for the bell's shape
       // (dot vs. pill) elsewhere in this app.
-      onMarkAllRead?.();
-    } catch {}
+onMarkAllRead?.();
+    } catch { /* mark-read is best-effort */ }
   };
 
   const clearAll = async () => {
@@ -299,7 +299,7 @@ function ActivityPanel({ authFetch, demo = false, appliedBriefs, savedBriefs, bo
       await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "clear-all-notifications" }) });
       setNotifications([]);
       onMarkAllRead?.();
-    } catch {}
+    } catch { /* clear is best-effort */ }
   };
 
   const tabBtn = (key: any, label: string) => (

@@ -48,7 +48,7 @@ export function tourSeenKey(id: TourScreenId): string {
  *  next time the user visits it. Used by the "Replay Tutorials" action. */
 export function clearAllPageTourFlags(): void {
   for (const id of ALL_TOUR_IDS) {
-    try { safeRemoveItem(tourSeenKey(id)); } catch {}
+    try { safeRemoveItem(tourSeenKey(id)); } catch { /* storage may be unavailable */ }
   }
 }
 

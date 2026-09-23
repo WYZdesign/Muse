@@ -52,21 +52,37 @@ test.describe('Smoke Tests', () => {
     
     for (const element of interactiveElements) {
       const box = await element.boundingBox();
-      const isLoginForm = await element.evaluate((el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | HTMLElement) => 
-        el.closest('[data-auth-form], .auth-form, form[data-login]') !== null ||
-        (el as HTMLInputElement).type === 'password' ||
-        (el as HTMLInputElement).type === 'email' ||
-        el.getAttribute('placeholder')?.includes('password') === true ||
-        el.getAttribute('placeholder')?.includes('email') === true
-      );
-      
-      if (box && !isLoginForm && (box.width < 44 || box.height < 44)) {
-        const tagName = await element.evaluate(el => el.tagName.toLowerCase());
-        const className = await element.getAttribute('class') || '';
-        const ariaLabel = await element.getAttribute('aria-label') || '';
-        const text = await element.textContent() || '';
+      const meta = await element.evaluate((el: HTMLElement) => {
+        const label = el.getAttribute('aria-label') || '';
+        const text = el.textContent || '';
+        // Next.js dev overlay lives in <nextjs-portal> shadow DOM (dev only).
+        const root = el.getRootNode();
+        const shadowHost =
+          root instanceof ShadowRoot ? root.host?.tagName?.toLowerCase() : '';
+        const isNextDevTools =
+          shadowHost === 'nextjs-portal' ||
+          el.closest('nextjs-portal') !== null ||
+          el.getAttribute('data-nextjs-dev-tools-button') !== null ||
+          /Next\.js Dev Tools|issues overlay|Collapse issues|Open issues/i.test(`${label} ${text}`);
+        const isLoginForm =
+          el.closest('[data-auth-form], .auth-form, form[data-login]') !== null ||
+          (el as HTMLInputElement).type === 'password' ||
+          (el as HTMLInputElement).type === 'email' ||
+          el.getAttribute('placeholder')?.includes('password') === true ||
+          el.getAttribute('placeholder')?.includes('email') === true;
+        return {
+          isLoginForm,
+          isNextDevTools,
+          tagName: el.tagName.toLowerCase(),
+          className: el.getAttribute('class') || '',
+          ariaLabel: label,
+          text: text.substring(0, 30),
+        };
+      });
+
+      if (box && !meta.isLoginForm && !meta.isNextDevTools && (box.width < 44 || box.height < 44)) {
         violations.push(
-          `${tagName}.${className} (${ariaLabel || text.substring(0, 30)}) = ${Math.round(box.width)}x${Math.round(box.height)}px`
+          `${meta.tagName}.${meta.className} (${meta.ariaLabel || meta.text}) = ${Math.round(box.width)}x${Math.round(box.height)}px`
         );
       }
     }

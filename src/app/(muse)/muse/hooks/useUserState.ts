@@ -90,7 +90,7 @@ export function useUserState() {
       if (viewedSessionRef.current.has(id)) return;
       viewedSessionRef.current.add(id);
       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-view", target_id: id }) }).catch(() => {});
-    } catch {}
+    } catch { /* track-view is best-effort */ }
   }, [authUser]);
 
   useEffect(() => { setViewProfilePhotoIdx(0); }, [viewProfile?.id]);

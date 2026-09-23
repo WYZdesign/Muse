@@ -321,7 +321,7 @@ export const CollabScreen = memo(function CollabScreen({
                     {isLong && (
                       <button
                         type="button"
-                        onClick={() => setExpandedBriefIds(prev => { const next = new Set(prev); isExpanded ? next.delete(brief.id) : next.add(brief.id); return next; })}
+                        onClick={() => setExpandedBriefIds(prev => { const next = new Set(prev); if (isExpanded) { next.delete(brief.id); } else { next.add(brief.id); } return next; })}
                         style={{ display: "block", marginTop: 4, background: "none", border: "none", padding: 0, color: "var(--gold)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
                       >
                         {isExpanded ? "Show less" : "Show more"}

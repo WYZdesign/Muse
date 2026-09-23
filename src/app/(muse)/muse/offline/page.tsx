@@ -24,8 +24,8 @@ export default function OfflinePage() {
         const keys = await caches.keys();
         await Promise.all(keys.map(k => caches.delete(k)));
       }
-      try { sessionStorage.clear(); } catch {}
-      try { localStorage.removeItem("muse_user"); } catch {}
+      try { sessionStorage.clear(); } catch { /* storage may be blocked */ }
+      try { localStorage.removeItem("muse_user"); } catch { /* storage may be blocked */ }
       setDone(true);
       setTimeout(() => window.location.assign("/muse"), 600);
     } catch {
@@ -48,14 +48,14 @@ export default function OfflinePage() {
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
         <button
           onClick={() => window.location.reload()}
-          style={{ padding: "12px 32px", borderRadius: 12, background: "#FFD700", color: "#0a0612", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+          style={{ padding: "12px 32px", borderRadius: 12, background: "#FFD700", color: "#0a0612", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", minHeight: 44 }}
         >
           Try Again
         </button>
         <button
           onClick={clearAndReload}
           disabled={clearing}
-          style={{ padding: "12px 32px", borderRadius: 12, background: "rgba(255,255,255,0.08)", color: "#f5f0ff", border: "1px solid rgba(255,255,255,0.15)", fontSize: 14, fontWeight: 600, cursor: clearing ? "default" : "pointer", opacity: clearing ? 0.6 : 1 }}
+          style={{ padding: "12px 32px", borderRadius: 12, background: "rgba(255,255,255,0.08)", color: "#f5f0ff", border: "1px solid rgba(255,255,255,0.15)", fontSize: 14, fontWeight: 600, cursor: clearing ? "default" : "pointer", opacity: clearing ? 0.6 : 1, minHeight: 44 }}
         >
           {done ? "✓ Recovered. Redirecting…" : clearing ? "Clearing…" : "Clear cache & reload"}
         </button>

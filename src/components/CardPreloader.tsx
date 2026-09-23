@@ -40,7 +40,7 @@ export function CardPreloader({ currentIdx, profiles }: {
       // Remove DOM nodes so abandoned preload <link>s don't accumulate in <head>.
       // If the Set grows unbounded, prune the oldest nodes to bound memory.
       if (links.current.size > 20) {
-        links.current.forEach((link) => { try { link.remove(); } catch {} });
+        links.current.forEach((link) => { try { link.remove(); } catch { /* node may already be detached */ } });
         links.current.clear();
         preloaded.current.clear();
       }

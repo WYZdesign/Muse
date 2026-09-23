@@ -45,7 +45,7 @@ export interface CommunityScreenProps {
 
 async function shareItem(title: string, url: string, showToast: (m: string) => void) {
   if (navigator.share) {
-    try { await navigator.share({ title, url }); } catch {}
+    try { await navigator.share({ title, url }); } catch { /* user dismissed */ }
   } else {
     try { await navigator.clipboard.writeText(url); showToast("Link copied!"); } catch { showToast("Couldn't copy link"); }
   }

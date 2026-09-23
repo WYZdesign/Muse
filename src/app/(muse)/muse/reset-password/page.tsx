@@ -23,7 +23,7 @@ export default function ResetPasswordPage() {
     if (!password.trim()) { setError("Enter a new password"); return; }
     if (password.length < 6) { setError("Minimum 6 characters"); return; }
     if (!/[A-Z]/.test(password)) { setError("Needs a capital letter"); return; }
-    if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) { setError("Needs a symbol"); return; }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) { setError("Needs a symbol"); return; }
     if (password !== confirm) { setError("Passwords don't match"); return; }
     setError("");
     try {

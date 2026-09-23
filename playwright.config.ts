@@ -67,7 +67,9 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:3000',
+    // Root `/` 404s (no src/app/page.tsx) — health-check a real 200 route so
+    // reuseExistingServer recognizes the already-running dev server.
+    url: 'http://localhost:3000/muse/landing',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

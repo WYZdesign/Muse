@@ -67,9 +67,9 @@ export default function Lightbox({ photos, idx, onClose, onNavigate, onError }: 
   const handleShare = async () => {
     const url = photos[idx];
     if (navigator.share) {
-      try { await navigator.share({ url, title: "Photo from Muse" }); } catch {}
+      try { await navigator.share({ url, title: "Photo from Muse" }); } catch { /* user dismissed */ }
     } else {
-      try { await navigator.clipboard.writeText(url); } catch {}
+      try { await navigator.clipboard.writeText(url); } catch { /* clipboard unavailable */ }
     }
   };
 
@@ -83,7 +83,7 @@ export default function Lightbox({ photos, idx, onClose, onNavigate, onError }: 
       a.download = `muse-photo-${idx + 1}.jpg`;
       a.click();
       URL.revokeObjectURL(a.href);
-    } catch {}
+    } catch { /* download may be blocked */ }
   };
 
   return (

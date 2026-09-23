@@ -923,7 +923,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                             const rf = await apiFetch("/api/muse?type=forum");
                             const df = await rf.json();
                             if (df.posts) setLiveForum?.(df.posts);
-                          } catch {}
+                          } catch { /* live forum refresh is best-effort */ }
                           setForumPosts((prev) => [
                             {
                               id: uid(),

@@ -335,7 +335,7 @@ export default function MuseLandingPage() {
   useEffect(() => {
     try {
       if (sessionStorage.getItem("muse_entered") === "1") setGateGone(true);
-    } catch {}
+    } catch { /* storage may be unavailable */ }
   }, []);
 
   useEffect(() => {
@@ -736,7 +736,7 @@ export default function MuseLandingPage() {
       )}
 
       {!gateGone && (
-        <div className={`muse-enter-gate ${gateClosing ? "closing" : ""}`} onClick={() => { if (!gateClosing) { setGateClosing(true); try { sessionStorage.setItem("muse_entered", "1"); } catch {} setTimeout(() => setGateGone(true), 850); } }}>
+        <div className={`muse-enter-gate ${gateClosing ? "closing" : ""}`} onClick={() => { if (!gateClosing) { setGateClosing(true); try { sessionStorage.setItem("muse_entered", "1"); } catch { /* storage may be unavailable */ } setTimeout(() => setGateGone(true), 850); } }}>
           <div className="sunset-scene" aria-hidden="true">
             <div className="sunset-sky" />
             <div className="sunset-overlay" />

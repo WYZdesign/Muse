@@ -16,7 +16,7 @@ function deletionPurgeAt(now = new Date()): string {
 function validatePassword(pw: string): string | null {
   if (pw.length < 6) return "Password must be at least 6 characters";
   if (!/[A-Z]/.test(pw)) return "Password needs a capital letter";
-  if (!/[!@#$%^&*(),.?\":{}|<>]/.test(pw)) return "Password needs a symbol";
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(pw)) return "Password needs a symbol";
   return null;
 }
 

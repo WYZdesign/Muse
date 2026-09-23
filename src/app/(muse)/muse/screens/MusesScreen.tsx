@@ -89,7 +89,7 @@ export const MusesScreen = memo(function MusesScreen({
       if (prev.has(id)) return prev;
       const next = new Set(prev);
       next.add(id);
-      try { localStorage.setItem("muse_seen_matches", JSON.stringify([...next].slice(-500))); } catch {}
+      try { localStorage.setItem("muse_seen_matches", JSON.stringify([...next].slice(-500))); } catch { /* storage may be unavailable */ }
       return next;
     });
   };
