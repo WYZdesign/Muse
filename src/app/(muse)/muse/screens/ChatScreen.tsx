@@ -6,6 +6,7 @@ import { FiArrowLeft, FiImage, FiSend, FiMoreVertical, FiFlag, FiUserX, FiSlash,
 import Nav from "../components/Nav";
 import RecorderSheet from "../components/RecorderSheet";
 import { authFetch } from "../lib/auth-client";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { Screen } from "../components/types";
 
 export interface ChatScreenProps {
@@ -96,11 +97,14 @@ export const ChatScreen = memo(function ChatScreen({
   // the app to actually reach them from an active conversation — a real gap,
   // not a style choice. This menu is that entry point.
   const [showChatMenu, setShowChatMenu] = useState(false);
+  const chatMenuTrap = useFocusTrap(showChatMenu, () => setShowChatMenu(false));
   // Call history for this conversation (missed / answered / voicemail).
   const [showCallLog, setShowCallLog] = useState(false);
+  const callLogTrap = useFocusTrap(showCallLog, () => setShowCallLog(false));
   const [callLog, setCallLog] = useState<any[]>([]);
   // Media & clips shared in this conversation (photos, video notes, voice notes).
   const [showGallery, setShowGallery] = useState(false);
+  const galleryTrap = useFocusTrap(showGallery, () => setShowGallery(false));
   // In-chat search across message text AND voice-note transcripts.
   const [chatQuery, setChatQuery] = useState("");
   const [showChatSearch, setShowChatSearch] = useState(false);
@@ -120,6 +124,7 @@ export const ChatScreen = memo(function ChatScreen({
   const [recKind, setRecKind] = useState<null | "voice" | "video">(null);
   const [showConsent, setShowConsent] = useState(false);
   const [consentKind, setConsentKind] = useState<"voice" | "video">("voice");
+  const consentRef = useFocusTrap<HTMLDivElement>(showConsent, () => setShowConsent(false));
 
   const acceptConsent = () => {
     try { window.localStorage.setItem("muse_rec_consent", "1"); } catch { /* ignore */ }
@@ -151,7 +156,7 @@ export const ChatScreen = memo(function ChatScreen({
     <div className={"screen-el" + (screen === "chat" && chatTarget ? " active" : "")} data-screen="chat">
       <h1 className="sr-only">Chat{chatTarget?.name ? ` with ${chatTarget.name}` : ""}</h1>
       {showConsent && (
-        <div role="dialog" aria-modal="true" aria-label="Recording consent" style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", padding: 20 }}>
+        <div ref={consentRef} role="dialog" aria-modal="true" aria-label="Recording consent" style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", padding: 20 }}>
           <div style={{ background: "var(--panel-bg-solid, #0f0a1a)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 24, maxWidth: 380, width: "100%" }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: "var(--gold)", marginBottom: 10 }}>Before you record</div>
             <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6, marginBottom: 16 }}>
@@ -183,11 +188,11 @@ export const ChatScreen = memo(function ChatScreen({
         const clips = msgs.filter((m) => m.mediaUrl && (m.kind === "voice" || m.kind === "video"));
         const none = photos.length === 0 && clips.length === 0;
         return (
-          <div role="dialog" aria-modal="true" aria-label="Media and clips" onClick={() => setShowGallery(false)} style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.88)", padding: 20 }}>
+          <div ref={galleryTrap} role="dialog" aria-modal="true" aria-label="Media and clips" onClick={() => setShowGallery(false)} style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.88)", padding: 20 }}>
             <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--panel-bg-solid, #0f0a1a)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 20, maxWidth: 420, width: "100%", maxHeight: "78vh", overflowY: "auto" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <div style={{ fontSize: 16, fontWeight: 800, color: "var(--gold)" }}>Media &amp; clips</div>
-                <button onClick={() => setShowGallery(false)} aria-label="Close media" style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 18, cursor: "pointer" }}>✕</button>
+                <button onClick={() => setShowGallery(false)} aria-label="Close media" style={{ width: 44, height: 44, background: "none", border: "none", color: "var(--text2)", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
               </div>
               {none ? (
                 <div style={{ fontSize: 13, color: "var(--muted)" }}>Nothing shared with {chatTarget?.name} yet.</div>
@@ -230,11 +235,11 @@ export const ChatScreen = memo(function ChatScreen({
         );
       })()}
       {showCallLog && (
-        <div role="dialog" aria-modal="true" aria-label="Call history" onClick={() => setShowCallLog(false)} style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", padding: 20 }}>
+        <div ref={callLogTrap} role="dialog" aria-modal="true" aria-label="Call history" onClick={() => setShowCallLog(false)} style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", padding: 20 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--panel-bg-solid, #0f0a1a)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 22, maxWidth: 380, width: "100%", maxHeight: "70vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--gold)" }}>Call history</div>
-              <button onClick={() => setShowCallLog(false)} aria-label="Close call history" style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 18, cursor: "pointer" }}>✕</button>
+              <button onClick={() => setShowCallLog(false)} aria-label="Close call history" style={{ width: 44, height: 44, background: "none", border: "none", color: "var(--text2)", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
             {callLog.length === 0 ? (
               <div style={{ fontSize: 13, color: "var(--muted)" }}>No calls with {chatTarget?.name} yet.</div>
@@ -300,8 +305,8 @@ export const ChatScreen = memo(function ChatScreen({
               ><FiMoreVertical size={20} /></button>
               {showChatMenu && (
                 <>
-                  <div role="dialog" aria-modal="true" aria-label="Chat menu" style={{ position: "fixed", inset: 0, zIndex: 998 }} onClick={() => setShowChatMenu(false)} />
-                  <div role="menu" style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 999, minWidth: 168, background: "var(--panel-bg)", border: "1px solid var(--border-med)", borderRadius: 14, padding: 6, boxShadow: "0 12px 32px rgba(0,0,0,0.5)" }}>
+                  <div role="presentation" style={{ position: "fixed", inset: 0, zIndex: 998 }} onClick={() => setShowChatMenu(false)} />
+                  <div ref={chatMenuTrap} role="menu" aria-label="Chat options" style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 999, minWidth: 168, background: "var(--panel-bg)", border: "1px solid var(--border-med)", borderRadius: 14, padding: 6, boxShadow: "0 12px 32px rgba(0,0,0,0.5)" }}>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setShowGallery(true); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiImage size={14} /> Media &amp; clips</button>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setShowChatSearch(true); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiSearch size={14} /> Search this chat</button>
                     <button role="menuitem" onClick={openCallLog} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiPhone size={14} /> Call history</button>

@@ -12,7 +12,7 @@ const FALLBACK_ANSWERS: { re: RegExp; answer: string }[] = [
   { re: /(book|session|booking|shoot)/i, answer: "To book a session, open a creative's profile and tap Book Session. You'll set the time and may need to complete identity verification and a disclosure (consent form) first." },
   { re: /(album|portfolio|photo)/i, answer: "You can create albums in your profile. Each album can be public, private, or invite-only, and you control who sees each one." },
   { re: /(billing|pay|subscription|pro|upgrade|price)/i, answer: "Billing and subscriptions (Muse Pro) are handled through Stripe. Manage your plan in account settings." },
-  { re: /(delete|account|data|privacy|remove)/i, answer: "You can delete your account from account settings, which removes your profile and data. For privacy questions, see the Privacy Policy linked in the app menu." },
+  { re: /(delete|account|data|privacy|remove)/i, answer: "You can request account deletion from Account Settings. Deletion suspends profile access immediately; remaining data is removed on a 30-day scheduled purge. For privacy questions, see the Privacy Policy linked in the app menu." },
 ];
 
 function fallbackAnswer(q: string): string {

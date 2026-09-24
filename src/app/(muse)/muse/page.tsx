@@ -435,9 +435,19 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // "closing" keeps it mounted for one slide-down cycle before the real
   // dismiss flips verificationBannerDismissed and unmounts it for good.
   const [verificationBannerClosing, setVerificationBannerClosing] = useState(false);
+  // D1: persist dismiss across reloads (same pattern as muse_tour_seen_*).
+  useEffect(() => {
+    try {
+      if (safeGetItem("muse_verify_banner_dismissed") === "1") setVerificationBannerDismissed(true);
+    } catch { /* storage unavailable — show banner */ }
+  }, []);
   const dismissVerificationBanner = () => {
     setVerificationBannerClosing(true);
-    setTimeout(() => { setVerificationBannerDismissed(true); setVerificationBannerClosing(false); }, 320);
+    setTimeout(() => {
+      setVerificationBannerDismissed(true);
+      setVerificationBannerClosing(false);
+      try { safeSetItem("muse_verify_banner_dismissed", "1"); } catch { /* best-effort */ }
+    }, 320);
   };
   const [pendingDisclosureConfirm, setPendingDisclosureConfirm] = useState<string | null>(null);
   const [pendingDisclosureCreate, setPendingDisclosureCreate] = useState<Record<string, unknown> | null>(null);
@@ -2718,14 +2728,14 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           ripples hugging the bottom, furthest back. The bands only lightly
           overlap, so depth reads clearly even before the drift animation
           (staggered durations/delays, unchanged) adds motion parallax. */}
-      <div className="wave-bottom">
-        <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
+      <div className="wave-bottom" aria-hidden="true">
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none" aria-hidden="true" focusable="false">
           <path className="wave-path-1" d="M0,95 C240,45 480,135 720,85 C960,35 1200,120 1440,70 L1440,160 L0,160 Z" />
         </svg>
-        <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none" aria-hidden="true" focusable="false">
           <path className="wave-path-2" d="M0,135 C120,108 240,152 360,122 C480,92 600,148 720,118 C840,88 960,144 1080,114 C1200,84 1320,140 1440,122 L1440,160 L0,160 Z" />
         </svg>
-        <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none" aria-hidden="true" focusable="false">
           <path className="wave-path-3" d="M0,148 C60,138 120,153 180,143 C240,133 300,151 360,141 C420,131 480,149 540,139 C600,129 660,147 720,137 C780,127 840,145 900,135 C960,125 1020,143 1080,133 C1140,123 1200,141 1260,131 C1320,121 1380,139 1440,133 L1440,160 L0,160 Z" />
         </svg>
         {/* Round 43: 4th, deepest layer added per Torree's "more stacks of
@@ -2733,7 +2743,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             taller container (height 22%->32%) reads as a fuller body of
             water rather than the same 3 curves just stretched over more
             space. Flattest, broadest curve, slowest drift, furthest back. */}
-        <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none" aria-hidden="true" focusable="false">
           <path className="wave-path-4" d="M0,158 C180,150 360,159 540,152 C720,145 900,158 1080,150 C1200,145 1320,155 1440,150 L1440,160 L0,160 Z" />
         </svg>
       </div>

@@ -100,7 +100,7 @@ export default function SupportChat({ open, onClose }: { open: boolean; onClose:
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <button onClick={resetChat} aria-label="New conversation" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: 12, cursor: "pointer", padding: "4px 10px", borderRadius: 8 }} title="New conversation">New</button>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.6)", fontSize: 20, cursor: "pointer", padding: 4 }} aria-label="Close">✕</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.6)", width: 44, height: 44, fontSize: 20, cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }} aria-label="Close support chat">✕</button>
         </div>
       </div>
 

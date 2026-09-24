@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FiX, FiSquare, FiSend, FiRefreshCw } from "react-icons/fi";
 import { authFetch } from "../lib/auth-client";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export type RecKind = "voice" | "video";
 
@@ -46,6 +47,7 @@ export default function RecorderSheet({
   const timerRef = useRef<number | null>(null);
   const startedAtRef = useRef(0);
   const cancelledRef = useRef(false);
+  const sheetRef = useFocusTrap<HTMLDivElement>(true, onCancel);
 
   const cleanup = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -149,13 +151,13 @@ export default function RecorderSheet({
   const ss = String(seconds % 60).padStart(2, "0");
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={`${kind === "voice" ? "Voice" : "Video"} note recorder`} style={{ position: "fixed", inset: 0, zIndex: 10002, background: "rgba(5,3,10,0.94)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20 }}>
+    <div ref={sheetRef} role="dialog" aria-modal="true" aria-label={`${kind === "voice" ? "Voice" : "Video"} note recorder`} style={{ position: "fixed", inset: 0, zIndex: 10002, background: "rgba(5,3,10,0.94)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <div style={{ width: "100%", maxWidth: 420 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>
             {kind === "voice" ? "🎤 Voice note" : "🎥 Video note"}
           </div>
-          <button onClick={onCancel} aria-label="Cancel" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer" }}><FiX size={20} /></button>
+          <button onClick={onCancel} aria-label="Cancel recording" style={{ width: 44, height: 44, background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiX size={22} /></button>
         </div>
 
         {error && (

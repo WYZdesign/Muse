@@ -515,7 +515,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                             <>
                             </>
                           )}
-                          <div className={"card-photo-dots" + (cardScrolled ? " hidden" : "")}>
+                          <div className={"card-photo-dots" + (cardScrolled ? " hidden" : "")} aria-hidden={cardScrolled || undefined} inert={cardScrolled || undefined}>
                             {photos.map((_: string, i: number) => <button key={i} className={"card-photo-dot" + (i === currentPhotoIdx ? " active" : "")} aria-label={`Show photo ${i + 1}`} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(i); }} style={{ width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", padding: 0, cursor: "pointer" }}><span style={{ width: i === currentPhotoIdx ? 20 : 7, height: 7, borderRadius: i === currentPhotoIdx ? 4 : "50%", background: i === currentPhotoIdx ? "linear-gradient(120deg,var(--gold),var(--pink),var(--lavender),var(--gold))" : "rgba(255,255,255,0.4)", transition: "all .25s", display: "block" }} /></button>)}
                           </div>
                           {isTop && (!(profile as any).nsfw || revealedNsfw.has(String(profile.id))) && (
@@ -525,7 +525,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               onPointerDown={(e) => e.stopPropagation()}
                               onClick={(e) => { e.stopPropagation(); togglePhotoLike(heroSrc); }}
                               aria-label={`Like photo ${(currentPhotoIdx ?? 0) + 1}`}
-                            ><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg><span style={{ fontSize: 11, fontWeight: 700 }}>{photoLike[heroSrc]?.count || 0}</span></button>
+                            ><svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg><span style={{ fontSize: 11, fontWeight: 700 }}>{photoLike[heroSrc]?.count || 0}</span></button>
                           )}
                           {showNoteTooltip && (
                             <div style={{ textAlign: "center", padding: "4px 16px 0", animation: "tooltipIn .4s ease" }}>
@@ -537,9 +537,9 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                           )}
                           {isTop && (
                             <>
-                              <div ref={likeLabelRef as any} className="label label-like">LIKE</div>
-                              <div ref={nopeLabelRef as any} className="label label-nope">NOPE</div>
-                              <div ref={superLabelRef as any} className="label label-super">SUPER</div>
+                              <div ref={likeLabelRef as any} className="label label-like" aria-hidden="true">LIKE</div>
+                              <div ref={nopeLabelRef as any} className="label label-nope" aria-hidden="true">NOPE</div>
+                              <div ref={superLabelRef as any} className="label label-super" aria-hidden="true">SUPER</div>
                             </>
                           )}
                           <div className="card-info-scroll" ref={cardScrollRef as any} onScroll={(e) => { if (isTop) { const scrollY = (e.target as HTMLElement)?.scrollTop || 0; setCardScrolled?.(scrollY > 10); } }}>
@@ -639,7 +639,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                   );
                                 })()}
                               </div>
-                              <div className="match-score" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}><div className="score-bar" style={{ flex: 1 }}><div className="score-fill" style={{ width: profile.score + "%" }} /></div><span className="score-text">{profile.score}%</span>{(profile as any).matchReasons?.length > 0 && <button onClick={(e) => { e.stopPropagation(); setWhyInfo({ score: profile.score, reasons: (profile as any).matchReasons }); }} aria-label="Why this match?" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: "var(--muted)", cursor: "pointer", padding: 0 }}><FiInfo size={14} /></button>}</div>
+                              <div className="match-score" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}><div className="score-bar" style={{ flex: 1 }}><div className="score-fill" style={{ width: profile.score + "%" }} /></div><span className="score-text">{profile.score}%</span>{(profile as any).matchReasons?.length > 0 && <button onClick={(e) => { e.stopPropagation(); setWhyInfo({ score: profile.score, reasons: (profile as any).matchReasons }); }} aria-label="Why this match?" aria-haspopup="dialog" aria-expanded={!!whyInfo} aria-controls="why-match-dialog" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: "var(--muted)", cursor: "pointer", padding: 0 }}><FiInfo size={14} /></button>}</div>
                               {(profile as any).badges?.length > 0 && <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges.map((b: any, i: number) => <button key={i} className="tag" onClick={(e) => { e.stopPropagation(); setBadgeInfo(b); }} style={{ minWidth: 44, minHeight: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", background: `${b.color}20`, border: `1px solid ${b.color}40`, color: b.color, cursor: "pointer" }}>{b.icon} {b.name}</button>)}</div></div>}
                               <div className="card-section" style={{ fontSize: 12, color: "var(--muted)" }}>📍 {profile.loc}</div>
                             </div>
@@ -654,13 +654,13 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                   as a tap-outside-to-close target for the radial menu. */}
                               <div className={"match-fab-scrim" + (showMatchMenu ? " open" : "")} onClick={() => setShowMatchMenu(false)} aria-hidden="true" />
                               <div className={"match-fab" + (cardScrolled ? " hidden" : "")}>
-                              <button className={"match-fab-btn" + (showMatchMenu ? " open" : "")} onClick={() => setShowMatchMenu(v => !v)} aria-label="Match actions" style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>{showMatchMenu ? <FiCamera size={28} /> : "M"}</button>
-                              <div className={"match-radial" + (showMatchMenu ? " open" : "")}>
-                                <button className={"match-radial-btn btn-rewind" + (canRewind ? "" : " is-disabled")} style={{ left: -110, top: 7, width: 44, height: 44 }} onClick={canRewind ? doRewind : undefined} disabled={!canRewind} aria-disabled={!canRewind} aria-label="Rewind">↺</button>
-                                <button className="match-radial-btn btn-nope" style={{ left: -106, top: -40, width: 44, height: 44 }} onClick={() => doSwipe("left")} aria-label="Pass">✕</button>
-                                <button className="match-radial-btn btn-super" style={{ left: -77, top: -77, width: 44, height: 44, fontSize: 16 }} onClick={() => doSwipe("super")} aria-label="Super Like">★</button>
+                              <button className={"match-fab-btn" + (showMatchMenu ? " open" : "")} onClick={() => setShowMatchMenu(v => !v)} aria-label="Match actions" aria-haspopup="true" aria-expanded={showMatchMenu} aria-controls="match-radial-menu" style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>{showMatchMenu ? <FiCamera size={28} /> : "M"}</button>
+                              <div id="match-radial-menu" className={"match-radial" + (showMatchMenu ? " open" : "")}>
+                                <button className={"match-radial-btn btn-rewind" + (canRewind ? "" : " is-disabled")} style={{ left: -110, top: 7, width: 44, height: 44 }} onClick={canRewind ? doRewind : undefined} disabled={!canRewind} aria-disabled={!canRewind} aria-label="Rewind"><span aria-hidden="true">↺</span></button>
+                                <button className="match-radial-btn btn-nope" style={{ left: -106, top: -40, width: 44, height: 44 }} onClick={() => doSwipe("left")} aria-label="Pass"><span aria-hidden="true">✕</span></button>
+                                <button className="match-radial-btn btn-super" style={{ left: -77, top: -77, width: 44, height: 44, fontSize: 16 }} onClick={() => doSwipe("super")} aria-label="Super Like"><span aria-hidden="true">★</span></button>
                                 <button className="match-radial-btn btn-like" style={{ left: -40, top: -106, width: 44, height: 44, flexDirection: "column", fontSize: 16, lineHeight: 1 }} onClick={() => doSwipe("right")} aria-label="Like this match"><span aria-hidden="true" style={{ fontSize: 18 }}>♥</span></button>
-                                <button className="match-radial-btn btn-note" style={{ left: 7, top: -110, width: 44, height: 44 }} onClick={() => doLikeWithNote()} aria-label="Like + Note">✎</button>
+                                <button className="match-radial-btn btn-note" style={{ left: 7, top: -110, width: 44, height: 44 }} onClick={() => doLikeWithNote()} aria-label="Like + Note"><span aria-hidden="true">✎</span></button>
                               </div>
                               </div>
                             </>
@@ -732,7 +732,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
       <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
       {/* Why this match? popover — traces the score back to the real calcMatch factors */}
       {whyInfo && (
-        <div role="dialog" aria-modal="true" aria-label="Why this match" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setWhyInfo(null)}>
+        <div id="why-match-dialog" role="dialog" aria-modal="true" aria-label="Why this match" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setWhyInfo(null)}>
           <div style={{ background: "#1a0a2e", border: "1px solid rgba(255,215,0,0.25)", borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
               <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)", flexShrink: 0 }}>{whyInfo.score}%</div>

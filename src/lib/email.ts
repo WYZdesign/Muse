@@ -14,13 +14,28 @@
  * in Resend (add SPF/DKIM DNS records), then send from info@wyzdesign.com.
  */
 
+import { createHmac, timingSafeEqual } from "crypto";
 import { getMuseUrl, getTermsUrl, getPrivacyUrl, getLandingUrl } from "@/lib/urls";
 
 const FROM = "Muse <info@wyzdesign.com>";
 const RESEND_URL = "https://api.resend.com/emails";
 
+/** Signed unsubscribe token — HMAC(email) so links can't be forged for others. */
+function unsubscribeToken(email: string): string {
+  const secret = process.env.UNSUBSCRIBE_SECRET || process.env.RESEND_API_KEY || process.env.NEXTAUTH_SECRET || "";
+  return createHmac("sha256", secret || "muse-unsub-fallback").update(email.toLowerCase()).digest("base64url").slice(0, 32);
+}
+
+export function verifyUnsubscribeToken(email: string, token: string): boolean {
+  if (!email || !token) return false;
+  const expected = unsubscribeToken(email);
+  const a = Buffer.from(expected);
+  const b = Buffer.from(token);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 function unsubscribeUrl(email: string): string {
-  return `${getMuseUrl()}/api/muse/unsubscribe?email=${encodeURIComponent(email)}`;
+  return `${getMuseUrl()}/api/muse/unsubscribe?email=${encodeURIComponent(email)}&t=${encodeURIComponent(unsubscribeToken(email))}`;
 }
 
 let warnedMissingKey = false;

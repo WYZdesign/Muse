@@ -25,13 +25,8 @@ export async function POST(req: NextRequest) {
     // (case-varying spam vector on a victim's address).
     const email = rawEmail.toLowerCase();
 
-    // Check if already exists
-    const { data: existing } = await sb.from("muse_waitlist").select("id").eq("email", email).maybeSingle();
-    if (existing) {
-      return NextResponse.json({ error: "Email already on waitlist" }, { status: 409 });
-    }
-
-    // Insert waitlist entry
+    // Atomic insert — unique(email) is the race guard (no select-then-insert window).
+    // 23505 = unique_violation → already on list (idempotent 409).
     const { error } = await sb.from("muse_waitlist").insert({
       email,
       phone: phone || null,
@@ -40,6 +35,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (error) {
+      if ((error as { code?: string }).code === "23505") {
+        return NextResponse.json({ error: "Email already on waitlist" }, { status: 409 });
+      }
       console.error("Waitlist insert error:", error);
       return NextResponse.json({ error: "Failed to join waitlist" }, { status: 500 });
     }

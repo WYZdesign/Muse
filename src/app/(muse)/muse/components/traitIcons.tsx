@@ -62,15 +62,15 @@ export function ZodiacGlyph({ sign }: { sign: string }) {
 
 export function MbtiIcon({ code, size = 14 }: { code: string; size?: number }) {
   const C = MBTI_ICON[code];
-  return C ? <C size={size} /> : null;
+  return C ? <C size={size} aria-hidden="true" focusable="false" /> : null;
 }
 
 export function LifePathIcon({ n, size = 14 }: { n: number; size?: number }) {
   const C = LIFE_PATH_ICON[n];
-  return C ? <C size={size} /> : null;
+  return C ? <C size={size} aria-hidden="true" focusable="false" /> : null;
 }
 
 export function ChineseZodiacIcon({ animal, size = 14 }: { animal: string; size?: number }) {
   const C = CHINESE_ICON[animal];
-  return C ? <C size={size} /> : null;
+  return C ? <C size={size} aria-hidden="true" focusable="false" /> : null;
 }

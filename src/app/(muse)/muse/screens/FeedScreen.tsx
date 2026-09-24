@@ -507,7 +507,7 @@ export const FeedScreen = memo(function FeedScreen({
           // gate the render list below uses.
           <EmptyState icon="📝" title="No posts yet" sub="Be the first to share your creative work!" style={{ paddingTop: 60 }} />
         ) : filteredFeedPosts.length === 0 ? (
-          <EmptyState icon="📷" title={`No ${feedFilter} posts yet`} sub="Try another filter or return to all posts." style={{ paddingTop: 60 }}>
+          <EmptyState icon="📷" title={feedFilter === "photos" ? "No photos yet" : `No ${feedFilter} posts yet`} sub="Try another filter or return to all posts." style={{ paddingTop: 60 }}>
             <button className="btn btn-outline" type="button" onClick={() => setFeedFilter("all")}>Show all posts</button>
           </EmptyState>
         ) : (
@@ -770,7 +770,7 @@ export const FeedScreen = memo(function FeedScreen({
           )}
           {/* Top bar */}
           <div style={{ position: "absolute", top: "calc(14px + env(safe-area-inset-top,0px))", left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 18px" }}>
-            <button onClick={closeCamera} aria-label="Close camera" style={{ width: 38, height: 38, borderRadius: "50%", background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.2)", color: "var(--text)", fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            <button onClick={closeCamera} aria-label="Close camera" style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.2)", color: "var(--text)", fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             <div style={{ display: "flex", background: "rgba(0,0,0,0.55)", borderRadius: 999, padding: 3, border: "1px solid rgba(255,255,255,0.15)" }}>
               {(["photo", "video"] as const).map(m => (
                 <button key={m} disabled={recording} onClick={() => setCamMode(m)} style={{ padding: "7px 16px", borderRadius: 999, border: "none", background: camMode === m ? "var(--gold)" : "transparent", color: camMode === m ? "var(--text)" : "rgba(255,255,255,0.8)", fontWeight: 700, fontSize: 12, cursor: recording ? "default" : "pointer", textTransform: "capitalize" }}>{m}</button>

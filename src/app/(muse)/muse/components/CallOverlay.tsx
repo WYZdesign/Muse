@@ -12,6 +12,7 @@ import {
 import { FiMic, FiMicOff, FiVideo, FiVideoOff, FiPhoneOff, FiFlag, FiVoicemail, FiSquare, FiDisc } from "react-icons/fi";
 import type { ActiveCall } from "../hooks/useCall";
 import { useRecorder } from "../hooks/useRecorder";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 /**
  * Full-screen call overlay. Connects to the LiveKit room, renders the remote
@@ -52,6 +53,7 @@ export default function CallOverlay({
   const [camOn, setCamOn] = useState(call.kind === "video");
   const [remoteCount, setRemoteCount] = useState(0);
   const [seconds, setSeconds] = useState(0);
+  const overlayRef = useFocusTrap<HTMLDivElement>(true, onEnd);
 
   // Voicemail — only offered on an outgoing call nobody has answered.
   const rec = useRecorder({
@@ -154,7 +156,7 @@ export default function CallOverlay({
   const ss = String(seconds % 60).padStart(2, "0");
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={`${call.kind === "voice" ? "Voice" : "Video"} call with ${call.peerName}`} style={{ position: "fixed", inset: 0, zIndex: 10001, background: "#05030a", display: "flex", flexDirection: "column" }}>
+    <div ref={overlayRef} role="dialog" aria-modal="true" aria-label={`${call.kind === "voice" ? "Voice" : "Video"} call with ${call.peerName}`} style={{ position: "fixed", inset: 0, zIndex: 10001, background: "#05030a", display: "flex", flexDirection: "column" }}>
       {/* Remote view */}
       <div style={{ position: "relative", flex: 1, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div ref={remoteContainerRef} style={{ position: "absolute", inset: 0, display: "grid", gridTemplateColumns: remoteCount > 1 ? "1fr 1fr" : "1fr", gap: 4 }} />
