@@ -27,11 +27,19 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `7a1abbde95bfcd77e783bb456d080a80a682cbfc`
+## Confirmed merged, last verified at: `a4206ebb3f1f44d8130092e0bc6af8d479c838d2`
+
+### Round 55 — BUNDLE_B_EVIDENCE §4/§5 reconcile (verified 2026-09-23)
+
+- `a4206eb` on `origin/main` — Vercel STATE **READY**, `DEPLOY IS LIVE ✅`
+- Fixed stale `BUNDLE_B_EVIDENCE.md` §4 (Bundle A merge / 0025 unapplied) + §5 verification record
+- No code delta this round — pure docs
+- Gates unchanged from Round 54: vitest **417** · tsc **0** · eslint **0 err** · deploy LIVE
+- Still unstaged/protected: `muse.css`, `tests/e2e/*`, `tests/fixtures/*`, `tests/helpers/*`, `CODEX_PAGE_TSX_HANDOFF.md`, dev logs
 
 ### Round 54 — backup route test (B4) (verified 2026-09-23)
 
-- `7a1abbd` on `origin/main` — Vercel STATE **READY**, `DEPLOY IS LIVE ✅`
+- `a4206eb` (this tip) — was built + READY at check time
 - Added `src/app/api/backup/route.test.ts` (auth branches matching sibling cron tests)
 - Gates: backup vitest **3/3** · full vitest **53 files / 417 tests exit 0** · tsc **exit 0** · eslint backup **0 errors**
 - Clears BUNDLE_B **B4** / **BLK-BACKUP-TEST**

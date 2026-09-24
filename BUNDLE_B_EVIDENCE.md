@@ -30,7 +30,7 @@ Deployment/migration/cron/demo-mode readiness evidence requested for release-gat
 | B10 | Migration `0024_add_account_deletion_schedule.sql` applied | file present | applied-state **not** queried | **UNVERIFIED** |
 | B11 | Migration runner exists | `scripts/run_migrations.py` | `Test-Path` → **True** | **VERIFIED** (exists); not executed |
 | B12 | Migration `0025` (Bundle A) | **on main** as `sql/migrations/0025_add_storage_cleanup_jobs.sql` (merge `0f38ca3`) | **NOT applied to any DB** | **FILE ON MAIN · UNAPPLIED** |
-| B13 | `DELIVERY_STATUS.md` current | reconciled to `7813f87` (Bundle E round) | matches origin/main | **CURRENT** |
+| B13 | `DELIVERY_STATUS.md` current | reconciled to `a4206eb` (Round 55) | matches origin/main | **CURRENT** |
 | B14 | CORS origin for API | `vercel.json` headers | `Access-Control-Allow-Origin: https://muse.wyzdesign.com` | **VERIFIED** (file) |
 | B15 | CI runtime env parity | `.github/workflows/ci.yml` | job-level `env` has placeholder Supabase/Stripe + `MUSE_DEMO_MODE: 'true'`; `Start server`: `nohup npx next start -p 3000 &` inherits job env | **MOSTLY VERIFIED** — `CRON_SECRET` **not** in CI env (cron tests stub env in-process; live CI server cron routes would 401 without secret — acceptable fail-closed) |
 
@@ -45,7 +45,7 @@ Deployment/migration/cron/demo-mode readiness evidence requested for release-gat
 | **BLK-MIG-STATE** | 0022 / 0024 applied-state unknown on target Supabase | Wyzmind (after authorize) | run migration read-only check or runner dry-run |
 | **BLK-CRON-VERCEL** | Vercel `CRON_SECRET` presence unknown | Wyzmind (read-only Vercel check on go) | dashboard/env API evidence |
 | **BLK-BACKUP-TEST** | ~~No `backup/route.test.ts`~~ | implementation agent | **CLEARED** — added + 3/3 green (2026-09-23) |
-| **BLK-DELIVERY-STALE** | ~~DELIVERY_STATUS stale~~ | Wyzmind | **CLEARED** — reconciled `7813f87` Bundle E round |
+| **BLK-DELIVERY-STALE** | ~~DELIVERY_STATUS stale~~ | Wyzmind | **CLEARED** — reconciled `a4206eb` Round 55 |
 | **BLK-LOCAL-HTTP** | ~~:3000 HTTP timed out~~ | Wyzmind | **CLEARED** — health/muse/landing 200; create-album 409 Bundle E |
 | **BLK-0025-MAIN** | ~~0025 not on main~~ | Wyzmind | **CLEARED (file)** — on main via `0f38ca3`; still **UNAPPLIED** to DB |
 
@@ -53,26 +53,25 @@ Deployment/migration/cron/demo-mode readiness evidence requested for release-gat
 
 ## 4. What is NOT claimed
 
-- No production migration executed.
-- No Vercel config/env change.
-- No deploy, no push of integration bundle.
+- No production migration executed (0022/0024/0025 applied-state still UNVERIFIED / UNAPPLIED).
+- No Vercel config/env change; `CRON_SECRET` presence in Vercel still UNVERIFIED.
 - No `MUSE_DEMO_MODE=false`.
-- Bundle A not merged to main (branch commit `a504daa` only).
-- Live custom-domain smoke this round: **UNVERIFIED**.
+- Bundle A **is** merged to main (`0f38ca3`); migration 0025 is file-only, unapplied.
 
 ---
 
 ## 5. Verification record
 
-- Revision/worktree: `V:\Muse` @ `5031750` (dirty Codex files unstaged); Bundle A worktree @ `a504daa`
-- Files changed: this document only (+ prior `HANDOFF.md` appends)
-- Commands actually run + exact result:
-  - `git rev-parse HEAD` / `origin/main` → both `5031750…`
-  - env key name dump from `.env.local` (names only)
-  - `Test-Path scripts\run_migrations.py` → True
-  - cron route greps → 401 patterns confirmed
-  - Bundle A worktree: vitest **29/29 exit 0**, eslint **0 err/12 warn exit 0**, tsc **exit 0**
-- Browser/mobile: UNVERIFIED this doc
-- Migration/environment/deploy: as matrix B9–B13
-- Known failures: BLK-* table
-- Next owner/action: **Codex** patches 4 sites → **Wyzmind** tsc re-probe → **Owner** `go`
+- Revision/worktree: through Bundle E + backup test (see HANDOFF / DELIVERY_STATUS)
+- Files changed: this document; `src/app/api/backup/route.test.ts` (new)
+- Commands: backup route vitest **3/3**; full vitest **53 files / 417 tests exit 0**; tsc **exit 0**; eslint backup test **0 errors / 1 any warning exit 0**
+- Browser/mobile: Bundle E matrix in HANDOFF (320/375/390 + chromium)
+- Migration/environment/deploy: as matrix B9–B13; demo ON
+- Known remaining: BLK-MIG-STATE, BLK-CRON-VERCEL
+- Next owner/action: **Owner** — migrate auth? Vercel CRON_SECRET read-only check? next bundle?
+
+---
+
+## Heartbeat (2026-09-23 · post B4 + §4/§5 reconcile)
+
+owner | base `a4206eb` | files `BUNDLE_B_EVIDENCE.md`, `DELIVERY_STATUS.md` | action: evidence reconcile Round 55 | exact result: HEAD == origin/main == `a4206eb`, deploy READY LIVE ✅, health 200, vitest 417/417 | blockers/UNVERIFIED: BLK-MIG-STATE, BLK-CRON-VERCEL, protected dirty unstaged | next owner: **Owner**
