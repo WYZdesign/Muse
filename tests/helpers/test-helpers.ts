@@ -113,14 +113,18 @@ export async function checkDiscoverQueueIsolation(page: Page) {
   }
 }
 
-export async function loginAsDemoUser(page: Page, opts?: { seedTours?: boolean }) {
+export async function loginAsDemoUser(page: Page, opts?: { seedTours?: boolean; screen?: string }) {
   // Screen starts as "auth" with no auto demo login. Seed muse_v1 (not muse_user)
-  // so loadState() restores authUser + screen=discover without applySession()
+  // so loadState() restores authUser + screen without applySession()
   // token validation (a fake muse_user would bounce back to auth on 401).
   // seedTours defaults true: first-visit page tours + verify banner + daily-login
   // modal would otherwise intercept Collab badge / width / feed assertions.
+  // screen defaults to discover; pass 'connections' for Feed tests so async
+  // loadState restores INTO the feed (a late restore to 'discover' can bounce
+  // a post-login nav click).
   const seedTours = opts?.seedTours !== false;
-  await page.addInitScript((withTours: boolean) => {
+  const startScreen = opts?.screen ?? 'discover';
+  await page.addInitScript(({ withTours, screen }: { withTours: boolean; screen: string }) => {
     try {
       localStorage.setItem('muse_v1', JSON.stringify({
         v: 2,
@@ -129,7 +133,7 @@ export async function loginAsDemoUser(page: Page, opts?: { seedTours?: boolean }
           email: 'demo-e2e@example.com',
           profile: { id: 'demo-e2e-profile', name: 'Demo User' },
         },
-        screen: 'discover',
+        screen,
         currentUser: {
           id: 'you',
           name: 'Demo User',
@@ -161,7 +165,7 @@ export async function loginAsDemoUser(page: Page, opts?: { seedTours?: boolean }
     } catch {
       /* storage may be unavailable in some contexts */
     }
-  }, seedTours);
+  }, { withTours: seedTours, screen: startScreen });
   // Root `/` is a custom 404 locally (Vercel redirect only applies in prod).
   // waitUntil domcontentloaded: full `load` hangs under Next dev HMR +
   // remote image preloads (same pattern as tests/smoke.spec.ts).
