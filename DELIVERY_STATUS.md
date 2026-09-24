@@ -27,7 +27,13 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e`
+## Confirmed merged, last verified at: `7384624cf6863159413d8c13cb4d52daa82ef34f`
+
+### Priority E — read-only migration audit (verified 2026-09-24)
+
+- `7384624` on `origin/main` at audit start (Priority D) — docs-only Priority E footer + `PRIORITY_E_MIGRATION_AUDIT.md`
+- Applied-state: 0022/0024 **UNVERIFIED** · 0025 **UNAPPLIED** · **BLK-MIG-STATE OPEN** (no DSN)
+- No migration apply, no Vercel/Supabase mutation this session
 
 ### Round 59b — Discover header grid + photo prev/next zones (verified 2026-09-23)
 
@@ -465,3 +471,12 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - NOT STAGED: Codex page-shell set, muse.css, vercel.json, storage-cleanup/, package.json (lighthouse-ci swap = owner), _LOGS_dev_*, node_modules_broken_bak
 - KNOWN: full npm audit red on lighthouse-ci chain (intentional until package swap); discover-deck still in smoke (documented)
 - NEXT: Priority E (read-only migration audit)
+
+## Priority E — 2026-09-24 — read-only migration audit (0022/0024/0025)
+- BASE: `7384624` (Priority D LIVE) — docs only: `PRIORITY_E_MIGRATION_AUDIT.md`, `HANDOFF.md`, `DELIVERY_STATUS.md`
+- SCOPE: read-only · no `--apply` · no Supabase/Vercel mutation · no DSN · no secret values
+- COMMANDS: `run_migrations.py` dry-run queue **26** exit 0 · DSN_ENV=**UNSET** · paths 0022/0024/0025/0026/runner True · git tracked 0001–0025, 0026 untracked · ancestors 95b7544/477862f/0f38ca3/a504daa YES
+- APPLIED-STATE: 0022 **UNVERIFIED** · 0024 **UNVERIFIED** · 0025 **FILE ON MAIN · UNAPPLIED** · 0026 **not on main** · last recorded ledger apply = 0001–0015 only (Round 48)
+- BLK-MIG-STATE: **STILL OPEN** — owner must supply migrate DSN/auth for `schema_migrations` SELECT
+- NOT STAGED: Codex page-shell set, muse.css, vercel.json, storage-cleanup/, 0026, _LOGS_dev_*, node_modules_broken_bak
+- NEXT: Priority F (API/rate-limit/contentScan tests)
