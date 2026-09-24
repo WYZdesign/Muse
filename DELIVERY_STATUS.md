@@ -459,13 +459,6 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - NOT STAGED: Codex page-shell/muse.css/vercel.json/storage-cleanup, _LOGS_dev_*, node_modules_broken_bak
 - NEXT: Priority D (CI + playwright config + lighthouserc)
 
-## Priority C — 2026-09-24 — accessibility suite
-- COMMIT: `test(priority C)` — accessibility.spec.ts + accessibility-helpers.ts (KNOWN_A11Y_GAPS baseline)
-- E2E: accessibility chromium-desktop workers=1 → **20 passed / 1 skipped exit 0**
-- GATES: eslint 0 · tsc exit 2 = Codex storage-cleanup route.test.ts only (pre-existing)
-- NOT STAGED: Codex page-shell set, muse.css, vercel.json, storage-cleanup/, _LOGS_dev_*, node_modules_broken_bak
-- NEXT: Priority D (CI gates — never weaken)
-
 ## Priority D — 2026-09-24 — CI + playwright + lighthouserc
 - COMMIT: `ci(priority D)` — ci.yml, playwright.config.ts, lighthouserc.js
 - GATES: YAML_OK · lighthouserc 11 asserts · @lhci/cli@0.15.1 resolves · CI=true smoke App loads 1 passed · eslint 0 · tsc exit 2 = Codex storage-cleanup only
