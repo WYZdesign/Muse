@@ -39,6 +39,7 @@
   ],
   "exclude": [
     "node_modules",
+    "node_modules_broken_bak",
     "_dev"
   ]
 }

@@ -116,7 +116,7 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
       <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 28, maxWidth: 520, width: "90%", maxHeight: "85vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>🛡️ Safety Center</h2>
-          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 20, cursor: "pointer" }}>✕</button>
+          <button onClick={onClose} aria-label="Close" title="Close" style={{ width: 44, height: 44, background: "none", border: "none", color: "var(--text2)", fontSize: 20, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", margin: "-8px -8px 0 0" }}>✕</button>
         </div>
 
         {/* Tabs */}

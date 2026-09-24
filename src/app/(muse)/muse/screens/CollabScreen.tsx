@@ -258,7 +258,7 @@ export const CollabScreen = memo(function CollabScreen({
                   aria-label="Not interested"
                   title="Not interested"
                   onClick={() => hideBrief(brief.id)}
-                  style={{ position: "absolute", top: 8, left: 8, zIndex: 2, width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "var(--text)", fontSize: 14, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  style={{ position: "absolute", top: 8, left: 8, zIndex: 2, width: 44, height: 44, borderRadius: "50%", border: "none", background: "transparent", color: "var(--text)", fontSize: 14, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >✕</button>
               )}
               {/* Report flag + safety info (top-right cluster) */}

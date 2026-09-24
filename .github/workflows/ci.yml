@@ -217,6 +217,13 @@ jobs:
 
       - name: Start server
         run: nohup npx next start -p 3000 &
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          SUPABASE_SECRET_KEY: placeholder
+          STRIPE_SECRET_KEY: placeholder
+          NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
 
       - name: Wait for server
         run: |
@@ -276,6 +283,13 @@ jobs:
 
       - name: Start server
         run: nohup npx next start -p 3000 &
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          SUPABASE_SECRET_KEY: placeholder
+          STRIPE_SECRET_KEY: placeholder
+          NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
 
       - name: Wait for server
         run: |
@@ -331,6 +345,13 @@ jobs:
 
       - name: Start server
         run: nohup npx next start -p 3000 &
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          SUPABASE_SECRET_KEY: placeholder
+          STRIPE_SECRET_KEY: placeholder
+          NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
 
       - name: Wait for server
         run: |
@@ -387,6 +408,14 @@ jobs:
 
       - name: Start server
         run: nohup npx next start -p 3000 &
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          SUPABASE_SECRET_KEY: placeholder
+          STRIPE_SECRET_KEY: placeholder
+          NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
+          MUSE_DEMO_MODE: 'true'
 
       - name: Wait for server
         run: |
@@ -437,6 +466,14 @@ jobs:
 
       - name: Start server
         run: nohup npx next start -p 3000 &
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          SUPABASE_SECRET_KEY: placeholder
+          STRIPE_SECRET_KEY: placeholder
+          NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
+          MUSE_DEMO_MODE: 'true'
 
       - name: Wait for server
         run: |
@@ -483,6 +520,13 @@ jobs:
 
       - name: Start server
         run: nohup npx next start -p 3000 &
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          SUPABASE_SECRET_KEY: placeholder
+          STRIPE_SECRET_KEY: placeholder
+          NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
 
       - name: Wait for server
         run: |
