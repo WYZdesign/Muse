@@ -27,7 +27,22 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `5d07bd4fed716e0b1a1d5c031d45d560364485b8`
+## Confirmed merged, last verified at: `b1d3cbd5f0b272f3aa52e0aaea6f243f70054045`
+
+### Round 57 — CRON_SECRET verified + evidence reconcile (verified 2026-09-23)
+
+- `b1d3cbd` on `origin/main` — Vercel STATE **READY**, `DEPLOY IS LIVE ✅`
+- History: `b1d3cbd` (Round 56 docs) ← `5d07bd4` (protected bundle) ← `3b51860` (Round 55) ← `a4206eb` (B4 test)
+- BLK-CRON-VERCEL **CLEARED**: `vercel env ls production` shows `CRON_SECRET` Encrypted (Preview+Production, 41d)
+- BLK-MIG-STATE remains open: no DSN this session for `schema_migrations` applied-state SELECT
+- Gates: tsc **0** · vitest **53/417 exit 0** · eslint page.tsx **0** · deploy **b1d3cbd LIVE** · `/api/health` 200
+- Protected dirty files **integrated** at `5d07bd4` (muse.css, e2e, fixtures, helpers, CODEX handoff) — status clean except `_LOGS_dev_*`
+
+### Round 56 — protected bundle integrated (verified 2026-09-23)
+
+- `5d07bd4` / `b1d3cbd` — ChatGPT/Codex protected bundle (Discover header, 390px wrap, gold photo dots, e2e demo-login seeding)
+- Protected dirty files **integrated** at `5d07bd4`: `muse.css`, `tests/e2e/*`, `tests/fixtures/*`, `tests/helpers/*`, `CODEX_PAGE_TSX_HANDOFF.md`
+- BLK-CRON-VERCEL **CLEARED** at `b1d3cbd` (CRON_SECRET present in Vercel env 41d)
 
 ### Round 55 — BUNDLE_B_EVIDENCE §4/§5 reconcile (verified 2026-09-23)
 
@@ -35,7 +50,7 @@ same way.
 - Fixed stale `BUNDLE_B_EVIDENCE.md` §4 (Bundle A merge / 0025 unapplied) + §5 verification record
 - No code delta this round — pure docs
 - Gates unchanged from Round 54: vitest **417** · tsc **0** · eslint **0 err** · deploy LIVE
-- Still unstaged/protected: `muse.css`, `tests/e2e/*`, `tests/fixtures/*`, `tests/helpers/*`, `CODEX_PAGE_TSX_HANDOFF.md`, dev logs
+- Still unstaged/protected at that time: `muse.css`, `tests/e2e/*`, `tests/fixtures/*`, `tests/helpers/*`, `CODEX_PAGE_TSX_HANDOFF.md`, dev logs
 
 ### Round 54 — backup route test (B4) (verified 2026-09-23)
 

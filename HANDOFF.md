@@ -1577,14 +1577,15 @@ first-visit tour fires ~600ms after boot (page.tsx maybeShowPageTour)
 | 390 | PASS | PASS | PASS | PASS | PASS | PASS |
 | chromium-desktop | PASS | PASS | PASS | PASS | PASS | PASS |
 
-### Still open (after Bundle E + B4)
+### Still open (after Bundle E + B4 + Round 56/57)
 
-- Migration 0022 / 0024 / 0025 applied-state: **UNVERIFIED** (0025 file on main only, UNAPPLIED)
-- Vercel `CRON_SECRET` presence: **UNVERIFIED**
+- Migration 0022 / 0024 / 0025 applied-state: **UNVERIFIED** (0025 file on main, UNAPPLIED) — **BLK-MIG-STATE** · no vault/env DSN this session
+- ~~Vercel `CRON_SECRET` presence~~ → **VERIFIED** `vercel env ls` Encrypted 41d (BLK-CRON-VERCEL CLEARED)
 - ~~`src/app/api/backup/route.test.ts` missing~~ → **ADDED** 3/3 green (B4/BLK-BACKUP-TEST CLEARED)
-- Protected dirty unstaged: `muse.css`, e2e smoke/demo-mode, fixtures, helpers, CODEX_PAGE_TSX_HANDOFF, dev logs
+- Protected dirty files **integrated** at `5d07bd4` (muse.css, e2e, fixtures, helpers, CODEX handoff)
+- `_LOGS_dev_*` untracked — never stage
 - Bundle D D1–D5 per-ID Codex status: still open (D3 Photos confirmed fixed live by ChatGPT)
-- e2e UI Badge: tour-overlay blocks click (badges present) — needs `muse_tour_seen_*` seed in protected helpers (owner approval)
+- e2e UI Badge: tour seed may now be in `5d07bd4` helpers — re-run smoke if needed
 
 ## Verification record — Bundle E
 - Revision/worktree: `V:\Muse` @ `7a1abbd` == origin/main (at Bundle E commit time `7813f87`)
@@ -1599,3 +1600,7 @@ first-visit tour fires ~600ms after boot (page.tsx maybeShowPageTour)
 ## Heartbeat — 2026-09-23 post-B4 reconcile (Round 55)
 
 owner | base `a4206eb` | files `BUNDLE_B_EVIDENCE.md`, `DELIVERY_STATUS.md` (docs only) | action: evidence reconcile Round 55 + B4 clear | exact result: HEAD == origin/main == `a4206ebb3f1f44d8130092e0bc6af8d479c838d2`, deploy READY LIVE ✅, `/api/health` 200, vitest **417/417**, tsc 0, eslint 0 err | blockers/UNVERIFIED: BLK-MIG-STATE (0022/0024 applied-state), BLK-CRON-VERCEL (`CRON_SECRET` presence), protected dirty unstaged (`muse.css`, `tests/e2e/*`, `tests/fixtures/*`, `tests/helpers/*`, `CODEX_PAGE_TSX_HANDOFF.md`, dev logs) | next: **Owner** — migrate auth? Vercel CRON_SECRET check? approve protected e2e/helper tour-seed fix? assign next bundle?
+
+## Heartbeat — 2026-09-23 Round 57 — CRON clear + protected bundle verified
+
+owner | base `b1d3cbd5f0b272f3aa52e0aaea6f243f70054045` | files `BUNDLE_B_EVIDENCE.md`, `DELIVERY_STATUS.md`, `HANDOFF.md` (docs only) | action: clear BLK-CRON-VERCEL + reconcile Round 56/57 | exact result: HEAD == origin/main == `b1d3cbd`, Vercel deploy **READY LIVE ✅**, `/api/health` 200, vitest **417/417**, tsc 0, eslint page.tsx 0, `vercel env ls` shows CRON_SECRET Encrypted 41d, protected bundle already on main at `5d07bd4`, vault DSN probe **none** | blockers/UNVERIFIED: BLK-MIG-STATE (0022/0024/0025 applied-state — no DSN) | next: **Owner** — supply migrate DSN/auth; assign next bundle
