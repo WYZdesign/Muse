@@ -311,8 +311,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
               expand to fill the header; it fades/slides back in the same way
               on close. */}
           <div className={"discover-hdr-title" + (discoverSearchOpen ? " collapsed" : "")} aria-hidden={discoverSearchOpen}>
-            <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", position: "static", left: "auto", top: "auto", transform: "none", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Discover</div>
-            <div style={{ flex: 1 }} />
+            <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#FFD700,#FF8C69,#FFB6C1,#FFD700,#FFA07A,#FFD700)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "var(--gold)", position: "static", left: "auto", top: "auto", transform: "none", animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite" }}>Discover</div>
           </div>
           <div className={"discover-hdr-actions" + (discoverSearchOpen ? " search-open" : "")} style={{ display: "flex", gap: 4, alignItems: "center" }}>
             <button
@@ -511,8 +510,44 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               );
                             })()}
                           </div>
-                          {isTop && (
+                          {isTop && photos.length > 1 && (
                             <>
+                              <div
+                                className={"card-photo-zone card-photo-zone-left" + (cardScrolled ? " hidden" : "")}
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Previous photo"
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setCurrentPhotoIdx?.((p) => ((p ?? 0) > 0 ? (p as number) - 1 : photos.length - 1));
+                                  }
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCurrentPhotoIdx?.((p) => ((p ?? 0) > 0 ? (p as number) - 1 : photos.length - 1));
+                                }}
+                              ><span className="card-photo-nav" aria-hidden="true">‹</span></div>
+                              <div
+                                className={"card-photo-zone card-photo-zone-right" + (cardScrolled ? " hidden" : "")}
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Next photo"
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setCurrentPhotoIdx?.((p) => ((p ?? 0) + 1) % photos.length);
+                                  }
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCurrentPhotoIdx?.((p) => ((p ?? 0) + 1) % photos.length);
+                                }}
+                              ><span className="card-photo-nav" aria-hidden="true">›</span></div>
                             </>
                           )}
                           <div className={"card-photo-dots" + (cardScrolled ? " hidden" : "")} aria-hidden={cardScrolled || undefined} inert={cardScrolled || undefined}>

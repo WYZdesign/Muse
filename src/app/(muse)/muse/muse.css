@@ -425,13 +425,23 @@ textarea.inp{resize:none}
    Collab, BTS…) stays one row (~68px + safe-area). On iOS home-screen PWA with
    a notch that compounded with env(safe-area-inset-top) and read as the whole
    page pushed down vs the other tabs. Same height as .hdr everywhere: one row,
-   title shrinks/ellipsizes, actions keep 44px and never wrap. */
+   title shrinks/ellipsizes, actions keep 44px and never wrap.
+   Round 59b: max-width:none let the title consume the full row (inner spacer
+   flex:1) and pushed .discover-hdr-actions onto a second line even though the
+   media block set flex-wrap:nowrap — grid makes a second row impossible. */
 @media(max-width:390px){
-  .screen-el[data-screen="discover"] .hdr{gap:4px;padding-inline:12px;flex-wrap:nowrap}
-  .screen-el[data-screen="discover"] .discover-hdr-title{flex:1 1 auto;min-width:0;max-width:none;justify-content:flex-start}
-  .screen-el[data-screen="discover"] .discover-hdr-title .logo-link{font-size:30px!important;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-  .screen-el[data-screen="discover"] .discover-hdr-actions{width:auto;flex:0 0 auto;justify-content:flex-end}
-  .screen-el[data-screen="discover"] .discover-hdr-actions.search-open{flex:1 1 auto;min-width:0}
+  .screen-el[data-screen="discover"] .discover-wrap>.hdr{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:4px;
+    padding-inline:12px;
+    flex-wrap:nowrap!important;
+    align-items:center;
+  }
+  .screen-el[data-screen="discover"] .discover-hdr-title{flex:1 1 0;min-width:0;max-width:none;justify-content:flex-start;overflow:hidden}
+  .screen-el[data-screen="discover"] .discover-hdr-title .logo-link{font-size:30px!important;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%}
+  .screen-el[data-screen="discover"] .discover-hdr-actions{width:auto;max-width:none;flex:0 0 auto;justify-content:flex-end;min-width:0}
+  .screen-el[data-screen="discover"] .discover-hdr-actions.search-open{grid-column:1/-1;flex:1 1 auto;min-width:0}
 }
 /* Round 17 originally scoped this fix to .discover-wrap alone, reasoning
    that Discover was the only screen confirmed overlapping via visual
@@ -2165,11 +2175,14 @@ img{background-color:var(--card-bg)}
    the previous/next photo. The horizontal like/pass swipe itself is handled
    card-wide by the pointer handlers on .swipe-card (see page.tsx
    onPointerMove's axis lock), not by these zones, so it's unaffected. */
-.card-photo-zone{position:absolute;top:0;height:62vh;width:16%;z-index:5;transition:opacity .3s ease}
+.card-photo-zone{position:absolute;top:0;height:100%;width:16%;z-index:5;transition:opacity .3s ease;pointer-events:auto;cursor:pointer}
 .card-photo-zone.hidden{opacity:0;pointer-events:none}
 .card-photo-zone-left{left:0}
 .card-photo-zone-right{right:0}
-.card-photo-nav{position:absolute;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:rgba(10,6,18,0.55);border:1px solid rgba(255,255,255,0.16);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;line-height:1;pointer-events:none;backdrop-filter:blur(8px)}
+.card-photo-nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(10,6,18,0.55);border:1px solid rgba(255,255,255,0.16);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;line-height:1;pointer-events:none;backdrop-filter:blur(8px)}
+.card-photo-zone-left .card-photo-nav{left:8px}
+.card-photo-zone-right .card-photo-nav{right:8px}
+.card-photo-zone:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
 .card-photo-thumb.active{border:2px solid var(--gold)}
 .card-portfolio-btn{width:100%;margin-top:12px;padding:10px 16px;border-radius:99px;border:1px solid rgba(255,215,0,0.25);background:rgba(255,215,0,0.08);color:var(--gold);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
 .card-portfolio-btn:hover{background:rgba(var(--gold),0.15);border-color:rgba(255,215,0,0.4)}
