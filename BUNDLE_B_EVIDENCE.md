@@ -1,10 +1,10 @@
 # Bundle B — Formal evidence matrix + blocker list
 
-**Status:** EVIDENCE COMPLETE · type gate + GO cleared · residual open: BLK-MIG-STATE  
+**Status:** EVIDENCE COMPLETE · type gate + GO cleared · Round 59/59b deploy LIVE · residual open: BLK-MIG-STATE  
 **Date:** 2026-09-23  
 **From:** Wyzmind (sole integrator)  
-**Base SHA:** `b1d3cbd` (see DELIVERY_STATUS)  
-**Role:** bundle-specific evidence · **not** deployment approval  
+**Base SHA:** `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` (see DELIVERY_STATUS)  
+**Role:** bundle-specific evidence · **not** deployment approval
 
 ---
 
@@ -30,7 +30,7 @@ Deployment/migration/cron/demo-mode readiness evidence requested for release-gat
 | B10 | Migration `0024_add_account_deletion_schedule.sql` applied | file present | applied-state **not** queried | **UNVERIFIED** |
 | B11 | Migration runner exists | `scripts/run_migrations.py` | `Test-Path` → **True** | **VERIFIED** (exists); not executed |
 | B12 | Migration `0025` (Bundle A) | **on main** as `sql/migrations/0025_add_storage_cleanup_jobs.sql` (merge `0f38ca3`) | **NOT applied to any DB** | **FILE ON MAIN · UNAPPLIED** |
-| B13 | `DELIVERY_STATUS.md` current | reconciled to `b1d3cbd` Round 56/57 | matches origin/main | **CURRENT** |
+| B13 | `DELIVERY_STATUS.md` current | reconciled to `b042a96` Round 59/59b | matches origin/main | **CURRENT** |
 | B14 | CORS origin for API | `vercel.json` headers | `Access-Control-Allow-Origin: https://muse.wyzdesign.com` | **VERIFIED** (file) |
 | B15 | CI runtime env parity | `.github/workflows/ci.yml` | job-level `env` has placeholder Supabase/Stripe + `MUSE_DEMO_MODE: 'true'`; `Start server`: `nohup npx next start -p 3000 &` inherits job env | **MOSTLY VERIFIED** — `CRON_SECRET` **not** in CI env (cron tests stub env in-process; live CI server cron routes would 401 without secret — acceptable fail-closed) |
 
@@ -45,7 +45,7 @@ Deployment/migration/cron/demo-mode readiness evidence requested for release-gat
 | **BLK-MIG-STATE** | 0022 / 0024 / 0025 applied-state unknown on target Supabase | Wyzmind (after DSN/migrate auth) | runner dry-run cannot SELECT applied-state without DSN |
 | **BLK-CRON-VERCEL** | ~~Vercel `CRON_SECRET` presence unknown~~ | Wyzmind | **CLEARED** — `vercel env ls` shows CRON_SECRET Encrypted 41d (2026-09-23) |
 | **BLK-BACKUP-TEST** | ~~No `backup/route.test.ts`~~ | implementation agent | **CLEARED** — added + 3/3 green (2026-09-23) |
-| **BLK-DELIVERY-STALE** | ~~DELIVERY_STATUS stale~~ | Wyzmind | **CLEARED** — reconciled `b1d3cbd` Round 56/57 |
+| **BLK-DELIVERY-STALE** | ~~DELIVERY_STATUS stale~~ | Wyzmind | **CLEARED** — reconciled `b1d3cbd` Round 56/57, then `b042a96` Round 59/59b |
 | **BLK-LOCAL-HTTP** | ~~:3000 HTTP timed out~~ | Wyzmind | **CLEARED** — health/muse/landing 200; create-album 409 Bundle E |
 | **BLK-0025-MAIN** | ~~0025 not on main~~ | Wyzmind | **CLEARED (file)** — on main via `0f38ca3`; still **UNAPPLIED** to DB |
 
@@ -79,4 +79,8 @@ owner | base `b1d3cbd` | files `BUNDLE_B_EVIDENCE.md`, `DELIVERY_STATUS.md`, `HA
 
 ## Heartbeat (2026-09-23 · Round 58 — all queued bundles integrated)
 
-owner | base 8fe2c6 | files 16 (bundles C/G/H/I/F/J/K/N/D1/D3) | action: execute remaining queued bundles after owner "do it all" | exact result: HEAD == origin/main == 2040d59ce2d60ffbd568254120c0289218053de8, deploy READY LIVE ✅, health 200 (pre-existing), vitest 417/417, tsc 0, next 16.3.6 exact | blockers/UNVERIFIED: BLK-MIG-STATE (0022/0024/0025 applied-state — no DSN), D2 375px clip, D4/D5 verify, npm audit 11 vulns | next owner: **Owner** — migrate DSN/auth; triage npm audit; assign next work
+owner | base 8fe2c6 | files 16 (bundles C/G/H/I/F/J/K/N/D1/D3) | action: execute remaining queued bundles after owner "do it all" | exact result: HEAD == origin/main == 2040d59ce2d60ffbd568254120c0289218053de8, deploy READY LIVE ✅, health 200 (pre-existing), vitest 417/417, tsc 0, next 16.3.6 exact | blockers/UNVERIFIED: BLK-MIG-STATE (0022/0024/0025 applied-state — no DSN), D2 375px clip, D4/D5 verify, npm audit 11 vulns | next owner: **Owner** — migrate DSN/auth; triage npm audit; assign next work
+
+## Heartbeat (2026-09-23 · Round 59 + 59b — Deploy is live)
+
+owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59 9 files; Round 59b `muse.css` + `DiscoverScreen.tsx` | action: Round 59 UI batch + Round 59b Discover single-row hdr (≤390 grid) + photo prev/next zones | exact result: HEAD == origin/main == `b042a96`, `wyz_deploy_check.py` **DEPLOY IS LIVE ✅**, tsc 0, vitest 417/417, eslint 0 err, prod health 200, Playwright live PASS (390 hdrH=68 grid, zones+navs, TAP_NEXT/PREV) | blockers/UNVERIFIED: BLK-MIG-STATE (0022/0024/0025 — no DSN), D5 P2, lighthouse-ci chain; verify production via `muse.wyzdesign.com` not stale `muse-gvnhgffq1` | next owner: **Owner** — visual accept; migrate DSN/auth; D5 approve; assign next work

@@ -27,7 +27,17 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `b1d3cbd5f0b272f3aa52e0aaea6f243f70054045`
+## Confirmed merged, last verified at: `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e`
+
+### Round 59b — Discover header grid + photo prev/next zones (verified 2026-09-23)
+
+- `b042a96` on `origin/main` — Vercel STATE **READY**, `DEPLOY IS LIVE ✅` (`muse-moot8j3ii` / `muse.wyzdesign.com`)
+- History: `b042a96` (Round 59b) ← `2865519` (Round 59 UI) ← `9279bfb` ← `2040d59` ← `f8fe2c6` ← `b1d3cbd`
+- Files: `muse.css` (≤390 grid hdr + zone/nav CSS), `DiscoverScreen.tsx` (photo zones + logo fallback)
+- Gates: tsc **0** · vitest **53/417 exit 0** · eslint focused **0 errors** · deploy **b042a96 LIVE** · prod `/api/health` 200
+- Live Playwright: 390 hdrH **68** grid sameRow · desktop hdrH 73 · zones+navs present · TAP_NEXT/PREV photo index advances
+- Note: deployment URL `muse-gvnhgffq1` is the prior Round 59 build — verify against `muse.wyzdesign.com` or latest `muse-moot8j3ii`
+- Still open: BLK-MIG-STATE (0022/0024/0025 applied-state — no DSN), D5 product direction P2, lighthouse-ci chain owner decision
 
 ### Round 57 — CRON_SECRET verified + evidence reconcile (verified 2026-09-23)
 
@@ -416,7 +426,11 @@ running via opencode)
 ## Heartbeat — 2026-09-23 Round 56 — protected bundle integrated
 
 owner | base `5d07bd4fed716e0b1a1d5c031d45d560364485b8` | files `muse.css`, `tests/e2e/*`, `tests/fixtures/*`, `tests/helpers/*`, `CODEX_PAGE_TSX_HANDOFF.md` | action: integrate ChatGPT/Codex protected bundle (Discover header simplify + 390px wrap, gold photo dots, e2e demo login seeding + /muse paths) | exact result: tsc cache-free exit 0 · eslint page.tsx exit 0 · vitest 53/417 exit 0 · next build exit 0 · pushed origin/main · deploy READY LIVE (see wyz_deploy_check) | blockers/UNVERIFIED: BLK-MIG-STATE (0022/0024/0025 applied-state — no DSN this session), BLK-CRON-VERCEL **CLEARED** (CRON_SECRET present in Vercel env 41d ago) | next: owner — migrate auth for 0022/0024/0025; assign next bundle
-
 ## Heartbeat — 2026-09-23 Round 58 — queued bundles C/G/H/I/F/J/K/M/N/D integrated
 
-owner | base 8fe2c6bae023244b9b7d77d7a739fa61adc5877 | files 16 source/config (see HANDOFF Round 58) | action: execute all owner-cleared bundles ("do it all") | exact result: HEAD == origin/main == 2040d59ce2d60ffbd568254120c0289218053de8, deploy READY LIVE ✅, vitest 417/417, tsc 0, focused eslint warnings-only | blockers/UNVERIFIED: BLK-MIG-STATE (0022/0024/0025 applied-state — no DSN this session), D2 375px card-clip CSS, D4/D5 verify-only, npm audit 11 vulns untriaged | next: **Owner** — migrate DSN/auth; assign next work; approve D2 visual direction
+owner | base 8fe2c6bae023244b9b7d77d7a739fa61adc5877 | files 16 source/config (see HANDOFF Round 58) | action: execute all owner-cleared bundles ("do it all") | exact result: HEAD == origin/main == 2040d59ce2d60ffbd568254120c0289218053de8, deploy READY LIVE ✅, vitest 417/417, tsc 0, focused eslint warnings-only | blockers/UNVERIFIED: BLK-MIG-STATE (0022/0024/0025 applied-state — no DSN this session), D2 375px card-clip CSS, D4/D5 verify-only, npm audit 11 vulns untriaged | next: **Owner** — migrate DSN/auth; assign next work; approve D2 visual direction
+
+## Heartbeat — 2026-09-23 Round 59 + 59b — UI batch + Discover header/zones deployed
+
+owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 source/config; Round 59b: `muse.css`, `DiscoverScreen.tsx` | action: Round 59 UI batch then Round 59b (≤390 grid Discover hdr + photo prev/next zones with chevrons) | exact result: HEAD == origin/main == `b042a96`, deploy READY LIVE ✅ (`muse-moot8j3ii` / `muse.wyzdesign.com`), tsc 0, vitest 417/417, eslint 0 err, prod health 200, Playwright 390 hdrH=68 grid sameRow + TAP_NEXT/PREV green | blockers/UNVERIFIED: BLK-MIG-STATE (0022/0024/0025 — no DSN), D5 P2, lighthouse-ci chain owner decision; stale deployment alias `muse-gvnhgffq1` is prior SHA | next: **Owner** — visual accept; migrate DSN; D5 approve; assign next work
+
