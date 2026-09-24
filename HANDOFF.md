@@ -1577,19 +1577,21 @@ first-visit tour fires ~600ms after boot (page.tsx maybeShowPageTour)
 | 390 | PASS | PASS | PASS | PASS | PASS | PASS |
 | chromium-desktop | PASS | PASS | PASS | PASS | PASS | PASS |
 
-### Still open (unchanged by this round)
+### Still open (after Bundle E + B4)
 
-- Migration 0022 / 0024 / 0025 applied-state: **UNVERIFIED** (0025 file on main only)
+- Migration 0022 / 0024 / 0025 applied-state: **UNVERIFIED** (0025 file on main only, UNAPPLIED)
 - Vercel `CRON_SECRET` presence: **UNVERIFIED**
-- `src/app/api/backup/route.test.ts`: **missing** (B4)
+- ~~`src/app/api/backup/route.test.ts` missing~~ → **ADDED** 3/3 green (B4/BLK-BACKUP-TEST CLEARED)
 - Protected dirty unstaged: `muse.css`, e2e smoke/demo-mode, fixtures, helpers, CODEX_PAGE_TSX_HANDOFF, dev logs
 - Bundle D D1–D5 per-ID Codex status: still open (D3 Photos confirmed fixed live by ChatGPT)
+- e2e UI Badge: tour-overlay blocks click (badges present) — needs `muse_tour_seen_*` seed in protected helpers (owner approval)
 
 ## Verification record — Bundle E
-- Revision/worktree: `V:\Muse` @ `7813f87` == origin/main
-- Files changed by this heartbeat: HANDOFF.md, BUNDLE_B_EVIDENCE.md, DELIVERY_STATUS.md (append/reconcile only)
-- Commands: netstat; curl health/muse/landing/create-album(409); wyz_deploy_check.py 7813f87 READY; playwright chromium+320/375/390+serial-320+negative reconfirm
+- Revision/worktree: `V:\Muse` @ `7a1abbd` == origin/main (at Bundle E commit time `7813f87`)
+- Files changed by Bundle E heartbeat: HANDOFF.md, BUNDLE_B_EVIDENCE.md, DELIVERY_STATUS.md
+- Follow-up: `src/app/api/backup/route.test.ts` + evidence updates (this append)
+- Commands: netstat; curl health/muse/landing/create-album(409); wyz_deploy_check READY; playwright 320/375/390+chromium; backup vitest 3/3; full vitest **53/417 exit 0**; tsc exit 0
 - Browser/mobile widths: 320 / 375 / 390 / desktop chromium — matrix above
-- Migration/environment/deploy: demo ON; 0025 unapplied; deploy 7813f87 LIVE
+- Migration/environment/deploy: demo ON; 0025 unapplied; deploy `7a1abbd` LIVE
 - Known failures: UI-badge tour overlay (harness gap); parallel 320 goto flake (serial green)
-- Next owner/action: **Owner** — assign next work; migrate auth if desired; approve any protected e2e/helper edits for tour-seed fix
+- Next owner/action: **Owner** — migrate auth; Vercel CRON_SECRET check; protected e2e/helper tour-seed approval; next bundle assign

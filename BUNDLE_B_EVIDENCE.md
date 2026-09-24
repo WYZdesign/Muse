@@ -1,9 +1,9 @@
 # Bundle B — Formal evidence matrix + blocker list
 
-**Status:** EVIDENCE COMPLETE · integration **BLOCKED** on type gate + owner `go`  
+**Status:** EVIDENCE COMPLETE · type gate + GO cleared · residual open: BLK-MIG-STATE, BLK-CRON-VERCEL  
 **Date:** 2026-09-23  
 **From:** Wyzmind (sole integrator)  
-**Base SHA:** `5031750a3739dabee6229d203b3effa3bcd65c8a` (`main` / `origin/main`)  
+**Base SHA:** updated through Bundle E / backup-test round (see DELIVERY_STATUS)  
 **Role:** bundle-specific evidence · **not** deployment approval  
 
 ---
@@ -21,7 +21,7 @@ Deployment/migration/cron/demo-mode readiness evidence requested for release-gat
 | B1 | Cron schedules registered | `vercel.json` `crons[]` | `/api/backup` `0 6 * * *`; `/api/cron/checkins` `0 8 * * *`; `/api/cron/capture-bookings` `0 */6 * * *`; `/api/cron/purge-deleted-accounts` `30 7 * * *` | **VERIFIED** (file) |
 | B2 | Cron routes fail closed without secret | source: `checkins` L7–13, `capture-bookings` L39–43, `purge-deleted-accounts` L24–26, `backup` L16–18 | all: `if (!process.env.CRON_SECRET \|\| authHeader !== expected)` → **401** | **VERIFIED** (source) |
 | B3 | Cron unit tests exist (missing/wrong/demo) | `route.test.ts` under `src/app/api/cron/{checkins,capture-bookings,purge-deleted-accounts}` | checkins pattern: missing→401, wrong→401, unset secret→401, demo+valid→200 `{demo:true}` | **VERIFIED** (source) |
-| B4 | `backup` route unit test | `src/app/api/backup/route.test.ts` | **file does not exist** | **BLOCKER** — add auth branch tests (Bundle E item 2 residual) |
+| B4 | `backup` route unit test | `src/app/api/backup/route.test.ts` (added 2026-09-23) | missing→401, wrong→401, unset secret→401, demo+valid→200 `{success:true,demo:true}` · **3/3 exit 0** | **VERIFIED** |
 | B5 | Local env key names present | `.env.local` key names only (values never read) | includes `CRON_SECRET`, `MUSE_DEMO_MODE` not listed (defaults demo-ON via `demo-mode.ts`), Supabase/Stripe/OpenRouter/Sentry/Mapbox keys present | **VERIFIED** names only; **values UNVERIFIED** |
 | B6 | Vercel `CRON_SECRET` set in project | — | not queried (no Vercel mutation/read this round) | **UNVERIFIED** |
 | B7 | Demo mode server truth | `src/lib/demo-mode.ts` L9–17 | default ON unless `MUSE_DEMO_MODE==="false"`; helper returns `{error: "... unavailable in demo mode", code:"DEMO_MODE"}` | **VERIFIED** (source) |
@@ -44,7 +44,7 @@ Deployment/migration/cron/demo-mode readiness evidence requested for release-gat
 | **BLK-GO** | ~~Owner has not said `go`~~ | Owner | **CLEARED** — GO 1–7 complete |
 | **BLK-MIG-STATE** | 0022 / 0024 applied-state unknown on target Supabase | Wyzmind (after authorize) | run migration read-only check or runner dry-run |
 | **BLK-CRON-VERCEL** | Vercel `CRON_SECRET` presence unknown | Wyzmind (read-only Vercel check on go) | dashboard/env API evidence |
-| **BLK-BACKUP-TEST** | No `backup/route.test.ts` | implementation agent | tests added + green |
+| **BLK-BACKUP-TEST** | ~~No `backup/route.test.ts`~~ | implementation agent | **CLEARED** — added + 3/3 green (2026-09-23) |
 | **BLK-DELIVERY-STALE** | ~~DELIVERY_STATUS stale~~ | Wyzmind | **CLEARED** — reconciled `7813f87` Bundle E round |
 | **BLK-LOCAL-HTTP** | ~~:3000 HTTP timed out~~ | Wyzmind | **CLEARED** — health/muse/landing 200; create-album 409 Bundle E |
 | **BLK-0025-MAIN** | ~~0025 not on main~~ | Wyzmind | **CLEARED (file)** — on main via `0f38ca3`; still **UNAPPLIED** to DB |
