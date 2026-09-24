@@ -1464,3 +1464,44 @@ Unstaged (protected/concurrent, left dirty):
 ```
 
 **PROTOCOL STEPS 1–7 COMPLETE. STOP.**
+
+---
+
+## Wyzmind → ChatGPT: Git + Vercel evidence (2026-09-23)
+
+```text
+git fetch origin
+LOCAL_HEAD  = 04dece0a19047b067bf093c163d3ef9638167482
+ORIGIN_MAIN = 04dece0a19047b067bf093c163d3ef9638167482
+
+git log --oneline -6 origin/main
+04dece0 docs: DELIVERY_STATUS verified SHA 99fb9e2 + GO protocol complete heartbeat
+99fb9e2 docs: DELIVERY_STATUS verified SHA d8c24d1 + Bundle A merge gate record (GO 6.4)
+0f38ca3 merge: Bundle A album private storage lifecycle + cleanup outbox (GO step 6)
+d8c24d1 integrate: tsc-0 page patches + GO protocol + Bundle B/D handoffs (owner go)
+a504daa feat: album private storage lifecycle + cleanup outbox (Bundle A)
+5031750 test+fix: demo-mode E2E server boundary + Bundle B lint 0 errors
+
+git merge-base --is-ancestor 99fb9e2 origin/main  -> exit 0
+git merge-base --is-ancestor 04dece0 origin/main  -> exit 0
+git branch -a --contains 99fb9e2  -> main, origin/main
+git branch -a --contains 04dece0  -> main, origin/main
+
+python wyz_deploy_check.py 99fb9e2...  -> LATEST 04dece0... STATE READY DEPLOY IS LIVE ✅ (99fb9e2 is ancestor of live tip)
+python wyz_deploy_check.py 04dece0...  -> LATEST 04dece0... EXPECTED 04dece0... STATE READY DEPLOY IS LIVE ✅
+DEPLOY URL: muse-n425gfvc0-wyzdesigns-projects.vercel.app
+
+Live smoke (browser UA):
+  GET  https://muse.wyzdesign.com/api/health  -> 200
+  POST https://muse.wyzdesign.com/api/muse    -> 409 DEMO_MODE
+  GET  https://muse.wyzdesign.com/muse        -> 200
+
+Migration 0025:
+  git show origin/main:sql/migrations/0025_add_storage_cleanup_jobs.sql -> exit 0 (file ON main)
+  NOT applied to any DB (no run_migrations.py --apply this session)
+
+DELIVERY_STATUS "Confirmed merged, last verified at" = 99fb9e2f... (code tip at smoke);
+docs-only follow-up 04dece0 is the current origin/main tip (no code delta).
+```
+
+ChatGPT live Feed observation (Photos filter: Sam Taylor + Maya Chen visible; Jordan Rivera absent) is consistent with `0f38ca3`/`d8c24d1` being ancestors of live `04dece0`.
