@@ -361,7 +361,7 @@ export const BtsScreen = memo(function BtsScreen({
               borderRadius: 12,
               border: "none",
               background: "#fff",
-              color: "#FF1493",
+              color: "#C2185B",
               fontSize: 14,
               fontWeight: 800,
               cursor: "pointer",
@@ -487,7 +487,7 @@ export const BtsScreen = memo(function BtsScreen({
                 flexShrink: 0,
                 transition: "all .15s",
                 background: activeFilter === t ? activePill : "rgba(255,255,255,0.06)",
-                color: activeFilter === t ? "#fff" : "var(--muted, #999)",
+                color: activeFilter === t ? "#fff" : "var(--text)",
               }}
             >
               {t}
@@ -705,7 +705,7 @@ export const BtsScreen = memo(function BtsScreen({
                       onClick={() => submitComment(s)}
                       disabled={!commentDraft.trim() || sendingComment}
                       aria-label="Send comment"
-                      style={{ width: 38, height: 38, flexShrink: 0, borderRadius: "50%", border: "none", background: commentDraft.trim() ? pinkGradient : "rgba(255,255,255,0.06)", color: commentDraft.trim() ? "#fff" : "rgba(255,255,255,0.25)", cursor: commentDraft.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", opacity: sendingComment ? 0.6 : 1 }}
+                      style={{ width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: "none", background: commentDraft.trim() ? pinkGradient : "rgba(255,255,255,0.06)", color: commentDraft.trim() ? "#fff" : "rgba(255,255,255,0.25)", cursor: commentDraft.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", opacity: sendingComment ? 0.6 : 1 }}
                     >
                       <FiArrowLeft size={16} style={{ transform: "rotate(180deg)" }} />
                     </button>

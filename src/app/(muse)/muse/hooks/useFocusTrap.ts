@@ -33,26 +33,22 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
     const first = focusables()[0];
     if (first) first.focus();
 
-    // Inert background app content to prevent Tab escape
-    const phone = document.getElementById("muse-app");
+    // Inert only background branches that do NOT contain the trap container.
+    // Never inert #muse-app (or any ancestor) when the modal lives inside it —
+    // that used to break hit-testing and force dispatchEvent('click') workarounds.
     const inerted: HTMLElement[] = [];
-    if (phone) {
-      const parent = phone.parentElement;
-      if (parent) {
-        Array.from(parent.children).forEach((sib) => {
-          if (sib !== phone && sib instanceof HTMLElement && !sib.hasAttribute("inert")) {
-            sib.setAttribute("inert", "");
-            sib.setAttribute("aria-hidden", "true");
-            inerted.push(sib);
-          }
-        });
-      }
-      // Also inert the phone itself while modal is open
-      if (!phone.hasAttribute("inert")) {
-        phone.setAttribute("inert", "");
-        phone.setAttribute("aria-hidden", "true");
-        inerted.push(phone);
-      }
+    let branch: HTMLElement | null = el;
+    while (branch && branch !== document.body) {
+      const parent: HTMLElement | null = branch.parentElement;
+      if (!parent) break;
+      Array.from(parent.children).forEach((child) => {
+        if (child !== branch && child instanceof HTMLElement && !child.hasAttribute("inert")) {
+          child.setAttribute("inert", "");
+          child.setAttribute("aria-hidden", "true");
+          inerted.push(child);
+        }
+      });
+      branch = parent;
     }
 
     const onKeyDown = (e: KeyboardEvent) => {

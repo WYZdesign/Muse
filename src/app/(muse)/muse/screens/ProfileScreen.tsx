@@ -341,7 +341,7 @@ export const ProfileScreen = memo(function ProfileScreen({
             {/* NSFW must go through age verification before being enabled — mirrors
                 SettingsScreen's "NSFW Content" toggle. Previously this toggle flipped
                 showNsfw directly, bypassing the age gate entirely (C4). */}
-            <div role="switch" aria-checked={showNsfw} tabIndex={0} className={"toggle" + (showNsfw ? " on" : "")} onClick={() => { if (!showNsfw) { setShowAgeVerification(true); } else { setShowNsfw(false); } }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!showNsfw) { setShowAgeVerification(true); } else { setShowNsfw(false); } } }}><div className="toggle-dot" /></div>
+            <div role="switch" aria-checked={showNsfw} aria-label="Show NSFW" tabIndex={0} className={"toggle" + (showNsfw ? " on" : "")} onClick={() => { if (!showNsfw) { setShowAgeVerification(true); } else { setShowNsfw(false); } }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!showNsfw) { setShowAgeVerification(true); } else { setShowNsfw(false); } } }}><div className="toggle-dot" /></div>
           </div>
         </div>
         <div className="section">

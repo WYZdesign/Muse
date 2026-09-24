@@ -267,7 +267,7 @@ export const CommunityScreen = memo(function CommunityScreen({
       <div className="hdr" style={{ justifyContent: "space-between", alignItems: "center", padding: `calc(12px + env(safe-area-inset-top,0px)) 18px 12px` }}>
         <button className="chat-back" aria-label="Back" onClick={() => (goBack ? goBack() : showScreen("discover"))}><FiArrowLeft size={20} /></button>
         <div className="logo-link" style={{ fontSize: 37.5, backgroundImage: "linear-gradient(90deg,#FF8A80,#FF4757,#FFD700,#FF8A80,#FF4757,#FF8A80)", backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", fontWeight: 800, animation: "shimmer 8s ease-in-out infinite" }}>Community</div>
-        <button className="hdr-btn" onClick={() => setShowCreate(v => !v)} aria-label="Create" style={{ width: 34, height: 34 }}>+</button>
+        <button className="hdr-btn" onClick={() => setShowCreate(v => !v)} aria-label="Create" style={{ width: 44, height: 44 }}>+</button>
       </div>
       <div className="conn-tabs" role="tablist" aria-label="Community tabs" style={{ padding: "0 16px" }}>
         {(["groups", "events"] as const).map(t => (
@@ -325,7 +325,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                   </div>
                 )}
               </div>
-              <button onClick={() => setDetailItem(null)} style={{ background: "var(--card-bg)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}><FiX size={16} /></button>
+              <button onClick={() => setDetailItem(null)} style={{ background: "var(--card-bg)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}><FiX size={16} /></button>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 100px" }}>
               {/* Same img:'' seed-data gap as the card views — gradient-initial fallback */}

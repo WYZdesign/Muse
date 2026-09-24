@@ -93,14 +93,12 @@ test.describe('Priority C Accessibility — axe per screen', () => {
     await assertNoNewAxeViolations(page, { knownGapIds: SHELL_KNOWN_GAPS });
   });
 
-  test('Profile: no NEW axe violations (toggle-name baselined)', async ({ page }) => {
+  test('Profile: no NEW axe violations', async ({ page }) => {
     await seedAndOpen(page, 'profile');
     const ok = await ensureScreen(page, 'profile');
     test.skip(!ok, 'Profile screen not reachable');
     await dismissPageTour(page);
-    await assertNoNewAxeViolations(page, {
-      knownGapIds: [...SHELL_KNOWN_GAPS, 'aria-toggle-field-name'],
-    });
+    await assertNoNewAxeViolations(page, { knownGapIds: SHELL_KNOWN_GAPS });
   });
 
   test('Settings: no NEW axe violations', async ({ page }) => {
@@ -108,19 +106,15 @@ test.describe('Priority C Accessibility — axe per screen', () => {
     const ok = await ensureScreen(page, 'settings');
     test.skip(!ok, 'Settings screen not reachable');
     await dismissPageTour(page);
-    await assertNoNewAxeViolations(page, {
-      knownGapIds: [...SHELL_KNOWN_GAPS, 'aria-toggle-field-name'],
-    });
+    await assertNoNewAxeViolations(page, { knownGapIds: SHELL_KNOWN_GAPS });
   });
 
-  test('Network: no NEW axe violations (required-parent baselined)', async ({ page }) => {
+  test('Network: no NEW axe violations', async ({ page }) => {
     await seedAndOpen(page, 'network');
     const ok = await ensureScreen(page, 'network');
     test.skip(!ok, 'Network screen not reachable');
     await dismissPageTour(page);
-    await assertNoNewAxeViolations(page, {
-      knownGapIds: [...SHELL_KNOWN_GAPS, 'aria-required-parent'],
-    });
+    await assertNoNewAxeViolations(page, { knownGapIds: SHELL_KNOWN_GAPS });
   });
 
   test('Community: no NEW axe violations (skip if beta-hidden)', async ({ page }) => {
@@ -140,24 +134,20 @@ test.describe('Priority C Accessibility — axe per screen', () => {
     await assertNoNewAxeViolations(page, { knownGapIds: SHELL_KNOWN_GAPS });
   });
 
-  test('Briefs (Collab): no NEW axe violations (button-name baselined)', async ({ page }) => {
+  test('Briefs (Collab): no NEW axe violations', async ({ page }) => {
     await seedAndOpen(page, 'briefs');
     const ok = await ensureScreen(page, 'briefs');
     test.skip(!ok, 'Briefs screen not reachable');
     await dismissPageTour(page);
-    await assertNoNewAxeViolations(page, {
-      knownGapIds: [...SHELL_KNOWN_GAPS, 'button-name'],
-    });
+    await assertNoNewAxeViolations(page, { knownGapIds: SHELL_KNOWN_GAPS });
   });
 
-  test('BTS: no NEW axe violations (contrast baselined)', async ({ page }) => {
+  test('BTS: no NEW axe violations', async ({ page }) => {
     await seedAndOpen(page, 'bts');
     const ok = await ensureScreen(page, 'bts');
     test.skip(!ok, 'BTS screen not reachable');
     await dismissPageTour(page);
-    await assertNoNewAxeViolations(page, {
-      knownGapIds: [...SHELL_KNOWN_GAPS, 'color-contrast'],
-    });
+    await assertNoNewAxeViolations(page, { knownGapIds: SHELL_KNOWN_GAPS });
   });
 });
 

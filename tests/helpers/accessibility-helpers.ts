@@ -34,17 +34,13 @@ export type AxeViolationSummary = {
  */
 export const KNOWN_A11Y_GAPS: Record<string, string> = {
   region:
-    'Page content outside landmarks — missing #muse-main / landmark shell (CHATGPT_DOCUMENT_LANDMARKS_BUNDLE)',
-  'aria-toggle-field-name':
-    'Profile/Settings .toggle switches lack accessible names (CHATGPT_…_A11Y batches)',
-  'aria-required-parent':
-    'Network Hiring filter role="tab" not inside role="tablist" (NetworkScreen disclosure controls)',
-  'button-name':
-    'Briefs .brief-btn-save icon buttons have no discernible text (CollabScreen L371)',
-  'color-contrast':
-    'BTS filter button fails contrast (product CSS — Priority G / design)',
+    'Page content outside landmarks — verify-banner sits outside #muse-main (page.tsx / Codex-owned)',
+  // 'aria-toggle-field-name' fixed in Priority G (ProfileScreen NSFW aria-label)
+  // 'aria-required-parent' fixed in Priority G (Network Hiring role=button)
+  // 'button-name' fixed in Priority G (CollabScreen brief-btn-save aria-label)
+  // 'color-contrast' fixed in Priority G (BtsScreen inactive filter → var(--text))
   'target-size':
-    'Discover card chrome still 38×38 (mobile touch-target bundles) — nav/dialog targets covered by hard 44px assert',
+    'Shell-level undersized targets remain baselined in SHELL_KNOWN_GAPS — Discover card-photo-nav 36px is pointer-events:none chrome (muse.css / Codex-owned)',
 };
 
 export function summarizeViolations(

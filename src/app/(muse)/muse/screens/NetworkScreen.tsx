@@ -553,8 +553,8 @@ export const NetworkScreen = memo(function NetworkScreen({
                 </button>
               ))}
               <span
-                role="tab"
-                aria-selected={proHiringOnly}
+                role="button"
+                aria-pressed={proHiringOnly}
                 aria-label={`Hiring filter${proHiringOnly ? " (active)" : ""}`}
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProHiringOnly(!proHiringOnly); } }}

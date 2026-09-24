@@ -368,8 +368,11 @@ export const CollabScreen = memo(function CollabScreen({
                   <button className={"brief-btn-apply lavender"} style={{ padding: "8px 14px", fontSize: 12 }} onClick={() => { if (demo) { showToast("Demo booking preview — no message, booking, payment, or match was created."); return; } setChatTarget({ id: brief.id, name: brief.author, type: "Creative", img: brief.authorImg, messages: [] }); showScreen("chat"); showToast("Message " + brief.author + " to book this paid brief"); }}>Book</button>
                 )}
                 <button
+                  type="button"
                   className={"brief-btn-save" + (savedBriefs.includes(brief.id) ? " saved" : "")}
-                  style={{ padding: 8, fontSize: 16, background: "transparent", border: "none", borderRadius: 0, color: savedBriefs.includes(brief.id) ? "var(--gold)" : "var(--text2)", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  aria-label={savedBriefs.includes(brief.id) ? "Unsave brief" : "Save brief"}
+                  aria-pressed={savedBriefs.includes(brief.id)}
+                  style={{ padding: 8, minWidth: 44, minHeight: 44, fontSize: 16, background: "transparent", border: "none", borderRadius: 0, color: savedBriefs.includes(brief.id) ? "var(--gold)" : "var(--text2)", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}
                   onClick={() => {
                     const isSaved = savedBriefs.includes(brief.id);
                     if (isSaved) {

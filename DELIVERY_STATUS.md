@@ -489,3 +489,12 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - NOT STAGED: Codex page-shell set (page.tsx, muse.css, vercel.json, CODEX_*.md, storage-cleanup/, 0026, initials-avatar, page-constants/models, DailyLogin/Match/Report/PageSplash), _LOGS_dev_*, node_modules_broken_bak, visual-regression.spec.ts-snapshots
 - BLK-MIG-STATE: **STILL OPEN** (no DSN)
 - NEXT: Priority G (KNOWN_A11Y_GAPS product fixes: region, aria-toggle-field-name, aria-required-parent, button-name, color-contrast, target-size, useFocusTrap inert)
+
+## Priority G — 2026-09-24 — KNOWN_A11Y_GAPS product fixes committed
+- BASE: `853f62638f36eb416ef050299b8923c798bb53a4` (Priority F LIVE)
+- FILES: 8 screens + Lightbox + useFocusTrap + accessibility.spec.ts + accessibility-helpers.ts + HANDOFF.md + DELIVERY_STATUS.md (no Codex exclusive files)
+- FIXES: NSFW switch name · Hiring filter aria-pressed · brief-save name/44 · BTS filter+SnapMoment contrast+44 · Feed/Sessions/Community/PublicProfile/Lightbox 44px targets · useFocusTrap ancestor-safe inert · KNOWN_A11Y_GAPS → region+target-size only
+- GATES: a11y **20 passed / 1 skipped exit 0** · vitest **67/535 PASS** · eslint **0 errors** · tsc exit 2 = pre-existing Codex storage-cleanup only
+- NOT STAGED: Codex page.tsx/muse.css/vercel.json/storage-cleanup set, _LOGS_dev_*, node_modules_broken_bak, visual-regression.spec.ts-snapshots
+- BLK-MIG-STATE: STILL OPEN (owner DSN)
+- NEXT: open-beta blockers — migration applied-state proof, video moderation durable pipeline, storage-cleanup worker integration, lighthouse-ci package swap, Codex-owned region/residual-toggle fixes

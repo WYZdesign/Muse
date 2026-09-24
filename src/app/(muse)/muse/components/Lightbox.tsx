@@ -95,7 +95,7 @@ export default function Lightbox({ photos, idx, onClose, onNavigate, onError }: 
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <button onClick={(e) => { e.stopPropagation(); onClose(); }} aria-label="Close" style={{ position: "absolute", top: 16, right: 16, zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 18 }}>✕</button>
+      <button onClick={(e) => { e.stopPropagation(); onClose(); }} aria-label="Close" style={{ position: "absolute", top: 16, right: 16, zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 18 }}>✕</button>
       {photos.length > 1 && (
         <>
           <button onClick={(e) => { e.stopPropagation(); goPrev(); }} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 2, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 22 }}>‹</button>
@@ -119,8 +119,8 @@ export default function Lightbox({ photos, idx, onClose, onNavigate, onError }: 
       </div>
       <div style={{ position: "absolute", bottom: 20, left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
         <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>{idx + 1} / {photos.length}</div>
-        <button onClick={(e) => { e.stopPropagation(); handleShare(); }} aria-label="Share" style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 14 }}>↗</button>
-        <button onClick={(e) => { e.stopPropagation(); handleDownload(); }} aria-label="Download" style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 14 }}>↓</button>
+        <button onClick={(e) => { e.stopPropagation(); handleShare(); }} aria-label="Share" style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 14 }}>↗</button>
+        <button onClick={(e) => { e.stopPropagation(); handleDownload(); }} aria-label="Download" style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 14 }}>↓</button>
       </div>
     </div>
   );
