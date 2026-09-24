@@ -5,8 +5,14 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  // One worker on CI: shared next-start server + demo localStorage seeds are
+  // not safe under parallel workers (320 goto flake documented in HANDOFF).
   workers: process.env.CI ? 1 : undefined,
-  reporter: [['html', { outputFolder: 'playwright-report' }], ['list']],
+  reporter: [
+    ['html', { outputFolder: 'playwright-report' }],
+    ['list'],
+    ['github'],
+  ],
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
@@ -65,14 +71,19 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: 'npm run dev',
-    // Root `/` 404s (no src/app/page.tsx) — health-check a real 200 route so
-    // reuseExistingServer recognizes the already-running dev server.
-    url: 'http://localhost:3000/muse/landing',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  // CI jobs (ci.yml) already build + `npx next start -p 3000` and wait for
+  // health. Do not also spawn `npm run dev` (port conflict / reuseExistingServer
+  // false on CI). Local runs keep the dev-server helper.
+  webServer: process.env.CI
+    ? undefined
+    : {
+        command: 'npm run dev',
+        // Root `/` 404s (no src/app/page.tsx) — health-check a real 200 route so
+        // reuseExistingServer recognizes the already-running dev server.
+        url: 'http://localhost:3000/muse/landing',
+        reuseExistingServer: true,
+        timeout: 120000,
+      },
   expect: {
     toHaveScreenshot: {
       maxDiffPixels: 100,

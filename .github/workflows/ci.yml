@@ -177,9 +177,13 @@ jobs:
           exit 1
 
       - name: Run self-contained e2e specs
-        run: npx playwright test tests/e2e/smoke.spec.ts tests/e2e/discover-deck.spec.ts
+        # smoke + Priority A modal/width matrix. discover-deck kept (known stale
+        # locators — documented gap, do not silently drop coverage).
+        # accessibility.spec.ts runs in e2e-accessibility (full WCAG suite).
+        run: npx playwright test tests/e2e/smoke.spec.ts tests/e2e/discover-deck.spec.ts --project=chromium-desktop --workers=1
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
+          CI: 'true'
 
   e2e-full:
     name: Full E2E Tests
@@ -235,9 +239,10 @@ jobs:
           exit 1
 
       - name: Run full E2E suite
-        run: npx playwright test --project=${{ matrix.project }}
+        run: npx playwright test --project=${{ matrix.project }} --workers=1
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
+          CI: 'true'
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -301,9 +306,10 @@ jobs:
           exit 1
 
       - name: Run mobile viewport tests
-        run: npx playwright test tests/e2e/visual-regression.spec.ts --grep "${{ matrix.viewport }}px"
+        run: npx playwright test tests/e2e/visual-regression.spec.ts --grep "${{ matrix.viewport }}px" --workers=1
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
+          CI: 'true'
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
@@ -362,10 +368,14 @@ jobs:
           echo "Server never came up" >&2
           exit 1
 
+      # Priority C suite (WCAG 2.1 AA + KNOWN_A11Y_GAPS baseline).
+      # Replaces the old visual-regression --grep "Accessibility" wiring, which
+      # hit stale feed locators and did not run accessibility.spec.ts.
       - name: Run accessibility tests
-        run: npx playwright test tests/e2e/visual-regression.spec.ts --grep "Accessibility"
+        run: npx playwright test tests/e2e/accessibility.spec.ts --project=chromium-desktop --workers=1
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
+          CI: 'true'
 
       - name: Upload axe results
         uses: actions/upload-artifact@v4
@@ -427,10 +437,11 @@ jobs:
           exit 1
 
       - name: Run demo mode tests
-        run: npx playwright test tests/e2e/demo-mode.spec.ts
+        run: npx playwright test tests/e2e/demo-mode.spec.ts --project=chromium-desktop --workers=1
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           MUSE_DEMO_MODE: 'true'
+          CI: 'true'
 
   e2e-demo-negative:
     name: Demo Mode Negative Tests
@@ -485,10 +496,11 @@ jobs:
           exit 1
 
       - name: Run demo negative mutation tests
-        run: npx playwright test tests/e2e/demo-mode.spec.ts --grep "Demo Mode Negative"
+        run: npx playwright test tests/e2e/demo-mode.spec.ts --grep "Demo Mode Negative" --project=chromium-desktop --workers=1
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           MUSE_DEMO_MODE: 'true'
+          CI: 'true'
 
   lighthouse:
     name: Lighthouse CI
@@ -538,9 +550,17 @@ jobs:
           exit 1
 
       - name: Run Lighthouse CI
-        run: npx lhci autorun --upload.target=temporary-public-storage
+        # package.json has legacy third-party `lighthouse-ci@1.13.1` (andreasonny83)
+        # — bin is `lighthouse-ci <url>`, NOT Google's `lhci autorun`.
+        # Google Lighthouse CI is `@lhci/cli` (reads lighthouserc.js). It is NOT
+        # in package.json (package change is out of Priority D exclusive set);
+        # invoke it pinned via npx so asserts in lighthouserc.js actually run.
+        # Full-tree npm audit still fails on the legacy lighthouse-ci dep chain —
+        # documented in lighthouserc.js + security-audit; do not drop asserts.
+        run: npx --yes --package=@lhci/cli@0.15.1 lhci autorun
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+          CI: 'true'
 
   security-audit:
     name: Security Audit
@@ -558,7 +578,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: npm audit
+      - name: npm audit (production — hard gate)
+        # Runtime deps only. Current: 0 vulnerabilities (verified local 2026-09-24).
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: npm audit (full tree — documents lighthouse-ci chain)
+        # Does NOT weaken the prod gate above. Full tree currently fails with
+        # 9 DEV-only vulns all reachable via legacy lighthouse-ci@1.13.1
+        # (cookie/raven/lodash.set/got/update-notifier). Owner decision pending
+        # to replace with @lhci/cli — see lighthouserc.js header. Keep this
+        # step failing until the package is replaced; do not drop the level.
         run: npm audit --audit-level=high
 
       - name: Run OpenSSF Scorecard
@@ -626,17 +655,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify Vercel Deployment
-        run: |
-          python wyz_deploy_check.py --sha ${{ github.sha }} --wait
+      # wyz_deploy_check.py lives on the integrator host (W:\WYZ_Command_Center),
+      # not in this repo — previous `python wyz_deploy_check.py` always failed here.
+      # Poll Vercel REST for a production READY deployment of this exact SHA.
+      - name: Verify Vercel Deployment (production READY for this SHA)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Verify Deployed SHA Matches
         run: |
-          python wyz_deploy_check.py --sha ${{ github.sha }} --verify
+          set -euo pipefail
+          SHA="${{ github.sha }}"
+          echo "Waiting for production deployment of ${SHA}..."
+          for i in $(seq 1 45); do
+            RESP=$(curl -sS -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+              "https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&target=production&limit=10" || true)
+            if echo "$RESP" | jq -e --arg sha "$SHA" \
+              '[.deployments[]? | select((.meta.githubCommitSha // .meta.commitSha // "") == $sha) | select(.readyState == "READY")] | length > 0' \
+              >/dev/null 2>&1; then
+              echo "DEPLOY IS LIVE ✅ ${SHA}"
+              exit 0
+            fi
+            STATE=$(echo "$RESP" | jq -r --arg sha "$SHA" \
+              '[.deployments[]? | select((.meta.githubCommitSha // .meta.commitSha // "") == $sha) | .readyState] | first // "NOT_FOUND"' \
+              2>/dev/null || echo "PARSE_ERR")
+            echo "attempt ${i}: state=${STATE}"
+            sleep 20
+          done
+          echo "Deploy ${SHA} did not reach READY in time" >&2
+          exit 1
 
   renovate:
     name: Renovate Dependency Updates
