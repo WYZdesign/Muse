@@ -113,11 +113,14 @@ export async function checkDiscoverQueueIsolation(page: Page) {
   }
 }
 
-export async function loginAsDemoUser(page: Page) {
+export async function loginAsDemoUser(page: Page, opts?: { seedTours?: boolean }) {
   // Screen starts as "auth" with no auto demo login. Seed muse_v1 (not muse_user)
   // so loadState() restores authUser + screen=discover without applySession()
   // token validation (a fake muse_user would bounce back to auth on 401).
-  await page.addInitScript(() => {
+  // seedTours defaults true: first-visit page tours + verify banner + daily-login
+  // modal would otherwise intercept Collab badge / width / feed assertions.
+  const seedTours = opts?.seedTours !== false;
+  await page.addInitScript((withTours: boolean) => {
     try {
       localStorage.setItem('muse_v1', JSON.stringify({
         v: 2,
@@ -134,16 +137,56 @@ export async function loginAsDemoUser(page: Page) {
           audience: 'creative',
         },
       }));
+      // Verification banner (page.tsx L428) — seeded so it never overlays nav.
+      localStorage.setItem('muse_verify_banner_dismissed', '1');
+      if (withTours) {
+        // ALL_TOUR_IDS from pageTourContent.tsx — 11 destinations + forum tab.
+        const tourIds = [
+          'discover', 'connections', 'briefs', 'matches', 'bts',
+          'chat', 'community', 'sessions', 'forum', 'network', 'studios',
+        ];
+        for (const id of tourIds) {
+          localStorage.setItem(`muse_tour_seen_${id}`, '1');
+        }
+      }
+      // Daily-login / streak overlay (page.tsx L1719) fires only when
+      // muse_quest_login_day !== today. Pre-seed today so it never opens.
+      const today = new Date().toISOString().slice(0, 10);
+      localStorage.setItem('muse_quest_login_day', today);
+      try {
+        const days = JSON.parse(localStorage.getItem('muse_login_days') || '[]');
+        if (!days.includes(today)) days.push(today);
+        localStorage.setItem('muse_login_days', JSON.stringify(days.slice(-7)));
+      } catch { /* ignore malformed history */ }
     } catch {
       /* storage may be unavailable in some contexts */
     }
-  });
+  }, seedTours);
   // Root `/` is a custom 404 locally (Vercel redirect only applies in prod).
   // waitUntil domcontentloaded: full `load` hangs under Next dev HMR +
   // remote image preloads (same pattern as tests/smoke.spec.ts).
   await page.goto('/muse', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForSelector('#splash-screen', { state: 'hidden', timeout: 15000 }).catch(() => {});
   await page.waitForSelector('[data-screen="discover"], .discover-screen', { timeout: 15000 }).catch(() => {});
+}
+
+/** Dismiss any open first-visit page tour overlay (idempotent, short timeout). */
+export async function dismissPageTour(page: Page) {
+  const close = page.locator('.tour-overlay button[aria-label="Close tutorial"], .tour-overlay .tour-close').first();
+  if (await close.isVisible({ timeout: 400 }).catch(() => false)) {
+    await close.click({ timeout: 3000 }).catch(() => {});
+    await page.waitForSelector('.tour-overlay', { state: 'hidden', timeout: 3000 }).catch(() => {});
+  }
+}
+
+/** Assert documentElement/body do not scroll horizontally at the current viewport. */
+export async function assertNoDocOverflow(page: Page) {
+  const overflow = await page.evaluate(() => {
+    const doc = document.documentElement;
+    const body = document.body;
+    return doc.scrollWidth > doc.clientWidth || body.scrollWidth > body.clientWidth;
+  });
+  expect(overflow).toBe(false);
 }
 
 // proxy.ts origin-gates every non-GET /api/* call. ALLOWED_ORIGINS always

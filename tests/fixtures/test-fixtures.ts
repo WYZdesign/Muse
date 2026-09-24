@@ -5,6 +5,8 @@ type TestFixtures = {
   axe: AxeBuilder;
   demoPage: Page;
   authPage: Page;
+  /** Demo-authed /muse with tour-seen keys + verify-banner dismissed (shared). */
+  seededDemoPage: Page;
 };
 
 export const test = base.extend<TestFixtures>({
@@ -20,6 +22,11 @@ export const test = base.extend<TestFixtures>({
   authPage: async ({ page }, use) => {
     await page.goto('/muse');
     await page.waitForSelector('#splash-screen', { state: 'hidden', timeout: 10000 }).catch(() => {});
+    await use(page);
+  },
+  seededDemoPage: async ({ page }, use) => {
+    const { loginAsDemoUser } = await import('../helpers/test-helpers');
+    await loginAsDemoUser(page);
     await use(page);
   },
 });

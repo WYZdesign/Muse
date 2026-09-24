@@ -1,5 +1,9 @@
 import { test, expect } from '../fixtures/test-fixtures';
-import { checkDemoModeMutationDenial, loginAsDemoUser } from '../helpers/test-helpers';
+import {
+  checkDemoModeMutationDenial,
+  loginAsDemoUser,
+  dismissPageTour,
+} from '../helpers/test-helpers';
 
 // Real mutation families registered in ACTIONS (src/app/api/muse/route.ts).
 // All are absent from DEMO_READ_ACTIONS, so the server demo gate must return
@@ -73,7 +77,10 @@ test.describe('Demo Mode UI Badge', () => {
       `App shell unavailable (/muse -> ${shell.status()}); UI badge blocked until page.tsx is healthy`,
     );
 
+    // loginAsDemoUser seeds muse_tour_seen_* for all 11 tour ids + verify banner
+    // dismiss so the first-visit briefs tour overlay cannot intercept the click.
     await loginAsDemoUser(page);
+    await dismissPageTour(page);
     // Role-aware label: creative = "Collab", muse = "Briefs". Wait for nav shell.
     await page.waitForSelector('button.nav-item', { timeout: 15000 });
     const collabTab = page
@@ -83,5 +90,32 @@ test.describe('Demo Mode UI Badge', () => {
     await collabTab.click({ timeout: 10000 });
     await expect(page.locator('[data-screen="briefs"].active')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('DEMO PREVIEW').first()).toBeVisible({ timeout: 10000 });
+  });
+});
+
+// Priority A: prove tour still shows on true first visit (keys cleared) and
+// dismisses cleanly — kept separate from seeded login so the two paths don't
+// fight over the same localStorage flags.
+test.describe('Page Tour First Visit', () => {
+  test('Discover tour appears and dismisses when tour-seen keys are absent', async ({ page }) => {
+    const shell = await page.request.get('/muse', { failOnStatusCode: false });
+    test.skip(shell.status() !== 200, `App shell unavailable (/muse -> ${shell.status()})`);
+
+    // seedTours: false — leave muse_tour_seen_discover unset so first visit plays.
+    // Still seed verify-banner + daily-login so only the tour overlays.
+    await loginAsDemoUser(page, { seedTours: false });
+
+    const tour = page.locator('.tour-overlay').first();
+    await expect(tour).toBeVisible({ timeout: 8000 });
+
+    const closeBtn = tour.locator('button[aria-label="Close tutorial"], .tour-close').first();
+    await expect(closeBtn).toBeVisible();
+    await closeBtn.click();
+    await expect(page.locator('.tour-overlay')).toBeHidden({ timeout: 4000 });
+
+    // Revisit must not replay (dismiss persisted via muse_tour_seen_discover).
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#splash-screen', { state: 'hidden', timeout: 15000 }).catch(() => {});
+    await expect(page.locator('.tour-overlay')).toBeHidden({ timeout: 5000 });
   });
 });
