@@ -1,6 +1,27 @@
 "use client";
 import { useState } from "react";
 
+export type OnboardingData = {
+  name?: string;
+  loc?: string;
+  bio?: string;
+  type?: string;
+  looking?: string[];
+  conn?: string[];
+  styles?: string[];
+  zodiac?: string;
+  chinese?: string;
+  mbti?: string;
+  lifePath?: number;
+  referralCode?: string;
+  mediaKitUrl?: string;
+  audience?: "creative" | "industry";
+  customTypePending?: boolean;
+  customStylePending?: boolean;
+  showCustomStyleInput?: boolean;
+  customStyleDraft?: string;
+};
+
 /**
  * Auth + onboarding state, extracted from page.tsx. Covers the login/signup
  * form (authMode/authEmail/authPass/authName/authLoading/formErrors), the
@@ -26,7 +47,7 @@ export function useAuthOnboardingState() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const [obStep, setObStep] = useState(0);
-  const [obData, setObData] = useState<{ name?: string; loc?: string; bio?: string; type?: string; looking?: string[]; conn?: string[]; styles?: string[]; zodiac?: string; chinese?: string; mbti?: string; lifePath?: number; referralCode?: string; mediaKitUrl?: string }>({});
+  const [obData, setObData] = useState<OnboardingData>({});
 
   const [testScreen, setTestScreen] = useState<"zodiac" | "mbti" | "chinese" | "lifepath" | "done" | null>(null);
   const [testBirthMonth, setTestBirthMonth] = useState("");

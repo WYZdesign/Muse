@@ -16,7 +16,7 @@ import SwipeParticles from "./components/SwipeParticles";
 import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, setRefreshToken, getRefreshToken, clearRefreshToken, QUOTA_MSG } from "./lib/safe-storage";
 import { createSafeObserver } from "./lib/safe-observer";
 import { getAccessToken, authFetch, fetchWithTimeout } from "./lib/api";
-import { analytics, setAnalyticsScreen, setAnalyticsUser, initAnalyticsSession } from "./lib/analytics";
+import { analytics, setAnalyticsUser, initAnalyticsSession } from "./lib/analytics";
 import { uid } from "./lib/uid";
 import { getProfileShareUrl, getPostShareUrl, getMuseUrl } from "@/lib/urls";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
@@ -54,6 +54,7 @@ import { NetworkScreen } from "./screens/NetworkScreen";
 import { ProfileScreen } from "./screens/ProfileScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { MenuModal } from "./screens/MenuModal";
+import type { PublicProfileUser } from "./screens/PublicProfileScreen";
 const PortfolioScreen = React.lazy(() => import("./screens/PortfolioScreen").then(m => ({ default: m.PortfolioScreen })));
 const BtsScreen = React.lazy(() => import("./screens/BtsScreen").then(m => ({ default: m.BtsScreen })));
 const CodexScreen = React.lazy(() => import("./screens/CodexScreen").then(m => ({ default: m.CodexScreen })));
@@ -68,14 +69,14 @@ import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
 import StreakWidget from "./components/StreakWidget";
-import { PROFILES, AESTHETICS, BEHIND_CAMERA, IN_FRONT_CAMERA, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, EXCLUDED_PORTFOLIOS, ICEBREAKERS, BRIEFS, calcMatch, matchReasons, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen, type LikeAnchor } from "./components/types";
+import { PROFILES, AESTHETICS, BEHIND_CAMERA, IN_FRONT_CAMERA, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, ICEBREAKERS, BRIEFS, calcMatch, matchReasons, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen, type LikeAnchor } from "./components/types";
 import { useDiscoveryData } from "./hooks/useDiscoveryData";
 import { useFeedData } from "./hooks/useFeedData";
 import { useCommunityData } from "./hooks/useCommunityData";
 import { useSessionData } from "./hooks/useSessionData";
 import { useBriefsData } from "./hooks/useBriefsData";
 import { useProfileData } from "./hooks/useProfileData";
-import { normalizeCommunity, normalizeEvent, normalizeForumPost, normalizeBrief, normalizeSession, normalizeFeedPost, normalizeProfile } from "./hooks/normalizers";
+import { normalizeCommunity, normalizeEvent, normalizeForumPost, normalizeBrief, normalizeSession, normalizeFeedPost } from "./hooks/normalizers";
 
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL || "torree.marcel@gmail.com";
@@ -94,7 +95,55 @@ const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 // the client's local ageVerified flag from lying about staleness.
 const AGE_VERIFICATION_VALID_DAYS = 150;
 
-const DEMO_MOMENTS: any[] = [
+type ProfileBadge = { name: string; icon?: string; color?: string; bg?: string; bd?: string };
+type ViewProfile = Omit<PublicProfileUser, "badges"> & {
+  id: string;
+  score?: number;
+  views?: number;
+  tier?: string;
+  looking?: string[];
+  badges?: ProfileBadge[];
+};
+type ProfileReview = { id: string; rating: number; body?: string; reviewer_id?: { name?: string } };
+type RawApiProfile = {
+  id: string;
+  name?: string;
+  avatar?: string;
+  type?: string;
+  bio?: string;
+  loc?: string;
+  styles?: string[];
+  matchScore?: number;
+  rulesScore?: number;
+  cosineScore?: number;
+  nsfw?: boolean;
+  looking?: string[];
+  zodiac?: string;
+  chinese?: string;
+  mbti?: string;
+  life_path?: number | string;
+  photos?: string[];
+  collabs?: number;
+  verified?: boolean;
+  showDistance?: boolean;
+  side?: "behind" | "front";
+};
+type RawFeedPost = { id: string; author_id?: { name?: string; avatar?: string }; img?: string; text?: string; likes?: number; comments?: number; shares?: number; created_at?: string };
+type RawForumPost = { id: string; author_id?: { name?: string; avatar?: string }; title?: string; body?: string; votes?: number; comments?: { author: string; text: string }[]; cat?: string; created_at?: string };
+type Quest = { id: string; title: string; icon: string; completed: boolean; claimed: boolean; progress: number; target: number; quest_tier: string };
+type ProfileViewer = { id?: string; name?: string; avatar?: string; viewedAt?: string };
+type Notification = { id?: number; body?: string; type?: string; from?: string; avatar?: string; actor?: { name?: string; avatar?: string }; created_at?: string; read?: boolean };
+type Professional = { id: number; name: string; type: string; img: string; loc: string; exp: string; openings: number; rate: string; skills: string[]; looking: string[]; nsfw: boolean };
+type DiscoveryProfile = typeof PROFILES[number] & {
+  showDistance?: boolean;
+  matchScore?: number;
+  distanceMi?: number;
+  matchReasons?: ReturnType<typeof matchReasons>;
+  lat?: number;
+  lng?: number;
+};
+
+const DEMO_MOMENTS = [
   { id: 9001, author: "Maya Chen", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800", time: "12m ago", text: "Golden hour setup for tonight's shoot. The light is unreal right now 🌅", likes: 87, comments: 12 },
   { id: 9002, author: "Jordan Rivera", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100", img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800", time: "28m ago", text: "Lens test on the new 85mm. Creamy bokeh for days 📷", likes: 143, comments: 21 },
   { id: 9003, author: "Sam Taylor", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100", img: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800", time: "1h ago", text: "WIP color grade. Pulling shadows, pushing the teal-orange split.", likes: 56, comments: 8 },
@@ -103,7 +152,7 @@ const DEMO_MOMENTS: any[] = [
   { id: 9006, author: "Kai Tanaka", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100", img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800", time: "4h ago", text: "First edit pass on the campaign. Client's gonna love this one.", likes: 312, comments: 41 },
 ];
 
-const INITIAL_STORIES: any[] = [
+const INITIAL_STORIES = [
   {id:501,author:"Maya Chen",avatar:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",type:"photo",text:"Behind the scenes of today's editorial shoot. The light was absolutely magical.",likes:87,comments:12,shares:3,time:"12m ago",img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600"},
   {id:502,author:"Jordan Rivera",avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",type:"photo",text:"Color grading session. Testing new LUTs for the indie film.",likes:45,comments:8,shares:2,time:"1h ago",img:"https://images.unsplash.com/photo-1535016120720-40c646be5580?w=600"},
   {id:503,author:"Sam Taylor",avatar:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",type:"photo",text:"Studio session vibes. New album art coming together.",likes:62,comments:9,shares:4,time:"3h ago",img:"https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=600"},
@@ -121,7 +170,7 @@ export default function MusePageWrapper() {
   return <ErrorBoundary><MusePage /></ErrorBoundary>;
 }
 
-import { viewerSide, viewerSideOf, getMuseRole, type MuseRole } from "@/lib/role";
+import { viewerSide, viewerSideOf, getMuseRole } from "@/lib/role";
 
 // Deterministic per-user gradient-initials avatar (data URI, no network) —
 // used when a live profile has no uploaded photo, so Discover cards never
@@ -163,7 +212,7 @@ function MusePage() {
     authMode, setAuthMode,
     authEmail, setAuthEmail,
     authPass, setAuthPass,
-    authName, setAuthName,
+    authName, setAuthName: _setAuthName,
     authLoading, setAuthLoading,
     formErrors, setFormErrors,
     obStep, setObStep,
@@ -175,8 +224,8 @@ function MusePage() {
     testMbtiAnswers, setTestMbtiAnswers,
     testLevels, setTestLevels,
     obSelects, setObSelects,
-    obTestKey, setObTestKey,
-    obTestStep, setObTestStep,
+    obTestKey: _obTestKey, setObTestKey,
+    obTestStep: _obTestStep, setObTestStep,
     obProfilePic, setObProfilePic,
     obConnectedSocials, setObConnectedSocials,
     obPortfolioItems, setObPortfolioItems,
@@ -184,12 +233,8 @@ function MusePage() {
   } = useAuthOnboardingState();
   const [showPass, setShowPass] = useState(false);
   const [authUser, setAuthUser] = useState<{id:string;email:string;profile?:{id:string;[key:string]:unknown}}|null>(null);
-   const [currentUser, setCurrentUser] = useState({ id:"you", name:"You", type:"Photographer", exp:"New here", avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", stats:{matches:0,likes:0,superLikes:0,passes:0,bookingsCompleted:0,matchesReceived:0,messagesSent:0}, createdAt:Date.now(), referrals:0, portfolios:[] as {img:string;title:string;type:string}[], foundingTier:"" as string, proExpiresAt:"" as string, tier:"free", nsfw:false as boolean, status:"" as string });
-const [excludedPortfolios, _setExcludedPortfolios] = useState<string[]>(EXCLUDED_PORTFOLIOS);
-  const [portfolioAccess, _setPortfolioAccess] = useState<{[key: string]: "public" | "private" | "invite"}>({});
-  const [selectedPortfolio, _setSelectedPortfolio] = useState<any>(null);
-  const [showPortfolioModal, _setShowPortfolioModal] = useState(false);
-  const [portfolioStats, _setPortfolioStats] = useState<any>({});
+  const [currentUser, setCurrentUser] = useState({ id:"you", name:"You", type:"Photographer", audience:"creative" as "creative" | "industry", exp:"New here", avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", stats:{matches:0,likes:0,superLikes:0,passes:0,bookingsCompleted:0,matchesReceived:0,messagesSent:0}, createdAt:Date.now(), referrals:0, portfolios:[] as {img:string;title:string;type:string}[], foundingTier:"" as string, proExpiresAt:"" as string, tier:"free", nsfw:false as boolean, status:"" as string });
+  const [, _setSelectedPortfolio] = useState<unknown>(null);
   const [cardAlbums, setCardAlbums] = useState<{id:string;title:string;cover_url:string;access_level:string;photo_count:number}[]>([]);
   const [cardAlbumIdx, setCardAlbumIdx] = useState(0);
   const [cardAlbumPhotos, setCardAlbumPhotos] = useState<string[]>([]);
@@ -213,7 +258,7 @@ const [excludedPortfolios, _setExcludedPortfolios] = useState<string[]>(EXCLUDED
     filterStyles, setFilterStyles,
     filterScore, setFilterScore,
   } = useDiscoverState();
-const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setShowMatchMenu, unmatchTarget, setUnmatchTarget, chatImages, setChatImages, typingTarget, setTypingTarget, themTyping, setThemTyping } = useChatState();
+const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setShowMatchMenu, unmatchTarget, setUnmatchTarget, chatImages, setChatImages, typingTarget, setTypingTarget, themTyping: _themTyping, setThemTyping } = useChatState();
   const [showNsfw, setShowNsfw] = useState(false);
   const [showOnline, setShowOnline] = useState(true);
   const [showDistance, setShowDistance] = useState(true);
@@ -236,7 +281,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [showUnlimitedBadge, setShowUnlimitedBadge] = useState(true);
   const [showLikeNote, setShowLikeNote] = useState(false);
   const [likeNoteText, setLikeNoteText] = useState("");
-  const [noteTargetProfile, setNoteTargetProfile] = useState<any>(null);
+  const [noteTargetProfile, setNoteTargetProfile] = useState<Profile | null>(null);
   // Hinge-style anchored like: which specific prompt/photo (if any) the
   // in-progress Like + Note composer is attached to.
   const [likeNoteAnchor, setLikeNoteAnchor] = useState<LikeAnchor | null>(null);
@@ -266,7 +311,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     showNewPost, setShowNewPost,
     showLikesYou, setShowLikesYou,
     showDiscoveryPrefs, setShowDiscoveryPrefs,
-    showActivityFeed, setShowActivityFeed,
     showHamburger, setShowHamburger,
     showDisclosureModal, setShowDisclosureModal,
     showAgeVerification, setShowAgeVerification,
@@ -279,7 +323,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     showDailyLogin, setShowDailyLogin,
     showAgeGate, setShowAgeGate,
     showIntentPicker, setShowIntentPicker,
-    showStories, setShowStories,
+    showStories, setShowStories: _setShowStories,
     showEmojiPicker, setShowEmojiPicker,
   } = useModalVisibility();
   // Focus traps for all overlay modals
@@ -289,11 +333,11 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const guidelinesTrap = useFocusTrap(showGuidelines, () => setShowGuidelines(false));
   const deleteConfirmTrap = useFocusTrap(showDeleteConfirm, () => setShowDeleteConfirm(false));
   const discoveryPrefsTrap = useFocusTrap(showDiscoveryPrefs, () => setShowDiscoveryPrefs(false));
-  const ageVerificationTrap = useFocusTrap(showAgeVerification, () => setShowAgeVerification(false));
+  useFocusTrap(showAgeVerification, () => setShowAgeVerification(false));
   const likeNoteTrap = useFocusTrap(showLikeNote, () => setShowLikeNote(false));
   const shareProfileTrap = useFocusTrap(showShareProfile, () => setShowShareProfile(false));
   const intentPickerTrap = useFocusTrap(showIntentPicker, () => setShowIntentPicker(false));
-  const filterModalTrap = useFocusTrap(showFilterModal, () => setShowFilterModal(false));
+  useFocusTrap(showFilterModal, () => setShowFilterModal(false));
   const unmatchTrap = useFocusTrap(!!unmatchTarget, () => setUnmatchTarget(null));
   const editProfileTrap = useFocusTrap(showEditProfile, () => setShowEditProfile(false));
   // Which screen's first-visit tutorial (if any) is currently open — see
@@ -301,7 +345,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [activePageTour, setActivePageTour] = useState<TourScreenId | null>(null);
   const [pendingNsfw, setPendingNsfw] = useState(false);
   const [userTier, setUserTier] = useState<string>("free");
-  const [liveProfessionals, setLiveProfessionals] = useState<any[] | null>(null);
+  const [liveProfessionals, setLiveProfessionals] = useState<Professional[] | null>(null);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editLoc, setEditLoc] = useState("");
@@ -320,7 +364,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [showBlockedUsersPanel, setShowBlockedUsersPanel] = useState(false);
   const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>({match:true,message:true,brief:true,like:true});
   const [pushEnabled, setPushEnabled] = useState<boolean>(false);
-  const [connTab, setConnTab] = useState<"community"|"events"|"sessions"|"forum"|"feed"|"professional">("community");
+  const [connTab, _setConnTab] = useState<"community"|"events"|"sessions"|"forum"|"feed"|"professional">("community");
   const [portfolioTab, setPortfolioTab] = useState<"all"|"portrait"|"landscape"|"sets">("all");
   const [commTab, setCommTab] = useState<"groups"|"events">("groups");
   const [sessTab, setSessTab] = useState<"sessions"|"bookings"|"requests">(() => viewerSideOf(currentUser) === "industry" ? "bookings" : "sessions");
@@ -337,12 +381,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   }, [currentUser?.type]);
   const [_networkOpenTab, _setNetworkOpenTab] = useState<"pros"|"forum"|undefined>(undefined);
   const [forumSort, setForumSort] = useState<"hot"|"new"|"top">("hot");
-  const [forumCategory, setForumCategory] = useState<string>("all");
+  const [forumCategory, _setForumCategory] = useState<string>("all");
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostBody, setNewPostBody] = useState("");
   const [expandedPost, setExpandedPost] = useState<number|null>(null);
   const [commentText, setCommentText] = useState("");
-  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [_replyingTo, setReplyingTo] = useState<number | null>(null);
   const [feedText, setFeedText] = useState("");
   const [feedMedia, setFeedMedia] = useState<string[]>([]);
   const [feedPostsStatic, setFeedPostsStatic] = useState<{id:number;author:string;avatar:string;type:string;text:string;likes:number;comments:number;shares:number;time:string;liked:boolean;saved:boolean;img?:string}[]>([{id:401,author:"Maya Chen",avatar:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",type:"photo",text:"Golden hour never gets old. Shot this at El Matador Beach last weekend.",likes:234,comments:18,shares:5,time:"2h ago",img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600",liked:false,saved:false},{id:402,author:"Jordan Rivera",avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",type:"text",text:"Just wrapped principal photography on a 30-min short. 14-hour days for 12 days straight. The footage is incredible!",likes:189,comments:32,shares:12,time:"5h ago",liked:false,saved:false},{id:403,author:"Sam Taylor",avatar:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",type:"photo",text:"New album art I designed. Surreal dreamlike aesthetic.",likes:312,comments:24,shares:8,time:"8h ago",img:"https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=600",liked:false,saved:false},{id:404,author:"Riley Patel",avatar:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",type:"photo",text:"Motion graphics reel. 6 months of work in 90 seconds.",likes:567,comments:45,shares:23,time:"1d ago",liked:false,saved:false}]);
@@ -359,7 +403,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [_obStep10Known, _setObStep10Known] = useState<"yes"|"no"|"test"|null>(null);
   const portfolioInputRef = useRef<HTMLInputElement>(null);
   const [matchesView, setMatchesView] = useState<"list"|"grid">("list");
-  const [messageRequests, setMessageRequests] = useState<any[]>([]);
+  const [messageRequests, setMessageRequests] = useState<unknown[]>([]);
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
   const [showStory, setShowStory] = useState<number|null>(null);
@@ -367,14 +411,14 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
   const [serverNotifCount, setServerNotifCount] = useState(0);
   const [discoveryPrefs, setDiscoveryPrefs] = useState<{ageMin:number;ageMax:number;distance:number;gender:string}>({ageMin:18,ageMax:50,distance:50,gender:"all"});
-  const [savedSearches, setSavedSearches] = useState<{id:string;name:string;query?:string;filters?:any}[]>([]);
+  const [savedSearches, setSavedSearches] = useState<{id:string;name:string;query?:string;filters?:Record<string, unknown>}[]>([]);
   const [myGeo, setMyGeo] = useState<{lat:number;long:number;city:string;state:string;requiresIdVerification:boolean}|null>(null);
   const [supportOpen, setSupportOpen] = useState(false);
 
 // ═══ TRUST & SAFETY STATE ═══
   const [disclosureTarget, setDisclosureTarget] = useState<{id:string;name:string} | null>(null);
   const [disclosureBookingId, setDisclosureBookingId] = useState<string | undefined>();
-  const [existingDisclosure, setExistingDisclosure] = useState<Record<string, unknown> | null>(null);
+  const [existingDisclosure, _setExistingDisclosure] = useState<Record<string, unknown> | null>(null);
   const [ageVerified, setAgeVerified] = useState(false);
   const [verificationExpiringSoon, setVerificationExpiringSoon] = useState(false);
   // Dismiss state for the top-of-app verification banner (Torreé feedback,
@@ -413,16 +457,28 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       } catch (e) { console.debug("[page.tsx] open count storage ignore", e); }
   }, []);
 
-  const [viewProfile, setViewProfileRaw] = useState<any>(null);
+  const [viewProfile, setViewProfileRaw] = useState<ViewProfile | null>(null);
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
   const [viewProfilePhotoIdx, setViewProfilePhotoIdx] = useState(0);
   // Reset photo carousel when a new profile is opened
+  // Attaches the verified session token (from localStorage) to /api/muse
+  // POST calls so the server can authenticate writes. Falls back to a plain
+  // fetch for GET/other endpoints and for /api/muse/auth (which manages its own auth).
+  // Declared before setViewProfile (and any other useCallback that lists apiFetch
+  // in deps) — block-scoped const would otherwise TDZ at line ~429.
+  const apiFetch = useCallback(async (url: string, opts: RequestInit = {}) => {
+    const res = await authFetch(url, opts);
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res;
+  }, []);
+
   useEffect(() => { setViewProfilePhotoIdx(0); }, [viewProfile?.id]);
   // Tracked wrapper — counts one view per real profile per session (duality
   // stats plumbing); demo/numeric ids are skipped server-side anyway.
   const viewedSessionRef = useRef<Set<string>>(new Set());
-  const setViewProfile = useCallback((p: any) => {
+  const setViewProfile = useCallback((p: ViewProfile | null) => {
     setViewProfileRaw(p);
+    if (!p) return;
     try {
       const id = String(p?.id ?? "");
       if (!id || !authUser) return;
@@ -431,12 +487,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       viewedSessionRef.current.add(id);
       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-view", target_id: id }) }).catch(() => {});
     } catch (e) { console.debug("[page.tsx] viewProfile tracking ignore", e); }
-  }, [authUser]);
-  const viewProfileTrap = useFocusTrap(!!viewProfile, () => setViewProfile(null));
+  }, [apiFetch, authUser]);
+  const viewProfileTrap = useFocusTrap(!!viewProfile, () => setViewProfileRaw(null));
   const shareTargetTrap = useFocusTrap(!!shareTarget, () => setShareTarget(null));
-  const [viewProfileReviews, setViewProfileReviews] = useState<any[]>([]);
+  const [viewProfileReviews, setViewProfileReviews] = useState<ProfileReview[]>([]);
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
-  const [publicProfileUser, setPublicProfileUser] = useState<any>(null);
+  const [publicProfileUser, setPublicProfileUser] = useState<PublicProfileUser | null>(null);
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
    const [blockTarget, setBlockTarget] = useState<{id:string;name:string}|null>(null);
    const blockTrap = useFocusTrap(!!blockTarget, () => setBlockTarget(null));
@@ -459,9 +515,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // applySession. A real external SIGNED_IN (actual login, OAuth) never
   // sets this, so it's unaffected.
   const syncingSdkSessionRef = useRef(false);
-  const shuffleSeed = useRef(Math.floor(Math.random() * 100000));
-  const matchSwipeRef = useRef<{id:string;startX:number;el:HTMLElement|null}>({id:"",startX:0,el:null});
-  const [matchSwiping, setMatchSwiping] = useState<{id:string;offset:number} | null>(null);
+  const _shuffleSeed = useRef(Math.floor(Math.random() * 100000));
+  const _matchSwipeRef = useRef<{id:string;startX:number;el:HTMLElement|null}>({id:"",startX:0,el:null});
+  const [_matchSwiping, setMatchSwiping] = useState<{id:string;offset:number} | null>(null);
    const [realtimeStatus, setRealtimeStatus] = useState<"connecting"|"connected"|"disconnected">("connecting");
    const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sendTypingRef = useRef<() => void>(() => {});
@@ -573,15 +629,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     return () => document.removeEventListener("pointerdown", onFirstTouch);
   }, []);
 
-  // Attaches the verified session token (from localStorage) to /api/muse
-  // POST calls so the server can authenticate writes. Falls back to a plain
-  // fetch for GET/other endpoints and for /api/muse/auth (which manages its own auth).
-  const apiFetch = useCallback(async (url: string, opts: RequestInit = {}) => {
-    const res = await authFetch(url, opts);
-    if (!res.ok) throw new Error(`API ${res.status}`);
-    return res;
-  }, [authFetch]);
-
   const { liveProfiles, setLiveProfiles, matches, setMatches, likedBy, setLikedBy, blockedUsers, setBlockedUsers, matchStreak, setMatchStreak } = useDiscoveryData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
   // Ref to avoid stale closure on rapid swipes — always holds latest matches
   const matchesRef = useRef(matches);
@@ -589,7 +636,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const { liveFeed, setLiveFeed, feedPosts, setFeedPosts, stories, setStories, liveForum, setLiveForum, forumPosts, setForumPosts } = useFeedData({ authFetch, profileId: authUser?.profile?.id ?? null, initialStories: INITIAL_STORIES });
   const { liveCommunities, setLiveCommunities, liveEvents, setLiveEvents, rsvpdEvents, setRsvpdEvents } = useCommunityData({ authFetch, profileId: authUser?.profile?.id ?? null });
   const { myBookings, setMyBookings, liveSessions, setLiveSessions, bookingReminders } = useSessionData({ authFetch, profileId: authUser?.profile?.id ?? null });
-  const { liveBriefs, setLiveBriefs } = useBriefsData({ authFetch, profileId: authUser?.profile?.id ?? null });  const { myStats, setMyStats, safetyCheckins, setSafetyCheckins, safetyProfile, setSafetyProfile, promptBankData, setPromptBankData, promptResponses, setPromptResponses } = useProfileData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
+  const { liveBriefs, setLiveBriefs } = useBriefsData({ authFetch, profileId: authUser?.profile?.id ?? null });
+  const { myStats, setMyStats: _setMyStats, safetyCheckins, setSafetyCheckins, safetyProfile, setSafetyProfile, promptBankData, setPromptBankData: _setPromptBankData, promptResponses, setPromptResponses } = useProfileData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
 
   // ── Calls (LiveKit): ringing + in-call state for the whole app ──
   const { incoming: incomingCall, active: activeCall, error: callError, setError: setCallError, startCall, acceptCall, declineCall, endCall, leaveVoicemail, fetchHistory: fetchCallHistory, startRoom, recording: callRecording, peerRecording: callPeerRecording, startRecording: startCallRecording, stopRecording: stopCallRecording } = useCall(authUser?.profile?.id ?? null);
@@ -664,7 +712,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         skipWrap((liveSessions?.length ?? 0) > 0, "sessions"),
         apiFetch("/api/muse?type=professionals").then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
-      if (matchData?.profiles?.length) setLiveProfiles(matchData.profiles.map((p: any) => ({
+      if (matchData?.profiles?.length) setLiveProfiles((matchData.profiles as RawApiProfile[]).map((p) => ({
         id: p.id, name: p.name || "Creative", img: p.avatar || initialsAvatarUrl(p.name || "Creative", p.id), type: p.type || "artist",
         bio: p.bio || "", loc: p.loc || "Unknown", styles: Array.isArray(p.styles) ? p.styles : [],
         score: p.matchScore || 70, nsfw: !!p.nsfw, looking: Array.isArray(p.looking) ? p.looking : [],
@@ -672,7 +720,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         photos: Array.isArray(p.photos) ? p.photos : [], collabs: p.collabs || 0, verified: !!p.verified,
         matchScore: p.matchScore, rulesScore: p.rulesScore, cosineScore: p.cosineScore,
         showDistance: p.showDistance !== false,
-        side: (p as any).side || viewerSide(p.type),
+        side: p.side || viewerSide(p.type),
       })));
       if (briefs?.briefs?.length) setLiveBriefs(briefs.briefs.map(normalizeBrief));
       if (feed?.posts?.length) {
@@ -686,8 +734,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         // by `.author`) would fail to match against the raw rows, showing
         // every post twice. Normalize here too so both effects always
         // agree on the same shape regardless of which resolves last.
-        setLiveFeed(feed.posts.map((p: any) => normalizeFeedPost(p, authUser?.profile?.id ?? null)));
-        setFeedPosts(feed.posts.map((p: any, i: number) => ({
+        setLiveFeed((feed.posts as RawFeedPost[]).map((p) => normalizeFeedPost(p, authUser?.profile?.id ?? null)));
+        setFeedPosts((feed.posts as RawFeedPost[]).map((p, i: number) => ({
           id: 100000 + i,
           // Real DB id — synthetic display ids break server-side lookups
           // (reports pointed at posts no moderator could ever resolve).
@@ -699,7 +747,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       }
       if (forum?.posts?.length) {
         setLiveForum(forum.posts.map(normalizeForumPost));
-        setForumPosts(forum.posts.map((p: any, i: number) => ({
+        setForumPosts((forum.posts as RawForumPost[]).map((p, i: number) => ({
           id: 100000 + i, title: p.title || "", body: p.body || "", author: p.author_id?.name || "Creative",
           avatar: p.author_id?.avatar || "", votes: p.votes || 0, comments: Array.isArray(p.comments) ? p.comments : [],
           cat: p.cat || "General", time: p.created_at ? new Date(p.created_at).toLocaleString() : "Just now", pinned: false
@@ -708,11 +756,11 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (events?.events?.length) setLiveEvents(events.events.map(normalizeEvent));
       if (communities?.communities?.length) setLiveCommunities(communities.communities.map(normalizeCommunity));
       if (sessions?.sessions?.length) setLiveSessions(sessions.sessions.map(normalizeSession));
-      if (professionals?.professionals?.length) setLiveProfessionals(professionals.professionals);
+      if (professionals?.professionals?.length) setLiveProfessionals(professionals.professionals as Professional[]);
     } catch { console.debug("[muse] initial recommendation refresh failed"); }
     setBootstrapped(true);
     setDiscoverLoading(false);
-  }, [apiFetch]);
+  }, [apiFetch, authUser?.profile?.id, feedPosts?.length, forumPosts?.length, liveBriefs?.length, liveCommunities?.length, liveEvents?.length, liveForum?.length, liveSessions?.length, setDiscoverLoading, setFeedPosts, setForumPosts, setLiveBriefs, setLiveCommunities, setLiveEvents, setLiveFeed, setLiveForum, setLiveProfiles, setLiveSessions]);
 
   // ─── PERSISTENCE ───
   const STORAGE_KEY = "muse_v1";
@@ -739,7 +787,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs, stats: currentUser.stats }) }).catch(() => {});
       }
     } catch { console.debug("[muse] persisted client state could not be saved"); }
-  }, [currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,savedSessionIds,savedProfileIds,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,showZodiac,showAge,showMbti,showLifePath,showChinese,showMatchPercent,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,authUser,chatTarget]);
+  }, [apiFetch, currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,savedSessionIds,savedProfileIds,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,showZodiac,showAge,showMbti,showLifePath,showChinese,showMatchPercent,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,authUser,chatTarget]);
 
   const loadState = useCallback(async () => {
     try {
@@ -755,8 +803,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (d.obData) setObData(d.obData);
       if (d.obStep) setObStep(d.obStep);
       if (d.authUser) setAuthUser(d.authUser);
-      if (d.matches) setMatches(d.matches.map((m: any) => {
-        const t = m.target_id || m;
+      if (d.matches) setMatches(d.matches.map((m: Match & { target_id?: Partial<Profile> & { last_seen_at?: string } }) => {
+        const t: Partial<Profile> & { last_seen_at?: string } = m.target_id || {};
         const lastSeen = t.last_seen_at || null;
         const online = !!lastSeen && (Date.now() - new Date(lastSeen).getTime()) < 5 * 60 * 1000;
         return { ...m, name: t.name || m.name, img: t.avatar || m.img, type: t.type || m.type, bio: t.bio || m.bio, location: t.loc || m.location, online, lastSeen, nsfw: t.nsfw || m.nsfw };
@@ -766,7 +814,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         // profiles (ARCANA/AUDREY/CHER) in live production. An empty matches list
         // shows the real empty state instead of 6 invented matches.
         if (DEMO_MODE) {
-          const demoMatches = PROFILES.slice(0, 6).map((p: any) => ({
+          const demoMatches = PROFILES.slice(0, 6).map((p) => ({
             id: p.id, name: p.name, img: p.img, type: p.type,
             bio: p.bio, location: p.loc, booked: false, online: !!p.online,
             messages: [], _demo: true
@@ -829,9 +877,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       if (d.authUser && !VALID_SCREENS.includes(d.screen||"")) setScreen("discover");
     } catch { console.debug("[muse] persisted client state could not be restored"); }
     try { const b=safeGetItem("muse_boost"); if(b){const e=parseInt(b);if(e>Date.now()){setBoostActive(true);setBoostEnd(e);}else{safeRemoveItem("muse_boost");}} } catch { console.debug("[muse] persisted boost state could not be restored"); }
-  }, []);
+  }, [setAppliedBriefs, setBlockedUsers, setBoostActive, setBoostEnd, setChatImages, setChatTarget, setDailyLikes, setFeedPosts, setForumPosts, setLikedBy, setMatches, setObConnectedSocials, setObData, setObPortfolioItems, setObProfilePic, setObSelects, setObStep, setRsvpdEvents, setSavedBriefs, setSavedProfileIds, setSavedSessionIds, setStories, setSuperLikes, setTestLevels, setUserBriefs]);
 
-  useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{safeRemoveItem("muse_boost");}catch{console.debug("[muse] expired boost state could not be cleared");}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd]);
+  useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{safeRemoveItem("muse_boost");}catch{console.debug("[muse] expired boost state could not be cleared");}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd,setBoostActive]);
 
   // Fetch connected accounts status from server on mount (overrides stale localStorage)
   useEffect(() => {
@@ -839,7 +887,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.connected) setObConnectedSocials(d.connected); })
       .catch(() => {});
-  }, []);
+  }, [setObConnectedSocials]);
 
   // ─── CROSS-DEVICE: Persist all preferences to server (single debounced) ───
   const prefsSnapshotRef = useRef({ obStep, notifPrefs, filterStyles, filterScore, appliedBriefs, showNsfw });
@@ -854,7 +902,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { onboardingStep: p.obStep, notifications: p.notifPrefs, filterStyles: p.filterStyles, filterScore: p.filterScore, appliedBriefs: p.appliedBriefs, nsfw: p.showNsfw } }) }).catch(() => {});
     }, 2000);
     return () => { if (prefsTimerRef.current) clearTimeout(prefsTimerRef.current); };
-  }, [obStep, notifPrefs, filterStyles, filterScore, appliedBriefs, showNsfw, authUser]);
+  }, [apiFetch, obStep, notifPrefs, filterStyles, filterScore, appliedBriefs, showNsfw, authUser]);
 
   // ─── MESSAGE REQUESTS: Fetch pending requests when on matches screen ───
   useEffect(() => {
@@ -863,7 +911,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.requests) setMessageRequests(data.requests); })
       .catch(() => {});
-  }, [screen, authUser]);
+  }, [apiFetch, screen, authUser]);
 
 const applySession = useCallback((accessToken: string, refreshToken?: string, attempt = 0, fromAuthStateChange = false) => {
     // Re-entrancy guard: if we're already in applySession from an auth-state-change callback,
@@ -915,7 +963,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                   const sv = serverStats[k];
                   if (typeof sv === "number" && sv > (mergedStats[k] || 0)) mergedStats[k] = sv;
                 }
-                return { ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, audience: (d.profile as any).audience || "creative", type: d.profile.type || prev.type, foundingTier: isOwner ? "founding" : (d.profile.founding_tier || ""), proExpiresAt: isOwner ? "" : (d.profile.pro_expires_at || ""), tier: effTier, stats: mergedStats, status: d.profile.status ?? prev.status };
+                return { ...prev, name: d.profile.name || prev.name, avatar: d.profile.avatar || prev.avatar, audience: d.profile.audience || "creative", type: d.profile.type || prev.type, foundingTier: isOwner ? "founding" : (d.profile.founding_tier || ""), proExpiresAt: isOwner ? "" : (d.profile.pro_expires_at || ""), tier: effTier, stats: mergedStats, status: d.profile.status ?? prev.status };
               });
               if (effTier) setUserTier(effTier);
               // Mirrors the server's isAgeVerificationCurrent (shared.ts) —
@@ -1081,7 +1129,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     // Recognize this case and log out cleanly instead of feeding the SDK a
     // token we already know will never work.
     const isDeadRefreshTokenError = (err: unknown): boolean => {
-      const msg = String((err as any)?.message || err || "").toLowerCase();
+      const msg = String(err instanceof Error ? err.message : err || "").toLowerCase();
       return msg.includes("refresh_token_not_found") || msg.includes("invalid_grant") || msg.includes("invalid refresh token") || msg.includes("refresh token not found") || msg.includes("already used");
     };
     const cleanLogoutDeadToken = () => {
@@ -1171,7 +1219,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       syncSdkSession(pendingToken, pendingRefresh);
       doSessionCheck();
     }
-  }, []);
+  }, [setAppliedBriefs, setFilterScore, setFilterStyles, setObStep, setSavedBriefs, setSavedProfileIds, setSavedSessionIds]);
 
   useEffect(() => {
     if (loadStateRef.current) return;
@@ -1373,6 +1421,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       }
     });
     return () => { authListener?.subscription?.unsubscribe(); };
+  // This installs one subscription for the component lifetime. Including the
+  // bootstrap callback would re-register it whenever bootstrapped data changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Cross-tab session sync: when the SAME browser has this account open in
@@ -1425,7 +1476,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     poll();
     const iv = setInterval(poll, 20000);
     return () => { cancelled = true; clearInterval(iv); };
-  }, [authUser?.id, authFetch]);
+  }, [authUser?.id]);
 
   // Pull the real "who viewed my profile" list so the Profile Activity section
   // shows genuine viewer avatars/names (fed by track-view → profile_view rows),
@@ -1444,11 +1495,11 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           // Merge new viewer rows into the activity feed (dedup by viewer id),
           // placed chronologically by view time.
           setActivityFeed(prev => {
-            const existingViewerIds = new Set(prev.filter(x => x.type === "profile_view").map(x => x.id));
+            const existingViewerIds = new Set<string | number>(prev.filter(x => x.type === "profile_view").map(x => x.id));
             const newItems = d.viewers
-              .filter((v: any) => !existingViewerIds.has(v.id))
-              .map((v: any) => ({
-                id: (v.id || uid()) as any,
+              .filter((v: ProfileViewer) => !existingViewerIds.has(v.id || ""))
+              .map((v: ProfileViewer) => ({
+                id: v.id || uid(),
                 type: "profile_view",
                 from: v.name || "Someone",
                 avatar: v.avatar || "",
@@ -1464,7 +1515,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     pull();
     const iv = setInterval(pull, 60000);
     return () => { cancelled = true; clearInterval(iv); };
-  }, [authUser?.id, authFetch]);
+  }, [authUser?.id]);
 
   // Load background transparency from localStorage on mount
   useEffect(() => {
@@ -1576,12 +1627,12 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [showToast]);
+  }, [setObConnectedSocials, showToast]);
 
   // Onboarding multi-select toggle with a hard cap. Toggling off always works;
   // adding beyond the cap is ignored and surfaces a toast instead.
   const toggleObMulti = (field: "looking" | "styles", value: string, max: number) => {
-    const arr: string[] = ((obData as any)[field] as string[] | undefined) || [];
+    const arr: string[] = (obData[field as keyof typeof obData] as string[] | undefined) || [];
     if (arr.includes(value)) { setObData(d => ({ ...d, [field]: arr.filter(x => x !== value) })); return; }
     if (arr.length >= max) { showToast(`Max ${max} selected`); return; }
     setObData(d => ({ ...d, [field]: [...arr, value] }));
@@ -1592,19 +1643,20 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-quests" }) });
       const d = await res.json();
       if (Array.isArray(d?.quests)) {
-        setClaimableQuests(d.quests.filter((q: any) => q.completed && !q.claimed).length);
-        setNearQuests(d.quests.filter((q: any) => !q.completed && q.progress / q.target >= 0.6).length);
+        const quests = d.quests as Quest[];
+        setClaimableQuests(quests.filter((q) => q.completed && !q.claimed).length);
+        setNearQuests(quests.filter((q) => !q.completed && q.progress / q.target >= 0.6).length);
         const TIER_COLORS: Record<string,string> = { starter: "#98FB98", daily: "#87CEEB", weekly: "#FFD700", monthly: "#D4A5FF", season: "#FF69B4", legendary: "#FF8A80" };
-        const top = d.quests
-          .filter((q: any) => !q.completed && q.progress > 0)
-          .sort((a: any, b: any) => (b.progress / b.target) - (a.progress / a.target))
+        const top = quests
+          .filter((q) => !q.completed && q.progress > 0)
+          .sort((a, b) => (b.progress / b.target) - (a.progress / a.target))
           .slice(0, 3)
-          .map((q: any) => ({ id: q.id, title: q.title, icon: q.icon, progress: q.progress, target: q.target, color: TIER_COLORS[q.quest_tier] || "#FFD700" }));
+          .map((q) => ({ id: q.id, title: q.title, icon: q.icon, progress: q.progress, target: q.target, color: TIER_COLORS[q.quest_tier] || "#FFD700" }));
         setTopQuests(top);
       }
       if (typeof d?.streak === "number") setLoginStreak(d.streak);
     } catch { console.debug("[muse] quest refresh failed"); }
-  }, [apiFetch]);
+  }, [apiFetch, setClaimableQuests, setLoginStreak, setNearQuests, setTopQuests]);
 
   // Quest tracking — call after successful actions. Batches multiple keys into
   // one request; silent unless a quest is newly completed or the user levels up
@@ -1615,15 +1667,15 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: actionKeys }) });
       const data = await res.json();
       if (!data?.success || !Array.isArray(data.results)) return;
-      const completed = data.results.find((r: any) => r.newlyCompleted);
+      const completed = data.results.find((r: { newlyCompleted?: boolean; leveledUp?: boolean; action_key?: string; quest?: { icon?: string; title?: string } }) => r.newlyCompleted);
       if (completed) showToast(`${completed.quest?.icon || "⭐"} Quest complete: ${completed.quest?.title || completed.action_key}`);
       else {
-        const leveled = data.results.find((r: any) => r.leveledUp);
+        const leveled = data.results.find((r: { leveledUp?: boolean }) => r.leveledUp);
         if (leveled) showToast("🎉 Level up! Keep completing quests for rewards");
       }
       if (completed) setClaimableQuests(n => n + 1);
     } catch { console.debug("[muse] safety preference refresh failed"); }
-  }, [apiFetch, showToast]);
+  }, [apiFetch, setClaimableQuests, showToast]);
 
   // Surface storage quota failures to the user instead of failing silently.
   useEffect(() => {
@@ -1672,7 +1724,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-quests" }) })
       .then(r => r.json())
       .then(d => {
-        if (Array.isArray(d?.quests)) setClaimableQuests(d.quests.filter((q: any) => q.completed && !q.claimed).length);
+        if (Array.isArray(d?.quests)) setClaimableQuests((d.quests as Quest[]).filter((q) => q.completed && !q.claimed).length);
         // Bug fix (live-verified): this boot-time fetch used to read only
         // `quests` from the response, leaving `loginStreak` at its initial 0
         // until the user happened to open the Quests panel (the only other
@@ -1686,7 +1738,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         if (typeof d?.streak === "number") setLoginStreak(d.streak);
       })
       .catch(() => {});
-  }, [bootstrapped, authUser, trackQuest, apiFetch]);
+  }, [bootstrapped, authUser, trackQuest, apiFetch, setClaimableQuests, setLoginStreak, setShowDailyLogin, setWeeklyLogins]);
 
   // Per-page tutorials: each major screen gets its own small lightbox the
   // first time this browser ever opens it (tracked one localStorage flag
@@ -1733,7 +1785,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       }
       setWeeklyLogins(weekDays);
     } catch { console.debug("[muse] weekly login state could not be updated"); }
-  }, [bootstrapped, authUser]);
+  }, [bootstrapped, authUser, setWeeklyLogins]);
 
   const doLogout = useCallback(async (message: string = "Logged out") => {
     try { await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "logout" }) }); } catch { console.debug("[muse] remote logout request failed"); }
@@ -1749,7 +1801,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
   const doLogoutFull = useCallback(async () => {
     await doLogout(); setHamburgerScreen(""); setShowHamburger(false);
-  }, [doLogout]);
+  }, [doLogout, setShowHamburger]);
 
   // authFetch (lib/api.ts) dispatches this when a request 401s, the user HAD
   // a token, and a refresh attempt still couldn't produce a usable one — the
@@ -1830,7 +1882,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: m.messages.filter(mm => mm !== userMsg) } : m));
       showToast(kind === "voice" ? "Voice note couldn't be sent" : "Video note couldn't be sent");
     }
-  }, [chatTarget, authUser, setMatches, showToast]);
+  }, [chatTarget, authUser, setChatTarget, setMatches, showToast]);
 
   // Single source of truth lives in components/types.ts — a second local copy
   // existed here and the two were drifting.
@@ -1841,13 +1893,13 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
   }, []);
 
   const getReferralTier = (c:number) => c>=50?{tier:"Platinum",discount:20,perks:"20% off all services",nextThreshold:null}:c>=20?{tier:"Gold",discount:15,perks:"15% off all services",nextThreshold:50}:c>=5?{tier:"Silver",discount:10,perks:"10% off all services",nextThreshold:20}:c>=1?{tier:"Bronze",discount:0,perks:"Exclusive badge",nextThreshold:5}:{tier:"None",discount:0,perks:"Invite friends to earn",nextThreshold:1};
-  const checkProfileBadges = (stats:any, createdAt:number):{name:string;desc:string;icon:string;color:string}[] => {
+  const checkProfileBadges = (stats: Partial<typeof currentUser.stats>, createdAt:number):{name:string;desc:string;icon:string;color:string}[] => {
     const b:{name:string;desc:string;icon:string;color:string}[] = [];
     if (createdAt && Date.now()-createdAt > 31536000000) b.push({name:"Full Moon",icon:"🌕",color:"#C0C0FF",desc:"1 year on Muse"});
-    if (stats?.bookingsCompleted >= 50) b.push({name:"Golden Hour",icon:"☀️",color:"#FFD700",desc:"50+ shoots completed"});
-    else if (stats?.bookingsCompleted >= 10) b.push({name:"Collab King",icon:"👑",color:"#FFD700",desc:"10+ bookings completed"});
-    if (stats?.matchesReceived >= 100) b.push({name:"Rising Star",icon:"⭐",color:"#FFBF00",desc:"100+ matches"});
-    if (stats?.messagesSent >= 500) b.push({name:"Social Butterfly",icon:"🦋",color:"#FF69B4",desc:"500+ messages"});
+    if ((stats.bookingsCompleted ?? 0) >= 50) b.push({name:"Golden Hour",icon:"☀️",color:"#FFD700",desc:"50+ shoots completed"});
+    else if ((stats.bookingsCompleted ?? 0) >= 10) b.push({name:"Collab King",icon:"👑",color:"#FFD700",desc:"10+ bookings completed"});
+    if ((stats.matchesReceived ?? 0) >= 100) b.push({name:"Rising Star",icon:"⭐",color:"#FFBF00",desc:"100+ matches"});
+    if ((stats.messagesSent ?? 0) >= 500) b.push({name:"Social Butterfly",icon:"🦋",color:"#FF69B4",desc:"500+ messages"});
     return b;
   };
 
@@ -1878,13 +1930,13 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       .then(r => r.json())
       .then(j => {
         if (cancelled) return;
-        const list = (j.notifications || []) as any[];
+        const list = (j.notifications || []) as Notification[];
         if (!list.length) return;
         setActivityFeed(prev => {
           const existing = new Set(prev.map(a => a.text));
           const mapped = list
             .filter(n => n && n.body && !existing.has(n.body))
-            .map((n: any) => ({
+            .map((n) => ({
               id: n.id ?? uid(),
               type: n.type || "info",
               // Audit fix (Torreé batch Part B item 8): this used to
@@ -1937,10 +1989,11 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     // Gating the static demo deck behind DEMO_MODE: in production this deck of
     // hardcoded creatives (ARCANA/AUDREY/CHER…) never leaks — the swipe deck is
     // pure live `discover-ranked` data, so nobody swipes fabricated people.
-    const merged = DEMO_MODE && liveProfiles?.length
-      ? [...liveProfiles, ...base.filter((dp: any) => !liveProfiles.some((lp: any) => String(lp.id) === String(dp.id)))]
-      : liveProfiles?.length
-        ? liveProfiles
+    const liveProfileList = (liveProfiles || []) as DiscoveryProfile[];
+    const merged: DiscoveryProfile[] = DEMO_MODE && liveProfileList.length
+      ? [...liveProfileList, ...base.filter((dp) => !liveProfileList.some((lp) => String(lp.id) === String(dp.id)))]
+      : liveProfileList.length
+        ? liveProfileList
         : (DEMO_MODE ? base : []);
     let list = showNsfw ? merged : merged.filter(p => !p.nsfw);
     if (filterStyles.length > 0) list = list.filter(p => p.styles.some((s: string) => filterStyles.includes(s)));
@@ -1954,21 +2007,21 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       // Static demo profiles have no showDistance flag (default true); live
       // profiles carry the target's own privacy preference from /api/muse/match —
       // don't compute/attach a distance figure for someone who opted out.
-      const targetAllowsDistance = (p as any).showDistance !== false;
+      const targetAllowsDistance = p.showDistance !== false;
       const distMi = myGeo && geo && targetAllowsDistance ? distanceMiles(myGeo, geo) : null;
-      const boosted = geo ? { ...p, lat: geo.lat, lng: geo.long } : { ...p };
-      if (distMi !== null) (boosted as any).distanceMi = distMi;
+      const boosted: DiscoveryProfile = geo ? { ...p, lat: geo.lat, lng: geo.long } : { ...p };
+      if (distMi !== null) boosted.distanceMi = distMi;
       // Recompute live match % from the user's current type/looking (the duality
       // change). calcMatch is source-of-truth; static seed score is a floor only
       // when the user hasn't set a type yet.
       try {
         const meForMatch = { type: obData.type || "", styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath };
-        const liveScore = calcMatch(meForMatch, p as any);
+        const liveScore = calcMatch(meForMatch, p);
         if (obData.type) boosted.score = Math.min(99, Math.max(boosted.score, liveScore));
-        (boosted as any).matchReasons = matchReasons(meForMatch, p as any);
+        boosted.matchReasons = matchReasons(meForMatch, p);
       } catch { console.debug("[muse] match explanation could not be calculated"); }
       if (boosted.badges?.length) {
-        const badgeBoost = boosted.badges.reduce((acc: number, b: any) => {
+        const badgeBoost = boosted.badges.reduce((acc: number, b) => {
           if (b.name === "Verified Pro") return acc + 5;
           if (b.name === "Top Creator" || b.name === "Creative Sage") return acc + 3;
           if (b.name === "Super Collab") return acc + 4;
@@ -1981,7 +2034,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       return boosted;
     });
     return enriched;
-  }, [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch, obData.type, obData.looking, obData.styles]);
+  }, [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch, obData.chinese, obData.lifePath, obData.mbti, obData.type, obData.looking, obData.styles, obData.zodiac]);
 
   useEffect(() => {
     const profile = filteredProfiles[currentIdx];
@@ -2008,7 +2061,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       .then(r => r.json())
       .then(d => {
         if (cancelled) return;
-        setCardAlbumPhotos((d.photos || []).map((p: any) => p.img_url));
+        setCardAlbumPhotos((d.photos || []).map((p: { img_url: string }) => p.img_url));
       })
       .catch((err) => { trackError("fetch_album_photos", { err: String(err) }); });
     return () => { cancelled = true; };
@@ -2024,9 +2077,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         safeSetItem("muse_last_reset", String(now));
       }
     }
-  }, []);
+  }, [setDailyLikes, setSuperLikes]);
 
-  const flash = useCallback((color: string) => { setScreenFlash(color); setTimeout(() => setScreenFlash(null), 300); }, []);
+  const flash = useCallback((color: string) => { setScreenFlash(color); setTimeout(() => setScreenFlash(null), 300); }, [setScreenFlash]);
   // Back-navigation history: showScreen pushes the screen we're leaving so a
   // back button can return to the ACTUAL previous page (e.g. Analytics → back
   // → Profile, not Discover). goBack pops the stack; falls back to discover.
@@ -2055,13 +2108,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     setReportTarget, setShowReport, setUnmatchTarget, setBlockTarget, handleImgError, getIcebreaker, setViewProfile
   }), [setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping, setReportTarget, setShowReport, setUnmatchTarget, setBlockTarget, handleImgError, getIcebreaker, setViewProfile]);
 
-  const navActive = useMemo(() => {
-    const m: Record<string, string> = { discover: "discover", connections: "connections", matches: "matches", chat: "matches", briefs: "briefs", bts: "bts", profile: "profile", settings: "profile", subscription: "profile", portfolio: "profile", analytics: "profile" };
-    return m[screen as string] || "discover";
-  }, [screen]);
-
-
-  const openHamburger = useCallback(() => { setHamburgerScreen(""); setShowHamburger(true); }, []);
+  const openHamburger = useCallback(() => { setHamburgerScreen(""); setShowHamburger(true); }, [setShowHamburger]);
 
   const handleOAuth = useCallback(async (provider: "google" | "facebook" | "x") => {
     setAuthLoading(true);
@@ -2074,7 +2121,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       });
       if (error) { showToast(error.message); setAuthLoading(false); }
     } catch { showToast("OAuth failed"); setAuthLoading(false); }
-  }, [showToast]);
+  }, [setAuthLoading, showToast]);
 
   const handleAuthClick = useCallback(async () => {
     if (authLoading) return;
@@ -2135,7 +2182,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       flash("#FFD700");
     } catch { showToast({ msg: "Login failed — check your credentials", type: "error" }); }
     setAuthLoading(false);
-  }, [authMode, authEmail, authPass, authName, authLoading, flash]);
+  }, [authMode, authEmail, authPass, authName, authLoading, flash, setAuthLoading, setAuthMode, setAuthPass, setFormErrors, setObStep, showToast]);
 
   const swipeLocked = useRef(false);
   const [intentProfile, setIntentProfile] = useState<Profile|null>(null);
@@ -2162,12 +2209,12 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     const p = filteredProfiles[currentIdx];
     if (!p) return;
     if (!isUnlimited && dir === "super" && superLikes <= 0) { setUpsell({ feature: "More Super Likes", reason: "You're out of super likes for today. Muse Pro's unlimited likes means you're never stuck waiting for a reset.", icon: "💜" }); return; }
-    analytics.discoverSwipe(dir as "left" | "right" | "super", p.id, p.type);
+    analytics.discoverSwipe(dir as "left" | "right" | "super", String(p.id), p.type);
     if (dir === "right" || dir === "super") {
       const effectiveIntent = intentOverride || userDefaultIntent;
       if (!effectiveIntent) { setIntentProfile(p); setIntentSelection([]); setShowIntentPicker(true); swipeLocked.current = false; return; }
       const intent = dir === "super" ? "super" : effectiveIntent;
-      const matchScore = (p as any).matchScore ?? calcMatch({ styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath }, p);
+      const matchScore = p.matchScore ?? calcMatch({ styles: obData.styles || [], looking: obData.looking || [], zodiac: obData.zodiac, chinese: obData.chinese, mbti: obData.mbti, lifePath: obData.lifePath }, p);
       // Every right-swipe is a real like — the backend `match` action always
       // fires (creating a muse_matches row + notifying the target). `isMatch`
       // only decides whether we show the celebratory "You matched!" overlay;
@@ -2189,7 +2236,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         showToast("Demo interest preview — no person was notified and no match was created.");
       } else authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id, intent }) }).then(async (r) => {
         if (!r.ok) {
-          const d = await r.json().catch(() => ({} as any));
+          const d = await r.json().catch((): { error?: string } => ({}));
           if (r.status === 429) showToast("You're swiping a bit fast — give it a few seconds and try again");
           else if (r.status === 403) showToast(d?.error || "Can't like this profile right now");
           else showToast(d?.error || "Match failed — try again");
@@ -2207,7 +2254,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             setShowConfetti(true);
             setTimeout(() => setShowConfetti(false), 1500);
             setExpandedMatchId(String(newMatch.id));
-            analytics.discoverMatch(p.id, p.type);
+            analytics.discoverMatch(String(p.id), p.type);
             setActivityFeed(prev => [{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
             flash("#FFD700");
           }, 450);
@@ -2217,7 +2264,6 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       });
       if (isMatch) {
         const newMatch: Match = { ...p, messages: [] };
-        const prevMatches = matchesRef.current;
         setMatches(prev => [...prev, newMatch]);
         setMatchStreak(prev => prev + 1);
         setActivityFeed(prev => [{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
@@ -2227,7 +2273,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 2500);
           setExpandedMatchId(String(newMatch.id));
-          analytics.discoverMatch(p.id, p.type);
+          analytics.discoverMatch(String(p.id), p.type);
           flash("#FFD700");
         }, 450);
       }
@@ -2261,7 +2307,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     else swapToNext();
     if (dir === "right" || dir === "super") trackQuest("swipe", "first_swipe", "like_profile");
     else trackQuest("swipe", "first_swipe");
-  }, [currentIdx, dailyLikes, superLikes, filteredProfiles, isUnlimited, calcMatch, likedBy, flash, obData, userDefaultIntent, trackQuest]);
+  }, [currentIdx, dailyLikes, superLikes, filteredProfiles, isUnlimited, flash, obData, userDefaultIntent, trackQuest, setCurrentIdx, setDailyLikes, setExpandedMatchId, setMatchAnimVariant, setMatchStreak, setMatches, setRewindStack, setShowConfetti, setShowIntentPicker, setShowMatchOverlay, setSuperLikes, setSwipeDir, showToast]);
 
   useEffect(() => { if(screen!=="discover")return;const onKey=(e:KeyboardEvent)=>{if(e.key==="ArrowLeft"){e.preventDefault();doSwipe("left")}if(e.key==="ArrowRight"){e.preventDefault();doSwipe("right")}};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey)},[screen,doSwipe]);
 
@@ -2291,7 +2337,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     setPromptIdx(0);
     setCardScrolled(false);
     flash("#D4A5FF");
-  }, [rewindStack, flash]);
+  }, [rewindStack, flash, setCurrentIdx, setRewindStack, showToast]);
 
   const doLikeWithNote = useCallback((anchor?: LikeAnchor) => {
     setShowNoteTooltip(false); safeSetItem("muse_note_seen","1");
@@ -2405,12 +2451,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     if (superLabelRef.current) superLabelRef.current.style.opacity = "0";
   }, []);
 
-  const openGallery = useCallback((profile: Profile) => {
-    const photos = ((profile as any).photos?.length ? (profile as any).photos : [profile.img]) as string[];
-    setGalleryView({ profileId: profile.id, name: profile.name, photos, idx: 0 });
-  }, []);
-
-  const openChat = useCallback((match: Match) => { setChatTarget(match); setScreen("chat"); }, []);
+  const openChat = useCallback((match: Match) => { setChatTarget(match); setScreen("chat"); }, [setChatTarget]);
 
   const sanitizeInput = (text: string) => text.replace(/[<>]/g, '').slice(0, 500);
   const toggleSocial = useCallback((key: string) => {
@@ -2433,7 +2474,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         .then(d => { if (d.authUrl) window.location.href = d.authUrl; else showToast(d.error || `Couldn't connect ${key}`); })
         .catch(() => showToast(`Couldn't connect ${key}`));
     }
-  }, [apiFetch, obConnectedSocials, showToast]);
+  }, [apiFetch, obConnectedSocials, setObConnectedSocials, showToast]);
   const sendMsg = useCallback(async (overrideText?: string) => {
     const inputText = overrideText !== undefined ? overrideText : chatInput;
     if (!inputText.trim() || !chatTarget) return;
@@ -2489,7 +2530,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, reply] } : m));
       setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
     }, 1200 + Math.random() * 2000);
-  }, [chatInput, chatTarget, authUser, trackQuest]);
+  }, [chatInput, chatTarget, authUser, trackQuest, setChatInput, setChatTarget, setMatches, setShowDisclosureModal, setTypingTarget, showToast]);
 
   // Send an image message (chat attach button → uploaded URL → image bubble).
   const sendChatImg = useCallback(async (imgUrl: string) => {
@@ -2521,7 +2562,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, reply] } : m));
       setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
     }, 1200 + Math.random() * 2000);
-  }, [chatTarget, authUser]);
+  }, [chatTarget, authUser, setChatTarget, setMatches, setTypingTarget, showToast]);
 
   // Real-time incoming messages for the active conversation.
   useEffect(() => {
@@ -2546,7 +2587,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     });
     sendTypingRef.current = sub.sendTyping;
     return sub.unsubscribe;
-  }, [chatTarget?.id, authUser?.id]);
+  }, [authUser?.profile?.id, chatTarget, chatTarget?.id, authUser?.id, setChatTarget, setMatches, setThemTyping]);
 
   // Load persisted conversation history when a chat is opened -- the realtime
   // subscription above only catches messages that arrive *after* it connects,
@@ -2568,20 +2609,20 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       // that predate this fix and never got a clientMsgId.
       const seenIds = new Set(history.map(h => h.clientMsgId).filter(Boolean));
       const seenContent = new Set(history.map(h => h.text + "|" + (h.img || "")));
-      const isDupe = (m: any) => m.clientMsgId ? seenIds.has(m.clientMsgId) : seenContent.has((m.text || "") + "|" + (m.img || ""));
+      const isDupe = (m: { clientMsgId?: string; text?: string; img?: string }) => m.clientMsgId ? seenIds.has(m.clientMsgId) : seenContent.has((m.text || "") + "|" + (m.img || ""));
       setChatTarget(prev => {
         if (!prev || String(prev.id) !== theirId) return prev;
-        const localOnly = (prev.messages || []).filter((m: any) => !isDupe(m));
+        const localOnly = (prev.messages || []).filter(m => !isDupe(m));
         return { ...prev, messages: [...history, ...localOnly] };
       });
       setMatches(prev => prev.map(m => {
         if (String(m.id) !== theirId) return m;
-        const localOnly = (m.messages || []).filter((mm: any) => !isDupe(mm));
+        const localOnly = (m.messages || []).filter(mm => !isDupe(mm));
         return { ...m, messages: [...history, ...localOnly] };
       }));
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, [chatTarget?.id, authUser?.id]);
+  }, [authUser?.profile?.id, chatTarget, chatTarget?.id, authUser?.id, setChatTarget, setMatches]);
 
   const saveProfileEdits = useCallback(async () => {
     setCurrentUser(prev => ({ ...prev, name: editName || prev.name, avatar: editAvatar || prev.avatar, type: editType || prev.type }));
@@ -2621,30 +2662,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     } catch {
       showToast("Failed to save — try again");
     }
-  }, [editName, editBio, editLoc, editAvatar, editType, editCustomTypePending, editLooking, editNsfw, editMediaKit, showToast, currentUser.nsfw, trackQuest]);
-
-  const toggleObSelect = (key: string, val: string | number) => {
-    setObData(prev => ({ ...prev, [key]: val }));
-    setObSelects(prev => {
-      const existing = prev.findIndex(s => s.startsWith(key+"-"));
-      const entry = key+"-"+val;
-      if (existing >= 0) {
-        const updated = [...prev];
-        updated[existing] = entry;
-        return updated;
-      }
-      return [...prev, entry];
-    });
-  };
-  const toggleObArray = (key: string, val: string) => {
-    setObData(prev => {
-      const arr = (prev[key as keyof typeof prev] as string[] | undefined) || [];
-      const i = arr.indexOf(val);
-      return { ...prev, [key]: i >= 0 ? arr.filter((_, idx) => idx !== i) : [...arr, val] };
-    });
-  };
-
-  const stats = { matches: matches.length, likes: currentUser.stats.likes, superLikes: currentUser.stats.superLikes, passes: currentUser.stats.passes, rate: currentUser.stats.likes ? Math.round(matches.length / currentUser.stats.likes * 100) : 0 };
+  }, [editName, editBio, editLoc, editAvatar, editType, editCustomTypePending, editLooking, editNsfw, editMediaKit, obData.styles, setObData, setShowEditProfile, showToast, currentUser.nsfw, trackQuest]);
 
   return !hydrated ? (
     <div style={{"display":"contents"}}>
@@ -2729,11 +2747,11 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         return (
         <div
           className="match-overlay"
-          style={{ ["--match-grad" as any]: mv.gradient, ["--match-particle-color" as any]: mv.particleColor }}
+          style={{ "--match-grad": mv.gradient, "--match-particle-color": mv.particleColor } as React.CSSProperties & Record<"--match-grad" | "--match-particle-color", string>}
           role="dialog" aria-modal="true" aria-label={mv.title}
-          onClick={() => setShowMatchOverlay(null)}
+          onPointerDown={(e) => { if (e.target === e.currentTarget) setShowMatchOverlay(null); }}
         >
-          <button className="match-overlay-close" onClick={(e)=>{e.stopPropagation();setShowMatchOverlay(null)}} aria-label="Close match overlay"><FiX size={22} /></button>
+          <button className="match-overlay-close" onClick={() => setShowMatchOverlay(null)} aria-label="Close match overlay"><FiX size={22} /></button>
           {confettiPieces.map((piece,i)=><div key={i} className="confetti-piece" style={piece as React.CSSProperties} />)}
           <div className="match-particles" aria-hidden="true">{Array.from({length:18}).map((_,i)=><span key={i} className="match-particle" style={{left:`${Math.random()*100}%`,top:`${Math.random()*100}%`,animationDelay:`${Math.random()*2}s`,fontSize:`${10+Math.random()*18}px`}}>{mv.particles[i % mv.particles.length]}</span>)}</div>
           <div
@@ -2757,8 +2775,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         );
       })()}
       {showIntentPicker && intentProfile && (
-        <div className="intent-overlay" ref={intentPickerTrap} role="dialog" aria-modal="true" aria-label="Intent picker" onClick={(e) => { if (e.target === e.currentTarget) { setShowIntentPicker(false); setIntentProfile(null); setIntentSelection([]); } }}>
-          <div className="intent-modal" onClick={e=>e.stopPropagation()}>
+        <div className="intent-overlay" ref={intentPickerTrap} role="dialog" aria-modal="true" aria-label="Intent picker" onPointerDown={(e) => { if (e.target === e.currentTarget) { setShowIntentPicker(false); setIntentProfile(null); setIntentSelection([]); } }}>
+          <div className="intent-modal">
             <div style={{textAlign:"center",marginBottom:16}}>
               <Image loading="lazy" src={intentProfile.img} alt="Avatar" width={60} height={60} style={{borderRadius:"50%",objectFit:"cover",marginBottom:8}} onError={handleImgError} />
               <div style={{fontSize:16,fontWeight:700,color:"var(--text)"}}>{intentProfile.name}</div>
@@ -2766,7 +2784,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             </div>
             <div style={{fontSize:13,color:"var(--text2)",textAlign:"center",marginBottom:16}}>What's your intent with {intentProfile.name.split(" ")[0]}? <span style={{opacity:0.7}}>(up to 2)</span></div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {(getMuseRole({ audience: (currentUser as any)?.audience, type: currentUser?.type || obData?.type }) === "muse" ? [
+              {(getMuseRole({ audience: currentUser.audience, type: currentUser.type || obData.type }) === "muse" ? [
                 {icon:"📌",label:"Book / Hire",desc:"Bring them onto a project you're casting or producing",intent:"hire"},
                 {icon:"🤝",label:"Collaborate",desc:"Work together on a project",intent:"collab"},
                 {icon:"📁",label:"Scout for Future Work",desc:"Keep them in mind for upcoming briefs",intent:"scout"},
@@ -2823,9 +2841,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         </div>
       )}
       {toastMsg && (
-        <div style={{ position: "fixed", left: "50%", bottom: "calc(84px + env(safe-area-inset-bottom,0px))", transform: "translateX(-50%)", zIndex: 4000, background: "rgba(20,12,34,0.92)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: `1px solid ${toastMsg.type === "success" ? "rgba(152,251,152,0.4)" : toastMsg.type === "error" ? "rgba(255,107,107,0.45)" : "rgba(255,215,0,0.28)"}`, color: "#f5f0ff", padding: "10px 18px", borderRadius: 999, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", boxShadow: "0 6px 24px rgba(0,0,0,0.5)", pointerEvents: toastMsg.onTap ? "auto" : "none", cursor: toastMsg.onTap ? "pointer" : "default", animation: "museToastIn .22s ease-out forwards" }} onClick={toastMsg.onTap}>
+        <button type="button" style={{ position: "fixed", left: "50%", bottom: "calc(84px + env(safe-area-inset-bottom,0px))", transform: "translateX(-50%)", zIndex: 4000, background: "rgba(20,12,34,0.92)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: `1px solid ${toastMsg.type === "success" ? "rgba(152,251,152,0.4)" : toastMsg.type === "error" ? "rgba(255,107,107,0.45)" : "rgba(255,215,0,0.28)"}`, color: "#f5f0ff", padding: "10px 18px", borderRadius: 999, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", boxShadow: "0 6px 24px rgba(0,0,0,0.5)", pointerEvents: toastMsg.onTap ? "auto" : "none", cursor: toastMsg.onTap ? "pointer" : "default", animation: "museToastIn .22s ease-out forwards" }} onClick={toastMsg.onTap}>
           {toastMsg.type === "success" ? "✓ " : toastMsg.type === "error" ? "✕ " : ""}{toastMsg.msg}
-        </div>
+        </button>
       )}
       <ScreenErrorBoundary name="MenuModal">
         <MenuModal showHamburger={showHamburger} setShowHamburger={setShowHamburger} hamburgerScreen={hamburgerScreen} setHamburgerScreen={setHamburgerScreen} showScreen={showScreen} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} matches={matches} openChat={openChat} setChatTarget={setChatTarget} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} liveForum={liveForum} setLiveForum={setLiveForum} forumSort={forumSort} setForumSort={setForumSort} expandedPost={expandedPost} setExpandedPost={setExpandedPost} commentText={commentText} setCommentText={setCommentText} setSupportOpen={setSupportOpen} doLogoutFull={doLogoutFull} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} setShowNsfw={setShowNsfw} appliedBriefs={appliedBriefs} savedBriefs={savedBriefs} bookingsForHub={myBookings} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} setShowBlockedUsers={setShowBlockedUsersPanel} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} nearQuests={nearQuests} topQuests={topQuests} loginStreak={loginStreak} weeklyLogins={weeklyLogins} isUnlimited={isUnlimited} profileViews={myStats ? myStats.views : profileViews} likesReceived={myStats ? myStats.likes : likedBy.length} setObStep={setObStep} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} blockedUsers={blockedUsers} setScreen={setScreen} setShowAgeVerification={setShowAgeVerification} apiFetch={apiFetch} authFetch={authFetch} uid={uid} authUser={authUser} activityFeed={activityFeed} onOpenActivity={() => { setActivityFeed(prev => prev.map(a => ({ ...a, read: true }))); const unreadIds = activityFeed.filter(a => !a.read).map(a => a.id); if (unreadIds.length) { authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "mark-read", notificationIds: unreadIds }) }).catch(() => {}); } }} onMarkAllRead={() => setActivityFeed(prev => prev.map(a => ({ ...a, read: true })))} unreadCount={unreadNotificationCount} briefTitleById={briefTitleById} liveProfessionals={liveProfessionals} setShowQuests={setShowQuests} questClaimables={claimableQuests} getReferralTier={getReferralTier} />
@@ -2936,7 +2954,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                     <div className="step-sub">Where do you work — behind the camera or in front of it?</div>
                     <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
                       {([["creative", "I'm here to work & collaborate"], ["industry", "I'm here to hire & book"]] as const).map(([val, label]) => (
-                        <div key={val} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d => ({ ...d, audience: val })); } }} onClick={() => setObData(d => ({ ...d, audience: val }))} style={{ flex: 1, padding: "10px 8px", borderRadius: 12, cursor: "pointer", textAlign: "center", fontSize: 12, fontWeight: 700, transition: "all .25s", background: (obData as any).audience === val ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${(obData as any).audience === val ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"}`, color: (obData as any).audience === val ? "var(--gold)" : "var(--muted)" }}>{label}</div>
+                        <div key={val} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d => ({ ...d, audience: val })); } }} onClick={() => setObData(d => ({ ...d, audience: val }))} style={{ flex: 1, padding: "10px 8px", borderRadius: 12, cursor: "pointer", textAlign: "center", fontSize: 12, fontWeight: 700, transition: "all .25s", background: obData.audience === val ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${obData.audience === val ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"}`, color: obData.audience === val ? "var(--gold)" : "var(--muted)" }}>{label}</div>
                       ))}
                     </div>
                     <div className="side-group">
@@ -2944,7 +2962,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                       <div className="side-sub">You make the work — crew, direction, craft.</div>
                       <div className="chips">
                         {BEHIND_CAMERA.map(t => (
-                          <div key={t} className={"chip"+(obData.type===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:t,customTypePending:false} as any)); } }} onClick={()=>setObData(d=>({...d,type:t,customTypePending:false} as any))}><span>{t}</span></div>
+                          <div key={t} className={"chip"+(obData.type===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:t,customTypePending:false})); } }} onClick={()=>setObData(d=>({...d,type:t,customTypePending:false}))}><span>{t}</span></div>
                         ))}
                       </div>
                     </div>
@@ -2953,17 +2971,17 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                       <div className="side-sub">You're the talent — on-camera, performing, audience-facing.</div>
                       <div className="chips">
                         {IN_FRONT_CAMERA.map(t => (
-                          <div key={t} className={"chip"+(obData.type===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:t,customTypePending:false} as any)); } }} onClick={()=>setObData(d=>({...d,type:t,customTypePending:false} as any))}><span>{t}</span></div>
+                          <div key={t} className={"chip"+(obData.type===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:t,customTypePending:false})); } }} onClick={()=>setObData(d=>({...d,type:t,customTypePending:false}))}><span>{t}</span></div>
                         ))}
                         {/* Torreé audit item 6: not every creative role fits the
                             preset list — "Other" lets someone type their own,
                             saved as a real `type` value immediately and flagged
                             custom_type_pending for admin review. */}
-                        <div key="other" className={"chip"+((obData as any).customTypePending?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:"",customTypePending:true} as any)); } }} onClick={()=>setObData(d=>({...d,type:"",customTypePending:true} as any))}><span>Add New +</span></div>
+                        <div key="other" className={"chip"+(obData.customTypePending?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:"",customTypePending:true})); } }} onClick={()=>setObData(d=>({...d,type:"",customTypePending:true}))}><span>Add New +</span></div>
                       </div>
                     </div>
-                    {(obData as any).customTypePending && (
-                      <input className="inp" aria-label="Creative role" placeholder="Type your creative role..." value={obData.type||""} onChange={e=>setObData(d=>({...d,type:e.target.value} as any))} style={{ marginTop: 10 }} autoFocus />
+                    {obData.customTypePending && (
+                      <input className="inp" aria-label="Creative role" placeholder="Type your creative role..." value={obData.type||""} onChange={e=>setObData(d=>({...d,type:e.target.value}))} style={{ marginTop: 10 }} autoFocus />
                     )}
                     {!obData.type && <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", margin: "6px 0 2px" }}>Select one to continue</div>}
                     <button className="btn btn-gold" disabled={!obData.type} style={!obData.type?{opacity:0.5}:undefined} onClick={()=>setObStep(3)}>Next</button>
@@ -2995,18 +3013,18 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                       {/* Torreé audit item 6: aesthetic "Other" — typed values are
                           appended to `styles` immediately and flagged
                           custom_style_pending for admin review. */}
-                      <div key="other" className={"chip"+((obData as any).showCustomStyleInput?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,showCustomStyleInput:!(d as any).showCustomStyleInput} as any)); } }} onClick={()=>setObData(d=>({...d,showCustomStyleInput:!(d as any).showCustomStyleInput} as any))}><span>Add New +</span></div>
+                      <div key="other" className={"chip"+(obData.showCustomStyleInput?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,showCustomStyleInput:!d.showCustomStyleInput})); } }} onClick={()=>setObData(d=>({...d,showCustomStyleInput:!d.showCustomStyleInput}))}><span>Add New +</span></div>
                     </div>
-                    {(obData as any).showCustomStyleInput && (
+                    {obData.showCustomStyleInput && (
                       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                        <input className="inp" aria-label="Custom aesthetic" placeholder="Type your own aesthetic..." value={(obData as any).customStyleDraft||""} onChange={e=>setObData(d=>({...d,customStyleDraft:e.target.value} as any))} style={{ margin: 0, flex: 1 }} autoFocus />
+                        <input className="inp" aria-label="Custom aesthetic" placeholder="Type your own aesthetic..." value={obData.customStyleDraft||""} onChange={e=>setObData(d=>({...d,customStyleDraft:e.target.value}))} style={{ margin: 0, flex: 1 }} autoFocus />
                         <button className="btn btn-outline" style={{ padding: "0 16px" }} onClick={() => {
-                          const v = ((obData as any).customStyleDraft || "").trim();
+                          const v = (obData.customStyleDraft || "").trim();
                           if (!v) return;
                           const cur = obData.styles || [];
                           if (cur.includes(v)) return;
                           if (cur.length >= 5) { showToast("Max 5 selected"); return; }
-                          setObData(d => ({ ...d, styles: [...(d.styles||[]), v], customStylePending: true, customStyleDraft: "" } as any));
+                          setObData(d => ({ ...d, styles: [...(d.styles||[]), v], customStylePending: true, customStyleDraft: "" }));
                         }}>Add</button>
                       </div>
                     )}
@@ -3291,18 +3309,18 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                       if(authUser?.id){
                         try{
                           const r = await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"update-profile",
-                            name:obData.name,loc:obData.loc,bio:obData.bio,audience:(obData as any).audience||"creative",type:obData.type,
+                            name:obData.name,loc:obData.loc,bio:obData.bio,audience:obData.audience||"creative",type:obData.type,
                             looking:obData.looking,styles:obData.styles,
                             zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,life_path:obData.lifePath,
                             avatar:obProfilePic,
                             // Torreé audit item 6: carry the "Other" custom-value
                             // review flags through to the saved profile.
-                            ...((obData as any).customTypePending ? { custom_type_pending: true } : {}),
-                            ...((obData as any).customStylePending ? { custom_style_pending: true } : {}),
+                            ...(obData.customTypePending ? { custom_type_pending: true } : {}),
+                            ...(obData.customStylePending ? { custom_style_pending: true } : {}),
                             ...(geo ? { lat: geo.lat, long: geo.long, city: geo.city } : {})
                           })});
                           if (!r.ok) showToast("Profile saved locally — sync will retry");
-                        }catch(e){ showToast("Profile saved locally — sync will retry"); }
+                        }catch{ showToast("Profile saved locally — sync will retry"); }
                         // Apply referral code if entered
                         if (obData.referralCode) {
                           try {
@@ -3348,7 +3366,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             <React.Suspense fallback={null}><CodexScreen screen={screen} showScreen={showScreen} goBack={goBack} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} /></React.Suspense>
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Chat">
-            <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} goBack={goBack} messages={chatTarget?.messages || []} setMessages={((msgs: any) => setChatTarget((prev: any) => prev ? {...prev, messages: typeof msgs === "function" ? msgs(prev?.messages || []) : msgs} : prev)) as any} chatText={chatInput} setChatText={setChatInput} messagesEndRef={messagesEndRef} sendChat={sendMsg} sendChatImg={sendChatImg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} uploadImage={uploadImage} uploadMedia={uploadMedia} sendChatMedia={sendChatMedia} startCall={startCall} fetchCallHistory={fetchCallHistory} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} demo={DEMO_MODE} />
+            <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} goBack={goBack} messages={chatTarget?.messages || []} setMessages={((messages: unknown) => setChatTarget((previous) => previous ? { ...previous, messages: typeof messages === "function" ? (messages as (_prior: Match["messages"]) => Match["messages"])(previous.messages) : messages as Match["messages"] } : previous)) as React.ComponentProps<typeof ChatScreen>["setMessages"]} chatText={chatInput} setChatText={setChatInput} messagesEndRef={messagesEndRef} sendChat={sendMsg} sendChatImg={sendChatImg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} uploadImage={uploadImage} uploadMedia={uploadMedia} sendChatMedia={sendChatMedia} startCall={startCall} fetchCallHistory={fetchCallHistory} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} demo={DEMO_MODE} />
             </ScreenErrorBoundary>
             <ScreenErrorBoundary name="Collab">
             <CollabScreen screen={screen} showScreen={showScreen} goBack={goBack} museCat={museCat} setMuseCat={setMuseCat} userBriefs={userBriefs} setUserBriefs={setUserBriefs} showPostBrief={showPostBrief} setShowPostBrief={setShowPostBrief} liveBriefs={liveBriefs || []} showNsfw={showNsfw} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} uid={uid} appliedBriefs={appliedBriefs} setAppliedBriefs={setAppliedBriefs} savedBriefs={savedBriefs} setSavedBriefs={setSavedBriefs} setChatTarget={setChatTarget} briefTitle={briefTitle} setBriefTitle={setBriefTitle} briefDesc={briefDesc} setBriefDesc={setBriefDesc} briefBudget={briefBudget} setBriefBudget={setBriefBudget} briefCat={briefCat} setBriefCat={setBriefCat} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} demo={DEMO_MODE} />
@@ -3389,7 +3407,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       {screen === "analytics" && <React.Suspense fallback={null}><ScreenErrorBoundary name="Analytics"><AnalyticsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} /></ScreenErrorBoundary></React.Suspense>}
       {screen === "matchGuide" && <React.Suspense fallback={null}><ScreenErrorBoundary name="MatchGuide"><MatchGuideScreen screen={screen} showScreen={showScreen} goBack={goBack} /></ScreenErrorBoundary></React.Suspense>}
       {/* SETTINGS SCREEN */}
-      {screen === "settings" && <ScreenErrorBoundary name="Settings"><SettingsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} obData={obData} showNsfw={showNsfw} setShowNsfw={setShowNsfw} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} blockedUsers={blockedUsers} setBlockedUsers={setBlockedUsers} obConnectedSocials={obConnectedSocials} toggleSocial={toggleSocial} theme={theme} setTheme={setTheme} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} doLogout={doLogout} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditNsfw={setEditNsfw} setShowNotificationsSettings={setShowNotificationsSettings} showNotificationsSettings={showNotificationsSettings} setShowConnectedAccounts={setShowConnectedAccounts} showConnectedAccounts={showConnectedAccounts} pushEnabled={pushEnabled} setPushEnabled={setPushEnabled} subscribeToMusePush={subscribeToMusePush} unsubscribeFromMusePush={unsubscribeFromMusePush} setShowTerms={setShowTerms} setShowPrivacy={setShowPrivacy} setShowGuidelines={setShowGuidelines} setShowDeleteConfirm={setShowDeleteConfirm} isUnlimited={isUnlimited} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} promptResponses={promptResponses} promptBankData={promptBankData} myGeo={myGeo} setShowAgeGate={setShowAgeGate} setPendingNsfw={setPendingNsfw} setShowAgeVerification={setShowAgeVerification} setScreen={setScreen} setObStep={setObStep} apiFetch={apiFetch} setShowQuests={setShowQuests} questClaimables={claimableQuests} showBlockedUsers={showBlockedUsersPanel} setShowBlockedUsers={setShowBlockedUsersPanel} ageVerified={ageVerified} verificationExpiringSoon={verificationExpiringSoon} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} showZodiac={showZodiac} setShowZodiac={setShowZodiac} showAge={showAge} setShowAge={setShowAge} showMbti={showMbti} setShowMbti={setShowMbti} showLifePath={showLifePath} setShowLifePath={setShowLifePath} showChinese={showChinese} setShowChinese={setShowChinese} showMatchPercent={showMatchPercent} setShowMatchPercent={setShowMatchPercent} userTier={userTier} setUpsell={setUpsell} authFetch={authFetch} setSupportOpen={setSupportOpen} preferences={((currentUser as any)?.preferences ?? (currentUser as any)?.profile?.preferences ?? {})} /></ScreenErrorBoundary>}
+      {screen === "settings" && <ScreenErrorBoundary name="Settings"><SettingsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} obData={obData} showNsfw={showNsfw} setShowNsfw={setShowNsfw} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} blockedUsers={blockedUsers} setBlockedUsers={setBlockedUsers} obConnectedSocials={obConnectedSocials} toggleSocial={toggleSocial} theme={theme} setTheme={setTheme} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} doLogout={doLogout} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditNsfw={setEditNsfw} setShowNotificationsSettings={setShowNotificationsSettings} showNotificationsSettings={showNotificationsSettings} setShowConnectedAccounts={setShowConnectedAccounts} showConnectedAccounts={showConnectedAccounts} pushEnabled={pushEnabled} setPushEnabled={setPushEnabled} subscribeToMusePush={subscribeToMusePush} unsubscribeFromMusePush={unsubscribeFromMusePush} setShowTerms={setShowTerms} setShowPrivacy={setShowPrivacy} setShowGuidelines={setShowGuidelines} setShowDeleteConfirm={setShowDeleteConfirm} isUnlimited={isUnlimited} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} promptResponses={promptResponses} promptBankData={promptBankData} myGeo={myGeo} setShowAgeGate={setShowAgeGate} setPendingNsfw={setPendingNsfw} setShowAgeVerification={setShowAgeVerification} setScreen={setScreen} setObStep={setObStep} apiFetch={apiFetch} setShowQuests={setShowQuests} questClaimables={claimableQuests} showBlockedUsers={showBlockedUsersPanel} setShowBlockedUsers={setShowBlockedUsersPanel} ageVerified={ageVerified} verificationExpiringSoon={verificationExpiringSoon} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} showZodiac={showZodiac} setShowZodiac={setShowZodiac} showAge={showAge} setShowAge={setShowAge} showMbti={showMbti} setShowMbti={setShowMbti} showLifePath={showLifePath} setShowLifePath={setShowLifePath} showChinese={showChinese} setShowChinese={setShowChinese} showMatchPercent={showMatchPercent} setShowMatchPercent={setShowMatchPercent} userTier={userTier} setUpsell={setUpsell} authFetch={authFetch} setSupportOpen={setSupportOpen} preferences={(currentUser as typeof currentUser & { preferences?: Record<string, unknown>; profile?: { preferences?: Record<string, unknown> } }).preferences ?? (currentUser as typeof currentUser & { profile?: { preferences?: Record<string, unknown> } }).profile?.preferences ?? {}} /></ScreenErrorBoundary>}
 
       {/* REPORT MODAL */}
       {showReport && (
@@ -3578,12 +3596,12 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
       {/* DISCOVERY PREFERENCES MODAL */}
       {showDiscoveryPrefs && (
-        <div className="modal-overlay" ref={discoveryPrefsTrap} role="dialog" aria-modal="true" aria-label="Discovery preferences" onClick={(e) => { if (e.target === e.currentTarget) setShowDiscoveryPrefs(false); }}>
-          <div className="modal-header" onClick={e=>e.stopPropagation()}>
+        <div className="modal-overlay" ref={discoveryPrefsTrap} role="dialog" aria-modal="true" aria-label="Discovery preferences" onPointerDown={(e) => { if (e.target === e.currentTarget) setShowDiscoveryPrefs(false); }}>
+          <div className="modal-header">
             <button className="modal-back" aria-label="Close discovery preferences" onClick={()=>setShowDiscoveryPrefs(false)}><FiArrowLeft size={20} /></button>
             <div className="modal-title" style={{fontSize:16.5,whiteSpace:"nowrap"}}>Discovery Preferences</div>
           </div>
-          <div className="modal-body" onClick={e=>e.stopPropagation()}>
+          <div className="modal-body">
             <div style={{marginBottom:20}}>
               <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Age Range: {discoveryPrefs.ageMin} to {discoveryPrefs.ageMax}</div>
               <div style={{display:"flex",gap:10,alignItems:"center"}}>
@@ -3743,14 +3761,14 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         </div>
       )}
       {viewProfile && (
-        <div className="modal-overlay" ref={viewProfileTrap} role="dialog" aria-modal="true" aria-label="View profile" onClick={(e) => { if (e.target === e.currentTarget) setViewProfile(null); }}>
-          <div className="modal-panel" onClick={e=>e.stopPropagation()} style={{maxWidth:420,width:"90%",maxHeight:"88vh",overflowY:"auto",borderRadius:24,padding:0,background:"linear-gradient(180deg,#0f081e,#0a0612)"}}>
+        <div className="modal-overlay" ref={viewProfileTrap} role="dialog" aria-modal="true" aria-label="View profile" onPointerDown={(e) => { if (e.target === e.currentTarget) setViewProfile(null); }}>
+          <div className="modal-panel" style={{maxWidth:420,width:"90%",maxHeight:"88vh",overflowY:"auto",borderRadius:24,padding:0,background:"linear-gradient(180deg,#0f081e,#0a0612)"}}>
             <div style={{position:"relative",width:"100%",aspectRatio:"3/4",overflow:"hidden"}}>
               {(() => {
-                const photos: string[] = (viewProfile.photos?.length ? viewProfile.photos : [viewProfile.img]).filter(Boolean);
-                const curPhoto = photos[viewProfilePhotoIdx] || photos[0] || viewProfile.img;
+                const photos = (viewProfile.photos?.length ? viewProfile.photos : [viewProfile.img]).filter((photo): photo is string => Boolean(photo));
+                const curPhoto = photos[viewProfilePhotoIdx] || photos[0] || viewProfile.img || "";
                 return <>
-                  <Image loading="lazy" src={curPhoto} alt={viewProfile.name} fill sizes="(max-width: 600px) 100vw, 400px" style={{objectFit:"cover",filter:viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))?"blur(26px) brightness(0.7)":"none",transition:"filter .3s"}} />
+                  <Image loading="lazy" src={curPhoto} alt={viewProfile.name || "Profile"} fill sizes="(max-width: 600px) 100vw, 400px" style={{objectFit:"cover",filter:viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))?"blur(26px) brightness(0.7)":"none",transition:"filter .3s"}} />
                   {viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))&&(
                     <button onClick={(e)=>{e.stopPropagation();setRevealedNsfw(prev=>{const n=new Set(prev);n.add(String(viewProfile.id));return n;})}} style={{position:"absolute",inset:0,zIndex:5,background:"rgba(10,6,18,0.45)",border:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer"}}>
                       <div style={{fontSize:30,fontWeight:800,color:"#ff8a80"}}>18+</div>
@@ -3796,33 +3814,33 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               </div>
               {viewProfile.badges && viewProfile.badges.length > 0 && (
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
-                  {viewProfile.badges.map((b:any,i:number) => (
+                  {viewProfile.badges.map((b, i) => (
                     <span key={i} style={{padding:"3px 8px",borderRadius:99,background:b.bg||"rgba(255,215,0,0.1)",border:`1px solid ${b.bd||"rgba(255,215,0,0.2)"}`,fontSize:10,fontWeight:700,color:b.color||"var(--gold)",cursor:"pointer"}}>{b.icon} {b.name}</span>
                   ))}
                 </div>
               )}
               {viewProfile.bio && <p style={{color:"var(--text2)",lineHeight:1.6,fontSize:14,marginBottom:16}}>{viewProfile.bio}</p>}
               {viewProfile.location && <div style={{fontSize:13,color:"var(--text2)",marginBottom:12}}>📍 {viewProfile.location}{typeof viewProfile.distanceMi==="number"?` · ${viewProfile.distanceMi} mi`:""}</div>}
-              {viewProfile.styles?.length > 0 && (
+              {(viewProfile.styles || []).length > 0 && (
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
-                  {viewProfile.styles.map((s:string)=><button key={s} onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:s,desc:STYLE_FULL[s]||"A creative style this member works in.",icon:"🎨",color:"#FFD700"})}} style={{padding:"3px 8px",borderRadius:99,background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",fontSize:10,fontWeight:600,color:"var(--gold)",cursor:"pointer"}}>{s}</button>)}
+                  {(viewProfile.styles || []).map((s:string)=><button key={s} onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:s,desc:STYLE_FULL[s]||"A creative style this member works in.",icon:"🎨",color:"#FFD700"})}} style={{padding:"3px 8px",borderRadius:99,background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",fontSize:10,fontWeight:600,color:"var(--gold)",cursor:"pointer"}}>{s}</button>)}
                 </div>
               )}
-              {viewProfile.looking?.length > 0 && (
+              {(viewProfile.looking || []).length > 0 && (
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
-                  {viewProfile.looking.map((l:string)=><span key={l} style={{padding:"3px 8px",borderRadius:99,background:"rgba(255,105,180,0.12)",border:"1px solid rgba(255,105,180,0.2)",fontSize:10,fontWeight:600,color:"#FF69B4"}}>looking for {l}</span>)}
+                  {(viewProfile.looking || []).map((l:string)=><span key={l} style={{padding:"3px 8px",borderRadius:99,background:"rgba(255,105,180,0.12)",border:"1px solid rgba(255,105,180,0.2)",fontSize:10,fontWeight:600,color:"#FF69B4"}}>looking for {l}</span>)}
                 </div>
               )}
               <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
-                {viewProfile.zodiac && <button onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:`${viewProfile.zodiac} — ${ZODIAC_FULL[viewProfile.zodiac]?.tag||""}`,desc:ZODIAC_FULL[viewProfile.zodiac]?.desc||"",icon:ZODIAC_GLYPH[viewProfile.zodiac]||"✦",color:"#D4A5FF"})}} style={{padding:"3px 8px",borderRadius:99,background:"rgba(212,165,255,0.12)",border:"1px solid rgba(212,165,255,0.2)",fontSize:10,fontWeight:600,color:"var(--lavender)",cursor:"pointer"}}>{ZODIAC_GLYPH[viewProfile.zodiac]||"✦"} {viewProfile.zodiac}</button>}
-                {viewProfile.mbti && <button onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:`${viewProfile.mbti} — ${MBTI_FULL[viewProfile.mbti]?.tag||""}`,desc:MBTI_FULL[viewProfile.mbti]?.desc||"",icon:<MbtiIcon code={viewProfile.mbti} size={16}/>,color:"#FFD700"})}} style={{padding:"3px 8px",borderRadius:99,background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",fontSize:10,fontWeight:600,color:"var(--gold)",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}><MbtiIcon code={viewProfile.mbti} size={10}/> {viewProfile.mbti}</button>}
+                {viewProfile.zodiac && <button onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:`${viewProfile.zodiac} — ${ZODIAC_FULL[viewProfile.zodiac || ""]?.tag||""}`,desc:ZODIAC_FULL[viewProfile.zodiac || ""]?.desc||"",icon:ZODIAC_GLYPH[viewProfile.zodiac || ""]||"✦",color:"#D4A5FF"})}} style={{padding:"3px 8px",borderRadius:99,background:"rgba(212,165,255,0.12)",border:"1px solid rgba(212,165,255,0.2)",fontSize:10,fontWeight:600,color:"var(--lavender)",cursor:"pointer"}}>{ZODIAC_GLYPH[viewProfile.zodiac || ""]||"✦"} {viewProfile.zodiac}</button>}
+                {viewProfile.mbti && <button onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:`${viewProfile.mbti} — ${MBTI_FULL[viewProfile.mbti || ""]?.tag||""}`,desc:MBTI_FULL[viewProfile.mbti || ""]?.desc||"",icon:<MbtiIcon code={viewProfile.mbti || ""} size={16}/>,color:"#FFD700"})}} style={{padding:"3px 8px",borderRadius:99,background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",fontSize:10,fontWeight:600,color:"var(--gold)",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}><MbtiIcon code={viewProfile.mbti || ""} size={10}/> {viewProfile.mbti}</button>}
                 {viewProfile.lifePath && <button onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:`Life Path ${viewProfile.lifePath}`,desc:LIFE_PATH_FULL[String(viewProfile.lifePath)]||"",icon:<LifePathIcon n={Number(viewProfile.lifePath)} size={16}/>,color:"#98FB98"})}} style={{padding:"3px 8px",borderRadius:99,background:"rgba(152,251,152,0.1)",border:"1px solid rgba(152,251,152,0.2)",fontSize:10,fontWeight:600,color:"var(--mint)",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}><LifePathIcon n={Number(viewProfile.lifePath)} size={10}/> LP {viewProfile.lifePath}</button>}
               </div>
               {typeof viewProfile.collabs === "number" && <div style={{fontSize:13,color:"var(--text2)",marginBottom:16}}>🤝 {viewProfile.collabs} collaborations</div>}
               {viewProfileReviews.length > 0 && (
                 <div style={{marginBottom:16}}>
                   <div style={{fontSize:14,fontWeight:700,color:"var(--text)",marginBottom:8}}>Reviews</div>
-                  {viewProfileReviews.map((rv:any) => (
+                  {viewProfileReviews.map((rv) => (
                     <div key={rv.id} style={{padding:"10px 12px",borderRadius:12,background:"rgba(255,255,255,0.04)",marginBottom:8}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
                         <span style={{fontSize:12,fontWeight:700,color:"var(--text)"}}>{rv.reviewer_id?.name || "Anonymous"}</span>
@@ -3833,7 +3851,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                   ))}
                 </div>
               )}
-              <button className="btn btn-gold" style={{width:"100%"}} onClick={() => {const u=viewProfile;setViewProfile(null);setPublicProfileUser(u);}}>View Full Profile</button>
+              <button className="btn btn-gold" style={{width:"100%"}} onClick={() => {const u=viewProfile;setViewProfile(null);setPublicProfileUser({ ...u, badges: u.badges?.map(b => b.name) });}}>View Full Profile</button>
             </div>
             <BadgeInfoModal info={badgeInfo} onClose={()=>setBadgeInfo(null)} />
           </div>
@@ -3846,8 +3864,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             <PublicProfileScreen
               user={publicProfileUser}
               onBack={() => setPublicProfileUser(null)}
-              onMessage={(u) => { setPublicProfileUser(null); setChatTarget(u as any); showScreen("chat"); }}
-              onReport={(u) => { setReportTarget(u as any); setShowReport(true); setPublicProfileUser(null); }}
+              onMessage={(u) => { setPublicProfileUser(null); setChatTarget(u as unknown as Match); showScreen("chat"); }}
+              onReport={(u) => { setReportTarget({ id: u.id, type: "user", name: u.name || "Unknown" }); setShowReport(true); setPublicProfileUser(null); }}
               onBlock={(u) => { setBlockTarget({ id: u.id, name: u.name || "Unknown" }); setPublicProfileUser(null); }}
               handleImgError={handleImgError}
               currentUser={currentUser}
@@ -3863,8 +3881,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       )}
       {/* ══════ SHARE MODAL ══════ */}
       {shareTarget && (
-        <div className="modal-overlay" ref={shareTargetTrap} role="dialog" aria-modal="true" aria-label="Share" onClick={(e) => { if (e.target === e.currentTarget) setShareTarget(null); }}>
-          <div className="modal-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, width: "90%", borderRadius: 24, padding: "24px 20px", background: "linear-gradient(180deg,#0f081e,#0a0612)" }}>
+        <div className="modal-overlay" ref={shareTargetTrap} role="dialog" aria-modal="true" aria-label="Share" onPointerDown={(e) => { if (e.target === e.currentTarget) setShareTarget(null); }}>
+          <div className="modal-panel" style={{ maxWidth: 420, width: "90%", borderRadius: 24, padding: "24px 20px", background: "linear-gradient(180deg,#0f081e,#0a0612)" }}>
             <div style={{ textAlign: "center", marginBottom: 20 }}>
               <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", color: "var(--gold)" }}>Share</div>
               <div style={{ fontSize: 13, color: "var(--text2)", marginTop: 6 }}>Share {shareTarget.author}'s post</div>
@@ -3965,8 +3983,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       )}
       {/* ══════ SHARE PROFILE SHEET ══════ */}
       {showShareProfile && (
-        <div className="modal-overlay" ref={shareProfileTrap} role="dialog" aria-modal="true" aria-label="Share profile" onClick={(e) => { if (e.target === e.currentTarget) setShowShareProfile(false); }}>
-          <div className="share-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="modal-overlay" ref={shareProfileTrap} role="dialog" aria-modal="true" aria-label="Share profile" onPointerDown={(e) => { if (e.target === e.currentTarget) setShowShareProfile(false); }}>
+          <div className="share-sheet">
             <div className="share-title">Share Profile</div>
             <div className="share-options">
               <div className="share-opt" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigator.clipboard?.writeText(getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"));setShowShareProfile(false); } }} onClick={()=>{navigator.clipboard?.writeText(getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"));setShowShareProfile(false)}}><span className="share-opt-icon"><FiLink size={24} /></span><span className="share-opt-label">Copy</span></div>
@@ -4126,8 +4144,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         <PaymentHistory userId={authUser?.id || ""} onClose={() => setShowPaymentHistory(false)} />
       )}
       {showDailyLogin && (
-        <div className="daily-login-overlay" role="presentation" onClick={() => setShowDailyLogin(false)}>
-          <div className="daily-login-card" onClick={e => e.stopPropagation()}>
+        <div className="daily-login-overlay" role="presentation" onPointerDown={(e) => { if (e.target === e.currentTarget) setShowDailyLogin(false); }}>
+          <div className="daily-login-card">
             <div className="daily-login-title">Welcome back{currentUser?.name ? `, ${currentUser.name.split(" ")[0]}` : ""}!</div>
             <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
             {/* Persona-aware copy (audit finding fm-1) — Muse already collects

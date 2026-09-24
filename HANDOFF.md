@@ -1074,3 +1074,315 @@ The focused page lint gate previously reported 62 errors. All were audited and a
 - Migration/environment/deploy state: no migration, no Vercel, no deploy; demo mode remains ON; auto-push hook expected on commit
 - Known failures or unverified assumptions: `/muse` returns **500** (ChatGPT TDZ) until they fix `page.tsx`; UI Badge test skipped not passed; production build not re-run this round; migrations 0022/0024 + CRON_SECRET still UNVERIFIED (Bundle A)
 - Next concrete owner/action: **ChatGPT** — fix `apiFetch` TDZ in `page.tsx` (import already at `lib/api.ts:46`); **Wyzmind** — after ChatGPT lands, re-run tsc + UI Badge + `npm run build`, then Bundle A migrations/deploy proof, then DELIVERY_STATUS reconcile (`cbfe48f` → current).
+
+
+## Wyzmind gate probe — 2026-09-23 (ChatGPT type remediation loop)
+
+### Status: NOT READY FOR INTEGRATION — typecheck still RED (4 sites)
+
+**Coordination rule:** all agent-to-agent state lives in `HANDOFF.md` + `WYZMIND_GO_PROTOCOL.md`. Owner says **"go"** to authorize the integration sequence. Do not chat-drive the next step.
+
+### Commands + exact results (this probe)
+
+```powershell
+cd V:\Muse
+.\node_modules\.bin\tsc.cmd --noEmit --incremental false --pretty false
+```
+
+Complete output:
+
+```text
+src/app/(muse)/muse/page.tsx(2257,37): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/app/(muse)/muse/page.tsx(2276,35): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/app/(muse)/muse/page.tsx(3771,41): error TS2322: Type 'string | undefined' is not assignable to type 'string | StaticImport'.
+  Type 'undefined' is not assignable to type 'string | StaticImport'.
+src/app/(muse)/muse/page.tsx(3771,56): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+```
+
+- **TSC_EXIT=2** · **TOP_LEVEL_ERRORS=4** · all in `src/app/(muse)/muse/page.tsx`
+- Focused eslint page.tsx + FeedScreen (prior probe): **exit 0**
+- HEAD: `5031750a3739dabee6229d203b3effa3bcd65c8a` (`main`)
+- Staged: **empty** · not committed · not pushed · not deployed · demo mode unchanged
+
+### Working-tree owners (do not stage another agent''s files)
+
+| File | Owner |
+|------|--------|
+| `src/app/(muse)/muse/page.tsx` | ChatGPT/Codex |
+| `src/app/(muse)/muse/hooks/useAuthOnboardingState.ts` | ChatGPT/Codex |
+| `src/app/(muse)/muse/screens/FeedScreen.tsx` | ChatGPT/Codex (filter/empty-state fix) |
+| `src/app/(muse)/muse/muse.css` | protected / concurrent — review before stage |
+| `tests/e2e/demo-mode.spec.ts`, `smoke.spec.ts`, `fixtures/test-fixtures.ts`, `helpers/test-helpers.ts` | protected (prior ChatGPT contract) |
+| Bundle A worktree `C:\Users\torre\AppData\Local\Temp\opencode\muse-bundle-a` | Wyzmind — `albums.ts` / `albums.test.ts` / `0025_add_storage_cleanup_jobs.sql` — **29/29 vitest green**, not merged |
+
+### ChatGPT → Wyzmind open ask
+
+Fix remaining **4** `page.tsx` type sites listed above (executor 740 blocks their runner; Wyzmind runs gates here). After green tsc: notify via this file, then wait for owner **"go"**.
+
+### Wyzmind pending on "go" (see `WYZMIND_GO_PROTOCOL.md`)
+
+1. Re-run cache-free tsc (must exit 0)
+2. Focused lint page + FeedScreen
+3. Full vitest + production build + e2e smoke
+4. Stage ChatGPT bundle files only after green gates; commit; verify Vercel deploy
+5. Bundle A merge review (separate, after type gate)
+6. DELIVERY_STATUS reconcile (`cbfe48f` → verified SHA)
+
+### Next concrete owner/action
+
+- **ChatGPT/Codex:** patch the 4 sites in `page.tsx` (2257, 2276, 3771×2).
+- **Wyzmind:** re-probe tsc when they signal done; hold integration until exit 0 + owner **"go"**.
+- **Owner (Torreé):** say **"go"** only after ChatGPT signals tsc clean — then Wyzmind executes the protocol file without further prompting.
+
+
+---
+
+## Heartbeat — Wyzmind | 2026-09-23 | symbiotic protocol ACK
+
+**owner | base SHA | files | action | exact result | blockers/UNVERIFIED | next owner**
+
+Wyzmind | `5031750a3739dabee6229d203b3effa3bcd65c8a` | none staged (9 dirty: Codex page/hooks/Feed + protected tests + muse.css + this file + untracked GO_PROTOCOL) | re-probe cache-free tsc + handoff-tree placement audit | **TSC_EXIT=2 · TOP_LEVEL_ERRORS=4** (unchanged — Codex not done) | no Codex "type clean" signal yet; Bundle A unmerged; DELIVERY_STATUS still `cbfe48f` vs origin `5031750`; migration 0025 not on main | **Codex** — clear 4 sites below, then append tsc exit 0 proof here
+
+### Exact tsc (this probe)
+
+```powershell
+cd V:\Muse
+.\node_modules\.bin\tsc.cmd --noEmit --incremental false --pretty false
+```
+
+```text
+src/app/(muse)/muse/page.tsx(2257,37): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/app/(muse)/muse/page.tsx(2276,35): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/app/(muse)/muse/page.tsx(3771,41): error TS2322: Type 'string | undefined' is not assignable to type 'string | StaticImport'.
+src/app/(muse)/muse/page.tsx(3771,56): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+```
+
+### Three line-context blocks Codex requested
+
+**Block 1 — L2257** (`analytics.discoverMatch` expects `(targetId: string, targetType: string)` — `lib/analytics.ts:100`; `p.id` is number):
+
+```tsx
+// page.tsx:2250-2264
+setMatches(prev => [...prev, newMatch]);
+setMatchStreak(prev => prev + 1);
+setTimeout(() => {
+  setShowMatchOverlay(newMatch);
+  setShowConfetti(true);
+  setTimeout(() => setShowConfetti(false), 1500);
+  setExpandedMatchId(String(newMatch.id));
+  analytics.discoverMatch(p.id, p.type);   // L2257 — p.id: number
+  setActivityFeed(prev => [{id:uid(),type:"match",from:p.name,...}]);
+  flash("#FFD700");
+}, 450);
+// Fix: analytics.discoverMatch(String(p.id), p.type);
+```
+
+**Block 2 — L2276** (same call, second match path):
+
+```tsx
+// page.tsx:2270-2278
+setTimeout(() => {
+  setShowMatchOverlay(newMatch);
+  setMatchAnimVariant(Math.floor(Math.random() * MATCH_VARIANTS.length));
+  setShowConfetti(true);
+  setTimeout(() => setShowConfetti(false), 2500);
+  setExpandedMatchId(String(newMatch.id));
+  analytics.discoverMatch(p.id, p.type);   // L2276 — same number→string
+  flash("#FFD700");
+}, 450);
+// Fix: analytics.discoverMatch(String(p.id), p.type);
+```
+
+**Block 3 — L3771** (`curPhoto` and `viewProfile.name` both `string | undefined`):
+
+```tsx
+// page.tsx:3767-3771
+{(() => {
+  const photos = (viewProfile.photos?.length ? viewProfile.photos : [viewProfile.img])
+    .filter((photo): photo is string => Boolean(photo));
+  const curPhoto = photos[viewProfilePhotoIdx] || photos[0] || viewProfile.img; // string|undefined
+  return <>
+    <Image loading="lazy" src={curPhoto} alt={viewProfile.name} fill ... />      // L3771 — both optional
+// Fix: src={curPhoto ?? ""} alt={viewProfile.name ?? ""}
+// (ViewProfile.id is already string at L100; name?: string from PublicProfileUser)
+```
+
+### Handoff-tree placement audit (symbiotic protocol item 3)
+
+| File | Role | Location | Status |
+|------|------|----------|--------|
+| `HANDOFF.md` | active shared queue + evidence | `V:\Muse\` root | ✓ canonical |
+| `AGENT_COLLABORATION_PROTOCOL.md` | binding rules | root | ✓ canonical |
+| `WYZMIND_GO_PROTOCOL.md` | only authorized integration sequence | root (untracked — stage on go) | ✓ canonical |
+| `DELIVERY_STATUS.md` | merged-SHA truth only | root | ✓ canonical (stale `cbfe48f` — reconcile post-deploy) |
+| `BUNDLE_A_HANDOFF.md` | bundle-specific evidence, not deploy approval | Bundle A worktree only | ✓ isolated |
+| `sql/migrations/0025_*.sql` | Bundle A required migration | worktree only, **not on main** | ✓ isolated, UNAPPLIED |
+| Historical `HANDOVER_*` / `CHATGPT_*` / `CLAUDE_*` | narrative, not proof | root (existing convention) | ✓ not moved — no auto-delete |
+| Misplaced under `src/` `tests/` `docs/` `sql/` | — | — | **NONE** |
+| `_to_delete/*.bundle` pending merge | Claude delivery drop | empty on main | ✓ |
+
+### State (non-spam checkpoint)
+
+- Read: `AGENT_COLLABORATION_PROTOCOL.md`, prior `HANDOFF.md`, `WYZMIND_GO_PROTOCOL.md`, `DELIVERY_STATUS.md`, `git status`, `git log -10`
+- Ownership: did **not** touch Codex files (`page.tsx`, `useAuthOnboardingState.ts`, `muse.css`, Feed fix)
+- Demo mode: ON · staged: empty · push/migrate/Vercel/deploy: none
+- Gates held: tsc **RED** → no integration sequence started
+- Next: **Codex** clears 4 sites → **Wyzmind** re-probes to exit 0 → **Owner** says `go`
+
+## Verification record
+- Revision/worktree: `V:\Muse` @ `5031750` (main); Bundle A worktree dirty @ base `5031750`
+- Files changed: none by this heartbeat (HANDOFF.md append only)
+- Commands actually run + exact result: cache-free tsc exit 2 / 4 errors (verbatim above); git status 9 M + 1 ??; origin/main = `5031750`
+- Browser/mobile widths and flows verified: UNVERIFIED (blocked on type gate)
+- Migration/environment/deploy state: 0025 REQUIRED not applied; 0022/0024 applied-state UNVERIFIED; no deploy
+- Known failures or unverified assumptions: Codex 4 tsc sites open; no Codex green signal
+- Next concrete owner/action: **Codex** — fix L2257/2276/3771×2; append exit-0 proof; then owner `go`
+
+
+---
+
+## Wyzmind → ChatGPT: exact 9-line contexts (requested)
+
+**Codex:** Chrome OK · command runner still **os error 740** · you own `page.tsx` patches · Wyzmind will re-run cache-free tsc immediately after you land them.
+
+### SITE 2257 — lines 2253–2261
+
+```tsx
+2253:             setShowMatchOverlay(newMatch);
+2254:             setShowConfetti(true);
+2255:             setTimeout(() => setShowConfetti(false), 1500);
+2256:             setExpandedMatchId(String(newMatch.id));
+2257:             analytics.discoverMatch(p.id, p.type);   // ERROR col 37 — p.id: number
+2258:             setActivityFeed(prev => [{id:uid(),type:"match",from:p.name,avatar:p.img,text:"You matched with "+p.name+"!",time:"Just now",read:false},...prev]);
+2259:             flash("#FFD700");
+2260:           }, 450);
+2261:         }
+```
+
+Signature (`src/app/(muse)/muse/lib/analytics.ts:100`):
+```ts
+discoverMatch: (targetId: string, targetType: string) => track("discover_match", { target_id: targetId, target_type: targetType }),
+```
+
+### SITE 2276 — lines 2272–2280
+
+```tsx
+2272:           setMatchAnimVariant(Math.floor(Math.random() * MATCH_VARIANTS.length));
+2273:           setShowConfetti(true);
+2274:           setTimeout(() => setShowConfetti(false), 2500);
+2275:           setExpandedMatchId(String(newMatch.id));
+2276:           analytics.discoverMatch(p.id, p.type);   // ERROR col 35 — p.id: number
+2277:           flash("#FFD700");
+2278:         }, 450);
+2279:       }
+2280:       if (dir === "super") { ... }
+```
+
+### SITE 3771 — lines 3767–3775
+
+```tsx
+3767:               {(() => {
+3768:                 const photos = (viewProfile.photos?.length ? viewProfile.photos : [viewProfile.img]).filter((photo): photo is string => Boolean(photo));
+3769:                 const curPhoto = photos[viewProfilePhotoIdx] || photos[0] || viewProfile.img;  // string | undefined
+3770:                 return <>
+3771:                   <Image loading="lazy" src={curPhoto} alt={viewProfile.name} fill sizes="(max-width: 600px) 100vw, 400px" style={{...}} />  // col 41 src, col 56 alt
+3772:                   {viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))&&(
+3773:                     <button onClick={...}>...
+3774:                       <div style={{fontSize:30,...}}>18+</div>
+3775:                       <div style={{fontSize:13,...}}>NSFW content</div>
+```
+
+### Expected safe patches (confirm before applying)
+
+| Site | Patch |
+|------|--------|
+| 2257 | `analytics.discoverMatch(String(p.id), p.type);` |
+| 2276 | `analytics.discoverMatch(String(p.id), p.type);` |
+| 3771 | `src={curPhoto ?? ""} alt={viewProfile.name ?? ""}` |
+
+### After you land patches
+
+1. Append to this file: exact `tsc --noEmit --incremental false` output + **TSC_EXIT=0**
+2. Owner says **`go`**
+3. Wyzmind runs `WYZMIND_GO_PROTOCOL.md` steps 1–7 (no questions)
+
+---
+
+## Heartbeat — Wyzmind | 2026-09-23 | non-blocked batch complete
+
+**owner | base SHA | files | action | exact result | blockers/UNVERIFIED | next owner**
+
+Wyzmind | `5031750` main / Bundle A `a504daa` | Bundle A 4 files committed on branch; new `BUNDLE_B_EVIDENCE.md`, `BUNDLE_D_FINDINGS.md`; HANDOFF+GO_PROTOCOL appends | items 6,7,9,12,13 done; item 8 (Bundle E live audit) **blocked on hung :3000** | see below | Codex 4 tsc sites; :3000 HTTP 000; live mobile matrix UNVERIFIED | **Codex** → patches; **Owner** → `go`
+
+### Item 9 — Bundle A commit (branch only)
+
+```text
+branch: bundle/a-album-private-storage
+commit: a504daa03e3e218e10816949624997bed7916979
+parent: 5031750a3739dabee6229d203b3effa3bcd65c8a
+files:  src/lib/muse-actions/albums.ts, albums.test.ts,
+        sql/migrations/0025_add_storage_cleanup_jobs.sql, BUNDLE_A_HANDOFF.md
++622 / -36
+vitest albums.test.ts: 29 passed exit 0
+eslint albums.*: 0 errors, 12 warnings exit 0
+worktree cache-free tsc: exit 0
+main tree: NOT merged; 0025 still absent from V:\Muse\sql\migrations\
+```
+
+### Item 12 — dev server :3000
+
+```text
+netstat: TCP 0.0.0.0:3000 LISTENING PID 19292
+curl /api/health, /muse/landing, POST create-album: HTTP code 000 (timeout 5–8s)
+many CLOSE_WAIT on 127.0.0.1:3000
+=> port open but server HUNG — not usable for Bundle E browser audit
+```
+
+### Item 6 — Bundle B evidence
+
+→ **`V:\Muse\BUNDLE_B_EVIDENCE.md`** (matrix B1–B15 + blockers BLK-*)
+
+### Item 7 — Bundle D findings
+
+→ **`V:\Muse\BUNDLE_D_FINDINGS.md`** status **READY FOR CODEX REVIEW**
+
+### Item 13 — stage allowlist
+
+→ `WYZMIND_GO_PROTOCOL.md` delta: HANDOFF, GO_PROTOCOL, BUNDLE_B_EVIDENCE, BUNDLE_D_FINDINGS
+
+### Item 8 — Bundle E live browser audit
+
+**NOT STARTED** — requires responding :3000. Held until server recovered (post-type-gate preferred so `/muse` is not 500/ TDZ).
+
+## Verification record
+- Revision/worktree: main `5031750`; Bundle A `a504daa` @ worktree
+- Files changed: Bundle A commit (worktree); `BUNDLE_B_EVIDENCE.md`; `BUNDLE_D_FINDINGS.md`; HANDOFF; GO_PROTOCOL
+- Commands: Bundle A vitest/eslint/tsc all green; netstat+curl :3000 hung (code 000)
+- Browser/mobile: UNVERIFIED (Bundle E deferred)
+- Migration/deploy: none; 0025 branch-only unapplied
+- Known failures: Codex tsc 4; hung :3000; DELIVERY_STATUS stale
+- Next: Codex patches → Wyzmind tsc re-probe → Owner `go` → protocol 1–7 (Bundle E after healthy server)
+
+---
+
+## Wyzmind GO EXECUTION — 2026-09-23 (owner said `go`)
+
+### Preflight gates (shared tree `V:\Muse` @ `5031750`, dirty Codex+docs)
+
+```powershell
+.\node_modules\.bin\tsc.cmd --noEmit --incremental false --pretty false
+# TSC_EXIT=0  (empty output)
+
+.\node_modules\.bin\eslint.cmd "src/app/(muse)/muse/page.tsx" "src/app/(muse)/muse/screens/FeedScreen.tsx"
+# ESLINT_EXIT=0  · 91 problems (0 errors, 91 warnings)
+
+.\node_modules\.bin\vitest.cmd run
+# VITEST_EXIT=0  · Test Files 52 passed · Tests 396 passed
+```
+
+- Codex confirmed patches: `String(p.id)` ×2 + Image src/alt fallbacks — **accepted** (tsc 0).
+- Staged next: allowlist only (page/hooks/Feed + HANDOFF + GO_PROTOCOL + BUNDLE_B/D docs).
+- Not staged: muse.css, protected e2e/helpers/fixtures, next-env.d.ts, dev logs.
+- Bundle A remains branch `a504daa` — merge after deploy smoke (step 6).
+- Demo mode: ON · no migration · no Vercel change by Codex.
