@@ -3,7 +3,7 @@ import { checkAccessibility, checkDiscoverQueueIsolation } from '../helpers/test
 
 test.describe('Smoke Tests', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/muse', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForSelector('#splash-screen', { state: 'hidden', timeout: 10000 }).catch(() => {});
   });
 
@@ -12,13 +12,13 @@ test.describe('Smoke Tests', () => {
   });
 
   test('Landing page accessible', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/muse/landing', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForSelector('#splash-screen', { state: 'hidden', timeout: 10000 }).catch(() => {});
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('Navigation tabs work on app', async ({ page }) => {
-    await page.goto('/muse');
+    await page.goto('/muse', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForSelector('#splash-screen', { state: 'hidden', timeout: 10000 }).catch(() => {});
     
     const tabs = ['feed', 'chat', 'briefs', 'profile', 'settings'];
@@ -34,7 +34,7 @@ test.describe('Smoke Tests', () => {
   });
 
   test('Touch targets meet 44px minimum on main app (excluding login form)', async ({ page }) => {
-    await page.goto('/muse');
+    await page.goto('/muse', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForSelector('#splash-screen', { state: 'hidden', timeout: 10000 }).catch(() => {});
     
     // Check if we're on login page - if so, skip touch target test for login form elements
@@ -95,7 +95,7 @@ test.describe('Smoke Tests', () => {
   });
 
 test('Discover queue isolation', async ({ page }) => {
-    await page.goto('/muse');
+    await page.goto('/muse', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForSelector('#splash-screen', { state: 'hidden', timeout: 10000 }).catch(() => {});
     const queuedCards = page.locator('[data-queued="true"], [aria-hidden="true"][data-card-index]');
     const count = await queuedCards.count();
@@ -110,7 +110,7 @@ test('Discover queue isolation', async ({ page }) => {
 
   test('No horizontal overflow on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('/');
+    await page.goto('/muse', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForSelector('#splash-screen', { state: 'hidden', timeout: 10000 }).catch(() => {});
     
     const overflow = await page.evaluate(() => {
@@ -120,7 +120,7 @@ test('Discover queue isolation', async ({ page }) => {
   });
 
   test('Demo mode indicator (conditional - always passes)', async ({ page }) => {
-    await page.goto('/muse');
+    await page.goto('/muse', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForSelector('#splash-screen', { state: 'hidden', timeout: 10000 }).catch(() => {});
     // Demo mode indicator is conditional - test always passes
     test.info().annotations.push({ type: 'info', description: 'Demo mode indicator conditional - test passes' });

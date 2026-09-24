@@ -74,12 +74,13 @@ test.describe('Demo Mode UI Badge', () => {
     );
 
     await loginAsDemoUser(page);
-    const collabTab = page.locator('button.nav-item[aria-label="Collab"]').first();
-    if (await collabTab.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await collabTab.click();
-    } else {
-      await page.locator('button.nav-item').filter({ hasText: 'Collab' }).first().click({ timeout: 10000 });
-    }
+    // Role-aware label: creative = "Collab", muse = "Briefs". Wait for nav shell.
+    await page.waitForSelector('button.nav-item', { timeout: 15000 });
+    const collabTab = page
+      .locator('button.nav-item')
+      .filter({ hasText: /Collab|Briefs/ })
+      .first();
+    await collabTab.click({ timeout: 10000 });
     await expect(page.locator('[data-screen="briefs"].active')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('DEMO PREVIEW').first()).toBeVisible({ timeout: 10000 });
   });

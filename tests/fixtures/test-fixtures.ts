@@ -12,7 +12,8 @@ export const test = base.extend<TestFixtures>({
     await use(new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'best-practice']));
   },
   demoPage: async ({ page }, use) => {
-    await page.goto('/');
+    // Root `/` 404s locally (Vercel redirect only in prod).
+    await page.goto('/muse');
     await page.waitForSelector('#splash-screen', { state: 'hidden', timeout: 10000 }).catch(() => {});
     await use(page);
   },

@@ -114,9 +114,36 @@ export async function checkDiscoverQueueIsolation(page: Page) {
 }
 
 export async function loginAsDemoUser(page: Page) {
-  await page.goto('/');
-  await page.waitForSelector('#splash-screen', { state: 'hidden', timeout: 10000 }).catch(() => {});
-  await page.waitForSelector('[data-screen="discover"], .discover-screen', { timeout: 10000 }).catch(() => {});
+  // Screen starts as "auth" with no auto demo login. Seed muse_v1 (not muse_user)
+  // so loadState() restores authUser + screen=discover without applySession()
+  // token validation (a fake muse_user would bounce back to auth on 401).
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('muse_v1', JSON.stringify({
+        v: 2,
+        authUser: {
+          id: 'demo-e2e-user',
+          email: 'demo-e2e@example.com',
+          profile: { id: 'demo-e2e-profile', name: 'Demo User' },
+        },
+        screen: 'discover',
+        currentUser: {
+          id: 'you',
+          name: 'Demo User',
+          type: 'Photographer',
+          audience: 'creative',
+        },
+      }));
+    } catch {
+      /* storage may be unavailable in some contexts */
+    }
+  });
+  // Root `/` is a custom 404 locally (Vercel redirect only applies in prod).
+  // waitUntil domcontentloaded: full `load` hangs under Next dev HMR +
+  // remote image preloads (same pattern as tests/smoke.spec.ts).
+  await page.goto('/muse', { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.waitForSelector('#splash-screen', { state: 'hidden', timeout: 15000 }).catch(() => {});
+  await page.waitForSelector('[data-screen="discover"], .discover-screen', { timeout: 15000 }).catch(() => {});
 }
 
 // proxy.ts origin-gates every non-GET /api/* call. ALLOWED_ORIGINS always
