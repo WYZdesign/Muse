@@ -27,7 +27,17 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `d8c24d11e650d4937b4791407b412048ae1cb1c6`
+## Confirmed merged, last verified at: `99fb9e2f1d345268a6612448bdf21308fda22d6a`
+
+### Round 50 — Bundle A merge + delivery reconcile (verified 2026-09-23)
+
+- `99fb9e2` on `origin/main` — Vercel STATE **READY**, `DEPLOY IS LIVE ✅` for this exact SHA
+- History: `99fb9e2` (docs) ← `0f38ca3` (Bundle A merge) ← `d8c24d1` (type integration) ← `5031750`
+- Post-merge gates: cache-free tsc **exit 0** · eslint page+Feed+albums **0 errors / 103 warnings exit 0** · vitest **52 files / 414 tests exit 0** · `next build` **exit 0**
+- Smoke: `/api/health` 200 · POST `/api/muse` `create-album` **409 `DEMO_MODE`** · `/muse` 200 · `/muse/landing` 200
+- Bundle A **merged** to main: `albums.ts`, `albums.test.ts`, `BUNDLE_A_HANDOFF.md`, `sql/migrations/0025_add_storage_cleanup_jobs.sql`
+- Migration `0025` is a **file on main only — NOT applied to any environment** (separate migrate auth required)
+- Still unstaged/protected: `muse.css`, `tests/e2e/*`, `tests/fixtures/*`, `tests/helpers/*`, `CODEX_PAGE_TSX_HANDOFF.md`, dev logs
 
 ### Round 49 — type integration + GO protocol docs (verified 2026-09-23)
 
@@ -36,7 +46,7 @@ same way.
 - Smoke: `/api/health` 200 · POST `/api/muse` `create-album` **409 `DEMO_MODE`** local+prod · `/muse` 200 · `/muse/landing` 200 · root 200
 - Staged only: `page.tsx`, `useAuthOnboardingState.ts`, `FeedScreen.tsx`, `HANDOFF.md`, `WYZMIND_GO_PROTOCOL.md`, `BUNDLE_B_EVIDENCE.md`, `BUNDLE_D_FINDINGS.md`
 - NOT staged: protected e2e/helpers/fixtures, `muse.css`, `next-env.d.ts`, dev logs, Bundle A
-- Bundle A still **branch-only** `a504daa` — migration `0025` **not applied** (needs separate migrate auth)
+- Bundle A was **branch-only** `a504daa` at this SHA — migration `0025` **not applied** (needs separate migrate auth)
 
 ### Round 47 — SQL migration suite idempotency (verified 2026-09-19)
 
