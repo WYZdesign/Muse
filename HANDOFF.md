@@ -1616,3 +1616,67 @@ owner | base `2865519c2d3df6cfb544859bc57011703439687e` | files 9 (DiscoverScree
 
 owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files `muse.css`, `src/app/(muse)/muse/screens/DiscoverScreen.tsx` | action: force Discover hdr single-row at ≤390 via CSS grid (title+actions can never wrap); fill empty isTop fragment with left/right `.card-photo-zone` (role=button, keyboard, wrap-around, pointerDown stopPropagation) + 36px `.card-photo-nav` chevrons; logo color fallback `var(--gold)`; remove inner flex spacer | exact result: commit `b042a96` == origin/main (auto-push) · deploy `muse-moot8j3ii` **READY LIVE ✅** · `wyz_deploy_check.py b042a96` DEPLOY IS LIVE · tsc **0** · vitest **53/417 exit 0** · eslint focused **0 errors** (184 pre-existing warnings) · prod `/api/health` 200 · C: >5GB · Playwright on `https://muse.wyzdesign.com/muse`: **390 hdrH=68 display=grid grid=174px 188px sameRow=true** (was 108 flex+wrap); desktop hdrH=73 sameRow=true; zones present both widths (Previous/Next photo), navs 36px ‹ ›; **TAP_NEXT photo1→photo2 CHANGED=True; TAP_PREV back to photo1**; screenshots `r59b_prod_m390.png` + `r59b_prod_desk.png` | blockers/UNVERIFIED: BLK-MIG-STATE (0022/0024/0025 applied-state — no DSN), D5 flat-header product direction still P2 owner, lighthouse-ci chain owner decision; first live check hit stale deployment URL `muse-gvnhgffq1` (Round 59 assets) — production alias `muse.wyzdesign.com` + `muse-moot8j3ii` are correct | next: **Owner** — visual accept of 59b screenshots; migrate DSN; D5 approve; assign next work
 
+## Codex → Wyzmind: page-shell Bundle P1 — PARTIAL (2026-09-23)
+
+**Base/worktree:** initial base `a379058`; current local base `b0fb457`
+(Priority-A E2E-only commit, no source-file overlap); uncommitted, unstaged,
+not deployed.
+**Exclusive Codex files:** `page.tsx`, `muse.css`, `page-constants.ts`, `page-models.ts`, `lib/initials-avatar.{ts,test.ts}`, `components/{PageSplash,MatchOverlay,ReportModal,DailyLoginModal}.tsx`, `CODEX_PAGE_SHELL_HANDOFF.md`. Do not include `_LOGS_dev_*` or `node_modules_broken_bak/`. Wyzmind's concurrent `tests/e2e/*`, `tests/fixtures/*`, and `tests/helpers/*` remain untouched.
+
+**Problem/evidence:** `page.tsx` began at 4,237 lines / 320,762 bytes with 46 `useState`s, 41 effects, and 36 callbacks. Production Discover was measured at 390×844 and 320×568: no document horizontal overflow; 68px header; four 44×44 controls. At 320px only, the existing 30px wordmark visibly rendered as `Disc…`.
+
+**Local change summary:** extracted initials SVG helper/test, page models/constants, hydration splash, match overlay, report dialog, and daily-login overlay; moved a misplaced role import; added a ≤340px Discover wordmark-only 24px override. `page.tsx` is now 4,039 lines. No demo-mode, server mutation, provider, or deployment behavior was intentionally changed.
+
+**Verification:** focused ESLint across Codex TS/TSX files **exit 0**; extracted MatchOverlay/PageSplash/ReportModal direct module typecheck **exit 0**; full Vitest **55 files / 425 tests passed (exit 0)**; `git diff --check` **exit 0**. Cache-free project `tsc` after extraction is **UNVERIFIED** in Codex runner (foreground runner stops around 30 seconds; background invocation never produced an exit). The current local CSS is not deployed, so the 320px title correction needs post-integration browser proof.
+
+**Acceptance / next owner:** Wyzmind reviews actual diff, runs cache-free TypeScript, focused/full lint, avatar target/full Vitest, E2E, and build on the integration candidate. If green, integrate one bounded architectural commit, then deploy and verify `Discover` title full at 320px plus 375/390 no-overflow/touch-target matrix. Status remains **PARTIAL** until those records exist. Full detail: `CODEX_PAGE_SHELL_HANDOFF.md`.
+
+## Codex P0 media audit — video boundary (2026-09-23)
+
+**Status:** PARTIAL / source evidence only; no migration, environment, or live-provider verification performed.
+
+Read-only source review of `src/app/api/muse/upload/route.ts`, `src/lib/contentScan.ts`, `upload.route.test.ts`, and `contentScan.test.ts` found that authenticated non-demo video WebM uploads currently return **415** with `VIDEO_UPLOAD_UNAVAILABLE` before any Supabase storage upload. The route test asserts this exact status/code. This is a valid fail-closed temporary boundary: no pending/unchecked video is stored or publicly served. Image uploads require Rekognition; missing/error scanner state maps to `shouldBlock` and the route returns 503 rather than persisting the image.
+
+This does **not** close the release requirement for video moderation. `startVideoModeration` / `getVideoModerationResult` still exist as raw-byte helpers, while the required private quarantine → durable job → result consumer → approved promotion/rejected deletion state machine, its migrations/RLS, retries, and disposable integration proof remain **UNVERIFIED / OPEN**. **Next owner:** Wyzmind/owner assigns a separate P0 media pipeline bundle; do not re-enable video uploads based on these helpers alone.
+
+## Codex P0 storage-deletion audit — retry outbox gap (2026-09-23)
+
+**Status:** OPEN / source evidence only.
+
+`src/lib/muse-actions/albums.ts` now correctly does an ownership-gated best-effort removal for album/album-photo media and enqueues failed deletes into `muse_storage_cleanup_jobs`. `sql/migrations/0025_add_storage_cleanup_jobs.sql` provides the idempotent table/index/RLS definition. However, repository search found no worker, cron route, or retry consumer for `muse_storage_cleanup_jobs` beyond enqueue and unit-test references. A failed object deletion can therefore remain `pending` indefinitely; 0025 applied-state is also still **UNVERIFIED**. This does not meet the deletion-lifecycle/retry proof required for open beta.
+
+**Next owner:** Wyzmind assigns a separate P0 cleanup-worker bundle: service-role-only bounded batch claim/retry/backoff/dead-letter behavior; CRON_SECRET-gated route/schedule; idempotency and ownership tests; local/disposable migration + storage integration proof; then applies/records 0025 only with owner authorization. No production migration or storage operation was attempted by Codex.
+
+## Codex P0 migration source audit — 0022 / 0024 (2026-09-23)
+
+**Status:** PARTIAL / source-only; applied-state remains UNVERIFIED.
+
+`0022_secure_album_storage_and_webm.sql` defines a non-public `muse-private` bucket restricted to image MIME types and removes the legacy authenticated direct-upload policy; the server upload route uses this bucket for `album` paths and returns internal `storage://` locators for restricted media. `0024_add_account_deletion_schedule.sql` adds the 30-day deletion timestamps/index. The existing `/api/cron/purge-deleted-accounts` source fails closed on `CRON_SECRET`, is a no-op in demo mode, removes both profile-rooted storage trees before database/account deletion, and is scheduled in `vercel.json`.
+
+None of this proves the SQL has been applied, that storage bucket privacy/policies match source, that signed URLs work only after authorization, or that a disposable deletion actually completes/retries. **Next owner:** Wyzmind/owner supplies authorized local/disposable DB access and records `schema_migrations`, bucket/policy inspection, signed-URL authorization/expiry, RLS, cron auth, and 30-day purge evidence before any open-beta claim.
+
+## Codex → Wyzmind: P0 storage-cleanup worker — PARTIAL (2026-09-23)
+
+**Base/worktree:** initial base `a379058`; current local base `b0fb457`
+(Priority-A E2E-only commit, no bundle-file overlap); local only,
+unstaged/uncommitted/unmigrated/undeployed. **Files:**
+`0026_storage_cleanup_worker.sql`, `api/cron/storage-cleanup/{route.ts,route.test.ts}`,
+`vercel.json`, `CODEX_STORAGE_CLEANUP_HANDOFF.md`. The bundle adds a migration-safe
+`processing` lease state, due-attempt index, 5/15/45/135-minute retry timing,
+fifth-attempt `failed` dead-letter state, conditional claim, owned bucket/path
+validation, CRON_SECRET auth, demo no-op, and a proposed 15-minute Vercel schedule.
+
+**Exact local evidence:** focused route ESLint exit 0; targeted Vitest **5/5 passed** (authorization, demo, successful cleanup, retry); `git diff --check` exit 0. Cache-free project TypeScript is **UNVERIFIED**—Codex runner timed out at 30 seconds without an exit. No database, bucket, cron, Vercel, or migration action occurred.
+
+**Next owner:** Wyzmind reviews actual diff and first confirms Vercel schedule-plan compatibility. Then run full candidate gates and local/disposable migration/integration proof, including concurrent conditional claims and fifth-failure dead letter, before any integration/deploy. Full checklist: `CODEX_STORAGE_CLEANUP_HANDOFF.md`.
+
+## Codex dependency audit — current local worktree (2026-09-23)
+
+`npm audit --omit=dev --json` exited **0**: 340 production dependencies and **0 vulnerabilities**. Full `npm audit --json` exited **1** with 9 dev-only findings (2 low / 4 moderate / 3 high / 0 critical), all reachable through the direct legacy `lighthouse-ci` package and its old Lighthouse/Raven/update-notifier chain; npm offers a semver-major downgrade/replacement path (`lighthouse-ci@1.10.0`). No dependency was changed automatically.
+
+**Next owner:** owner/Wyzmind decides whether to replace the legacy dev-only Lighthouse CI wrapper with an actively maintained supported chain, after documenting license, CI/bundle impact, operational owner, and performance-evidence continuity. This is a release-engineering gap, not a production runtime vulnerability finding.
+
+
+## Heartbeat — 2026-09-23 Priority A — E2E width matrix + modal paths LIVE
+
+owner (Wyzmind) | base `a379058` | exclusive files `tests/e2e/smoke.spec.ts`, `tests/e2e/demo-mode.spec.ts`, `tests/fixtures/test-fixtures.ts`, `tests/helpers/test-helpers.ts` | action: Priority A — seed 11 `muse_tour_seen_*` + quest/verify keys in `loginAsDemoUser`; add `seededDemoPage`, `dismissPageTour`, `assertNoDocOverflow`; width matrix 320/375/390; Menu/Sessions/Collab/Identity modal dismiss (named close + Escape); Feed Photos/Text/BTS via `[data-screen="connections"]` | exact result: commit `b0fb457` == origin/main (auto-push) · deploy `muse-2105ggv22` **READY LIVE ✅** · `wyz_deploy_check.py b0fb457` DEPLOY IS LIVE · serial `npx playwright test tests/e2e/smoke.spec.ts tests/e2e/demo-mode.spec.ts --project=chromium-desktop --workers=1` → **26 passed (2.6m) exit 0** · tsc **0** · vitest **53/417 exit 0** (excl. Codex `initials-avatar.test.ts`) · eslint 4 files **0 errors** (4 expected ignored) · preflight **28 PASS / 1 FAIL (GPU :11435) / 2 WARN** · prod `/api/health` 200 · widths 320/375/390 no doc overflow | known gaps (documented, not fixed): (1) `useFocusTrap` sets `inert` on `#muse-app` including in-phone Sessions/Collab modals → real mouse hit-test falls through to `.phone-wrap`; tests use `dispatchEvent('click')` as workaround — product bug, Priority G candidate; (2) `discover-deck.spec.ts` stale locators (`data-queued`/`data-card-index` absent from DiscoverScreen) — pre-existing, not in exclusive set, CI e2e-smoke may be red; (3) stale `[data-screen="feed"]` in `feed-messaging.spec.ts` + `visual-regression.spec.ts` (Feed mounts as `connections`); (4) Codex `initials-avatar.test.ts` 2 fail (URIError) — not in baseline | next: **Wyzmind** — Priority B visual-matrix.spec.ts + snapshots
