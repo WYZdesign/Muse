@@ -480,3 +480,12 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - BLK-MIG-STATE: **STILL OPEN** — owner must supply migrate DSN/auth for `schema_migrations` SELECT
 - NOT STAGED: Codex page-shell set, muse.css, vercel.json, storage-cleanup/, 0026, _LOGS_dev_*, node_modules_broken_bak
 - NEXT: Priority F (API/rate-limit/contentScan tests)
+
+## Priority F — 2026-09-24 — API/rate-limit/contentScan tests committed
+- BASE: `c9562232987f3f823b34d83583ceb2e3f323e308` (Priority E LIVE)
+- FILES: 15 exclusive test files only (rate-limit, contentScan, content-scan + 12 route suites) + HANDOFF.md + DELIVERY_STATUS.md — no product source, no Codex exclusive files
+- GATES: focused vitest **15/15 files · 125 tests PASS** · full vitest **67 files · 535 tests PASS exit 0** · eslint 15 files **0 errors** (136 warnings) · tsc exit 2 = pre-existing Codex `storage-cleanup/route.test.ts(82,20) TS2339` only
+- COVERAGE: fail-closed rate-limit (RPC error/null/non-true + checkRateUser), contentScan persistence/NCMEC/Sightengine/video helpers, content-scan gates incl. oversized+CSAM escalate+503, waitlist/unsubscribe/cache-version/landing-stats/transcribe/depth/push/match/embed/promote-waitlist/social/callback
+- NOT STAGED: Codex page-shell set (page.tsx, muse.css, vercel.json, CODEX_*.md, storage-cleanup/, 0026, initials-avatar, page-constants/models, DailyLogin/Match/Report/PageSplash), _LOGS_dev_*, node_modules_broken_bak, visual-regression.spec.ts-snapshots
+- BLK-MIG-STATE: **STILL OPEN** (no DSN)
+- NEXT: Priority G (KNOWN_A11Y_GAPS product fixes: region, aria-toggle-field-name, aria-required-parent, button-name, color-contrast, target-size, useFocusTrap inert)
