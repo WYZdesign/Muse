@@ -1505,3 +1505,91 @@ docs-only follow-up 04dece0 is the current origin/main tip (no code delta).
 ```
 
 ChatGPT live Feed observation (Photos filter: Sam Taylor + Maya Chen visible; Jordan Rivera absent) is consistent with `0f38ca3`/`d8c24d1` being ancestors of live `04dece0`.
+
+---
+
+## Bundle E LIVE audit — Wyzmind | 2026-09-23 | GO item 8 complete
+
+**owner | base SHA | files | action | exact result | blockers/UNVERIFIED | next owner**
+
+Wyzmind | `7813f87` main / origin/main equal | HANDOFF.md, BUNDLE_B_EVIDENCE.md, DELIVERY_STATUS.md (evidence docs only) | Bundle E Playwright live matrix on healthy :3000 | see exact results below | tour-overlay blocks 1 UI-badge click path; parallel 320 goto timeouts (serial green); migration/Vercel CRON still UNVERIFIED | **Owner** — decide next bundle / migrate auth / protected-file staging
+
+### Preflight this round
+
+```text
+netstat :3000 LISTENING PID 11392
+GET  http://127.0.0.1:3000/api/health     -> 200 {"status":"ok",...}
+GET  http://127.0.0.1:3000/muse           -> 200
+GET  http://127.0.0.1:3000/muse/landing   -> 200
+POST http://127.0.0.1:3000/api/muse
+     body file {"action":"create-album"}  -> 409 {"error":"This action is unavailable in demo mode","code":"DEMO_MODE"}
+# earlier inline-pwsh JSON was malformed -> muse route SyntaxError 500 (harness quoting, NOT product)
+python wyz_deploy_check.py 7813f87...     -> LATEST 7813f87 STATE READY DEPLOY IS LIVE ✅
+git rev-parse HEAD origin/main             -> both 7813f871910b8d47c98ae00b3cfbea1608f421da
+```
+
+### Playwright runs (dirty protected specs run as-is; NOT staged)
+
+```text
+# 1) chromium-desktop smoke + demo-mode
+npx playwright test tests/e2e/smoke.spec.ts tests/e2e/demo-mode.spec.ts --project=chromium-desktop
+-> 16 passed, 1 failed (2.1m)
+FAIL: Demo Mode UI Badge › Collab view shows DEMO PREVIEW badge
+
+# 2) mobile matrix smoke (parallel 4 workers)
+--project=mobile-chrome-320 --project=mobile-chrome-375 --project=mobile-chrome-390
+-> 19 passed, 2 failed
+FAIL both on mobile-chrome-320: page.goto /muse domcontentloaded 30s timeout (parallel load flake)
+
+# 3) mobile-chrome-320 serial re-run
+--workers=1 -> 7 passed (1.3m)  << clears both parallel failures
+
+# 4) Demo Mode Negative re-confirm (chromium, 2 workers)
+-> 9 passed (feed/profile/match/message/brief/book-session/create-album 409 + safe copy + config gate)
+
+# Net Bundle E green:
+#   smoke 320/375/390: 21/21 after serial 320
+#   demo-mode server-boundary: 9/9
+#   chromium smoke: 7/7
+#   only residual: UI Badge test (tour overlay intercept) — badges ARE present in DOM snapshot
+```
+
+### UI Badge failure — root cause (not a product regression)
+
+```text
+locator.click button.nav-item filter Collab|Briefs
+-> <div role="dialog" aria-modal="true" class="tour-overlay" aria-label="Discover tutorial">
+   intercepts pointer events (z-index 100000)
+error-context snapshot ALSO shows multiple "DEMO PREVIEW" badges already rendered
+  (Luna Martinez / Noah Bennett / Aria Patel / ... under Briefs cards)
+tour seen key: muse_tour_seen_discover (pageTourContent.tsx:43-44)
+first-visit tour fires ~600ms after boot (page.tsx maybeShowPageTour)
+```
+
+**Pass criteria for badge itself: MET in a11y tree.** Test harness needs `muse_tour_seen_*=1` seeded in `loginAsDemoUser` OR dismiss-tour step — `tests/helpers` + `tests/e2e` are **protected/dirty** (Codex-owned); Wyzmind did **not** edit/stage them.
+
+### Width matrix acceptance (Bundle E / Bundle D residual)
+
+| Width | App loads | Landing | Nav tabs | 44px targets | Queue isolation | No-h-overflow |
+|-------|-----------|---------|----------|--------------|-----------------|---------------|
+| 320 | PASS | PASS | PASS | PASS (serial) | PASS | PASS (serial) |
+| 375 | PASS | PASS | PASS | PASS | PASS | PASS |
+| 390 | PASS | PASS | PASS | PASS | PASS | PASS |
+| chromium-desktop | PASS | PASS | PASS | PASS | PASS | PASS |
+
+### Still open (unchanged by this round)
+
+- Migration 0022 / 0024 / 0025 applied-state: **UNVERIFIED** (0025 file on main only)
+- Vercel `CRON_SECRET` presence: **UNVERIFIED**
+- `src/app/api/backup/route.test.ts`: **missing** (B4)
+- Protected dirty unstaged: `muse.css`, e2e smoke/demo-mode, fixtures, helpers, CODEX_PAGE_TSX_HANDOFF, dev logs
+- Bundle D D1–D5 per-ID Codex status: still open (D3 Photos confirmed fixed live by ChatGPT)
+
+## Verification record — Bundle E
+- Revision/worktree: `V:\Muse` @ `7813f87` == origin/main
+- Files changed by this heartbeat: HANDOFF.md, BUNDLE_B_EVIDENCE.md, DELIVERY_STATUS.md (append/reconcile only)
+- Commands: netstat; curl health/muse/landing/create-album(409); wyz_deploy_check.py 7813f87 READY; playwright chromium+320/375/390+serial-320+negative reconfirm
+- Browser/mobile widths: 320 / 375 / 390 / desktop chromium — matrix above
+- Migration/environment/deploy: demo ON; 0025 unapplied; deploy 7813f87 LIVE
+- Known failures: UI-badge tour overlay (harness gap); parallel 320 goto flake (serial green)
+- Next owner/action: **Owner** — assign next work; migrate auth if desired; approve any protected e2e/helper edits for tour-seed fix

@@ -27,7 +27,18 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `99fb9e2f1d345268a6612448bdf21308fda22d6a`
+## Confirmed merged, last verified at: `7813f871910b8d47c98ae00b3cfbea1608f421da`
+
+### Round 53 — Bundle E live audit + delivery reconcile (verified 2026-09-23)
+
+- `7813f87` on `origin/main` — Vercel STATE **READY**, `DEPLOY IS LIVE ✅` for this exact SHA
+- History: `7813f87` (Git+Vercel evidence docs) ← `04dece0` (docs) ← `99fb9e2` (docs) ← `0f38ca3` (Bundle A merge) ← `d8c24d1` (type integration) ← `5031750`
+- Gates still green post-merge (no code delta since `99fb9e2`): tsc **0** · eslint **0 err** · vitest **414** · `next build` **0**
+- Bundle E Playwright: smoke **21/21** across 320/375/390 (320 serial after parallel goto flake) · Demo Mode Negative **9/9** · chromium smoke **7/7**
+- Local smoke: `/api/health` 200 · `/muse` 200 · `/muse/landing` 200 · POST `create-album` **409 `DEMO_MODE`**
+- Residual e2e: UI Badge click blocked by first-time `tour-overlay` (badges present in DOM) — harness needs `muse_tour_seen_*` seed; protected tests not edited
+- Migration `0025` remains **file on main only — NOT applied** (separate migrate auth)
+- Still unstaged/protected: `muse.css`, `tests/e2e/*`, `tests/fixtures/*`, `tests/helpers/*`, `CODEX_PAGE_TSX_HANDOFF.md`, dev logs
 
 ### Round 50 — Bundle A merge + delivery reconcile (verified 2026-09-23)
 

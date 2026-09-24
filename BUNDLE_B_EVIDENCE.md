@@ -25,12 +25,12 @@ Deployment/migration/cron/demo-mode readiness evidence requested for release-gat
 | B5 | Local env key names present | `.env.local` key names only (values never read) | includes `CRON_SECRET`, `MUSE_DEMO_MODE` not listed (defaults demo-ON via `demo-mode.ts`), Supabase/Stripe/OpenRouter/Sentry/Mapbox keys present | **VERIFIED** names only; **values UNVERIFIED** |
 | B6 | Vercel `CRON_SECRET` set in project | — | not queried (no Vercel mutation/read this round) | **UNVERIFIED** |
 | B7 | Demo mode server truth | `src/lib/demo-mode.ts` L9–17 | default ON unless `MUSE_DEMO_MODE==="false"`; helper returns `{error: "... unavailable in demo mode", code:"DEMO_MODE"}` | **VERIFIED** (source) |
-| B8 | Live demo 409 on mutation | prior recorded: `POST /api/muse/create-album` → `409` `{"error":"This action is unavailable in demo mode","code":"DEMO_MODE"}` | local :3000 probe this round: TCP :3000 open earlier; HTTP timed out / connection error (dev server unhealthy or hung) | **PRIOR VERIFIED · this-round re-probe FAILED** |
+| B8 | Live demo 409 on mutation | `POST /api/muse` action `create-album` body file `{"action":"create-album"}` + Origin `https://muse.wyzdesign.com` + browser UA on local :3000 | **409** `{"error":"This action is unavailable in demo mode","code":"DEMO_MODE"}` · Playwright Demo Mode Negative 9/9 also green this round | **VERIFIED (2026-09-23 Bundle E)** |
 | B9 | Migration `0022_secure_album_storage_and_webm.sql` applied to target | file present | applied-state **not** queried against Supabase | **UNVERIFIED** |
 | B10 | Migration `0024_add_account_deletion_schedule.sql` applied | file present | applied-state **not** queried | **UNVERIFIED** |
 | B11 | Migration runner exists | `scripts/run_migrations.py` | `Test-Path` → **True** | **VERIFIED** (exists); not executed |
-| B12 | Migration `0025` (Bundle A) | worktree only at `bundle/a-album-private-storage` commit `a504daa` | **not on main**, **not applied any env** | **REQUIRED · isolated** |
-| B13 | `DELIVERY_STATUS.md` current | file says `cbfe48f` | `origin/main` = `5031750` | **STALE** — reconcile only after verified deploy |
+| B12 | Migration `0025` (Bundle A) | **on main** as `sql/migrations/0025_add_storage_cleanup_jobs.sql` (merge `0f38ca3`) | **NOT applied to any DB** | **FILE ON MAIN · UNAPPLIED** |
+| B13 | `DELIVERY_STATUS.md` current | reconciled to `7813f87` (Bundle E round) | matches origin/main | **CURRENT** |
 | B14 | CORS origin for API | `vercel.json` headers | `Access-Control-Allow-Origin: https://muse.wyzdesign.com` | **VERIFIED** (file) |
 | B15 | CI runtime env parity | `.github/workflows/ci.yml` | job-level `env` has placeholder Supabase/Stripe + `MUSE_DEMO_MODE: 'true'`; `Start server`: `nohup npx next start -p 3000 &` inherits job env | **MOSTLY VERIFIED** — `CRON_SECRET` **not** in CI env (cron tests stub env in-process; live CI server cron routes would 401 without secret — acceptable fail-closed) |
 
@@ -40,14 +40,14 @@ Deployment/migration/cron/demo-mode readiness evidence requested for release-gat
 
 | ID | Blocker | Owner | Clears when |
 |----|---------|-------|-------------|
-| **BLK-TSC** | Cache-free tsc **exit 2**, 4 errors in `page.tsx` (2257, 2276, 3771×2) | **Codex** | Wyzmind probe → exit 0 |
-| **BLK-GO** | Owner has not said `go` | **Owner** | message `go` after green tsc |
+| **BLK-TSC** | ~~Cache-free tsc exit 2~~ | Codex | **CLEARED** — tsc exit 0 pre-GO; merged `d8c24d1` |
+| **BLK-GO** | ~~Owner has not said `go`~~ | Owner | **CLEARED** — GO 1–7 complete |
 | **BLK-MIG-STATE** | 0022 / 0024 applied-state unknown on target Supabase | Wyzmind (after authorize) | run migration read-only check or runner dry-run |
 | **BLK-CRON-VERCEL** | Vercel `CRON_SECRET` presence unknown | Wyzmind (read-only Vercel check on go) | dashboard/env API evidence |
 | **BLK-BACKUP-TEST** | No `backup/route.test.ts` | implementation agent | tests added + green |
-| **BLK-DELIVERY-STALE** | `DELIVERY_STATUS` = `cbfe48f` ≠ `5031750` | Wyzmind | post-deploy verified SHA update |
-| **BLK-LOCAL-HTTP** | :3000 HTTP probe timed out this round | Wyzmind | healthy dev/prod server + re-probe 409 |
-| **BLK-0025-MAIN** | 0025 not on main | Wyzmind | Bundle A merge after go (separate migrate auth) |
+| **BLK-DELIVERY-STALE** | ~~DELIVERY_STATUS stale~~ | Wyzmind | **CLEARED** — reconciled `7813f87` Bundle E round |
+| **BLK-LOCAL-HTTP** | ~~:3000 HTTP timed out~~ | Wyzmind | **CLEARED** — health/muse/landing 200; create-album 409 Bundle E |
+| **BLK-0025-MAIN** | ~~0025 not on main~~ | Wyzmind | **CLEARED (file)** — on main via `0f38ca3`; still **UNAPPLIED** to DB |
 
 ---
 
