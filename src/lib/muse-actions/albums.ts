@@ -16,6 +16,145 @@ const isPrivateAlbumObject = (value: unknown): value is string =>
 const isPrivateAlbumObjectForOwner = (value: unknown, profileId: unknown): value is string =>
   isPrivateAlbumObject(value) && value.slice(PRIVATE_ALBUM_PREFIX.length).startsWith(`${String(profileId)}/`);
 
+type OwnedStorageObject = { bucket: "muse-private" | "muse-uploads"; path: string };
+type StorageCleanupFailure = OwnedStorageObject & { error: string };
+
+function isSafeStoragePath(path: string): boolean {
+  if (!path || path.startsWith("/") || path.includes("..") || path.includes("\\") || path.includes("\0")) return false;
+  return path.split("/").every((seg) => seg.length > 0);
+}
+
+function storageHostFromEnv(): string {
+  return (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "")
+    .replace(/^https?:\/\//, "")
+    .split("/")[0];
+}
+
+/**
+ * Resolve a stored media value to an owned bucket+path, or null.
+ * - Private album media: storage://muse-private/<profileId>/...
+ * - Generic/public bucket: Muse-hosted public object URL under <profileId>/...
+ * Foreign owners, traversal, non-Muse hosts, and non-URL junk are rejected.
+ * Client-supplied bucket names never pass through this function.
+ */
+export function parseOwnedAlbumStorageLocator(
+  value: unknown,
+  profileId: string,
+  storageHost: string = storageHostFromEnv(),
+): OwnedStorageObject | null {
+  if (typeof value !== "string" || !value) return null;
+
+  if (value.startsWith(PRIVATE_ALBUM_PREFIX)) {
+    const path = value.slice(PRIVATE_ALBUM_PREFIX.length);
+    if (!isSafeStoragePath(path)) return null;
+    if (!path.startsWith(`${profileId}/`)) return null;
+    return { bucket: "muse-private", path };
+  }
+
+  if (!/^https?:\/\//i.test(value) || !storageHost) return null;
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  if (url.hostname !== storageHost && !url.hostname.endsWith(`.${storageHost}`)) return null;
+
+  const markers = ["/storage/v1/object/public/muse-uploads/", "/storage/v1/object/sign/muse-uploads/", "/muse-uploads/"];
+  for (const marker of markers) {
+    const idx = value.indexOf(marker);
+    if (idx === -1) continue;
+    const path = value.slice(idx + marker.length).split(/[?#]/)[0];
+    if (!isSafeStoragePath(path)) return null;
+    if (!path.startsWith(`${profileId}/`)) return null;
+    return { bucket: "muse-uploads", path };
+  }
+  return null;
+}
+
+function collectOwnedLocators(values: Array<unknown>, profileId: string): OwnedStorageObject[] {
+  const seen = new Set<string>();
+  const out: OwnedStorageObject[] = [];
+  for (const value of values) {
+    const parsed = parseOwnedAlbumStorageLocator(value, profileId);
+    if (!parsed) continue;
+    const key = `${parsed.bucket}:${parsed.path}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(parsed);
+  }
+  return out;
+}
+
+async function removeOwnedStorageObjects(
+  sb: ActionContext["sb"],
+  objects: OwnedStorageObject[],
+): Promise<StorageCleanupFailure[]> {
+  const failed: StorageCleanupFailure[] = [];
+  const byBucket = new Map<string, string[]>();
+  for (const obj of objects) {
+    const list = byBucket.get(obj.bucket) || [];
+    list.push(obj.path);
+    byBucket.set(obj.bucket, list);
+  }
+  for (const [bucket, paths] of byBucket) {
+    try {
+      const { error } = await sb.storage.from(bucket).remove(paths);
+      if (error) {
+        const message = String((error as { message?: string }).message || error);
+        for (const path of paths) failed.push({ bucket: bucket as OwnedStorageObject["bucket"], path, error: message });
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      for (const path of paths) failed.push({ bucket: bucket as OwnedStorageObject["bucket"], path, error: message });
+    }
+  }
+  return failed;
+}
+
+async function enqueueStorageCleanupJobs(
+  sb: ActionContext["sb"],
+  failures: StorageCleanupFailure[],
+  meta: { profileId: string; reason: string; albumId?: string; photoId?: string },
+): Promise<boolean> {
+  if (failures.length === 0) return true;
+  try {
+    for (const failure of failures) {
+      const { error } = await sb.from("muse_storage_cleanup_jobs").upsert(
+        {
+          bucket: failure.bucket,
+          path: failure.path,
+          reason: meta.reason,
+          profile_id: meta.profileId,
+          album_id: meta.albumId ?? null,
+          photo_id: meta.photoId ?? null,
+          attempts: 1,
+          last_error: failure.error,
+          status: "pending",
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "bucket,path" },
+      );
+      if (error) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function cleanupOwnedAlbumMedia(
+  sb: ActionContext["sb"],
+  locators: OwnedStorageObject[],
+  meta: { profileId: string; reason: string; albumId?: string; photoId?: string },
+): Promise<{ queued: boolean; pending: number }> {
+  if (locators.length === 0) return { queued: true, pending: 0 };
+  const failures = await removeOwnedStorageObjects(sb, locators);
+  if (failures.length === 0) return { queued: true, pending: 0 };
+  const queued = await enqueueStorageCleanupJobs(sb, failures, meta);
+  return { queued, pending: failures.length };
+}
+
 export async function albumCreate({ sb, profile, rest, ip }: ActionContext) {
   if (!await checkRate(ip, "create-album", 20)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const vErr = validateInput(rest);
@@ -72,11 +211,42 @@ export async function albumDelete({ sb, profile, rest, ip }: ActionContext) {
   if (!await checkRate(ip, "delete-album", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { albumId } = rest;
   if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
-  const { data: existing } = await sb.from("muse_albums").select("profile_id").eq("id", albumId).maybeSingle();
-  if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { data: existing } = await sb.from("muse_albums")
+    .select("profile_id, cover_url")
+    .eq("id", albumId)
+    .maybeSingle();
+  // Idempotent: a missing album is already deleted; only a foreign-owned row is forbidden.
+  if (!existing) return NextResponse.json({ success: true, alreadyDeleted: true });
+  if (String(existing.profile_id) !== String(profile.id)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const { data: photos } = await sb.from("muse_album_photos")
+    .select("img_url")
+    .eq("album_id", albumId);
+  const ownerProfileId = String(profile.id);
+  const locators = collectOwnedLocators(
+    [existing.cover_url, ...(photos || []).map((p: { img_url?: unknown }) => p?.img_url)],
+    ownerProfileId,
+  );
   const { error } = await sb.from("muse_albums").delete().eq("id", albumId);
   if (error) return safeServerError(error, "db op");
-  return NextResponse.json({ success: true });
+  const cleanup = await cleanupOwnedAlbumMedia(sb, locators, {
+    profileId: ownerProfileId,
+    reason: "album_delete",
+    albumId: String(albumId),
+  });
+  if (!cleanup.queued) {
+    return NextResponse.json({
+      error: "Album deleted, but storage cleanup could not be recorded for retry",
+      code: "STORAGE_CLEANUP_UNRECORDED",
+      pending: cleanup.pending,
+    }, { status: 500 });
+  }
+  return NextResponse.json({
+    success: true,
+    cleanedStorage: locators.length - cleanup.pending,
+    pendingCleanup: cleanup.pending,
+  });
 }
 
 export async function albumAddPhoto({ sb, profile, rest, ip }: ActionContext) {
@@ -109,13 +279,38 @@ export async function albumRemovePhoto({ sb, profile, rest, ip }: ActionContext)
   if (!await checkRate(ip, "remove-album-photo", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { photoId } = rest;
   if (!photoId) return NextResponse.json({ error: "photoId required" }, { status: 400 });
-  const { data: photo } = await sb.from("muse_album_photos").select("album_id").eq("id", photoId).maybeSingle();
-  if (!photo) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const { data: photo } = await sb.from("muse_album_photos")
+    .select("album_id, img_url")
+    .eq("id", photoId)
+    .maybeSingle();
+  // Idempotent: missing photo row is already removed.
+  if (!photo) return NextResponse.json({ success: true, alreadyDeleted: true });
   const { data: album } = await sb.from("muse_albums").select("profile_id").eq("id", photo.album_id).maybeSingle();
-  if (!album || String(album.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!album || String(album.profile_id) !== String(profile.id)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const ownerProfileId = String(profile.id);
+  const locators = collectOwnedLocators([photo.img_url], ownerProfileId);
   const { error } = await sb.from("muse_album_photos").delete().eq("id", photoId);
   if (error) return safeServerError(error, "db op");
-  return NextResponse.json({ success: true });
+  const cleanup = await cleanupOwnedAlbumMedia(sb, locators, {
+    profileId: ownerProfileId,
+    reason: "remove_photo",
+    albumId: String(photo.album_id),
+    photoId: String(photoId),
+  });
+  if (!cleanup.queued) {
+    return NextResponse.json({
+      error: "Photo deleted, but storage cleanup could not be recorded for retry",
+      code: "STORAGE_CLEANUP_UNRECORDED",
+      pending: cleanup.pending,
+    }, { status: 500 });
+  }
+  return NextResponse.json({
+    success: true,
+    cleanedStorage: locators.length - cleanup.pending,
+    pendingCleanup: cleanup.pending,
+  });
 }
 
 export async function albumGrantAccess({ sb, profile, rest }: ActionContext) {
