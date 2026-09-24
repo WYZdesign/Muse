@@ -27,7 +27,16 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `cbfe48f`
+## Confirmed merged, last verified at: `d8c24d11e650d4937b4791407b412048ae1cb1c6`
+
+### Round 49 — type integration + GO protocol docs (verified 2026-09-23)
+
+- `d8c24d1` on `origin/main` — Vercel STATE **READY**, `DEPLOY IS LIVE ✅` for this exact SHA
+- Gates pre-commit: cache-free tsc **exit 0** · eslint page+Feed **0 errors / 91 warnings exit 0** · vitest **52 files / 396 tests exit 0** · `next build` **exit 0**
+- Smoke: `/api/health` 200 · POST `/api/muse` `create-album` **409 `DEMO_MODE`** local+prod · `/muse` 200 · `/muse/landing` 200 · root 200
+- Staged only: `page.tsx`, `useAuthOnboardingState.ts`, `FeedScreen.tsx`, `HANDOFF.md`, `WYZMIND_GO_PROTOCOL.md`, `BUNDLE_B_EVIDENCE.md`, `BUNDLE_D_FINDINGS.md`
+- NOT staged: protected e2e/helpers/fixtures, `muse.css`, `next-env.d.ts`, dev logs, Bundle A
+- Bundle A still **branch-only** `a504daa` — migration `0025` **not applied** (needs separate migrate auth)
 
 ### Round 47 — SQL migration suite idempotency (verified 2026-09-19)
 

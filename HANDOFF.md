@@ -1386,3 +1386,46 @@ many CLOSE_WAIT on 127.0.0.1:3000
 - Not staged: muse.css, protected e2e/helpers/fixtures, next-env.d.ts, dev logs.
 - Bundle A remains branch `a504daa` — merge after deploy smoke (step 6).
 - Demo mode: ON · no migration · no Vercel change by Codex.
+
+---
+
+## Wyzmind POST-DEPLOY SMOKE — d8c24d1 (2026-09-23)
+
+```text
+wyz_deploy_check.py d8c24d11e650d4937b4791407b412048ae1cb1c6
+LATEST SHA:    d8c24d11e650d4937b4791407b412048ae1cb1c6
+STATE:         READY
+DEPLOY IS LIVE ✅
+
+# browser UA (proxy BLOCKED_AGENTS blocks curl UA by design)
+GET  https://muse.wyzdesign.com/api/health          -> 200 {"status":"ok",...}
+POST https://muse.wyzdesign.com/api/muse            -> 409 DEMO_MODE  {"error":"This action is unavailable in demo mode","code":"DEMO_MODE"}
+GET  https://muse.wyzdesign.com/muse                -> 200
+GET  https://muse.wyzdesign.com/muse/landing        -> 200
+GET  https://muse.wyzdesign.com/                    -> 200
+# local same results
+GET  http://127.0.0.1:3000/api/health              -> 200
+POST http://127.0.0.1:3000/api/muse                -> 409 DEMO_MODE
+```
+
+- Demo mode remains **ON**.
+- `DELIVERY_STATUS.md` updated `cbfe48f` → `d8c24d1` after deploy READY.
+- Next: GO step 6 Bundle A re-gates + merge (migration 0025 still NOT applied — separate auth).
+
+---
+
+## Bundle A MERGE — GO step 6 (2026-09-23)
+
+Worktree re-gates before merge:
+```text
+WT HEAD a504daa
+tsc --noEmit --incremental false -> exit 0
+eslint albums.ts albums.test.ts  -> exit 0 (0 errors, 12 warnings)
+vitest albums.test.ts            -> exit 0 (1 file, 29 tests passed)
+```
+
+Diff vs main: `albums.ts`, `albums.test.ts`, `sql/migrations/0025_add_storage_cleanup_jobs.sql` (NEW), `BUNDLE_A_HANDOFF.md` (NEW).
+
+**Migration 0025 will land on main as a file only — NOT applied to any DB (separate migrate auth required by GO protocol 6.5).**
+
+Protected dirty files must survive merge unstaged: muse.css, protected e2e/helpers/fixtures, CODEX_PAGE_TSX_HANDOFF.md, dev logs.
