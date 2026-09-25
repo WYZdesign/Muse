@@ -443,6 +443,13 @@ textarea.inp{resize:none}
   .screen-el[data-screen="discover"] .discover-hdr-actions{width:auto;max-width:none;flex:0 0 auto;justify-content:flex-end;min-width:0}
   .screen-el[data-screen="discover"] .discover-hdr-actions.search-open{grid-column:1/-1;flex:1 1 auto;min-width:0}
 }
+/* At 320px the four 44px header actions intentionally retain their touch
+   targets, leaving the title column narrower than the display-face's 30px
+   “Discover” wordmark. Scale the wordmark—not its controls—so the full route
+   name remains visible without introducing horizontal scroll or a second row. */
+@media (max-width:340px){
+  .screen-el[data-screen="discover"] .discover-hdr-title .logo-link{font-size:24px!important}
+}
 /* Round 17 originally scoped this fix to .discover-wrap alone, reasoning
    that Discover was the only screen confirmed overlapping via visual
    sweep. A follow-up live sweep (round 18) found the same

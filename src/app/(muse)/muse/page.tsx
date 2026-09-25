@@ -11,14 +11,20 @@ import { persistMessage, subscribeToConversation, fetchConversationHistory, getG
 import { trackError } from "@/lib/errorTracker";
 import { FiArrowLeft, FiX, FiLink, FiTwitter, FiInstagram } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
+import { MatchOverlay } from "./components/MatchOverlay";
+import { ReportModal } from "./components/ReportModal";
+import { DailyLoginModal } from "./components/DailyLoginModal";
+import { PageSplash } from "./components/PageSplash";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
 import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, setRefreshToken, getRefreshToken, clearRefreshToken, QUOTA_MSG } from "./lib/safe-storage";
 import { createSafeObserver } from "./lib/safe-observer";
 import { getAccessToken, authFetch, fetchWithTimeout } from "./lib/api";
 import { analytics, setAnalyticsUser, initAnalyticsSession } from "./lib/analytics";
+import { initialsAvatarUrl } from "./lib/initials-avatar";
 import { uid } from "./lib/uid";
 import { getProfileShareUrl, getPostShareUrl, getMuseUrl } from "@/lib/urls";
+import { viewerSide, viewerSideOf, getMuseRole } from "@/lib/role";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
 import { STRINGS } from "@/lib/strings";
 import DisclosureModal from "./components/DisclosureModal";
@@ -68,7 +74,6 @@ import PromptBankModal from "./components/PromptBankModal";
 import ReferralPanel from "./components/ReferralPanel";
 import ConnectPanel from "./components/ConnectPanel";
 import PaymentHistory from "./components/PaymentHistory";
-import StreakWidget from "./components/StreakWidget";
 import { PROFILES, AESTHETICS, BEHIND_CAMERA, IN_FRONT_CAMERA, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, ICEBREAKERS, BRIEFS, calcMatch, matchReasons, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen, type LikeAnchor } from "./components/types";
 import { useDiscoveryData } from "./hooks/useDiscoveryData";
 import { useFeedData } from "./hooks/useFeedData";
@@ -77,63 +82,9 @@ import { useSessionData } from "./hooks/useSessionData";
 import { useBriefsData } from "./hooks/useBriefsData";
 import { useProfileData } from "./hooks/useProfileData";
 import { normalizeCommunity, normalizeEvent, normalizeForumPost, normalizeBrief, normalizeSession, normalizeFeedPost } from "./hooks/normalizers";
+import { AGE_VERIFICATION_VALID_DAYS, DEMO_MODE, MATCH_VARIANTS, OWNER_EMAIL, SUPPORT_EMAIL } from "./page-constants";
+import type { Notification, Professional, ProfileReview, ProfileViewer, Quest, RawApiProfile, RawFeedPost, RawForumPost, ViewProfile } from "./page-models";
 
-const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";
-const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL || "torree.marcel@gmail.com";
-
-// Demo scaffolding gate — during pre-closed-beta the app runs with demo supply
-// so there's always something to swipe/post (real supply seeds over time).
-// Defaults ON; set NEXT_PUBLIC_DEMO_MODE=false at public launch to disable all
-// demo scaffolding (discover deck, matches seed, feed posts, catalogs).
-const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
-
-// Identity re-verification window (Torreé's policy, Sept 2026) — mirrors
-// AGE_VERIFICATION_VALID_DAYS in src/lib/muse-actions/shared.ts. Kept as a
-// separate constant deliberately (server code shouldn't import from this
-// app-route file, and this one number isn't worth a shared cross-boundary
-// module) — the server is the real enforcement either way; this just keeps
-// the client's local ageVerified flag from lying about staleness.
-const AGE_VERIFICATION_VALID_DAYS = 150;
-
-type ProfileBadge = { name: string; icon?: string; color?: string; bg?: string; bd?: string };
-type ViewProfile = Omit<PublicProfileUser, "badges"> & {
-  id: string;
-  score?: number;
-  views?: number;
-  tier?: string;
-  looking?: string[];
-  badges?: ProfileBadge[];
-};
-type ProfileReview = { id: string; rating: number; body?: string; reviewer_id?: { name?: string } };
-type RawApiProfile = {
-  id: string;
-  name?: string;
-  avatar?: string;
-  type?: string;
-  bio?: string;
-  loc?: string;
-  styles?: string[];
-  matchScore?: number;
-  rulesScore?: number;
-  cosineScore?: number;
-  nsfw?: boolean;
-  looking?: string[];
-  zodiac?: string;
-  chinese?: string;
-  mbti?: string;
-  life_path?: number | string;
-  photos?: string[];
-  collabs?: number;
-  verified?: boolean;
-  showDistance?: boolean;
-  side?: "behind" | "front";
-};
-type RawFeedPost = { id: string; author_id?: { name?: string; avatar?: string }; img?: string; text?: string; likes?: number; comments?: number; shares?: number; created_at?: string };
-type RawForumPost = { id: string; author_id?: { name?: string; avatar?: string }; title?: string; body?: string; votes?: number; comments?: { author: string; text: string }[]; cat?: string; created_at?: string };
-type Quest = { id: string; title: string; icon: string; completed: boolean; claimed: boolean; progress: number; target: number; quest_tier: string };
-type ProfileViewer = { id?: string; name?: string; avatar?: string; viewedAt?: string };
-type Notification = { id?: number; body?: string; type?: string; from?: string; avatar?: string; actor?: { name?: string; avatar?: string }; created_at?: string; read?: boolean };
-type Professional = { id: number; name: string; type: string; img: string; loc: string; exp: string; openings: number; rate: string; skills: string[]; looking: string[]; nsfw: boolean };
 type DiscoveryProfile = typeof PROFILES[number] & {
   showDistance?: boolean;
   matchScore?: number;
@@ -169,42 +120,6 @@ const INITIAL_STORIES = [
 export default function MusePageWrapper() {
   return <ErrorBoundary><MusePage /></ErrorBoundary>;
 }
-
-import { viewerSide, viewerSideOf, getMuseRole } from "@/lib/role";
-
-// Deterministic per-user gradient-initials avatar (data URI, no network) —
-// used when a live profile has no uploaded photo, so Discover cards never
-// collapse into one shared fallback image.
-function initialsAvatarUrl(name: string, key: string | number): string {  const n = (name || "M").trim();
-  const letters = encodeURIComponent((n.split(/\s+/).slice(0, 2).map(w => w[0] || "").join("") || "M").toUpperCase());
-  const s = String(key) + n;
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  const c1 = `hsl(${h % 360},68%,52%)`;
-  const c2 = `hsl(${(h * 7 + 40) % 360},62%,34%)`;
-  return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='${c1}'/><stop offset='1' stop-color='${c2}'/></linearGradient></defs><rect width='200' height='200' fill='url(%23g)'/><text x='100' y='102' font-family='Inter,Arial,sans-serif' font-size='82' font-weight='700' fill='white' text-anchor='middle' dominant-baseline='central'>${letters}</text></svg>`;
-}
-
-// Round 46: the match-celebration overlay used to have ~3 hand-coded
-// variants (anim-variant-1/2 in muse.css, plus a plain default), picked via
-// Math.random()*4 even though only 0-2 actually rendered anything distinct.
-// Torreé asked for the full 10 variants he originally requested: no
-// romance-themed copy, real apostrophes, and each with its own gradient
-// pulled from the site's existing color tokens. Data-driven so muse.css
-// doesn't need a new .anim-variant-N block per variant — .match-title reads
-// its gradient from a CSS custom property set inline per variant instead.
-const MATCH_VARIANTS: { title: string; symbol: string; particles: string[]; gradient: string; particleColor: string }[] = [
-  { title: "It's a Connection!", symbol: "✨", particles: ["✦","✧","⭑","⋆"], gradient: "linear-gradient(120deg,var(--gold),var(--amber),var(--sunset-orange),var(--gold))", particleColor: "var(--gold)" },
-  { title: "It's a Match!", symbol: "★", particles: ["★","☆","✦"], gradient: "linear-gradient(120deg,var(--pink),var(--coral),var(--gold),var(--pink))", particleColor: "var(--coral)" },
-  { title: "Creative Match!", symbol: "🎨", particles: ["🎨","✦","⭑"], gradient: "linear-gradient(120deg,var(--lavender),var(--pink),var(--gold),var(--lavender))", particleColor: "var(--lavender)" },
-  { title: "Let's Collaborate!", symbol: "🤝", particles: ["✦","⋆","✧"], gradient: "linear-gradient(120deg,var(--sky),var(--mint),var(--gold),var(--sky))", particleColor: "var(--sky)" },
-  { title: "New Connection!", symbol: "⚡", particles: ["⚡","✦","⭑"], gradient: "linear-gradient(120deg,var(--honey),var(--amber),var(--coral),var(--honey))", particleColor: "var(--honey)" },
-  { title: "Match Made!", symbol: "🌟", particles: ["🌟","★","✧"], gradient: "linear-gradient(120deg,var(--golden-rose),var(--pink),var(--lavender),var(--golden-rose))", particleColor: "var(--golden-rose)" },
-  { title: "Time to Create!", symbol: "🎬", particles: ["✦","⋆","✧"], gradient: "linear-gradient(120deg,var(--sunset),var(--gold),var(--peach),var(--sunset))", particleColor: "var(--sunset)" },
-  { title: "Connection Found!", symbol: "🔗", particles: ["✦","⭑","✧"], gradient: "linear-gradient(120deg,var(--mint),var(--sky),var(--lavender),var(--mint))", particleColor: "var(--mint)" },
-  { title: "You're a Match!", symbol: "💫", particles: ["💫","✦","⭑"], gradient: "linear-gradient(120deg,var(--warm-cream),var(--gold),var(--amber),var(--warm-cream))", particleColor: "var(--gold)" },
-  { title: "Collab Unlocked!", symbol: "🎉", particles: ["🎉","✦","⋆"], gradient: "linear-gradient(120deg,var(--coral),var(--peach),var(--gold),var(--coral))", particleColor: "var(--coral)" },
-];
 
 function MusePage() {
   const [screen, setScreen] = useState<Screen>("auth");
@@ -2674,41 +2589,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     }
   }, [editName, editBio, editLoc, editAvatar, editType, editCustomTypePending, editLooking, editNsfw, editMediaKit, obData.styles, setObData, setShowEditProfile, showToast, currentUser.nsfw, trackQuest]);
 
-  return !hydrated ? (
-    <div style={{"display":"contents"}}>
-      <div className="splash-scene">
-        <div className="splash-sky" />
-        <div className="splash-overlay" />
-        <div className="splash-stars">
-          {Array.from({length:36}).map((_,i)=>(
-            <span key={i} className="splash-star" style={{left:`${(i*37)%100}%`,top:`${(i*13)%45}%`,animationDelay:`${(i%8)*0.4}s`}} />
-          ))}
-        </div>
-        <div className="splash-meteor sm-1" /><div className="splash-meteor sm-2" /><div className="splash-meteor sm-3" />
-        <div className="splash-nebula sbn-1" /><div className="splash-nebula sbn-2" /><div className="splash-nebula sbn-3" />
-        <div className="splash-sun-glow" />
-        <div className="splash-sun" />
-        <div className="splash-cloud spc-1" /><div className="splash-cloud spc-2" /><div className="splash-cloud spc-3" />
-        <div className="splash-ocean splash-ocean-tide">
-          <svg className="splash-tide" viewBox="0 0 1440 160" preserveAspectRatio="none" aria-hidden="true">
-            <path className="wave-path-1" d="M0,90 C120,130 260,60 420,86 C560,108 640,40 800,84 C950,124 1060,58 1200,88 C1300,108 1370,72 1440,92 L1440,160 L0,160 Z" />
-          </svg>
-          <svg className="splash-tide" viewBox="0 0 1440 160" preserveAspectRatio="none" aria-hidden="true">
-            <path className="wave-path-2" d="M0,110 C150,70 300,130 470,96 C620,68 760,128 930,102 C1060,82 1180,124 1300,98 C1360,86 1400,108 1440,100 L1440,160 L0,160 Z" />
-          </svg>
-          <svg className="splash-tide" viewBox="0 0 1440 160" preserveAspectRatio="none" aria-hidden="true">
-            <path className="wave-path-3" d="M0,72 C170,116 340,58 520,92 C660,118 820,66 980,96 C1120,120 1240,74 1360,96 L1440,108 L1440,160 L0,160 Z" />
-          </svg>
-        </div>
-      </div>
-      <div className="splash-content">
-        <Image src="/muse-app-icon.png" alt="" width={120} height={120} className="splash-logo-icon" />
-        <div className="splash-logo-text">Muse</div>
-        <div className="splash-tagline" style={{ whiteSpace: "nowrap" }}>Where Creatives Connect</div>
-        <div className="splash-loader"><div className="splash-loader-bar" /></div>
-      </div>
-    </div>
-  ) : (
+  return !hydrated ? <PageSplash /> : (
     <div style={{"display":"contents"}}>
       <a href="#muse-main" className="sr-only" style={{zIndex:99999}} onClick={()=>{requestAnimationFrame(()=>document.getElementById("muse-main")?.focus())}} onFocus={(e)=>{e.currentTarget.style.cssText="position:fixed;top:0;left:0;padding:8px 16px;background:var(--gold);color:#0a0612;fontWeight:700;borderRadius:0 0 8px 0;width:auto;height:auto;clip:auto;overflow:visible;margin:0"}} onBlur={(e)=>{e.currentTarget.removeAttribute("style")}}>Skip to main content</a>
       <CardPreloader currentIdx={currentIdx} profiles={filteredProfiles} />
@@ -2747,43 +2628,17 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           <path className="wave-path-4" d="M0,158 C180,150 360,159 540,152 C720,145 900,158 1080,150 C1200,145 1320,155 1440,150 L1440,160 L0,160 Z" />
         </svg>
       </div>
-      {showMatchOverlay && (() => {
-        // Round 46: 10 random variants, each with its own text (no romance
-        // framing — see MATCH_VARIANTS above the component) and its own
-        // color gradient, driven off --match-grad / --match-particle-color
-        // instead of a per-variant CSS class, so this block works the same
-        // for all 10 without needing 10 sets of JSX/CSS.
-        const mv = MATCH_VARIANTS[matchAnimVariant] || MATCH_VARIANTS[0];
-        return (
-        <div
-          className="match-overlay"
-          style={{ "--match-grad": mv.gradient, "--match-particle-color": mv.particleColor } as React.CSSProperties & Record<"--match-grad" | "--match-particle-color", string>}
-          role="dialog" aria-modal="true" aria-label={mv.title}
-          onPointerDown={(e) => { if (e.target === e.currentTarget) setShowMatchOverlay(null); }}
-        >
-          <button className="match-overlay-close" onClick={() => setShowMatchOverlay(null)} aria-label="Close match overlay"><FiX size={22} /></button>
-          {confettiPieces.map((piece,i)=><div key={i} className="confetti-piece" style={piece as React.CSSProperties} />)}
-          <div className="match-particles" aria-hidden="true">{Array.from({length:18}).map((_,i)=><span key={i} className="match-particle" style={{left:`${Math.random()*100}%`,top:`${Math.random()*100}%`,animationDelay:`${Math.random()*2}s`,fontSize:`${10+Math.random()*18}px`}}>{mv.particles[i % mv.particles.length]}</span>)}</div>
-          <div
-            className="match-title"
-          >
-            <span className="match-title-symbol">{mv.symbol}</span>
-            {mv.title}
-          </div>
-          <div className="match-subtitle">You and <strong style={{color:"var(--gold)"}}>{showMatchOverlay.name}</strong> are both ready to collaborate.</div>
-          <div className="match-disclaimer">Muse is for finding and booking creative collaborators, not a dating app.</div>
-          <div className="match-avatars"
-          >
-            <Image loading="lazy" className="match-av" src={currentUser.avatar} alt="You" width={80} height={80} />
-            <Image loading="lazy" className="match-av" src={showMatchOverlay.img} alt={showMatchOverlay.name} width={80} height={80} onError={handleImgError} />
-          </div>
-          <button className="match-btn" onClick={() => { setShowMatchOverlay(null); openChat(showMatchOverlay); }}
-          >
-            Send a Message
-          </button>
-        </div>
-        );
-      })()}
+      {showMatchOverlay && (
+        <MatchOverlay
+          match={showMatchOverlay}
+          variant={MATCH_VARIANTS[matchAnimVariant] || MATCH_VARIANTS[0]}
+          currentUserAvatar={currentUser.avatar}
+          confettiPieces={confettiPieces}
+          onClose={() => setShowMatchOverlay(null)}
+          onMessage={() => { setShowMatchOverlay(null); openChat(showMatchOverlay); }}
+          onImageError={handleImgError}
+        />
+      )}
       {showIntentPicker && intentProfile && (
         <div className="intent-overlay" ref={intentPickerTrap} role="dialog" aria-modal="true" aria-label="Intent picker" onPointerDown={(e) => { if (e.target === e.currentTarget) { setShowIntentPicker(false); setIntentProfile(null); setIntentSelection([]); } }}>
           <div className="intent-modal">
@@ -2864,7 +2719,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
           <div className="phone" id="muse-app">
             <div className="notch" />
             <div className="screen-el active">
-              <div className="onboard" style={{paddingTop:30}}>
+              <div className="onboard" role="main" id="muse-main" tabIndex={-1} style={{paddingTop:30}}>
                 <div className="sparkle" style={{top:"8%",left:"6%",fontSize:24}}>✦</div>
                 <div className="sparkle" style={{top:"15%",right:"10%",fontSize:18}}>✧</div>
                 <div className="sparkle" style={{bottom:"35%",left:"12%",fontSize:20}}>✦</div>
@@ -3419,33 +3274,14 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       {/* SETTINGS SCREEN */}
       {screen === "settings" && <ScreenErrorBoundary name="Settings"><SettingsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} obData={obData} showNsfw={showNsfw} setShowNsfw={setShowNsfw} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} blockedUsers={blockedUsers} setBlockedUsers={setBlockedUsers} obConnectedSocials={obConnectedSocials} toggleSocial={toggleSocial} theme={theme} setTheme={setTheme} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} doLogout={doLogout} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditNsfw={setEditNsfw} setShowNotificationsSettings={setShowNotificationsSettings} showNotificationsSettings={showNotificationsSettings} setShowConnectedAccounts={setShowConnectedAccounts} showConnectedAccounts={showConnectedAccounts} pushEnabled={pushEnabled} setPushEnabled={setPushEnabled} subscribeToMusePush={subscribeToMusePush} unsubscribeFromMusePush={unsubscribeFromMusePush} setShowTerms={setShowTerms} setShowPrivacy={setShowPrivacy} setShowGuidelines={setShowGuidelines} setShowDeleteConfirm={setShowDeleteConfirm} isUnlimited={isUnlimited} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} promptResponses={promptResponses} promptBankData={promptBankData} myGeo={myGeo} setShowAgeGate={setShowAgeGate} setPendingNsfw={setPendingNsfw} setShowAgeVerification={setShowAgeVerification} setScreen={setScreen} setObStep={setObStep} apiFetch={apiFetch} setShowQuests={setShowQuests} questClaimables={claimableQuests} showBlockedUsers={showBlockedUsersPanel} setShowBlockedUsers={setShowBlockedUsersPanel} ageVerified={ageVerified} verificationExpiringSoon={verificationExpiringSoon} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} showZodiac={showZodiac} setShowZodiac={setShowZodiac} showAge={showAge} setShowAge={setShowAge} showMbti={showMbti} setShowMbti={setShowMbti} showLifePath={showLifePath} setShowLifePath={setShowLifePath} showChinese={showChinese} setShowChinese={setShowChinese} showMatchPercent={showMatchPercent} setShowMatchPercent={setShowMatchPercent} userTier={userTier} setUpsell={setUpsell} authFetch={authFetch} setSupportOpen={setSupportOpen} preferences={(currentUser as typeof currentUser & { preferences?: Record<string, unknown>; profile?: { preferences?: Record<string, unknown> } }).preferences ?? (currentUser as typeof currentUser & { profile?: { preferences?: Record<string, unknown> } }).profile?.preferences ?? {}} /></ScreenErrorBoundary>}
 
-      {/* REPORT MODAL */}
       {showReport && (
-        <div className="modal-overlay" ref={reportTrap} role="dialog" aria-modal="true" aria-label="Report">
-          <div className="modal-header">
-            <button className="modal-back" aria-label="Back" onClick={()=>setShowReport(false)}><FiArrowLeft size={20} /></button>
-            <div className="modal-title">Report</div>
-            <button className="modal-close" onClick={()=>setShowReport(false)} aria-label="Close"><FiX size={18} /></button>
-          </div>
-          <div className="modal-body">
-            {[
-              {icon:"🚫",label:"Inappropriate Content",desc:"Nudity, violence, or spam"},
-              {icon:"🎭",label:"Fake Profile",desc:"Not a real person or catfish"},
-              {icon:"⚡",label:"Harassment",desc:"Threats, bullying, or hate speech"},
-              {icon:"🔞",label:"Underage",desc:"User appears to be under 18"},
-              {icon:"💼",label:"Scam or Fraud",desc:"Selling, soliciting, or phishing"},
-              {icon:"📋",label:"Other",desc:"Something else not listed above"},
-            ].map(r=>(
-               <div key={r.label} className="report-option" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); (async()=>{if(reportTarget){let ok=false;try{const res=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"report",target_id:reportTarget.id,target_type:reportTarget.type,reason:r.label})});ok=res.ok}catch{console.debug("[muse] report request failed")}showToast(ok?"Reported: "+r.label:"Failed to report")}setShowReport(false);setReportTarget(null)})(); } }} onClick={async()=>{if(reportTarget){let ok=false;try{const res=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"report",target_id:reportTarget.id,target_type:reportTarget.type,reason:r.label})});ok=res.ok}catch{console.debug("[muse] report request failed")}showToast(ok?"Reported: "+r.label:"Failed to report")}setShowReport(false);setReportTarget(null)}}>
-                <div className="report-option-icon">{r.icon}</div>
-                <div>
-                  <div className="report-option-text">{r.label}</div>
-                  <div className="report-option-desc">{r.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ReportModal
+          target={reportTarget}
+          dialogRef={reportTrap}
+          apiFetch={apiFetch}
+          onClose={() => { setShowReport(false); setReportTarget(null); }}
+          onReported={showToast}
+        />
       )}
 
       {/* LIKE + NOTE MODAL */}
@@ -4154,18 +3990,14 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         <PaymentHistory userId={authUser?.id || ""} onClose={() => setShowPaymentHistory(false)} />
       )}
       {showDailyLogin && (
-        <div className="daily-login-overlay" role="presentation" onPointerDown={(e) => { if (e.target === e.currentTarget) setShowDailyLogin(false); }}>
-          <div className="daily-login-card">
-            <div className="daily-login-title">Welcome back{currentUser?.name ? `, ${currentUser.name.split(" ")[0]}` : ""}!</div>
-            <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
-            {/* Persona-aware copy (audit finding fm-1) — Muse already collects
-                creative type in onboarding, so referencing it here costs
-                nothing new and beats identical copy for every user type. */}
-            <div className="daily-login-sub">{currentUser?.type ? `As a ${currentUser.type}, check your quests and claim rewards` : "Check your quests and claim rewards"}</div>
-            <button className="daily-login-btn" onClick={() => { setShowDailyLogin(false); setShowQuests(true); }}>View Quests</button>
-            <button className="daily-login-dismiss" onClick={() => setShowDailyLogin(false)}>Later</button>
-          </div>
-        </div>
+        <DailyLoginModal
+          name={currentUser.name}
+          creativeType={currentUser.type}
+          weeklyLogins={weeklyLogins}
+          loginStreak={loginStreak}
+          onClose={() => setShowDailyLogin(false)}
+          onViewQuests={() => { setShowDailyLogin(false); setShowQuests(true); }}
+        />
       )}
       {activePageTour && (
         <PageTour

@@ -538,3 +538,10 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - GOTCHA: port 3000 = Open WebUI here (SPA returns 200 for any path) → local Playwright must use a dedicated port (:3100 used)
 - GATES: visual-matrix **20 passed / 1 flaky exit 0** · eslint SplashScreen **0 errors** · ci.yml **YAML_OK 16 jobs**
 - NEXT: integrate Codex P1 + P0
+
+## Codex page-shell P1 — 2026-09-25 — INTEGRATED
+- BASE: `3aaadfd`; files: page.tsx, page-constants.ts, page-models.ts, lib/initials-avatar.ts(+test), components/{PageSplash,MatchOverlay,ReportModal,DailyLoginModal}.tsx, muse.css, CODEX_PAGE_SHELL_HANDOFF.md
+- EXTRA FIX (a11y): auth shell lacked `#muse-main` while the skip link rendered unconditionally → axe `skip-link`. Added `role="main" id="muse-main" tabIndex={-1}` to the auth `.onboard` container
+- GATES (all Codex-required gates closed): tsc **0** · vitest **71/544 PASS** · build **0** · eslint 11 files **0 errors** · smoke **15/15** · a11y **20 passed / 1 skipped**
+- NOT INCLUDED: Codex P2 controller-hook extraction (separate bundle + parity tests required)
+- NEXT: Codex storage-cleanup P0
