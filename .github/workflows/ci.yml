@@ -627,13 +627,18 @@ jobs:
         # `partialFingerprints` — `TypeError: Cannot read properties of
         # undefined (reading 'commitSha')` at dist/index.js:129895. Run the
         # official gitleaks binary directly; it writes the same SARIF without
-        # that crash. `--exit-code 0` reports findings as SARIF instead of
-        # failing the job on a history-only match.
+        # that crash.
+        #
+        # Verified locally before wiring: `gitleaks git` over the full history
+        # (1263 commits, 14.44 MB) reports NO leaks, so the default exit code is
+        # left enabled — a real leak FAILS this job. Do not add `--exit-code 0`.
+        # `.gitleaks.toml` was also migrated to the current `[[allowlists]]`
+        # schema: 8.30.1 panics on the legacy `[allowlist]` table.
         env:
           GITLEAKS_VERSION: 8.30.1
         run: |
           curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz gitleaks
-          ./gitleaks git --config .gitleaks.toml --report-format sarif --report-path gitleaks.sarif --exit-code 0 --no-banner
+          ./gitleaks git --config .gitleaks.toml --report-format sarif --report-path gitleaks.sarif --no-banner
           test -f gitleaks.sarif
 
       - name: Upload Gitleaks SARIF

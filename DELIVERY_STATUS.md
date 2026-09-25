@@ -566,3 +566,10 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - REMAINING CI BLOCKERS: (1) Demo Mode `demo-mode.spec.ts:100` — `.tour-overlay` never mounts; (2) E2E Smoke `discover-deck.spec.ts` — stale selectors not in current DiscoverScreen (documented gap; do not delete the spec)
 - OWNER SECRETS STILL MISSING: DATABASE_URL/R2_*, migrations DSN, CRON_SECRET, RENOVATE_TOKEN, LHCI_GITHUB_APP_TOKEN/VERCEL_*
 - NEXT: confirm gitleaks green; fix tour overlay; rewrite discover-deck spec
+
+## Priority H8 — 2026-09-25 — Gitleaks config migrated, real gate restored
+- BASE: `82b1e6f`; run `36087919727` → gitleaks panicked on legacy `[allowlist]` schema (config.go:347)
+- FIX: `.gitleaks.toml` → `[[allowlists]]`; dropped hand-rolled rules (stock ruleset is stronger)
+- GATE: removed `--exit-code 0`; verified with REAL v8.30.1 binary that full history is clean (**1263 commits, no leaks**) so the gate can legitimately fail on a future leak
+- VERIFIED: `gitleaks dir` config parse EXIT 0 · `gitleaks git` full history EXIT 0 · ci.yml YAML_OK
+- NEXT: Demo Mode tour + discover-deck rewrite
