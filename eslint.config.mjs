@@ -10,7 +10,7 @@ const nextRecommended = pluginNext.configs.recommended;
 const nextCoreWebVitals = pluginNext.configs["core-web-vitals"];
 
 export default [
-  { ignores: [".next/**", "node_modules/**", "out/**", "build/**", "*.config.js", "*.config.mjs", "scripts/**", "tests/**", "capture-screenshots.js", "test-frontend-e2e.mjs", "test-visual.mjs", "scripts/*.mjs", "src/app/api/cron/**/route.test.ts", "src/app/api/muse/**/route.test.ts", "src/lib/demo-mode.test.ts", "src/app/api/muse/auth/auth.route.test.ts", "src/app/api/muse/call/call.route.test.ts", "_audit_artifacts/**", "_screenshots/**", "public/sw-muse.js", "*.cjs"] },
+  { ignores: [".next/**", "node_modules/**", "out/**", "build/**", "*.config.js", "*.config.mjs", "scripts/**", "tests/**", "capture-screenshots.js", "test-frontend-e2e.mjs", "test-visual.mjs", "scripts/*.mjs", "src/app/api/cron/**/route.test.ts", "src/app/api/muse/**/route.test.ts", "src/lib/demo-mode.test.ts", "src/app/api/muse/auth/auth.route.test.ts", "src/app/api/muse/call/call.route.test.ts", "_audit_artifacts/**", "_screenshots/**", "public/sw-muse.js", "*.cjs", "_STATE/**", "coverage/**", "test-results/**", "playwright-report/**", "node_modules_broken_bak/**"] },
   ...tseslint.configs.recommended,
   {
     files: ["**/*.{js,jsx,mjs,cjs,ts,tsx}"],

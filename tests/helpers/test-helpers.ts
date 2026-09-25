@@ -102,9 +102,16 @@ export async function checkPageTour(page: Page, tourId: string) {
 }
 
 export async function checkDiscoverQueueIsolation(page: Page) {
-  const queuedCards = page.locator('[data-queued="true"], [aria-hidden="true"][data-card-index]');
+  // Real DiscoverScreen hooks: queued depth cards are `.swipe-card` children of
+  // `.card-stack` that are NOT the top card, and carry `aria-hidden` + `inert` +
+  // `pointer-events:none` (DiscoverScreen.tsx ~L394). The previous locator
+  // (`[data-queued="true"], [aria-hidden="true"][data-card-index]`) matched
+  // nothing — DiscoverScreen exposes only `data-screen` — so the loop body never
+  // ran and this helper passed VACUOUSLY. It now fails if no queued card exists.
+  const queuedCards = page.locator('.card-stack .swipe-card[inert][aria-hidden="true"]');
   const count = await queuedCards.count();
-  
+  expect(count, 'expected at least one queued (non-top) discover card').toBeGreaterThan(0);
+
   for (let i = 0; i < count; i++) {
     const card = queuedCards.nth(i);
     await expect(card).toHaveAttribute('aria-hidden', 'true');

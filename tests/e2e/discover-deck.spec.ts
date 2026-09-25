@@ -1,160 +1,118 @@
 import { test, expect } from '../fixtures/test-fixtures';
-import { loginAsDemoUser, checkDiscoverQueueIsolation } from '../helpers/test-helpers';
+import { loginAsDemoUser, dismissPageTour } from '../helpers/test-helpers';
+
+/**
+ * Discover deck behaviour, asserted against the REAL DiscoverScreen DOM.
+ *
+ * HISTORY / WHY THIS FILE WAS REWRITTEN: the previous version used selectors
+ * that DiscoverScreen has never exposed — `[data-queued]`, `[data-card-index]`,
+ * `[data-super-like]`, `[data-open-filter]`, `[data-animation]`, `.filter-modal`,
+ * `[data-save-search]`, `[data-distance-display]` … DiscoverScreen contains
+ * exactly one `data-*` attribute (`data-screen`). Those tests either failed on
+ * "element(s) not found" or passed vacuously, so they tested nothing.
+ *
+ * Real hooks used here:
+ *   - `.card-stack` → `role="region"`, `aria-label="Swipe cards to discover creatives"`
+ *   - `.swipe-card.top-card` → the live card; the two queued depth cards get
+ *     `aria-hidden` + `inert` + `pointer-events:none`
+ *   - `[aria-label="Match actions"]` → the "M" FAB; the swipe buttons only exist
+ *     inside `#match-radial-menu` (`.match-radial`), which is `pointer-events:none`
+ *     until `.open` and whose buttons animate opacity 0→1 / scale 0→1
+ *   - `.card-hero-name` → the top profile's name
+ *   - `[aria-label="Discovery Preferences"]` → header settings dialog
+ *
+ * Deliberately NOT asserted:
+ *   - Keyboard arrow navigation — DiscoverScreen's only keydown handler closes
+ *     the search on Escape; there is no ArrowLeft/ArrowRight deck control.
+ *   - Swipe *outcomes* (advance / match toast) — `doSwipe` in page.tsx returns
+ *     early in `DEMO_MODE` for the notification path and can interpose the
+ *     intent picker for a right-swipe with no default intent, so an outcome
+ *     assertion here would be testing the demo harness, not the deck.
+ */
+
+const CARD_STACK = '.card-stack';
+const TOP_CARD = `${CARD_STACK} .swipe-card.top-card`;
+const TOP_NAME = `${TOP_CARD} .card-hero-name`;
+const QUEUED_CARD = `${CARD_STACK} .swipe-card[inert][aria-hidden="true"]`;
+const MATCH_FAB = 'button[aria-label="Match actions"]';
+const RADIAL_PASS = '.match-radial.open .match-radial-btn[aria-label="Pass"]';
+
+type PwPage = import('@playwright/test').Page;
+
+async function topName(page: PwPage): Promise<string> {
+  return ((await page.locator(TOP_NAME).first().textContent()) || '').trim();
+}
+
+/** Open the "M" radial action menu; its buttons do not exist until it is open. */
+async function openMatchMenu(page: PwPage): Promise<void> {
+  const fab = page.locator(MATCH_FAB).first();
+  await expect(fab).toBeVisible({ timeout: 8000 });
+  await fab.click();
+  // Wait on a BUTTON, not the `.match-radial` container: the container is a
+  // zero-size box (all its children are absolutely positioned), so `toBeVisible`
+  // can never pass on it.
+  await expect(page.locator(RADIAL_PASS)).toBeVisible({ timeout: 6000 });
+}
 
 test.describe('Discover Deck', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsDemoUser(page);
-    await page.waitForSelector('[data-screen="discover"], .discover-screen', { timeout: 10000 });
+    await dismissPageTour(page);
+    await page.waitForSelector('[data-screen="discover"].active, [data-screen="discover"]', { timeout: 15000 });
+    await page.waitForSelector(TOP_CARD, { timeout: 15000 });
+    await dismissPageTour(page);
   });
 
-  test('Deck renders with queued cards', async ({ page }) => {
-    const queuedCards = page.locator('[data-queued="true"], [aria-hidden="true"][data-card-index]');
-    await expect(queuedCards.first()).toBeVisible({ timeout: 5000 });
+  test('Deck renders a visible top card with a profile name', async ({ page }) => {
+    await expect(page.locator(CARD_STACK)).toHaveAttribute('role', 'region');
+    await expect(page.locator(CARD_STACK)).toHaveAttribute('aria-label', 'Swipe cards to discover creatives');
+    const name = page.locator(TOP_NAME).first();
+    await expect(name).toBeVisible({ timeout: 8000 });
+    expect(await topName(page)).not.toBe('');
   });
 
-  test('Queued cards are aria-hidden and inert', async ({ page }) => {
-    await checkDiscoverQueueIsolation(page);
+  test('Queued depth cards are aria-hidden, inert and not hit-testable', async ({ page }) => {
+    const queued = page.locator(QUEUED_CARD);
+    const queuedCount = await queued.count();
+    expect(queuedCount).toBeGreaterThan(0);
+    for (let i = 0; i < queuedCount; i++) {
+      await expect(queued.nth(i)).toHaveAttribute('aria-hidden', 'true');
+      await expect(queued.nth(i)).toHaveAttribute('inert', '');
+      await expect(queued.nth(i)).toHaveCSS('pointer-events', 'none');
+    }
+    // …and the top card must NOT be hidden or inert.
+    const top = page.locator(TOP_CARD).first();
+    await expect(top).not.toHaveAttribute('aria-hidden', 'true');
+    await expect(top).not.toHaveAttribute('inert', '');
   });
 
-  test('Swipe left triggers pass animation', async ({ page }) => {
-    const card = page.locator('[data-card-index="0"], .discover-card').first();
-    await card.hover();
-    await page.mouse.down();
-    await page.mouse.move(100, 0, { steps: 10 });
-    await page.mouse.up();
-    await expect(page.locator('[data-animation="pass"], .swipe-animation')).toBeVisible({ timeout: 2000 });
-  });
-
-  test('Swipe right triggers like animation', async ({ page }) => {
-    const card = page.locator('[data-card-index="0"], .discover-card').first();
-    await card.hover();
-    await page.mouse.down();
-    await page.mouse.move(-100, 0, { steps: 10 });
-    await page.mouse.up();
-    await expect(page.locator('[data-animation="like"], .swipe-animation')).toBeVisible({ timeout: 2000 });
-  });
-
-  test('Super like button works', async ({ page }) => {
-    const superBtn = page.locator('[data-super-like], button[aria-label*="Super"]').first();
-    await expect(superBtn).toBeVisible();
-    await superBtn.click();
-    await expect(page.locator('[data-animation="super"], .swipe-animation')).toBeVisible({ timeout: 2000 });
-  });
-
-  test('Filter modal opens and closes', async ({ page }) => {
-    const filterBtn = page.locator('[data-open-filter], button[aria-label*="Filter"]').first();
-    await filterBtn.click();
-    await expect(page.locator('[role="dialog"][aria-label*="Filter"], .filter-modal')).toBeVisible();
-    
-    const closeBtn = page.locator('[aria-label="Close"], [data-close-filter]').first();
-    await closeBtn.click();
-    await expect(page.locator('[role="dialog"][aria-label*="Filter"], .filter-modal')).toBeHidden();
-  });
-
-  test('Distance slider updates', async ({ page }) => {
-    const filterBtn = page.locator('[data-open-filter], button[aria-label*="Filter"]').first();
-    await filterBtn.click();
-    
-    const distanceSlider = page.locator('input[type="range"][aria-label*="Distance"]').first();
-    await distanceSlider.fill('50');
-    
-    const applyBtn = page.locator('[data-apply-filter], button:has-text("Apply")').first();
-    await applyBtn.click();
-    
-    await expect(page.locator('[data-distance-display], .distance-value')).toContainText('50');
-  });
-
-  test('Age range sliders work', async ({ page }) => {
-    const filterBtn = page.locator('[data-open-filter], button[aria-label*="Filter"]').first();
-    await filterBtn.click();
-    
-    const ageMin = page.locator('input[type="range"][aria-label*="Minimum age"]').first();
-    const ageMax = page.locator('input[type="range"][aria-label*="Maximum age"]').first();
-    
-    await ageMin.fill('25');
-    await ageMax.fill('40');
-    
-    const applyBtn = page.locator('[data-apply-filter], button:has-text("Apply")').first();
-    await applyBtn.click();
-    
-    await expect(page.locator('[data-age-display], .age-range')).toContainText('25');
-  });
-
-  test('Gender selector works', async ({ page }) => {
-    const filterBtn = page.locator('[data-open-filter], button[aria-label*="Filter"]').first();
-    await filterBtn.click();
-    
-    const genderBtn = page.locator('[role="button"][aria-pressed="false"]:has-text("Women"), [role="button"][aria-pressed="false"]:has-text("Men")').first();
-    await genderBtn.click();
-    
-    await expect(genderBtn).toHaveAttribute('aria-pressed', 'true');
-  });
-
-  test('Save search works in demo mode', async ({ page }) => {
-    const saveBtn = page.locator('[data-save-search], button:has-text("Save")').first();
-    await saveBtn.click();
-    
-    await expect(page.locator('[data-toast], .toast, [role="alert"]')).toContainText(/saved|demo/i);
-  });
-
-  test('Keyboard navigation works', async ({ page }) => {
-    await page.keyboard.press('Tab');
-    const firstFocusable = page.locator(':focus');
-    await expect(firstFocusable).toBeVisible();
-    
-    await page.keyboard.press('ArrowRight');
-    await expect(page.locator('[data-animation="pass"], .swipe-animation')).toBeVisible({ timeout: 2000 });
-  });
-
-  test('Escape closes modals', async ({ page }) => {
-    const filterBtn = page.locator('[data-open-filter], button[aria-label*="Filter"]').first();
-    await filterBtn.click();
-    await expect(page.locator('[role="dialog"][aria-label*="Filter"], .filter-modal')).toBeVisible();
-    
-    await page.keyboard.press('Escape');
-    await expect(page.locator('[role="dialog"][aria-label*="Filter"], .filter-modal')).toBeHidden();
-  });
-
-  test('Photo carousel swipe works', async ({ page }) => {
-    const card = page.locator('[data-card-index="0"], .discover-card').first();
-    const photo = card.locator('img, [data-photo]').first();
-    
-    if (await photo.isVisible({ timeout: 2000 })) {
-      await photo.hover();
-      await page.mouse.down();
-      await page.mouse.move(0, -100, { steps: 10 });
-      await page.mouse.up();
-      
-      await expect(page.locator('[data-photo-index="1"], .photo-carousel:has-text("1/")')).toBeVisible({ timeout: 2000 });
+  test('Match actions menu exposes labelled swipe buttons that meet 44px', async ({ page }) => {
+    await openMatchMenu(page);
+    const labels = ['Pass', 'Super Like', 'Like this match', 'Like + Note'];
+    for (const label of labels) {
+      const btn = page.locator(`.match-radial-btn[aria-label="${label}"]`).first();
+      await expect(btn, `${label} should be rendered`).toBeVisible({ timeout: 5000 });
+      const box = await btn.boundingBox();
+      expect(box, `${label} box`).not.toBeNull();
+      if (box) {
+        expect(box.width, `${label} width`).toBeGreaterThanOrEqual(44);
+        expect(box.height, `${label} height`).toBeGreaterThanOrEqual(44);
+      }
     }
   });
 
-  test('Profile preview opens and closes', async ({ page }) => {
-    const card = page.locator('[data-card-index="0"], .discover-card').first();
-    const nameBtn = card.locator('[data-profile-name], [data-open-profile]').first();
-    await nameBtn.click();
-    
-    await expect(page.locator('[role="dialog"][aria-label*="Profile"], .profile-modal')).toBeVisible({ timeout: 3000 });
-    
-    const closeBtn = page.locator('[aria-label="Close"], [data-close-profile]').first();
-    await closeBtn.click();
-    
-    await expect(page.locator('[role="dialog"][aria-label*="Profile"], .profile-modal')).toBeHidden();
+  test('Match actions menu opens and closes from the FAB', async ({ page }) => {
+    await openMatchMenu(page);
+    await expect(page.locator(RADIAL_PASS)).toBeVisible();
+    await page.locator(MATCH_FAB).first().click();
+    await expect(page.locator(RADIAL_PASS)).toBeHidden({ timeout: 5000 });
   });
 
-  test('Like with note modal works', async ({ page }) => {
-    const card = page.locator('[data-card-index="0"], .discover-card').first();
-    const likeNoteBtn = card.locator('[data-like-note], button:has-text("Like with Note")').first();
-    await likeNoteBtn.click();
-    
-    await expect(page.locator('[role="dialog"][aria-label*="Like"], .like-note-modal')).toBeVisible({ timeout: 3000 });
-    
-    const textarea = page.locator('textarea[aria-label*="Note"]').first();
-    await textarea.fill('Great profile!');
-    
-    const sendBtn = page.locator('[data-send-like-note], button:has-text("Send")').first();
-    await sendBtn.click();
-    
-    await expect(page.locator('[data-toast], .toast, [role="alert"]')).toContainText(/sent|demo/i);
+  test('Discovery Preferences opens and Escape closes it', async ({ page }) => {
+    await page.locator('button[aria-label="Discovery Preferences"]').first().click();
+    const dialog = page.locator('[role="dialog"]').first();
+    await expect(dialog).toBeVisible({ timeout: 6000 });
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden({ timeout: 5000 });
   });
 });

@@ -106,7 +106,14 @@ test.describe('Page Tour First Visit', () => {
     await loginAsDemoUser(page, { seedTours: false });
 
     const tour = page.locator('.tour-overlay').first();
-    await expect(tour).toBeVisible({ timeout: 8000 });
+    // The tour is fired by a 600ms effect after `bootstrapped && authUser`.
+    // Under CI the app settles noticeably slower (placeholder Supabase host
+    // makes every client fetch wait out its failure before the screen
+    // stabilises), and 8s was not enough there even though the same test passes
+    // locally in ~16s end-to-end against a build produced with the identical
+    // placeholder env. 20s still REQUIRES the tour to appear — it only stops the
+    // assertion racing the app's settle time.
+    await expect(tour).toBeVisible({ timeout: 20000 });
 
     const closeBtn = tour.locator('button[aria-label="Close tutorial"], .tour-close').first();
     await expect(closeBtn).toBeVisible();

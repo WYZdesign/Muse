@@ -573,3 +573,13 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - GATE: removed `--exit-code 0`; verified with REAL v8.30.1 binary that full history is clean (**1263 commits, no leaks**) so the gate can legitimately fail on a future leak
 - VERIFIED: `gitleaks dir` config parse EXIT 0 · `gitleaks git` full history EXIT 0 · ci.yml YAML_OK
 - NEXT: Demo Mode tour + discover-deck rewrite
+
+## Priority H9 — 2026-09-25 — discover-deck rewritten, tour wait, CI artifacts
+- BASE: `4c14c61`
+- discover-deck.spec.ts: previous 14 tests used selectors DiscoverScreen never had (it exposes only `data-screen`) → failures/vacuous passes. Rewritten to the real DOM: **5/5 PASS**
+- checkDiscoverQueueIsolation: was VACUOUS (dead locator, loop never ran) → now real selector + `count>0`
+- demo-mode tour: passes locally incl. CI-identical placeholder env; wait 8s→20s (still requires the tour)
+- e2e-smoke + e2e-demo-mode now upload playwright-report/test-results on failure (they uploaded nothing)
+- eslint.config.mjs ignores now cover gitignored local/generated dirs → `npx eslint --quiet` EXIT 0
+- GATES: tsc **0** · vitest **71/544 PASS** · eslint **0** · build **0** · smoke **14+1 flaky** · discover-deck **5/5** · tour **2/2** · ci.yml **YAML_OK 16 jobs**
+- NEXT: confirm full CI green + deploy LIVE; P2 not integrated; owner-gated items unchanged
