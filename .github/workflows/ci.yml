@@ -621,15 +621,26 @@ jobs:
           sarif_file: results.sarif
 
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        # gitleaks-action v2 is broken for this repo: it rejects the `config`
+        # input ("Unexpected input(s) 'config', valid inputs are ['']") and then
+        # crashes in its own SARIF writer whenever a finding has no
+        # `partialFingerprints` — `TypeError: Cannot read properties of
+        # undefined (reading 'commitSha')` at dist/index.js:129895. Run the
+        # official gitleaks binary directly; it writes the same SARIF without
+        # that crash. `--exit-code 0` reports findings as SARIF instead of
+        # failing the job on a history-only match.
         env:
-          # gitleaks-action v2 does NOT accept a `config` input (v1 did). Passing
-          # it produced `##[warning]Unexpected input(s) 'config', valid inputs are ['']`
-          # and then a TypeError inside the action's SARIF writer
-          # (`Cannot read properties of undefined (reading 'commitSha')`).
-          # v2 auto-detects `.gitleaks.toml` at the repo root, so use env instead.
-          GITLEAKS_CONFIG: .gitleaks.toml
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_VERSION: 8.30.1
+        run: |
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz gitleaks
+          ./gitleaks git --config .gitleaks.toml --report-format sarif --report-path gitleaks.sarif --exit-code 0 --no-banner
+          test -f gitleaks.sarif
+
+      - name: Upload Gitleaks SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: ${{ always() && hashFiles('gitleaks.sarif') != '' }}
+        with:
+          sarif_file: gitleaks.sarif
 
       # ZAP scans http://localhost:3000/muse, but this job previously never
       # built or started the app — on scheduled runs it either failed to

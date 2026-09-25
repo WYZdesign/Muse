@@ -559,3 +559,10 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - GITLEAKS: `config` is not a v2 input (`Unexpected input(s) 'config'`) → broke the action's SARIF writer (`TypeError ... 'commitSha'`). Switched to `env: GITLEAKS_CONFIG` + `GITHUB_TOKEN`
 - E2E Smoke/A11y/Demo now RUN and failed on the pre-H5 tip (splash overlay not waited for); H5 fixes that
 - NEXT: confirm H5/H6 CI results; fix any remaining E2E failures without weakening gates
+
+## Priority H7 — 2026-09-25 — Gitleaks direct scan + CI reconciliation
+- BASE: `51fe9e7`; run `36086131863` → **Accessibility SUCCESS** (H5+P1 fixes confirmed) + Build/Lint/Unit/TypeScript/Renovate/SBOM SUCCESS
+- GITLEAKS: action v2 crashes in its own SARIF writer (`partialFingerprints.commitSha`) → replaced with direct official binary v8.30.1 + `Upload Gitleaks SARIF`
+- REMAINING CI BLOCKERS: (1) Demo Mode `demo-mode.spec.ts:100` — `.tour-overlay` never mounts; (2) E2E Smoke `discover-deck.spec.ts` — stale selectors not in current DiscoverScreen (documented gap; do not delete the spec)
+- OWNER SECRETS STILL MISSING: DATABASE_URL/R2_*, migrations DSN, CRON_SECRET, RENOVATE_TOKEN, LHCI_GITHUB_APP_TOKEN/VERCEL_*
+- NEXT: confirm gitleaks green; fix tour overlay; rewrite discover-deck spec
