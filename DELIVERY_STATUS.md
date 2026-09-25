@@ -522,3 +522,10 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - RENOVATE FIX: `RENOVATE_TOKEN` repo secret absent → job skipped cleanly via `if: env.RENOVATE_TOKEN != ''` (**owner: add token to enable**)
 - GATES: ci.yml **YAML_OK 16 jobs**, step graph verified
 - NEXT: confirm full CI green (build/e2e/a11y/demo/deploy-check), then Codex bundles
+
+## Priority H4 — 2026-09-25 — Build + Scorecard fixes
+- BASE: `02e4022`; run `36081674082` → Lint/Renovate/Unit/TypeScript/SBOM **SUCCESS**; Build now runs
+- BUILD FIX: `OAUTH_STATE_SECRET` missing → `src/lib/oauth-state.ts:4` aborts `next build` page-data collection for `/api/muse/social`. Added CI-only `OAUTH_STATE_SECRET: placeholder` (only module-level guard in src)
+- SCORECARD FIX: `results path is empty` → added `results_file: results.sarif`, `results_format: sarif`, `publish_results: true` + `Upload Scorecard SARIF` step
+- LOCAL PARITY: `npm run build` **EXIT 0**; real server on :3100 (3000 = Open WebUI) → smoke **15/15**, a11y **20 passed / 1 skipped**
+- NEXT: Codex bundle integration; full CI green

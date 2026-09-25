@@ -18,6 +18,11 @@ env:
   STRIPE_SECRET_KEY: placeholder
   NEXT_PUBLIC_SUPPORT_EMAIL: info@wyzdesign.com
   MUSE_DEMO_MODE: 'true'
+  # Build-time fail-closed guard: src/lib/oauth-state.ts throws at module
+  # evaluation if OAUTH_STATE_SECRET is unset, which aborts `next build` while
+  # collecting page data for /api/muse/social. CI uses placeholders for every
+  # other secret (nothing here is deployed), so this is a CI-only placeholder.
+  OAUTH_STATE_SECRET: placeholder
 
 jobs:
   lint:
@@ -601,7 +606,19 @@ jobs:
         uses: ossf/scorecard-action@v2.4.4
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
+          # The action REQUIRES an output file — without it it aborts with
+          # "validating options: results path is empty" (it previously had no
+          # results_file, so this step failed on every run).
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
           checks: --checks=Branch-Protection,Code-Review,Dependency-Update-Tool,Maintained,Pinned-Dependencies,SAST,Security-Policy,Token-Permissions,Vulnerabilities
+
+      - name: Upload Scorecard SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: ${{ always() && hashFiles('results.sarif') != '' }}
+        with:
+          sarif_file: results.sarif
 
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
