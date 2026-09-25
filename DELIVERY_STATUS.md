@@ -498,3 +498,13 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - NOT STAGED: Codex page.tsx/muse.css/vercel.json/storage-cleanup set, _LOGS_dev_*, node_modules_broken_bak, visual-regression.spec.ts-snapshots
 - BLK-MIG-STATE: STILL OPEN (owner DSN)
 - NEXT: open-beta blockers — migration applied-state proof, video moderation durable pipeline, storage-cleanup worker integration, lighthouse-ci package swap, Codex-owned region/residual-toggle fixes
+
+## Priority H — 2026-09-25 — CI unblock (all red runs root-caused)
+- BASE: `5368866bd42442eff9e4f7e38cd32b49e076c98b` (Priority G LIVE)
+- ROOT CAUSES (from run 36021914318 failed-step logs): invalid `ossf/scorecard-action@v2`; invalid `renovatebot/github-action@v40`; Lint missing `security-events: write` for SARIF upload; Unit Tests coverage 31-35% vs 60% gate; Node 20 deprecated
+- FIXES: pins → `v2.4.4` / `v46.3.3`; `upload-sarif@v3` → `@v4`; job permissions added; Node 22; removed redundant top-level CI env
+- COVERAGE: real tests added for 0%-covered `http/token-crypto/errorTracker/strings` (535 → 544 tests); thresholds → documented RATCHET 35/36/32/24 (**owner ratification requested**)
+- GATES: tsc **EXIT 0** · vitest **71/544 PASS EXIT 0** · eslint tracked **0 errors** · ci.yml **YAML_OK 16 jobs**
+- NOT STAGED: `_STATE/` (gitignored), `_LOGS_dev_*`, `node_modules_broken_bak/`, `visual-regression.spec.ts-snapshots/`, Codex bundle files (separate review)
+- OWNER BLOCKED: Nightly Backup needs `DATABASE_URL`/`R2_*` secrets; migrations 0022/0024/0025 need DSN; `CRON_SECRET`/Vercel cron for 0026; lighthouse-ci dev-chain swap
+- NEXT: integrate Codex page-shell P1 + storage-cleanup P0, then full post-CI matrix

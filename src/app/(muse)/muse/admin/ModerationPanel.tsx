@@ -18,21 +18,59 @@ type Strike = {
 };
 type AuditLog = { id: string; query_text: string; query_result_summary: string; created_at: string };
 
+type TabKey = "reports" | "strikes" | "scans" | "custom" | "brain" | "audit";
+
+type ScanDetail = { url?: string };
+type ScanRow = {
+  id: string;
+  scanned_at: string;
+  safe?: boolean;
+  should_block?: boolean;
+  should_report?: boolean;
+  is_csam?: boolean;
+  file_type?: string;
+  file_name?: string;
+  context?: string;
+  confidence?: number;
+  flagged_categories?: string[];
+  user_id?: string | null;
+  details?: ScanDetail[] | ScanDetail | null;
+};
+
+type Incident = {
+  id: string;
+  created_at: string;
+  type: string;
+  severity?: string;
+  status?: string;
+  user_id?: string | null;
+  details?: { flaggedCategories?: string[] } | null;
+};
+
+type CustomValueProfile = {
+  id: string;
+  name?: string;
+  type?: string;
+  styles?: string[];
+  custom_type_pending?: boolean;
+  custom_style_pending?: boolean;
+};
+
 export default function AdminModerationPanel() {
-  const [tab, setTab] = useState<"reports" | "strikes" | "scans" | "custom" | "brain" | "audit">("reports");
+  const [tab, setTab] = useState<TabKey>("reports");
   const [reports, setReports] = useState<Report[]>([]);
   const [strikes, setStrikes] = useState<Strike[]>([]);
-  const [scanRows, setScanRows] = useState<any[]>([]);
-  const [incidents, setIncidents] = useState<any[]>([]);
-  const [customValueProfiles, setCustomValueProfiles] = useState<any[]>([]);
+  const [scanRows, setScanRows] = useState<ScanRow[]>([]);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [customValueProfiles, setCustomValueProfiles] = useState<CustomValueProfile[]>([]);
   const [reviewingCustom, setReviewingCustom] = useState<string | null>(null);
   const [auditLog, setAuditLog] = useState<AuditLog[]>([]);
   const [brainQuery, setBrainQuery] = useState("");
   const [brainResult, setBrainResult] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
-  const loadTab = async (t: string) => {
-    setTab(t as any);
+  const loadTab = async (t: TabKey) => {
+    setTab(t);
     if (t === "reports" && !reports.length) {
       const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-reports" }) });
       if (r.ok) { const d = await r.json(); setReports(d.reports || []); }
@@ -64,7 +102,9 @@ export default function AdminModerationPanel() {
       const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-review-custom-value", targetUserId, field }) });
       if (r.ok) {
         setCustomValueProfiles(prev => prev
-          .map(p => p.id === targetUserId ? { ...p, [field === "type" ? "custom_type_pending" : "custom_style_pending"]: false } : p)
+          .map(p => p.id === targetUserId
+            ? { ...p, ...(field === "type" ? { custom_type_pending: false } : { custom_style_pending: false }) }
+            : p)
           .filter(p => p.custom_type_pending || p.custom_style_pending));
       }
     } finally { setReviewingCustom(null); }
@@ -160,7 +200,7 @@ export default function AdminModerationPanel() {
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>
-          {[["reports", `Reports (${reports.length})`], ["strikes", `Warnings (${strikes.length})`], ["scans", `Review Queue${incidents.length ? ` ⚠${incidents.length}` : ""}`], ["custom", `Custom Values (${customValueProfiles.length})`], ["brain", "🧠 AI Assistant"], ["audit", "Activity Log"]].map(([key, label]) => (
+          {([["reports", `Reports (${reports.length})`], ["strikes", `Warnings (${strikes.length})`], ["scans", `Review Queue${incidents.length ? ` ⚠${incidents.length}` : ""}`], ["custom", `Custom Values (${customValueProfiles.length})`], ["brain", "🧠 AI Assistant"], ["audit", "Activity Log"]] as const).map(([key, label]) => (
             <button key={key} onClick={() => loadTab(key)} style={{ flex: 1, padding: "10px 0", borderRadius: 8, background: tab === key ? "rgba(255,215,0,0.15)" : "transparent", border: "none", color: tab === key ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
               {label}
             </button>
@@ -244,7 +284,7 @@ export default function AdminModerationPanel() {
                 {/* Play the actual flagged clip so a reviewer isn't judging a
                     filename. The upload route stores its public URL in details. */}
                 {(() => {
-                  const url = Array.isArray(s.details) ? (s.details.find((d: any) => d?.url)?.url || s.details[0]?.url) : null;
+                  const url = Array.isArray(s.details) ? (s.details.find((d) => d?.url)?.url || s.details[0]?.url) : null;
                   if (!url) return null;
                   const isAudio = /audio/i.test(String(s.file_type));
                   return (

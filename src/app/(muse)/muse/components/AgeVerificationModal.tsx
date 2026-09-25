@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
 type Props = {
   onVerified: () => void;
   onClose: () => void;
   purpose?: "general" | "age_gate";
-  authFetch: (url: string, opts?: RequestInit) => Promise<Response>;
+  authFetch: (_url: string, _opts?: RequestInit) => Promise<Response>;
 };
 
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
