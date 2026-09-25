@@ -545,3 +545,11 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - GATES (all Codex-required gates closed): tsc **0** · vitest **71/544 PASS** · build **0** · eslint 11 files **0 errors** · smoke **15/15** · a11y **20 passed / 1 skipped**
 - NOT INCLUDED: Codex P2 controller-hook extraction (separate bundle + parity tests required)
 - NEXT: Codex storage-cleanup P0
+
+## Codex storage-cleanup P0 — 2026-09-25 — INTEGRATED
+- BASE: `7560bbd`; files: sql/migrations/0026_storage_cleanup_worker.sql, src/app/api/cron/storage-cleanup/route.ts(+test), vercel.json, CODEX_STORAGE_CLEANUP_HANDOFF.md
+- FIX: typed the route.test fixture (`CleanupJob` with `next_attempt_at`/`last_error`) → cleared the last local tsc error
+- CRON PLAN: vercel.json already had `0 */6 * * *` → plan supports sub-daily; new `*/15` schedule OK. `CRON_SECRET` NOT set → route inert/fail-closed until owner configures
+- GATES: tsc **0** · vitest **71/544 PASS** · build **0** · eslint **0 errors**
+- NOT DONE (owner-gated): 0026 **unapplied/unverified**; BLK-MIG-STATE OPEN; no disposable-DB apply/concurrency/backoff/dead-letter proof
+- NEXT: full CI green check + post-CI matrix + live SHA verification
