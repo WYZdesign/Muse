@@ -553,13 +553,11 @@ jobs:
           exit 1
 
       - name: Run Lighthouse CI
-        # package.json has legacy third-party `lighthouse-ci@1.13.1` (andreasonny83)
-        # — bin is `lighthouse-ci <url>`, NOT Google's `lhci autorun`.
-        # Google Lighthouse CI is `@lhci/cli` (reads lighthouserc.js). It is NOT
-        # in package.json (package change is out of Priority D exclusive set);
-        # invoke it pinned via npx so asserts in lighthouserc.js actually run.
-        # Full-tree npm audit still fails on the legacy lighthouse-ci dep chain —
-        # documented in lighthouserc.js + security-audit; do not drop asserts.
+        # Google Lighthouse CI is `@lhci/cli` (reads lighthouserc.js). The legacy
+        # third-party `lighthouse-ci@1.13.1` wrapper (andreasonny83 — bin
+        # `lighthouse-ci <url>`) was removed from package.json on 2026-09-25: it
+        # was unused by every script/workflow and pulled a 9-vuln dev chain.
+        # Invoke the real client pinned via npx so lighthouserc.js asserts run.
         run: npx --yes --package=@lhci/cli@0.15.1 lhci autorun
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
@@ -590,12 +588,10 @@ jobs:
         # Runtime deps only. Current: 0 vulnerabilities (verified local 2026-09-24).
         run: npm audit --omit=dev --audit-level=high
 
-      - name: npm audit (full tree — documents lighthouse-ci chain)
-        # Does NOT weaken the prod gate above. Full tree currently fails with
-        # 9 DEV-only vulns all reachable via legacy lighthouse-ci@1.13.1
-        # (cookie/raven/lodash.set/got/update-notifier). Owner decision pending
-        # to replace with @lhci/cli — see lighthouserc.js header. Keep this
-        # step failing until the package is replaced; do not drop the level.
+      - name: npm audit (full tree — hard gate)
+        # Dev + prod. Green since the unused legacy `lighthouse-ci@1.13.1`
+        # wrapper (9 dev-only vulns: cookie/raven/lodash.set/got/update-notifier)
+        # was removed from package.json on 2026-09-25. Do not drop the level.
         run: npm audit --audit-level=high
 
       - name: Run OpenSSF Scorecard

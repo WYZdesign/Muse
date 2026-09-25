@@ -1,15 +1,14 @@
-// Lighthouse CI config for Muse — consumed by Google `@lhci/cli` (`lhci autorun`).
+// Consumed by Google `@lhci/cli` (`lhci autorun`), invoked pinned from ci.yml as
+// `npx --package=@lhci/cli@0.15.1 lhci autorun`.
 //
-// KNOWN DEBT (Priority D — never weaken asserts to go green):
-// - package.json still depends on legacy third-party `lighthouse-ci@^1.13.1`
-//   (andreasonny83 — bin `lighthouse-ci <url>`), which is NOT @lhci/cli and
-//   pulls a 9-vuln DEV-only chain (cookie/raven/lodash.set/got/update-notifier
-//   via lighthouse@8). `npm audit --omit=dev` is 0 vulns.
-// - package.json change is outside Priority D exclusive set → ci.yml invokes
-//   pinned `npx --package=@lhci/cli@0.15.1 lhci autorun` so these asserts run.
-// - Owner decision pending: replace `lighthouse-ci` with `@lhci/cli` in
-//   package.json, then simplify the CI step back to `npx lhci autorun`.
-// - Assertion thresholds below are intentional gates; do not lower them.
+// RESOLVED 2026-09-25: package.json no longer depends on the legacy third-party
+// `lighthouse-ci@^1.13.1` (andreasonny83 — bin `lighthouse-ci <url>`), which was
+// NOT @lhci/cli and pulled a 9-vuln DEV-only chain (cookie/raven/lodash.set/got/
+// update-notifier via lighthouse@8). It was unused by every script and workflow
+// and has been removed. `npm audit` is now 0 vulnerabilities for both prod and
+// the full tree.
+//
+// Assertion thresholds below are intentional gates; do not lower them.
 module.exports = {
   ci: {
     collect: {

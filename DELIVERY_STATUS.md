@@ -508,3 +508,10 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - NOT STAGED: `_STATE/` (gitignored), `_LOGS_dev_*`, `node_modules_broken_bak/`, `visual-regression.spec.ts-snapshots/`, Codex bundle files (separate review)
 - OWNER BLOCKED: Nightly Backup needs `DATABASE_URL`/`R2_*` secrets; migrations 0022/0024/0025 need DSN; `CRON_SECRET`/Vercel cron for 0026; lighthouse-ci dev-chain swap
 - NEXT: integrate Codex page-shell P1 + storage-cleanup P0, then full post-CI matrix
+
+## Priority H2 — 2026-09-25 — lighthouse-ci dev-chain resolved (item 5)
+- BASE: `4f40d75890f4df8cf779c8b5db64bccb60c5524c`
+- ACTION: removed unused legacy `lighthouse-ci@1.13.1` devDependency (0 script/workflow references); CI already used pinned `npx @lhci/cli@0.15.1 lhci autorun`
+- RESULT: `npm uninstall` → 179 packages removed · `npm audit` prod **0** · `npm audit` full tree **0** (was 9 dev vulns) · lighthouserc **11 asserts** · ci.yml **YAML_OK 16 jobs**
+- CI: security-audit full-tree step is now a hard gate, not a documented failure; lighthouse + lighthouserc comments updated
+- NEXT: confirm CI green, then integrate Codex page-shell P1 + storage-cleanup P0
