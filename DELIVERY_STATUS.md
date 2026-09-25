@@ -592,3 +592,11 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - Gates: smoke **15/15** · discover-deck **5/5** · tsc **0** · vitest **544 PASS** · eslint **0**
 - CI at `912a277`: all jobs green EXCEPT E2E Smoke (now fixed); Deploy Verification skipped pending it
 - NEXT: confirm E2E Smoke + Deploy Verification green, deploy LIVE check
+
+## Priority H11 — 2026-09-25 — Deploy Verification fixed (last red job)
+- BASE: `7edd8ff`; run `36138016410` = every push job GREEN except Deploy Verification
+- ROOT CAUSE: step used `?projectId=…&target=production&limit=10` → NOT_FOUND ×45 while the deploy was live (`wyz_deploy_check.py 7edd8ff` → READY / LIVE)
+- FIX: query `v6/deployments?limit=50` (no projectId/target), match EXACT SHA + READY (not loosened); fail-fast if VERCEL_TOKEN unset; log HTTP status+body per attempt
+- VERIFIED LIVE: new query → HTTP 200, 1 exact-SHA match, readyState=READY, DEPLOY IS LIVE ✅
+- CI at `7edd8ff`: all green except this job; schedule-only jobs unrun
+- NEXT: confirm green run; then owner-gated items (migrations DSN, secrets, media pipeline)

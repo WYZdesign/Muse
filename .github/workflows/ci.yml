@@ -753,22 +753,45 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           SHA="${{ github.sha }}"
-          echo "Waiting for production deployment of ${SHA}..."
+          echo "Waiting for a READY deployment of ${SHA}..."
+          # Fail fast and say so: with no token every call would look like
+          # NOT_FOUND and the job would burn ~15 minutes before failing.
+          if [ -z "${VERCEL_TOKEN:-}" ]; then
+            echo "::error::VERCEL_TOKEN secret is not set — cannot query the Vercel API."
+            exit 1
+          fi
           for i in $(seq 1 45); do
-            RESP=$(curl -sS -H "Authorization: Bearer ${VERCEL_TOKEN}" \
-              "https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&target=production&limit=10" || true)
-            if echo "$RESP" | jq -e --arg sha "$SHA" \
-              '[.deployments[]? | select((.meta.githubCommitSha // .meta.commitSha // "") == $sha) | select(.readyState == "READY")] | length > 0' \
-              >/dev/null 2>&1; then
-              echo "DEPLOY IS LIVE ✅ ${SHA}"
-              exit 0
+            # Exact-SHA match against the token's deployments. A git SHA is
+            # globally unique, so matching on it alone (no projectId, no
+            # `target=production` filter) is both precise and robust.
+            # EVIDENCE for dropping the filter: the integrator's working checker
+            # (WYZ_Command_Center/wyz_deploy_check.py) queries this same
+            # v6/deployments endpoint WITHOUT a target filter and resolved the
+            # exact SHA to readyState=READY, while the previous version of this
+            # step used `&target=production&limit=10` and reported
+            # state=NOT_FOUND on 45 consecutive attempts for that same live SHA.
+            # HTTP status + body are now logged so an auth/permission problem is
+            # visible instead of masquerading as NOT_FOUND.
+            RAW=$(curl -sS -w '\n%{http_code}' -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+              "https://api.vercel.com/v6/deployments?limit=50" || true)
+            CODE=$(printf '%s' "$RAW" | tail -n1)
+            RESP=$(printf '%s' "$RAW" | sed '$d')
+            if [ "$CODE" != "200" ]; then
+              echo "attempt ${i}: Vercel API HTTP ${CODE} — $(printf '%s' "$RESP" | head -c 300)"
+            else
+              if echo "$RESP" | jq -e --arg sha "$SHA" \
+                '[.deployments[]? | select((.meta.githubCommitSha // .meta.commitSha // "") == $sha) | select(.readyState == "READY")] | length > 0' \
+                >/dev/null 2>&1; then
+                echo "DEPLOY IS LIVE ✅ ${SHA}"
+                exit 0
+              fi
+              STATE=$(echo "$RESP" | jq -r --arg sha "$SHA" \
+                '[.deployments[]? | select((.meta.githubCommitSha // .meta.commitSha // "") == $sha) | .readyState] | first // "NOT_FOUND"' \
+                2>/dev/null || echo "PARSE_ERR")
+              echo "attempt ${i}: state=${STATE}"
             fi
-            STATE=$(echo "$RESP" | jq -r --arg sha "$SHA" \
-              '[.deployments[]? | select((.meta.githubCommitSha // .meta.commitSha // "") == $sha) | .readyState] | first // "NOT_FOUND"' \
-              2>/dev/null || echo "PARSE_ERR")
-            echo "attempt ${i}: state=${STATE}"
             sleep 20
           done
           echo "Deploy ${SHA} did not reach READY in time" >&2
