@@ -553,3 +553,9 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - GATES: tsc **0** · vitest **71/544 PASS** · build **0** · eslint **0 errors**
 - NOT DONE (owner-gated): 0026 **unapplied/unverified**; BLK-MIG-STATE OPEN; no disposable-DB apply/concurrency/backoff/dead-letter proof
 - NEXT: full CI green check + post-CI matrix + live SHA verification
+
+## Priority H6 — 2026-09-25 — Gitleaks input fix
+- BASE: `87e9b31`; run `36083077994` → **Build SUCCESS** (H4 confirmed) + Lint/Unit/TypeScript/Renovate/SBOM green
+- GITLEAKS: `config` is not a v2 input (`Unexpected input(s) 'config'`) → broke the action's SARIF writer (`TypeError ... 'commitSha'`). Switched to `env: GITLEAKS_CONFIG` + `GITHUB_TOKEN`
+- E2E Smoke/A11y/Demo now RUN and failed on the pre-H5 tip (splash overlay not waited for); H5 fixes that
+- NEXT: confirm H5/H6 CI results; fix any remaining E2E failures without weakening gates

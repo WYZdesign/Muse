@@ -622,8 +622,14 @@ jobs:
 
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
-        with:
-          config: .gitleaks.toml
+        env:
+          # gitleaks-action v2 does NOT accept a `config` input (v1 did). Passing
+          # it produced `##[warning]Unexpected input(s) 'config', valid inputs are ['']`
+          # and then a TypeError inside the action's SARIF writer
+          # (`Cannot read properties of undefined (reading 'commitSha')`).
+          # v2 auto-detects `.gitleaks.toml` at the repo root, so use env instead.
+          GITLEAKS_CONFIG: .gitleaks.toml
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # ZAP scans http://localhost:3000/muse, but this job previously never
       # built or started the app — on scheduled runs it either failed to
