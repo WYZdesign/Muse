@@ -609,3 +609,9 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - DEPLOY IS ACTUALLY LIVE (verified out-of-band): `wyz_deploy_check.py 7edd8ff` → READY / LIVE ✅
 - OWNER ACTIONS: add VERCEL_TOKEN (+LHCI_GITHUB_APP_TOKEN), DATABASE_URL/R2_*; decide migrations 0026 apply; ratify coverage ratchet
 - NEXT: owner adds secrets → full pipeline green
+
+## Priority H13 — 2026-09-25 — independent full regression sweep
+- BASE: `97253a3`; reproduced EVERY CI push job locally: smoke+discover-deck **20/20**, demo-mode **11/11**, a11y **20/1**, tsc **0**, vitest **544**, eslint **0**, build **0**
+- One earlier combined-run a11y failure (12/21, all screens visible) did NOT reproduce standalone (20/1) nor on re-run — traced to my shared-server harness (stale `next start` child holding port 3100); CI uses a fresh job+server per suite, so it is not exposed. No repo change made.
+- Only remaining red is Deploy Verification: repo has **0 Actions secrets** (`gh secret list` → `[]`), so `VERCEL_TOKEN` is absent → owner action
+- NEXT: owner adds VERCEL_TOKEN (+LHCI token) → full pipeline green
