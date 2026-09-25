@@ -625,6 +625,28 @@ jobs:
         with:
           config: .gitleaks.toml
 
+      # ZAP scans http://localhost:3000/muse, but this job previously never
+      # built or started the app — on scheduled runs it either failed to
+      # connect or scanned nothing. Build + start + wait here (workflow-level
+      # env already supplies every placeholder the build needs).
+      - name: Build (for ZAP target)
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: npm run build
+
+      - name: Start server (for ZAP target)
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: nohup npx next start -p 3000 &
+
+      - name: Wait for server (for ZAP target)
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/muse -o /dev/null && exit 0
+            sleep 1
+          done
+          echo "Server never came up" >&2
+          exit 1
+
       - name: Run OWASP ZAP Baseline Scan
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         uses: zaproxy/action-baseline@v0.12.0

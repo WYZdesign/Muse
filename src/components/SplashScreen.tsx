@@ -27,7 +27,7 @@ export default function SplashScreen() {
   }));
 
   return (
-    <div style={{
+    <div id="splash-screen" style={{
       position: "fixed", inset: 0, zIndex: 99999,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       transition: "opacity .7s cubic-bezier(.4,0,.2,1)",

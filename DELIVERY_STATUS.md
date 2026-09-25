@@ -529,3 +529,12 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - SCORECARD FIX: `results path is empty` → added `results_file: results.sarif`, `results_format: sarif`, `publish_results: true` + `Upload Scorecard SARIF` step
 - LOCAL PARITY: `npm run build` **EXIT 0**; real server on :3100 (3000 = Open WebUI) → smoke **15/15**, a11y **20 passed / 1 skipped**
 - NEXT: Codex bundle integration; full CI green
+
+## Priority H5 — 2026-09-25 — ZAP provisioning + splash id + prod baselines
+- BASE: `e57d970`
+- ZAP FIX: Security Audit never started the app before scanning localhost:3000 → added gated build/start/wait steps
+- SPLASH FIX: `src/components/SplashScreen.tsx` lacked `id="splash-screen"` (waited on by ~15 e2e helpers) → all splash waits were silent no-ops; prod-mode visual captured the splash. Added the id
+- BASELINES: regenerated 8 visual-matrix PNGs in PRODUCTION mode (dev-mode baselines could never match CI `next start`); Discover verified as real Discover UI
+- GOTCHA: port 3000 = Open WebUI here (SPA returns 200 for any path) → local Playwright must use a dedicated port (:3100 used)
+- GATES: visual-matrix **20 passed / 1 flaky exit 0** · eslint SplashScreen **0 errors** · ci.yml **YAML_OK 16 jobs**
+- NEXT: integrate Codex P1 + P0
