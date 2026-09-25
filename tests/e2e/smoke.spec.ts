@@ -296,6 +296,20 @@ test.describe('Priority A Responsive + Modals', () => {
   });
 
   test('Feed Photos filter shows image posts, Text filter shows text-only, empty state resets', async ({ page }) => {
+    // Pin the live feed to empty so FeedScreen falls back to its baked-in
+    // `feedPostsStatic` demo posts — FeedScreen.tsx L134-135:
+    //   baseFeed = hasLiveFeed ? liveFeed : feedPostsStatic
+    // Without this the test depends on whatever the live backend returns, which
+    // differs between CI (placeholder Supabase) and local dev. Evidence: this
+    // test passed at 02e4022 and started failing at 3aaadfd — the run where the
+    // `#splash-screen` fix landed, changing E2E timing so the live
+    // `/api/muse?type=feed` result was already applied by the time the filter
+    // was clicked. Same stub the visual suite already uses; it makes the demo
+    // assertion deterministic instead of backend-dependent.
+    await page.route(/\/api\/muse\?.*type=feed(?:&|$)/, (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ posts: [] }) })
+    );
+
     await page.setViewportSize({ width: 390, height: 844 });
     await loginAsDemoUser(page);
     await dismissPageTour(page);

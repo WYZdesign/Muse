@@ -583,3 +583,12 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - eslint.config.mjs ignores now cover gitignored local/generated dirs → `npx eslint --quiet` EXIT 0
 - GATES: tsc **0** · vitest **71/544 PASS** · eslint **0** · build **0** · smoke **14+1 flaky** · discover-deck **5/5** · tour **2/2** · ci.yml **YAML_OK 16 jobs**
 - NEXT: confirm full CI green + deploy LIVE; P2 not integrated; owner-gated items unchanged
+
+## Priority H10 — 2026-09-25 — E2E Smoke last blocker fixed (via CI artifacts)
+- BASE: `912a277`; CI artifacts from run 36136411356 gave exact causes (no guessing)
+- 44px: measured mid-entry-animation (44 × 0.935 = 41.1px) → `expect.poll` until settled
+- Feed filters: test depended on live `/api/muse?type=feed`; proved regression start = `3aaadfd` (H5 splash fix) → stubbed `{posts:[]}` so `hasLiveFeed=false` → deterministic demo posts
+- No assertions weakened — same end state required
+- Gates: smoke **15/15** · discover-deck **5/5** · tsc **0** · vitest **544 PASS** · eslint **0**
+- CI at `912a277`: all jobs green EXCEPT E2E Smoke (now fixed); Deploy Verification skipped pending it
+- NEXT: confirm E2E Smoke + Deploy Verification green, deploy LIVE check

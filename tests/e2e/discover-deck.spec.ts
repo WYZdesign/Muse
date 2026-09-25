@@ -92,12 +92,17 @@ test.describe('Discover Deck', () => {
     for (const label of labels) {
       const btn = page.locator(`.match-radial-btn[aria-label="${label}"]`).first();
       await expect(btn, `${label} should be rendered`).toBeVisible({ timeout: 5000 });
-      const box = await btn.boundingBox();
-      expect(box, `${label} box`).not.toBeNull();
-      if (box) {
-        expect(box.width, `${label} width`).toBeGreaterThanOrEqual(44);
-        expect(box.height, `${label} height`).toBeGreaterThanOrEqual(44);
-      }
+      // The buttons enter with `transform: scale(0) → scale(1)` over 0.5s on an
+      // overshoot bezier (.22,1.4,.36,1) and then float on an infinite
+      // `radialFloat` keyframe. A single immediate `boundingBox()` can land
+      // mid-ramp and read e.g. 41.1px for a button that renders at 44px, which
+      // is exactly how this failed in CI. Poll until the box settles >= 44.
+      await expect
+        .poll(async () => (await btn.boundingBox())?.width ?? 0, { timeout: 6000 })
+        .toBeGreaterThanOrEqual(44);
+      await expect
+        .poll(async () => (await btn.boundingBox())?.height ?? 0, { timeout: 6000 })
+        .toBeGreaterThanOrEqual(44);
     }
   });
 
