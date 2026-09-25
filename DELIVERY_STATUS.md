@@ -600,3 +600,12 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - VERIFIED LIVE: new query → HTTP 200, 1 exact-SHA match, readyState=READY, DEPLOY IS LIVE ✅
 - CI at `7edd8ff`: all green except this job; schedule-only jobs unrun
 - NEXT: confirm green run; then owner-gated items (migrations DSN, secrets, media pipeline)
+
+## Priority H12 — 2026-09-25 — FINAL: code-level CI fully green; last red = missing secret
+- BASE: `1e4d058`; run `36140565423` → 10/10 push jobs GREEN except Deploy Verification
+- DEFINITIVE CAUSE: `##[error]VERCEL_TOKEN secret is not set`; `gh secret list --json name` → **`[]` (ZERO repo secrets)**
+- Explains all remaining non-green: Deploy Verification (VERCEL_TOKEN), Renovate (RENOVATE_TOKEN, already guarded to skip), Nightly Backup (DATABASE_URL)
+- Deliberately NOT skipped: deploy verification is a real release gate, unlike Renovate — it fails fast (<1s) with an explicit message
+- DEPLOY IS ACTUALLY LIVE (verified out-of-band): `wyz_deploy_check.py 7edd8ff` → READY / LIVE ✅
+- OWNER ACTIONS: add VERCEL_TOKEN (+LHCI_GITHUB_APP_TOKEN), DATABASE_URL/R2_*; decide migrations 0026 apply; ratify coverage ratchet
+- NEXT: owner adds secrets → full pipeline green
