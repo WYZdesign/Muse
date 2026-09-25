@@ -515,3 +515,10 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - RESULT: `npm uninstall` → 179 packages removed · `npm audit` prod **0** · `npm audit` full tree **0** (was 9 dev vulns) · lighthouserc **11 asserts** · ci.yml **YAML_OK 16 jobs**
 - CI: security-audit full-tree step is now a hard gate, not a documented failure; lighthouse + lighthouserc comments updated
 - NEXT: confirm CI green, then integrate Codex page-shell P1 + storage-cleanup P0
+
+## Priority H3 — 2026-09-25 — Lint Semgrep + Renovate guards
+- BASE: `7908fd0`; run `36081423981` → Unit Tests / TypeScript / SBOM **SUCCESS**
+- LINT FIX: `returntocorp/semgrep-action@v1` crashed (`invalid rule severity value: MEDIUM`) → no SARIF → upload failed. Replaced with direct `pip install semgrep` + `semgrep scan ... --sarif --output semgrep.sarif`; upload now conditional on `hashFiles`
+- RENOVATE FIX: `RENOVATE_TOKEN` repo secret absent → job skipped cleanly via `if: env.RENOVATE_TOKEN != ''` (**owner: add token to enable**)
+- GATES: ci.yml **YAML_OK 16 jobs**, step graph verified
+- NEXT: confirm full CI green (build/e2e/a11y/demo/deploy-check), then Codex bundles

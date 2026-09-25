@@ -43,18 +43,21 @@ jobs:
         run: npm run lint
 
       - name: Run Semgrep (SAST)
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: >-
-            p/ci
-            p/typescript
-            p/nodejs
-            p/secrets
-          generateSarif: true
+        # `returntocorp/semgrep-action@v1` is stale: its bundled semgrep aborts
+        # with "ValueError: invalid rule severity value: MEDIUM" against the
+        # current registry packs, so `semgrep.sarif` was never written and the
+        # SARIF upload step failed on every run. Install current semgrep and
+        # scan directly (report-only — no --error, so findings are reported).
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check semgrep
+          semgrep scan \
+            --config p/ci --config p/typescript --config p/nodejs --config p/secrets \
+            --sarif --output semgrep.sarif --metrics off
+          test -f semgrep.sarif
 
       - name: Upload Semgrep SARIF
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: ${{ always() && hashFiles('semgrep.sarif') != '' }}
         with:
           sarif_file: semgrep.sarif
 
@@ -696,6 +699,12 @@ jobs:
       contents: write
       pull-requests: write
     if: github.repository == 'WYZdesign/Muse'
+    env:
+      # Job-level so the step guard below can read it — the `secrets` context is
+      # not available in a job-level `if`. Renovate is optional bot tooling, not
+      # a release gate: skip cleanly when the token is absent instead of failing
+      # on every push. Owner action: add RENOVATE_TOKEN to enable the bot.
+      RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -707,10 +716,11 @@ jobs:
           cache: npm
 
       - name: Run Renovate
+        if: env.RENOVATE_TOKEN != ''
         uses: renovatebot/github-action@v46.3.3
         with:
           configurationFile: renovate.json
-          token: ${{ secrets.RENOVATE_TOKEN }}
+          token: ${{ env.RENOVATE_TOKEN }}
 
   notify:
     name: Notify
