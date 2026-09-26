@@ -484,7 +484,8 @@ export const NetworkScreen = memo(function NetworkScreen({
       {!MUSE_CLOSED_BETA_HIDE_SOCIAL && (
       <div className="conn-tabs" role="tablist" aria-label="Network tabs" style={{ padding: "0 16px" }}>
         {(["pros", "forum"] as const).map((t) => (
-          <div
+          <button
+            type="button"
             key={t}
             role="tab"
             tabIndex={0}
@@ -494,7 +495,7 @@ export const NetworkScreen = memo(function NetworkScreen({
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNetTab(t); } }}
           >
             {t === "pros" ? "Professionals" : "Forum"}
-          </div>
+          </button>
         ))}
       </div>
       )}
@@ -552,8 +553,8 @@ export const NetworkScreen = memo(function NetworkScreen({
                   {f.label}{f.active ? " ✓" : ""}
                 </button>
               ))}
-              <span
-                role="button"
+              <button
+                type="button"
                 aria-pressed={proHiringOnly}
                 aria-label={`Hiring filter${proHiringOnly ? " (active)" : ""}`}
                 tabIndex={0}
@@ -562,7 +563,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: proHiringOnly ? "var(--text)" : "var(--text)", background: proHiringOnly ? "#4cdd88" : "rgba(255,255,255,0.06)", border: proHiringOnly ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
               >
                 Hiring{proHiringOnly ? " ✓" : ""}
-              </span>
+              </button>
             </div>
             {/* Expanded filter panels — single-line horizontal scroll, color-coded per category */}
             {filterSections.experience && (
@@ -685,9 +686,8 @@ export const NetworkScreen = memo(function NetworkScreen({
                     "linear-gradient(to top,rgba(10,6,18,0.88) 0%,rgba(10,6,18,0.25) 55%,rgba(10,6,18,0.1) 100%)",
                 }}
               />
-              <div
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
                 aria-label={savedProfileIds.includes(p.id) ? "Unsave professional" : "Save professional"}
                 title={savedProfileIds.includes(p.id) ? "Saved" : "Save"}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); toggleSaveProfessional(p.id); } }}
@@ -710,7 +710,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 }}
               >
                 <FiBookmark size={16} fill={savedProfileIds.includes(p.id) ? "currentColor" : "none"} />
-              </div>
+              </button>
               <div
                 className="pro-card-content"
                 style={{
