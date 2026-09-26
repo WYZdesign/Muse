@@ -16,14 +16,19 @@ export async function POST(req: NextRequest) {
 
     const { email: rawEmail, phone, source } = await req.json();
 
-    if (!rawEmail || !rawEmail.includes("@")) {
+    if (typeof rawEmail !== "string") {
       return NextResponse.json({ error: "Valid email required" }, { status: 400 });
     }
     // Normalize once, use for both dedup check and insert. Previously the check
     // ran against raw mixed-case input while inserts lowercased — "Foo@x.com" and
     // "foo@x.com" both passed dedup as "unique" rows, each firing a welcome email
     // (case-varying spam vector on a victim's address).
-    const email = rawEmail.toLowerCase();
+    const email = rawEmail.trim().toLowerCase();
+    // Keep this deliberately practical rather than attempting full RFC 5322
+    // parsing: reject malformed addresses before persisting or emailing them.
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: "Valid email required" }, { status: 400 });
+    }
 
     // Atomic insert — unique(email) is the race guard (no select-then-insert window).
     // 23505 = unique_violation → already on list (idempotent 409).
