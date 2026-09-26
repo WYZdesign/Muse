@@ -104,7 +104,7 @@ export default function SupportChat({ open, onClose }: { open: boolean; onClose:
         </div>
       </div>
 
-      <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+      <div ref={scrollRef} role="log" aria-live="polite" aria-label="Support conversation" style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
         {messages.map((m, i) => (
           <div key={i} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "85%" }}>
             <div style={{
