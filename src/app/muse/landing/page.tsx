@@ -353,7 +353,7 @@ export default function MuseLandingPage() {
   }, []);
 
   const generateQrCode = async (source: keyof typeof QR_SOURCES) => {
-    const url = `https://wyzdesign.com/muse/landing${QR_SOURCES[source] || ""}`;
+    const url = `${window.location.origin}/muse/landing${QR_SOURCES[source] || ""}`;
     try {
       const res = await fetch(`/api/qr?url=${encodeURIComponent(url)}&source=${encodeURIComponent(source)}`);
       if (!res.ok) throw new Error("QR generation failed");
@@ -384,7 +384,7 @@ export default function MuseLandingPage() {
   };
 
   const copyLink = () => {
-    navigator.clipboard?.writeText(`https://wyzdesign.com/muse/landing${QR_SOURCES[selectedSource] || ""}`);
+    navigator.clipboard?.writeText(`${window.location.origin}/muse/landing${QR_SOURCES[selectedSource] || ""}`);
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
@@ -395,7 +395,7 @@ export default function MuseLandingPage() {
       const res = await fetch("/api/muse/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...formData, source: selectedSource }) });
       const data = await res.json();
       if (res.ok) {
-        setSubmitResult({ success: true, message: "You're on the list! We'll notify you when Muse launches." });
+        setSubmitResult({ success: true, message: "You're on the list! We'll notify you when Muses by WYZ launches." });
         setFormData({ email: "", phone: "" });
       } else setSubmitResult({ success: false, message: data.error || "Something went wrong" });
     } catch { setSubmitResult({ success: false, message: "Network error. Please try again." }); }
@@ -474,8 +474,8 @@ export default function MuseLandingPage() {
               <span style={{ fontSize: 14, fontWeight: 600 }}>✓ You're on the list — we'll email you when it's your turn.</span>
               <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Founding members get lifetime Pro free.</span>
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                <button onClick={() => { navigator.clipboard?.writeText("https://wyzdesign.com/muse/landing"); }} style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", cursor: "pointer" }}>Copy Link</button>
-                <a href="https://twitter.com/intent/tweet?text=Just%20joined%20the%20Muse%20waitlist%20✦%20Creative%20professional%20network%20for%20photographers%2C%20models%2C%20and%20filmmakers&url=https%3A%2F%2Fwyzdesign.com%2Fmuse%2Flanding" target="_blank" rel="noopener" style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", textDecoration: "none" }}>Share on X</a>
+                <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/muse/landing`); }} style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", cursor: "pointer" }}>Copy Link</button>
+                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("Just joined the Muses by WYZ waitlist ✦ Creative professional network for photographers, models, and filmmakers")}&url=${encodeURIComponent(`${window.location.origin}/muse/landing`)}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", textDecoration: "none" }}>Share on X</a>
               </div>
             </div>
           )}
