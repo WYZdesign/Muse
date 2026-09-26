@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { authFetch } from "../lib/auth-client";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 type Payment = {
   id: string;
@@ -24,6 +25,10 @@ export default function PaymentHistory({ userId, onClose }: Props) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"received" | "sent">("received");
+  const dialogRef = useFocusTrap<HTMLDivElement>(true, onClose);
+  const titleId = useId();
+  const tabId = (name: "received" | "sent") => `payment-history-tab-${name}`;
+  const panelId = (name: "received" | "sent") => `payment-history-panel-${name}`;
 
   useEffect(() => {
     // Fetch payments from booking_payments table
@@ -58,10 +63,10 @@ export default function PaymentHistory({ userId, onClose }: Props) {
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)" }}>
-      <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 28, maxWidth: 520, width: "90%", maxHeight: "85vh", overflowY: "auto" }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} style={{ background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 20, padding: 28, maxWidth: 520, width: "90%", maxHeight: "85vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: "#ffd700" }}>💰 Payment History</h2>
-          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 20, cursor: "pointer" }}>✕</button>
+          <h2 id={titleId} style={{ fontSize: 18, fontWeight: 800, color: "#ffd700" }}>💰 Payment History</h2>
+          <button onClick={onClose} aria-label="Close payment history" style={{ width: 44, height: 44, background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
 
         {/* Summary cards */}
@@ -81,16 +86,17 @@ export default function PaymentHistory({ userId, onClose }: Props) {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
-          <button onClick={() => setTab("received")} style={{ flex: 1, padding: "8px 12px", borderRadius: 8, background: tab === "received" ? "rgba(78,205,196,0.15)" : "rgba(255,255,255,0.04)", border: "none", color: tab === "received" ? "#4ecdc4" : "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+        <div role="tablist" aria-label="Payment direction" style={{ display: "flex", gap: 4, marginBottom: 16 }}>
+          <button id={tabId("received")} role="tab" aria-selected={tab === "received"} aria-controls={panelId("received")} tabIndex={tab === "received" ? 0 : -1} onClick={() => setTab("received")} style={{ flex: 1, padding: "8px 12px", borderRadius: 8, background: tab === "received" ? "rgba(78,205,196,0.15)" : "rgba(255,255,255,0.04)", border: "none", color: tab === "received" ? "#4ecdc4" : "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
             Received ({received.length})
           </button>
-          <button onClick={() => setTab("sent")} style={{ flex: 1, padding: "8px 12px", borderRadius: 8, background: tab === "sent" ? "rgba(255,215,0,0.15)" : "rgba(255,255,255,0.04)", border: "none", color: tab === "sent" ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+          <button id={tabId("sent")} role="tab" aria-selected={tab === "sent"} aria-controls={panelId("sent")} tabIndex={tab === "sent" ? 0 : -1} onClick={() => setTab("sent")} style={{ flex: 1, padding: "8px 12px", borderRadius: 8, background: tab === "sent" ? "rgba(255,215,0,0.15)" : "rgba(255,255,255,0.04)", border: "none", color: tab === "sent" ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
             Sent ({sent.length})
           </button>
         </div>
 
         {/* Payment list */}
+        <section id={panelId(tab)} role="tabpanel" aria-labelledby={tabId(tab)} tabIndex={0}>
         {loading ? (
           <div style={{ textAlign: "center", padding: 30, color: "rgba(255,255,255,0.4)" }}>Loading...</div>
         ) : activeList.length === 0 ? (
@@ -100,9 +106,9 @@ export default function PaymentHistory({ userId, onClose }: Props) {
             <div style={{ fontSize: 11, marginTop: 4 }}>Payments from bookings will appear here</div>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <ul aria-label={`${tab === "received" ? "Received" : "Sent"} payments`} style={{ display: "flex", flexDirection: "column", gap: 6, listStyle: "none", padding: 0, margin: 0 }}>
             {activeList.map(p => (
-              <div key={p.id} style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 12 }}>
+              <li key={p.id} style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: "#f5f0ff" }}>
@@ -126,10 +132,11 @@ export default function PaymentHistory({ userId, onClose }: Props) {
                     </div>
                   )}
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
+        </section>
       </div>
     </div>
   );
