@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authFetch } from "@/app/(muse)/muse/lib/api";
 
 type Report = {
@@ -68,6 +68,20 @@ export default function AdminModerationPanel() {
   const [brainQuery, setBrainQuery] = useState("");
   const [brainResult, setBrainResult] = useState<string>("");
   const [loading, setLoading] = useState(false);
+
+  // Reports is the default view. Load it on mount rather than rendering a
+  // misleading empty queue until an operator switches away and back.
+  useEffect(() => {
+    let cancelled = false;
+    void authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "admin-reports" }) })
+      .then(async (response) => {
+        if (!response.ok || cancelled) return;
+        const data = await response.json();
+        if (!cancelled) setReports(data.reports || []);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const loadTab = async (t: TabKey) => {
     setTab(t);
