@@ -68,7 +68,7 @@ test.describe('Demo Mode Configuration', () => {
 // Kept separate from the server-boundary suite: brittle UI nav must not
 // weaken API assertions if Collab entry points change (ChatGPT owns page.tsx).
 test.describe('Demo Mode UI Badge', () => {
-  test('Collab view shows DEMO PREVIEW badge', async ({ page }) => {
+  test('Collab view stays populated without a per-card DEMO PREVIEW chip', async ({ page }) => {
     // Soft-skip only when the app shell itself is down (e.g. ChatGPT mid-split
     // page.tsx TDZ). API Demo Mode Negative tests above must stay hard asserts.
     const shell = await page.request.get('/muse', { failOnStatusCode: false });
@@ -89,7 +89,11 @@ test.describe('Demo Mode UI Badge', () => {
       .first();
     await collabTab.click({ timeout: 10000 });
     await expect(page.locator('[data-screen="briefs"].active')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('DEMO PREVIEW').first()).toBeVisible({ timeout: 10000 });
+    // Owner request (2026-09-25): demo mode must look published, so the
+    // per-brief "DEMO PREVIEW" chip was removed. The board must still render
+    // populated briefs, and no per-card demo chip may come back.
+    await expect(page.locator('.brief-author').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('DEMO PREVIEW')).toHaveCount(0);
   });
 });
 
