@@ -41,7 +41,9 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
       if (d.url) {
         setState("redirected");
         // Open Stripe's hosted verification page; user returns via return_url
-        window.open(d.url, "_blank");
+        // Stripe returns this hosted URL from our authenticated server route,
+        // but the new tab must still not receive a handle to this app.
+        window.open(d.url, "_blank", "noopener,noreferrer");
         setMessage("Verification opened in a new tab. Complete it, then return here.");
       } else if (d.clientSecret) {
         setState("redirected");

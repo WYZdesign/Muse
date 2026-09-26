@@ -86,6 +86,28 @@ test.describe('Discover Deck', () => {
     await expect(top).not.toHaveAttribute('inert', '');
   });
 
+  test('Queued cards retain their cover image when the active card photo changes', async ({ page }) => {
+    const queuedHero = page.locator(`${QUEUED_CARD} .card-hero img`).first();
+    await expect(queuedHero).toBeVisible({ timeout: 8000 });
+    const queuedSrc = await queuedHero.getAttribute('src');
+    expect(queuedSrc).toBeTruthy();
+
+    const nextZone = page.locator(`${TOP_CARD} [aria-label="Next photo"]`).first();
+    // A profile with one photo has no carousel; in that case there is no state
+    // to leak to the queued cards and this assertion is already satisfied.
+    if (await nextZone.count()) {
+      const topHero = page.locator(`${TOP_CARD} .card-hero img`).first();
+      const topSrc = await topHero.getAttribute('src');
+      await nextZone.click();
+      await expect(topHero).not.toHaveAttribute('src', topSrc!);
+      await expect(queuedHero).toHaveAttribute('src', queuedSrc!);
+    }
+  });
+
+  test('Prompts remain a simple wide carousel without a prompt-like control', async ({ page }) => {
+    await expect(page.locator('.card-prompt-like-btn')).toHaveCount(0);
+  });
+
   test('Match actions menu exposes labelled swipe buttons that meet 44px', async ({ page }) => {
     await openMatchMenu(page);
     const labels = ['Pass', 'Super Like', 'Like this match', 'Like + Note'];

@@ -135,7 +135,7 @@ const SHELL = (inner: string, email?: string, preheader?: string) => `
     <meta name="x-apple-disable-message-reformatting" />
     <meta name="color-scheme" content="dark light" />
     <meta name="supported-color-schemes" content="dark light" />
-    <title>Muse</title>
+    <title>Muses by WYZ</title>
   </head>
   <body style="margin:0;padding:0;background-color:#0a0612;">
     ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#0a0612;font-size:1px;line-height:1px;">${escapeHtml(preheader)}</div>` : ""}
@@ -145,7 +145,7 @@ const SHELL = (inner: string, email?: string, preheader?: string) => `
           <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px;max-width:100%;">
             <tr>
               <td align="center" style="padding:32px 20px 8px;font-size:28px;font-weight:800;letter-spacing:1px;color:#ffd700;">
-                Muse<span style="color:#d4a5ff;">&#10022;</span>
+                Muses by WYZ<span style="color:#d4a5ff;">&#10022;</span>
               </td>
             </tr>
             <tr>
@@ -155,7 +155,7 @@ const SHELL = (inner: string, email?: string, preheader?: string) => `
             </tr>
             <tr>
               <td style="padding:20px;border-top:1px solid #241b36;text-align:center;font-size:12px;color:#8b8299;line-height:1.7;">
-                You're receiving this because you're on Muse's list.<br/>
+                You're receiving this because you're on the Muses by WYZ list.<br/>
                 Built by WYZ Design &middot; <a href="${getTermsUrl()}" style="color:#ffd700;text-decoration:none;">Terms</a> &middot; <a href="${getPrivacyUrl()}" style="color:#ffd700;text-decoration:none;">Privacy</a>${email ? ` &middot; <a href="${unsubscribeUrl(email)}" style="color:#ffd700;text-decoration:none;">Unsubscribe</a>` : ""}
               </td>
             </tr>

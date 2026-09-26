@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Blog — Muses by WYZ",
   description: "Updates, insights, and stories from the Muses by WYZ creative community and WYZ Design.",
   alternates: { canonical: getMuseUrl() + "/blog" },
-  openGraph: { title: "Blog — Muses by WYZ", description: "Updates, insights, and stories from the Muses by WYZ creative community and WYZ Design.", url: getMuseUrl() + "/blog", siteName: "Muse", type: "website" },
+  openGraph: { title: "Blog — Muses by WYZ", description: "Updates, insights, and stories from the Muses by WYZ creative community and WYZ Design.", url: getMuseUrl() + "/blog", siteName: "Muses by WYZ", type: "website" },
   twitter: { card: "summary", title: "Blog — Muses by WYZ", description: "Updates, insights, and stories from the Muses by WYZ creative community and WYZ Design." },
 };
 

@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Community Guidelines — Muses by WYZ",
   description: "Muses by WYZ community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network.",
   alternates: { canonical: getGuidelinesUrl() },
-  openGraph: { title: "Community Guidelines — Muses by WYZ", description: "Muses by WYZ community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network.", url: getGuidelinesUrl(), siteName: "Muse", type: "website" },
+  openGraph: { title: "Community Guidelines — Muses by WYZ", description: "Muses by WYZ community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network.", url: getGuidelinesUrl(), siteName: "Muses by WYZ", type: "website" },
   twitter: { card: "summary", title: "Community Guidelines — Muses by WYZ", description: "Muses by WYZ community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network." },
 };
 

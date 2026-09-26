@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Privacy Policy — Muses by WYZ",
   description: "How Muse collects, uses, and protects your personal information. Data security and your rights.",
   alternates: { canonical: getPrivacyUrl() },
-  openGraph: { title: "Privacy Policy — Muses by WYZ", description: "How Muse collects, uses, and protects your personal information. Data security and your rights.", url: getPrivacyUrl(), siteName: "Muse", type: "website" },
+  openGraph: { title: "Privacy Policy — Muses by WYZ", description: "How Muses by WYZ collects, uses, and protects your personal information. Data security and your rights.", url: getPrivacyUrl(), siteName: "Muses by WYZ", type: "website" },
   twitter: { card: "summary", title: "Privacy Policy — Muses by WYZ", description: "How Muse collects, uses, and protects your personal information. Data security and your rights." },
 };
 

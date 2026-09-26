@@ -66,7 +66,14 @@ const nextConfig: NextConfig = {
       // /_next/ chunk URLs and renders a blank screen. Always revalidate.
       {
         source: "/muse",
-        headers: [{ key: "Cache-Control", value: "no-store" }],
+        headers: [
+          { key: "Cache-Control", value: "no-store" },
+          // Belt-and-braces noindex for the authenticated shell, beyond the
+          // <meta name="robots"> in (muse)/layout.tsx — crawlers that ignore
+          // meta (or read the raw response) still won't index it. Scoped to the
+          // exact app route so public pages under /muse/* stay indexable.
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
       },
       {
         source: "/muse/landing",

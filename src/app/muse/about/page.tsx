@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "About Muses by WYZ — The Creative Professional Network",
   description: "Muse is a creative professional network by WYZ Design. We connect photographers, models, filmmakers, musicians, and designers for real collaboration, booking, and community.",
   alternates: { canonical: getMuseUrl() + "/about" },
-  openGraph: { title: "About Muses by WYZ — The Creative Professional Network", description: "Muse is a creative professional network by WYZ Design. We connect photographers, models, filmmakers, musicians, and designers for real collaboration, booking, and community.", url: getMuseUrl() + "/about", siteName: "Muse", type: "website" },
+  openGraph: { title: "About Muses by WYZ — The Creative Professional Network", description: "Muses by WYZ is a creative professional network by WYZ Design. We connect photographers, models, filmmakers, musicians, and designers for real collaboration, booking, and community.", url: getMuseUrl() + "/about", siteName: "Muses by WYZ", type: "website" },
   twitter: { card: "summary", title: "About Muses by WYZ — The Creative Professional Network", description: "Muse is a creative professional network by WYZ Design. We connect photographers, models, filmmakers, musicians, and designers for real collaboration, booking, and community." },
 };
 

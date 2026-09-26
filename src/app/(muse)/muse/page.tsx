@@ -1859,9 +1859,13 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         const list = (j.notifications || []) as Notification[];
         if (!list.length) return;
         setActivityFeed(prev => {
-          const existing = new Set(prev.map(a => a.text));
+          // Dedup by stable id, not by body text: two DIFFERENT notifications
+          // can legitimately share identical text (e.g. two "Someone liked your
+          // post" events), and the old text-based dedup silently dropped the
+          // second one.
+          const existing = new Set<number | undefined>(prev.map(a => a.id));
           const mapped = list
-            .filter(n => n && n.body && !existing.has(n.body))
+            .filter(n => n && n.body && !existing.has(n.id))
             .map((n) => ({
               id: n.id ?? uid(),
               type: n.type || "info",
@@ -2054,11 +2058,12 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     const e: Record<string,string> = {};
     if (!authEmail.trim()) e.email = "Email required";
     if (!authPass.trim()) e.pass = "Password required";
-    if (authMode === "signup") {
-      if (authPass.length < 6) e.pass = "Minimum 6 characters";
-      else if (!/[A-Z]/.test(authPass)) e.pass = "Needs a capital letter";
-      else if (!/[!@#$%^&*]/.test(authPass)) e.pass = "Needs a symbol";
-    }
+    // Sign-up password complexity is enforced server-side (validatePassword in
+    // /api/muse/auth) and guided by the live strength meter here. It is
+    // deliberately NOT hard-blocked client-side: an existing account whose
+    // password predates these rules (or was created via OAuth) must still be
+    // able to submit, so it can be recognised and sent to Log In instead of
+    // dead-ending on "Needs a symbol".
     if (Object.keys(e).length) { setFormErrors(e); return; }
     setAuthLoading(true);
     try {
@@ -2069,16 +2074,31 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       // exact shape of the earliest "froze after clicking Log In" reports
       // from this engagement. fetchWithTimeout aborts and rejects into the
       // existing catch block below instead.
-      const r = await fetchWithTimeout("/api/muse/auth", {
+      // Try the credentials as a LOGIN first — on BOTH tabs. On the Sign Up tab
+      // this is what stops the "spaz": entering a pre-existing account's
+      // credentials signs the user straight in instead of dead-ending on
+      // sign-up rules. A genuinely new email fails this login and falls through
+      // to register below. This is a UX pre-check only; a login succeeds solely
+      // with valid credentials, so it reveals nothing about which emails exist.
+      let effectiveAction: "login" | "register" = "login";
+      let r = await fetchWithTimeout("/api/muse/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: authMode === "login" ? "login" : "register",
-          email: authEmail.trim(),
-          password: authPass,
-          name: authName || authEmail.split("@")[0],
-        }),
+        body: JSON.stringify({ action: "login", email: authEmail.trim(), password: authPass }),
       });
+      if (!r.ok && authMode === "signup") {
+        r = await fetchWithTimeout("/api/muse/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "register",
+            email: authEmail.trim(),
+            password: authPass,
+            name: authName || authEmail.split("@")[0],
+          }),
+        });
+        effectiveAction = "register";
+      }
       const j = await r.json();
       // Sign-up attempted with an email that already has an account: move the
       // user to the tab that can actually help them and say so plainly.
@@ -2119,9 +2139,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       if (j.profile) {
         setCurrentUser(prev => ({ ...prev, name: j.profile.name || prev.name, avatar: j.profile.avatar || prev.avatar, type: j.profile.type || prev.type }));
       }
-      setScreen(authMode === "signup" ? "onboard" : "discover");
-      if (authMode === "signup") setObStep(0);
-      analytics[authMode === "signup" ? "signup" : "login"]("email");
+      setScreen(effectiveAction === "register" ? "onboard" : "discover");
+      if (effectiveAction === "register") setObStep(0);
+      analytics[effectiveAction === "register" ? "signup" : "login"]("email");
       flash("#FFD700");
     } catch { showToast({ msg: "Login failed — check your credentials", type: "error" }); }
     setAuthLoading(false);
@@ -2231,13 +2251,17 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       ? dragRef.current.el
       : (typeof document !== "undefined" ? (document.querySelector('.swipe-card.top-card') as HTMLElement | null) : null);
     if (flyEl) {
-      flyEl.style.transition = "transform .36s cubic-bezier(.36,0,.66,-0.02), opacity .36s ease";
+      // Keep the outgoing card opaque until it has cleared the clipped deck.
+      // Fading it from the first animation frame exposed the queued card behind
+      // it, and the old 260ms swap removed the card before its 360ms transform
+      // had finished. That produced a visible "peek" during every pass/like.
+      flyEl.style.transition = "transform .36s cubic-bezier(.36,0,.66,-0.02)";
       flyEl.style.transform = dir === "super"
         ? "translateY(-130%) scale(0.92)"
         : `translateX(${dir === "right" ? 150 : -150}%) rotate(${dir === "right" ? 24 : -24}deg)`;
-      flyEl.style.opacity = "0";
+      flyEl.style.opacity = "1";
     }
-    const swapDelay = flyEl ? 260 : 0;
+    const swapDelay = flyEl ? 380 : 0;
     const swapToNext = () => {
       setRewindStack(prev => [...prev, currentIdx]);
       setCurrentIdx(prev => prev + 1);
@@ -3767,12 +3791,12 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                 { name: "More", icon: "•••", color: "#fff", bg: "#374151" },
               ].map(s => {
                 const url = getPostShareUrl(shareTarget.id);
-                const text = encodeURIComponent((shareTarget.text || "Check this out on Muse!").slice(0, 200));
+                const text = encodeURIComponent((shareTarget.text || "Check this out on Muses by WYZ!").slice(0, 200));
                 const href = s.name === "X" ? `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${text}`
                   : s.name === "Facebook" ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`
                   : s.name === "LinkedIn" ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
                   : s.name === "WhatsApp" ? `https://wa.me/?text=${text}%20${encodeURIComponent(url)}`
-                  : s.name === "Email" ? `mailto:?subject=${encodeURIComponent("Check this out on Muse")}&body=${text}%20${encodeURIComponent(url)}`
+                  : s.name === "Email" ? `mailto:?subject=${encodeURIComponent("Check this out on Muses by WYZ")}&body=${text}%20${encodeURIComponent(url)}`
                   : null;
                 return (
                   <button key={s.name} onClick={() => {

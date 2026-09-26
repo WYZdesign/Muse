@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Press — Muses by WYZ",
   description: "Press and media inquiries for Muse. Brand assets and contact information.",
   alternates: { canonical: getPressUrl() },
-  openGraph: { title: "Press — Muses by WYZ", description: "Press and media inquiries for Muse. Brand assets and contact information.", url: getPressUrl(), siteName: "Muse", type: "website" },
+  openGraph: { title: "Press — Muses by WYZ", description: "Press and media inquiries for Muses by WYZ. Brand assets and contact information.", url: getPressUrl(), siteName: "Muses by WYZ", type: "website" },
   twitter: { card: "summary", title: "Press — Muses by WYZ", description: "Press and media inquiries for Muse. Brand assets and contact information." },
 };
 

@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Pricing — Muses by WYZ",
   description: "Muses by WYZ pricing: a free tier forever, plus Muses Pro at $9.99/month. Founding members get lifetime Pro free.",
   alternates: { canonical: getMuseUrl() + "/pricing" },
-  openGraph: { title: "Pricing — Muses by WYZ", description: "Muses by WYZ pricing: a free tier forever, plus Muses Pro at $9.99/month. Founding members get lifetime Pro free.", url: getMuseUrl() + "/pricing", siteName: "Muse", type: "website" },
+  openGraph: { title: "Pricing — Muses by WYZ", description: "Muses by WYZ pricing: a free tier forever, plus Muses Pro at $9.99/month. Founding members get lifetime Pro free.", url: getMuseUrl() + "/pricing", siteName: "Muses by WYZ", type: "website" },
   twitter: { card: "summary", title: "Pricing — Muses by WYZ", description: "Muses by WYZ pricing: a free tier forever, plus Muses Pro at $9.99/month. Founding members get lifetime Pro free." },
 };
 

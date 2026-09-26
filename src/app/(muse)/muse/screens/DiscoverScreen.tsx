@@ -159,7 +159,6 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   canRewind = false,
   doSwipe,
   doLikeWithNote = () => {},
-  onAnchorLike,
   setDailyLikes = () => {},
   setSuperLikes = () => {},
   isUnlimited = false,
@@ -184,11 +183,6 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   const [badgeInfo, setBadgeInfo] = useState<{ name: string; desc: string; icon: React.ReactNode; color: string } | null>(null);
   const [whyInfo, setWhyInfo] = useState<{ score: number; reasons: string[] } | null>(null);
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
-  // Tapping a specific prompt or photo opens the like-with-note composer
-  // already anchored to that content (Hinge-style). Falls back to
-  // doLikeWithNote directly if the caller doesn't wire a dedicated handler.
-  const handleAnchorLike = onAnchorLike ?? ((anchor: LikeAnchor) => doLikeWithNote(anchor));
-
   // ═══ PHOTO LIKES (like the image, not the match) ═══
   const [photoLike, setPhotoLike] = useState<{ [url: string]: { liked: boolean; count: number } }>({});
   // Current hero photo URL for the top card (kept in sync so the spark counter
@@ -410,7 +404,12 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                         const extra = allPhotos.filter((p: string) => !used.has(p));
                         photos.push(...extra.slice(0, Math.max(0, 4 - photos.length)));
                       }
-                      const heroSrc = photos[currentPhotoIdx ?? 0] || profile.img;
+                      // Only the active card owns carousel state. Depth cards must
+                      // always render their cover image; sharing the active card's
+                      // index made the next profile briefly show its second photo
+                      // while the current card was swiped away.
+                      const photoIdxForCard = isTop ? (currentPhotoIdx ?? 0) : 0;
+                      const heroSrc = photos[photoIdxForCard] || profile.img;
                       const heroPortrait = !!PORTRAIT_IMG[heroSrc];
                       return (
                         <>
@@ -572,8 +571,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                           )}
                           {isTop && (
                             <>
-                              <div ref={likeLabelRef as any} className="label label-like" aria-hidden="true">LIKE</div>
-                              <div ref={nopeLabelRef as any} className="label label-nope" aria-hidden="true">NOPE</div>
+                              <div ref={likeLabelRef as any} className="label label-like" aria-hidden="true">YES</div>
+                              <div ref={nopeLabelRef as any} className="label label-nope" aria-hidden="true" style={{ left: "auto", right: 20 }}>NOPE</div>
                               <div ref={superLabelRef as any} className="label label-super" aria-hidden="true">SUPER</div>
                             </>
                           )}
@@ -589,12 +588,6 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                       <div className="card-prompt-a">{(profile as any).prompts[promptIdx ?? 0]?.a || ""}</div>
                                     </div>
                                     <button className="card-prompt-arrow" aria-label="Next prompt" onClick={(e) => { e.stopPropagation(); setPromptIdx?.(prev => Math.min(((profile as any).prompts.length - 1), (prev ?? 0) + 1)); }} style={{ opacity: (promptIdx ?? 0) < ((profile as any).prompts.length - 1) ? 1 : 0.3 }}>›</button>
-                                    <button
-                                      className="card-prompt-like-btn"
-                                      onClick={(e) => { e.stopPropagation(); const p = (profile as any).prompts[promptIdx ?? 0]; if (p) handleAnchorLike({ type: "prompt", value: p.a || p.q || "" }); }}
-                                      aria-label="Like this prompt"
-                                      title="Like this prompt"
-                                    >✦</button>
                                   </div>
                                 </div>
                               )}

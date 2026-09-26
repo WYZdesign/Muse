@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Careers — Join Muses by WYZ / WYZ Design",
   description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design.",
   alternates: { canonical: getCareersUrl() },
-  openGraph: { title: "Careers — Join Muses by WYZ / WYZ Design", description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design.", url: getCareersUrl(), siteName: "Muse", type: "website" },
+  openGraph: { title: "Careers — Join Muses by WYZ / WYZ Design", description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design.", url: getCareersUrl(), siteName: "Muses by WYZ", type: "website" },
   twitter: { card: "summary", title: "Careers — Join Muses by WYZ / WYZ Design", description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design." },
 };
 

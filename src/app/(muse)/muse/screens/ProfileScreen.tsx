@@ -555,7 +555,7 @@ export const ProfileScreen = memo(function ProfileScreen({
                 );
               });
               return [1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} style={{ aspectRatio: "3/4", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "2px dashed rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 11, cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setScreen("portfolio"); } }} onClick={() => setScreen("portfolio")}>Add</div>
+                <button key={i} type="button" aria-label={`Add work to portfolio slot ${i} of 6`} style={{ aspectRatio: "3/4", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "2px dashed rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", padding: 0 }} onClick={() => setScreen("portfolio")}>Add</button>
               ));
             })()}
           </div>

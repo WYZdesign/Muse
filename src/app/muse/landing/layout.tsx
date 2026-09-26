@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     title: "Muses by WYZ — Where Creatives Connect",
     description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.",
     url: getLandingUrl(),
-    siteName: "Muse",
+    siteName: "Muses by WYZ",
     type: "website",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Muses by WYZ — Where Creatives Connect" }],
   },

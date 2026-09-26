@@ -1034,6 +1034,7 @@ img{background-color:var(--card-bg)}
      than the mobile layout (24px margin + 3px border), leaving a visible gap
      above the app. Mobile is `.phone{position:fixed;top:0}`. Match it: no top
      offset, full viewport height. */
+  .app-wrap{padding:0 20px}
   .phone{margin:0 auto;height:100dvh;border-width:3px;box-shadow:0 0 120px rgba(255,215,0,0.3),0 0 240px rgba(255,181,194,0.05)}
   body{overflow-y:auto;overflow-x:hidden}
   /* Scrollbar visibility for all scroll containers */
@@ -2511,11 +2512,11 @@ img{background-color:var(--card-bg)}
 /* BTS stories row: report affordance on the outer edge of each circle.
    Hidden by default and on touch devices (no hover) — those rely on
    hold-to-report instead — and revealed on hover only for mouse/desktop. */
-.bts-story-report-btn{display:none;opacity:0;transition:opacity .15s}
+.bts-story-report-btn{display:flex;opacity:0;pointer-events:none;transition:opacity .15s}
 @media (hover:hover) and (pointer:fine){
-  .bts-story-circle:hover .bts-story-report-btn{display:flex;opacity:1}
+  .bts-story-item:hover .bts-story-report-btn{opacity:1;pointer-events:auto}
 }
-.bts-story-circle:focus-within .bts-story-report-btn{display:flex;opacity:1}
+.bts-story-item:focus-within .bts-story-report-btn,.bts-story-report-btn:focus-visible{opacity:1;pointer-events:auto}
 
 /* Mapbox GL controls — ensure they work on mobile touch */
 .mapboxgl-ctrl-group{background:rgba(10,6,18,0.85)!important;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.15)!important;border-radius:12px!important;box-shadow:0 4px 16px rgba(0,0,0,0.4)!important}

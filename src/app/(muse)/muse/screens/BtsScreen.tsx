@@ -388,8 +388,8 @@ export const BtsScreen = memo(function BtsScreen({
             }}
           >
             {stories.slice(0, 10).map((s, i) => (
+              <div key={s.id} className="bts-story-item" style={{ position: "relative", flexShrink: 0 }}>
               <div
-                key={s.id}
                 role="button"
                 tabIndex={0}
                 title="Hold to report"
@@ -405,8 +405,6 @@ export const BtsScreen = memo(function BtsScreen({
                   alignItems: "center",
                   gap: 6,
                   cursor: "pointer",
-                  flexShrink: 0,
-                  position: "relative",
                 }}
               >
                 <div
@@ -434,17 +432,6 @@ export const BtsScreen = memo(function BtsScreen({
                       border: "2px solid var(--bg, #0a0612)",
                     }}
                   />
-                  {/* Desktop-only: a small report affordance sitting on the OUTER edge of
-                      the circle (not overlapping the photo), revealed on hover. Touch
-                      devices have no hover, so they rely on hold-to-report instead. */}
-                  <button
-                    aria-label="Report moment"
-                    title="Report"
-                    className="bts-story-report-btn"
-                    onClick={(e) => { e.stopPropagation(); reportStory(s); }}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); reportStory(s); } }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    style={{ position: "absolute", bottom: -2, right: -2, zIndex: 2, width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(10,6,18,0.85)", color: "var(--muted)", fontSize: 14, lineHeight: 1, cursor: "pointer", alignItems: "center", justifyContent: "center" }}>⋯</button>
                 </div>
                 <span
                   style={{
@@ -459,6 +446,16 @@ export const BtsScreen = memo(function BtsScreen({
                 >
                   {s.author?.split(" ")[0] || "..."}
                 </span>
+                </div>
+                {/* Report is a SIBLING of the card's role="button" node, not a
+                    descendant — a focusable button nested inside another
+                    interactive control is an axe `nested-interactive` violation. */}
+                <button
+                  aria-label={`Report ${s.author?.split(" ")[0] || "moment"}`}
+                  title="Report"
+                  className="bts-story-report-btn"
+                  onClick={(e) => { e.stopPropagation(); reportStory(s); }}
+                  style={{ position: "absolute", top: 22, right: -2, zIndex: 2, width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(10,6,18,0.85)", color: "var(--muted)", fontSize: 14, lineHeight: 1, cursor: "pointer", alignItems: "center", justifyContent: "center" }}>⋯</button>
               </div>
             ))}
           </div>

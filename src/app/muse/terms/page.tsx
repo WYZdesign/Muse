@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Terms of Service — Muses by WYZ",
   description: "The terms of service governing use of Muse, the creative professional network by WYZ Design.",
   alternates: { canonical: getTermsUrl() },
-  openGraph: { title: "Terms of Service — Muses by WYZ", description: "The terms of service governing use of Muse, the creative professional network by WYZ Design.", url: getTermsUrl(), siteName: "Muse", type: "website" },
+  openGraph: { title: "Terms of Service — Muses by WYZ", description: "The terms of service governing use of Muses by WYZ, the creative professional network by WYZ Design.", url: getTermsUrl(), siteName: "Muses by WYZ", type: "website" },
   twitter: { card: "summary", title: "Terms of Service — Muses by WYZ", description: "The terms of service governing use of Muse, the creative professional network by WYZ Design." },
 };
 
