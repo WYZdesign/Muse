@@ -806,3 +806,15 @@ Verified against PRODUCTION using the vault credentials (values never printed).
 **Vercel env audit (correction):** the project has **62 env vars** and `CRON_SECRET` **is already set** (production + preview) — my earlier "owner must add CRON_SECRET" was wrong. Comparing every `process.env.*` the non-test code reads against Vercel: the only genuine gaps are the tuning constants in `src/lib/config.ts` (all have code defaults) and `NCMEC_CLIENT_ID`/`NCMEC_CLIENT_SECRET`, which only exist after NCMEC ESP onboarding. `UNSUBSCRIBE_SECRET`/`NEXTAUTH_SECRET` are unset but `email.ts` falls back to the configured `RESEND_API_KEY`, so unsubscribe links work.
 
 **GATES:** tsc 0 · eslint 0 · vitest **547 PASS** · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
+
+## SECURITY follow-up: PII tables tightened (proactive) — 2026-09-25 (wyzmind)
+Full anon-exposure scan across all `muse_*` tables (production, vault creds, values never printed) found the earlier profile leak was the only one with data, plus three latent holes now closed by **migration 0029 (applied)**:
+
+- **`muse_safety_shares`** carried `"Service manages shares" FOR ALL TO public USING (true)` → anon could read (and insert/delete) rows holding `recipient_name`, **`recipient_phone`**, **`recipient_email`**. Empty today (0 rows) so nothing leaked.
+- **`muse_disclosures`** carried `"Service manages disclosures" FOR ALL TO public USING (true)` → anon could read intimate-content safety disclosures including **`location_address`**. Empty today.
+- Both dropped. Verified after: anon now gets **401**; the owner-scoped policies ("Users view own shares", "Disclosure parties can read") remain, and all app access goes through service-role server actions.
+- **Three INSERT policies granted to `public` with NO predicate** (anon could insert arbitrary rows): `muse_community_members` ("Users can join communities"), `muse_forum_replies` ("Users can post replies"), `muse_professionals` ("professionals_upsert"). Replaced with `TO authenticated` + ownership `WITH CHECK`.
+
+**Confirmed SAFE (no change needed):** `muse_calls` and `muse_boost_purchases` have RLS on with no anon policy (empty for anon); `muse_qr_events` policy is `USING (false)`; `muse_communities` (21), `muse_sessions` (1) and `muse_prompt_bank` (193) are intentionally-public catalogue surfaces; RLS is enabled on every `muse_*` table.
+
+**GATES:** tsc 0 · eslint 0 · vitest 547 · build 0.
