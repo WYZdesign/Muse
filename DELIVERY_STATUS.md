@@ -649,3 +649,18 @@ owner | base `b042a960dcc4e4e5352ab75d8b9e89d40a69b59e` | files Round 59: 9 sour
 - A11Y: wired the previously dead `announce()` live-region helper into the Discover swipe outcome (`Passed on <name>` / `Liked <name>` / `Super liked <name>`) — the `role="status"` region and helper existed but had zero callers.
 - GATES: tsc 0 · vitest 71 files / **547 tests PASS** · eslint 0 · build 0 · e2e-smoke **15/15**.
 - STILL OPEN (unchanged): PaymentHistory dialog/tab/table semantics, MatchCard + Network card semantic controls, Feed post header nested actions, notification row semantics + count reconciliation, admin role=main/aria-live + unified report counts, SupportChat AI disclosure/escalation copy, why-match popover trap, availability/currency radio semantics, tab `aria-controls`, unblock confirmation, and the owner/legal/ops items (migrations DSN, repo secrets, retention schedule, DMCA agent phone, RLS/signed-URL matrix, P2 extraction).
+
+## Release blockers CLEARED via WYZ vault — 2026-09-25 (wyzmind)
+Owner authorized using the DPAPI vault. Credentials were read programmatically and NEVER printed (only names/lengths logged).
+
+1. REPO SECRETS — the repo previously had **zero** Actions secrets (`gh secret list` → `[]`), which is why Deploy Verification, Renovate and Nightly Backup were red. Set from the vault via `gh secret set` (stdin, no echo):
+   - `VERCEL_TOKEN` <- vault:`vercel_TOKEN_FULL` (len 60)
+   - `VERCEL_PROJECT_ID` <- vault:`muse_VERCEL_PROJECT_ID` (len 32)
+   - `DATABASE_URL` <- vault:`muse_DATABASE_URL` (len 109)
+   - `R2_ENDPOINT` / `R2_ACCESS_KEY` / `R2_SECRET_KEY` / `R2_BUCKET` <- vault:`muse_R2_*`
+   - Still absent (not in vault): `RENOVATE_TOKEN`, `LHCI_GITHUB_APP_TOKEN`, `VERCEL_ORG_ID` (ORG_ID not needed by the rewired deploy step; Renovate already skips safely when unset).
+2. MIGRATION APPLIED-STATE — BLK-MIG-STATE **RESOLVED** (read-only check against the production DSN, then apply):
+   - Ledger verified: **0001–0025 APPLIED**, plus a custom `MUSE_CUSTOM_ROLE_PENDING_20260916.sql`. `muse_storage_cleanup_jobs` exists.
+   - `0026_storage_cleanup_worker.sql` was the only PENDING migration. Applied via `python scripts/run_migrations.py --apply` -> `OK 0026`, **1 applied, 25 already present**, exit 0. Re-check: **pending 0**.
+   - Note: the earlier "0024 `muse_account_deletions` MISSING" signal was a wrong assumption on my part — 0024 ALTERs `muse_profiles` (adds `deletion_requested_at`/`deletion_purge_after` + partial index); no such table was ever created. 0024 is correctly applied.
+3. STILL OWNER-GATED: retention-copy wording (counsel), DMCA designated-agent phone, RLS/signed-URL matrix, provider-isolation proof, load/Web-Vitals, restore drill.
