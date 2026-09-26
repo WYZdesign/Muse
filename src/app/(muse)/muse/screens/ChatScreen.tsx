@@ -342,8 +342,8 @@ export const ChatScreen = memo(function ChatScreen({
             {(chatTarget.messages || []).length === 0 && !(typingTarget === chatTarget.id) && (
               <div style={{ textAlign: "center", padding: "48px 24px 24px", color: "var(--muted)" }}>
                 <div style={{ fontSize: 38, marginBottom: 12 }}>🌊</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{demo ? `Demo chat preview: ${chatTarget.name}` : `You matched with ${chatTarget.name}`}</div>
-                <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>{demo ? "Messages are disabled for demo profiles; no recipient is contacted." : "Break the ice with a quick reply below, or send your own message to kick things off."}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{`You matched with ${chatTarget.name}`}</div>
+                <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>Break the ice with a quick reply below, or send your own message to kick things off.</div>
               </div>
             )}
             {(chatTarget.messages || [])
@@ -425,7 +425,7 @@ export const ChatScreen = memo(function ChatScreen({
           </div>
           <div className="quick-replies">
             {["Hey! Love your work", "Let's collab", "What's your vision?", "Love your portfolio"].map(q => (
-              <button key={q} className="quick-reply" disabled={demo} onClick={() => { if (!demo) setChatText(q); }}>{q}</button>
+              <button key={q} className="quick-reply" onClick={() => setChatText(q)}>{q}</button>
             ))}
           </div>
           <div className="chat-input-wrap">
@@ -449,8 +449,8 @@ export const ChatScreen = memo(function ChatScreen({
               style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 18, display: "flex", alignItems: "center", alignSelf: "center", cursor: "pointer", padding: 0 }}>
               <FiVideo size={20} />
             </button>
-            <input className="chat-inp" aria-label="Type a message" disabled={demo} placeholder={demo ? "Messaging is disabled in this demo" : "Type a message..."} value={chatText} onChange={e => { setChatText(e.target.value); if (sendTyping) sendTyping(); }} onKeyDown={e => { if (!demo && e.key === "Enter" && chatText.trim()) { sendChat(); } }} />
-            <button className="send-btn" aria-label="Send message" disabled={demo} onClick={() => { if (!demo) sendChat(); }}><FiSend size={18} /></button>
+            <input className="chat-inp" aria-label="Type a message" placeholder="Type a message..." value={chatText} onChange={e => { setChatText(e.target.value); if (sendTyping) sendTyping(); }} onKeyDown={e => { if (e.key === "Enter" && chatText.trim()) { sendChat(); } }} />
+            <button className="send-btn" aria-label="Send message" onClick={() => sendChat()}><FiSend size={18} /></button>
           </div>
         </div>
       )}

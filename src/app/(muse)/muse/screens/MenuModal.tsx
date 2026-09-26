@@ -10,6 +10,19 @@ import { EmptyState } from "../components/EmptyState";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
 import { STRINGS } from "@/lib/strings";
 
+// Fully-populated demo activity feed. Owner requirement: demo mode must look
+// published, so the bell never shows "No notifications yet". Shapes mirror
+// get-notifications rows: id, from, text, type, read, created_at.
+const DEMO_NOTIFICATIONS = [
+  { id: "n1", from: "Maya Chen", text: "liked your photo", type: "like", read: false, created_at: new Date(Date.now() - 12 * 60000).toISOString() },
+  { id: "n2", from: "Andre Silva", text: "sent you a message", type: "message", read: false, created_at: new Date(Date.now() - 47 * 60000).toISOString() },
+  { id: "n3", from: "Priya Nair", text: "it's a match — you both swiped right", type: "match", read: false, created_at: new Date(Date.now() - 3 * 3600000).toISOString() },
+  { id: "n4", from: "Jordan Blake", text: "booked your Golden Hour Portrait session", type: "booking", read: true, created_at: new Date(Date.now() - 9 * 3600000).toISOString() },
+  { id: "n5", from: "Muses by WYZ", text: "your profile is now verified ✓", type: "system", read: true, created_at: new Date(Date.now() - 26 * 3600000).toISOString() },
+  { id: "n6", from: "Lena Ortiz", text: "started following you", type: "follow", read: true, created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
+  { id: "n7", from: "Dev Patel", text: "commented: “This lighting is unreal 🔥”", type: "comment", read: true, created_at: new Date(Date.now() - 3 * 86400000).toISOString() },
+];
+
 interface ActivityPanelProps {
   authFetch: any;
   demo?: boolean;
@@ -234,6 +247,14 @@ function ActivityPanel({ authFetch, demo = false, appliedBriefs, savedBriefs, bo
 
   const loadNotifications = useCallback(async (append = false) => {
     if (!authFetch) return;
+    if (demo) {
+      // Populated demo activity feed (see DEMO_NOTIFICATIONS) instead of the
+      // "No notifications yet" empty state.
+      setNotifications(DEMO_NOTIFICATIONS);
+      setNotifHasMore(false);
+      setNotifOffset(DEMO_NOTIFICATIONS.length);
+      return;
+    }
     // Ghost-notification bug: switching tabs fast (e.g. All -> Unread before
     // All's request finished) used to let the OLD, slower request's response
     // land AFTER the new one and unconditionally overwrite `notifications`

@@ -31,7 +31,35 @@ export default function PaymentHistory({ userId, onClose }: Props) {
   const panelId = (name: "received" | "sent") => `payment-history-panel-${name}`;
 
   useEffect(() => {
-    // Fetch payments from booking_payments table
+    // Populated demo ledger. Owner requirement: demo mode must look published,
+    // so Payment History shows a realistic mix of received/sent rows instead of
+    // "No payments yet". Rows reference `userId` on the matching side so both
+    // the Received and Sent tabs filter correctly.
+    if (process.env.NEXT_PUBLIC_DEMO_MODE !== "false") {
+      const now = Date.now();
+      const mk = (i: number, dir: "in" | "out", amount: number, days: number, name: string, status = "succeeded") => ({
+        id: `demo-pay-${dir}-${i}`,
+        amount_cents: amount,
+        commission_cents: dir === "in" ? Math.round(amount * 0.1) : 0,
+        net_amount_cents: dir === "in" ? amount - Math.round(amount * 0.1) : amount,
+        status,
+        created_at: new Date(now - days * 86400000).toISOString(),
+        payer_id: dir === "in" ? { id: `demo-payer-${i}`, name, avatar: "" } : { id: userId, name: "You", avatar: "" },
+        payee_id: dir === "in" ? { id: userId, name: "You", avatar: "" } : { id: `demo-payee-${i}`, name, avatar: "" },
+        booking_id: { session_id: `S-${1000 + i}`, status: "completed" },
+      });
+      setPayments([
+        mk(1, "in", 15000, 2, "Jordan Blake"),
+        mk(2, "in", 60000, 6, "Priya Nair"),
+        mk(3, "in", 110000, 11, "Lena Ortiz"),
+        mk(4, "in", 15000, 18, "Dev Patel", "refunded"),
+        mk(5, "out", 22000, 4, "Andre Silva"),
+        mk(6, "out", 45000, 13, "Maya Chen"),
+        mk(7, "out", 8000, 21, "Kai Rivera"),
+      ]);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     authFetch("/api/muse", {
       method: "POST",

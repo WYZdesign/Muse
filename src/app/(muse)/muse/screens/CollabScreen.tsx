@@ -277,7 +277,9 @@ export const CollabScreen = memo(function CollabScreen({
                 <Image loading="lazy" src={brief.authorImg} alt={brief.author} width={86} height={86} className={"brief-avatar brief-variant-" + (bi % 5)} />
                 <div className="brief-info" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <div className="brief-author"><strong>{brief.author}</strong></div>
-                  {demo && <span style={{ marginTop: 4, padding: "3px 8px", borderRadius: 99, background: "rgba(255,215,0,0.14)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)", fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>DEMO PREVIEW</span>}
+                  {/* "DEMO PREVIEW" chip removed: it appeared on every brief and
+                      made the board read as unfinished. Demo provenance is
+                      disclosed by the global demo-mode indicator. */}
                   <div className="brief-meta" style={{ flexDirection: "column", alignItems: "center", gap: 2 }}>
                     <span className="brief-meta-item"><strong>{brief.budget}</strong></span>
                     <span className="brief-meta-item">⏱ Timeline: {brief.deadline}</span>

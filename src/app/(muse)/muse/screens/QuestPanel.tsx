@@ -34,6 +34,26 @@ const FILTER_OPTIONS = [
 ];
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 
+// Fully-populated demo quest board. Owner requirement: demo mode must look
+// published, so the panel shows a realistic mix (claimed / claimable / in
+// progress) instead of an empty "No quests in this category" state. Shapes
+// mirror the `get-quests` payload: id, icon, title, tier, completed, claimed,
+// progress, target, description.
+const DEMO_QUESTS = [
+  { id: "d1", icon: "🔥", title: "Log in today", tier: "daily", completed: true, claimed: true, progress: 1, target: 1, description: "Open Muses by WYZ to keep your streak alive." },
+  { id: "d2", icon: "💛", title: "Like 3 creatives", tier: "daily", completed: true, claimed: false, progress: 3, target: 3, description: "Show love to three profiles on Discover." },
+  { id: "d3", icon: "💬", title: "Reply to a comment", tier: "daily", completed: false, claimed: false, progress: 1, target: 2, description: "Keep the conversation going on your posts." },
+  { id: "w1", icon: "📸", title: "Post to your feed", tier: "weekly", completed: true, claimed: false, progress: 1, target: 1, description: "Share a new piece of work with the community." },
+  { id: "w2", icon: "✉️", title: "Send 5 messages", tier: "weekly", completed: false, claimed: false, progress: 2, target: 5, description: "Reach out to matches and collaborators." },
+  { id: "w3", icon: "✨", title: "Update your profile", tier: "weekly", completed: true, claimed: true, progress: 1, target: 1, description: "Keep your bio, styles and portfolio fresh." },
+  { id: "m1", icon: "🤝", title: "Complete 10 collaborations", tier: "monthly", completed: false, claimed: false, progress: 4, target: 10, description: "Work with other creatives on real projects." },
+  { id: "m2", icon: "🌟", title: "Get 25 new likes", tier: "monthly", completed: true, claimed: false, progress: 25, target: 25, description: "Grow your reach across the community." },
+  { id: "s1", icon: "🎬", title: "Behind-the-scenes streak: 6 of 14 days", tier: "season", completed: false, claimed: false, progress: 6, target: 14, description: "Post a BTS moment on 14 different days this season." },
+  { id: "l1", icon: "👑", title: "Refer 3 friends", tier: "legendary", completed: false, claimed: false, progress: 1, target: 3, description: "Invite friends and unlock a free month of Pro." },
+  { id: "st1", icon: "🚀", title: "Finish onboarding", tier: "starter", completed: true, claimed: true, progress: 1, target: 1, description: "Set up your profile and first portfolio pieces." },
+];
+const DEMO_XP = { total_xp: 1480, level: 5 };
+
 // Concise one-line objective shown when a quest is expanded. Prefers the
 // backend description; when that's empty, derives a short sentence from the
 // quest title/type so the card never reads "No description available."
@@ -66,7 +86,14 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
   const quests = rotateQuests(allQuests);
 
   const fetchQuests = useCallback(async () => {
-    if (DEMO_MODE) { setAllQuests([]); setXp({ total_xp: 0, level: 1 }); onClaimablesChange?.(0); return; }
+    if (DEMO_MODE) {
+      // Populated demo board (see DEMO_QUESTS) rather than an empty panel.
+      setAllQuests(DEMO_QUESTS);
+      setXp(DEMO_XP);
+      onClaimablesChange?.(DEMO_QUESTS.filter((q: any) => q.completed && !q.claimed).length);
+      onQuestsChange?.();
+      return;
+    }
     try {
       const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-quests" }) });
       const data = await res.json();

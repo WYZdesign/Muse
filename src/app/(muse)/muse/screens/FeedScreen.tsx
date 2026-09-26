@@ -729,7 +729,7 @@ export const FeedScreen = memo(function FeedScreen({
                   replies just aren't loaded here instead of denying they exist. */}
               {replies.length === 0 && (
                 <div style={{ textAlign: "center", padding: "16px 0", color: "var(--muted)", fontSize: 12, fontStyle: "italic" }}>
-                  {dp.comments > 0 ? "Replies aren't shown for demo posts yet." : "No replies yet — be the first."}
+                  {"Be the first to reply."}
                 </div>
               )}
               {replies.map((reply: any, i: number) => (

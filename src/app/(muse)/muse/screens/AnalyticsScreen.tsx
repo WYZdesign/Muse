@@ -41,6 +41,18 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
 
   useEffect(() => {
     const fetchAnalytics = async () => {
+      // Populated demo analytics (owner requirement: demo mode must look
+      // published) instead of a wall of zeros.
+      if (process.env.NEXT_PUBLIC_DEMO_MODE !== "false") {
+        setAnalytics({
+          views: 2847, viewsLast30Days: 412,
+          matchesReceived: 138, messagesSent: 96, briefApplications: 24,
+          bookingsAsHost: 17, bookingsAsBooker: 9,
+          totalEarningsCents: 486000, totalEarningsUsd: "4,860.00",
+        } as any);
+        setLoading(false);
+        return;
+      }
       try {
         // "my-analytics" is a read-only GET type (see route.ts's GET handler),
         // not a POST action — it has no entry in the POST ACTIONS dispatcher,

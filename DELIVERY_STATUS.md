@@ -729,3 +729,15 @@ Owner request: the two-part lockup must read **"Muses" on one line** and **"by W
 - Metadata/plain-text strings (titles, OG, manifest) cannot be multi-line and are unchanged.
 - GATES: tsc 0 · eslint 0 · build 0.
 - NEXT: demo-mode completeness (owner wants demo to look fully published, everything populated and working as if live).
+
+## DEMO MODE: fully populated + working (owner requirement) — 2026-09-25 (wyzmind)
+Owner: "I know it's demo mode but I still want everything filled with proper placeholders and for everything to fully function as if it's real."
+- **Quests no longer empty.** `QuestPanel` hard-emptied the board in demo (`setAllQuests([])`), so it always read "No quests in this category". Added `DEMO_QUESTS` (11 quests across starter/daily/weekly/monthly/season/legendary with claimed / claimable / in-progress states) + `DEMO_XP { total_xp: 1480, level: 5 }`, wired through the existing `onClaimablesChange`/`onQuestsChange` callbacks.
+- **Notifications no longer empty.** ActivityPanel now seeds `DEMO_NOTIFICATIONS` (7 realistic rows: like, message, match, booking, system, follow, comment) instead of "No notifications yet".
+- **Payment History no longer empty.** Seeds 7 demo ledger rows (4 received incl. one refunded, 3 sent) keyed to `userId` so both tabs populate.
+- **Analytics no longer a wall of zeros.** Seeds views 2,847 / matches 138 / messages 96 / brief applications 24 / bookings 17 host + 9 booker / $4,860.00 earnings.
+- **Chat works.** The composer, Send, Enter-to-send and quick replies were all `disabled={demo}` while a full simulated-reply engine already existed in `page.tsx` and could never fire. Enabled the text flow; demo matches now open with seeded conversation threads (6, 2–3 messages each) instead of empty conversations; replaced "Messages are disabled for demo profiles" with the normal matched copy.
+- **Removed the "unfinished" tells:** the "DEMO PREVIEW" chip on every brief, the red "Demo" chip on every match, and the "Replies aren't shown for demo posts yet." copy (now "Be the first to reply."). Demo provenance is still disclosed by the global demo-mode indicator.
+- **Fixed broken demo asset paths:** `NICO  +  DRACO` (double spaces) + literal `%2B` in filenames → `NICO__plus__DRACO` / `Nico + Draco-*` (4 dir refs + 14 filename refs + 1 display name). That card previously fell back to a letter tile instead of a face.
+- GATES: tsc 0 · eslint 0 · vitest **71 files / 547 tests PASS** · build 0 · e2e-smoke **15/15**.
+- STILL PLACEHOLDER-ish (next): Sessions "Date TBD"/"Rate TBD" + empty Bookings/Requests, Muses "Interested"/"Inbox", Public Profile reviews/posts/trust, Profile completeness 0% + referral "unavailable", Portfolio screen placeholder, brief budgets "—", Settings templates/team empty.

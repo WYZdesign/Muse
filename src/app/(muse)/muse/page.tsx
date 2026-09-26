@@ -741,10 +741,29 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         // profiles (ARCANA/AUDREY/CHER) in live production. An empty matches list
         // shows the real empty state instead of 6 invented matches.
         if (DEMO_MODE) {
-          const demoMatches = PROFILES.slice(0, 6).map((p) => ({
+          // Seeded conversation threads so demo matches open with real history
+          // instead of an empty "no messages" state (owner requirement: demo
+          // mode must look published).
+          const now = Date.now();
+          const t = (mins: number) => new Date(now - mins * 60000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          const DEMO_THREADS: { from: "me" | "them"; text: string; time: string }[][] = [
+            [{ from: "them", text: "Hey! Loved your portfolio — the studio lighting work is unreal.", time: t(180) },
+             { from: "me", text: "Thank you! I've been experimenting with a soft-box setup lately 🙌", time: t(174) },
+             { from: "them", text: "Would you be up for a shoot next week? I have a concept in mind.", time: t(12) }],
+            [{ from: "me", text: "Your drone reel is incredible. Do you travel for shoots?", time: t(240) },
+             { from: "them", text: "I do — mostly the Southeast, but I'll fly anywhere for the right project.", time: t(232) }],
+            [{ from: "them", text: "I'd love to feature your work in the community spotlight this month.", time: t(90) },
+             { from: "me", text: "That would be amazing, thank you! What do you need from me?", time: t(84) }],
+            [{ from: "them", text: "Just sent over the brief for the brand campaign — take a look when you can.", time: t(30) },
+             { from: "me", text: "On it. First read looks great, I'll come back with availability.", time: t(26) }],
+            [{ from: "me", text: "Congrats on the gallery opening! The turnout looked packed.", time: t(600) },
+             { from: "them", text: "Thank you! We sold three pieces on the first night 🥂", time: t(590) }],
+            [{ from: "them", text: "Are you free to hop on a quick call about the collaboration?", time: t(20) }],
+          ];
+          const demoMatches = PROFILES.slice(0, 6).map((p, i) => ({
             id: p.id, name: p.name, img: p.img, type: p.type,
             bio: p.bio, location: p.loc, booked: false, online: !!p.online,
-            messages: [], _demo: true
+            messages: DEMO_THREADS[i] || [], _demo: true
           }));
           setMatches(demoMatches);
         } else {
