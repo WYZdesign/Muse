@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const deletes: string[] = [];
+let emailResult: { sent: boolean; error?: string } = { sent: true };
 
 vi.mock("@/lib/rate-limit", () => ({
   checkRate: vi.fn(async () => true),
   clientIp: vi.fn(() => "10.0.0.1"),
 }));
 vi.mock("@/lib/email", () => ({
-  sendEmail: vi.fn(async () => ({ sent: true })),
+  sendEmail: vi.fn(async () => emailResult),
   betaAccess: vi.fn((email: string) => ({ to: email, subject: "beta", html: "" })),
 }));
 vi.mock("@/lib/supabase", () => ({
@@ -54,6 +55,7 @@ describe("admin promote-waitlist route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     deletes.length = 0;
+    emailResult = { sent: true };
     vi.stubEnv("MUSE_DEMO_MODE", "false");
     vi.stubEnv("NEXT_PUBLIC_OWNER_EMAIL", "torree.marcel@gmail.com");
   });
@@ -100,5 +102,18 @@ describe("admin promote-waitlist route", () => {
     const r = await POST(req({ email: "one@example.com" }, "owner-tok"));
     expect(r.status).toBe(200);
     expect(deletes).toContain("one@example.com");
+  });
+
+  it("keeps a member on the waitlist when the access email fails", async () => {
+    emailResult = { sent: false, error: "provider unavailable" };
+    const r = await POST(req({ email: "retry@example.com" }, "owner-tok"));
+    expect(r.status).toBe(200);
+    expect((await r.json()).results[0]).toMatchObject({ email: "retry@example.com", sent: false });
+    expect(deletes).not.toContain("retry@example.com");
+  });
+
+  it("rejects malformed request shapes and oversized batches", async () => {
+    expect((await POST(req({ emails: "not-an-array" }, "owner-tok"))).status).toBe(400);
+    expect((await POST(req({ emails: Array.from({ length: 51 }, (_, i) => `member${i}@example.com`) }, "owner-tok"))).status).toBe(400);
   });
 });
