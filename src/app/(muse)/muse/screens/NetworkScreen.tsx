@@ -655,17 +655,27 @@ export const NetworkScreen = memo(function NetworkScreen({
             {proList.map((p) => (
             <div
               key={p.id}
-              className="pro-card"
-              onClick={() => openProProfile(p)}
-              style={{
-                marginBottom: 14,
-                borderRadius: 16,
-                overflow: "hidden",
-                cursor: "pointer",
-                position: "relative",
-                height: 570,
-              }}
-            >
+                className="pro-card"
+                style={{
+                  marginBottom: 14,
+                  borderRadius: 16,
+                  overflow: "hidden",
+                  position: "relative",
+                  height: 570,
+                }}
+              >
+                {/* Full-card target as a real <button> that is a SIBLING of the
+                    Save control below (which sits at zIndex 2), never an
+                    ancestor of it — a clickable div wrapping a button is an axe
+                    `nested-interactive` violation, and the div had no keyboard
+                    access at all (pointer-only). */}
+                <button
+                  type="button"
+                  className="pro-card-open"
+                  aria-label={`View ${p.name}'s profile`}
+                  onClick={() => openProProfile(p)}
+                  style={{ position: "absolute", inset: 0, zIndex: 1, padding: 0, border: "none", background: "transparent", cursor: "pointer" }}
+                />
               <Image
                 loading="lazy"
                 src={p.img}

@@ -693,3 +693,9 @@ Each of these requires un-nesting interactive controls (the same class of bug fi
 6. `screens/DiscoverScreen.tsx` (~L400) — the per-card `allPhotos/portraitPics/landscapePics` derivation runs inside an inline IIFE on every render; needs the block lifted out of JSX to be memoised.
 7. Tab groups still lack `aria-controls`/`aria-labelledby` panel wiring across Feed/Network/Community/Collab/Profile/Sessions.
 8. `page.tsx` P2 controller-hook extraction (Codex explicitly deferred; needs parity tests first).
+
+## NetworkScreen pro-card un-nested — 2026-09-25 (wyzmind)
+- `.pro-card` was a clickable `<div>` (pointer-only, no role, no keyboard access) that ALSO wrapped the Save `<button>` — an axe `nested-interactive` violation plus a keyboard dead end.
+- Restructured: the card is now a plain positioning container; the whole-card target is a real `<button className="pro-card-open" aria-label="View <name>'s profile">` at `zIndex: 1`, and the Save control (already `zIndex: 2`) stays a SIBLING so it remains reachable and is not nested.
+- GATES: tsc 0 · vitest **71 files / 547 tests PASS** · eslint 0 · build 0.
+- NOTE: the remaining structural items (FeedScreen post header, MatchCard, MenuModal notification rows, admin unified counts, Discover per-render derivation, tab `aria-controls`, page.tsx P2) are the same bug class and each needs the sibling/overlay treatment WITH a browser verification pass. They are documented in the list below rather than rushed.
