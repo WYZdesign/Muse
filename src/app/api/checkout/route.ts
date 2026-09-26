@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { checkRate, clientIp } from "@/lib/rate-limit";
-import { supabase } from "@/lib/supabase";
+import { supabase, getServiceClient } from "@/lib/supabase";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 export const runtime = "nodejs";
@@ -67,8 +67,11 @@ export async function POST(req: NextRequest) {
     let discountCouponId: string | null = null;
     if (promo && String(promo).trim().toUpperCase() === BETA_PROMO.toUpperCase()) {
       // Admin-gate: only ADMIN_EMAILS can use the beta promo code.
-      const { data: promoProfile } = await supabase.from("muse_profiles")
-        .select("email").eq("auth_id", userId).maybeSingle();
+        // Service client: this is a server-only, already-authenticated route, and
+        // `muse_profiles` no longer grants anon SELECT (see migration 0027), so
+        // the shared anon client would return nothing here.
+        const { data: promoProfile } = await getServiceClient().from("muse_profiles")
+          .select("email").eq("auth_id", userId).maybeSingle();
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
       if (!promoProfile?.email || !admins.includes(promoProfile.email.toLowerCase())) {
         return NextResponse.json({ error: "Invalid promo code" }, { status: 400 });

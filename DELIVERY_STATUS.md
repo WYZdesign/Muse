@@ -785,3 +785,24 @@ Owner request: on a right-swipe the green like-label must sit on the **top-LEFT*
 - Seeded demo fallbacks: 3 brief templates (Editorial shoot / Brand campaign / Test shoot TFP, with realistic descriptions and budgets) and 3 team members (Producer / Editor / Designer). Real saved values still win when present — the fallback only fills an empty list, and non-demo builds are unchanged.
 - GATES: tsc 0 · eslint 0 · vitest **547 PASS** · build 0.
 - Remaining minor: community/event member lists, and a few `Unknown`/`Anonymous` fallbacks.
+
+## CRITICAL SECURITY: production profile exposure closed + album RLS fixed — 2026-09-25 (wyzmind)
+Verified against PRODUCTION using the vault credentials (values never printed).
+
+**1. `muse_profiles` was world-readable, including `email` and `auth_id`.**
+- `pg_policies` showed two SELECT policies with `USING (true)`: `"Profiles are public"` (role `public`) and `"Public profiles viewable by authenticated users"`. The anon/publishable key ships inside the client bundle, so **any unauthenticated visitor could read every profile row**.
+- Reproduced live: a raw PostgREST request with the anon key returned a real address (`torree.marcel+musetest1@gmail.com`) plus that user's `auth_id`.
+- **Fixed (migration 0027, applied):** dropped both blanket policies, replaced with `"Users read own profile"` (`FOR SELECT TO authenticated USING (auth.uid() = auth_id)`) and `REVOKE SELECT ON muse_profiles FROM anon`.
+- Verified after: anon now gets **401 `42501` (permission denied)**; service-role still reads normally.
+- Code change required: `api/checkout` read `muse_profiles` through the shared anon client (the only such use in the app). Switched that read to `getServiceClient()`; `supabase.auth.getUser(token)` still uses the anon client (correct — it takes the token explicitly).
+
+**2. `muse_albums` / `muse_album_photos` were returning HTTP 500 to any non-service role.**
+- Error: `42P17 infinite recursion detected in policy for relation "muse_albums"`. Cycle: `muse_albums_select → muse_album_access → muse_albums` (policy subqueries re-enter RLS on the other table).
+- **Fixed (migration 0028, applied):** added `SECURITY DEFINER` helpers `muse_current_profile_id()`, `muse_owns_album(uuid)`, `muse_can_view_album(uuid)` (owner rights bypass RLS, breaking the cycle while `auth.uid()` still reflects the caller) and rewrote the album/photo/access policies on top of them. Also added the missing `WITH CHECK` on `muse_albums_insert` (it previously had **no** predicate, so any authenticated user could insert an album row).
+- Verified after: anon album queries return **200** (was 500); service-role unchanged.
+
+**Audit of the rest:** RLS is enabled on every `muse_*` table (none disabled). Eight tables carry `USING (true)` public SELECT policies (`muse_communities`, `muse_community_members`, `muse_events`, `muse_forum_replies`, `muse_professionals`, `muse_prompt_bank`, `muse_sessions`, plus the now-fixed `muse_profiles`) — these are public catalogue/community surfaces, so public read appears intentional; `muse_profiles` was the outlier because it holds PII.
+
+**Vercel env audit (correction):** the project has **62 env vars** and `CRON_SECRET` **is already set** (production + preview) — my earlier "owner must add CRON_SECRET" was wrong. Comparing every `process.env.*` the non-test code reads against Vercel: the only genuine gaps are the tuning constants in `src/lib/config.ts` (all have code defaults) and `NCMEC_CLIENT_ID`/`NCMEC_CLIENT_SECRET`, which only exist after NCMEC ESP onboarding. `UNSUBSCRIBE_SECRET`/`NEXTAUTH_SECRET` are unset but `email.ts` falls back to the configured `RESEND_API_KEY`, so unsubscribe links work.
+
+**GATES:** tsc 0 · eslint 0 · vitest **547 PASS** · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
