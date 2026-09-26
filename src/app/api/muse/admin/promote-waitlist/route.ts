@@ -30,16 +30,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const emails: string[] = body.emails || (body.email ? [body.email] : []);
+  const emails: unknown[] = Array.isArray(body.emails)
+    ? body.emails
+    : typeof body.email === "string"
+      ? [body.email]
+      : [];
   if (!emails.length) {
     return NextResponse.json({ error: "Provide email or emails array" }, { status: 400 });
+  }
+  if (emails.length > 50) {
+    return NextResponse.json({ error: "A maximum of 50 emails can be promoted at once" }, { status: 400 });
   }
 
   const results: { email: string; sent: boolean; error?: string }[] = [];
 
   for (const rawEmail of emails) {
+    if (typeof rawEmail !== "string") {
+      results.push({ email: "", sent: false, error: "Invalid email" });
+      continue;
+    }
     const email = rawEmail.toLowerCase().trim();
-    if (!email || !email.includes("@")) {
+    if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
       results.push({ email: rawEmail, sent: false, error: "Invalid email" });
       continue;
     }
@@ -48,8 +59,10 @@ export async function POST(req: NextRequest) {
     const result = await sendEmail(betaAccess(email));
     results.push({ email, sent: result.sent, error: result.error });
 
-    // Remove from waitlist
-    await sb.from("muse_waitlist").delete().eq("email", email).then(() => {}, () => {});
+    // Keep the member on the waitlist if delivery failed so an admin can retry.
+    if (result.sent) {
+      await sb.from("muse_waitlist").delete().eq("email", email).then(() => {}, () => {});
+    }
   }
 
   return NextResponse.json({ success: true, results });
