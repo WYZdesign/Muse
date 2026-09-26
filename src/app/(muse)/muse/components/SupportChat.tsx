@@ -104,6 +104,10 @@ export default function SupportChat({ open, onClose }: { open: boolean; onClose:
         </div>
       </div>
 
+      {/* AI disclosure + sensitive-data warning (safety copy, handover item). */}
+      <div style={{ padding: "10px 16px 0", fontSize: 11.5, lineHeight: 1.5, color: "rgba(255,255,255,0.55)" }}>
+        Automated assistant — not a human. Please don&apos;t share passwords, ID documents, or payment details. For urgent safety or account problems, use Report or the support email.
+      </div>
       <div ref={scrollRef} role="log" aria-live="polite" aria-label="Support conversation" style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
         {messages.map((m, i) => (
           <div key={i} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "85%" }}>

@@ -127,7 +127,13 @@ export default function AdminDashboard() {
     : null;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0612", color: "#f5f0ff", padding: "32px 24px 64px", fontFamily: "system-ui, sans-serif" }}>
+    <div role="main" aria-label="Admin dashboard" style={{ minHeight: "100vh", background: "#0a0612", color: "#f5f0ff", padding: "32px 24px 64px", fontFamily: "system-ui, sans-serif" }}>
+      {/* Live region — announces the async dashboard load state so screen
+          readers hear the outcome instead of silence. Admin had no landmark
+          and no live region at all. */}
+      <div role="status" aria-live="polite" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" }}>
+        {status === "loading" ? "Loading dashboard" : status === "ready" ? "Dashboard loaded" : status === "unauthenticated" ? "Not signed in" : status === "forbidden" ? "Not authorised" : "Dashboard failed to load"}
+      </div>
       {/* Gradient title animation — self-contained so this route doesn't need muse.css. */}
       <style>{`
         @keyframes adminTitleFlow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }

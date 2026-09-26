@@ -664,3 +664,11 @@ Owner authorized using the DPAPI vault. Credentials were read programmatically a
    - `0026_storage_cleanup_worker.sql` was the only PENDING migration. Applied via `python scripts/run_migrations.py --apply` -> `OK 0026`, **1 applied, 25 already present**, exit 0. Re-check: **pending 0**.
    - Note: the earlier "0024 `muse_account_deletions` MISSING" signal was a wrong assumption on my part — 0024 ALTERs `muse_profiles` (adds `deletion_requested_at`/`deletion_purge_after` + partial index); no such table was ever created. 0024 is correctly applied.
 3. STILL OWNER-GATED: retention-copy wording (counsel), DMCA designated-agent phone, RLS/signed-URL matrix, provider-isolation proof, load/Web-Vitals, restore drill.
+
+## Handover a11y/safety batch 2 — 2026-09-25 (wyzmind)
+- A11Y: "Why this match?" popover now uses `useFocusTrap` — it declared `role="dialog" aria-modal` but never moved, trapped, or restored focus, and had no Escape handling. Tab is now contained, Escape closes, focus returns to the trigger, backdrop click still closes.
+- A11Y: admin dashboard gained `role="main" aria-label="Admin dashboard"` (it had NO landmark) plus a `role="status" aria-live="polite"` region announcing the async dashboard state (loading / loaded / not signed in / not authorised / failed).
+- SAFETY COPY: SupportChat now discloses that it is an automated assistant and warns users not to share passwords, ID documents or payment details, with a human/escalation route — the conversation log (`role="log"`) landed in the previous commit.
+- GATES: tsc 0 · vitest **71 files / 547 tests PASS** · eslint 0 · build 0.
+- STILL OPEN (code): PaymentHistory dialog/tab/table semantics; MatchCard + Network card semantic controls; Feed post-header nested actions; notification row semantics + single-source count; admin unified report counts; availability/currency radio semantics; tab `aria-controls`; unblock confirmation; BTS comment Escape; Discover per-render memoisation; `page.tsx` P2 hook extraction.
+- OWNER: retention-copy wording (counsel), DMCA agent phone, RLS/signed-URL cross-account matrix, provider-isolation proof, load/Web-Vitals, restore drill; `RENOVATE_TOKEN`/`LHCI_GITHUB_APP_TOKEN` absent from vault.

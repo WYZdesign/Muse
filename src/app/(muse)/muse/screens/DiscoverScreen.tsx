@@ -14,6 +14,7 @@ import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../ho
 import { attachSpatialDepth } from "../hooks/useSpatialDepth";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 import Lightbox from "../components/Lightbox";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 // Tag description maps + the tap-to-detail popover, shared across every
 // screen that shows these badges (extracted from here — Discover was the
 // original home of this pattern — into badgeInfo.tsx so Muses/Profile can
@@ -182,6 +183,10 @@ export const DiscoverScreen = memo(function DiscoverScreen({
 }: DiscoverScreenProps) {
   const [badgeInfo, setBadgeInfo] = useState<{ name: string; desc: string; icon: React.ReactNode; color: string } | null>(null);
   const [whyInfo, setWhyInfo] = useState<{ score: number; reasons: string[] } | null>(null);
+  // Focus trap for the "Why this match?" popover. It already declared
+  // role="dialog" aria-modal but never moved/trapped/restored focus. The hook
+  // handles Tab containment and Escape-to-close (backdrop click also closes).
+  const whyTrap = useFocusTrap<HTMLDivElement>(!!whyInfo, () => setWhyInfo(null));
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
   // ═══ PHOTO LIKES (like the image, not the match) ═══
   const [photoLike, setPhotoLike] = useState<{ [url: string]: { liked: boolean; count: number } }>({});
@@ -761,7 +766,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
       {/* Why this match? popover — traces the score back to the real calcMatch factors */}
       {whyInfo && (
         <div id="why-match-dialog" role="dialog" aria-modal="true" aria-label="Why this match" style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setWhyInfo(null)}>
-          <div style={{ background: "#1a0a2e", border: "1px solid rgba(255,215,0,0.25)", borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
+          <div ref={whyTrap} style={{ background: "#1a0a2e", border: "1px solid rgba(255,215,0,0.25)", borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
               <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)", flexShrink: 0 }}>{whyInfo.score}%</div>
               <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Why this match?</div>
