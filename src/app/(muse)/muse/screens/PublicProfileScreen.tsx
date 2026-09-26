@@ -109,6 +109,16 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
 
   useEffect(() => {
     if (!user.id || !apiFetch) return;
+    // Populated demo reviews (owner: demo must look published) so the Reviews
+    // section isn't silently hidden behind an empty live fetch.
+    if (process.env.NEXT_PUBLIC_DEMO_MODE !== "false") {
+      setReviews([
+        { id: "dr1", rating: 5, text: "Absolutely nailed the brief and delivered ahead of schedule. Would book again in a heartbeat.", author: "Jordan Blake", created_at: new Date(Date.now() - 9 * 86400000).toISOString() },
+        { id: "dr2", rating: 5, text: "Professional, calm on set and great with direction. The final edits were gorgeous.", author: "Priya Nair", created_at: new Date(Date.now() - 26 * 86400000).toISOString() },
+        { id: "dr3", rating: 4, text: "Great communication and a really collaborative shoot. Highly recommend.", author: "Lena Ortiz", created_at: new Date(Date.now() - 54 * 86400000).toISOString() },
+      ]);
+      return;
+    }
     let cancelled = false;
     apiFetch(`/api/muse?type=reviews&profile_id=${encodeURIComponent(user.id)}`)
       .then((r: any) => r.json())
@@ -119,6 +129,15 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
 
   useEffect(() => {
     if (!user.id || !apiFetch) return;
+    if (process.env.NEXT_PUBLIC_DEMO_MODE !== "false") {
+      // Populated demo posts for the profile's Feed section.
+      setFeedPosts([
+        { id: "dp1", text: "Behind the scenes from yesterday's editorial shoot — one light, one reflector, a lot of patience.", likes: 128, comments: 14, created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
+        { id: "dp2", text: "New portrait series is up in my portfolio. Shot entirely on golden hour light.", likes: 96, comments: 9, created_at: new Date(Date.now() - 8 * 86400000).toISOString() },
+        { id: "dp3", text: "Looking for a stylist for a neon-noir concept next month. Brief is in Collab.", likes: 64, comments: 21, created_at: new Date(Date.now() - 15 * 86400000).toISOString() },
+      ]);
+      return;
+    }
     let cancelled = false;
     apiFetch(`/api/muse?type=feed&profile_id=${encodeURIComponent(user.id)}`)
       .then((r: any) => r.json())
@@ -133,6 +152,12 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
   // surface — real data from the backend, shown to anyone viewing the profile.
   useEffect(() => {
     if (!user.id || !apiFetch) return;
+    if (process.env.NEXT_PUBLIC_DEMO_MODE !== "false") {
+      // Populated demo trust card (verification, review aggregate, completed
+      // bookings, response rate) so the buyer-side trust surface renders.
+      setTrust({ verified: true, reviewCount: 3, avgRating: 4.7, completedAsHost: 17, responseRatePct: 98, boosted: true, lastSeen: new Date(Date.now() - 8 * 60000).toISOString() });
+      return;
+    }
     let cancelled = false;
     apiFetch(`/api/muse?type=creative-trust&profile_id=${encodeURIComponent(user.id)}`)
       .then((r: any) => r.json())

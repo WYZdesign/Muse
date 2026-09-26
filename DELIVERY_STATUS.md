@@ -773,3 +773,9 @@ Owner request: on a right-swipe the green like-label must sit on the **top-LEFT*
 - **Brief budgets no longer "—".** The two demo briefs with a placeholder budget now read "Unpaid collab" and "Open to offers".
 - GATES: tsc 0 · eslint 0 · vitest **547 PASS** · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
 - STILL TO FILL: Public Profile reviews/posts/trust (sections hidden) · Settings brief templates / team members empty · community/event member lists.
+
+## DEMO MODE batch 6: Public Profile reviews / feed / trust — 2026-09-25 (wyzmind)
+- The public profile's **Reviews**, **Feed posts** and **buyer-side trust card** are all fed by live endpoints (`type=reviews`, `type=feed&profile_id`, `type=creative-trust`) that return nothing for a demo viewer, so all three sections were silently hidden — a profile looked like it had no activity or credibility at all.
+- Seeded all three in demo mode: 3 reviews (5/5/4 with realistic copy and staggered dates), 3 feed posts (with like/comment counts), and a trust card (verified, 3 reviews / 4.7 avg, 17 completed as host, 98% response rate, boosted, recently online).
+- GATES: tsc 0 · eslint 0 · vitest **547 PASS** · build 0 · e2e-smoke **15/15**.
+- STILL TO FILL: Settings brief templates / team members empty · community/event member lists · a couple of `Unknown`/`Anonymous` fallbacks.
