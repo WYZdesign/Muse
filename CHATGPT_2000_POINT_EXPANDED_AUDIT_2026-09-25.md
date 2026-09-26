@@ -60,3 +60,10 @@ Each category is assessed using ten subcategories, each with ten concrete checks
 - A local test earns at most **test-only** credit until an equivalent deployed behavior is confirmed where deployment matters.
 - Credentials, migrations, provider configuration, and production storage behavior require direct non-secret proof; they cannot be assumed from repository code.
 - No release claim is valid until the final deployed SHA equals the reviewed commit and its health checks pass.
+
+
+## Evidence updates — 2026-09-25 (post-baseline)
+
+- **Waitlist correctness — verified source/test:** commits 8082e5e, 903f491, and 65c07db normalize/trim signup email addresses, reject malformed or non-text values before storage or email, add route regression coverage, and generate QR/copy/X sharing URLs from the deployed origin. Focused Vitest: **6/6 passed**; TypeScript: **exit 0**. The commits were re-read from GitHub. This is not production delivery proof.
+- **Payment History accessibility — verified source/local gate:** commit 65ef799 adds dialog semantics, a labelled modal, Escape/focus-trap behavior, 44px close control, tab/tab-panel relationships, and a semantic transaction list. TypeScript: **exit 0**; focused ESLint: **0 errors** (pre-existing explicit-any warnings only). The remote file and commit were re-read from GitHub. Manual assistive-tech and deployed behavior remain unverified.
+- **Release evidence remains open:** local Git cannot refresh its fetch metadata (.git/FETCH_HEAD permission denied), the browser sandbox cannot spawn Playwright, and no exact-SHA production deployment proof has been obtained for these commits. Therefore the calibrated **1,461/2,000** score is deliberately unchanged.
