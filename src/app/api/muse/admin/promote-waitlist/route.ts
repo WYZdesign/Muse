@@ -50,7 +50,11 @@ export async function POST(req: NextRequest) {
       continue;
     }
     const email = rawEmail.toLowerCase().trim();
-    if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    // NOTE: `[^\\s@]` was double-escaped — inside a regex LITERAL that means
+    // "not backslash, s, or @" and requires a literal backslash before the dot,
+    // so EVERY valid address (e.g. foo@example.com) was rejected as invalid and
+    // the member was never promoted. `[^\s@]` is the intended class.
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       results.push({ email: rawEmail, sent: false, error: "Invalid email" });
       continue;
     }
