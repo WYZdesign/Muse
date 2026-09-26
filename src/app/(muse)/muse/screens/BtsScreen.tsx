@@ -695,7 +695,12 @@ export const BtsScreen = memo(function BtsScreen({
                       value={commentDraft}
                       autoFocus
                       onChange={(e) => setCommentDraft(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") submitComment(s); }}
+                      onKeyDown={(e) => {
+                      if (e.key === "Enter") submitComment(s);
+                      // Escape cancels the inline comment box (it previously had
+                      // no dismissal path at all).
+                      else if (e.key === "Escape") { e.preventDefault(); setCommentingId(null); setCommentDraft(""); }
+                    }}
                       style={{ flex: 1, margin: 0, borderRadius: 99, padding: "10px 14px", fontSize: 13 }}
                     />
                     <button

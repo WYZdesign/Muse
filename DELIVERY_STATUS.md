@@ -678,3 +678,18 @@ Owner authorized using the DPAPI vault. Credentials were read programmatically a
 - Blocked Users: the row no longer falls back to printing a raw user UUID (it now reads "Unknown user" when the profile is unavailable), the Unblock button has a unique accessible name (`Unblock <name>`), and unblocking now requires confirmation ("Unblock <name>? They will be able to see your profile and contact you again.") instead of silently reversing a safety control on one click.
 - VERIFIED ALREADY DONE by Codex (so not duplicated): PaymentHistory focus trap + `role="dialog" aria-modal` + `role="tablist"`/`role="tab"` with `aria-selected`/`aria-controls`/roving `tabIndex` + `role="tabpanel"` + `<ul>` payment list.
 - GATES: tsc 0 · vitest **71 files / 547 tests PASS** · eslint 0 · build 0.
+
+## BTS comment dismissal — 2026-09-25 (wyzmind)
+- The inline "Write a comment" field on a BTS moment now cancels on **Escape** (clears the draft and closes the box). It previously only had Enter-to-submit with no dismissal path — no keyboard or pointer way to back out without submitting.
+- GATES: tsc 0 · vitest **71 files / 547 tests PASS** · eslint 0 · build 0.
+
+## Remaining code items — deliberately NOT rushed (need a dedicated restructure pass)
+Each of these requires un-nesting interactive controls (the same class of bug fixed for BTS), which risks an axe `nested-interactive` regression if done fast. They are documented, not dropped:
+1. `components/MatchCard.tsx` — root is a clickable `<div>` with NO role/tabIndex (pointer-only), but it also contains badge `<button>`s, a `role="button"` verified-mark span, and reveal handlers. Making the card itself a control requires moving those children out as siblings.
+2. `screens/NetworkScreen.tsx` (~L655) — same pattern: clickable `.pro-card` div containing a Save `role="button"`.
+3. `screens/FeedScreen.tsx` (~L532) — clickable post-header div wrapping the avatar `Image onClick` and a `Report post` `role="button"`.
+4. `components/MenuModal.tsx` — notification rows are gesture(swipe)-only with no keyboard-accessible remove; badge count is `max(local unread, serverNotifCount)` from two sources.
+5. `admin/page.tsx` + `admin/ModerationPanel.tsx` — dashboard counts and the moderation queue come from two different queries; needs one server-authoritative status bucket query.
+6. `screens/DiscoverScreen.tsx` (~L400) — the per-card `allPhotos/portraitPics/landscapePics` derivation runs inside an inline IIFE on every render; needs the block lifted out of JSX to be memoised.
+7. Tab groups still lack `aria-controls`/`aria-labelledby` panel wiring across Feed/Network/Community/Collab/Profile/Sessions.
+8. `page.tsx` P2 controller-hook extraction (Codex explicitly deferred; needs parity tests first).
