@@ -754,3 +754,10 @@ Owner request: on a right-swipe the green like-label must sit on the **top-LEFT*
 - It was on the RIGHT: `.label-like{right:20px; transform:rotate(14deg)}`. Worse, the NOPE label's MARKUP also forced it right (`style={{ left:"auto", right:20 }}`), so both labels stacked on the same corner. `.label-like` is now `left:20px; transform:rotate(-14deg)` — green like top-left, coral NOPE stays top-right. SUPER remains centred.
 - Note: the green label's text is currently **"YES"** (the owner referred to it as "YEAH"). Left as "YES" to avoid an unrequested copy change — say the word and I'll switch it to "YEAH".
 - GATES: tsc 0 · build 0 · discover-deck **7/7**.
+
+## DEMO MODE batch 3: the signed-in user is a complete profile — 2026-09-25 (wyzmind)
+- The demo user was literally `name: "You"` with 0 everywhere: Profile showed no bio ("No bio yet"), no media kit, "Profile Completeness 0%", all stats 0, no badges, no prompts, no portfolio ("6 dashed Add slots"), referral "—".
+- Seeded a full demo persona (`DEMO_USER`, used only when `NEXT_PUBLIC_DEMO_MODE !== "false"`): Alex Rivera, photographer, Austin TX; real bio; 5 years exp; 47 collabs; score 94; verified; 3 styles; 3 looking-for; Leo/Dragon/ENFJ/7; 3 badges; 3 prompts; 3 albums (Editorial/Portrait/Fashion, one invite-only); 6 photos; stats 47 matches / 312 likes / 18 super likes / 1,204 passes / 17 bookings / 138 matches received / 96 messages; 4 referrals; pro tier with ~8 months remaining; "Founding Member".
+- Non-demo builds are byte-for-byte unchanged (the original blank default is preserved on the else branch).
+- GATES: tsc 0 · eslint 0 · vitest **547 PASS** · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
+- STILL TO FILL: Muses "No interest yet"/"No pending requests" · Public Profile reviews/posts/trust (hidden) · Portfolio screen ("Album management is unavailable in this demo") · brief budgets "—" · Settings templates/team empty · community member lists.
