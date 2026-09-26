@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { trackError } from "@/lib/errorTracker";
 import { normalizeProfile } from "./normalizers";
 import type { Match, Profile } from "../components/types";
+import { PROFILES } from "../components/types";
 
 export type UseDiscoveryDataArgs = {
   apiFetch: (url: string, init?: RequestInit) => Promise<Response>;
@@ -82,6 +83,15 @@ export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscover
       .catch(() => {});
     return () => { cancelled = true; };
   }, [profileId]);
+
+  // ═══ DEMO: "Interested in you" seed ═══
+  useEffect(() => {
+    // `likedBy` is only populated by the live matches endpoint, so in demo mode
+    // the Muses "Interested in you" grid always showed "No interest yet".
+    // Owner requirement: demo must look published, so seed it from the deck.
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "false") return;
+    setLikedBy(PROFILES.slice(6, 14) as unknown as Profile[]);
+  }, []);
 
   return {
     liveProfiles, setLiveProfiles,

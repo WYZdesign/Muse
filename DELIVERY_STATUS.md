@@ -761,3 +761,9 @@ Owner request: on a right-swipe the green like-label must sit on the **top-LEFT*
 - Non-demo builds are byte-for-byte unchanged (the original blank default is preserved on the else branch).
 - GATES: tsc 0 · eslint 0 · vitest **547 PASS** · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
 - STILL TO FILL: Muses "No interest yet"/"No pending requests" · Public Profile reviews/posts/trust (hidden) · Portfolio screen ("Album management is unavailable in this demo") · brief budgets "—" · Settings templates/team empty · community member lists.
+
+## DEMO MODE batch 4: Muses "Interested" + Inbox — 2026-09-25 (wyzmind)
+- **"Interested in you" was always empty.** `likedBy` is only populated by the live `type=matches` endpoint (auth-gated), so the grid showed "No interest yet" in demo. Seeded it from the deck (`PROFILES.slice(6, 14)`) in `useDiscoveryData` when `NEXT_PUBLIC_DEMO_MODE !== "false"`.
+- **Inbox always empty.** `messageRequests` comes from the live `message-requests` action, so demo showed "No pending requests". Seeded 3 realistic requests (names, avatars from the deck, distinct message copy, staggered timestamps) in the `screen === "matches"` effect.
+- GATES: tsc 0 · eslint 0 · vitest **547 PASS** · build 0 · e2e-smoke **15/15**.
+- STILL TO FILL: Public Profile reviews/posts/trust (sections hidden) · Portfolio screen ("Album management is unavailable in this demo") · brief budgets "—" · Settings templates/team empty · community/event member lists.
