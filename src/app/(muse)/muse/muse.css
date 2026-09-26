@@ -2766,3 +2766,13 @@ img{background-color:var(--card-bg)}
    320px viewport without wrapping or overflowing. */
 .hero-text.muse-brand-lockup{font-size:clamp(38px,11vw,58px)}
 .hero-text.muse-brand-lockup > span{display:inline-block;margin-left:.1em;font-family:Inter,system-ui,sans-serif;font-size:.3em;font-style:normal;font-weight:800;letter-spacing:.14em;text-transform:uppercase;vertical-align:.32em;white-space:nowrap}
+
+/* ─── Match cards: full-card open target ───
+   MatchCard renders a full-card <button class="match-card-open"> at zIndex 1 and
+   keeps the card's own controls (trait badges, verified mark, NSFW reveal) as
+   SIBLINGS above it, so nothing interactive is nested and the card is reachable
+   by keyboard. These rules lift those controls above the overlay. */
+.match-card{position:relative}
+.match-card .match-badge,
+.match-card .card-verified-mark,
+.match-card .match-time{position:relative;z-index:2}

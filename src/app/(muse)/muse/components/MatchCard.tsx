@@ -85,11 +85,21 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
     <div
       data-mid={mid}
       className={isList ? "match-card" : "match-card match-card-grid"}
-      onClick={() => {
-        setChatTarget(m);
-        showScreen("chat");
-      }}
+      style={{ position: "relative" }}
     >
+      {/* Full-card open target. A real <button> placed as a SIBLING of the
+          card's own controls (badges / verified mark / reveal), never their
+          ancestor: a clickable div wrapping buttons is an axe
+          `nested-interactive` violation, and the old clickable div gave keyboard
+          users no way to open a match at all. The controls are lifted above this
+          overlay in muse.css. */}
+      <button
+        type="button"
+        className="match-card-open"
+        aria-label={`Open chat with ${m.name}`}
+        onClick={() => { setChatTarget(m); showScreen("chat"); }}
+        style={{ position: "absolute", inset: 0, zIndex: 1, padding: 0, border: "none", background: "transparent", cursor: "pointer" }}
+      />
       {/* "New match" vertical color tab on the right edge (list view only).
           Represents an unseen match; disappears once the user opens the chat
           (MusesScreen tracks seen ids). */}
@@ -114,7 +124,7 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
             tabIndex={isNsfwBlurred ? 0 : undefined}
             onClick={isNsfwBlurred ? (e) => { e.stopPropagation(); setRevealed(true); } : undefined}
             onKeyDown={isNsfwBlurred ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setRevealed(true); } } : undefined}
-            style={{ position: "relative", width: AVATAR_SIZE, height: AVATAR_SIZE, zIndex: 1, cursor: isNsfwBlurred ? "pointer" : undefined }}
+            style={{ position: "relative", width: AVATAR_SIZE, height: AVATAR_SIZE, zIndex: 2, cursor: isNsfwBlurred ? "pointer" : undefined }}
           >
             <Image
               loading="lazy"
@@ -134,7 +144,7 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
             tabIndex={isNsfwBlurred ? 0 : undefined}
             onClick={isNsfwBlurred ? (e) => { e.stopPropagation(); setRevealed(true); } : undefined}
             onKeyDown={isNsfwBlurred ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setRevealed(true); } } : undefined}
-            style={{ position: "absolute", inset: 0, cursor: isNsfwBlurred ? "pointer" : undefined }}
+            style={{ position: "absolute", inset: 0, zIndex: 2, cursor: isNsfwBlurred ? "pointer" : undefined }}
           >
             <Image
               loading="lazy"
