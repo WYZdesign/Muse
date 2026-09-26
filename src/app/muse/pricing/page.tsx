@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { getMuseUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
-  title: "Pricing — Muse",
-  description: "Muse pricing: a free tier forever, plus Muse Pro at $9.99/month. Founding members get lifetime Pro free.",
+  title: "Pricing — Muses by WYZ",
+  description: "Muses by WYZ pricing: a free tier forever, plus Muses Pro at $9.99/month. Founding members get lifetime Pro free.",
   alternates: { canonical: getMuseUrl() + "/pricing" },
-  openGraph: { title: "Pricing — Muse", description: "Muse pricing: a free tier forever, plus Muse Pro at $9.99/month. Founding members get lifetime Pro free.", url: getMuseUrl() + "/pricing", siteName: "Muse", type: "website" },
-  twitter: { card: "summary", title: "Pricing — Muse", description: "Muse pricing: a free tier forever, plus Muse Pro at $9.99/month. Founding members get lifetime Pro free." },
+  openGraph: { title: "Pricing — Muses by WYZ", description: "Muses by WYZ pricing: a free tier forever, plus Muses Pro at $9.99/month. Founding members get lifetime Pro free.", url: getMuseUrl() + "/pricing", siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "Pricing — Muses by WYZ", description: "Muses by WYZ pricing: a free tier forever, plus Muses Pro at $9.99/month. Founding members get lifetime Pro free." },
 };
 
 export default function PricingPage() {
@@ -31,7 +31,7 @@ export default function PricingPage() {
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "120px 24px 80px", fontFamily: "'Inter', sans-serif" }}>
       <h1 style={{ fontSize: "2rem", fontWeight: 700, marginBottom: 24, color: "#ffd700" }}>Pricing</h1>
       <div style={{ color: "rgba(255,255,255,0.75)", lineHeight: 1.8, fontSize: 15 }}>
-        <p style={{ marginBottom: 48 }}>Free tier forever. Muse Pro at $9.99/mo. Founding members get lifetime Pro free.</p>
+        <p style={{ marginBottom: 48 }}>Free tier forever. Muses Pro at $9.99/mo. Founding members get lifetime Pro free.</p>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
           <div style={{ border: "1px solid rgba(255,215,0,0.2)", borderRadius: 12, padding: 32 }}>
@@ -59,7 +59,7 @@ export default function PricingPage() {
           <a href="/muse/landing#join" style={{ display: "inline-block", padding: "14px 36px", borderRadius: 999, background: "#ffd700", color: "#000", fontWeight: 700, fontSize: 15, textDecoration: "none" }}>Join the Waitlist</a>
         </div>
       </div>
-      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 24, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muse</a>
+      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 24, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muses by WYZ</a>
     </div>
   );
 }

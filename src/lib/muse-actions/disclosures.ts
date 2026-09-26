@@ -32,7 +32,7 @@ export const disclosureCreate = async ({ sb, profile, rest, ip }: ActionContext)
   if (hasNsfw && hasPayment) {
     await sb.from("muse_disclosures").insert({
       proposer_id: profile.id, responder_id: responderId, booking_id: bookingId || null,
-      status: "blocked", blocked_reason: "NSFW content with payment — violates Muse terms",
+      status: "blocked", blocked_reason: "NSFW content with payment — violates Muses by WYZ terms",
       compensation_amount: compensationAmount || "",
       content_type_nudity: !!contentTypeNudity,
       content_type_artistic_nude: !!contentTypeArtisticNude,
@@ -45,7 +45,7 @@ export const disclosureCreate = async ({ sb, profile, rest, ip }: ActionContext)
       details: "Disclosure was hard-blocked: NSFW content + payment combination",
     });
     await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "disclosure_blocked", details: { responder_id: responderId } });
-    return NextResponse.json({ error: "This request violates Muse terms and has been blocked.", blocked: true }, { status: 403 });
+    return NextResponse.json({ error: "This request violates Muses by WYZ terms and has been blocked.", blocked: true }, { status: 403 });
   }
 
   const { data, error } = await sb.from("muse_disclosures").insert({

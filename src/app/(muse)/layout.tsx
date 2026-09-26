@@ -14,13 +14,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Muse — Where Creatives Connect",
+  title: "Muses by WYZ — Where Creatives Connect",
   description: "Discover and connect with photographers, models, filmmakers, musicians, designers, and artists. The creative professional network.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/muse-icon.png", apple: "/apple-touch-icon.png", shortcut: "/muse-icon.png" },
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Muse", startupImage: "/apple-touch-icon.png" },
-  openGraph: { title: "Muse — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", url: "https://muse.wyzdesign.com/muse", siteName: "Muse", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Muse — Where Creatives Connect" }] },
-  twitter: { card: "summary_large_image", title: "Muse — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", images: ["/og-image.png"] },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Muses by WYZ", startupImage: "/apple-touch-icon.png" },
+  openGraph: { title: "Muses by WYZ — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", url: "https://muse.wyzdesign.com/muse", siteName: "Muses by WYZ", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Muses by WYZ — Where Creatives Connect" }] },
+  twitter: { card: "summary_large_image", title: "Muses by WYZ — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", images: ["/og-image.png"] },
   robots: { index: false, follow: false },
   alternates: { canonical: null },
 };

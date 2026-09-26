@@ -8,7 +8,7 @@ import { useFocusTrap } from "../hooks/useFocusTrap";
 
 // Reusable contextual upsell modal — shown at the moment a free-tier user
 // hits a Pro-gated limit (Rewind, Boost, daily/super likes, viewing "Likes
-// You" profiles, etc). Replaces the generic "Upgrade to Muse Pro..." toast
+// You" profiles, etc). Replaces the generic "Upgrade to Muses Pro..." toast
 // with a real in-context paywall moment, Tinder-style: name the specific
 // benefit being gated, explain why it matters right now, and show the real
 // tier(s) that unlock it — pulled live from TIERS_BY_SIDE so pricing/features

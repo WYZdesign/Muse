@@ -358,7 +358,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div className="section-title">Subscription</div>
           {currentUser.foundingTier && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <button type="button" onClick={() => setBadgeInfo({ name: currentUser.foundingTier === "founding" ? "Founding Member" : "Early Member", desc: currentUser.foundingTier === "founding" ? "You backed Muse from the very start, unlocking the earliest perks and recognition." : "You joined Muse during its early growth, with a special early-adopter badge.", icon: currentUser.foundingTier === "founding" ? "🏆" : "⭐", color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 44, fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 99, background: currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.12)" : "rgba(212,165,255,0.12)", border: `1px solid ${currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.35)" : "rgba(212,165,255,0.35)"}`, color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)", cursor: "pointer" }}>
+              <button type="button" onClick={() => setBadgeInfo({ name: currentUser.foundingTier === "founding" ? "Founding Member" : "Early Member", desc: currentUser.foundingTier === "founding" ? "You backed Muse from the very start, unlocking the earliest perks and recognition." : "You joined Muses during its early growth, with a special early-adopter badge.", icon: currentUser.foundingTier === "founding" ? "🏆" : "⭐", color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 44, fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 99, background: currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.12)" : "rgba(212,165,255,0.12)", border: `1px solid ${currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.35)" : "rgba(212,165,255,0.35)"}`, color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)", cursor: "pointer" }}>
                 {currentUser.foundingTier === "founding" ? "🏆 FOUNDING MEMBER" : "⭐ EARLY MEMBER"}
               </button>
               {/* Audit fix (2026-09-08): this whole Subscription block used a
@@ -372,7 +372,7 @@ export const ProfileScreen = memo(function ProfileScreen({
               )}
             </div>
           )}
-          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 10 }}>Plan: <span style={{ color: "var(--gold)", fontWeight: 600 }}>{currentUser.tier === "muse_studio" ? "Muse Studio" : isPaidTier(userTier) || isPaidTier(currentUser.tier) ? "Muse Pro" : "Free"}</span></div>
+          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 10 }}>Plan: <span style={{ color: "var(--gold)", fontWeight: 600 }}>{currentUser.tier === "muse_studio" ? "Muses Studio" : isPaidTier(userTier) || isPaidTier(currentUser.tier) ? "Muses Pro" : "Free"}</span></div>
           {isPaidTier(currentUser.tier) && !currentUser.foundingTier ? (
             <button className="btn btn-outline" style={{ fontSize: 14, padding: "14px 0" }} onClick={() => setScreen("subscription")}>Manage Plan</button>
           ) : isPaidTier(currentUser.tier) && currentUser.foundingTier ? (

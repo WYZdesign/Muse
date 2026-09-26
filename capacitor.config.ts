@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.wyzdesign.muse',
-  appName: 'Muse',
+  appName: 'Muses',
   webDir: 'out',
   server: {
     url: 'https://muse.wyzdesign.com',

@@ -50,7 +50,7 @@ async function authedProfile(req: NextRequest) {
 async function mint(profile: { id: string; name?: string }, room: string) {
   const at = new AccessToken(LK_KEY, LK_SECRET, {
     identity: String(profile.id),
-    name: profile.name || "Muse user",
+    name: profile.name || "Muses user",
     ttl: "2h",
   });
   at.addGrant({ roomJoin: true, room, canPublish: true, canSubscribe: true });
@@ -213,11 +213,11 @@ export async function POST(req: NextRequest) {
         pushToProfile(
           toId,
           `${kind === "voice" ? "Voice" : "Video"} call`,
-          `${profile.name || "Someone"} is calling you on Muse`,
+          `${profile.name || "Someone"} is calling you on Muses`,
           "/muse/matches",
         ).catch(() => {});
         const { emailProfile } = await import("@/lib/muse-actions/shared");
-        emailProfile(sb, toId, "Incoming Muse call", `${profile.name || "Someone"} is calling`, `${profile.name || "Someone"} is trying to reach you on Muse.`, "Answer", "https://muse.wyzdesign.com/muse", "call").catch(() => {});
+        emailProfile(sb, toId, "Incoming Muses call", `${profile.name || "Someone"} is calling`, `${profile.name || "Someone"} is trying to reach you on Muse.`, "Answer", "https://muse.wyzdesign.com/muse", "call").catch(() => {});
       } catch { /* notifications are best-effort */ }
 
       return NextResponse.json({
@@ -226,7 +226,7 @@ export async function POST(req: NextRequest) {
         url: LK_URL,
         kind,
         callId,
-        from: { id: profile.id, name: profile.name || "Muse user" },
+        from: { id: profile.id, name: profile.name || "Muses user" },
       });
     }
 

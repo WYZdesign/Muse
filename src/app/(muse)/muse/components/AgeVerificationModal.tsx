@@ -113,7 +113,7 @@ export default function AgeVerificationModal({ onVerified, onClose, purpose = "a
           <p style={{ fontSize: 14, color: "#3a9e3a", marginBottom: 20 }}>Your identity has been verified. You're all set for paid bookings.</p>
         ) : (
           <p style={{ fontSize: 13, color: "var(--text2)", marginBottom: 20, lineHeight: 1.6 }}>
-            Paid bookings require an 18+ identity check administered by Stripe Identity. Stripe processes the government ID and selfie needed for that check; Muse receives the verification status needed to apply booking eligibility. See the Privacy Policy for details.
+            Paid bookings require an 18+ identity check administered by Stripe Identity. Stripe processes the government ID and selfie needed for that check; Muses by WYZ receives the verification status needed to apply booking eligibility. See the Privacy Policy for details.
           </p>
         )}
 

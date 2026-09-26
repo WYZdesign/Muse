@@ -33,13 +33,13 @@ async function grantReferralReward(sb: ReturnType<typeof getServiceClient>, auth
     ]);
 
     await sb.from("muse_notifications").insert([
-      { user_id: referral.referrer_id, type: "referral_reward", body: "You earned a free month of Muse Pro for a successful referral!", read: false },
-      { user_id: referral.referee_id, type: "referral_reward", body: "You received a free month of Muse Pro thanks to a referral!", read: false },
+      { user_id: referral.referrer_id, type: "referral_reward", body: "You earned a free month of Muses Pro for a successful referral!", read: false },
+      { user_id: referral.referee_id, type: "referral_reward", body: "You received a free month of Muses Pro thanks to a referral!", read: false },
     ]);
 
     const { data: rewardProfiles } = await sb.from("muse_profiles").select("id,email").in("id", [referral.referrer_id, referral.referee_id]);
     for (const p of (rewardProfiles || [])) {
-      if (p?.email) sendEmail(notify(p.email, "Free month unlocked ✦", "You earned a free month", "A referral just went through — you've received a free month of Muse Pro.")).catch(() => {});
+      if (p?.email) sendEmail(notify(p.email, "Free month unlocked ✦", "You earned a free month", "A referral just went through — you've received a free month of Muses Pro.")).catch(() => {});
     }
   } catch (e: unknown) {
     console.error("[webhook] referral reward failed:", e);
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
               // Notify the user
               const { data: prof } = await sb.from("muse_profiles").select("id,email").eq("auth_id", userId).maybeSingle();
               if (prof?.email) {
-                sendEmail(notify(prof.email, "Subscription refunded", "Your Muse Pro subscription has been refunded", "Your Pro access has been revoked. You can resubscribe anytime from Settings.")).catch(() => {});
+                sendEmail(notify(prof.email, "Subscription refunded", "Your Muses Pro subscription has been refunded", "Your Pro access has been revoked. You can resubscribe anytime from Settings.")).catch(() => {});
               }
             }
           } catch (e: unknown) {
@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
               await sb.from("muse_profiles").update({ pro_expires_at: graceUntil }).eq("auth_id", userId);
               const { data: prof } = await sb.from("muse_profiles").select("id,email").eq("auth_id", userId).maybeSingle();
               if (prof?.email) {
-                sendEmail(notify(prof.email, "Action required: update payment method", "Your Muse Pro payment needs attention", "Your card on file couldn't be charged. Please update your payment method within 3 days to keep Pro access.")).catch(() => {});
+                sendEmail(notify(prof.email, "Action required: update payment method", "Your Muses Pro payment needs attention", "Your card on file couldn't be charged. Please update your payment method within 3 days to keep Pro access.")).catch(() => {});
               }
             }
           } catch (e: unknown) {

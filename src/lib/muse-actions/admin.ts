@@ -126,7 +126,7 @@ export const adminBrain = async ({ sb, profile, rest, ip }: ActionContext) => {
         sb.from("muse_disclosures").select("*", { count: "exact", head: true }),
       ]);
       result = {
-        answer: `Muse Overview: ${counts[0].count || 0} users, ${counts[1].count || 0} matches, ${counts[2].count || 0} reports, ${counts[3].count || 0} strikes, ${counts[4].count || 0} disclosures.`,
+        answer: `Muses by WYZ Overview: ${counts[0].count || 0} users, ${counts[1].count || 0} matches, ${counts[2].count || 0} reports, ${counts[3].count || 0} strikes, ${counts[4].count || 0} disclosures.`,
         data: { users: counts[0].count || 0, matches: counts[1].count || 0, reports: counts[2].count || 0, strikes: counts[3].count || 0, disclosures: counts[4].count || 0 }
       };
     }

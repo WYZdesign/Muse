@@ -2,18 +2,18 @@ import type { Metadata } from "next";
 import { getGuidelinesUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
-  title: "Community Guidelines — Muse",
-  description: "Muse's community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network.",
+  title: "Community Guidelines — Muses by WYZ",
+  description: "Muses by WYZ community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network.",
   alternates: { canonical: getGuidelinesUrl() },
-  openGraph: { title: "Community Guidelines — Muse", description: "Muse's community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network.", url: getGuidelinesUrl(), siteName: "Muse", type: "website" },
-  twitter: { card: "summary", title: "Community Guidelines — Muse", description: "Muse's community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network." },
+  openGraph: { title: "Community Guidelines — Muses by WYZ", description: "Muses by WYZ community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network.", url: getGuidelinesUrl(), siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "Community Guidelines — Muses by WYZ", description: "Muses by WYZ community guidelines: be respectful, be real, be safe. Our rules for a thriving creative network." },
 };
 
 export default function GuidelinesPage() {
   const rules = [
     { title: "Be respectful", desc: "Treat every member with professionalism and dignity. Creative work is personal — honor that." },
     { title: "Be real", desc: "Use your real identity. Fake profiles undermine the trust that makes collaboration possible." },
-    { title: "Be safe", desc: "Use Muse's built-in safety features. They exist to protect you and the people you work with." },
+    { title: "Be safe", desc: "Use Muses by WYZ's built-in safety features. They exist to protect you and the people you work with." },
     { title: "No harassment", desc: "Zero tolerance for harassment, discrimination, or predatory behavior of any kind." },
     { title: "No fraud", desc: "Don't misrepresent yourself, your work, or your intentions. Scams and catfishing result in immediate bans." },
     { title: "Verify your identity", desc: "Complete Stripe Identity verification to unlock the full platform. It protects you and everyone you work with." },
@@ -35,7 +35,7 @@ export default function GuidelinesPage() {
           ))}
         </div>
       </div>
-      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muse</a>
+      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muses by WYZ</a>
     </div>
   );
 }

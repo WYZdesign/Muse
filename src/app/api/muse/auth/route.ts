@@ -91,7 +91,12 @@ export async function POST(req: NextRequest) {
         // configuration. Keep that result indistinguishable from a successful
         // enrolment; operational failures still use the normal safe error.
         if (/already|registered|exists/i.test(authErr.message)) {
-          return NextResponse.json({ success: true, registrationPending: true, message: "Check your email to continue. If you already have an account, sign in or reset your password." }, { status: 202 });
+          // OWNER DECISION (2026-09-25): the sign-up tab must explicitly reject
+          // an email that already has an account. This DELIBERATELY REVERSES the
+          // anti-enumeration behaviour described above — the response now
+          // confirms whether an address is registered. Requested for UX; owner
+          // accepted the enumeration trade-off.
+          return NextResponse.json({ error: "You already have an account — log in instead.", code: "ACCOUNT_EXISTS" }, { status: 409 });
         }
         return safeServerError(authErr, "register auth");
       }
@@ -99,7 +104,11 @@ export async function POST(req: NextRequest) {
       // With email confirmation enabled, an existing address is represented by
       // an obfuscated user with no identities. Never create a profile for it.
       if (!authUser.user?.identities?.length) {
-        return NextResponse.json({ success: true, registrationPending: true, message: "Check your email to continue. If you already have an account, sign in or reset your password." }, { status: 202 });
+        // Same owner decision (2026-09-25) as the duplicate-error branch above.
+        // With email confirmation enabled this is the branch Supabase takes for
+        // an existing address (an obfuscated user carrying no identities), so
+        // surface an explicit rejection instead of the generic message.
+        return NextResponse.json({ error: "You already have an account — log in instead.", code: "ACCOUNT_EXISTS" }, { status: 409 });
       }
 
       // Insert ONLY whitelisted fields. Never spread arbitrary client data

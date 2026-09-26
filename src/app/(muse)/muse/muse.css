@@ -195,7 +195,7 @@ a{color:inherit;text-decoration:none}
 .splash-content{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;transform:translateY(16vh)}
 .splash-logo-icon{width:120px;height:120px;border-radius:32px;object-fit:cover;background:var(--bg);box-shadow:0 8px 40px rgba(0,0,0,0.5);border:none;animation:splashIconFloat 4.2s ease-in-out infinite}
 @keyframes splashIconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.splash-logo-text{font-family:'Playfair Display',serif;font-style:italic;font-size:48px;font-weight:900;background:linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFB5C2,#FF8C69,#FFD700);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lavaFlow 7s ease-in-out infinite;margin-top:12px}
+.splash-logo-text{font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(30px,10vw,48px);font-weight:900;background:linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFB5C2,#FF8C69,#FFD700);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lavaFlow 7s ease-in-out infinite;margin-top:12px;white-space:nowrap}
 .splash-tagline{color:rgba(240,234,255,0.72);font-size:14px;margin-top:6px;letter-spacing:0.5px}
 .splash-loader{width:120px;height:3px;border-radius:2px;background:rgba(255,255,255,0.1);margin-top:24px;overflow:hidden}
 .splash-loader-bar{width:40%;height:100%;border-radius:2px;background:linear-gradient(90deg,#FFD700,#FF8A80,#D4A5FF);animation:splashLoad 1.4s ease-in-out infinite}
@@ -2756,3 +2756,12 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) [class*="quest"] svg{
   filter:brightness(0.8) saturate(1.2)
 }
+
+/* ─── MUSES BY WYZ brand lockup ───
+   "Muses" keeps the existing Playfair/gradient treatment; "BY WYZ" is smaller,
+   uppercase, letter-spaced and visually secondary. Applied to the auth hero
+   (page.tsx) and available anywhere .hero-text is used. The base size is scaled
+   down from the old 67px single-word logo so the two-part lockup still fits a
+   320px viewport without wrapping or overflowing. */
+.hero-text.muse-brand-lockup{font-size:clamp(38px,11vw,58px)}
+.hero-text.muse-brand-lockup > span{display:inline-block;margin-left:.1em;font-family:Inter,system-ui,sans-serif;font-size:.3em;font-style:normal;font-weight:800;letter-spacing:.14em;text-transform:uppercase;vertical-align:.32em;white-space:nowrap}

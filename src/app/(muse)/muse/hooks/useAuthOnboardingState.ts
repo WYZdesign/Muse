@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export type OnboardingData = {
   name?: string;
@@ -39,12 +39,37 @@ export type OnboardingData = {
  * this a pure state-relocation, not a dead-code cleanup).
  */
 export function useAuthOnboardingState() {
-  const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
+  // Default to the Log In tab: returning users are the common case, and landing
+  // on Sign Up made them re-click every time. (Was "signup".)
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [authEmail, setAuthEmail] = useState("");
   const [authPass, setAuthPass] = useState("");
   const [authName, setAuthName] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  // "Remember me" — when on (default) the signed-in session is persisted in
+  // `muse_v1` (auto sign-in on return) and the email is pre-filled next time.
+  // When off, `authUser` is deliberately NOT written to persisted state, so
+  // closing the browser signs the user out. Persisted as `muse_remember`.
+  const [authRemember, setAuthRememberState] = useState(true);
+
+  const setAuthRemember = (v: boolean) => {
+    setAuthRememberState(v);
+    try { localStorage.setItem("muse_remember", v ? "1" : "0"); } catch { /* storage unavailable */ }
+  };
+
+  // Restore the remember flag + saved email on mount (after hydration, so the
+  // server-rendered empty field and the client render agree on first paint).
+  useEffect(() => {
+    try {
+      const remember = localStorage.getItem("muse_remember") !== "0";
+      setAuthRememberState(remember);
+      if (remember) {
+        const saved = localStorage.getItem("muse_remember_email");
+        if (saved) setAuthEmail(prev => prev || saved);
+      }
+    } catch { /* storage unavailable */ }
+  }, []);
 
   const [obStep, setObStep] = useState(0);
   const [obData, setObData] = useState<OnboardingData>({});
@@ -70,6 +95,7 @@ export function useAuthOnboardingState() {
     authName, setAuthName,
     authLoading, setAuthLoading,
     formErrors, setFormErrors,
+    authRemember, setAuthRemember,
     obStep, setObStep,
     obData, setObData,
     testScreen, setTestScreen,

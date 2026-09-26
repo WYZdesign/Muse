@@ -152,17 +152,17 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(getMuseUrl()),
-  title: "Muse — Where Creatives Connect",
+  title: "Muses by WYZ — Where Creatives Connect",
   description: "Discover and connect with photographers, models, filmmakers, musicians, designers, and artists. The creative professional network.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Muse", startupImage: "/apple-touch-icon.png" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Muses by WYZ", startupImage: "/apple-touch-icon.png" },
   icons: {
     icon: "/muse-icon.png",
     shortcut: "/muse-icon.png",
     apple: "/muse-icon.png",
   },
-  openGraph: { title: "Muse — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", url: getMuseUrl(), siteName: "Muse", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Muse — Where Creatives Connect" }] },
-  twitter: { card: "summary_large_image", title: "Muse — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", images: ["/og-image.png"] },
+  openGraph: { title: "Muses by WYZ — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", url: getMuseUrl(), siteName: "Muses by WYZ", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Muses by WYZ — Where Creatives Connect" }] },
+  twitter: { card: "summary_large_image", title: "Muses by WYZ — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", images: ["/og-image.png"] },
   robots: { index: true, follow: true },
   keywords: ["creative network", "photographers", "models", "filmmakers", "musicians", "designers", "book creative shoots", "creative collaboration", "hire creatives"],
   alternates: { canonical: getMuseUrl() },
@@ -172,7 +172,7 @@ const JSON_LD = [
   {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Muse",
+    name: "Muses by WYZ",
     url: getMuseUrl(),
     logo: getMuseUrl() + "/muse-icon.png",
     sameAs: [],
@@ -185,7 +185,7 @@ const JSON_LD = [
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Muse",
+    name: "Muses by WYZ",
     url: getMuseUrl(),
     potentialAction: {
       "@type": "SearchAction",
@@ -196,7 +196,7 @@ const JSON_LD = [
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "Muse",
+    name: "Muses by WYZ",
     url: getMuseUrl() + "/muse",
     applicationCategory: "SocialNetworkingApplication",
     operatingSystem: "Web",
@@ -214,7 +214,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" sizes="180x180" href="/muse-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Muse" />
+        <meta name="apple-mobile-web-app-title" content="Muses by WYZ" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#0a0612" />
         <meta name="format-detection" content="telephone=no" />

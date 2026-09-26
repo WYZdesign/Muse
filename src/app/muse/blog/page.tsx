@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import { getMuseUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
-  title: "Blog — Muse",
-  description: "Updates, insights, and stories from the Muse creative community and WYZ Design.",
+  title: "Blog — Muses by WYZ",
+  description: "Updates, insights, and stories from the Muses by WYZ creative community and WYZ Design.",
   alternates: { canonical: getMuseUrl() + "/blog" },
-  openGraph: { title: "Blog — Muse", description: "Updates, insights, and stories from the Muse creative community and WYZ Design.", url: getMuseUrl() + "/blog", siteName: "Muse", type: "website" },
-  twitter: { card: "summary", title: "Blog — Muse", description: "Updates, insights, and stories from the Muse creative community and WYZ Design." },
+  openGraph: { title: "Blog — Muses by WYZ", description: "Updates, insights, and stories from the Muses by WYZ creative community and WYZ Design.", url: getMuseUrl() + "/blog", siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "Blog — Muses by WYZ", description: "Updates, insights, and stories from the Muses by WYZ creative community and WYZ Design." },
 };
 
 const POSTS = [
-  { slug: "why-muse-exists", title: "Why Muse Exists", date: "2026-09-01", tag: "Product", excerpt: "Creative collaboration shouldn't require a middleman. Muse connects artists directly — securely, privately, and on their own terms." },
+  { slug: "why-muse-exists", title: "Why Muses by WYZ Exists", date: "2026-09-01", tag: "Product", excerpt: "Creative collaboration shouldn't require a middleman. Muse connects artists directly — securely, privately, and on their own terms." },
   { slug: "safety-by-design", title: "Safety by Design: How We Built Muse", date: "2026-08-20", tag: "Safety", excerpt: "Age verification, identity checks, and content moderation aren't afterthoughts — they're baked into the foundation." },
   { slug: "behind-the-scenes-verification", title: "Behind the Scenes: Identity Verification", date: "2026-08-10", tag: "Engineering", excerpt: "How Stripe Identity, AWS Rekognition, and Supabase work together to verify creators without exposing their data." },
   { slug: "community-guidelines", title: "Community Guidelines: Our Commitment", date: "2026-07-28", tag: "Community", excerpt: "What we expect from Muse creators and what you can expect from us." },
-  { slug: "launch-recap", title: "Muse Launch Recap", date: "2026-07-15", tag: "News", excerpt: "Our first month: the numbers, the stories, and what's next for the platform." },
+  { slug: "launch-recap", title: "Muses Launch Recap", date: "2026-07-15", tag: "News", excerpt: "Our first month: the numbers, the stories, and what's next for the platform." },
 ];
 
 const TAG_COLORS: Record<string, string> = {
@@ -29,7 +29,7 @@ export default function BlogPage() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "120px 24px 80px", fontFamily: "'Inter', sans-serif" }}>
       <h1 style={{ fontSize: "2rem", fontWeight: 700, marginBottom: 8, color: "#ffd700" }}>Blog</h1>
-      <p style={{ color: "rgba(255,255,255,0.6)", marginBottom: 48, fontSize: 14 }}>Updates, insights, and stories from the Muse team.</p>
+      <p style={{ color: "rgba(255,255,255,0.6)", marginBottom: 48, fontSize: 14 }}>Updates, insights, and stories from the Muses by WYZ team.</p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
         {POSTS.map((post) => (
@@ -52,7 +52,7 @@ export default function BlogPage() {
         </p>
       </div>
 
-      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muse</a>
+      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muses by WYZ</a>
     </div>
   );
 }

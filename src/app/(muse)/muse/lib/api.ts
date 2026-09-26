@@ -182,7 +182,7 @@ export async function mfaStatus(): Promise<{ enabled: boolean; factors: { id: st
   return await r.json();
 }
 
-export async function mfaEnroll(friendlyName = "Muse authenticator") {
+export async function mfaEnroll(friendlyName = "Muses authenticator") {
   const r = await authFetch("/api/muse/mfa", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "enroll", friendlyName }) });
   return await r.json();
 }

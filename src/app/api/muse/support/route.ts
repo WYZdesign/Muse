@@ -7,11 +7,11 @@ export const runtime = "nodejs";
 
 // Static FAQ fallback used when AI is unavailable (no key / no docs seeded).
 const FALLBACK_ANSWERS: { re: RegExp; answer: string }[] = [
-  { re: /(verif|age|18|identity|id\b)/i, answer: "Muse verifies identity and age through Stripe Identity. Go to the Verify section in the app to start. Verified profiles get a checkmark badge." },
+  { re: /(verif|age|18|identity|id\b)/i, answer: "Muses by WYZ verifies identity and age through Stripe Identity. Go to the Verify section in the app to start. Verified profiles get a checkmark badge." },
   { re: /(report|block|ban|abuse|safety|harass)/i, answer: "To report a user or content, open their profile or the content and tap Report. For blocking, open their profile and tap Block. Reports are reviewed by moderators." },
   { re: /(book|session|booking|shoot)/i, answer: "To book a session, open a creative's profile and tap Book Session. You'll set the time and may need to complete identity verification and a disclosure (consent form) first." },
   { re: /(album|portfolio|photo)/i, answer: "You can create albums in your profile. Each album can be public, private, or invite-only, and you control who sees each one." },
-  { re: /(billing|pay|subscription|pro|upgrade|price)/i, answer: "Billing and subscriptions (Muse Pro) are handled through Stripe. Manage your plan in account settings." },
+  { re: /(billing|pay|subscription|pro|upgrade|price)/i, answer: "Billing and subscriptions (Muses Pro) are handled through Stripe. Manage your plan in account settings." },
   { re: /(delete|account|data|privacy|remove)/i, answer: "You can request account deletion from Account Settings. Deletion suspends profile access immediately; remaining data is removed on a 30-day scheduled purge. For privacy questions, see the Privacy Policy linked in the app menu." },
 ];
 
@@ -19,7 +19,7 @@ function fallbackAnswer(q: string): string {
   for (const f of FALLBACK_ANSWERS) {
     if (f.re.test(q)) return f.answer;
   }
-  return "I can help with how Muse works, safety, bookings, albums, and account questions. For anything else, email info@wyzdesign.com.";
+  return "I can help with how Muses by WYZ works, safety, bookings, albums, and account questions. For anything else, email info@wyzdesign.com.";
 }
 
 export async function POST(req: NextRequest) {

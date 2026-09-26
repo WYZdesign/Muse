@@ -76,17 +76,29 @@ describe("auth route (integration)", () => {
     expect(status).toBe(429);
   });
 
-  it("does not reveal an existing account during registration", async () => {
-    // Supabase obfuscates an existing address as a user without identities
-    // when email confirmation is enabled. The route must preserve that
-    // neutral result rather than restoring a 409/email-exists oracle.
+  it("explicitly rejects an existing account during registration", async () => {
+    // OWNER DECISION (2026-09-25): the sign-up tab now rejects an email that
+    // already has an account with a clear 409 instead of the previous neutral
+    // 202. Supabase obfuscates an existing address as a user without identities
+    // when email confirmation is enabled — that branch must now surface the
+    // rejection. This test previously asserted the anti-enumeration behaviour;
+    // it was updated because the owner accepted the enumeration trade-off.
     mockSignUp.mockResolvedValue({ data: { user: { id: "opaque", identities: [] } }, error: null });
     const r = await POST(mockReq({ action: "register", email: "existing@example.com", password: "Strong!123" }));
     const body = await r.json();
-    expect(r.status).toBe(202);
-    expect(body).toMatchObject({ success: true, registrationPending: true });
-    expect(JSON.stringify(body).toLowerCase()).not.toContain("already registered");
-    expect(JSON.stringify(body).toLowerCase()).not.toContain("existing@example.com");
+    expect(r.status).toBe(409);
+    expect(body).toMatchObject({ code: "ACCOUNT_EXISTS" });
+    expect(body.error).toMatch(/already have an account/i);
+    // Still never echo the submitted address back.
+    expect(JSON.stringify(body)).not.toContain("existing@example.com");
+  });
+
+  it("explicitly rejects when Supabase returns an explicit duplicate error", async () => {
+    mockSignUp.mockResolvedValue({ data: { user: null }, error: { message: "User already registered" } });
+    const r = await POST(mockReq({ action: "register", email: "dup@example.com", password: "Strong!123" }));
+    const body = await r.json();
+    expect(r.status).toBe(409);
+    expect(body).toMatchObject({ code: "ACCOUNT_EXISTS" });
   });
 
   it("schedules account deletion for 30 days instead of deleting data immediately", async () => {

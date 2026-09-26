@@ -90,12 +90,12 @@ export async function POST(req: NextRequest) {
       await sb.from("muse_notifications").insert({
         user_id: referrer.id,
         type: "referral_signup",
-        body: `${profile.name || "Someone"} joined Muse using your referral code! You'll get a free month when they subscribe.`,
+        body: `${profile.name || "Someone"} joined Muses using your referral code! You'll get a free month when they subscribe.`,
         read: false,
       });
       // Email the referrer (fail-open)
       const { data: referrerFull } = await sb.from("muse_profiles").select("email").eq("id", referrer.id).maybeSingle();
-      if (referrerFull?.email) sendEmail(notify(referrerFull.email, "Someone joined via your referral ✦", "Your referral worked", `${profile.name || "Someone"} joined Muse using your referral code. You'll get a free month of Muse Pro when they subscribe.`)).catch(() => {});
+      if (referrerFull?.email) sendEmail(notify(referrerFull.email, "Someone joined via your referral ✦", "Your referral worked", `${profile.name || "Someone"} joined Muses using your referral code. You'll get a free month of Muses Pro when they subscribe.`)).catch(() => {});
 
       // Quest bump for the referrer: count successful signups.
       await setReferralQuestProgress(sb, referrer.id);
@@ -199,13 +199,13 @@ export async function POST(req: NextRequest) {
       ]);
 
       await sb.from("muse_notifications").insert([
-        { user_id: referral.referrer_id, type: "referral_reward", body: "You earned a free month of Muse Pro for a successful referral!", read: false },
-        { user_id: referral.referee_id, type: "referral_reward", body: "You received a free month of Muse Pro thanks to a referral!", read: false },
+        { user_id: referral.referrer_id, type: "referral_reward", body: "You earned a free month of Muses Pro for a successful referral!", read: false },
+        { user_id: referral.referee_id, type: "referral_reward", body: "You received a free month of Muses Pro thanks to a referral!", read: false },
       ]);
 
       const { data: rewardProfiles } = await sb.from("muse_profiles").select("id,email").in("id", [referral.referrer_id, referral.referee_id]);
       for (const p of (rewardProfiles || [])) {
-        if (p?.email) sendEmail(notify(p.email, "Free month unlocked ✦", "You earned a free month", "A referral just went through — you've received a free month of Muse Pro.")).catch(() => {});
+        if (p?.email) sendEmail(notify(p.email, "Free month unlocked ✦", "You earned a free month", "A referral just went through — you've received a free month of Muses Pro.")).catch(() => {});
       }
 
       return NextResponse.json({ success: true, message: "Free month issued to both parties" });

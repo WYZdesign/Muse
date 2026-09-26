@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
   if (action === "enroll") {
     const { data, error } = await client.auth.mfa.enroll({
       factorType: "totp",
-      friendlyName: String(body.friendlyName || "Muse authenticator").slice(0, 30),
+      friendlyName: String(body.friendlyName || "Muses authenticator").slice(0, 30),
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({

@@ -25,20 +25,20 @@ export async function feedbackGetNotifications({ sb, profile, rest }: ActionCont
   const { data, error } = await query;
   if (error) return safeServerError(error, "notifications fetch");
   // System notifications have no from_id (quest rewards, welcome, admin, etc).
-  // Previously every one of those fell back to `name: "Muse", avatar: ""`, so the
+  // Previously every one of those fell back to `name: "Muses by WYZ", avatar: ""`, so the
   // Activity tabs (every sub-tab but Unread) rendered a generic "M" avatar for
   // everything. Map the notification `type` to a meaningful sender label + a
   // themed avatar letter so these read as real, distinct items.
   const SYSTEM_META: Record<string, { label: string; letter: string }> = {
-    quest: { label: "Muse Quest", letter: "Q" },
-    quest_complete: { label: "Muse Quest", letter: "Q" },
-    reward: { label: "Muse Rewards", letter: "R" },
-    streak: { label: "Muse Streak", letter: "🔥" },
-    suspension: { label: "Muse Safety", letter: "S" },
-    strike: { label: "Muse Safety", letter: "S" },
+    quest: { label: "Muses Quest", letter: "Q" },
+    quest_complete: { label: "Muses Quest", letter: "Q" },
+    reward: { label: "Muses Rewards", letter: "R" },
+    streak: { label: "Muses Streak", letter: "🔥" },
+    suspension: { label: "Muses Safety", letter: "S" },
+    strike: { label: "Muses Safety", letter: "S" },
     account: { label: "Muse", letter: "M" },
     boost: { label: "Muse Boost", letter: "⚡" },
-    pro: { label: "Muse Pro", letter: "P" },
+    pro: { label: "Muses Pro", letter: "P" },
   };
   const notifications = (data || []).map((n: any) => {
     const meta = SYSTEM_META[n.type as string] || { label: "Muse", letter: "M" };
@@ -91,7 +91,7 @@ export async function feedbackReportBug({ sb, profile, rest }: ActionContext) {
   });
   if (error) return safeServerError(error, "log bug report");
   const ADMIN_EMAIL = "info@wyzdesign.com";
-  const subject = `[Muse Bug] ${safeCategory}`;
+  const subject = `[Muses Bug] ${safeCategory}`;
   const html = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto">
     <h2 style="color:#FF69B4">Bug Report</h2>
     <p><strong>From:</strong> ${profile.name || "Unknown"} (${profile.id})</p>
@@ -121,7 +121,7 @@ export async function feedbackSubmitIdea({ sb, profile, rest }: ActionContext) {
   });
   if (error) return safeServerError(error, "log idea submission");
   const ADMIN_EMAIL = "info@wyzdesign.com";
-  const subject = `[Muse Idea] ${safeTitle}`;
+  const subject = `[Muses Idea] ${safeTitle}`;
   const html = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto">
     <h2 style="color:#FFD700">Feature Idea</h2>
     <p><strong>From:</strong> ${profile.name || "Unknown"} (${profile.id})</p>

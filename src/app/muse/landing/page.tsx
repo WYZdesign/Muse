@@ -275,7 +275,7 @@ const SAFETY = [
 ];
 
 const TIERS = [
-  { cls: "founding", badge: "Founding", name: "First 150", perks: ["Lifetime Muse Pro", "Founders Page Spotlight", "Direct Feedback Channel", "Early Access to Everything", "Exclusive Founding Badge"] },
+  { cls: "founding", badge: "Founding", name: "First 150", perks: ["Lifetime Muses Pro", "Founders Page Spotlight", "Direct Feedback Channel", "Early Access to Everything", "Exclusive Founding Badge"] },
   { cls: "early", badge: "Early Member", name: "Up to 1,000", perks: ["6 Months Free Pro", "Early Access", "Early Member Badge", "Priority Support"] },
   { cls: "standard", badge: "Standard", name: "Everyone Else", perks: ["Free Tier Forever", "Pro at $9.99/mo", "Earn Pro via Referrals"] },
 ];
@@ -283,10 +283,10 @@ const TIERS = [
 
 
 const FAQS = [
-  { q: "When does Muse launch?", a: "We're onboarding the first 150 founding members now, then rolling out to the full waitlist. Founding members get in first." },
+  { q: "When does Muses by WYZ launch?", a: "We're onboarding the first 150 founding members now, then rolling out to the full waitlist. Founding members get in first." },
   { q: "How does verification work?", a: "We use phone + face verification (Stripe Identity) before any paid booking. No self-reported ages, real verification only." },
-  { q: "What does it cost?", a: "Free tier forever. Muse Pro is $9.99/mo. Founding members get lifetime Pro free, and you can earn Pro by referring friends." },
-  { q: "How is Muse different from Instagram or a job board?", a: "It's not a feed and it's not a job board. It's where you discover creatives near you, collab safely, and get booked, all with safety built into every step." },
+  { q: "What does it cost?", a: "Free tier forever. Muses Pro is $9.99/mo. Founding members get lifetime Pro free, and you can earn Pro by referring friends." },
+  { q: "How is Muses by WYZ different from Instagram or a job board?", a: "It's not a feed and it's not a job board. It's where you discover creatives near you, collab safely, and get booked, all with safety built into every step." },
   { q: "Is it safe?", a: "Disclosure forms, 24hr check-ins, trusted contacts, instant block, and two-track enforcement. Safety isn't a feature, it's the foundation." },
 ];
 
@@ -417,7 +417,7 @@ export default function MuseLandingPage() {
       <div className="muse-content">
       {/* Nav */}
       <nav className={`muse-nav ${navScrolled ? "scrolled" : ""}`}>
-        <div className="muse-nav-logo"><img src="/muse-app-icon.png" alt="Muse" className="muse-nav-icon" /></div>
+        <div className="muse-nav-logo"><img src="/muse-app-icon.png" alt="Muses by WYZ" className="muse-nav-icon" /></div>
         <div className="muse-nav-links">
           <a href="#features">Features</a>
           <a href="#how">How It Works</a>
@@ -624,7 +624,7 @@ export default function MuseLandingPage() {
             ))}
           </div>
           <Reveal delay={0.2}>
-            <div className="muse-referral-blurb"><FiGift size={24} /> Refer 3 friends and get Muse Pro free for a year, even before launch.</div>
+            <div className="muse-referral-blurb"><FiGift size={24} /> Refer 3 friends and get Muses Pro free for a year, even before launch.</div>
           </Reveal>
         </div>
       </section>
@@ -695,7 +695,7 @@ export default function MuseLandingPage() {
         <div className="muse-container">
           <div className="muse-footer-grid">
             <div>
-              <div className="muse-footer-logo">Muse<span className="accent">✦</span></div>
+              <div className="muse-footer-logo">Muses <span className="accent">by WYZ ✦</span></div>
               <p>Where creatives converge.</p>
             </div>
             <nav><h4>Product</h4><ul><li><a href="#features">Features</a></li><li><a href="#safety">Safety</a></li><li><a href="/muse/pricing">Pricing</a></li><li><a href="/muse/faq">FAQ</a></li></ul></nav>
@@ -796,9 +796,9 @@ export default function MuseLandingPage() {
           </div>
           <div className="muse-enter-content">
             <div className="muse-enter-icon-wrap">
-              <img src="/muse-app-icon.png" alt="Muse App" className="muse-enter-icon" />
+              <img src="/muse-app-icon.png" alt="Muses by WYZ app" className="muse-enter-icon" />
             </div>
-            <div className="muse-enter-logo">Muse</div>
+            <div className="muse-enter-logo">Muses <span>by WYZ</span></div>
             <div className="muse-enter-sub">Creative Professional Network</div>
             <div className="muse-enter-prompt">Tap to Enter <span style={{fontSize:'1.5em',lineHeight:1}}>✦</span></div>
           </div>

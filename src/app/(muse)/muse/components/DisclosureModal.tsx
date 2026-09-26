@@ -86,7 +86,7 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
     try {
       if (wouldBlock) {
         setBlocked(true);
-        setBlockedReason("NSFW content combined with payment violates Muse terms. This request has been blocked and flagged for review.");
+        setBlockedReason("NSFW content combined with payment violates Muses by WYZ terms. This request has been blocked and flagged for review.");
         return;
       }
       await onSubmit({ ...form, responderId, bookingId });
@@ -307,9 +307,9 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
 
             <div style={{ marginTop: 20, padding: 14, background: "rgba(255,215,0,0.06)", borderRadius: 10, border: "1px solid rgba(255,215,0,0.15)" }}>
               <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
-                <input type="checkbox" aria-label="I agree to the Muse Community Guidelines and Terms of Service" checked={form.agreeTerms} onChange={e => set("agreeTerms", e.target.checked)} style={{ marginTop: 2, accentColor: "#ffd700", width: 16, height: 16, flexShrink: 0 }} />
+                <input type="checkbox" aria-label="I agree to the Muses by WYZ Community Guidelines and Terms of Service" checked={form.agreeTerms} onChange={e => set("agreeTerms", e.target.checked)} style={{ marginTop: 2, accentColor: "#ffd700", width: 16, height: 16, flexShrink: 0 }} />
                 <span style={{ fontSize: 12, color: "#f5f0ff", lineHeight: 1.5 }}>
-                  I have read and agree to the <a href="/muse" style={{ color: "#ffd700" }}>Muse Community Guidelines</a> and <a href="/muse" style={{ color: "#ffd700" }}>Terms of Service</a>. I understand that this disclosure is a binding agreement between both parties for this specific shoot.
+                  I have read and agree to the <a href="/muse" style={{ color: "#ffd700" }}>Muses by WYZ Community Guidelines</a> and <a href="/muse" style={{ color: "#ffd700" }}>Terms of Service</a>. I understand that this disclosure is a binding agreement between both parties for this specific shoot.
                 </span>
               </label>
             </div>

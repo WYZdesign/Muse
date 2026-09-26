@@ -31,7 +31,7 @@ const QUICK_TOPICS = [
   "How do I verify my identity?",
   "How do bookings work?",
   "How do I stay safe?",
-  "What is Muse Pro?",
+  "What is Muses Pro?",
 ];
 
 const GREETING = "Hey, I'm Muse, your creative wingmate. Whether you're figuring out bookings, wondering how verification works, or just want tips on putting your best work forward, I've got you. What can I help you with?";

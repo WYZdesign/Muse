@@ -40,7 +40,7 @@ export default function ResetPasswordPage() {
         <div style={{fontSize:32,marginBottom:8}}>🔐</div>
         <h1 style={{fontFamily:"var(--font-heading,sans-serif)",fontSize:22,color:"var(--gold,#ffd700)",marginBottom:24}}>Reset Password</h1>
         {status==="loading"&&<p style={{color:"var(--muted,#888)",fontSize:14}}>Loading...</p>}
-        {status==="error"&&<div><p style={{color:"#ff6b6b",fontSize:14,marginBottom:16}}>{error}</p><a href="/muse" style={{color:"var(--gold,#ffd700)",fontSize:14,textDecoration:"underline"}}>Back to Muse</a></div>}
+        {status==="error"&&<div><p style={{color:"#ff6b6b",fontSize:14,marginBottom:16}}>{error}</p><a href="/muse" style={{color:"var(--gold,#ffd700)",fontSize:14,textDecoration:"underline"}}>Back to Muses by WYZ</a></div>}
         {status==="form"&&<div>
           <div style={{position:"relative",marginBottom:12}}>
             <input type={showPass?"text":"password"} aria-label="New password" placeholder="New password" value={password} onChange={e=>{setPassword(e.target.value);setError("")}} style={{width:"100%",padding:"12px 44px 12px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.06)",color:"#fff",fontSize:14,outline:"none",boxSizing:"border-box"}} />
@@ -51,7 +51,7 @@ export default function ResetPasswordPage() {
           {error&&<div style={{color:"#ff6b6b",fontSize:12,marginBottom:8}}>{error}</div>}
           <button onClick={handleSubmit} style={{width:"100%",padding:12,borderRadius:10,background:"linear-gradient(135deg,#ffd700,#ff6b6b)",color:"#000",fontWeight:700,fontSize:15,border:"none",cursor:"pointer",marginTop:8}}>Update Password</button>
         </div>}
-        {status==="success"&&<div><p style={{color:"#2ed573",fontSize:14,marginBottom:16}}>Password updated successfully!</p><a href="/muse" style={{display:"inline-block",padding:"10px 24px",borderRadius:10,background:"linear-gradient(135deg,#ffd700,#ff6b6b)",color:"#000",fontWeight:700,fontSize:14,textDecoration:"none"}}>Back to Muse</a></div>}
+        {status==="success"&&<div><p style={{color:"#2ed573",fontSize:14,marginBottom:16}}>Password updated successfully!</p><a href="/muse" style={{display:"inline-block",padding:"10px 24px",borderRadius:10,background:"linear-gradient(135deg,#ffd700,#ff6b6b)",color:"#000",fontWeight:700,fontSize:14,textDecoration:"none"}}>Back to Muses by WYZ</a></div>}
       </div>
     </div>
   );

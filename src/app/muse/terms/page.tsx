@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { getTermsUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Muse",
+  title: "Terms of Service — Muses by WYZ",
   description: "The terms of service governing use of Muse, the creative professional network by WYZ Design.",
   alternates: { canonical: getTermsUrl() },
-  openGraph: { title: "Terms of Service — Muse", description: "The terms of service governing use of Muse, the creative professional network by WYZ Design.", url: getTermsUrl(), siteName: "Muse", type: "website" },
-  twitter: { card: "summary", title: "Terms of Service — Muse", description: "The terms of service governing use of Muse, the creative professional network by WYZ Design." },
+  openGraph: { title: "Terms of Service — Muses by WYZ", description: "The terms of service governing use of Muse, the creative professional network by WYZ Design.", url: getTermsUrl(), siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "Terms of Service — Muses by WYZ", description: "The terms of service governing use of Muse, the creative professional network by WYZ Design." },
 };
 
 export default function TermsPage() {
@@ -18,7 +18,7 @@ export default function TermsPage() {
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>1. Acceptance of Terms</h2>
         <p style={{ marginBottom: 16 }}>By creating an account, accessing, or using Muse (&quot;Platform&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you do not agree, do not use the Platform.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>2. Description of Service</h2>
-        <p style={{ marginBottom: 16 }}>Muse is a creative professional networking platform connecting photographers, models, filmmakers, musicians, designers, artists, and other creative professionals for collaboration, booking, and professional growth. Muse is <strong>not</strong> a dating platform. All interactions are expected to remain professional.</p>
+        <p style={{ marginBottom: 16 }}>Muses by WYZ is a creative professional networking platform connecting photographers, models, filmmakers, musicians, designers, artists, and other creative professionals for collaboration, booking, and professional growth. Muse is <strong>not</strong> a dating platform. All interactions are expected to remain professional.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>3. Eligibility</h2>
         <p style={{ marginBottom: 16 }}>You must be at least 18 years of age. Paid bookings and adult content require government-issued ID verification via Stripe Identity (document + selfie). Certain jurisdictions impose additional age-verification requirements for adult content — see Section 8.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>4. Your Account</h2>
@@ -47,7 +47,7 @@ export default function TermsPage() {
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>12. Account Suspension &amp; Termination</h2>
         <p style={{ marginBottom: 16 }}>We may suspend or terminate your account for violating these Terms, with or without notice. You may delete your account at any time via Settings. We remove account access and associated user content immediately, while retaining only the minimum information necessary for legal, tax, fraud-prevention, safety, dispute-resolution, or other recordkeeping obligations.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>13. Intellectual Property</h2>
-        <p style={{ marginBottom: 16 }}>The Muse name, logo, and visual design are the exclusive property of WYZ Design LLC. Your creative work remains yours — Muse does not claim ownership.</p>
+        <p style={{ marginBottom: 16 }}>The Muses by WYZ name, logo, and visual design are the exclusive property of WYZ Design LLC. Your creative work remains yours — Muse does not claim ownership.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>14. Disclaimer of Warranties</h2>
         <p style={{ marginBottom: 16 }}>THE PLATFORM IS PROVIDED &quot;AS IS&quot; WITHOUT WARRANTIES OF ANY KIND. We do not warrant that the Platform will be uninterrupted, error-free, or secure.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>15. Limitation of Liability</h2>
@@ -63,7 +63,7 @@ export default function TermsPage() {
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>20. Contact</h2>
         <p>Questions? Reach us at <a href="mailto:legal@wyzdesign.com" style={{ color: "#ffd700" }}>legal@wyzdesign.com</a></p>
       </div>
-      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muse</a>
+      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muses by WYZ</a>
     </div>
   );
 }

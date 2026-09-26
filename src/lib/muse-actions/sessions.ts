@@ -333,7 +333,7 @@ export const safetyDetailsShare = async ({ sb, profile, rest }: ActionContext) =
     sendEmail(notify(
       recipientEmail,
       `Safety disclosure from ${profile.name}`,
-      "Muse Safety Notification",
+      "Muses by WYZ Safety Notification",
       safetyBody
     )).catch((e: unknown) => console.error("[share-safety] email dispatch failed:", e));
   }

@@ -130,6 +130,7 @@ function MusePage() {
     authName, setAuthName: _setAuthName,
     authLoading, setAuthLoading,
     formErrors, setFormErrors,
+    authRemember, setAuthRemember,
     obStep, setObStep,
     obData, setObData,
     testScreen, setTestScreen,
@@ -702,7 +703,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         testLevels, obSelects, obProfilePic, obPortfolioItems,         likedBy: likedBy.slice(-MAX_ITEMS),
         profileViews: DEMO_MODE ? profileViews : 0, profileViewers: DEMO_MODE ? profileViewers.slice(-20) : [], stories: stories.slice(-20), theme, activityFeed: activityFeed.slice(-MAX_ITEMS),
         discoveryPrefs, chatImages: Object.fromEntries(Object.entries(chatImages).slice(-20).map(([k,v]) => [k, v.slice(-20)])), screen, filterStyles, filterScore,
-        searchQuery, connTab, museCat, authUser, chatTarget
+        searchQuery, connTab, museCat, authUser: authRemember ? authUser : null, chatTarget
       };
       safeSetItem(STORAGE_KEY, JSON.stringify(data));
       // Throttle the server sync to once per 30s (was every saveState tick) — big load reduction at scale.
@@ -712,7 +713,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs, stats: currentUser.stats }) }).catch(() => {});
       }
     } catch { console.debug("[muse] persisted client state could not be saved"); }
-  }, [apiFetch, currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,savedSessionIds,savedProfileIds,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,showZodiac,showAge,showMbti,showLifePath,showChinese,showMatchPercent,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,authUser,chatTarget]);
+  }, [apiFetch, currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,savedSessionIds,savedProfileIds,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,showZodiac,showAge,showMbti,showLifePath,showChinese,showMatchPercent,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,authUser,authRemember,chatTarget]);
 
   const loadState = useCallback(async () => {
     try {
@@ -1223,7 +1224,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     // Handle post-checkout return: refresh tier from server
     const params = new URLSearchParams(window.location.search);
     const upgraded = params.get("upgraded");
-    if (upgraded) showToast("Welcome to Muse " + (upgraded.charAt(0).toUpperCase() + upgraded.slice(1)) + "! ✨");
+    if (upgraded) showToast("Welcome to Muses " + (upgraded.charAt(0).toUpperCase() + upgraded.slice(1)) + "! ✨");
 
     // Handle Stripe Connect onboarding return
     const connected = params.get("connected");
@@ -1820,7 +1821,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
   const getReferralTier = (c:number) => c>=50?{tier:"Platinum",discount:20,perks:"20% off all services",nextThreshold:null}:c>=20?{tier:"Gold",discount:15,perks:"15% off all services",nextThreshold:50}:c>=5?{tier:"Silver",discount:10,perks:"10% off all services",nextThreshold:20}:c>=1?{tier:"Bronze",discount:0,perks:"Exclusive badge",nextThreshold:5}:{tier:"None",discount:0,perks:"Invite friends to earn",nextThreshold:1};
   const checkProfileBadges = (stats: Partial<typeof currentUser.stats>, createdAt:number):{name:string;desc:string;icon:string;color:string}[] => {
     const b:{name:string;desc:string;icon:string;color:string}[] = [];
-    if (createdAt && Date.now()-createdAt > 31536000000) b.push({name:"Full Moon",icon:"🌕",color:"#C0C0FF",desc:"1 year on Muse"});
+    if (createdAt && Date.now()-createdAt > 31536000000) b.push({name:"Full Moon",icon:"🌕",color:"#C0C0FF",desc:"1 year on Muses"});
     if ((stats.bookingsCompleted ?? 0) >= 50) b.push({name:"Golden Hour",icon:"☀️",color:"#FFD700",desc:"50+ shoots completed"});
     else if ((stats.bookingsCompleted ?? 0) >= 10) b.push({name:"Collab King",icon:"👑",color:"#FFD700",desc:"10+ bookings completed"});
     if ((stats.matchesReceived ?? 0) >= 100) b.push({name:"Rising Star",icon:"⭐",color:"#FFBF00",desc:"100+ matches"});
@@ -2079,6 +2080,16 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         }),
       });
       const j = await r.json();
+      // Sign-up attempted with an email that already has an account: move the
+      // user to the tab that can actually help them and say so plainly.
+      if (r.status === 409 && j?.code === "ACCOUNT_EXISTS") {
+        setAuthMode("login");
+        const msg = j.error || "You already have an account — log in instead.";
+        setFormErrors({ email: msg });
+        showToast({ msg, type: "error" });
+        setAuthLoading(false);
+        return;
+      }
       if (!r.ok) { setFormErrors({ email: j.error || "Auth failed" }); setAuthLoading(false); return; }
       if (j.registrationPending) {
         setAuthMode("login");
@@ -2094,6 +2105,13 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       setAuthUser(userObj);
       if (refreshToken) setRefreshToken(refreshToken);
       safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken, user: userObj }));
+      // "Remember me": only pre-fill the email next time when opted in. The
+      // session itself is persisted separately — see saveState(), which writes
+      // `authUser: authRemember ? authUser : null`.
+      try {
+        if (authRemember) localStorage.setItem("muse_remember_email", authEmail.trim());
+        else localStorage.removeItem("muse_remember_email");
+      } catch { /* storage unavailable */ }
       // Attach session to browser supabase client so realtime works under RLS.
       if (accessToken) {
         supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).catch(() => {});
@@ -2107,7 +2125,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
       flash("#FFD700");
     } catch { showToast({ msg: "Login failed — check your credentials", type: "error" }); }
     setAuthLoading(false);
-  }, [authMode, authEmail, authPass, authName, authLoading, flash, setAuthLoading, setAuthMode, setAuthPass, setFormErrors, setObStep, showToast]);
+  }, [authMode, authEmail, authPass, authName, authLoading, authRemember, flash, setAuthLoading, setAuthMode, setAuthPass, setFormErrors, setObStep, showToast]);
 
   const swipeLocked = useRef(false);
   const [intentProfile, setIntentProfile] = useState<Profile|null>(null);
@@ -2133,7 +2151,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     if (!isUnlimited && dailyLikes <= 0 && dir === "right") { setUpsell({ feature: "Unlimited Likes", reason: "You've used all your likes for today. Go Pro to like as many creatives as you want, with no daily limit.", icon: "💛" }); return; }
     const p = filteredProfiles[currentIdx];
     if (!p) return;
-    if (!isUnlimited && dir === "super" && superLikes <= 0) { setUpsell({ feature: "More Super Likes", reason: "You're out of super likes for today. Muse Pro's unlimited likes means you're never stuck waiting for a reset.", icon: "💜" }); return; }
+    if (!isUnlimited && dir === "super" && superLikes <= 0) { setUpsell({ feature: "More Super Likes", reason: "You're out of super likes for today. Muses Pro's unlimited likes means you're never stuck waiting for a reset.", icon: "💜" }); return; }
     analytics.discoverSwipe(dir as "left" | "right" | "super", String(p.id), p.type);
     if (dir === "right" || dir === "super") {
       const effectiveIntent = intentOverride || userDefaultIntent;
@@ -2724,7 +2742,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                 <div className="sparkle" style={{top:"15%",right:"10%",fontSize:18}}>✧</div>
                 <div className="sparkle" style={{bottom:"35%",left:"12%",fontSize:20}}>✦</div>
                 <div className="sparkle" style={{bottom:"12%",right:"6%",fontSize:16}}>✧</div>
-                <div className="hero-text" style={{marginBottom:14}}>muse</div>
+                <div className="hero-text muse-brand-lockup" style={{marginBottom:14}}>Muses <span>by WYZ</span></div>
                 <div className="hero-sub">Where creatives find <em>real connections</em></div>
                 <div style={{width:"100%",maxWidth:320,margin:"0 auto"}}>
                   <div className="auth-tabs" role="tablist" aria-label="Authentication mode">
@@ -2739,6 +2757,10 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                   </div>
                   {authMode==="signup" && authPass && (()=>{const l=authPass.length;const u=/[A-Z]/.test(authPass);const y=/[!@#$%^&*]/.test(authPass);const s=l>=8&&u&&y?l>=12?4:3:l>=6?2:1;const lbl=["","Weak","Fair","Strong","Very strong"][s];const col=["","var(--sunset)","var(--sunset-orange)","var(--amber)","var(--mint)"][s];const t=["","weak","fair","strong","vstrong"][s];return(<div><div className="pw-meter-label" style={{color:col}}>{lbl}</div><div className="pw-meter-wrap"><div className={"pw-meter-bar"+(s>=1?" "+t:"")}/><div className={"pw-meter-bar"+(s>=2?" "+t:"")}/><div className={"pw-meter-bar"+(s>=3?" "+t:"")}/><div className={"pw-meter-bar"+(s>=4?" "+t:"")}/></div></div>);})()}
                   {formErrors.pass && <div className="error-msg">{formErrors.pass}</div>}
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:10,minHeight:44}}>
+                    <input id="auth-remember" type="checkbox" checked={authRemember} onChange={e=>setAuthRemember(e.target.checked)} style={{width:18,height:18,accentColor:"#ffd700",flexShrink:0,cursor:"pointer"}} />
+                    <label htmlFor="auth-remember" style={{fontSize:13,color:"rgba(255,255,255,0.7)",cursor:"pointer",display:"block",padding:"13px 0",flex:1}}>Remember me</label>
+                  </div>
                   {authMode==="login" && <button type="button" onClick={async()=>{if(!authEmail.trim()){setFormErrors({email:"Enter your email first"});return;}setAuthLoading(true);try{const r=await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"forgot-password",email:authEmail.trim()})});const j=await r.json();showToast(j.message||j.error||"Check your email for a password reset link!");}catch{showToast("Network error");}setAuthLoading(false);}} style={{background:"none",border:"none",color:"var(--gold)",fontSize:12,cursor:"pointer",textAlign:"right",width:"100%",marginTop:4,padding:0}}>Forgot password?</button>}
                   <button className="btn btn-gold" style={{marginTop:10,opacity:authLoading?0.6:1}} disabled={authLoading} onClick={handleAuthClick}>{authLoading?"Loading...":authMode==="login"?"Log In":"Create Account"}</button>
                   <div className="auth-divider"><span>or continue with</span></div>
@@ -3208,8 +3230,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                           } catch { console.debug("[muse] album photo import failed"); }
                         }
                       }
-                      setScreen("discover");showToast("Welcome to Muse!")
-                    }}>Enter Muse →</button>
+                      setScreen("discover");showToast("Welcome to Muses!")
+                    }}>Enter Muses →</button>
                     <button className="back-link" onClick={()=>setObStep(16)}>Back</button>
                   </div>
                 )}
@@ -3356,7 +3378,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             <button className="modal-close" onClick={()=>setShowTerms(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body" style={{maxHeight:"70vh",overflowY:"auto",lineHeight:1.7,fontSize:13,color:"var(--text2)"}}>
-            <div style={{fontWeight:700,fontSize:16,color:"var(--text)",marginBottom:12}}>Muse Terms of Service</div>
+            <div style={{fontWeight:700,fontSize:16,color:"var(--text)",marginBottom:12}}>Muses by WYZ Terms of Service</div>
             <p><strong>1. Acceptance of Terms</strong>{"\n"}By accessing or using Muse, a creative networking platform operated by WYZ Design, you agree to be bound by these Terms of Service. If you do not agree, do not use the service.</p>
             <p><strong>2. Eligibility</strong>{"\n"}You must be at least 18 years old to use Muse. By using the service, you represent that you meet this age requirement.</p>
             <p><strong>3. User Accounts</strong>{"\n"}You are responsible for maintaining the confidentiality of your account credentials. You agree to provide accurate and complete information during registration and to update it as necessary.</p>
@@ -3381,10 +3403,10 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             <button className="modal-close" onClick={()=>setShowPrivacy(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body" style={{maxHeight:"70vh",overflowY:"auto",lineHeight:1.7,fontSize:13,color:"var(--text2)"}}>
-            <div style={{fontWeight:700,fontSize:16,color:"var(--text)",marginBottom:12}}>Muse Privacy Policy</div>
+            <div style={{fontWeight:700,fontSize:16,color:"var(--text)",marginBottom:12}}>Muses by WYZ Privacy Policy</div>
             <p><strong>1. Information We Collect</strong>{"\n"}Account information (name, email, profile details you provide), content you post (photos, messages, briefs, forum posts), usage data (swipes, matches, interactions), device information (browser type, OS, IP address).</p>
             <p><strong>2. How We Use Your Information</strong>{"\n"}To provide and improve the Muse service, to match you with compatible creatives, to communicate with you about your account and the service, to detect and prevent fraud or abuse, and to comply with legal obligations.</p>
-            <p><strong>3. Information Sharing</strong>{"\n"}We do not sell your personal information. We may share information with service providers who assist in operating the platform (hosting, analytics), when required by law, or with your explicit consent. Your profile is visible to other Muse users based on your privacy settings.</p>
+            <p><strong>3. Information Sharing</strong>{"\n"}We do not sell your personal information. We may share information with service providers who assist in operating the platform (hosting, analytics), when required by law, or with your explicit consent. Your profile is visible to other Muses users based on your privacy settings.</p>
             <p><strong>4. Data Storage & Security</strong>{"\n"}Your data is stored on secure servers provided by Supabase. We use industry-standard encryption for data in transit (TLS) and at rest. However, no method of transmission over the Internet is 100% secure.</p>
              <p><strong>5. Your Rights</strong>{"\n"}You can access, update, or delete your account data at any time through the app settings. You may request a copy of all data we hold about you by contacting {SUPPORT_EMAIL}. You may also request deletion of your account. Access is removed immediately; account data is permanently deleted after 30 days, except where safety, fraud-prevention, or legal obligations require retention.</p>
             <p><strong>6. Cookies & Tracking</strong>{"\n"}We use essential cookies for authentication and session management. We do not use third-party advertising cookies. Analytics data is collected anonymously to improve the service.</p>
@@ -3405,7 +3427,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             <button className="modal-close" onClick={()=>setShowGuidelines(false)} aria-label="Close"><FiX size={18} /></button>
           </div>
           <div className="modal-body" style={{maxHeight:"70vh",overflowY:"auto",lineHeight:1.7,fontSize:13,color:"var(--text2)"}}>
-            <div style={{fontWeight:700,fontSize:16,color:"var(--text)",marginBottom:12}}>Muse Community Guidelines</div>
+            <div style={{fontWeight:700,fontSize:16,color:"var(--text)",marginBottom:12}}>Muses by WYZ Community Guidelines</div>
             <p><strong>Be Respectful</strong>{"\n"}Treat every member with dignity. Harassment, hate speech, bullying, discrimination, or personal attacks of any kind will result in immediate account suspension.</p>
             <p><strong>Be Authentic</strong>{"\n"}Use your real name, real photos, and honest descriptions of your work. Fake profiles, impersonation, and catfishing are strictly prohibited and will be removed without warning.</p>
             <p><strong>Be Professional</strong>{"\n"}Muse is a creative networking platform. Keep conversations professional and collaborative. Sexual content, explicit material, and solicitation are not permitted in public spaces. NSFW-tagged content is restricted to age-verified users only.</p>
@@ -3638,7 +3660,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px",background:"linear-gradient(to top,rgba(10,6,18,0.95),transparent)"}}>
                 <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                   <div style={{fontSize:24,fontWeight:800,fontFamily:"'Playfair Display',serif",fontStyle:"italic"}}>{viewProfile.name}</div>
-                  {viewProfile.verified && <span role="button" tabIndex={0} onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:"Verified",desc:"Identity verified by Muse — we confirmed this member's government ID and professional credentials.",icon:"✓",color:"#FFD700"});}} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setBadgeInfo({name:"Verified",desc:"Identity verified by Muse — we confirmed this member's government ID and professional credentials.",icon:"✓",color:"#FFD700"});}}} style={{cursor:"pointer",fontSize:16,color:"#FFD700"}} title="Identity verified">✓</span>}
+                  {viewProfile.verified && <span role="button" tabIndex={0} onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:"Verified",desc:"Identity verified by Muses by WYZ — we confirmed this member's government ID and professional credentials.",icon:"✓",color:"#FFD700"});}} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setBadgeInfo({name:"Verified",desc:"Identity verified by Muses by WYZ — we confirmed this member's government ID and professional credentials.",icon:"✓",color:"#FFD700"});}}} style={{cursor:"pointer",fontSize:16,color:"#FFD700"}} title="Identity verified">✓</span>}
                 </div>
                 <div style={{fontSize:14,color:"var(--gold)",fontWeight:600}}>{viewProfile.type}</div>
                 {viewProfile.tier && <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{viewProfile.tier}</div>}
@@ -3755,7 +3777,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                 return (
                   <button key={s.name} onClick={() => {
                     if (s.name === "Copy") { navigator.clipboard?.writeText(url); showToast("Link copied!"); setShareTarget(null); }
-                    else if (s.name === "More") { if (navigator.share) { navigator.share({ title: "Muse", text: shareTarget.text || "Check this out on Muse!", url }).catch(() => {}); } else { navigator.clipboard?.writeText(url); showToast("Link copied!"); } setShareTarget(null); }
+                    else if (s.name === "More") { if (navigator.share) { navigator.share({ title: "Muses by WYZ", text: shareTarget.text || "Check this out on Muses by WYZ!", url }).catch(() => {}); } else { navigator.clipboard?.writeText(url); showToast("Link copied!"); } setShareTarget(null); }
                     else if (href) { window.open(href, "_blank", "noopener"); setShareTarget(null); }
                   }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "14px 6px", cursor: "pointer", transition: "all .2s" }}>
                     <div style={{ width: 44, height: 44, borderRadius: "50%", background: s.bg, color: s.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800 }}>{s.icon}</div>
@@ -3834,8 +3856,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             <div className="share-title">Share Profile</div>
             <div className="share-options">
               <div className="share-opt" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigator.clipboard?.writeText(getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"));setShowShareProfile(false); } }} onClick={()=>{navigator.clipboard?.writeText(getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"));setShowShareProfile(false)}}><span className="share-opt-icon"><FiLink size={24} /></span><span className="share-opt-label">Copy</span></div>
-              <div className="share-opt" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.open("https://twitter.com/intent/tweet?text=Check%20out%20my%20Muse%20profile!&url="+encodeURIComponent(getMuseUrl()),"blank"); } }} onClick={()=>{window.open("https://twitter.com/intent/tweet?text=Check%20out%20my%20Muse%20profile!&url="+encodeURIComponent(getMuseUrl()),"blank")}}><span className="share-opt-icon"><FiTwitter size={24} /></span><span className="share-opt-label">Twitter</span></div>
-              <div className="share-opt" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const url=getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase());if(navigator.share){navigator.share({title:"My Muse Profile",text:"Check out my Muse profile!",url}).catch(()=>{});}else{navigator.clipboard?.writeText(url).then(()=>showToast("Link copied! Paste it in your IG bio or story")).catch(()=>window.open("https://www.instagram.com/"));}setShowShareProfile(false); } }} onClick={()=>{const url=getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase());if(navigator.share){navigator.share({title:"My Muse Profile",text:"Check out my Muse profile!",url}).catch(()=>{});}else{navigator.clipboard?.writeText(url).then(()=>showToast("Link copied! Paste it in your IG bio or story")).catch(()=>window.open("https://www.instagram.com/"));}setShowShareProfile(false)}}><span className="share-opt-icon"><FiInstagram size={24} /></span><span className="share-opt-label">IG</span></div>
+              <div className="share-opt" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.open("https://twitter.com/intent/tweet?text=Check%20out%20my%20Muses%20by%20WYZ%20profile!&url="+encodeURIComponent(getMuseUrl()),"blank"); } }} onClick={()=>{window.open("https://twitter.com/intent/tweet?text=Check%20out%20my%20Muses%20by%20WYZ%20profile!&url="+encodeURIComponent(getMuseUrl()),"blank")}}><span className="share-opt-icon"><FiTwitter size={24} /></span><span className="share-opt-label">Twitter</span></div>
+              <div className="share-opt" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const url=getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase());if(navigator.share){navigator.share({title:"My Muses Profile",text:"Check out my Muses profile!",url}).catch(()=>{});}else{navigator.clipboard?.writeText(url).then(()=>showToast("Link copied! Paste it in your IG bio or story")).catch(()=>window.open("https://www.instagram.com/"));}setShowShareProfile(false); } }} onClick={()=>{const url=getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase());if(navigator.share){navigator.share({title:"My Muses Profile",text:"Check out my Muses profile!",url}).catch(()=>{});}else{navigator.clipboard?.writeText(url).then(()=>showToast("Link copied! Paste it in your IG bio or story")).catch(()=>window.open("https://www.instagram.com/"));}setShowShareProfile(false)}}><span className="share-opt-icon"><FiInstagram size={24} /></span><span className="share-opt-label">IG</span></div>
             </div>
             <div className="share-link"><span className="share-link-text">{getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase()).replace(/^https?:\/\//, "")}</span><button className="share-link-copy" onClick={()=>{navigator.clipboard?.writeText(getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"))}}>Copy</button></div>
             <button className="btn btn-outline" style={{marginTop:16,width:"100%"}} onClick={()=>setShowShareProfile(false)}>{STRINGS.close}</button>
@@ -3861,7 +3883,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
             }
             const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "create-disclosure", ...form, responderId: disclosureTarget.id, bookingId: disclosureBookingId }) });
             const d = await r.json();
-            if (d.blocked) { setShowDisclosureModal(false); showToast("Request blocked — violates Muse terms"); return; }
+            if (d.blocked) { setShowDisclosureModal(false); showToast("Request blocked — violates Muses by WYZ terms"); return; }
             if (d.success) { setShowDisclosureModal(false); showToast("Disclosure sent for review"); }
           }}
           onCancel={() => { setShowDisclosureModal(false); setDisclosureTarget(null); }}
@@ -3900,7 +3922,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
               setPendingDisclosureCreate(null);
               const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "create-disclosure", ...form, responderId: disclosureTarget?.id, bookingId: disclosureBookingId }) });
               const d = await r.json();
-              if (d.blocked) { showToast("Request blocked — violates Muse terms"); return; }
+              if (d.blocked) { showToast("Request blocked — violates Muses by WYZ terms"); return; }
               if (d.success) { showToast("Disclosure sent for review"); }
             }
           }}

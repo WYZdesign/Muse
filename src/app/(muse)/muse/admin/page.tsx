@@ -57,7 +57,7 @@ const FRIENDLY: Record<string, string> = {
   quest_complete: "Completed a quest",
   referral: "Invited a friend",
   checkout: "Started checkout",
-  subscribe: "Subscribed to Muse Pro",
+  subscribe: "Subscribed to Muses Pro",
   onboarding: "Finished onboarding",
   onboarding_complete: "Finished onboarding",
   qr_scan: "Scanned a QR code",
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
 
         <div style={{ display: "flex", gap: 8, marginBottom: 28, justifyContent: "center", flexWrap: "wrap" }}>
           <a href="/muse/admin/moderation" style={navBtn("rgba(255,215,0,0.15)", "rgba(255,215,0,0.3)", "#ffd700")}>🛡️ Moderation</a>
-          <a href="/muse" style={navBtn("rgba(255,255,255,0.06)", "rgba(255,255,255,0.1)", "rgba(255,255,255,0.7)")}>🏠 Back to Muse</a>
+          <a href="/muse" style={navBtn("rgba(255,255,255,0.06)", "rgba(255,255,255,0.1)", "rgba(255,255,255,0.7)")}>🏠 Back to Muses by WYZ</a>
         </div>
 
         {status === "loading" && <p style={{ color: "rgba(255,255,255,0.6)", textAlign: "center" }}>Loading…</p>}

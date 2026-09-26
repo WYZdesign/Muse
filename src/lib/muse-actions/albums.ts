@@ -163,7 +163,7 @@ export async function albumCreate({ sb, profile, rest, ip }: ActionContext) {
   if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
   const level = ["public", "private", "invite"].includes(access_level as string) ? access_level : "public";
   if (level !== "public" && cover_url && !isPrivateAlbumObjectForOwner(cover_url, profile.id)) {
-    return NextResponse.json({ error: "Private and invite albums require private Muse media" }, { status: 400 });
+    return NextResponse.json({ error: "Private and invite albums require private Muses by WYZ media" }, { status: 400 });
   }
   const { data, error } = await sb.from("muse_albums").insert({
     profile_id: profile.id, title: (title as string).trim(), description: description || "",
@@ -186,7 +186,7 @@ export async function albumUpdate({ sb, profile, rest }: ActionContext) {
     : existing.access_level;
   if (cover_url !== undefined) {
     if (nextAccessLevel !== "public" && cover_url && !isPrivateAlbumObjectForOwner(cover_url, profile.id)) {
-      return NextResponse.json({ error: "Private and invite albums require private Muse media" }, { status: 400 });
+      return NextResponse.json({ error: "Private and invite albums require private Muses by WYZ media" }, { status: 400 });
     }
     updates.cover_url = cover_url;
   }
@@ -255,12 +255,12 @@ export async function albumAddPhoto({ sb, profile, rest, ip }: ActionContext) {
   if (!albumId || !img_url) return NextResponse.json({ error: "albumId and img_url required" }, { status: 400 });
   const storageHost = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/^https?:\/\//, "").split("/")[0];
   if (!isPrivateAlbumObject(img_url) && storageHost && !String(img_url).includes(storageHost)) {
-    return NextResponse.json({ error: "Images must be uploaded through Muse" }, { status: 400 });
+    return NextResponse.json({ error: "Images must be uploaded through Muses by WYZ" }, { status: 400 });
   }
   const { data: existing } = await sb.from("muse_albums").select("profile_id, access_level").eq("id", albumId).maybeSingle();
   if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (existing.access_level !== "public" && !isPrivateAlbumObjectForOwner(img_url, profile.id)) {
-    return NextResponse.json({ error: "Private and invite albums require private Muse media" }, { status: 400 });
+    return NextResponse.json({ error: "Private and invite albums require private Muses by WYZ media" }, { status: 400 });
   }
   const { count } = await sb.from("muse_album_photos").select("*", { count: "exact", head: true }).eq("album_id", albumId);
   const { data, error } = await sb.from("muse_album_photos").insert({ album_id: albumId, img_url, caption: String(caption || "").slice(0, 500), position: count ?? 0 }).select().single();

@@ -757,11 +757,11 @@ export const SettingsScreen = memo(function SettingsScreen({
             {privacyItems.map(renderRow)}
             <ToggleRow
               label="Show Distance"
-              desc="Muse Pro"
+              desc="Muses Pro"
               checked={!!showDistance}
               onToggle={() => {
                 if (!isPaidTier(userTier)) {
-                  setUpsell?.({ feature: "Show Distance", reason: "Let people see how close you are. Upgrade to Muse Pro to control whether your distance is shown on your profile.", icon: "📍" });
+                  setUpsell?.({ feature: "Show Distance", reason: "Let people see how close you are. Upgrade to Muses Pro to control whether your distance is shown on your profile.", icon: "📍" });
                   return;
                 }
                 const next = !showDistance;
@@ -785,11 +785,11 @@ export const SettingsScreen = memo(function SettingsScreen({
             />
             <ToggleRow
               label="Age"
-              desc="Muse Pro"
+              desc="Muses Pro"
               checked={showAge !== false}
               onToggle={() => {
                 if (!isPaidTier(userTier)) {
-                  setUpsell?.({ feature: "Hide Age", reason: "Keep your age private. Upgrade to Muse Pro to control whether your age is shown on your profile.", icon: "🎂" });
+                  setUpsell?.({ feature: "Hide Age", reason: "Keep your age private. Upgrade to Muses Pro to control whether your age is shown on your profile.", icon: "🎂" });
                   return;
                 }
                 const next = !(showAge !== false);
@@ -829,11 +829,11 @@ export const SettingsScreen = memo(function SettingsScreen({
                 likes) instead of a new gating mechanism. */}
             <ToggleRow
               label="Online Status"
-              desc="Muse Pro"
+              desc="Muses Pro"
               checked={!!showOnline}
               onToggle={() => {
                 if (!isPaidTier(userTier)) {
-                  setUpsell?.({ feature: "Hide Online Status", reason: "Control who sees when you're active. Upgrade to Muse Pro to hide your online status from other members.", icon: "🟢" });
+                  setUpsell?.({ feature: "Hide Online Status", reason: "Control who sees when you're active. Upgrade to Muses Pro to hide your online status from other members.", icon: "🟢" });
                   return;
                 }
                 const next = !showOnline;
@@ -843,11 +843,11 @@ export const SettingsScreen = memo(function SettingsScreen({
             />
             <ToggleRow
               label="Match % Visible to Others"
-              desc="Muse Pro"
+              desc="Muses Pro"
               checked={showMatchPercent !== false}
               onToggle={() => {
                 if (!isPaidTier(userTier)) {
-                  setUpsell?.({ feature: "Hide Match %", reason: "Keep your match-percentage private. Upgrade to Muse Pro to control whether others see how well you match with them.", icon: "✨" });
+                  setUpsell?.({ feature: "Hide Match %", reason: "Keep your match-percentage private. Upgrade to Muses Pro to control whether others see how well you match with them.", icon: "✨" });
                   return;
                 }
                 const next = !(showMatchPercent !== false);

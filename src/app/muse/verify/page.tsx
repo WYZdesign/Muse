@@ -16,7 +16,7 @@ export default function VerifyReturnPage() {
       try {
         const token = await getAccessToken();
         if (!token) {
-          if (active) { setStatus("pending"); setMessage("You need to log in to confirm verification. Head back to Muse."); }
+          if (active) { setStatus("pending"); setMessage("You need to log in to confirm verification. Head back to Muses."); }
           return;
         }
         const res = await authFetch("/api/muse/verification", {
@@ -55,7 +55,7 @@ export default function VerifyReturnPage() {
           {status === "verified" ? "✅" : status === "pending" ? "⏳" : status === "error" ? "⚠️" : "🪪"}
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 800, marginBottom: 10 }}>
-          {status === "verified" ? "Verification Complete" : "Muse Verification"}
+          {status === "verified" ? "Verification Complete" : "Muses by WYZ Verification"}
         </h1>
         <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.6 }}>{message}</p>
         {status !== "verified" && (
@@ -63,7 +63,7 @@ export default function VerifyReturnPage() {
             onClick={() => { window.location.href = "/muse"; }}
             style={{ marginTop: 24, padding: "12px 28px", borderRadius: 12, background: "rgba(255,255,255,0.1)", border: "none", color: "#f5f0ff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}
           >
-            Back to Muse
+            Back to Muses by WYZ
           </button>
         )}
       </div>

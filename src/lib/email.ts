@@ -17,7 +17,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { getMuseUrl, getTermsUrl, getPrivacyUrl, getLandingUrl } from "@/lib/urls";
 
-const FROM = "Muse <info@wyzdesign.com>";
+const FROM = "Muses by WYZ <info@wyzdesign.com>";
 const RESEND_URL = "https://api.resend.com/emails";
 
 /** Signed unsubscribe token — HMAC(email) so links can't be forged for others. */
@@ -178,16 +178,16 @@ export function waitlistWelcome(email: string, source?: string): EmailMessage {
       </p>
 
       <div style="margin:0 0 22px;">
-        <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">What Muse is</h2>
+        <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">What Muses by WYZ is</h2>
         <p style="font-size:14px;color:#b8b3c4;line-height:1.7;margin:0;">
-          Muse is a creative professional network. Photographers, models, filmmakers, musicians, designers — people who make things — use it to find each other, collaborate, and book real work. Think of it as the place your portfolio meets the people who want to hire it.
+          Muses by WYZ is a creative professional network. Photographers, models, filmmakers, musicians, designers — people who make things — use it to find each other, collaborate, and book real work. Think of it as the place your portfolio meets the people who want to hire it.
         </p>
       </div>
 
       <div style="margin:0 0 22px;">
         <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">How it works</h2>
         <p style="font-size:14px;color:#b8b3c4;line-height:1.7;margin:0;">
-          You build a profile, pick what kind of work you're into, and Muse matches you with the right people. Browse their work, message them, and book sessions — all in one place. No cold DMs, no endless scrolling through people who don't fit.
+          You build a profile, pick what kind of work you're into, and Muses by WYZ matches you with the right people. Browse their work, message them, and book sessions — all in one place. No cold DMs, no endless scrolling through people who don't fit.
         </p>
       </div>
 
@@ -217,17 +217,17 @@ export function waitlistWelcome(email: string, source?: string): EmailMessage {
         <div style="font-size:12px;color:#8b8299;margin-top:10px;">Signed up with ${escapeHtml(email)}</div>
       </div>
     </div>
-  `, email, "Your spot is reserved — here's what Muse is and what happens next.");
+  `, email, "Your spot is reserved — here's what Muses by WYZ is and what happens next.");
   return {
     to: email,
-    subject: "You're on the Muse waitlist ✦",
+    subject: "You're on the Muses by WYZ waitlist ✦",
     html,
     text: [
-      "Thanks for joining Muse — your spot is reserved.",
+      "Thanks for joining Muses by WYZ — your spot is reserved.",
       "",
-      "What Muse is: a creative professional network where photographers, models, filmmakers, musicians, and designers find each other, collaborate, and book real work.",
+      "What Muses by WYZ is: a creative professional network where photographers, models, filmmakers, musicians, and designers find each other, collaborate, and book real work.",
       "",
-      "How it works: build a profile, pick what work you're into, and Muse matches you with the right people. Browse their work, message them, and book sessions — all in one place.",
+      "How it works: build a profile, pick what work you're into, and Muses by WYZ matches you with the right people. Browse their work, message them, and book sessions — all in one place.",
       "",
       "When your spot opens you'll create an account and set up your profile — name, what you do, a few photos, and the collaborations you're after. It takes a few minutes.",
       "",
@@ -246,18 +246,18 @@ export function waitlistWelcome(email: string, source?: string): EmailMessage {
 export function betaAccess(email: string): EmailMessage {
   const html = SHELL(`
     <div style="background:#241f0a;border:1px solid #6b5a1c;border-radius:16px;padding:32px 28px;text-align:center;">
-      <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Your Muse access is ready</h1>
+      <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Your Muses by WYZ access is ready</h1>
       <p style="font-size:15px;color:#ccc7d6;line-height:1.7;margin:0 0 20px;">
         It's time to find your muse.<br/>Head to the app and set up your profile to start matching.
       </p>
-      ${ctaButton("Enter Muse", getMuseUrl(), 4)}
+      ${ctaButton("Enter Muses", getMuseUrl(), 4)}
     </div>
-  `, email, "Your Muse access is ready — set up your profile and start matching.");
+  `, email, "Your Muses by WYZ access is ready — set up your profile and start matching.");
   return {
     to: email,
-    subject: "Your Muse access is ready ✦",
+    subject: "Your Muses by WYZ access is ready ✦",
     html,
-    text: "Your Muse access is ready. Head to " + getMuseUrl() + " to set up your profile.",
+    text: "Your Muses by WYZ access is ready. Head to " + getMuseUrl() + " to set up your profile.",
   };
 }
 
@@ -271,7 +271,7 @@ export function signupWelcome(email: string, name?: string): EmailMessage {
   const who = name && name.trim() ? name.trim() : "there";
   const html = SHELL(`
     <div style="background:#1f1a08;border:1px solid #5c4e18;border-radius:16px;padding:32px 28px;text-align:center;">
-      <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Welcome to Muse, ${escapeHtml(who)} ✦</h1>
+      <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Welcome to Muses, ${escapeHtml(who)} ✦</h1>
       <p style="font-size:15px;color:#ccc7d6;line-height:1.7;margin:0 0 20px;">
         Your account is live. Here's what to do next:
       </p>
@@ -287,10 +287,10 @@ export function signupWelcome(email: string, name?: string): EmailMessage {
   `, email, "Your account is live — here are the 5 steps to finish your profile.");
   return {
     to: email,
-    subject: "Welcome to Muse ✦",
+    subject: "Welcome to Muses ✦",
     html,
     text: [
-      "Welcome to Muse! Your account is live.",
+      "Welcome to Muses! Your account is live.",
       "",
       "Here's what to do next:",
       "1. Add your name, location, and a short bio",

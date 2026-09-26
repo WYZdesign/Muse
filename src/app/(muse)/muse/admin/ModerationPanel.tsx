@@ -185,7 +185,7 @@ export default function AdminModerationPanel() {
         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>Review reports, manage accounts, and keep the community safe.</p>
         <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
           <a href="/muse/admin" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>📊 Dashboard</a>
-          <a href="/muse" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>🏠 Back to Muse</a>
+          <a href="/muse" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>🏠 Back to Muses by WYZ</a>
         </div>
 
         {/* NSFW Batch Scan */}

@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { getCareersUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
-  title: "Careers — Join Muse / WYZ Design",
+  title: "Careers — Join Muses by WYZ / WYZ Design",
   description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design.",
   alternates: { canonical: getCareersUrl() },
-  openGraph: { title: "Careers — Join Muse / WYZ Design", description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design.", url: getCareersUrl(), siteName: "Muse", type: "website" },
-  twitter: { card: "summary", title: "Careers — Join Muse / WYZ Design", description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design." },
+  openGraph: { title: "Careers — Join Muses by WYZ / WYZ Design", description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design.", url: getCareersUrl(), siteName: "Muse", type: "website" },
+  twitter: { card: "summary", title: "Careers — Join Muses by WYZ / WYZ Design", description: "Help build the future of creative collaboration. Explore opportunities at WYZ Design." },
 };
 
 export default function CareersPage() {
@@ -23,7 +23,7 @@ export default function CareersPage() {
           building a platform that puts creator safety first. If that excites you, we'd love to hear from you.
         </p>
       </div>
-      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muse</a>
+      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muses by WYZ</a>
     </div>
   );
 }

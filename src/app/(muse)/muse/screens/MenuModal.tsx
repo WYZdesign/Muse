@@ -597,7 +597,7 @@ export const MenuModal = memo(function MenuModal({
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Muse Pro banner sheen: used to be a plain CSS `infinite` loop sweeping
+  // Muses Pro banner sheen: used to be a plain CSS `infinite` loop sweeping
   // every 2.8s on a fixed metronome. Torreé asked for it ~30% less frequent
   // and irregular rather than a steady beat, so this drives it with a
   // randomized timer instead — each sweep is a one-shot animation
@@ -744,12 +744,12 @@ export const MenuModal = memo(function MenuModal({
                 <button style={{ fontSize: 11, color: "#D4A5FF", fontWeight: 600, cursor: "pointer", background: "none", border: "none", padding: 0 }} onClick={() => { setShowHamburger(false); setShowQuests?.(true); }}>View all →</button>
               </div>
             </div>
-            <button className="muse-pro-banner" onClick={() => { setShowHamburger(false); showScreen("subscription"); }} tabIndex={0} aria-label="Muse Pro">
+            <button className="muse-pro-banner" onClick={() => { setShowHamburger(false); showScreen("subscription"); }} tabIndex={0} aria-label="Muses Pro">
               <div className={"muse-pro-banner-shine" + (proShineOn ? " shine-play" : "")} onAnimationEnd={() => setProShineOn(false)} />
               <div className="muse-pro-banner-content">
                 <div className="muse-pro-banner-icon"><FiStar size={16} /></div>
                 <div className="muse-pro-banner-text">
-                  <div className="muse-pro-banner-title">Muse Pro</div>
+                  <div className="muse-pro-banner-title">Muses Pro</div>
                   <div className="muse-pro-banner-sub">Unlimited likes · superlikes · boosts</div>
                 </div>
                 <div className="muse-pro-banner-cta">✦</div>

@@ -46,7 +46,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#0a0612,#1a0a2e)",color:"#fff",fontFamily:"'Inter',system-ui,sans-serif",padding:24,maxWidth:640,margin:"0 auto"}}>
-      <Link href="/muse" style={{color:"#FFD700",textDecoration:"none",fontSize:14}}>← Back to Muse</Link>
+      <Link href="/muse" style={{color:"#FFD700",textDecoration:"none",fontSize:14}}>← Back to Muses by WYZ</Link>
       {authorAvatar ? (
         <div style={{display:"flex",gap:12,alignItems:"center",marginTop:20}}>
           <Image src={authorAvatar} alt={authorName} width={48} height={48} style={{width:48,height:48,borderRadius:14,objectFit:"cover"}} />

@@ -133,7 +133,7 @@ export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
   if (UUID_RE.test(String(toId))) {
     await sb.from("muse_notifications").insert({ user_id: String(toId), from_id: profile.id, type: "message", body: `${profile.name} sent you a message`, read: false });
   }
-  await emailProfile(sb, String(toId), "New message on Muse ✦", "You have a new message", `${profile.name} sent you a message.`, "Read it", "https://muse.wyzdesign.com/muse", "message");
+  await emailProfile(sb, String(toId), "New message on Muses ✦", "You have a new message", `${profile.name} sent you a message.`, "Read it", "https://muse.wyzdesign.com/muse", "message");
   const preview = cleanText.slice(0, 80)
     || (kind === "voice" ? "sent a voice note" : kind === "video" ? "sent a video note" : "sent an image");
   pushToProfile(String(toId), "New Message", `${profile.name}: ${preview}`, "/muse/matches").catch(() => {});

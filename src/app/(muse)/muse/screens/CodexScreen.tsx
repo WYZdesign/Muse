@@ -45,7 +45,7 @@ function IconGlyph({ name, size = 20 }: { name: string; size?: number }) {
 
 interface BadgeDef { name: string; icon: string; color: string; short: string; long: string; tier: "trust" | "achievement" | "engagement" | "community"; }
 const BADGES: BadgeDef[] = [
-  { name: "Verified Pro", icon: "✓", color: "#FFD700", tier: "trust", short: "Identity verified by Muse", long: "We checked this member's government ID and professional credentials. A Verified Pro is a confirmed real person with a real creative identity, and it's the strongest trust signal on the platform." },
+  { name: "Verified Pro", icon: "✓", color: "#FFD700", tier: "trust", short: "Identity verified by Muses by WYZ", long: "We checked this member's government ID and professional credentials. A Verified Pro is a confirmed real person with a real creative identity, and it's the strongest trust signal on the platform." },
   { name: "Top Creator", icon: "★", color: "#FF8A80", tier: "achievement", short: "80+ collaborations completed", long: "Earned after completing 80 or more collaborations on Muse. Top Creators are seasoned pros with a long, proven record of shipped work." },
   { name: "Creative Sage", icon: "◊", color: "#FFB5C2", tier: "achievement", short: "47+ collaborations completed", long: "Earned after 47+ completed collaborations. Creative Sages are trusted veterans with deep experience, the step between Rising Star and Top Creator." },
   { name: "Super Collab", icon: "✧", color: "#FF69B4", tier: "engagement", short: "High match compatibility", long: "This profile scores really well against your own compatibility, whether it's shared styles, complementary roles, aligned personality, or shared interests. A Super Collab is a strong nudge to say hi." },
@@ -53,13 +53,13 @@ const BADGES: BadgeDef[] = [
   { name: "Quick Responder", icon: "FiZap", color: "#FFD700", tier: "engagement", short: "Responds within 2 hours", long: "This member replies within 2 hours on average. A Quick Responder badge means fast, reliable communication, perfect when you're on a deadline." },
   { name: "Style Icon", icon: "✦", color: "#D4A5FF", tier: "community", short: "Recognized for outstanding style", long: "The community has spotlighted their portfolio for standout aesthetic, composition, or a distinctive voice. A Style Icon is someone worth studying." },
   { name: "Local Legend", icon: "FiMapPin", color: "#87CEEB", tier: "community", short: "Top creative in their city", long: "Ranked among the most active and highest-rated creatives in their city. Local Legends are the go-to collaborators in their market." },
-  { name: "Rising Star", icon: "✦", color: "#98FB98", tier: "achievement", short: "New to Muse, gaining traction", long: "New to Muse and already picking up steam, whether that's 100+ matches or quick early traction. Rising Stars are fresh energy, so connect early." },
+  { name: "Rising Star", icon: "✦", color: "#98FB98", tier: "achievement", short: "New to Muses, gaining traction", long: "New to Muses and already picking up steam, whether that's 100+ matches or quick early traction. Rising Stars are fresh energy, so connect early." },
   // "GiFullMoon" doesn't exist in react-icons/gi (verified against the
   // package's own type defs) — IconGlyph's lookup silently fell through to
   // its plain-text fallback, so this badge rendered the literal string
   // "GiFullMoon" instead of an icon. "GiMoon" is the real icon in the
   // package, closest to the badge's actual "full moon" concept.
-  { name: "Full Moon", icon: "GiMoon", color: "#C0C0FF", tier: "achievement", short: "1 year on Muse", long: "Earned after a full year on the platform. A Full Moon member has been a steady part of the Muse community." },
+  { name: "Full Moon", icon: "GiMoon", color: "#C0C0FF", tier: "achievement", short: "1 year on Muses", long: "Earned after a full year on the platform. A Full Moon member has been a steady part of the Muses community." },
   { name: "Golden Hour", icon: "FiSun", color: "#FFD700", tier: "achievement", short: "50+ shoots completed", long: "Completed 50+ shoots through Muse bookings. Golden Hour creators have delivered at scale and are proven on set." },
   { name: "Collab King", icon: "GiCrown", color: "#FFD700", tier: "achievement", short: "10+ bookings completed", long: "Completed 10+ bookings through Muse. A Collab King has shown they can turn a match into real, paid, finished work." },
   { name: "Social Butterfly", icon: "GiButterfly", color: "#FF69B4", tier: "engagement", short: "500+ messages", long: "Sent 500+ messages on Muse. Social Butterflies are deeply active conversationalists and networkers." },

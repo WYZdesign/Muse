@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { sessionTier, SESSION_TIERS } from "./sessionTiers";
 
-// sessionTier drives the "Rising Muse / Top Rated / Muse Elite" badges shown
+// sessionTier drives the "Rising Muses / Top Rated / Muses Elite" badges shown
 // on SessionsScreen.tsx cards (audit finding taskrabbit-p2-2). Locking in
 // the exact thresholds and the "only the highest tier, never a badge below
-// Rising Muse" behavior so a future threshold tweak can't silently regress
+// Rising Muses" behavior so a future threshold tweak can't silently regress
 // either of those two deliberate decisions.
 describe("sessionTier", () => {
   it("returns null below every threshold (no badge for a brand-new host)", () => {
@@ -12,22 +12,22 @@ describe("sessionTier", () => {
     expect(sessionTier({})).toBeNull();
   });
 
-  it("returns null just under the Rising Muse threshold", () => {
+  it("returns null just under the Rising Muses threshold", () => {
     expect(sessionTier({ hostCompletedSessions: 2, rating: 5 })).toBeNull(); // sessions too low
     expect(sessionTier({ hostCompletedSessions: 10, rating: 3.9 })).toBeNull(); // rating too low
   });
 
-  it("returns Rising Muse right at its threshold", () => {
+  it("returns Rising Muses right at its threshold", () => {
     const tier = sessionTier({ hostCompletedSessions: 3, rating: 4.0 });
     expect(tier?.key).toBe("rising");
   });
 
-  it("returns Top Rated once both thresholds are cleared, not Rising Muse", () => {
+  it("returns Top Rated once both thresholds are cleared, not Rising Muses", () => {
     const tier = sessionTier({ hostCompletedSessions: 10, rating: 4.5 });
     expect(tier?.key).toBe("top");
   });
 
-  it("returns Muse Elite at the top threshold", () => {
+  it("returns Muses Elite at the top threshold", () => {
     const tier = sessionTier({ hostCompletedSessions: 25, rating: 4.8 });
     expect(tier?.key).toBe("elite");
   });

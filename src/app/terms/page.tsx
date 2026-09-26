@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Muse",
+  title: "Terms of Service — Muses by WYZ",
   description: "Read Muse's Terms of Service for the creative professional networking platform.",
 };
 
@@ -9,7 +9,7 @@ export default function TermsPage() {
   return (
     <main style={{ minHeight: "100vh", background: "#0a0612", color: "#f5f0ff", padding: "60px 20px 100px" }}>
       <div style={{ maxWidth: 800, margin: "0 auto", fontFamily: "system-ui, sans-serif" }}>
-        <a href="/muse" style={{ color: "#FFD700", fontSize: 14, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>&larr; Back to Muse</a>
+        <a href="/muse" style={{ color: "#FFD700", fontSize: 14, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>&larr; Back to Muses by WYZ</a>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 800, color: "#FFD700", margin: "12px 0 6px" }}>Terms of Service</h1>
         <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 32 }}>Effective August 13, 2026 &middot; Muse by WYZ Design</p>
 
@@ -20,7 +20,7 @@ export default function TermsPage() {
 
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>2. Description of Service</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>Muse is a creative professional networking platform connecting photographers, models, filmmakers, musicians, designers, artists, and other creative professionals for collaboration, booking, and professional growth. Muse is <strong>not</strong> a dating platform. All interactions are expected to remain professional.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>Muses by WYZ is a creative professional networking platform connecting photographers, models, filmmakers, musicians, designers, artists, and other creative professionals for collaboration, booking, and professional growth. Muse is <strong>not</strong> a dating platform. All interactions are expected to remain professional.</p>
         </section>
 
         <section style={{ marginBottom: 28 }}>
@@ -82,7 +82,7 @@ export default function TermsPage() {
 
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>13. Intellectual Property</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>The Muse name, logo, and visual design are the exclusive property of WYZ Design LLC. Your creative work remains yours — Muse does not claim ownership.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>The Muses by WYZ name, logo, and visual design are the exclusive property of WYZ Design LLC. Your creative work remains yours — Muse does not claim ownership.</p>
         </section>
 
         <section style={{ marginBottom: 28 }}>

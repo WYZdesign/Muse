@@ -398,7 +398,7 @@ export async function submitToCyberTipline(report: {
       reportType: "Child Sexual Abuse Material",
       incidentDateTime: report.reported_at,
       reportingParty: {
-        espName: "Muse (WYZ Design)",
+        espName: "Muses by WYZ (WYZ Design)",
         espContact: "legal@wyzdesign.com",
       },
       contentDetails: {

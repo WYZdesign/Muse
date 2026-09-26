@@ -22,14 +22,14 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let payload = { title: "Muse", body: "You have a new notification" };
+  let payload = { title: "Muses by WYZ", body: "You have a new notification" };
   try {
     if (event.data) payload = Object.assign(payload, event.data.json());
   } catch {
     if (event.data) payload.body = event.data.text();
   }
 
-  const title = payload.title || "Muse";
+  const title = payload.title || "Muses by WYZ";
   const options = {
     body: payload.body || "",
     icon: payload.icon || "/favicon-192x192.png",

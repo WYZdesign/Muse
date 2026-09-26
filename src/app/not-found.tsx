@@ -37,7 +37,7 @@ export default function NotFound() {
           fontSize: 15,
         }}
       >
-        Back to Muse
+        Back to Muses by WYZ
       </Link>
     </div>
   );

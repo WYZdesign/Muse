@@ -14,7 +14,7 @@ export const runtime = "nodejs";
  * take, split so neither side eats the whole fee (Session 55 pricing):
  *   - MUSE_HOST_COMMISSION_RATE (7%) is deducted from the host's payout.
  *   - MUSE_BUYER_SERVICE_FEE_RATE (8%) is added on top of the session's rate
- *     and charged to the booker as a separate, itemized "Muse service fee"
+ *     and charged to the booker as a separate, itemized "Muses service fee"
  *     line — visible, not buried in the base price.
  * Both amounts land in `application_fee_amount` (what stays with the
  * platform); the host is transferred amount - hostCommission via Stripe
@@ -227,7 +227,7 @@ export async function POST(req: NextRequest) {
         capture_method: "manual",
         application_fee_amount: platformTake,
         transfer_data: { destination: payee.stripe_connect_id },
-        description: description || `Muse booking payment to ${payee.name}`,
+        description: description || `Muses by WYZ booking payment to ${payee.name}`,
         metadata: {
           muse_payer_id: profile.id,
           muse_payee_id: payeeId,
@@ -336,7 +336,7 @@ export async function POST(req: NextRequest) {
             quantity: 1,
           },
           {
-            price_data: { currency: "usd", unit_amount: buyerFee, product_data: { name: "Muse service fee" } },
+            price_data: { currency: "usd", unit_amount: buyerFee, product_data: { name: "Muses service fee" } },
             quantity: 1,
           },
         ],
@@ -386,7 +386,7 @@ export async function POST(req: NextRequest) {
             price_data: {
               currency: "usd",
               unit_amount: amount,
-              product_data: { name: `Muse boost ×${qty}${duration ? ` (${duration})` : ""}` },
+              product_data: { name: `Muses boost ×${qty}${duration ? ` (${duration})` : ""}` },
             },
             quantity: 1,
           },

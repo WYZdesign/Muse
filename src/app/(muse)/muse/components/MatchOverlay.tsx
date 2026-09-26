@@ -62,7 +62,7 @@ export function MatchOverlay({
         {variant.title}
       </div>
       <div className="match-subtitle">You and <strong style={{ color: "var(--gold)" }}>{match.name}</strong> are both ready to collaborate.</div>
-      <div className="match-disclaimer">Muse is for finding and booking creative collaborators, not a dating app.</div>
+      <div className="match-disclaimer">Muses by WYZ is for finding and booking creative collaborators, not a dating app.</div>
       <div className="match-avatars">
         <Image loading="lazy" className="match-av" src={currentUserAvatar} alt="You" width={80} height={80} />
         <Image loading="lazy" className="match-av" src={match.img} alt={match.name} width={80} height={80} onError={onImageError} />

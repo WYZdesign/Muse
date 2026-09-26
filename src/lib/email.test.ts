@@ -48,7 +48,7 @@ describe("email", () => {
       expect(callArgs[1].headers.Authorization).toBe("Bearer re_test_key");
       expect(callArgs[1].headers["Content-Type"]).toBe("application/json");
       const body = JSON.parse(callArgs[1].body);
-      expect(body.from).toBe("Muse <info@wyzdesign.com>");
+      expect(body.from).toBe("Muses by WYZ <info@wyzdesign.com>");
       expect(body.to).toEqual(["test@test.com"]);
       expect(body.subject).toBe("Test");
       expect(body.html).toBe("<p>Test</p>");
@@ -123,11 +123,11 @@ describe("email", () => {
       const msg = waitlistWelcome("test@test.com", "web");
 
       expect(msg.to).toBe("test@test.com");
-      expect(msg.subject).toBe("You're on the Muse waitlist ✦");
+      expect(msg.subject).toBe("You're on the Muses by WYZ waitlist ✦");
       expect(msg.html).toContain("You're on the list ✦");
       expect(msg.html).toContain("test@test.com");
       expect(msg.html).toContain("Create your account");
-      expect(msg.text).toContain("Thanks for joining Muse");
+      expect(msg.text).toContain("Thanks for joining Muses by WYZ");
     });
 
     it("should include source in CTA link", async () => {
@@ -143,10 +143,10 @@ describe("email", () => {
       const msg = betaAccess("test@test.com");
 
       expect(msg.to).toBe("test@test.com");
-      expect(msg.subject).toBe("Your Muse access is ready ✦");
-      expect(msg.html).toContain("Your Muse access is ready");
-      expect(msg.html).toContain("Enter Muse");
-      expect(msg.text).toContain("Your Muse access is ready");
+      expect(msg.subject).toBe("Your Muses by WYZ access is ready ✦");
+      expect(msg.html).toContain("Your Muses by WYZ access is ready");
+      expect(msg.html).toContain("Enter Muses");
+      expect(msg.text).toContain("Your Muses by WYZ access is ready");
     });
   });
 
@@ -156,16 +156,16 @@ describe("email", () => {
       const msg = signupWelcome("test@test.com", "John");
 
       expect(msg.to).toBe("test@test.com");
-      expect(msg.subject).toBe("Welcome to Muse ✦");
-      expect(msg.html).toContain("Welcome to Muse, John ✦");
+      expect(msg.subject).toBe("Welcome to Muses ✦");
+      expect(msg.html).toContain("Welcome to Muses, John ✦");
       expect(msg.html).toContain("Finish your profile");
-      expect(msg.text).toContain("Welcome to Muse!");
+      expect(msg.text).toContain("Welcome to Muses!");
     });
 
     it("should handle missing name", async () => {
       const { signupWelcome } = await import("./email");
       const msg = signupWelcome("test@test.com", "");
-      expect(msg.html).toContain("Welcome to Muse, there ✦");
+      expect(msg.html).toContain("Welcome to Muses, there ✦");
     });
   });
 

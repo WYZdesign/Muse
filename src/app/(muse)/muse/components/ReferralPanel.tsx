@@ -84,7 +84,7 @@ export default function ReferralPanel({ onClose }: Props) {
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 1.6 }}>
             1. Share your referral code with a friend<br/>
             2. They sign up using your code<br/>
-            3. When they subscribe to Muse Pro, you BOTH get a free month
+            3. When they subscribe to Muses Pro, you BOTH get a free month
           </div>
         </div>
 

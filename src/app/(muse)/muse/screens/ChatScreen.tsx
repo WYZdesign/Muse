@@ -291,8 +291,8 @@ export const ChatScreen = memo(function ChatScreen({
                 real profile id — the demo stubs have 1-2 char ids. */}
             {!demo && startCall && typeof chatTarget.id === "string" && chatTarget.id.length > 3 && (
               <>
-                <button className="chat-back" aria-label={`Voice call ${chatTarget.name}`} onClick={() => startCall(String(chatTarget.id), String(chatTarget.name || "Muse user"), "voice")} style={{ marginRight: 2 }}><FiPhone size={19} /></button>
-                <button className="chat-back" aria-label={`Video call ${chatTarget.name}`} onClick={() => startCall(String(chatTarget.id), String(chatTarget.name || "Muse user"), "video")} style={{ marginRight: 6 }}><FiVideo size={19} /></button>
+                <button className="chat-back" aria-label={`Voice call ${chatTarget.name}`} onClick={() => startCall(String(chatTarget.id), String(chatTarget.name || "Muses user"), "voice")} style={{ marginRight: 2 }}><FiPhone size={19} /></button>
+                <button className="chat-back" aria-label={`Video call ${chatTarget.name}`} onClick={() => startCall(String(chatTarget.id), String(chatTarget.name || "Muses user"), "video")} style={{ marginRight: 6 }}><FiVideo size={19} /></button>
               </>
             )}
             <div style={{ position: "relative" }}>
