@@ -27,7 +27,7 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `7384624cf6863159413d8c13cb4d52daa82ef34f`
+## Confirmed merged, last verified at: `73ad30bdb20610e763b41a11f185c7a769c16e7b`
 
 ### Priority E — read-only migration audit (verified 2026-09-24)
 
