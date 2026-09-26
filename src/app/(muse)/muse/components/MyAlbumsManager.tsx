@@ -26,6 +26,32 @@ const ACCESS_META: Record<string, { icon: React.ReactNode; label: string }> = {
 };
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 
+// Populated demo portfolio. Owner requirement: demo mode must look published,
+// so the Portfolio screen shows real albums + photos instead of the
+// "Album management is unavailable in this demo" placeholder.
+const DEMO_ALBUMS: Album[] = [
+  { id: "demo-a1", title: "Editorial", description: "Commissioned and personal editorial work.", cover_url: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600", access_level: "public", tags: ["editorial", "studio"], photo_count: 3, view_count: 1284, like_count: 96 },
+  { id: "demo-a2", title: "Portrait", description: "Natural-light portraits shot on location.", cover_url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600", access_level: "public", tags: ["portrait", "natural light"], photo_count: 3, view_count: 962, like_count: 71 },
+  { id: "demo-a3", title: "Fashion", description: "Styled test shoots with emerging designers.", cover_url: "https://images.unsplash.com/photo-1524253482453-3fed8d2fe12b?w=600", access_level: "invite", tags: ["fashion", "styled"], photo_count: 3, view_count: 508, like_count: 44 },
+];
+const DEMO_ALBUM_PHOTOS: Record<string, AlbumPhoto[]> = {
+  "demo-a1": [
+    { id: "demo-a1-p1", img_url: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800", caption: "Rooftop editorial", position: 0 },
+    { id: "demo-a1-p2", img_url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800", caption: "Studio, one light", position: 1 },
+    { id: "demo-a1-p3", img_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800", caption: "Window light test", position: 2 },
+  ],
+  "demo-a2": [
+    { id: "demo-a2-p1", img_url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800", caption: "Golden hour", position: 0 },
+    { id: "demo-a2-p2", img_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800", caption: "Backlit", position: 1 },
+    { id: "demo-a2-p3", img_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800", caption: "Location scout", position: 2 },
+  ],
+  "demo-a3": [
+    { id: "demo-a3-p1", img_url: "https://images.unsplash.com/photo-1524253482453-3fed8d2fe12b?w=800", caption: "Runway inspired", position: 0 },
+    { id: "demo-a3-p2", img_url: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800", caption: "Editorial styling", position: 1 },
+    { id: "demo-a3-p3", img_url: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800", caption: "Studio look", position: 2 },
+  ],
+};
+
 /**
  * Full album management for the signed-in user's own profile: create/delete
  * albums, set per-album privacy (public / private / invite-only), upload
@@ -65,7 +91,7 @@ export default function MyAlbumsManager({
   , []);
 
   const refreshAlbums = useCallback(() => {
-    if (DEMO_MODE) { setAlbums([]); setLoading(false); return; }
+    if (DEMO_MODE) { setAlbums(DEMO_ALBUMS); setLoading(false); return; }
     if (!authToken) { setLoading(false); return; }
     authFetch("/api/muse?type=albums&profile_id=me")
       .then(r => r.json())
@@ -80,6 +106,7 @@ export default function MyAlbumsManager({
     setSelected(album);
     setLiked(false);
     const reqId = ++albumReqId.current;
+    if (DEMO_MODE) { setPhotos(DEMO_ALBUM_PHOTOS[album.id] || []); return; }
     authFetch(`/api/muse?type=album-photos&album_id=${album.id}`)
       .then(r => r.json())
       .then(d => { if (reqId === albumReqId.current) setPhotos(Array.isArray(d.photos) ? d.photos : []); })
@@ -168,7 +195,9 @@ export default function MyAlbumsManager({
     setAccessList(Array.isArray(d.access) ? d.access : []);
   }, [selected, authedFetch]);
 
-  if (DEMO_MODE) return <div className="album-loading">Album management is unavailable in this demo. No private media or access settings are loaded.</div>;
+  // NOTE: the old `if (DEMO_MODE) return <div>…unavailable in this demo…</div>`
+  // placeholder is gone — demo now renders the real album UI seeded with
+  // DEMO_ALBUMS / DEMO_ALBUM_PHOTOS above.
   if (loading) return <div className="album-loading">Loading your albums…</div>;
 
   if (selected) {

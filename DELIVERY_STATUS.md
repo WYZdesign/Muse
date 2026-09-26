@@ -767,3 +767,9 @@ Owner request: on a right-swipe the green like-label must sit on the **top-LEFT*
 - **Inbox always empty.** `messageRequests` comes from the live `message-requests` action, so demo showed "No pending requests". Seeded 3 realistic requests (names, avatars from the deck, distinct message copy, staggered timestamps) in the `screen === "matches"` effect.
 - GATES: tsc 0 · eslint 0 · vitest **547 PASS** · build 0 · e2e-smoke **15/15**.
 - STILL TO FILL: Public Profile reviews/posts/trust (sections hidden) · Portfolio screen ("Album management is unavailable in this demo") · brief budgets "—" · Settings templates/team empty · community/event member lists.
+
+## DEMO MODE batch 5: Portfolio screen + brief budgets — 2026-09-25 (wyzmind)
+- **Portfolio screen was a pure placeholder.** `MyAlbumsManager` early-returned `<div>Album management is unavailable in this demo…</div>`, so the whole Portfolio experience was dead. Removed the early return and seeded `DEMO_ALBUMS` (Editorial / Portrait / Fashion, mixed public + invite-only, with view/like counts) and `DEMO_ALBUM_PHOTOS` (3 captioned photos per album); `refreshAlbums` and `openAlbum` now serve those in demo mode instead of empty state.
+- **Brief budgets no longer "—".** The two demo briefs with a placeholder budget now read "Unpaid collab" and "Open to offers".
+- GATES: tsc 0 · eslint 0 · vitest **547 PASS** · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
+- STILL TO FILL: Public Profile reviews/posts/trust (sections hidden) · Settings brief templates / team members empty · community/event member lists.
