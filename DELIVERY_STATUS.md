@@ -748,3 +748,9 @@ Owner: "I know it's demo mode but I still want everything filled with proper pla
 - **Test updated to the new intent:** `demo-mode.spec.ts` asserted the "DEMO PREVIEW" badge existed — it was removed on purpose, so the test now asserts the collab board renders populated briefs and that the chip has NOT come back (`toHaveCount(0)`). Renamed accordingly.
 - GATES: tsc 0 · eslint 0 · vitest **71 files / 547 PASS** · build 0 · e2e-smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
 - STILL TO FILL: Muses "No interest yet"/"No pending requests" · Public Profile reviews/posts/trust sections (hidden) · Profile completeness 0% + referral "unavailable" · Portfolio screen placeholder · brief budgets "—" · Settings templates/team empty.
+
+## Discover swipe label position — 2026-09-25 (wyzmind)
+Owner request: on a right-swipe the green like-label must sit on the **top-LEFT**.
+- It was on the RIGHT: `.label-like{right:20px; transform:rotate(14deg)}`. Worse, the NOPE label's MARKUP also forced it right (`style={{ left:"auto", right:20 }}`), so both labels stacked on the same corner. `.label-like` is now `left:20px; transform:rotate(-14deg)` — green like top-left, coral NOPE stays top-right. SUPER remains centred.
+- Note: the green label's text is currently **"YES"** (the owner referred to it as "YEAH"). Left as "YES" to avoid an unrequested copy change — say the word and I'll switch it to "YEAH".
+- GATES: tsc 0 · build 0 · discover-deck **7/7**.

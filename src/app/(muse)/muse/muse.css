@@ -531,7 +531,7 @@ img{background-color:var(--card-bg)}
 @keyframes onlinePulse{0%,100%{box-shadow:0 0 0 0 rgba(152,251,152,0.5)}50%{box-shadow:0 0 0 5px rgba(152,251,152,0)}}
 .card-online-text{font-size:11px;color:var(--mint);font-weight:600}
 .label{position:absolute;top:55px;padding:10px 24px;border-radius:14px;font-size:28px;font-weight:900;z-index:10;opacity:0;transition:opacity .15s;letter-spacing:3px}
-.label-like{right:20px;border:3px solid var(--mint);color:var(--mint);transform:rotate(14deg);text-shadow:0 0 24px rgba(152,251,152,0.6)}
+.label-like{left:20px;border:3px solid var(--mint);color:var(--mint);transform:rotate(-14deg);text-shadow:0 0 24px rgba(152,251,152,0.6)}
 .label-nope{left:20px;border:3px solid var(--coral);color:var(--coral);transform:rotate(-14deg);text-shadow:0 0 24px rgba(255,138,128,0.6)}
 .label-super{top:42%;left:50%;transform:translateX(-50%);border:3px solid var(--gold);color:var(--gold);background:rgba(0,0,0,0.6);font-size:32px;text-shadow:0 0 24px rgba(255,215,0,0.6);backdrop-filter:blur(8px)}
 .actions{display:flex;justify-content:center;align-items:center;gap:10px;padding:10px 0 14px;flex-shrink:0}
