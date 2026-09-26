@@ -321,10 +321,28 @@ export const SettingsScreen = memo(function SettingsScreen({
   const [showTeam, setShowTeam] = useState(false);
   const [showHiring, setShowHiring] = useState(false);
   const [briefTemplates, setBriefTemplates] = useState<{ title: string; desc: string; budget: string }[]>(
-    Array.isArray(preferences.briefTemplates) ? (preferences.briefTemplates as { title: string; desc: string; budget: string }[]) : [],
+    Array.isArray(preferences.briefTemplates) && (preferences.briefTemplates as unknown[]).length
+      ? (preferences.briefTemplates as { title: string; desc: string; budget: string }[])
+      // Demo fallback so the panel isn't an empty "No templates yet" state.
+      : (process.env.NEXT_PUBLIC_DEMO_MODE !== "false"
+        ? [
+            { title: "Editorial shoot", desc: "Half-day editorial shoot, 3 looks, 25+ edited images delivered in 48 hours.", budget: "$800-$1,500" },
+            { title: "Brand campaign", desc: "Concept, shot list and full-day capture for a product or brand campaign.", budget: "$3,000-$5,000" },
+            { title: "Test shoot (TFP)", desc: "Mutually beneficial test shoot for portfolio pieces. No fee either way.", budget: "TFP" },
+          ]
+        : []),
   );
   const [teamMembers, setTeamMembers] = useState<{ name: string; email: string; role: string }[]>(
-    Array.isArray(preferences.teamMembers) ? (preferences.teamMembers as { name: string; email: string; role: string }[]) : [],
+    Array.isArray(preferences.teamMembers) && (preferences.teamMembers as unknown[]).length
+      ? (preferences.teamMembers as { name: string; email: string; role: string }[])
+      // Demo fallback so the panel isn't an empty "No team members yet." state.
+      : (process.env.NEXT_PUBLIC_DEMO_MODE !== "false"
+        ? [
+            { name: "Maya Chen", email: "maya@studio.example", role: "Producer" },
+            { name: "Sam Taylor", email: "sam@studio.example", role: "Editor" },
+            { name: "Riley Patel", email: "riley@studio.example", role: "Designer" },
+          ]
+        : []),
   );
   const [hireMinRate, setHireMinRate] = useState<string>(String(preferences.hireMinRate ?? ""));
   const [hireAvailability, setHireAvailability] = useState<string>(String(preferences.hireAvailability ?? ""));

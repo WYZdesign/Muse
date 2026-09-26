@@ -779,3 +779,9 @@ Owner request: on a right-swipe the green like-label must sit on the **top-LEFT*
 - Seeded all three in demo mode: 3 reviews (5/5/4 with realistic copy and staggered dates), 3 feed posts (with like/comment counts), and a trust card (verified, 3 reviews / 4.7 avg, 17 completed as host, 98% response rate, boosted, recently online).
 - GATES: tsc 0 · eslint 0 · vitest **547 PASS** · build 0 · e2e-smoke **15/15**.
 - STILL TO FILL: Settings brief templates / team members empty · community/event member lists · a couple of `Unknown`/`Anonymous` fallbacks.
+
+## DEMO MODE batch 7: Settings brief templates + team members — 2026-09-25 (wyzmind)
+- Both panels were empty placeholders ("No templates yet — add your first below." / "No team members yet.") because they read from saved preferences, which a demo viewer has none of.
+- Seeded demo fallbacks: 3 brief templates (Editorial shoot / Brand campaign / Test shoot TFP, with realistic descriptions and budgets) and 3 team members (Producer / Editor / Designer). Real saved values still win when present — the fallback only fills an empty list, and non-demo builds are unchanged.
+- GATES: tsc 0 · eslint 0 · vitest **547 PASS** · build 0.
+- Remaining minor: community/event member lists, and a few `Unknown`/`Anonymous` fallbacks.
