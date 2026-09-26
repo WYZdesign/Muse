@@ -1033,9 +1033,9 @@ export const SettingsScreen = memo(function SettingsScreen({
               <div key={uid} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border-subtle)" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "var(--text)" }}>
                   {blockedProfiles[uid]?.avatar && <img src={blockedProfiles[uid].avatar} alt={`${blockedProfiles[uid]?.name || "Blocked user"}'s avatar`} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
-                  {blockedProfiles[uid]?.name || uid}
+                          {blockedProfiles[uid]?.name || "Unknown user"}
                 </span>
-                <button className="btn btn-outline" style={{ padding: "4px 12px", fontSize: 12 }} onClick={() => { setBlockedUsers(blockedUsers.filter(b => b !== uid)); if (apiFetch) { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unblock", target_id: uid }) }).catch(() => {}); } }}>Unblock</button>
+                    <button className="btn btn-outline" aria-label={`Unblock ${blockedProfiles[uid]?.name || "this user"}`} style={{ padding: "4px 12px", fontSize: 12 }} onClick={() => { const who = blockedProfiles[uid]?.name || "this user"; if (!window.confirm(`Unblock ${who}? They will be able to see your profile and contact you again.`)) return; setBlockedUsers(blockedUsers.filter(b => b !== uid)); if (apiFetch) { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unblock", target_id: uid }) }).catch(() => {}); } }}>Unblock</button>
               </div>
             ))
           )}
@@ -1420,7 +1420,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Currency</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {["USD", "EUR", "GBP", "CAD", "AUD"].map((cur) => (
-                <button key={cur} onClick={() => setRateCurrency(cur)}
+                      <button key={cur} aria-pressed={rateCurrency === cur} onClick={() => setRateCurrency(cur)}
                   style={{ padding: "8px 16px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: rateCurrency === cur ? "var(--gold)" : "var(--glass)", color: rateCurrency === cur ? "#0a0612" : "var(--text)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                   {cur}
                 </button>

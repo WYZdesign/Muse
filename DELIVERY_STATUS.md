@@ -672,3 +672,9 @@ Owner authorized using the DPAPI vault. Credentials were read programmatically a
 - GATES: tsc 0 · vitest **71 files / 547 tests PASS** · eslint 0 · build 0.
 - STILL OPEN (code): PaymentHistory dialog/tab/table semantics; MatchCard + Network card semantic controls; Feed post-header nested actions; notification row semantics + single-source count; admin unified report counts; availability/currency radio semantics; tab `aria-controls`; unblock confirmation; BTS comment Escape; Discover per-render memoisation; `page.tsx` P2 hook extraction.
 - OWNER: retention-copy wording (counsel), DMCA agent phone, RLS/signed-URL cross-account matrix, provider-isolation proof, load/Web-Vitals, restore drill; `RENOVATE_TOKEN`/`LHCI_GITHUB_APP_TOKEN` absent from vault.
+
+## Settings a11y/safety fixes — 2026-09-25 (wyzmind)
+- Rate Settings currency buttons now expose `aria-pressed` (they only had a visual fill change, so screen-reader users could not tell which currency was selected).
+- Blocked Users: the row no longer falls back to printing a raw user UUID (it now reads "Unknown user" when the profile is unavailable), the Unblock button has a unique accessible name (`Unblock <name>`), and unblocking now requires confirmation ("Unblock <name>? They will be able to see your profile and contact you again.") instead of silently reversing a safety control on one click.
+- VERIFIED ALREADY DONE by Codex (so not duplicated): PaymentHistory focus trap + `role="dialog" aria-modal` + `role="tablist"`/`role="tab"` with `aria-selected`/`aria-controls`/roving `tabIndex` + `role="tabpanel"` + `<ul>` payment list.
+- GATES: tsc 0 · vitest **71 files / 547 tests PASS** · eslint 0 · build 0.
