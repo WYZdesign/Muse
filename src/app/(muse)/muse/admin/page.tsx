@@ -14,6 +14,7 @@ type AnalyticsData = {
   payments?: { total: number; succeeded: number; totalVolume: number; totalCommission: number };
   connectedAccounts?: number;
   moderation?: { total: number; open: number; resolved: number; avgResolutionHours: number | null };
+  reportCounts?: { open: number; total: number };
   refunds?: { total: number; open: number; approved: number; rejected: number };
   calls?: { total: number; answered: number; missed: number; voicemails: number };
   topCreators?: { id: string; name?: string; type?: string; activity: number }[];
@@ -346,10 +347,19 @@ export default function AdminDashboard() {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 28 }}>
                   {data.moderation && (
                     <>
-                      <div style={{ ...box, borderLeft: `3px solid ${data.moderation.open > 0 ? "#ff6b6b" : "#98FB98"}` }}>
+                      {/* Counts the SAME queue the Moderation screen lists
+                          (`muse_reports`, status "open") rather than safety
+                          incidents, so this tile and the moderation queue can no
+                          longer disagree. */}
+                      <div style={{ ...box, borderLeft: `3px solid ${(data.reportCounts?.open ?? data.moderation.open) > 0 ? "#ff6b6b" : "#98FB98"}` }}>
                         <div style={label}>Reports Needing Review</div>
-                        <div style={{ ...bigNum, color: data.moderation.open > 0 ? "#ff6b6b" : "#98FB98" }}>{data.moderation.open}</div>
-                        <div style={hint}>{data.moderation.resolved} handled so far</div>
+                        <div style={{ ...bigNum, color: (data.reportCounts?.open ?? data.moderation.open) > 0 ? "#ff6b6b" : "#98FB98" }}>{data.reportCounts?.open ?? data.moderation.open}</div>
+                        <div style={hint}>{data.reportCounts ? `${data.reportCounts.total} reported in total` : `${data.moderation.resolved} handled so far`}</div>
+                      </div>
+                      <div style={{ ...box, borderLeft: "3px solid #ff8a80" }}>
+                        <div style={label}>Safety Incidents Open</div>
+                        <div style={bigNum}>{data.moderation.open}</div>
+                        <div style={hint}>{data.moderation.resolved} reviewed</div>
                       </div>
                       <div style={{ ...box, borderLeft: "3px solid #4ecdc4" }}>
                         <div style={label}>Avg. Review Time</div>

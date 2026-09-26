@@ -954,6 +954,18 @@ export async function GET(req: NextRequest) {
         moderation = { total: rows.length, open, resolved: resolved.length, avgResolutionHours: avgHours };
       } catch { /* table may not exist yet */ }
 
+      // Reports — the SAME queue the ModerationPanel renders (`muse_reports`
+      // with status "open"), counted EXACTLY rather than limited to the queue's
+      // 50-row page. Previously the dashboard's "Reports Needing Review" tile
+      // read `moderation.open` (which counts muse_safety_incidents), while the
+      // moderation screen listed muse_reports — so the two surfaces disagreed.
+      let reportCounts = undefined;
+      try {
+        const { count: openReports } = await sb.from("muse_reports").select("*", { count: "exact", head: true }).eq("status", "open");
+        const { count: totalReports } = await sb.from("muse_reports").select("*", { count: "exact", head: true });
+        reportCounts = { open: openReports ?? 0, total: totalReports ?? 0 };
+      } catch { /* table may not exist yet */ }
+
       let refunds = undefined;
       try {
         const { data: rr } = await sb.from("muse_refund_requests").select("status").limit(2000);
@@ -1005,6 +1017,7 @@ export async function GET(req: NextRequest) {
         connectedAccounts,
         auditLog,
         moderation,
+        reportCounts,
         refunds,
         calls,
         topCreators,
