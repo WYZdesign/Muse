@@ -9,6 +9,11 @@ const SUPABASE_HOST = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
   : "*.supabase.co";
 
+// Vercel's Live feedback toolbar is only useful on Preview deployments. Keep it
+// out of the production CSP entirely so the production custom domain never
+// allowlists third-party tooling (handover item: vercel.live in production CSP).
+const VERCEL_LIVE = process.env.VERCEL_ENV === "production" ? "" : " https://vercel.live";
+
 const CSP = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -17,7 +22,7 @@ const CSP = [
   "object-src 'none'",
   "upgrade-insecure-requests",
   // Next.js/Turbopack requires inline script for hydration; inline styles are used app-wide (React style props)
-  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://connect-js.stripe.com https://browser.sentry-cdn.com https://js.sentry-cdn.com https://api.mapbox.com https://vercel.live",
+  `script-src 'self' 'unsafe-inline' https://js.stripe.com https://connect-js.stripe.com https://browser.sentry-cdn.com https://js.sentry-cdn.com https://api.mapbox.com${VERCEL_LIVE}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https://images.unsplash.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://res.cloudinary.com",
   "font-src 'self' data: https://fonts.gstatic.com",

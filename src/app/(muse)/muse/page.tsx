@@ -14,6 +14,7 @@ import BackgroundScene from "./components/BackgroundScene";
 import { MatchOverlay } from "./components/MatchOverlay";
 import { ReportModal } from "./components/ReportModal";
 import { DailyLoginModal } from "./components/DailyLoginModal";
+import { announce } from "./a11y";
 import { PageSplash } from "./components/PageSplash";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
@@ -2171,6 +2172,9 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     if (!isUnlimited && dailyLikes <= 0 && dir === "right") { setUpsell({ feature: "Unlimited Likes", reason: "You've used all your likes for today. Go Pro to like as many creatives as you want, with no daily limit.", icon: "💛" }); return; }
     const p = filteredProfiles[currentIdx];
     if (!p) return;
+    // Non-blocking screen-reader announcement of the swipe outcome. The live
+    // status region + announce() helper existed but had no callers (dead code).
+    announce(dir === "left" ? `Passed on ${p.name}` : dir === "super" ? `Super liked ${p.name}` : `Liked ${p.name}`);
     if (!isUnlimited && dir === "super" && superLikes <= 0) { setUpsell({ feature: "More Super Likes", reason: "You're out of super likes for today. Muses Pro's unlimited likes means you're never stuck waiting for a reset.", icon: "💜" }); return; }
     analytics.discoverSwipe(dir as "left" | "right" | "super", String(p.id), p.type);
     if (dir === "right" || dir === "super") {
