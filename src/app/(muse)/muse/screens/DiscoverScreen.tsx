@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useState, useEffect, useRef } from "react";
+import React, { memo, useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
 import { FiSearch, FiSettings, FiCompass, FiZap, FiCamera, FiX, FiChevronRight, FiFilter, FiInfo } from "react-icons/fi";
 import Nav from "../components/Nav";
@@ -193,6 +193,29 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   // Current hero photo URL for the top card (kept in sync so the spark counter
   // reflects exactly the photo being viewed).
   const topCard = filteredProfiles[currentIdx];
+  // Memoised per-profile photo list. This used to be derived inside an inline
+  // IIFE on every render of every card (dedupe → portrait/landscape split →
+  // top-up to 4), recomputing identical work for all 3 mounted cards on every
+  // state change (swipe index, NSFW reveal, hover, search…). The list only
+  // depends on the profile, so it is computed once per deck change.
+  const cardPhotos = useMemo(() => {
+    const m = new Map<string, { photos: string[]; all: string[] }>();
+    for (const profile of filteredProfiles) {
+      const base: string[] = (profile as any).photos?.length ? (profile as any).photos : [profile.img];
+      // Dedupe so no image repeats on a card; each slot is a distinct photo.
+      const deduped: string[] = base.filter((p: string, i: number, a: string[]) => p && a.indexOf(p) === i);
+      const portraitPics = deduped.filter((p: string) => !!PORTRAIT_IMG[p]);
+      const landscapePics = deduped.filter((p: string) => !PORTRAIT_IMG[p]);
+      const photos: string[] = [...portraitPics, ...landscapePics].slice(0, 6);
+      if (photos.length < 4) {
+        const used = new Set(photos);
+        const extra = deduped.filter((p: string) => !used.has(p));
+        photos.push(...extra.slice(0, Math.max(0, 4 - photos.length)));
+      }
+      m.set(String(profile.id), { photos, all: deduped });
+    }
+    return m;
+  }, [filteredProfiles]);
   const topHeroSrc = (() => {
     const base: string[] = (topCard as any)?.photos?.length ? (topCard as any).photos : [topCard?.img];
     return (base[currentPhotoIdx ?? 0]) || topCard?.img || "";
@@ -398,17 +421,11 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                     onPointerCancel={isTop ? onPointerCancel : undefined}
                   >
                     {(() => {
-                      const allPhotosBase: string[] = (profile as any).photos?.length ? (profile as any).photos : [profile.img];
-                      // Dedupe so no image repeats on a card; each slot is a distinct photo.
-                      const allPhotos: string[] = allPhotosBase.filter((p: string, i: number, a: string[]) => p && a.indexOf(p) === i);
-                      const portraitPics = allPhotos.filter((p: string) => !!PORTRAIT_IMG[p]);
-                      const landscapePics = allPhotos.filter((p: string) => !PORTRAIT_IMG[p]);
-                      const photos: string[] = [...portraitPics, ...landscapePics].slice(0, 6);
-                      if (photos.length < 4) {
-                        const used = new Set(photos);
-                        const extra = allPhotos.filter((p: string) => !used.has(p));
-                        photos.push(...extra.slice(0, Math.max(0, 4 - photos.length)));
-                      }
+                      // Photo list is memoised per profile (see cardPhotos above);
+                      // only the ACTIVE card's carousel index is render state.
+                      const cardPhotoSet = cardPhotos.get(String(profile.id));
+                      const photos: string[] = cardPhotoSet?.photos || [profile.img];
+                      const allPhotos: string[] = cardPhotoSet?.all || [profile.img];
                       // Only the active card owns carousel state. Depth cards must
                       // always render their cover image; sharing the active card's
                       // index made the next profile briefly show its second photo
