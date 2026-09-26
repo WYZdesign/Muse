@@ -78,6 +78,8 @@ describe("waitlist route", () => {
   it("400 when email missing or invalid", async () => {
     expect((await POST(mockReq({}))).status).toBe(400);
     expect((await POST(mockReq({ email: "not-an-email" }))).status).toBe(400);
+    expect((await POST(mockReq({ email: "name@invalid" }))).status).toBe(400);
+    expect((await POST(mockReq({ email: { address: "name@example.com" } }))).status).toBe(400);
   });
 
   it("429 when rate limited", async () => {
@@ -86,8 +88,8 @@ describe("waitlist route", () => {
     expect(r.status).toBe(429);
   });
 
-  it("inserts lowercased email and returns success", async () => {
-    const r = await POST(mockReq({ email: "Foo@Example.COM", source: "qr_home" }));
+  it("trims and lowercases email before insert and returns success", async () => {
+    const r = await POST(mockReq({ email: "  Foo@Example.COM  ", source: "qr_home" }));
     expect(r.status).toBe(200);
     const body = await r.json();
     expect(body.success).toBe(true);
