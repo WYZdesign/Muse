@@ -2765,7 +2765,7 @@ img{background-color:var(--card-bg)}
    down from the old 67px single-word logo so the two-part lockup still fits a
    320px viewport without wrapping or overflowing. */
 .hero-text.muse-brand-lockup{font-size:clamp(38px,11vw,58px)}
-.hero-text.muse-brand-lockup > span{display:inline-block;margin-left:.1em;font-family:Inter,system-ui,sans-serif;font-size:.3em;font-style:normal;font-weight:800;letter-spacing:.14em;text-transform:uppercase;vertical-align:.32em;white-space:nowrap}
+.hero-text.muse-brand-lockup > span{display:block;margin-top:.02em;font-family:Inter,system-ui,sans-serif;font-size:.26em;font-style:normal;font-weight:800;letter-spacing:.3em;text-transform:uppercase;white-space:nowrap;text-indent:.3em}
 
 /* ─── Match cards: full-card open target ───
    MatchCard renders a full-card <button class="match-card-open"> at zIndex 1 and
@@ -2785,3 +2785,4 @@ img{background-color:var(--card-bg)}
 [data-swipe-row]:hover .notif-dismiss-btn,
 [data-swipe-row]:focus-within .notif-dismiss-btn,
 .notif-dismiss-btn:focus-visible{opacity:1}
+.splash-logo-text .splash-logo-sub{display:block;font-family:Inter,system-ui,sans-serif;font-style:normal;font-size:.28em;font-weight:800;letter-spacing:.3em;text-transform:uppercase;margin-top:.06em;text-indent:.3em}

@@ -452,7 +452,7 @@ export default function MuseLandingPage() {
             <span className="line" data-depth="-0.4"><SplitText text="Where Creatives" delay={0.15} /></span>
             <span className="line" data-depth="-0.4"><SplitText text="Find Their" delay={0.38} /></span>
             <span className="line" data-depth="-0.4">
-              <span className="gradient muse-animated-gradient" style={{ display: "inline-block", padding: "0 0.1em" }}>Muses by WYZ</span>
+              <span className="gradient muse-animated-gradient" style={{ display: "inline-block", padding: "0 0.1em" }}>Muses<span style={{ display: "block", fontFamily: "Inter, system-ui, sans-serif", fontStyle: "normal", fontSize: ".26em", fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", marginTop: ".02em", textIndent: ".3em" }}>by WYZ</span></span>
             </span>
           </h1>
           <p className="muse-hero-sub" data-depth="-0.3">Connect with photographers, models, filmmakers, and more. Work together on real projects. Get booked, safely.</p>

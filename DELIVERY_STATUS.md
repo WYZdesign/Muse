@@ -722,3 +722,10 @@ Each of these requires un-nesting interactive controls (the same class of bug fi
 - PERF: the per-card photo list on Discover was derived inside an inline IIFE on every render of every mounted card (dedupe → portrait/landscape split → top-up to 4 → cap 6), recomputing identical work for all 3 cards on every state change (swipe index, NSFW reveal, hover, search). It is now computed once per deck change in a component-level `useMemo` (`cardPhotos: Map<id, { photos, all }>`); the render just looks it up. `all` is retained because the Portfolio section needs the full deduped list, not just the capped 6.
 - GATES: tsc 0 · vitest **71 files / 547 tests PASS** · eslint 0 · build 0 · e2e-smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 passed / 1 skipped**.
 - REQUEST LOGGED (owner): demo mode must look fully published — every screen populated with realistic placeholders and every flow working as if real. Auditing empty states + missing demo data next.
+
+## Brand lockup STACKED — 2026-09-25 (wyzmind)
+Owner request: the two-part lockup must read **"Muses" on one line** and **"by WYZ" on the line under it** (previously inline/vertical-aligned).
+- Applied to every visual lockup: the app splash (`PageSplash.tsx` + `.splash-logo-sub` in muse.css), the global splash (`SplashScreen.tsx`, inline), the auth hero (`page.tsx` `.hero-text.muse-brand-lockup`), and the landing hero (`muse/landing/page.tsx`). The sub-line is now `display:block`, smaller (0.26–0.28em), uppercase, letter-spaced (0.3em) with `text-indent` to keep it optically centred under the wordmark.
+- Metadata/plain-text strings (titles, OG, manifest) cannot be multi-line and are unchanged.
+- GATES: tsc 0 · eslint 0 · build 0.
+- NEXT: demo-mode completeness (owner wants demo to look fully published, everything populated and working as if live).

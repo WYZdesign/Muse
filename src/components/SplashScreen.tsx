@@ -127,7 +127,7 @@ export default function SplashScreen() {
           animation: "fontLava 7s ease-in-out infinite", marginTop: 16, padding: "0 0.15em",
           lineHeight: 1.1, maxWidth: "100%", whiteSpace: "nowrap", overflow: "visible",
           textShadow: "0 2px 20px rgba(255,215,0,0.25)",
-        }}>Muses <span style={{ fontFamily: "Inter, system-ui, sans-serif", fontStyle: "normal", fontSize: ".3em", fontWeight: 800, letterSpacing: ".14em", textTransform: "uppercase", verticalAlign: ".32em", marginLeft: ".1em" }}>by WYZ</span></div>
+        }}>Muses <span style={{ display: "block", fontFamily: "Inter, system-ui, sans-serif", fontStyle: "normal", fontSize: ".28em", fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", marginTop: ".06em", textIndent: ".3em" }}>by WYZ</span></div>
         <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: 5, textIndent: 5, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", marginTop: 8, marginBottom: 28, whiteSpace: "normal", textAlign: "center", maxWidth: "100%", lineHeight: 1.5 }}>Creative Professional Network</div>
         <div style={{ width: 180, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.12)", overflow: "hidden" }}>
           <div style={{ width: "40%", height: "100%", borderRadius: 2, background: "linear-gradient(90deg,#FFD700,#FF8A80,#D4A5FF)", animation: "splashLoad 1.4s ease-in-out infinite" }} />

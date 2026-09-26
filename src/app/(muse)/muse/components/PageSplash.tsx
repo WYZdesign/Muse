@@ -45,7 +45,7 @@ export function PageSplash() {
       </div>
       <div className="splash-content">
         <Image src="/muse-app-icon.png" alt="" width={120} height={120} className="splash-logo-icon" />
-        <div className="splash-logo-text">Muses by WYZ</div>
+        <div className="splash-logo-text">Muses <span className="splash-logo-sub">by WYZ</span></div>
         <div className="splash-tagline" style={{ whiteSpace: "nowrap" }}>Where Creatives Connect</div>
         <div className="splash-loader"><div className="splash-loader-bar" /></div>
       </div>
