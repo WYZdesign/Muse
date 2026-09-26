@@ -168,6 +168,19 @@ function SwipeableNotification({ a, notifIcon, activeDragId, setActiveDragId, on
           </div>
           <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{new Date(a.created_at).toLocaleString()}</div>
         </div>
+        {/* Accessible dismiss. Rows were swipe-only, so this action was
+            unreachable without a touch gesture (and invisible to keyboard and
+            screen-reader users). It stays in the tab order at opacity 0 and is
+            revealed on hover / focus-within / focus-visible via muse.css. */}
+        <button
+          type="button"
+          className="notif-dismiss-btn"
+          aria-label={`Dismiss notification from ${a.from || "Muses by WYZ"}`}
+          onClick={(e) => { e.stopPropagation(); onRemove(idStr); }}
+          style={{ flexShrink: 0, alignSelf: "center", width: 44, height: 44, borderRadius: 8, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.04)", color: "var(--muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <FiTrash2 size={15} />
+        </button>
       </div>
     </div>
   );

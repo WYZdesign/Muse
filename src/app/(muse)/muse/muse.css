@@ -2776,3 +2776,12 @@ img{background-color:var(--card-bg)}
 .match-card .match-badge,
 .match-card .card-verified-mark,
 .match-card .match-time{position:relative;z-index:2}
+
+/* ─── Notification row dismiss ───
+   Rows were swipe-only. The dismiss button stays in the tab order (opacity 0,
+   NOT display:none) and is revealed for pointer hover, keyboard focus-within,
+   or its own focus-visible ring. */
+.notif-dismiss-btn{opacity:0;transition:opacity .15s}
+[data-swipe-row]:hover .notif-dismiss-btn,
+[data-swipe-row]:focus-within .notif-dismiss-btn,
+.notif-dismiss-btn:focus-visible{opacity:1}

@@ -705,3 +705,9 @@ Each of these requires un-nesting interactive controls (the same class of bug fi
 - `screens/FeedScreen.tsx`: the post header was the same pattern — a clickable `<div>` wrapping the avatar link (opens author profile) and the `role="button"` report control. Restructured the same way: plain positioning container + full-header `<button class="feed-post-open" aria-label="Open <author>'s post">` at `zIndex 1`, with the avatar link and report control raised to `zIndex 2` so both stay clickable.
 - GATES: tsc 0 · vitest **71 files / 547 tests PASS** · eslint 0 · build 0 · e2e-smoke **15/15**. The authoritative `nested-interactive` check runs in CI's Accessibility job.
 - STILL OPEN (same class): MenuModal notification rows (swipe-only, no keyboard remove) · admin unified report counts · Discover per-render photo derivation · tab `aria-controls` wiring · `page.tsx` P2 extraction.
+
+## Notification rows: keyboard-accessible dismiss — 2026-09-25 (wyzmind)
+- Notification rows in the activity panel were **swipe-only** (`SwipeableNotification`): removing one required a horizontal touch/pointer gesture, so keyboard and screen-reader users had no way to dismiss a notification at all.
+- Each row now renders a real `<button class="notif-dismiss-btn" aria-label="Dismiss notification from <sender>">` (44x44, `onRemove`). It stays **in the tab order at `opacity: 0`** (NOT `display:none`, so it is focusable) and is revealed on row hover, `:focus-within`, or its own `:focus-visible` — the same pattern used for the BTS report control.
+- GATES: tsc 0 · vitest **71 files / 547 tests PASS** · eslint 0 · build 0 · e2e-smoke **15/15**.
+- STILL OPEN: admin unified report counts (dashboard vs moderation queue come from two queries) · Discover per-render photo derivation (inline IIFE, needs lifting out of JSX to memoise) · tab `aria-controls` wiring across Feed/Network/Community/Collab/Profile/Sessions · `page.tsx` P2 controller-hook extraction.
