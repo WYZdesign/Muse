@@ -29,9 +29,17 @@ import path from "node:path";
  * useMotionPermission, useBoostExpiry, useSocialConnection,
  * useMessageRequests, usePageTour, useDailyLikesReset, useSaveStateTimer and
  * useSessTabRealign. Only the trivial `matchesRef` sync effect remains inline.
+ * Phase F extracted the remaining useCallback handlers into grouped action
+ * hooks: hooks/useMuseActions (quest tracking, navigation, social,
+ * onboarding multi-select, tours, verification banner, img fallback,
+ * setViewProfile), hooks/useAuthActions (handleAuthClick, handleOAuth,
+ * doLogout, doLogoutFull), hooks/useChatActions (openChat, sendMsg,
+ * sendChatImg, sendChatMedia) and hooks/useProfileActions (saveProfileEdits,
+ * uploadImage, uploadMedia). Only apiFetch, showToast, bootstrapData,
+ * saveState and loadState remain inline as useCallbacks.
  * Good next candidates: the screens still mounted inside `page.tsx`.
  */
-const BUDGET_LINES = 2290;
+const BUDGET_LINES = 1942;
 
 const file = path.resolve(__dirname, "page.tsx");
 

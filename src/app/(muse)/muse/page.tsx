@@ -7,8 +7,7 @@ import Image from "next/image";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
-import { persistMessage, getGeolocation, distanceMiles } from "@/app/muse-realtime";
-import { trackError } from "@/lib/errorTracker";
+import { getGeolocation, distanceMiles } from "@/app/muse-realtime";
 import { FiX } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import { MatchOverlay } from "./components/MatchOverlay";
@@ -28,7 +27,7 @@ import type { BadgeInfo } from "./components/badgeInfo";
 import { useChatState } from "./hooks/useChatState";
 import { useCall } from "./hooks/useCall";
 import { useFocusTrap } from "./hooks/useFocusTrap";
-import { getIcebreaker, getReferralTier, checkProfileBadges, sanitizeInput, buildBriefTitleMap, computeUnreadCount } from "./page-helpers";
+import { getIcebreaker, getReferralTier, checkProfileBadges, buildBriefTitleMap, computeUnreadCount } from "./page-helpers";
 import CallOverlay from "./components/CallOverlay";
 import { useBriefsState } from "./hooks/useBriefsState";
 import { useSavedListingsState } from "./hooks/useSavedListingsState";
@@ -38,7 +37,7 @@ import { useAuthOnboardingState } from "./hooks/useAuthOnboardingState";
 import { useDiscoverState } from "./hooks/useDiscoverState";
 import SupportChat from "./components/SupportChat";
 import PageTour from "./components/PageTour";
-import { PAGE_TOURS, tourSeenKey, type TourScreenId } from "./components/pageTourContent";
+import { PAGE_TOURS, type TourScreenId } from "./components/pageTourContent";
 import { ScreenErrorBoundary } from "./components/ScreenErrorBoundary";
 import { DiscoverScreen } from "./screens/DiscoverScreen";
 import { FeedScreen } from "./screens/FeedScreen";
@@ -97,9 +96,13 @@ import { useSaveStateTimer } from "./hooks/useSaveStateTimer";
 import { useSessTabRealign } from "./hooks/useSessTabRealign";
 import { useBriefsData } from "./hooks/useBriefsData";
 import { useProfileData } from "./hooks/useProfileData";
+import { useMuseActions } from "./hooks/useMuseActions";
+import { useAuthActions } from "./hooks/useAuthActions";
+import { useChatActions } from "./hooks/useChatActions";
+import { useProfileActions } from "./hooks/useProfileActions";
 import { normalizeCommunity, normalizeEvent, normalizeForumPost, normalizeBrief, normalizeSession, normalizeFeedPost } from "./hooks/normalizers";
 import { AGE_VERIFICATION_VALID_DAYS, DEMO_MODE, MATCH_VARIANTS, OWNER_EMAIL } from "./page-constants";
-import type { Professional, ProfileReview, Quest, RawApiProfile, RawFeedPost, RawForumPost, ViewProfile } from "./page-models";
+import type { Professional, ProfileReview, RawApiProfile, RawFeedPost, RawForumPost, ViewProfile } from "./page-models";
 
 type DiscoveryProfile = typeof PROFILES[number] & {
   showDistance?: boolean;
@@ -360,14 +363,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [verificationBannerClosing, setVerificationBannerClosing] = useState(false);
   // D1: persist dismiss across reloads (same pattern as muse_tour_seen_*).
   useMountFlags({ safeGetItem, safeSetItem, setVerificationBannerDismissed });
-  const dismissVerificationBanner = () => {
-    setVerificationBannerClosing(true);
-    setTimeout(() => {
-      setVerificationBannerDismissed(true);
-      setVerificationBannerClosing(false);
-      try { safeSetItem("muse_verify_banner_dismissed", "1"); } catch { /* best-effort */ }
-    }, 320);
-  };
   const [pendingDisclosureConfirm, setPendingDisclosureConfirm] = useState<string | null>(null);
   const [pendingDisclosureCreate, setPendingDisclosureCreate] = useState<Record<string, unknown> | null>(null);
   const {
@@ -396,21 +391,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   }, []);
 
   // Reset photo carousel when a new profile is opened (moved into useViewedProfile below).
-  // Tracked wrapper — counts one view per real profile per session (duality
-  // stats plumbing); demo/numeric ids are skipped server-side anyway.
-  const viewedSessionRef = useRef<Set<string>>(new Set());
-  const setViewProfile = useCallback((p: ViewProfile | null) => {
-    setViewProfileRaw(p);
-    if (!p) return;
-    try {
-      const id = String(p?.id ?? "");
-      if (!id || !authUser) return;
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(id)) return;
-      if (viewedSessionRef.current.has(id)) return;
-      viewedSessionRef.current.add(id);
-      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-view", target_id: id }) }).catch(() => {});
-    } catch (e) { console.debug("[page.tsx] viewProfile tracking ignore", e); }
-  }, [apiFetch, authUser]);
   const viewProfileTrap = useFocusTrap(!!viewProfile, () => setViewProfileRaw(null));
   const shareTargetTrap = useFocusTrap(!!shareTarget, () => setShareTarget(null));
   const [viewProfileReviews, setViewProfileReviews] = useState<ProfileReview[]>([]);
@@ -460,23 +440,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     "--drift": (Math.random()*120-60)+"px",
     "--rot": (Math.random()*720)+"deg"
   })), []);
-
-  const handleImgError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    const el = e.currentTarget;
-    if (el.dataset.fallback) return;
-    el.dataset.fallback = "1";
-    const initial = (el.alt || "").trim().charAt(0).toUpperCase();
-    el.style.background = "linear-gradient(135deg, #2a1a3e 0%, #1a0a2e 100%)";
-    el.style.display = "flex";
-    el.style.alignItems = "center";
-    el.style.justifyContent = "center";
-    el.style.color = "rgba(255,215,0,0.6)";
-    el.style.fontSize = initial ? "1.4em" : "1.8em";
-    el.style.fontWeight = "700";
-    el.style.fontFamily = "'Playfair Display', serif";
-    el.textContent = initial || "\uD83D\uDCF7";
-    el.removeAttribute("src");
-  }, []);
 
   // Global broken-image fallback sweep (moved into useVisualEffects below).
 
@@ -828,56 +791,71 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   const showToast = useCallback((msg: string | { msg: string; onTap?: () => void; type?: ToastType }) => { const t = typeof msg === "string" ? { msg } : msg; setToastMsg(t); setTimeout(() => setToastMsg(null), 3000); }, []);
 
+  // Back-navigation history: showScreen pushes the screen we're leaving so a
+  // back button can return to the ACTUAL previous page (e.g. Analytics → back
+  // → Profile, not Discover). goBack pops the stack; falls back to discover.
+  const screenHistoryRef = useRef<(typeof screen)[]>([]);
+
+  // Contextual upsell modal — shown in place of a plain toast the moment a
+  // free-tier user hits a Pro-gated limit (daily likes, super likes, "Likes
+  // You" profiles, etc). `feature`/`reason` are set per-gate right before
+  // opening so the same modal can explain whichever benefit was just blocked.
+  const [upsell, setUpsell] = useState<{ feature: string; reason: string; icon?: string } | null>(null);
+
+  // Core page action handlers (quest tracking, navigation, social connect,
+  // onboarding multi-select, per-page tours, verification banner) — see
+  // useMuseActions. Declared here because `trackQuest`/`flash`/`maybeShowPageTour`
+  // are consumed by the hooks called below (useQuestTracking, usePageTour,
+  // useSwipeActions) and by useAuthActions further down.
+  const {
+    setViewProfile,
+    handleImgError,
+    toggleObMulti,
+    handleQuestsChange,
+    trackQuest,
+    maybeShowPageTour,
+    flash,
+    showScreen,
+    goBack,
+    openHamburger,
+    closeUpsell,
+    toggleSocial,
+    dismissVerificationBanner,
+  } = useMuseActions({
+    apiFetch,
+    safeGetItem,
+    safeSetItem,
+    showToast,
+    activePageTour,
+    setActivePageTour,
+    showDailyLogin,
+    showAgeVerification,
+    showAgeGate,
+    showQuests,
+    showStories,
+    showHamburger,
+    setClaimableQuests,
+    setNearQuests,
+    setTopQuests,
+    setLoginStreak,
+    obData,
+    setObData,
+    obConnectedSocials,
+    setObConnectedSocials,
+    authUser,
+    setViewProfileRaw,
+    setScreen,
+    screenHistoryRef,
+    setScreenFlash,
+    setHamburgerScreen,
+    setShowHamburger,
+    setVerificationBannerClosing,
+    setVerificationBannerDismissed,
+    setUpsell,
+  });
+
   // Social connection status fetch + OAuth callback handling — see useSocialConnection.
   useSocialConnection({ authFetch, setObConnectedSocials, showToast });
-
-  // Onboarding multi-select toggle with a hard cap. Toggling off always works;
-  // adding beyond the cap is ignored and surfaces a toast instead.
-  const toggleObMulti = (field: "looking" | "styles", value: string, max: number) => {
-    const arr: string[] = (obData[field as keyof typeof obData] as string[] | undefined) || [];
-    if (arr.includes(value)) { setObData(d => ({ ...d, [field]: arr.filter(x => x !== value) })); return; }
-    if (arr.length >= max) { showToast(`Max ${max} selected`); return; }
-    setObData(d => ({ ...d, [field]: [...arr, value] }));
-  };
-
-  const handleQuestsChange = useCallback(async () => {
-    try {
-      const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-quests" }) });
-      const d = await res.json();
-      if (Array.isArray(d?.quests)) {
-        const quests = d.quests as Quest[];
-        setClaimableQuests(quests.filter((q) => q.completed && !q.claimed).length);
-        setNearQuests(quests.filter((q) => !q.completed && q.progress / q.target >= 0.6).length);
-        const TIER_COLORS: Record<string,string> = { starter: "#98FB98", daily: "#87CEEB", weekly: "#FFD700", monthly: "#D4A5FF", season: "#FF69B4", legendary: "#FF8A80" };
-        const top = quests
-          .filter((q) => !q.completed && q.progress > 0)
-          .sort((a, b) => (b.progress / b.target) - (a.progress / a.target))
-          .slice(0, 3)
-          .map((q) => ({ id: q.id, title: q.title, icon: q.icon, progress: q.progress, target: q.target, color: TIER_COLORS[q.quest_tier] || "#FFD700" }));
-        setTopQuests(top);
-      }
-      if (typeof d?.streak === "number") setLoginStreak(d.streak);
-    } catch { console.debug("[muse] quest refresh failed"); }
-  }, [apiFetch, setClaimableQuests, setLoginStreak, setNearQuests, setTopQuests]);
-
-  // Quest tracking — call after successful actions. Batches multiple keys into
-  // one request; silent unless a quest is newly completed or the user levels up
-  // (one subtle toast each, never stacked).
-  const trackQuest = useCallback(async (...actionKeys: string[]) => {
-    if (!actionKeys.length) return;
-    try {
-      const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: actionKeys }) });
-      const data = await res.json();
-      if (!data?.success || !Array.isArray(data.results)) return;
-      const completed = data.results.find((r: { newlyCompleted?: boolean; leveledUp?: boolean; action_key?: string; quest?: { icon?: string; title?: string } }) => r.newlyCompleted);
-      if (completed) showToast(`${completed.quest?.icon || "⭐"} Quest complete: ${completed.quest?.title || completed.action_key}`);
-      else {
-        const leveled = data.results.find((r: { leveledUp?: boolean }) => r.leveledUp);
-        if (leveled) showToast("🎉 Level up! Keep completing quests for rewards");
-      }
-      if (completed) setClaimableQuests(n => n + 1);
-    } catch { console.debug("[muse] safety preference refresh failed"); }
-  }, [apiFetch, setClaimableQuests, showToast]);
 
   // Surface storage quota failures to the user instead of failing silently.
   // Toast channel for code that runs before showToast exists (session bootstrap).
@@ -887,110 +865,65 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // Quest tracking (login quests, daily login, weekly pips) — see useQuestTracking.
   useQuestTracking({ bootstrapped, authUser, trackQuest, apiFetch, setClaimableQuests, setLoginStreak, setShowDailyLogin, setWeeklyLogins, safeGetItem, safeSetItem });
 
-  // Per-page tutorials: each major screen gets its own small lightbox the
-  // first time this browser ever opens it (tracked one localStorage flag
-  // per screen, muse_tour_seen_<screen>, same safeGetItem/safeSetItem
-  // pattern as the old single muse_feature_tour_seen flag it replaces).
-  // Only one page tour is ever open at once, tracked here rather than as a
-  // showX boolean per screen.
-  const pageTourShownRef = useRef<Set<string>>(new Set());
-  const maybeShowPageTour = useCallback((id: TourScreenId) => {
-    if (activePageTour) return;
-    if (pageTourShownRef.current.has(id)) return;
-    // Same defensive pattern the old trigger used with showDailyLogin —
-    // never stack a page tour on top of another full-screen modal.
-    if (showDailyLogin || showAgeVerification || showAgeGate || showQuests || showStories || showHamburger) return;
-    // Check localStorage FIRST — if this screen's tour has already been dismissed
-    // in any prior session, don't show it again. (Previously the localStorage
-    // read happened after adding to the ref, which was fine, but the early ref
-    // add also meant a dismissed tour would be re-added to the ref set and
-    // then immediately discarded — harmless but confusing; cleaner to gate
-    // the localStorage check before any ref mutation.)
-    let seen = "";
-    try { seen = safeGetItem(tourSeenKey(id)) || ""; } catch { console.debug("[muse] tour state could not be read"); }
-    if (seen) return;
-    pageTourShownRef.current.add(id);
-    setActivePageTour(id);
-  }, [activePageTour, showDailyLogin, showAgeVerification, showAgeGate, showQuests, showStories, showHamburger]);
-
   usePageTour({ screen, bootstrapped, authUser, maybeShowPageTour });
 
   // Weekly-login pips recompute (moved into useQuestTracking above).
 
-  const doLogout = useCallback(async (message: string = "Logged out") => {
-    try { await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "logout" }) }); } catch { console.debug("[muse] remote logout request failed"); }
-    // Kill the CLIENT-side supabase session too — without this, the persisted
-    // supabase-js session survives and silently re-logs the user on next load
-    // (shared-device risk). The backend call alone was a no-op for this.
-    try { await supabase.auth.signOut(); } catch { console.debug("[muse] local logout cleanup failed"); }
-    clearRefreshToken();
-    const keys = ["muse_user","muse_state","muse_v1","muse_geo","muse_boost","muse_last_reset","muse_local","muse_premium","muse_referral_code","muse_open_count","muse_hide_premium"];
-    keys.forEach(k => { try { safeRemoveItem(k); } catch { console.debug("[muse] local logout key could not be cleared"); } });
-    setAuthUser(null); setCurrentUser(prev => ({ ...prev, name:"", email:"", avatar:"", type:"", tier:"free", foundingTier:"", proExpiresAt:"" })); setUserTier("free"); setScreen("auth"); screenHistoryRef.current = []; showToast(message);
-  }, [showToast]);
-
-  const doLogoutFull = useCallback(async () => {
-    await doLogout(); setHamburgerScreen(""); setShowHamburger(false);
-  }, [doLogout, setShowHamburger]);
+  // Auth action handlers (login/signup submit, OAuth, logout) — see
+  // useAuthActions. Called here so `doLogout` is already declared for
+  // useSessionRefresh below (same ordering constraint Phase E noted).
+  const { doLogout, doLogoutFull, handleOAuth, handleAuthClick } = useAuthActions({
+    authMode,
+    authEmail,
+    authPass,
+    authName,
+    authLoading,
+    authRemember,
+    setAuthMode,
+    setAuthPass,
+    setAuthLoading,
+    setFormErrors,
+    setAuthUser,
+    setCurrentUser,
+    setUserTier,
+    setObStep,
+    setScreen,
+    screenHistoryRef,
+    setHamburgerScreen,
+    setShowHamburger,
+    supabase,
+    authFetch,
+    safeSetItem,
+    safeRemoveItem,
+    setRefreshToken,
+    clearRefreshToken,
+    flash,
+    showToast,
+  });
 
   useSessionRefresh({ applySession, setRefreshToken, doLogout, authUser });
 
-  const uploadImage = useCallback(async (file: File, folder: string): Promise<string | null> => {
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("folder", folder);
-      // File uploads legitimately take longer than the 15s default on a
-      // slow connection — give this call site more room before the
-      // shared authFetch timeout would abort it.
-      const r = await authFetch("/api/muse/upload", { method: "POST", body: fd, timeoutMs: 60000 });
-      const j = await r.json();
-      if (j.success && j.url) {
-        if (folder === "portfolio") trackQuest("upload_photo");
-        return j.url;
-      }
-      showToast("Upload failed: " + (j.error || "Unknown"));
-      return null;
-    } catch { trackError("upload_image_failed", { folder }); showToast("Upload failed"); return null; }
-  }, [showToast, trackQuest]);
-
-  // Recorded clips (voice / video notes). Same /api/muse/upload endpoint, but
-  // the server must be told audio vs video — both are WebM containers with an
-  // identical header, so it can't tell from the bytes.
-  const uploadMedia = useCallback(async (file: File, folder: string, mediaKind: "voice" | "video"): Promise<string | null> => {
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("folder", folder);
-      fd.append("mediaKind", mediaKind);
-      const r = await authFetch("/api/muse/upload", { method: "POST", body: fd, timeoutMs: 120000 });
-      const j = await r.json();
-      if (j.success && j.url) return j.url;
-      showToast("Upload failed: " + (j.error || "Unknown"));
-      return null;
-    } catch { trackError("upload_media_failed", { folder, mediaKind }); showToast("Upload failed"); return null; }
-  }, [showToast]);
-
-  const sendChatMedia = useCallback(async (url: string, kind: "voice" | "video", durationMs: number, mediaType: string, transcript?: string) => {
-    if (!url || !chatTarget) return;
-    const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    const myId = authUser?.profile?.id || authUser?.id || "local";
-    const clientMsgId = `${myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const userMsg = { from: "me" as const, text: "", img: "", kind, mediaUrl: url, mediaType, durationMs, transcript, time: now, clientMsgId };
-    const targetId = String(chatTarget.id);
-    setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, userMsg] } : prev);
-    setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, userMsg] } : m));
-    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-    let sent = true;
-    try {
-      sent = (await persistMessage({ myId, theirId: targetId, text: "", img: "", kind, mediaUrl: url, mediaType, durationMs, transcript, clientMsgId })).ok;
-    } catch { sent = false; }
-    if (!sent && myId !== "local") {
-      setChatTarget(prev => prev ? { ...prev, messages: prev.messages.filter(m => m !== userMsg) } : prev);
-      setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: m.messages.filter(mm => mm !== userMsg) } : m));
-      showToast(kind === "voice" ? "Voice note couldn't be sent" : "Video note couldn't be sent");
-    }
-  }, [chatTarget, authUser, setChatTarget, setMatches, showToast]);
+  // Profile action handlers (edit-profile save + avatar/media uploads) — see
+  // useProfileActions. `trackQuest` comes from useMuseActions above.
+  const { uploadImage, uploadMedia, saveProfileEdits } = useProfileActions({
+    editName,
+    editBio,
+    editLoc,
+    editAvatar,
+    editType,
+    editCustomTypePending,
+    editLooking,
+    editNsfw,
+    editMediaKit,
+    obData,
+    currentUser,
+    setObData,
+    setCurrentUser,
+    setShowEditProfile,
+    authFetch,
+    trackQuest,
+    showToast,
+  });
 
   // Single source of truth lives in components/types.ts — a second local copy
   // existed here and the two were drifting.
@@ -1088,143 +1021,10 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   useDailyLikesReset({ safeGetItem, safeSetItem, setDailyLikes, setSuperLikes });
 
-  const flash = useCallback((color: string) => { setScreenFlash(color); setTimeout(() => setScreenFlash(null), 300); }, [setScreenFlash]);
-  // Back-navigation history: showScreen pushes the screen we're leaving so a
-  // back button can return to the ACTUAL previous page (e.g. Analytics → back
-  // → Profile, not Discover). goBack pops the stack; falls back to discover.
-  const screenHistoryRef = useRef<(typeof screen)[]>([]);
-  const showScreen = useCallback((s: typeof screen) => {
-    setScreen(prev => {
-      if (prev !== s) {
-        screenHistoryRef.current.push(prev);
-        if (screenHistoryRef.current.length > 50) screenHistoryRef.current.shift();
-      }
-      return s;
-    });
-    analytics.screenView(s);
-    try { window.scrollTo({ top: 0, behavior: "instant" }); } catch { console.debug("[muse] screen scroll reset failed"); }
-  }, []);
-  const goBack = useCallback(() => {
-    const prev = screenHistoryRef.current.pop();
-    const dest = prev && prev !== "auth" ? prev : "discover";
-    setScreen(dest);
-    analytics.screenView(dest);
-    try { window.scrollTo({ top: 0, behavior: "instant" }); } catch { console.debug("[muse] screen scroll reset failed"); }
-  }, []);
-
   const matchActions = useMemo(() => ({
     setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping,
     setReportTarget, setShowReport, setUnmatchTarget, setBlockTarget, handleImgError, getIcebreaker, setViewProfile
   }), [setExpandedMatchId, setChatTarget, showScreen, setMatchSwiping, setReportTarget, setShowReport, setUnmatchTarget, setBlockTarget, handleImgError, getIcebreaker, setViewProfile]);
-
-  const openHamburger = useCallback(() => { setHamburgerScreen(""); setShowHamburger(true); }, [setShowHamburger]);
-
-  const handleOAuth = useCallback(async (provider: "google" | "facebook" | "x") => {
-    setAuthLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/muse`,
-        },
-      });
-      if (error) { showToast(error.message); setAuthLoading(false); }
-    } catch { showToast("OAuth failed"); setAuthLoading(false); }
-  }, [setAuthLoading, showToast]);
-
-  const handleAuthClick = useCallback(async () => {
-    if (authLoading) return;
-    const e: Record<string,string> = {};
-    if (!authEmail.trim()) e.email = "Email required";
-    if (!authPass.trim()) e.pass = "Password required";
-    // Sign-up password complexity is enforced server-side (validatePassword in
-    // /api/muse/auth) and guided by the live strength meter here. It is
-    // deliberately NOT hard-blocked client-side: an existing account whose
-    // password predates these rules (or was created via OAuth) must still be
-    // able to submit, so it can be recognised and sent to Log In instead of
-    // dead-ending on "Needs a symbol".
-    if (Object.keys(e).length) { setFormErrors(e); return; }
-    setAuthLoading(true);
-    try {
-      // Was a bare fetch() with no timeout — a hung request here (the
-      // server accepts the connection but never responds) left authLoading
-      // stuck true forever: the Log In button stays on "Loading..."
-      // indefinitely with no way out except a manual reload. Matches the
-      // exact shape of the earliest "froze after clicking Log In" reports
-      // from this engagement. fetchWithTimeout aborts and rejects into the
-      // existing catch block below instead.
-      // Try the credentials as a LOGIN first — on BOTH tabs. On the Sign Up tab
-      // this is what stops the "spaz": entering a pre-existing account's
-      // credentials signs the user straight in instead of dead-ending on
-      // sign-up rules. A genuinely new email fails this login and falls through
-      // to register below. This is a UX pre-check only; a login succeeds solely
-      // with valid credentials, so it reveals nothing about which emails exist.
-      let effectiveAction: "login" | "register" = "login";
-      let r = await fetchWithTimeout("/api/muse/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "login", email: authEmail.trim(), password: authPass }),
-      });
-      if (!r.ok && authMode === "signup") {
-        r = await fetchWithTimeout("/api/muse/auth", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "register",
-            email: authEmail.trim(),
-            password: authPass,
-            name: authName || authEmail.split("@")[0],
-          }),
-        });
-        effectiveAction = "register";
-      }
-      const j = await r.json();
-      // Sign-up attempted with an email that already has an account: move the
-      // user to the tab that can actually help them and say so plainly.
-      if (r.status === 409 && j?.code === "ACCOUNT_EXISTS") {
-        setAuthMode("login");
-        const msg = j.error || "You already have an account — log in instead.";
-        setFormErrors({ email: msg });
-        showToast({ msg, type: "error" });
-        setAuthLoading(false);
-        return;
-      }
-      if (!r.ok) { setFormErrors({ email: j.error || "Auth failed" }); setAuthLoading(false); return; }
-      if (j.registrationPending) {
-        setAuthMode("login");
-        setAuthPass("");
-        showToast(j.message || "Check your email to continue, then sign in.");
-        setAuthLoading(false);
-        return;
-      }
-      // The login endpoint now returns the session token directly — use it.
-      const accessToken = j.session?.access_token || "";
-      const refreshToken = j.session?.refresh_token || "";
-      const userObj = { id: j.user.id, email: j.user.email, profile: j.profile || null };
-      setAuthUser(userObj);
-      if (refreshToken) setRefreshToken(refreshToken);
-      safeSetItem("muse_user", JSON.stringify({ access_token: accessToken, refresh_token: refreshToken, user: userObj }));
-      // "Remember me": only pre-fill the email next time when opted in. The
-      // session itself is persisted separately — see saveState(), which writes
-      // `authUser: authRemember ? authUser : null`.
-      try {
-        if (authRemember) localStorage.setItem("muse_remember_email", authEmail.trim());
-        else localStorage.removeItem("muse_remember_email");
-      } catch { /* storage unavailable */ }
-      // Attach session to browser supabase client so realtime works under RLS.
-      if (accessToken) {
-        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).catch(() => {});
-      }
-      if (j.profile) {
-        setCurrentUser(prev => ({ ...prev, name: j.profile.name || prev.name, avatar: j.profile.avatar || prev.avatar, type: j.profile.type || prev.type }));
-      }
-      setScreen(effectiveAction === "register" ? "onboard" : "discover");
-      if (effectiveAction === "register") setObStep(0);
-      analytics[effectiveAction === "register" ? "signup" : "login"]("email");
-      flash("#FFD700");
-    } catch { showToast({ msg: "Login failed — check your credentials", type: "error" }); }
-    setAuthLoading(false);
-  }, [authMode, authEmail, authPass, authName, authLoading, authRemember, flash, setAuthLoading, setAuthMode, setAuthPass, setFormErrors, setObStep, showToast]);
 
   const swipeLocked = useRef(false);
   const [intentProfile, setIntentProfile] = useState<Profile|null>(null);
@@ -1233,13 +1033,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [showNoteTooltip, setShowNoteTooltip] = useState(() => !safeGetItem("muse_note_seen"));
 
   const isUnlimited = true;
-
-  // Contextual upsell modal — shown in place of a plain toast the moment a
-  // free-tier user hits a Pro-gated limit (daily likes, super likes, "Likes
-  // You" profiles, etc). `feature`/`reason` are set per-gate right before
-  // opening so the same modal can explain whichever benefit was just blocked.
-  const [upsell, setUpsell] = useState<{ feature: string; reason: string; icon?: string } | null>(null);
-  const closeUpsell = useCallback(() => setUpsell(null), []);
 
   const { doSwipe, doRewind, doLikeWithNote, onPointerDown, onPointerMove, onPointerUp, onPointerCancel } = useSwipeActions({
     swipeLocked,
@@ -1304,166 +1097,25 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // Story auto-advance: 5s per story, then next (or close at the end)
   useStoryAutoAdvance({ showStory, setShowStory, stories });
 
-  const openChat = useCallback((match: Match) => { setChatTarget(match); setScreen("chat"); }, [setChatTarget]);
-
-  const toggleSocial = useCallback((key: string) => {
-    const currentlyConnected = obConnectedSocials[key];
-    if (currentlyConnected) {
-      // Disconnect — the endpoint reads provider from the query string (not
-      // a JSON body) and only exports a GET handler, so this has to match
-      // that shape rather than POSTing a body.
-      apiFetch(`/api/muse/social?provider=${key}&action=disconnect`).then(() => {
-        setObConnectedSocials(prev => ({ ...prev, [key]: false }));
-        showToast(`${key.charAt(0).toUpperCase() + key.slice(1)} disconnected`);
-      }).catch(() => showToast("Failed to disconnect"));
-    } else {
-      // Connect - the endpoint requires an auth bearer header to identify
-      // the caller, which a raw window.location.href navigation can't
-      // send. Fetch it (authenticated) for the provider's real OAuth URL,
-      // then navigate the browser there ourselves.
-      apiFetch(`/api/muse/social?provider=${key}&action=auth`)
-        .then(r => r.json())
-        .then(d => { if (d.authUrl) window.location.href = d.authUrl; else showToast(d.error || `Couldn't connect ${key}`); })
-        .catch(() => showToast(`Couldn't connect ${key}`));
-    }
-  }, [apiFetch, obConnectedSocials, setObConnectedSocials, showToast]);
-  const sendMsg = useCallback(async (overrideText?: string) => {
-    const inputText = overrideText !== undefined ? overrideText : chatInput;
-    if (!inputText.trim() || !chatTarget) return;
-    const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    const clean = sanitizeInput(inputText.trim());
-    if (!clean) return;
-
-    // ═══ DISCLOSURE TRIGGER ═══
-    // Intercept messages containing payment + NSFW keywords → show disclosure form
-    const lower = clean.toLowerCase();
-    const hasPayment = /\$[\d]+|\bpay\b|\bcompensation\b|\brate\b|\bbudget\b|\bfee\b|\bcharged?\b/i.test(lower);
-    const hasNsfw = /\bnude\b|\bnudity\b|\bnsfw\b|\bnsf[ww]\b|\bexplicit\b|\bboudoir\b|\bpenetrat\b|\bsexual\b|\berotic\b|\btopless\b|\bundressed\b|\bintimate\b|\bsensual\b|\badult\b/i.test(lower);
-    if (hasPayment && hasNsfw) {
-      setDisclosureTarget({ id: String(chatTarget.id), name: chatTarget.name || "Unknown" });
-      setShowDisclosureModal(true);
-      return; // Don't send the raw message — disclosure replaces it
-    }
-
-    const myId = authUser?.profile?.id || authUser?.id || "local";
-    // Generated once and threaded through to both the optimistic bubble and
-    // the server insert so history-merge can dedup by id instead of content —
-    // two distinct messages with identical text sent close together used to
-    // get collapsed into one.
-    const clientMsgId = `${myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const userMsg = { from: "me", text: clean, time: now, clientMsgId };
-    const targetId = String(chatTarget.id);
-    setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, userMsg] } : prev);
-    setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, userMsg] } : m));
-    setChatInput("");
-    setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
-    let sent = true;
-    let pendingRequest = false;
-    try { const r = await persistMessage({ myId, theirId: targetId, text: clean, clientMsgId }); sent = r.ok; pendingRequest = !!r.pending; } catch { sent = false; }
-    // persistMessage returns false (never throws) on a real failure — safety
-    // block, rate limit, or a block between the two of you. The bubble was
-    // already shown optimistically above; without this the sender would see
-    // "sent" even when the message never reached the other person at all.
-    if (!sent && myId !== "local") {
-      setChatTarget(prev => prev ? { ...prev, messages: prev.messages.filter(m => m !== userMsg) } : prev);
-      setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: m.messages.filter(mm => mm !== userMsg) } : m));
-      showToast({ msg: "Message couldn't be sent", type: "error" });
-      return;
-    }
-    analytics.messageSend(String(chatTarget?.id || ""), false);
-    trackQuest("send_message", "first_message");
-    if (pendingRequest) {
-      showToast({ msg: "Sent as a message request — they'll see it in Requests." });
-      const mark = (list: any[]) => list.map(m => m === userMsg ? { ...m, pending: true } : m);
-      setChatTarget(prev => prev ? { ...prev, messages: mark(prev.messages) } : prev);
-      setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: mark(m.messages) } : m));
-    }
-    // Show typing + simulated reply only in demo mode (no real remote partner).
-    if (!DEMO_MODE) return;
-    setTypingTarget(Number(chatTarget.id));
-    setTimeout(() => {
-      setTypingTarget(null);
-      const replies = ["Great vision, let's work on this","I'm available — tell me more about the project","This is exactly what I'm looking for","Let's make something great together","This aligns with what I do best","I'd be glad to bring this to life","Can we schedule a call to discuss?","I've been looking for something like this","Ready when you are — let's create","This is the right fit for my portfolio"];
-      const reply = { from: "them" as const, text: replies[~~(Math.random() * replies.length)], time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
-      setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, reply] } : prev);
-      setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, reply] } : m));
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
-    }, 1200 + Math.random() * 2000);
-  }, [chatInput, chatTarget, authUser, trackQuest, setChatInput, setChatTarget, setMatches, setShowDisclosureModal, setTypingTarget, showToast]);
-
-  // Send an image message (chat attach button → uploaded URL → image bubble).
-  const sendChatImg = useCallback(async (imgUrl: string) => {
-    if (!imgUrl || !chatTarget) return;
-    const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    const myId = authUser?.profile?.id || authUser?.id || "local";
-    const clientMsgId = `${myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const userMsg = { from: "me" as const, text: "", img: imgUrl, time: now, clientMsgId };
-    const targetId = String(chatTarget.id);
-    setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, userMsg] } : prev);
-    setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, userMsg] } : m));
-    setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
-    let sent = true;
-    try { sent = (await persistMessage({ myId, theirId: targetId, text: "", img: imgUrl, clientMsgId })).ok; } catch { sent = false; }
-    if (!sent && myId !== "local") {
-      setChatTarget(prev => prev ? { ...prev, messages: prev.messages.filter(m => m !== userMsg) } : prev);
-      setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: m.messages.filter(mm => mm !== userMsg) } : m));
-      showToast("Image couldn't be sent");
-      return;
-    }
-    analytics.messageSend(String(chatTarget?.id || ""), true);
-    if (!DEMO_MODE) return;
-    setTypingTarget(Number(chatTarget.id));
-    setTimeout(() => {
-      setTypingTarget(null);
-      const replies = ["Love this shot! 🔥","This is gorgeous","Wow, where was this taken?","You've got a great eye","This is exactly my style","Incredible work","Okay, this is art","I need to know the story behind this"];
-      const reply = { from: "them" as const, text: replies[~~(Math.random() * replies.length)], time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
-      setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, reply] } : prev);
-      setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, reply] } : m));
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
-    }, 1200 + Math.random() * 2000);
-  }, [chatTarget, authUser, setChatTarget, setMatches, setTypingTarget, showToast]);
+  // Chat action handlers (open thread, send text/image/voice/video) — see
+  // useChatActions. `trackQuest` comes from useMuseActions above.
+  const { openChat, sendMsg, sendChatImg, sendChatMedia } = useChatActions({
+    chatInput,
+    chatTarget,
+    authUser,
+    setChatInput,
+    setChatTarget,
+    setMatches,
+    setScreen,
+    setShowDisclosureModal,
+    setDisclosureTarget,
+    setTypingTarget,
+    messagesEndRef,
+    trackQuest,
+    showToast,
+  });
 
   useChatEffects({ authUser, chatTarget, setChatTarget, setMatches, setRealtimeStatus, setThemTyping, typingTimerRef, sendTypingRef, messagesEndRef });
-
-  const saveProfileEdits = useCallback(async () => {
-    setCurrentUser(prev => ({ ...prev, name: editName || prev.name, avatar: editAvatar || prev.avatar, type: editType || prev.type }));
-    setObData(prev => ({ ...prev, bio: editBio, loc: editLoc, type: editType || prev.type, looking: editLooking.length ? editLooking : prev.looking, mediaKitUrl: editMediaKit }));
-    let geo: { lat: number; long: number; city?: string } | null = null;
-    try { geo = await getGeolocation(); } catch { console.debug("[muse] profile location lookup failed"); }
-    setShowEditProfile(false);
-    // Auto-detect NSFW from bio keywords (matches the chat disclosure trigger regex)
-    const bioLower = (editBio || "").toLowerCase();
-    const bioHasNsfw = /\bnude\b|\bnudity\b|\bnsfw\b|\bnsf[ww]\b|\bexplicit\b|\bboudoir\b|\bpenetrat\b|\bsexual\b|\berotic\b|\btopless\b|\bundressed\b|\bintimate\b|\bsensual\b|\badult\b/i.test(bioLower);
-    const nsfwValue = editNsfw || bioHasNsfw;
-    try {
-      const r = await authFetch("/api/muse/auth", {
-        method: "POST",
-        body: JSON.stringify({
-          action: "update-profile",
-          name: editName,
-          bio: editBio,
-          loc: editLoc,
-          avatar: editAvatar,
-          type: editType,
-          looking: editLooking,
-          nsfw: nsfwValue,
-          media_kit_url: editMediaKit.trim(),
-          // Torreé audit item 6: carry the "Other" custom-type review flag
-          // through to the saved profile.
-          ...(editCustomTypePending ? { custom_type_pending: true } : {}),
-          ...(geo ? { lat: geo.lat, long: geo.long, city: geo.city } : {}),
-        }),
-      });
-      if (!r.ok) throw new Error("save failed");
-      if (nsfwValue && !currentUser.nsfw) showToast("Profile marked as NSFW — your content will be age-gated");
-      else showToast("Saved!");
-      trackQuest("update_profile", "complete_profile");
-      if ((editBio || "").trim().length >= 50) trackQuest("write_bio");
-      if ((obData.styles || []).length > 0) trackQuest("set_styles");
-    } catch {
-      showToast("Failed to save — try again");
-    }
-  }, [editName, editBio, editLoc, editAvatar, editType, editCustomTypePending, editLooking, editNsfw, editMediaKit, obData.styles, setObData, setShowEditProfile, showToast, currentUser.nsfw, trackQuest]);
 
   return !hydrated ? <PageSplash /> : (
     <div style={{"display":"contents"}}>
