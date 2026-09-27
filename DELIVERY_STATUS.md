@@ -957,3 +957,12 @@ Given Muse's shape — ~30 hooks already extracted, ~10 screens in `screens/`, ~
 ## Open task: Feed media alt text — 2026-09-25 (wyzmind)
 - Both Feed post images used the generic `alt="Post image"` (posts list + detail). Now `${author}'s post image: <first 60 chars of the caption>`, falling back to just `${author}'s post image` when there is no caption. Screen readers finally get something meaningful; avatars were already correctly labelled.
 - GATES: tsc 0 · eslint 0 · vitest **73 files / 559 tests PASS**.
+
+## Open task: admin moderation UIs wired (3 of 6) — 2026-09-25 (wyzmind)
+Three backend admin actions had zero frontend callers, so the features were invisible. Now wired, purely additive:
+- **Refunds tab** (`admin/RefundsTab.tsx`, mounted in `ModerationPanel.tsx`) — lists `admin-refunds` ({refunds:[{id,user_id{name,avatar},booking_id,reason,amount_cents,status,created_at}]}) and Approve/Deny via `admin-resolve-refund` ({requestId, resolve:"refund"|"decline", note?}).
+- **Bans & Mutes** (`components/CommunityBansMutes.tsx`, in CommunityScreen's group detail — the only place with explicit per-community context) — lists `get-community-bans`/`get-community-mutes` and calls `unban-community-member`/`unmute-community-member` ({communityId,targetUserId}).
+- **Editable group Rules** (`components/CommunityRulesEditor.tsx`) — Edit/Add/Remove/Save/Cancel round-tripping `update-community-rules` ({communityId, rules:[{title,body}]} — the real stored shape).
+- Permission-accurate: `admin-resolve-refund` is site-admin; `communityUnban`/`communityUnmute`/`communityUpdateRules` require community role **admin**, so Edit/Unban/Unmute are gated on `myRole === "admin"` (moderators see the lists read-only) — no buttons that would 403. Empty/error/in-flight states handled; matches the panel's existing a11y patterns; page.tsx untouched (ratchet unchanged).
+- GATES (independently re-run): tsc 0 · eslint --quiet 0 errors · vitest **73 files / 559 tests PASS** · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
+- STILL OPEN from this group: `boost-analytics` has no UI panel; `saved-search-alerts` and `notify-claimable-quests` are server-side triggers with no scheduler/caller.

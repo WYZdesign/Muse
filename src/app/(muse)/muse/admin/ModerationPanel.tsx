@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { authFetch } from "@/app/(muse)/muse/lib/api";
+import RefundsTab from "./RefundsTab";
 
 type Report = {
   id: string; reporter_id: { id: string; name: string; avatar: string } | null;
@@ -18,7 +19,7 @@ type Strike = {
 };
 type AuditLog = { id: string; query_text: string; query_result_summary: string; created_at: string };
 
-type TabKey = "reports" | "strikes" | "scans" | "custom" | "brain" | "audit";
+type TabKey = "reports" | "refunds" | "strikes" | "scans" | "custom" | "brain" | "audit";
 
 type ScanDetail = { url?: string };
 type ScanRow = {
@@ -214,7 +215,7 @@ export default function AdminModerationPanel() {
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>
-          {([["reports", `Reports (${reports.length})`], ["strikes", `Warnings (${strikes.length})`], ["scans", `Review Queue${incidents.length ? ` ⚠${incidents.length}` : ""}`], ["custom", `Custom Values (${customValueProfiles.length})`], ["brain", "🧠 AI Assistant"], ["audit", "Activity Log"]] as const).map(([key, label]) => (
+          {([["reports", `Reports (${reports.length})`], ["refunds", "Refunds"], ["strikes", `Warnings (${strikes.length})`], ["scans", `Review Queue${incidents.length ? ` ⚠${incidents.length}` : ""}`], ["custom", `Custom Values (${customValueProfiles.length})`], ["brain", "🧠 AI Assistant"], ["audit", "Activity Log"]] as const).map(([key, label]) => (
             <button key={key} onClick={() => loadTab(key)} style={{ flex: 1, padding: "10px 0", borderRadius: 8, background: tab === key ? "rgba(255,215,0,0.15)" : "transparent", border: "none", color: tab === key ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
               {label}
             </button>
@@ -249,6 +250,14 @@ export default function AdminModerationPanel() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* REFUNDS */}
+        {tab === "refunds" && (
+          <div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Open refund requests, newest first.</div>
+            <RefundsTab />
           </div>
         )}
 

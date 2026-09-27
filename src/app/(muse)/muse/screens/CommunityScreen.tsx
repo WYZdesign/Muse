@@ -3,7 +3,7 @@
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
 import { STRINGS } from "@/lib/strings";
-import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX, FiShield, FiUserPlus, FiMoreHorizontal, FiMic } from "react-icons/fi";
+import { FiArrowLeft, FiShare2, FiMapPin, FiCalendar, FiUsers, FiX, FiUserPlus, FiMoreHorizontal, FiMic } from "react-icons/fi";
 import Nav from "../components/Nav";
 import { EmptyState } from "../components/EmptyState";
 import { BADGE_COLORS } from "../components/badgeColors";
@@ -13,6 +13,8 @@ import { COMMUNITIES, EVENTS, PROFILES } from "../components/types";
 import { getCommunityShareUrl, getEventShareUrl } from "@/lib/urls";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import { CommunityBansMutes } from "../components/CommunityBansMutes";
+import { CommunityRulesEditor } from "../components/CommunityRulesEditor";
 
 // Real (DB-backed) communities have a UUID id; the demo/fallback COMMUNITIES
 // dataset uses small numeric ids. Only real groups have a real member roster
@@ -374,20 +376,15 @@ export const CommunityScreen = memo(function CommunityScreen({
                   )}
 
                   {/* Rules — real, group-authored data (muse_communities.rules).
-                      No sample text: an empty/missing list just isn't shown. */}
-                  {Array.isArray(detailItem.rules) && detailItem.rules.length > 0 && (
-                    <div style={{ marginBottom: 20 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><FiShield size={13} /> Group Rules</div>
-                      <ol style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 10 }}>
-                        {(detailItem.rules as CommunityRule[]).map((rule, i) => (
-                          <li key={i} style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>
-                            <span style={{ color: "#fff", fontWeight: 700 }}>{rule.title}</span>
-                            {rule.body && <div style={{ marginTop: 2 }}>{rule.body}</div>}
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
+                      Read-only for members; community admins can edit inline. */}
+                  <CommunityRulesEditor
+                    communityId={String(detailItem.id)}
+                    rules={Array.isArray(detailItem.rules) ? (detailItem.rules as CommunityRule[]) : []}
+                    canEdit={myRole === "admin"}
+                    apiFetch={apiFetch}
+                    showToast={showToast}
+                    onSaved={(nextRules) => setDetailItem((d: any) => d ? { ...d, rules: nextRules } : d)}
+                  />
 
                   {/* Members — real roster fetched for DB-backed groups, with
                       admin/mod role badges sourced from the actual role column. */}
@@ -448,6 +445,17 @@ export const CommunityScreen = memo(function CommunityScreen({
                         </div>
                       )}
                     </div>
+                  )}
+
+                  {/* Per-community moderation: real ban/mute rows with undo.
+                      Server returns [] for non-admin/mod members. */}
+                  {UUID_RE.test(String(detailItem.id)) && canManage && (
+                    <CommunityBansMutes
+                      communityId={String(detailItem.id)}
+                      canLift={myRole === "admin"}
+                      apiFetch={apiFetch}
+                      showToast={showToast}
+                    />
                   )}
 
                   <div style={{ display: "flex", gap: 8 }}>
