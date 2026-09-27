@@ -910,3 +910,12 @@ The `page-size-budget` guardrail did its job: the banner move added 5 lines (4,1
 - **page.tsx: 3,866 -> 3,685 lines (-181 cumulative from Phase A's 4,134 = -449 total).** Ratchet lowered again to 3,685.
 - GATES (independently re-run): tsc 0 · eslint 0 · vitest **73 files / 559 tests PASS** · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
 - NEXT: Phase C = remaining inline handlers -> `hooks/useMuseActions.ts`; Phase D = the render tree -> composed components.
+
+## page.tsx PHASE C: swipe/pointer handlers extracted — 2026-09-25 (wyzmind)
+- Extracted the cohesive Discover interaction group — `doSwipe`, `doRewind`, `doLikeWithNote`, `onPointerDown`, `onPointerMove`, `onPointerUp`, `onPointerCancel` — into `hooks/useSwipeActions.ts`, returned as an object so the render tree keeps the same names. 52 outer values threaded via one options object (7 refs, 8 state values, 26 setters, 11 functions/constants). Dependency arrays, guards, thresholds, locks and timers byte-identical; the three intervening effects stayed in page.tsx so ordering is unchanged.
+- **page.tsx: 3,685 -> 3,500 lines.** Cumulative from 4,134: **-634**. Ratchet lowered to 3,500.
+- GATES (independently re-run): tsc 0 · eslint 0 · vitest **73 files / 559 tests PASS** · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
+- NEXT: Phase D = the render tree -> composed components (biggest remaining block); Phase E = remaining effects -> hooks; Phase F = remaining handler groups (chat send, auth click, profile save, uploads).
+
+## page.tsx TARGET ASSESSMENT (owner asked "what's optimal")
+Given Muse's shape — ~30 hooks already extracted, ~10 screens in `screens/`, ~25 components in `components/`, 3 helper modules (`page-constants`, `page-models`, `page-helpers`) — page.tsx should be a pure CONTROLLER: call hooks, wire handlers, compose the shell. A healthy target is **~500-700 lines** (composition ~100, handler wiring ~150-250, render/shell ~250-350). Absolute floor with this screen count is ~400. Industry guidance treats a top-level container over ~500 lines as a smell; 3,500 is still ~6x the target, so Phases D-F are the bulk of the remaining work (D alone removes ~850).

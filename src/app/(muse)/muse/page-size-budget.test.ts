@@ -17,10 +17,11 @@ import path from "node:path";
  * Already extracted (examples): page-constants.ts, page-models.ts,
  * page-helpers.ts (getIcebreaker/getReferralTier/checkProfileBadges/sanitizeInput),
  * hooks/useSessionApply.ts (`applySession`), hooks/useBootstrapHydration.ts
- * (the mount bootstrap/hydration effect).
+ * (the mount bootstrap/hydration effect), hooks/useSwipeActions.ts (doSwipe,
+ * doRewind, doLikeWithNote and the four pointer-drag handlers).
  * Good next candidates: the ~1,100-line render tree.
  */
-const BUDGET_LINES = 3685;
+const BUDGET_LINES = 3500;
 
 const file = path.resolve(__dirname, "page.tsx");
 
