@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GeoResult } from "@/app/muse-realtime";
 import type { OnboardingData } from "./useAuthOnboardingState";
@@ -23,9 +23,7 @@ export type UseBootstrapHydrationArgs = {
   syncingSdkSessionRef: { current: boolean };
   loadState: () => Promise<void>;
   initAnalyticsSession: () => void;
-  setHydrated: Dispatch<SetStateAction<boolean>>;
   getGeolocation: () => Promise<GeoResult>;
-  setMyGeo: Dispatch<SetStateAction<{ lat: number; long: number; city: string; state: string; requiresIdVerification: boolean } | null>>;
   safeSetItem: (key: string, value: string) => boolean;
   safeGetItem: (key: string) => string | null;
   safeRemoveItem: (key: string) => void;
@@ -46,9 +44,7 @@ export function useBootstrapHydration({
   syncingSdkSessionRef,
   loadState,
   initAnalyticsSession,
-  setHydrated,
   getGeolocation,
-  setMyGeo,
   safeSetItem,
   safeGetItem,
   safeRemoveItem,
@@ -62,6 +58,9 @@ export function useBootstrapHydration({
   setDiscoverLoading,
   setRefreshToken,
 }: UseBootstrapHydrationArgs) {
+  const [hydrated, setHydrated] = useState(false);
+  const [myGeo, setMyGeo] = useState<{ lat: number; long: number; city: string; state: string; requiresIdVerification: boolean } | null>(null);
+
   useEffect(() => {
     if (loadStateRef.current) return;
     loadStateRef.current = true;
@@ -266,4 +265,6 @@ export function useBootstrapHydration({
   // bootstrap callback would re-register it whenever bootstrapped data changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  return { hydrated, myGeo };
 }

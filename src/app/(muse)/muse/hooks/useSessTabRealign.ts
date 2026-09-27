@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useRef, useState } from "react";
 import { viewerSide } from "@/lib/role";
 
 /**
@@ -12,10 +12,11 @@ import { viewerSide } from "@/lib/role";
  */
 export type UseSessTabRealignArgs = {
   currentUserType: string | undefined;
-  setSessTab: Dispatch<SetStateAction<"sessions" | "bookings" | "requests">>;
+  initialSessTab: () => "sessions" | "bookings" | "requests";
 };
 
-export function useSessTabRealign({ currentUserType, setSessTab }: UseSessTabRealignArgs) {
+export function useSessTabRealign({ currentUserType, initialSessTab }: UseSessTabRealignArgs) {
+  const [sessTab, setSessTab] = useState<"sessions" | "bookings" | "requests">(initialSessTab);
   const sessTypeRef = useRef(currentUserType);
   useEffect(() => {
     const t = currentUserType;
@@ -24,4 +25,6 @@ export function useSessTabRealign({ currentUserType, setSessTab }: UseSessTabRea
       setSessTab(viewerSide(t) === "industry" ? "bookings" : "sessions");
     }
   }, [currentUserType]);
+
+  return { sessTab, setSessTab };
 }

@@ -37,9 +37,19 @@ import path from "node:path";
  * sendChatImg, sendChatMedia) and hooks/useProfileActions (saveProfileEdits,
  * uploadImage, uploadMedia). Only apiFetch, showToast, bootstrapData,
  * saveState and loadState remain inline as useCallbacks.
- * Good next candidates: the screens still mounted inside `page.tsx`.
+ * Phase G moved state ownership out of page.tsx and into the hooks that
+ * already own the behaviour (useCardAlbumPhotos, useMessageRequests,
+ * useSavedSearches, useViewedProfile, useMountFlags, useBootstrapHydration,
+ * useChatEffects, useNotificationSync, useProfileActions, useStoryAutoAdvance,
+ * useMuseActions, useSessTabRealign): 25 useState declarations (card album
+ * state, message requests, saved searches, viewed-profile photo index/reviews,
+ * verification-banner dismissed/closing, hydrated, myGeo, realtimeStatus,
+ * server notification count, the nine profile-edit fields, showStory,
+ * activePageTour and sessTab) no longer live in page.tsx.
+ * Good next candidates: the screens still mounted inside `page.tsx` and the
+ * remaining Discover/note-composer state still shared with useSwipeActions.
  */
-const BUDGET_LINES = 1942;
+const BUDGET_LINES = 1915;
 
 const file = path.resolve(__dirname, "page.tsx");
 

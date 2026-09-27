@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { uid } from "../lib/uid";
 import type { Notification, ProfileViewer } from "../page-models";
 
@@ -27,7 +27,6 @@ export type ActivityFeedItem = {
 export type UseNotificationSyncArgs = {
   authFetch: (url: string, init?: RequestInit) => Promise<Response>;
   authUser: { id?: string; profile?: { id?: string } } | null;
-  setServerNotifCount: Dispatch<SetStateAction<number>>;
   setProfileViewers: Dispatch<SetStateAction<{ name: string; avatar: string; time: string }[]>>;
   setActivityFeed: Dispatch<SetStateAction<ActivityFeedItem[]>>;
 };
@@ -35,10 +34,11 @@ export type UseNotificationSyncArgs = {
 export function useNotificationSync({
   authFetch,
   authUser,
-  setServerNotifCount,
   setProfileViewers,
   setActivityFeed,
 }: UseNotificationSyncArgs) {
+  const [serverNotifCount, setServerNotifCount] = useState(0);
+
   // Poll the server's unread-notification count so the menu/bottom-nav bell
   // reflects real DB rows (matches, likes, bookings, reviews, brief apps, etc.)
   // and not just the local activityFeed. Only when the user is authed.
@@ -144,4 +144,6 @@ export function useNotificationSync({
       .catch(() => {});
     return () => { cancelled = true; };
   }, [authUser?.profile?.id]);
+
+  return { serverNotifCount };
 }

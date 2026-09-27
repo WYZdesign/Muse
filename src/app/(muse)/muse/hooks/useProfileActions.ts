@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, type Dispatch, type SetStateAction } from "react";
+import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
 import { getGeolocation } from "@/app/muse-realtime";
 import { trackError } from "@/lib/errorTracker";
 import type { OnboardingData } from "./useAuthOnboardingState";
@@ -15,15 +15,6 @@ import type { MuseToastInput } from "./useMuseActions";
  * one options object. All useCallback dependency arrays are unchanged.
  */
 export type UseProfileActionsArgs = {
-  editName: string;
-  editBio: string;
-  editLoc: string;
-  editAvatar: string;
-  editType: string;
-  editCustomTypePending: boolean;
-  editLooking: string[];
-  editNsfw: boolean;
-  editMediaKit: string;
   obData: OnboardingData;
   currentUser: { nsfw?: boolean };
   setObData: Dispatch<SetStateAction<OnboardingData>>;
@@ -35,15 +26,6 @@ export type UseProfileActionsArgs = {
 };
 
 export function useProfileActions({
-  editName,
-  editBio,
-  editLoc,
-  editAvatar,
-  editType,
-  editCustomTypePending,
-  editLooking,
-  editNsfw,
-  editMediaKit,
   obData,
   currentUser,
   setObData,
@@ -53,6 +35,16 @@ export function useProfileActions({
   trackQuest,
   showToast,
 }: UseProfileActionsArgs) {
+  const [editName, setEditName] = useState("");
+  const [editBio, setEditBio] = useState("");
+  const [editLoc, setEditLoc] = useState("");
+  const [editAvatar, setEditAvatar] = useState("");
+  const [editType, setEditType] = useState("");
+  const [editCustomTypePending, setEditCustomTypePending] = useState(false);
+  const [editLooking, setEditLooking] = useState<string[]>([]);
+  const [editNsfw, setEditNsfw] = useState(false);
+  const [editMediaKit, setEditMediaKit] = useState("");
+
   const uploadImage = useCallback(async (file: File, folder: string): Promise<string | null> => {
     try {
       const fd = new FormData();
@@ -129,5 +121,18 @@ export function useProfileActions({
     }
   }, [editName, editBio, editLoc, editAvatar, editType, editCustomTypePending, editLooking, editNsfw, editMediaKit, obData.styles, setObData, setShowEditProfile, showToast, currentUser.nsfw, trackQuest]);
 
-  return { uploadImage, uploadMedia, saveProfileEdits };
+  return {
+    uploadImage,
+    uploadMedia,
+    saveProfileEdits,
+    editName, setEditName,
+    editBio, setEditBio,
+    editLoc, setEditLoc,
+    editAvatar, setEditAvatar,
+    editType, setEditType,
+    editCustomTypePending, setEditCustomTypePending,
+    editLooking, setEditLooking,
+    editNsfw, setEditNsfw,
+    editMediaKit, setEditMediaKit,
+  };
 }

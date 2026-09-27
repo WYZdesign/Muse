@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState } from "react";
 import { trackError } from "@/lib/errorTracker";
 
 export type CardAlbum = {
@@ -22,23 +22,17 @@ export type UseCardAlbumPhotosArgs = {
   apiFetch: (url: string, opts?: RequestInit) => Promise<Response>;
   filteredProfiles: ReadonlyArray<{ id?: string | number }>;
   currentIdx: number;
-  cardAlbums: CardAlbum[];
-  setCardAlbums: Dispatch<SetStateAction<CardAlbum[]>>;
-  cardAlbumIdx: number;
-  setCardAlbumIdx: Dispatch<SetStateAction<number>>;
-  setCardAlbumPhotos: Dispatch<SetStateAction<string[]>>;
 };
 
 export function useCardAlbumPhotos({
   apiFetch,
   filteredProfiles,
   currentIdx,
-  cardAlbums,
-  setCardAlbums,
-  cardAlbumIdx,
-  setCardAlbumIdx,
-  setCardAlbumPhotos,
 }: UseCardAlbumPhotosArgs) {
+  const [cardAlbums, setCardAlbums] = useState<CardAlbum[]>([]);
+  const [cardAlbumIdx, setCardAlbumIdx] = useState(0);
+  const [cardAlbumPhotos, setCardAlbumPhotos] = useState<string[]>([]);
+
   useEffect(() => {
     const profile = filteredProfiles[currentIdx];
     if (!profile?.id) { setCardAlbums([]); setCardAlbumPhotos([]); return; }
@@ -69,4 +63,6 @@ export function useCardAlbumPhotos({
       .catch((err) => { trackError("fetch_album_photos", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [cardAlbumIdx, cardAlbums, apiFetch]);
+
+  return { cardAlbums, setCardAlbums, cardAlbumIdx, setCardAlbumIdx, cardAlbumPhotos, setCardAlbumPhotos };
 }

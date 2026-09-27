@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Story auto-advance, extracted verbatim from page.tsx: 5s per story, then next
  * (or close at the end). Same guard, same [showStory, stories.length] deps.
  */
 export type UseStoryAutoAdvanceArgs = {
-  showStory: number | null;
-  setShowStory: Dispatch<SetStateAction<number | null>>;
   stories: ReadonlyArray<unknown>;
 };
 
-export function useStoryAutoAdvance({ showStory, setShowStory, stories }: UseStoryAutoAdvanceArgs) {
+export function useStoryAutoAdvance({ stories }: UseStoryAutoAdvanceArgs) {
+  const [showStory, setShowStory] = useState<number | null>(null);
+
   // Story auto-advance: 5s per story, then next (or close at the end)
   useEffect(() => {
     if (showStory === null) return;
@@ -21,4 +21,6 @@ export function useStoryAutoAdvance({ showStory, setShowStory, stories }: UseSto
     }, 5000);
     return () => clearTimeout(timer);
   }, [showStory, stories.length]);
+
+  return { showStory, setShowStory };
 }

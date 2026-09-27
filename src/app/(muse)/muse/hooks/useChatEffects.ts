@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { subscribeToConversation, fetchConversationHistory } from "@/app/muse-realtime";
 import type { Match } from "../components/types";
 
@@ -16,7 +16,6 @@ export type UseChatEffectsArgs = {
   chatTarget: Match | null;
   setChatTarget: Dispatch<SetStateAction<Match | null>>;
   setMatches: Dispatch<SetStateAction<Match[]>>;
-  setRealtimeStatus: Dispatch<SetStateAction<"connecting" | "connected" | "disconnected">>;
   setThemTyping: Dispatch<SetStateAction<boolean>>;
   typingTimerRef: { current: ReturnType<typeof setTimeout> | null };
   sendTypingRef: { current: () => void };
@@ -28,12 +27,13 @@ export function useChatEffects({
   chatTarget,
   setChatTarget,
   setMatches,
-  setRealtimeStatus,
   setThemTyping,
   typingTimerRef,
   sendTypingRef,
   messagesEndRef,
 }: UseChatEffectsArgs) {
+  const [realtimeStatus, setRealtimeStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
+
   // Real-time incoming messages for the active conversation.
   useEffect(() => {
     if (!chatTarget || !authUser?.profile?.id) return;
@@ -93,4 +93,6 @@ export function useChatEffects({
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [authUser?.profile?.id, chatTarget, chatTarget?.id, authUser?.id, setChatTarget, setMatches]);
+
+  return { realtimeStatus };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Saved-search hydration, extracted verbatim from page.tsx: refetches the list
@@ -10,10 +10,11 @@ import { useEffect, type Dispatch, type SetStateAction } from "react";
 export type UseSavedSearchesArgs = {
   showDiscoveryPrefs: boolean;
   apiFetch: (url: string, opts?: RequestInit) => Promise<Response>;
-  setSavedSearches: Dispatch<SetStateAction<{ id: string; name: string; query?: string; filters?: Record<string, unknown> }[]>>;
 };
 
-export function useSavedSearches({ showDiscoveryPrefs, apiFetch, setSavedSearches }: UseSavedSearchesArgs) {
+export function useSavedSearches({ showDiscoveryPrefs, apiFetch }: UseSavedSearchesArgs) {
+  const [savedSearches, setSavedSearches] = useState<{ id: string; name: string; query?: string; filters?: Record<string, unknown> }[]>([]);
+
   // Saved searches: hydrate whenever the Discovery Preferences modal opens so
   // the list reflects the latest server state (save/delete both happen inside
   // that modal). Non-fatal on failure — the modal still works without it.
@@ -29,4 +30,6 @@ export function useSavedSearches({ showDiscoveryPrefs, apiFetch, setSavedSearche
     })();
     return () => { cancelled = true; };
   }, [showDiscoveryPrefs, apiFetch]);
+
+  return { savedSearches, setSavedSearches };
 }

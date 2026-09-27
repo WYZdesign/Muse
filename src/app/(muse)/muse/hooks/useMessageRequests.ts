@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState } from "react";
 import { DEMO_MODE } from "../page-constants";
 import { PROFILES } from "../components/types";
 
@@ -13,10 +13,11 @@ export type UseMessageRequestsArgs = {
   screen: string;
   authUser: unknown;
   apiFetch: (url: string, opts?: RequestInit) => Promise<Response>;
-  setMessageRequests: Dispatch<SetStateAction<unknown[]>>;
 };
 
-export function useMessageRequests({ screen, authUser, apiFetch, setMessageRequests }: UseMessageRequestsArgs) {
+export function useMessageRequests({ screen, authUser, apiFetch }: UseMessageRequestsArgs) {
+  const [messageRequests, setMessageRequests] = useState<unknown[]>([]);
+
   // ─── MESSAGE REQUESTS: Fetch pending requests when on matches screen ───
   useEffect(() => {
     if (screen !== "matches" || !authUser) return;
@@ -36,4 +37,6 @@ export function useMessageRequests({ screen, authUser, apiFetch, setMessageReque
       .then(data => { if (data?.requests) setMessageRequests(data.requests); })
       .catch(() => {});
   }, [apiFetch, screen, authUser]);
+
+  return { messageRequests, setMessageRequests };
 }

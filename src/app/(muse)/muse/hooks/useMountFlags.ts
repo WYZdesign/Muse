@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Mount-time local flags, extracted verbatim from page.tsx's two mount effects:
@@ -10,14 +10,14 @@ import { useEffect, type Dispatch, type SetStateAction } from "react";
 export type UseMountFlagsArgs = {
   safeGetItem: (key: string) => string | null;
   safeSetItem: (key: string, value: string) => boolean;
-  setVerificationBannerDismissed: Dispatch<SetStateAction<boolean>>;
 };
 
 export function useMountFlags({
   safeGetItem,
   safeSetItem,
-  setVerificationBannerDismissed,
 }: UseMountFlagsArgs) {
+  const [verificationBannerDismissed, setVerificationBannerDismissed] = useState(false);
+
   // D1: persist dismiss across reloads (same pattern as muse_tour_seen_*).
   useEffect(() => {
     try {
@@ -32,4 +32,6 @@ export function useMountFlags({
         safeSetItem("muse_open_count", String(count));
       } catch (e) { console.debug("[page.tsx] open count storage ignore", e); }
   }, []);
+
+  return { verificationBannerDismissed, setVerificationBannerDismissed };
 }

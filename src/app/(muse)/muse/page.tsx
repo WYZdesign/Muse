@@ -169,9 +169,6 @@ function MusePage() {
   const [authUser, setAuthUser] = useState<{id:string;email:string;profile?:{id:string;[key:string]:unknown}}|null>(null);
   const [currentUser, setCurrentUser] = useState({ id:"you", name:"You", type:"Photographer", audience:"creative" as "creative" | "industry", exp:"New here", avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", stats:{matches:0,likes:0,superLikes:0,passes:0,bookingsCompleted:0,matchesReceived:0,messagesSent:0}, createdAt:Date.now(), referrals:0, portfolios:[] as {img:string;title:string;type:string}[], foundingTier:"" as string, proExpiresAt:"" as string, tier:"free", nsfw:false as boolean, status:"" as string });
   const [, _setSelectedPortfolio] = useState<unknown>(null);
-  const [cardAlbums, setCardAlbums] = useState<{id:string;title:string;cover_url:string;access_level:string;photo_count:number}[]>([]);
-  const [cardAlbumIdx, setCardAlbumIdx] = useState(0);
-  const [cardAlbumPhotos, setCardAlbumPhotos] = useState<string[]>([]);
   const {
     currentIdx, setCurrentIdx,
     showMatchOverlay, setShowMatchOverlay,
@@ -274,21 +271,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   useFocusTrap(showFilterModal, () => setShowFilterModal(false));
   const unmatchTrap = useFocusTrap(!!unmatchTarget, () => setUnmatchTarget(null));
   const editProfileTrap = useFocusTrap(showEditProfile, () => setShowEditProfile(false));
-  // Which screen's first-visit tutorial (if any) is currently open — see
-  // the "Per-page tutorials" effect below.
-  const [activePageTour, setActivePageTour] = useState<TourScreenId | null>(null);
   const [pendingNsfw, setPendingNsfw] = useState(false);
   const [userTier, setUserTier] = useState<string>("free");
   const [liveProfessionals, setLiveProfessionals] = useState<Professional[] | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editBio, setEditBio] = useState("");
-  const [editLoc, setEditLoc] = useState("");
-  const [editAvatar, setEditAvatar] = useState("");
-  const [editType, setEditType] = useState("");
-  const [editCustomTypePending, setEditCustomTypePending] = useState(false);
-  const [editLooking, setEditLooking] = useState<string[]>([]);
-  const [editNsfw, setEditNsfw] = useState(false);
-  const [editMediaKit, setEditMediaKit] = useState("");
   const [shareTarget, setShareTarget] = useState<{id:number|string;text:string;img:string;author:string} | null>(null);
   const [reportTarget, setReportTarget] = useState<{id:number|string;type:string;name:string} | null>(null);
   // Settings > Privacy & Safety > Blocked Users sub-page open/closed. This was
@@ -301,11 +286,10 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [connTab, _setConnTab] = useState<"community"|"events"|"sessions"|"forum"|"feed"|"professional">("community");
   const [portfolioTab, setPortfolioTab] = useState<"all"|"portrait"|"landscape"|"sets">("all");
   const [commTab, setCommTab] = useState<"groups"|"events">("groups");
-  const [sessTab, setSessTab] = useState<"sessions"|"bookings"|"requests">(() => viewerSideOf(currentUser) === "industry" ? "bookings" : "sessions");
-  // The lazy init above runs before the server profile arrives (type starts
+  // The lazy init runs before the server profile arrives (type starts
   // as the "Photographer" placeholder), so re-align once when the real type
   // lands — duality Phase 0's role-aware default.
-  useSessTabRealign({ currentUserType: currentUser?.type, setSessTab });
+  const { sessTab, setSessTab } = useSessTabRealign({ currentUserType: currentUser?.type, initialSessTab: () => viewerSideOf(currentUser) === "industry" ? "bookings" : "sessions" });
   const [forumSort, setForumSort] = useState<"hot"|"new"|"top">("hot");
   const [_networkOpenTab, _setNetworkOpenTab] = useState<"pros"|"forum"|undefined>(undefined);
   const [forumCategory, _setForumCategory] = useState<string>("all");
@@ -329,16 +313,11 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // Personality Discovery
   const portfolioInputRef = useRef<HTMLInputElement>(null);
   const [matchesView, setMatchesView] = useState<"list"|"grid">("list");
-  const [messageRequests, setMessageRequests] = useState<unknown[]>([]);
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{name:string;avatar:string;time:string}[]>([]);
-  const [showStory, setShowStory] = useState<number|null>(null);
   const [theme, setTheme] = useState<"lasunset"|"deepspace"|"nebula"|"deepsea"|"cinder"|"boreal"|"sunrise"|"daylight"|"sky"|"rose"|"meadow"|"frost">("lasunset");
   const [activityFeed, setActivityFeed] = useState<{id:number;type:string;from:string;avatar:string;text:string;time:string;read:boolean}[]>([]);
-  const [serverNotifCount, setServerNotifCount] = useState(0);
   const [discoveryPrefs, setDiscoveryPrefs] = useState<{ageMin:number;ageMax:number;distance:number;gender:string}>({ageMin:18,ageMax:50,distance:50,gender:"all"});
-  const [savedSearches, setSavedSearches] = useState<{id:string;name:string;query?:string;filters?:Record<string, unknown>}[]>([]);
-  const [myGeo, setMyGeo] = useState<{lat:number;long:number;city:string;state:string;requiresIdVerification:boolean}|null>(null);
   const [supportOpen, setSupportOpen] = useState(false);
 
 // ═══ TRUST & SAFETY STATE ═══
@@ -356,13 +335,11 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // ageVerified state directly and is unaffected by this flag. The status
   // is never truly lost — Settings > Privacy & Safety carries a permanent
   // "Identity Verification" row with the same live status.
-  const [verificationBannerDismissed, setVerificationBannerDismissed] = useState(false);
   // M11: dismissing used to unmount the banner instantly (no exit animation).
   // "closing" keeps it mounted for one slide-down cycle before the real
   // dismiss flips verificationBannerDismissed and unmounts it for good.
-  const [verificationBannerClosing, setVerificationBannerClosing] = useState(false);
   // D1: persist dismiss across reloads (same pattern as muse_tour_seen_*).
-  useMountFlags({ safeGetItem, safeSetItem, setVerificationBannerDismissed });
+  const { verificationBannerDismissed, setVerificationBannerDismissed } = useMountFlags({ safeGetItem, safeSetItem });
   const [pendingDisclosureConfirm, setPendingDisclosureConfirm] = useState<string | null>(null);
   const [pendingDisclosureCreate, setPendingDisclosureCreate] = useState<Record<string, unknown> | null>(null);
   const {
@@ -377,7 +354,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   const [viewProfile, setViewProfileRaw] = useState<ViewProfile | null>(null);
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
-  const [viewProfilePhotoIdx, setViewProfilePhotoIdx] = useState(0);
   // Reset photo carousel when a new profile is opened
   // Attaches the verified session token (from localStorage) to /api/muse
   // POST calls so the server can authenticate writes. Falls back to a plain
@@ -393,13 +369,11 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // Reset photo carousel when a new profile is opened (moved into useViewedProfile below).
   const viewProfileTrap = useFocusTrap(!!viewProfile, () => setViewProfileRaw(null));
   const shareTargetTrap = useFocusTrap(!!shareTarget, () => setShareTarget(null));
-  const [viewProfileReviews, setViewProfileReviews] = useState<ProfileReview[]>([]);
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
   const [publicProfileUser, setPublicProfileUser] = useState<PublicProfileUser | null>(null);
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
    const [blockTarget, setBlockTarget] = useState<{id:string;name:string}|null>(null);
    const blockTrap = useFocusTrap(!!blockTarget, () => setBlockTarget(null));
-   const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const loadStateRef = useRef(false);
   const sessionAppliedRef = useRef(false);
@@ -420,8 +394,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const syncingSdkSessionRef = useRef(false);
   const _matchSwipeRef = useRef<{id:string;startX:number;el:HTMLElement|null}>({id:"",startX:0,el:null});
   const [_matchSwiping, setMatchSwiping] = useState<{id:string;offset:number} | null>(null);
-   const [realtimeStatus, setRealtimeStatus] = useState<"connecting"|"connected"|"disconnected">("connecting");
-   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sendTypingRef = useRef<() => void>(() => {});
   const dragRef = useRef<{startX:number;startY:number;active:boolean;relY:number;startTime:number;el:HTMLElement|null;axis:"x"|"y"|null}>({startX:0,startY:0,active:false,relY:0,startTime:0,el:null,axis:null});
   const likeLabelRef = useRef<HTMLDivElement>(null);
@@ -469,12 +442,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // Load a profile's reviews when the profile modal opens (reviews are
   // written via submit-review but were previously never read back).
   // (also resets the photo carousel — see useViewedProfile)
-  useViewedProfile({ viewProfileId: viewProfile?.id, setViewProfilePhotoIdx, setViewProfileReviews, fetchWithTimeout });
+  const { viewProfilePhotoIdx, setViewProfilePhotoIdx, viewProfileReviews, setViewProfileReviews } = useViewedProfile({ viewProfileId: viewProfile?.id, fetchWithTimeout });
 
   // Saved searches: hydrate whenever the Discovery Preferences modal opens so
   // the list reflects the latest server state (save/delete both happen inside
   // that modal). Non-fatal on failure — the modal still works without it.
-  useSavedSearches({ showDiscoveryPrefs, apiFetch, setSavedSearches });
+  const { savedSearches, setSavedSearches } = useSavedSearches({ showDiscoveryPrefs, apiFetch });
 
   // Pulls real data from the API on mount; silently keeps the static demo
   // arrays when the table is empty or the request fails (graceful fallback).
@@ -709,7 +682,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   usePreferenceSync({ apiFetch, authUser, obStep, notifPrefs, filterStyles, filterScore, appliedBriefs, showNsfw });
 
   // ─── MESSAGE REQUESTS: Fetch pending requests when on matches screen ───
-  useMessageRequests({ screen, authUser, apiFetch, setMessageRequests });
+  const { messageRequests, setMessageRequests } = useMessageRequests({ screen, authUser, apiFetch });
 
   const applySession = useSessionApply({
     authFetch,
@@ -750,15 +723,13 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     syncingSdkSessionRef,
   });
 
-  useBootstrapHydration({
+  const { hydrated, myGeo } = useBootstrapHydration({
     loadStateRef,
     sessionAppliedRef,
     syncingSdkSessionRef,
     loadState,
     initAnalyticsSession,
-    setHydrated,
     getGeolocation,
-    setMyGeo,
     safeSetItem,
     safeGetItem,
     safeRemoveItem,
@@ -778,7 +749,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   useThemeEffect({ theme });
 
-  useNotificationSync({ authFetch, authUser, setServerNotifCount, setProfileViewers, setActivityFeed });
+  const { serverNotifCount } = useNotificationSync({ authFetch, authUser, setProfileViewers, setActivityFeed });
 
   // Ambient visual effects (img fallback, bg opacity, tide waves, scroll reset,
   // discover waves) — see useVisualEffects.
@@ -821,13 +792,14 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     closeUpsell,
     toggleSocial,
     dismissVerificationBanner,
+    activePageTour,
+    setActivePageTour,
+    verificationBannerClosing,
   } = useMuseActions({
     apiFetch,
     safeGetItem,
     safeSetItem,
     showToast,
-    activePageTour,
-    setActivePageTour,
     showDailyLogin,
     showAgeVerification,
     showAgeGate,
@@ -849,7 +821,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     setScreenFlash,
     setHamburgerScreen,
     setShowHamburger,
-    setVerificationBannerClosing,
     setVerificationBannerDismissed,
     setUpsell,
   });
@@ -905,16 +876,18 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   // Profile action handlers (edit-profile save + avatar/media uploads) — see
   // useProfileActions. `trackQuest` comes from useMuseActions above.
-  const { uploadImage, uploadMedia, saveProfileEdits } = useProfileActions({
-    editName,
-    editBio,
-    editLoc,
-    editAvatar,
-    editType,
-    editCustomTypePending,
-    editLooking,
-    editNsfw,
-    editMediaKit,
+  const {
+    uploadImage, uploadMedia, saveProfileEdits,
+    editName, setEditName,
+    editBio, setEditBio,
+    editLoc, setEditLoc,
+    editAvatar, setEditAvatar,
+    editType, setEditType,
+    editCustomTypePending, setEditCustomTypePending,
+    editLooking, setEditLooking,
+    editNsfw, setEditNsfw,
+    editMediaKit, setEditMediaKit,
+  } = useProfileActions({
     obData,
     currentUser,
     setObData,
@@ -1017,7 +990,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     return enriched;
   }, [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch, obData.chinese, obData.lifePath, obData.mbti, obData.type, obData.looking, obData.styles, obData.zodiac]);
 
-  useCardAlbumPhotos({ apiFetch, filteredProfiles, currentIdx, cardAlbums, setCardAlbums, cardAlbumIdx, setCardAlbumIdx, setCardAlbumPhotos });
+  const { cardAlbums, setCardAlbums, cardAlbumIdx, setCardAlbumIdx, cardAlbumPhotos, setCardAlbumPhotos } = useCardAlbumPhotos({ apiFetch, filteredProfiles, currentIdx });
 
   useDailyLikesReset({ safeGetItem, safeSetItem, setDailyLikes, setSuperLikes });
 
@@ -1095,7 +1068,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   useVisibilityPause();
 
   // Story auto-advance: 5s per story, then next (or close at the end)
-  useStoryAutoAdvance({ showStory, setShowStory, stories });
+  const { showStory, setShowStory } = useStoryAutoAdvance({ stories });
 
   // Chat action handlers (open thread, send text/image/voice/video) — see
   // useChatActions. `trackQuest` comes from useMuseActions above.
@@ -1115,7 +1088,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     showToast,
   });
 
-  useChatEffects({ authUser, chatTarget, setChatTarget, setMatches, setRealtimeStatus, setThemTyping, typingTimerRef, sendTypingRef, messagesEndRef });
+  const { realtimeStatus } = useChatEffects({ authUser, chatTarget, setChatTarget, setMatches, setThemTyping, typingTimerRef, sendTypingRef, messagesEndRef });
 
   return !hydrated ? <PageSplash /> : (
     <div style={{"display":"contents"}}>

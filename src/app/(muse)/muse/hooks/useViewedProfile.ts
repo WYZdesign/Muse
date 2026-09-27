@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState } from "react";
 import type { ProfileReview } from "../page-models";
 
 /**
@@ -13,17 +13,16 @@ import type { ProfileReview } from "../page-models";
  */
 export type UseViewedProfileArgs = {
   viewProfileId: string | number | undefined | null;
-  setViewProfilePhotoIdx: Dispatch<SetStateAction<number>>;
-  setViewProfileReviews: Dispatch<SetStateAction<ProfileReview[]>>;
   fetchWithTimeout: (url: string, init?: RequestInit) => Promise<Response>;
 };
 
 export function useViewedProfile({
   viewProfileId,
-  setViewProfilePhotoIdx,
-  setViewProfileReviews,
   fetchWithTimeout,
 }: UseViewedProfileArgs) {
+  const [viewProfilePhotoIdx, setViewProfilePhotoIdx] = useState(0);
+  const [viewProfileReviews, setViewProfileReviews] = useState<ProfileReview[]>([]);
+
   // Reset photo carousel when a new profile is opened
   useEffect(() => { setViewProfilePhotoIdx(0); }, [viewProfileId]);
 
@@ -41,4 +40,6 @@ export function useViewedProfile({
     })();
     return () => { cancelled = true; };
   }, [viewProfileId]);
+
+  return { viewProfilePhotoIdx, setViewProfilePhotoIdx, viewProfileReviews, setViewProfileReviews };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, type Dispatch, type SetStateAction, type SyntheticEvent } from "react";
+import { useCallback, useRef, useState, type Dispatch, type SetStateAction, type SyntheticEvent } from "react";
 import type { Screen } from "../components/types";
 import type { Quest, ViewProfile } from "../page-models";
 import type { OnboardingData } from "./useAuthOnboardingState";
@@ -26,8 +26,6 @@ export type UseMuseActionsArgs = {
   safeGetItem: (key: string) => string | null;
   safeSetItem: (key: string, value: string) => boolean;
   showToast: (msg: MuseToastInput) => void;
-  activePageTour: TourScreenId | null;
-  setActivePageTour: Dispatch<SetStateAction<TourScreenId | null>>;
   showDailyLogin: boolean;
   showAgeVerification: boolean;
   showAgeGate: boolean;
@@ -49,7 +47,6 @@ export type UseMuseActionsArgs = {
   setScreenFlash: Dispatch<SetStateAction<string | null>>;
   setHamburgerScreen: Dispatch<SetStateAction<string>>;
   setShowHamburger: Dispatch<SetStateAction<boolean>>;
-  setVerificationBannerClosing: Dispatch<SetStateAction<boolean>>;
   setVerificationBannerDismissed: Dispatch<SetStateAction<boolean>>;
   setUpsell: Dispatch<SetStateAction<{ feature: string; reason: string; icon?: string } | null>>;
 };
@@ -59,8 +56,6 @@ export function useMuseActions({
   safeGetItem,
   safeSetItem,
   showToast,
-  activePageTour,
-  setActivePageTour,
   showDailyLogin,
   showAgeVerification,
   showAgeGate,
@@ -82,10 +77,11 @@ export function useMuseActions({
   setScreenFlash,
   setHamburgerScreen,
   setShowHamburger,
-  setVerificationBannerClosing,
   setVerificationBannerDismissed,
   setUpsell,
 }: UseMuseActionsArgs) {
+  const [activePageTour, setActivePageTour] = useState<TourScreenId | null>(null);
+  const [verificationBannerClosing, setVerificationBannerClosing] = useState(false);
   const pageTourShownRef = useRef<Set<string>>(new Set());
   const viewedSessionRef = useRef<Set<string>>(new Set());
 
@@ -267,5 +263,8 @@ export function useMuseActions({
     closeUpsell,
     toggleSocial,
     dismissVerificationBanner,
+    activePageTour,
+    setActivePageTour,
+    verificationBannerClosing,
   };
 }
