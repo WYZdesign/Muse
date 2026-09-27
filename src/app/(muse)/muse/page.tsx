@@ -7,7 +7,7 @@ import Image from "next/image";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
-import { persistMessage, subscribeToConversation, fetchConversationHistory, getGeolocation, distanceMiles } from "@/app/muse-realtime";
+import { persistMessage, getGeolocation, distanceMiles } from "@/app/muse-realtime";
 import { trackError } from "@/lib/errorTracker";
 import { FiX } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
@@ -16,8 +16,7 @@ import { announce } from "./a11y";
 import { PageSplash } from "./components/PageSplash";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
-import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, setRefreshToken, getRefreshToken, clearRefreshToken, QUOTA_MSG } from "./lib/safe-storage";
-import { createSafeObserver } from "./lib/safe-observer";
+import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, setRefreshToken, getRefreshToken, clearRefreshToken } from "./lib/safe-storage";
 import { getAccessToken, authFetch, fetchWithTimeout } from "./lib/api";
 import { analytics, setAnalyticsUser, initAnalyticsSession } from "./lib/analytics";
 import { initialsAvatarUrl } from "./lib/initials-avatar";
@@ -37,10 +36,9 @@ import { useModalVisibility } from "./hooks/useModalVisibility";
 import { useQuestsState } from "./hooks/useQuestsState";
 import { useAuthOnboardingState } from "./hooks/useAuthOnboardingState";
 import { useDiscoverState } from "./hooks/useDiscoverState";
-import { requestMotionPermission } from "./hooks/useDeviceTilt";
 import SupportChat from "./components/SupportChat";
 import PageTour from "./components/PageTour";
-import { PAGE_TOURS, SCREEN_TRIGGERED_TOUR_IDS, tourSeenKey, type TourScreenId } from "./components/pageTourContent";
+import { PAGE_TOURS, tourSeenKey, type TourScreenId } from "./components/pageTourContent";
 import { ScreenErrorBoundary } from "./components/ScreenErrorBoundary";
 import { DiscoverScreen } from "./screens/DiscoverScreen";
 import { FeedScreen } from "./screens/FeedScreen";
@@ -74,11 +72,34 @@ import { useSessionData } from "./hooks/useSessionData";
 import { useSessionApply } from "./hooks/useSessionApply";
 import { useBootstrapHydration } from "./hooks/useBootstrapHydration";
 import { useSwipeActions } from "./hooks/useSwipeActions";
+import { useThemeEffect } from "./hooks/useThemeEffect";
+import { usePreferenceSync } from "./hooks/usePreferenceSync";
+import { useToastChannel } from "./hooks/useToastChannel";
+import { useCardAlbumPhotos } from "./hooks/useCardAlbumPhotos";
+import { useChatEffects } from "./hooks/useChatEffects";
+import { useNotificationSync } from "./hooks/useNotificationSync";
+import { useQuestTracking } from "./hooks/useQuestTracking";
+import { useSessionRefresh } from "./hooks/useSessionRefresh";
+import { useVisualEffects } from "./hooks/useVisualEffects";
+import { useKeyboardNav } from "./hooks/useKeyboardNav";
+import { useVisibilityPause } from "./hooks/useVisibilityPause";
+import { useStoryAutoAdvance } from "./hooks/useStoryAutoAdvance";
+import { useMountFlags } from "./hooks/useMountFlags";
+import { useViewedProfile } from "./hooks/useViewedProfile";
+import { useSavedSearches } from "./hooks/useSavedSearches";
+import { useMotionPermission } from "./hooks/useMotionPermission";
+import { useBoostExpiry } from "./hooks/useBoostExpiry";
+import { useSocialConnection } from "./hooks/useSocialConnection";
+import { useMessageRequests } from "./hooks/useMessageRequests";
+import { usePageTour } from "./hooks/usePageTour";
+import { useDailyLikesReset } from "./hooks/useDailyLikesReset";
+import { useSaveStateTimer } from "./hooks/useSaveStateTimer";
+import { useSessTabRealign } from "./hooks/useSessTabRealign";
 import { useBriefsData } from "./hooks/useBriefsData";
 import { useProfileData } from "./hooks/useProfileData";
 import { normalizeCommunity, normalizeEvent, normalizeForumPost, normalizeBrief, normalizeSession, normalizeFeedPost } from "./hooks/normalizers";
 import { AGE_VERIFICATION_VALID_DAYS, DEMO_MODE, MATCH_VARIANTS, OWNER_EMAIL } from "./page-constants";
-import type { Notification, Professional, ProfileReview, ProfileViewer, Quest, RawApiProfile, RawFeedPost, RawForumPost, ViewProfile } from "./page-models";
+import type { Professional, ProfileReview, Quest, RawApiProfile, RawFeedPost, RawForumPost, ViewProfile } from "./page-models";
 
 type DiscoveryProfile = typeof PROFILES[number] & {
   showDistance?: boolean;
@@ -281,14 +302,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // The lazy init above runs before the server profile arrives (type starts
   // as the "Photographer" placeholder), so re-align once when the real type
   // lands — duality Phase 0's role-aware default.
-  const sessTypeRef = useRef(currentUser?.type);
-  useEffect(() => {
-    const t = currentUser?.type;
-    if (t && t !== sessTypeRef.current) {
-      sessTypeRef.current = t;
-      setSessTab(viewerSide(t) === "industry" ? "bookings" : "sessions");
-    }
-  }, [currentUser?.type]);
+  useSessTabRealign({ currentUserType: currentUser?.type, setSessTab });
   const [forumSort, setForumSort] = useState<"hot"|"new"|"top">("hot");
   const [_networkOpenTab, _setNetworkOpenTab] = useState<"pros"|"forum"|undefined>(undefined);
   const [forumCategory, _setForumCategory] = useState<string>("all");
@@ -345,11 +359,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // dismiss flips verificationBannerDismissed and unmounts it for good.
   const [verificationBannerClosing, setVerificationBannerClosing] = useState(false);
   // D1: persist dismiss across reloads (same pattern as muse_tour_seen_*).
-  useEffect(() => {
-    try {
-      if (safeGetItem("muse_verify_banner_dismissed") === "1") setVerificationBannerDismissed(true);
-    } catch { /* storage unavailable — show banner */ }
-  }, []);
+  useMountFlags({ safeGetItem, safeSetItem, setVerificationBannerDismissed });
   const dismissVerificationBanner = () => {
     setVerificationBannerClosing(true);
     setTimeout(() => {
@@ -368,13 +378,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     weeklyLogins, setWeeklyLogins,
   } = useQuestsState();
 
-  useEffect(() => {
-    try {
-        const c = safeGetItem("muse_open_count");
-        const count = c ? parseInt(c) + 1 : 1;
-        safeSetItem("muse_open_count", String(count));
-      } catch (e) { console.debug("[page.tsx] open count storage ignore", e); }
-  }, []);
+  // Open-count bump (moved into useMountFlags above).
 
   const [viewProfile, setViewProfileRaw] = useState<ViewProfile | null>(null);
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
@@ -391,7 +395,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     return res;
   }, []);
 
-  useEffect(() => { setViewProfilePhotoIdx(0); }, [viewProfile?.id]);
+  // Reset photo carousel when a new profile is opened (moved into useViewedProfile below).
   // Tracked wrapper — counts one view per real profile per session (duality
   // stats plumbing); demo/numeric ids are skipped server-side anyway.
   const viewedSessionRef = useRef<Set<string>>(new Set());
@@ -474,64 +478,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     el.removeAttribute("src");
   }, []);
 
-  useEffect(() => {
-    const onImgError = (e: Event) => {
-      const img = e.target as HTMLImageElement;
-      if (img.tagName !== "IMG" || img.dataset.fallback) return;
-      img.dataset.fallback = "1";
-      img.style.background = "linear-gradient(135deg, #FF6B9D 0%, #C86BFF 50%, #FFB366 100%)";
-      img.style.display = "flex";
-      img.style.alignItems = "center";
-      img.style.justifyContent = "center";
-      img.style.color = "#fff";
-      img.style.fontSize = "2em";
-      img.alt = img.alt?.charAt(0) || "👤";
-      img.removeAttribute("src");
-    };
-    document.addEventListener("error", onImgError, true);
-    // MutationObserver catches <img> mounted with an empty/missing or broken src
-    // (blank or "undefined") which never fires an error event. Reuse the same
-    // fallback treatment when we detect one app-wide.
-    const sweepImg = (img: HTMLImageElement) => {
-      if (img.dataset.fallback) return;
-      const src = (img.getAttribute("src") || "").trim().toLowerCase();
-      const broken = !src || src === "undefined" || src === "null" || src === "none";
-      if (broken) {
-        img.dataset.fallback = "1";
-        img.style.background = "linear-gradient(135deg, #FF6B9D 0%, #C86BFF 50%, #FFB366 100%)";
-        img.style.display = "flex";
-        img.style.alignItems = "center";
-        img.style.justifyContent = "center";
-        img.style.color = "#fff";
-        img.style.fontSize = "1.6em";
-        img.style.fontWeight = "700";
-        img.style.fontFamily = "'Playfair Display', serif";
-        img.alt = img.alt?.trim().charAt(0) || "👤";
-        img.textContent = img.alt || "👤";
-        img.removeAttribute("src");
-      }
-    };
-    // Wrapped in createSafeObserver (rate-based circuit breaker) as
-    // defense-in-depth: this callback is already guarded against
-    // self-retriggering (img.dataset.fallback check-before-mutate), but it
-    // still does a subtree querySelectorAll("img") on every childList
-    // mutation anywhere in the app. A future edit that removes the guard,
-    // or an unrelated part of the app generating very high-frequency DOM
-    // churn, would otherwise be able to reproduce the same class of
-    // main-thread-freezing storm found in the "waves" observer below —
-    // this makes that fail safe (observer disconnects) instead of freezing
-    // the tab. See lib/safe-observer.ts for why this can't be caught once
-    // it happens, only prevented.
-    const mo = createSafeObserver((muts) => {
-      for (const m of muts) {
-        if (m.type === "childList") m.addedNodes.forEach(n => { if (n.nodeType === 1 && (n as Element).querySelectorAll) (n as Element).querySelectorAll("img").forEach(img => sweepImg(img as HTMLImageElement)); });
-        if (m.type === "attributes" && m.target.nodeName === "IMG") sweepImg(m.target as HTMLImageElement);
-      }
-    }, { label: "img-fallback-sweep" });
-    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["src"] });
-    document.querySelectorAll<HTMLImageElement>("img").forEach(sweepImg);
-    return () => { document.removeEventListener("error", onImgError, true); mo.disconnect(); };
-  }, []);
+  // Global broken-image fallback sweep (moved into useVisualEffects below).
 
   // iOS 13+ only fires deviceorientation events after DeviceOrientationEvent.
   // requestPermission() is called from inside a direct user-gesture handler.
@@ -541,11 +488,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // depends on, so a silent one-time request here (no dialog if the platform
   // doesn't need one — Android/desktop) is enough. {once:true} handles both
   // "asked, granted" and "asked, denied" — never asks twice in a session.
-  useEffect(() => {
-    const onFirstTouch = () => requestMotionPermission();
-    document.addEventListener("pointerdown", onFirstTouch, { once: true, passive: true });
-    return () => document.removeEventListener("pointerdown", onFirstTouch);
-  }, []);
+  useMotionPermission();
 
   const { liveProfiles, setLiveProfiles, matches, setMatches, likedBy, setLikedBy, blockedUsers, setBlockedUsers, matchStreak, setMatchStreak } = useDiscoveryData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
   // Ref to avoid stale closure on rapid swipes — always holds latest matches
@@ -562,34 +505,13 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   // Load a profile's reviews when the profile modal opens (reviews are
   // written via submit-review but were previously never read back).
-  useEffect(() => {
-    if (!viewProfile?.id) { setViewProfileReviews([]); return; }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetchWithTimeout(`/api/muse?type=reviews&profile_id=${encodeURIComponent(viewProfile.id)}`);
-        const d = await res.json();
-        if (!cancelled) setViewProfileReviews(d.reviews || []);
-      } catch { if (!cancelled) setViewProfileReviews([]); }
-    })();
-    return () => { cancelled = true; };
-  }, [viewProfile?.id]);
+  // (also resets the photo carousel — see useViewedProfile)
+  useViewedProfile({ viewProfileId: viewProfile?.id, setViewProfilePhotoIdx, setViewProfileReviews, fetchWithTimeout });
 
   // Saved searches: hydrate whenever the Discovery Preferences modal opens so
   // the list reflects the latest server state (save/delete both happen inside
   // that modal). Non-fatal on failure — the modal still works without it.
-  useEffect(() => {
-    if (!showDiscoveryPrefs) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const r = await apiFetch("/api/muse?type=saved-search-list");
-        const d = await r.json();
-        if (!cancelled) setSavedSearches(Array.isArray(d.searches) ? d.searches : []);
-      } catch { if (!cancelled) setSavedSearches([]); }
-    })();
-    return () => { cancelled = true; };
-  }, [showDiscoveryPrefs, apiFetch]);
+  useSavedSearches({ showDiscoveryPrefs, apiFetch, setSavedSearches });
 
   // Pulls real data from the API on mount; silently keeps the static demo
   // arrays when the table is empty or the request fails (graceful fallback).
@@ -816,50 +738,15 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     try { const b=safeGetItem("muse_boost"); if(b){const e=parseInt(b);if(e>Date.now()){setBoostActive(true);setBoostEnd(e);}else{safeRemoveItem("muse_boost");}} } catch { console.debug("[muse] persisted boost state could not be restored"); }
   }, [setAppliedBriefs, setBlockedUsers, setBoostActive, setBoostEnd, setChatImages, setChatTarget, setDailyLikes, setFeedPosts, setForumPosts, setLikedBy, setMatches, setObConnectedSocials, setObData, setObPortfolioItems, setObProfilePic, setObSelects, setObStep, setRsvpdEvents, setSavedBriefs, setSavedProfileIds, setSavedSessionIds, setStories, setSuperLikes, setTestLevels, setUserBriefs]);
 
-  useEffect(() => { if(!boostActive||!boostEnd)return;const iv=setInterval(()=>{if(Date.now()>=boostEnd){setBoostActive(false);try{safeRemoveItem("muse_boost");}catch{console.debug("[muse] expired boost state could not be cleared");}}},5000);return()=>clearInterval(iv); }, [boostActive,boostEnd,setBoostActive]);
+  useBoostExpiry({ boostActive, boostEnd, setBoostActive, safeRemoveItem });
 
-  // Fetch connected accounts status from server on mount (overrides stale localStorage)
-  useEffect(() => {
-    authFetch("/api/muse/social?action=status")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.connected) setObConnectedSocials(d.connected); })
-      .catch(() => {});
-  }, [setObConnectedSocials]);
+  // Fetch connected accounts status from server on mount (moved into useSocialConnection below).
 
   // ─── CROSS-DEVICE: Persist all preferences to server (single debounced) ───
-  const prefsSnapshotRef = useRef({ obStep, notifPrefs, filterStyles, filterScore, appliedBriefs, showNsfw });
-  const prefsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => { prefsSnapshotRef.current = { obStep, notifPrefs, filterStyles, filterScore, appliedBriefs, showNsfw }; });
-
-  useEffect(() => {
-    if (!authUser) return;
-    if (prefsTimerRef.current) clearTimeout(prefsTimerRef.current);
-    prefsTimerRef.current = setTimeout(() => {
-      const p = prefsSnapshotRef.current;
-      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { onboardingStep: p.obStep, notifications: p.notifPrefs, filterStyles: p.filterStyles, filterScore: p.filterScore, appliedBriefs: p.appliedBriefs, nsfw: p.showNsfw } }) }).catch(() => {});
-    }, 2000);
-    return () => { if (prefsTimerRef.current) clearTimeout(prefsTimerRef.current); };
-  }, [apiFetch, obStep, notifPrefs, filterStyles, filterScore, appliedBriefs, showNsfw, authUser]);
+  usePreferenceSync({ apiFetch, authUser, obStep, notifPrefs, filterStyles, filterScore, appliedBriefs, showNsfw });
 
   // ─── MESSAGE REQUESTS: Fetch pending requests when on matches screen ───
-  useEffect(() => {
-    if (screen !== "matches" || !authUser) return;
-    // Populated demo Inbox. The live endpoint requires a real account, so demo
-    // mode always rendered "No pending requests". Owner requirement: demo must
-    // look published.
-    if (DEMO_MODE) {
-      setMessageRequests(PROFILES.slice(14, 17).map((p, i) => ({
-        id: `demo-req-${i}`, from_id: { id: p.id, name: p.name, avatar: p.img },
-        text: i === 0 ? "Hi! Loved your editorial series — are you booking for June?" : i === 1 ? "Would you be open to a styled test shoot next month?" : "Hey! Big fan of your lighting work. Could we collab?",
-        created_at: new Date(Date.now() - (i + 1) * 5400000).toISOString(),
-      })));
-      return;
-    }
-    apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "message-requests" }) })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.requests) setMessageRequests(data.requests); })
-      .catch(() => {});
-  }, [apiFetch, screen, authUser]);
+  useMessageRequests({ screen, authUser, apiFetch, setMessageRequests });
 
   const applySession = useSessionApply({
     authFetch,
@@ -923,208 +810,26 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     setRefreshToken,
   });
 
-  // Cross-tab session sync: when the SAME browser has this account open in
-  // more than one tab (or the installed PWA running alongside a regular
-  // browser tab), each tab refreshes its access token on its own 1hr timer.
-  // Supabase rotates the refresh token on every use, so whichever tab
-  // refreshes second gets an "already used" error on a token another tab
-  // already rotated away — previously that read as a dead session and force-
-  // logged that tab out even though the account was still perfectly logged
-  // in next door. The `storage` event fires in every OTHER tab the instant
-  // one tab's TOKEN_REFRESHED handler (above) writes the new tokens to
-  // muse_user, so listening for it lets every other tab adopt the fresh
-  // token proactively instead of racing its own stale one and losing.
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key !== "muse_user" || !e.newValue) return;
-      try {
-        const parsed = JSON.parse(e.newValue);
-        if (parsed?.access_token) {
-          if (parsed.refresh_token) setRefreshToken(parsed.refresh_token);
-          applySession(parsed.access_token, parsed.refresh_token || "");
-        }
-      } catch { console.debug("[muse] client preference refresh failed"); }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, [applySession]);
-  useEffect(() => { const t = setTimeout(saveState, 4000); return () => clearTimeout(t); }, [saveState]);
+  // Cross-tab session sync + session-expiry handling (moved into useSessionRefresh below).
+  useSaveStateTimer({ saveState });
 
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    // Persistence is handled by saveState (theme is part of its payload) —
-    // no separate read-modify-write here to avoid a lost-update race on muse_v1.
-  }, [theme]);
+  useThemeEffect({ theme });
 
-  // Poll the server's unread-notification count so the menu/bottom-nav bell
-  // reflects real DB rows (matches, likes, bookings, reviews, brief apps, etc.)
-  // and not just the local activityFeed. Only when the user is authed.
-  useEffect(() => {
-    if (!authUser?.id) return;
-    let cancelled = false;
-    const poll = async () => {
-      try {
-        const r = await authFetch("/api/muse?type=notification-count");
-        if (cancelled) return;
-        const d = await r.json();
-        if (d && typeof d.count === "number") setServerNotifCount(d.count);
-      } catch { console.debug("[muse] client preference refresh failed"); }
-    };
-    poll();
-    const iv = setInterval(poll, 20000);
-    return () => { cancelled = true; clearInterval(iv); };
-  }, [authUser?.id]);
+  useNotificationSync({ authFetch, authUser, setServerNotifCount, setProfileViewers, setActivityFeed });
 
-  // Pull the real "who viewed my profile" list so the Profile Activity section
-  // shows genuine viewer avatars/names (fed by track-view → profile_view rows),
-  // not just the local activityFeed. Feed them into activityFeed as deduped
-  // "viewed your profile" items too, so the section is populated from the DB.
-  useEffect(() => {
-    if (!authUser?.id) return;
-    let cancelled = false;
-    const pull = async () => {
-      try {
-        const r = await authFetch("/api/muse?type=profile-viewers");
-        if (cancelled) return;
-        const d = await r.json();
-        if (d && Array.isArray(d.viewers)) {
-          setProfileViewers(d.viewers);
-          // Merge new viewer rows into the activity feed (dedup by viewer id),
-          // placed chronologically by view time.
-          setActivityFeed(prev => {
-            const existingViewerIds = new Set<string | number>(prev.filter(x => x.type === "profile_view").map(x => x.id));
-            const newItems = d.viewers
-              .filter((v: ProfileViewer) => !existingViewerIds.has(v.id || ""))
-              .map((v: ProfileViewer) => ({
-                id: v.id || uid(),
-                type: "profile_view",
-                from: v.name || "Someone",
-                avatar: v.avatar || "",
-                text: "viewed your profile",
-                time: v.viewedAt ? (() => { const ms = Date.now() - new Date(v.viewedAt).getTime(); const m = Math.floor(ms / 60000); if (m < 1) return "Just now"; if (m < 60) return `${m}m ago`; const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`; return `${Math.floor(h / 24)}d ago`; })() : "",
-                read: true,
-              }));
-            return [...newItems, ...prev];
-          });
-        }
-      } catch { console.debug("[muse] notification count refresh failed"); }
-    };
-    pull();
-    const iv = setInterval(pull, 60000);
-    return () => { cancelled = true; clearInterval(iv); };
-  }, [authUser?.id]);
+  // Ambient visual effects (img fallback, bg opacity, tide waves, scroll reset,
+  // discover waves) — see useVisualEffects.
+  useVisualEffects({ screen });
 
-  // Load background transparency from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("muse_bg_opacity");
-      if (stored) document.documentElement.style.setProperty("--scene-opacity", stored);
-    } catch { console.debug("[muse] screen scroll restoration failed"); }
-  }, []);
-
-  // Show the tide waves only when the user scrolls to the very bottom of the
-  // active screen — attach a scroll listener to whichever .screen-el is active,
-  // re-binding on screen change. The waves fade in (CSS .show) ~40px from the
-  // bottom; the active screen is found via the live DOM so this keeps working
-  // for every screen without a per-screen listener.
-  // Show waves at bottom of ANY screen when scrolled near the bottom.
-  const waveShowRef = useRef(false);
-  useEffect(() => {
-    const wave = document.querySelector(".wave-bottom");
-    const check = () => {
-      const p = document.querySelector('.screen-el.active');
-      if (!p || !wave) return;
-      const scroller = (p as HTMLElement).scrollTop !== undefined ? (p as HTMLElement) : p.querySelector<HTMLElement>('[style*="overflow"],.conn-scroll,.profile-scroll,.settings-scroll,.portfolio-scroll,.match-list');
-      const el: HTMLElement | null = scroller || p as HTMLElement;
-      const near = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
-      if (near !== waveShowRef.current) {
-        waveShowRef.current = near;
-        wave.classList.toggle("show", near);
-      }
-    };
-    const scroller = document.querySelector(".screen-el.active");
-    if (scroller) {
-      scroller.addEventListener("scroll", check, { passive: true });
-      check();
-    }
-    return () => { if (scroller) scroller.removeEventListener("scroll", check); };
-  }, [screen]);
-
-  // Scroll to top on every screen navigation (Torreé audit), except Settings
-  // and Profile — those manage their own internal scroll position and a
-  // reset here would fight it. Keyed on `screen` so it fires whether
-  // navigation went through showScreen, goBack, or a direct setScreen call.
-  // Most screens' real scrolling happens on an inner content div (flex:1,
-  // overflowY:auto) rather than the outer .screen-el itself, so this resets
-  // both the .screen-el.active container and any scrollable descendant.
-  useEffect(() => {
-    if (screen === "settings" || screen === "profile") return;
-    try {
-      const active = document.querySelector<HTMLElement>(".screen-el.active");
-      if (!active) return;
-      active.scrollTop = 0;
-      active.querySelectorAll<HTMLElement>('[style*="overflow"],.match-list,.messages,.profile-scroll,.portfolio-scroll,.settings-scroll,.briefs-scroll,.conn-scroll,.sub-scroll,.modal-body,.card-info-scroll').forEach(el => { el.scrollTop = 0; });
-    } catch { console.debug("[muse] streak refresh failed"); }
-  }, [screen]);
-
-  // Also always show waves on the swipe card (Discover) as a gradient accent.
-  //
-  // CRITICAL FIX (freeze root cause): this previously observed
-  // document.body with { childList: true, subtree: true, attributes: true,
-  // attributeFilter: ['class'] } — i.e. every class-attribute change and
-  // every node insertion/removal ANYWHERE on the page, not just Discover.
-  // Its own callback called classList.add('waves-visible'), which is
-  // itself a class-attribute mutation the same observer was watching, and
-  // reran document.querySelectorAll('.swipe-card.top-card') (a whole-
-  // document query) on every single one of those mutations. Mounting the
-  // Discover card stack (or, after that, literally any class/DOM churn
-  // anywhere else in this 3000+ line app — toasts, badges, animations)
-  // could fire this callback in rapid, sustained succession, each firing
-  // native DOM-traversal work with no JS between them to interrupt — a
-  // microtask storm that starves the render thread and freezes the tab.
-  // Confirmed via CPU profiling during the "app freezes after login /
-  // after ~2s on Discover" reports: ~98% of samples were in Chromium's
-  // native code, not JS, with this exact callback on the stack.
-  //
-  // Fix: scope the observer to the card stack only (not document.body),
-  // and drop the attributes/class watch entirely — classList.add is
-  // idempotent, so we only ever need to react to NEW cards being
-  // inserted (childList), never to class changes (which we caused).
-  //
-  // HARDENING: also wrapped in createSafeObserver as a second, independent
-  // layer of defense — even with the scoped target above, a future edit to
-  // this effect (or to .card-stack's own render logic) could reintroduce a
-  // tight mutate->observe->mutate loop. The circuit breaker makes that fail
-  // as "waves stop appearing" instead of "the app freezes".
-  useEffect(() => {
-    const addWaves = () => {
-      document.querySelectorAll('.swipe-card.top-card').forEach(c => c.classList.add('waves-visible'));
-    };
-    addWaves();
-    const target = document.querySelector('.card-stack') || document.body;
-    const obs = createSafeObserver(addWaves, { label: "discover-waves" });
-    obs.observe(target, { childList: true, subtree: true });
-    return () => obs.disconnect();
-  }, [screen]);
+  // Tide-wave scroll listener + scroll-to-top-on-navigation + Discover waves
+  // observer (moved into useVisualEffects above).
 
 
 
   const showToast = useCallback((msg: string | { msg: string; onTap?: () => void; type?: ToastType }) => { const t = typeof msg === "string" ? { msg } : msg; setToastMsg(t); setTimeout(() => setToastMsg(null), 3000); }, []);
 
-  // Check for OAuth callback on mount. Was previously (incorrectly) a React.useEffect
-  // call nested inside loadState's async body — a Rules-of-Hooks violation that threw
-  // "Invalid hook call" any time a returning user had persisted state, i.e. almost
-  // every real login/reload. Hoisted to a proper top-level effect.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const connected = params.get("connected");
-    if (connected) {
-      setObConnectedSocials(prev => ({ ...prev, [connected]: true }));
-      showToast(`${connected.charAt(0).toUpperCase() + connected.slice(1)} connected!`);
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [setObConnectedSocials, showToast]);
+  // Social connection status fetch + OAuth callback handling — see useSocialConnection.
+  useSocialConnection({ authFetch, setObConnectedSocials, showToast });
 
   // Onboarding multi-select toggle with a hard cap. Toggling off always works;
   // adding beyond the cap is ignored and surfaces a toast instead.
@@ -1175,67 +880,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   }, [apiFetch, setClaimableQuests, showToast]);
 
   // Surface storage quota failures to the user instead of failing silently.
-  useEffect(() => {
-    const onQuota = () => showToast(QUOTA_MSG);
-    window.addEventListener("muse:storage-quota", onQuota);
-    return () => window.removeEventListener("muse:storage-quota", onQuota);
-  }, [showToast]);
-
   // Toast channel for code that runs before showToast exists (session bootstrap).
-  useEffect(() => {
-    const onToast = (e: Event) => { const msg = (e as CustomEvent<string>).detail; if (msg) showToast(msg); };
-    window.addEventListener("muse:toast", onToast);
-    return () => window.removeEventListener("muse:toast", onToast);
-  }, [showToast]);
+  useToastChannel({ showToast });
 
 
-  // Login quests + claimables badge — runs once authed+bootstrapped. Must live
-  // AFTER trackQuest's declaration. Login counts once per calendar day so
-  // daily/streak quests stay accurate across refreshes.
-  const questBootRef = useRef(false);
-  useEffect(() => {
-    if (!bootstrapped || !authUser || questBootRef.current) return;
-    questBootRef.current = true;
-    const today = new Date().toISOString().slice(0, 10);
-    let lastLoginDay = "";
-    try { lastLoginDay = safeGetItem("muse_quest_login_day") || ""; } catch { console.debug("[muse] quest login state could not be read"); }
-    if (lastLoginDay !== today) {
-      try { safeSetItem("muse_quest_login_day", today); } catch { console.debug("[muse] quest login state could not be saved"); }
-      try {
-        let days: string[] = [];
-        try { days = JSON.parse(safeGetItem("muse_login_days") || "[]"); } catch { console.debug("[muse] login history could not be read"); }
-        if (!days.includes(today)) { days.push(today); }
-        const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
-        days = days.filter(d => new Date(d) >= cutoff);
-        safeSetItem("muse_login_days", JSON.stringify(days));
-        const weekDays: boolean[] = [];
-        for (let i = 6; i >= 0; i--) {
-          const dt = new Date(); dt.setDate(dt.getDate() - i);
-          weekDays.push(days.includes(dt.toISOString().slice(0, 10)));
-        }
-        setWeeklyLogins(weekDays);
-      } catch { console.debug("[muse] activity refresh failed"); }
-      trackQuest("login", "login_streak");
-      setTimeout(() => setShowDailyLogin(true), 800);
-    }
-    apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-quests" }) })
-      .then(r => r.json())
-      .then(d => {
-        if (Array.isArray(d?.quests)) setClaimableQuests((d.quests as Quest[]).filter((q) => q.completed && !q.claimed).length);
-        // Bug fix (live-verified): this boot-time fetch used to read only
-        // `quests` from the response, leaving `loginStreak` at its initial 0
-        // until the user happened to open the Quests panel (the only other
-        // place that reads `d.streak`, see handleQuestsChange above). That
-        // made the "Welcome back!" streak popup — which fires automatically
-        // right below this block — always show "Start Your Streak" even for
-        // an account with a real multi-day streak, while the day-checkmarks
-        // next to it (driven by the separate, purely-local `weeklyLogins`)
-        // could already show several days filled in. Now this fetch keeps
-        // `loginStreak` in sync with the server the same way it already does.
-        if (typeof d?.streak === "number") setLoginStreak(d.streak);
-      })
-      .catch(() => {});
-  }, [bootstrapped, authUser, trackQuest, apiFetch, setClaimableQuests, setLoginStreak, setShowDailyLogin, setWeeklyLogins]);
+  // Quest tracking (login quests, daily login, weekly pips) — see useQuestTracking.
+  useQuestTracking({ bootstrapped, authUser, trackQuest, apiFetch, setClaimableQuests, setLoginStreak, setShowDailyLogin, setWeeklyLogins, safeGetItem, safeSetItem });
 
   // Per-page tutorials: each major screen gets its own small lightbox the
   // first time this browser ever opens it (tracked one localStorage flag
@@ -1263,26 +913,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     setActivePageTour(id);
   }, [activePageTour, showDailyLogin, showAgeVerification, showAgeGate, showQuests, showStories, showHamburger]);
 
-  useEffect(() => {
-    if (!bootstrapped || !authUser) return;
-    if (!(SCREEN_TRIGGERED_TOUR_IDS as string[]).includes(screen)) return;
-    const t = setTimeout(() => maybeShowPageTour(screen as TourScreenId), 600);
-    return () => clearTimeout(t);
-  }, [screen, bootstrapped, authUser, maybeShowPageTour]);
+  usePageTour({ screen, bootstrapped, authUser, maybeShowPageTour });
 
-  useEffect(() => {
-    if (!bootstrapped || !authUser) return;
-    try {
-      let days: string[] = [];
-      try { days = JSON.parse(safeGetItem("muse_login_days") || "[]"); } catch { console.debug("[muse] login history could not be read"); }
-      const weekDays: boolean[] = [];
-      for (let i = 6; i >= 0; i--) {
-        const dt = new Date(); dt.setDate(dt.getDate() - i);
-        weekDays.push(days.includes(dt.toISOString().slice(0, 10)));
-      }
-      setWeeklyLogins(weekDays);
-    } catch { console.debug("[muse] weekly login state could not be updated"); }
-  }, [bootstrapped, authUser, setWeeklyLogins]);
+  // Weekly-login pips recompute (moved into useQuestTracking above).
 
   const doLogout = useCallback(async (message: string = "Logged out") => {
     try { await authFetch("/api/muse/auth", { method: "POST", body: JSON.stringify({ action: "logout" }) }); } catch { console.debug("[muse] remote logout request failed"); }
@@ -1300,29 +933,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     await doLogout(); setHamburgerScreen(""); setShowHamburger(false);
   }, [doLogout, setShowHamburger]);
 
-  // authFetch (lib/api.ts) dispatches this when a request 401s, the user HAD
-  // a token, and a refresh attempt still couldn't produce a usable one — the
-  // session is genuinely dead (e.g. an expired access token surviving in
-  // localStorage while sessionStorage's refresh token is gone). Without this,
-  // every caller just shows its own generic "X failed" toast with no hint
-  // that re-login is what's actually needed (found via Sessions' "Book
-  // Session", but authFetch is used for every authenticated action, so it
-  // isn't Sessions-specific). Multiple in-flight requests can all 401 at
-  // once, so guard against logging out more than once per dead session.
-  const sessionExpiredHandledRef = useRef(false);
-  useEffect(() => {
-    const onSessionExpired = () => {
-      if (sessionExpiredHandledRef.current) return;
-      sessionExpiredHandledRef.current = true;
-      doLogout("Your session expired — please log in again");
-    };
-    window.addEventListener("muse:session-expired", onSessionExpired);
-    return () => window.removeEventListener("muse:session-expired", onSessionExpired);
-  }, [doLogout]);
-  // Re-arm the guard above on every fresh login, so a session that expires,
-  // gets logged out, and is then logged back into (same tab) still gets the
-  // clear "please log in again" handling if THAT session later expires too.
-  useEffect(() => { if (authUser) sessionExpiredHandledRef.current = false; }, [authUser]);
+  useSessionRefresh({ applySession, setRefreshToken, doLogout, authUser });
 
   const uploadImage = useCallback(async (file: File, folder: string): Promise<string | null> => {
     try {
@@ -1399,51 +1010,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   // Merge server-side notifications (bookings, connections, check-ins) into the
   // activity feed so the Activity modal shows real DB rows, not just local events.
-  useEffect(() => {
-    const pid = authUser?.profile?.id;
-    if (!pid) return;
-    let cancelled = false;
-    authFetch("/api/muse?type=notifications")
-      .then(r => r.json())
-      .then(j => {
-        if (cancelled) return;
-        const list = (j.notifications || []) as Notification[];
-        if (!list.length) return;
-        setActivityFeed(prev => {
-          // Dedup by stable id, not by body text: two DIFFERENT notifications
-          // can legitimately share identical text (e.g. two "Someone liked your
-          // post" events), and the old text-based dedup silently dropped the
-          // second one.
-          const existing = new Set<number | undefined>(prev.map(a => a.id));
-          const mapped = list
-            .filter(n => n && n.body && !existing.has(n.id))
-            .map((n) => ({
-              id: n.id ?? uid(),
-              type: n.type || "info",
-              // Audit fix (Torreé batch Part B item 8): this used to
-              // hardcode from/avatar to "" for every server-sourced
-              // notification, which is what made ProfileScreen's Activity
-              // tab show a generic "Someone" / ghost "S" avatar even when
-              // the real sender's name and photo were available. The GET
-              // ?type=notifications handler now embeds + normalizes the
-              // sender profile (from_id -> muse_profiles) onto n.from/
-              // n.avatar directly, same as feedbackGetNotifications
-              // already did for MenuModal's own panel — a genuinely
-              // senderless system notification (no from_id, e.g. a
-              // booking reminder) still falls back to "Someone"/"S"
-              // downstream, which is correct for those, not a bug.
-              from: n.from || "",
-              avatar: n.avatar || "",
-              text: String(n.body),
-              time: n.created_at ? new Date(n.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "",
-              read: !!n.read,
-            }));
-          return mapped.length ? [...mapped.reverse(), ...prev] : prev;
-        });
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id]);
+  // (moved into useNotificationSync above)
 
   const filteredProfiles = useMemo(() => {
     // Stable order guarantee: the demo/static deck is shuffled ONCE with a
@@ -1517,48 +1084,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     return enriched;
   }, [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch, obData.chinese, obData.lifePath, obData.mbti, obData.type, obData.looking, obData.styles, obData.zodiac]);
 
-  useEffect(() => {
-    const profile = filteredProfiles[currentIdx];
-    if (!profile?.id) { setCardAlbums([]); setCardAlbumPhotos([]); return; }
-    let cancelled = false;
-    apiFetch(`/api/muse?type=albums&profile_id=${encodeURIComponent(profile.id)}`)
-      .then(r => r.json())
-      .then(d => {
-        if (cancelled) return;
-        const albums = d.albums || [];
-        setCardAlbums(albums);
-        if (albums.length > 0) setCardAlbumIdx(0);
-      })
-      .catch((err) => { trackError("fetch_albums", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [currentIdx, filteredProfiles, apiFetch]);
+  useCardAlbumPhotos({ apiFetch, filteredProfiles, currentIdx, cardAlbums, setCardAlbums, cardAlbumIdx, setCardAlbumIdx, setCardAlbumPhotos });
 
-  useEffect(() => {
-    if (cardAlbumIdx === 0) { setCardAlbumPhotos([]); return; }
-    const album = cardAlbums[cardAlbumIdx - 1];
-    if (!album?.id) return;
-    let cancelled = false;
-    apiFetch(`/api/muse?type=album-photos&album_id=${encodeURIComponent(album.id)}`)
-      .then(r => r.json())
-      .then(d => {
-        if (cancelled) return;
-        setCardAlbumPhotos((d.photos || []).map((p: { img_url: string }) => p.img_url));
-      })
-      .catch((err) => { trackError("fetch_album_photos", { err: String(err) }); });
-    return () => { cancelled = true; };
-  }, [cardAlbumIdx, cardAlbums, apiFetch]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const lastReset = safeGetItem("muse_last_reset");
-      const now = Date.now();
-      if (!lastReset || now - parseInt(lastReset) > 86400000) {
-        setDailyLikes(10);
-        setSuperLikes(3);
-        safeSetItem("muse_last_reset", String(now));
-      }
-    }
-  }, [setDailyLikes, setSuperLikes]);
+  useDailyLikesReset({ safeGetItem, safeSetItem, setDailyLikes, setSuperLikes });
 
   const flash = useCallback((color: string) => { setScreenFlash(color); setTimeout(() => setScreenFlash(null), 300); }, [setScreenFlash]);
   // Back-navigation history: showScreen pushes the screen we're leaving so a
@@ -1768,23 +1296,13 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     MATCH_VARIANTS,
   });
 
-  useEffect(() => { if(screen!=="discover")return;const onKey=(e:KeyboardEvent)=>{if(e.key==="ArrowLeft"){e.preventDefault();doSwipe("left")}if(e.key==="ArrowRight"){e.preventDefault();doSwipe("right")}};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey)},[screen,doSwipe]);
+  useKeyboardNav({ screen, doSwipe });
 
   // Pause ambient animations when tab hidden (battery/thermal/cpu savings)
-  useEffect(() => {
-    const onVis = () => { document.body.classList.toggle("animations-paused", document.hidden); };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, []);
+  useVisibilityPause();
 
   // Story auto-advance: 5s per story, then next (or close at the end)
-  useEffect(() => {
-    if (showStory === null) return;
-    const timer = setTimeout(() => {
-      setShowStory(prev => (prev !== null && prev < stories.length - 1) ? prev + 1 : null);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [showStory, stories.length]);
+  useStoryAutoAdvance({ showStory, setShowStory, stories });
 
   const openChat = useCallback((match: Match) => { setChatTarget(match); setScreen("chat"); }, [setChatTarget]);
 
@@ -1905,65 +1423,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     }, 1200 + Math.random() * 2000);
   }, [chatTarget, authUser, setChatTarget, setMatches, setTypingTarget, showToast]);
 
-  // Real-time incoming messages for the active conversation.
-  useEffect(() => {
-    if (!chatTarget || !authUser?.profile?.id) return;
-    const myId = authUser.profile.id;
-    const theirId = String(chatTarget.id);
-    const sub = subscribeToConversation({
-      myId,
-      theirId,
-      onMessage: (senderId, text, img) => {
-        const msg = { from: "them" as const, text, img, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
-        setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, msg] } : prev);
-        setMatches(prev => prev.map(m => String(m.id) === theirId ? { ...m, messages: [...m.messages, msg] } : m));
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
-      },
-      onStatus: (status) => setRealtimeStatus(status),
-      onTyping: () => {
-        setThemTyping(true);
-        if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
-        typingTimerRef.current = setTimeout(() => setThemTyping(false), 2200);
-      },
-    });
-    sendTypingRef.current = sub.sendTyping;
-    return sub.unsubscribe;
-  }, [authUser?.profile?.id, chatTarget, chatTarget?.id, authUser?.id, setChatTarget, setMatches, setThemTyping]);
-
-  // Load persisted conversation history when a chat is opened -- the realtime
-  // subscription above only catches messages that arrive *after* it connects,
-  // so without this a returning user (new device, cleared storage, or just a
-  // missed message) would only ever see whatever happens to be in local state.
-  // Server history is treated as canonical; any local-only messages (e.g. an
-  // optimistic send not yet reflected server-side) are appended after it.
-  useEffect(() => {
-    if (!chatTarget || !authUser?.profile?.id) return;
-    const myId = authUser.profile.id;
-    const theirId = String(chatTarget.id);
-    let cancelled = false;
-    fetchConversationHistory({ myId, theirId }).then(history => {
-      if (cancelled || !history.length) return;
-      // Prefer id-based dedup (clientMsgId, threaded through from send time)
-      // over content matching — two distinct messages sent close together
-      // with identical text+img used to collapse into one under the old
-      // text+"|"+img key. Fall back to content matching only for messages
-      // that predate this fix and never got a clientMsgId.
-      const seenIds = new Set(history.map(h => h.clientMsgId).filter(Boolean));
-      const seenContent = new Set(history.map(h => h.text + "|" + (h.img || "")));
-      const isDupe = (m: { clientMsgId?: string; text?: string; img?: string }) => m.clientMsgId ? seenIds.has(m.clientMsgId) : seenContent.has((m.text || "") + "|" + (m.img || ""));
-      setChatTarget(prev => {
-        if (!prev || String(prev.id) !== theirId) return prev;
-        const localOnly = (prev.messages || []).filter(m => !isDupe(m));
-        return { ...prev, messages: [...history, ...localOnly] };
-      });
-      setMatches(prev => prev.map(m => {
-        if (String(m.id) !== theirId) return m;
-        const localOnly = (m.messages || []).filter(mm => !isDupe(mm));
-        return { ...m, messages: [...history, ...localOnly] };
-      }));
-    }).catch(() => {});
-    return () => { cancelled = true; };
-  }, [authUser?.profile?.id, chatTarget, chatTarget?.id, authUser?.id, setChatTarget, setMatches]);
+  useChatEffects({ authUser, chatTarget, setChatTarget, setMatches, setRealtimeStatus, setThemTyping, typingTimerRef, sendTypingRef, messagesEndRef });
 
   const saveProfileEdits = useCallback(async () => {
     setCurrentUser(prev => ({ ...prev, name: editName || prev.name, avatar: editAvatar || prev.avatar, type: editType || prev.type }));
