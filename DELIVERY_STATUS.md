@@ -850,3 +850,35 @@ All six call sites in page.tsx now import them; inline definitions deleted. **Ze
 4. Small procedural handlers (`dismissVerificationBanner`, `toggleObMulti`, `toggleSocial`, `doRewind`, `doLikeWithNote`) — each 6–20 lines, each needs 2–4 setters; best bundled into one `useMuseActions` hook rather than one hook apiece.
 
 **GATES:** tsc 0 · eslint 0 · vitest **73 files / 559 tests PASS** (12 new) · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
+
+## Handover/audit reconciliation — all 80 CHATGPT_* + 24 non-CHATGPT docs re-verified vs current code — 2026-09-25 (wyzmind)
+Two independent passes re-checked every handover/audit document against the CURRENT source and reported only what is still genuinely open. Roughly 50 previously-open items are now confirmed DONE in code (email on all events, referral reward, mark-all-read persistence, QR local, web push, demo gate, notification prefs enforcement, real online badge, onboarding resume, prompt bank, message-request inbox, nested forum threading, LiveKit calls, full-screen gallery, studio map pins, 2FA UI, CSP ConnectJS, ESLint as a real gate, spatial-depth fix, npm audit 0). Migration applied-state is verified done (0001-0026 via the production ledger; 0027-0029 written+applied).
+
+QUICK WINS TAKEN THIS PASS:
+- `BtsScreen.tsx` comment field now has a context label ("Write a comment on <author>'s moment") instead of a generic one.
+- `src/app/dmca/page.tsx` now sets its own `alternates.canonical` (it previously inherited the app layout's `canonical: null`).
+- Fixed the "within24 hours" typo in `src/app/muse/privacy/page.tsx`.
+- `MenuModal.tsx` activity filter chips now expose `aria-pressed` (programmatic selected state).
+- `.gitignore` extended so the stray root artifacts from handover round 39 (page.tsx.original, build.log, build_output.txt, _audit_full.py, _verify_live.py, Muse_Boardroom_Audit.xlsx, screenshot_*.png, _screenshots/, test-screenshots/, node_modules_broken_bak/, _LOGS_dev_*.txt) can't be committed.
+
+STILL OPEN — CODE (verified absent from current source), roughly in value order:
+1. **Durable video-moderation pipeline** — helpers exist unused (`contentScan.ts:175,197`); upload rejects video (`api/muse/upload/route.ts:87-92`); recording disabled (`FeedScreen.tsx:426`).
+2. **Portfolio visibility server enforcement** — `portfolioVisibility` is still client-preference only; no server reader/authorization/signed delivery (`lib/muse-actions/misc.ts:33`, `SettingsScreen.tsx:1491,1506`).
+3. **Lazy-mount inactive screens** — all screens stay mounted (CSS-only hiding), leaving ghost landmarks/tabbables (`muse.css:235`).
+4. **Native-control / tab-primitive migration** — 100+ `role="button"` shims remain (`page.tsx:2886-3036`, `MenuModal.tsx:340,361`, `SessionsScreen.tsx:452,554`, `DiscoverScreen.tsx:538,556,661`, `CollabScreen.tsx:305-310`, `CommunityScreen.tsx:360`).
+5. **Admin moderation gaps** — refund-review UI, ban/mute list + undo, community-rules edit, boost-analytics panel, saved-search alerts trigger, notify-claimable-quests trigger; actions registered with zero callers (`api/muse/route.ts:101,106-109,131,140,207,216-217`).
+6. **Message-request feedback bug** — the sender is never told a message became a Message Request (`muse-realtime.ts:58`, `lib/muse-actions/messaging.ts:113`, `page.tsx:2493-2504`).
+7. **Age / online-visibility toggles have no observable effect** — no other-user payload exposes them (`api/muse/match/route.ts:51,144-165` vs `PublicProfileScreen.tsx:254,271`).
+8. **Availability structured dates** (currently free-text) + status radio semantics (`SettingsScreen.tsx:1519-1533`).
+9. **Feed media alt text** — still `alt="Post image"`; no user-authored alt/caption (`FeedScreen.tsx:587,708`).
+10. Baselines still open (`tests/helpers/accessibility-helpers.ts:35-44`): `region` (verify-banner outside `#muse-main`) and `target-size` (Discover 36px card chrome).
+11. Dead-code cleanup: `block-user`/`unblock-user` duplicates, `_networkOpenTab`/`_obStep10Known`/`_shuffleSeed`, unused `excludedPortfolios`/`selectedPortfolio`/`showPortfolioModal`/`portfolioStats` (`page.tsx:300,321,446`, `useUserState.ts:106-110`).
+12. Deferred/accepted: CSP nonce migration (`next.config.ts:25`), `.screen-el.active *{pointer-events:auto}` wildcard (`muse.css:2330`), write-only `decryptToken` (`token-crypto.ts:23`).
+13. `page.tsx` medium-large extraction plan (documented separately).
+
+STILL OPEN — OWNER/LEGAL (not code):
+- Counsel: retention wording, ToS/Privacy/DMCA/Safety, liability/arbitration, age-verification language, CCPA/GDPR, trademark/™.
+- DMCA designated-agent **phone** + published counter-notice; registration DMCA-1078382.
+- NCMEC ESP approval -> `NCMEC_CLIENT_ID`/`NCMEC_CLIENT_SECRET` (highest-risk legal gate).
+- Production proof: real RLS + signed-URL cross-account matrix, installed-PWA recheck, iOS/Android device suite, manual screen-reader traversal, Web Vitals/load/reconnect benchmarks, restore drill.
+- Owner decisions: duplicate-account-rejection vs anti-enumeration acceptance, coverage-ratchet ratification, D5 Discover header visual direction, seed-real-creatives/partnerships/app-store/RevenueCat.

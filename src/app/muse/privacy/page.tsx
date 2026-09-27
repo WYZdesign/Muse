@@ -28,7 +28,7 @@ export default function PrivacyPage() {
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>6. Data Security</h2>
         <p style={{ marginBottom: 16 }}>We use Supabase Row Level Security (RLS), HTTPS everywhere, DPAPI encryption for local credentials, and AWS KMS for secrets at rest. No system is perfectly secure, but we invest heavily in protecting your data.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>7. Children&apos;s Privacy</h2>
-        <p style={{ marginBottom: 16 }}>Muses by WYZ is strictly for ages 18+. We do not knowingly collect data from children. If you believe a child has used Muse, contact us immediately — we will delete all associated data within24 hours.</p>
+        <p style={{ marginBottom: 16 }}>Muses by WYZ is strictly for ages 18+. We do not knowingly collect data from children. If you believe a child has used Muse, contact us immediately — we will delete all associated data within 24 hours.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>8. Changes to This Policy</h2>
         <p style={{ marginBottom: 16 }}>We may update this policy. We will notify you of material changes via email or in-app notification. Your continued use after changes means you accept the new policy.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>9. Contact</h2>

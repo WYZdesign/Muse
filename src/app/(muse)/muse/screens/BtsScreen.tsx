@@ -690,7 +690,7 @@ export const BtsScreen = memo(function BtsScreen({
                   <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "0 12px 12px" }}>
                     <input
                       className="inp"
-                      aria-label="Write a comment"
+                      aria-label={`Write a comment on ${s.author?.split(" ")[0] || "this"}'s moment`}
                       placeholder="Write a comment…"
                       value={commentDraft}
                       autoFocus

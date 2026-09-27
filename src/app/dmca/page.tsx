@@ -3,6 +3,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "DMCA Takedown Policy — Muses by WYZ",
   description: "Report copyright infringement on the Muses by WYZ platform.",
+  // Its own canonical: without this the page inherits the app layout's
+  // `canonical: null` and can be indexed under the wrong URL.
+  alternates: { canonical: "/dmca" },
 };
 
 export default function DMCAPage() {
