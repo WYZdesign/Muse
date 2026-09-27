@@ -825,3 +825,28 @@ Full anon-exposure scan across all `muse_*` tables (production, vault creds, val
 - `PROFILES` added to the CommunityScreen types import.
 - GATES: tsc 0 · eslint 0 · vitest **547 PASS** · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
 - Reviewed the remaining `"Unknown"`/`"Anonymous"` fallbacks — they are sensible (e.g. `Upload failed: Unknown`, missing-name in the admin queue), not broken, so left as-is.
+
+## page.tsx de-cruft: pure helpers extracted + SIZE RATCHET — 2026-09-25 (wyzmind)
+Owner: "ensure page.tsx doesn't get too much crazier and can start getting worked on" — quick/easy/low wins first, massive extractions left for Codex.
+
+**New guardrail — `page-size-budget.test.ts`**: page.tsx is frozen at **4,134 lines** and CI fails if it grows. Lower the budget when a block moves out; never raise it. This is the mechanism that stops the file getting "crazier" while extraction continues.
+
+**New module — `page-helpers.ts`** (pure, dependency-free, unit-tested):
+- `getIcebreaker(type, seed)` — deterministic pool pick
+- `getReferralTier(c)` — Bronze/Silver/Gold/Platinum thresholds + next threshold
+- `checkProfileBadges(stats, createdAt)` — Full Moon / Golden Hour / Collab King / Rising Star / Social Butterfly
+- `sanitizeInput(text)` — strip `<>`, cap 500
+- `buildBriefTitleMap(userBriefs, liveBriefs, fallbackBriefs)` — the Activity > Applied/Saved id→title merge
+- `computeUnreadCount(activityFeed, serverNotifCount)` — the unread badge max()
+
+All six call sites in page.tsx now import them; inline definitions deleted. **Zero behaviour change** — the helpers are pure functions of their arguments, and `page-helpers.test.ts` (12 cases) pins every branch.
+
+**Current state of the file**: 4,134 lines / ~309 KB, down from ~4,018→ then 4,139 as the working tree drifted; net removal this pass of the six helper bodies. Codex's earlier split (31 hooks + page-constants + page-models) remains in place.
+
+**Assessment — what a further split needs (left for the big-pass / Codex):**
+1. `applySession` (~306 lines, L873–1179) — biggest inline callback; deps are 7 setters plus apiFetch/supabase/storage. Extract to `hooks/useSessionApply.ts`.
+2. Bootstrap hydration effect (~203 lines, L1181–1384) — build-version check + SW/cache bust + state load. Extract to `hooks/useBootstrapHydration.ts`.
+3. The render tree (~1,100 lines) — extract into composed sub-components; needs ~100 props threaded, so do it last.
+4. Small procedural handlers (`dismissVerificationBanner`, `toggleObMulti`, `toggleSocial`, `doRewind`, `doLikeWithNote`) — each 6–20 lines, each needs 2–4 setters; best bundled into one `useMuseActions` hook rather than one hook apiece.
+
+**GATES:** tsc 0 · eslint 0 · vitest **73 files / 559 tests PASS** (12 new) · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.

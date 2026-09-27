@@ -36,6 +36,7 @@ import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, typ
 import { useChatState } from "./hooks/useChatState";
 import { useCall } from "./hooks/useCall";
 import { useFocusTrap } from "./hooks/useFocusTrap";
+import { getIcebreaker, getReferralTier, checkProfileBadges, sanitizeInput, buildBriefTitleMap, computeUnreadCount } from "./page-helpers";
 import CallOverlay from "./components/CallOverlay";
 import { useBriefsState } from "./hooks/useBriefsState";
 import { useSavedListingsState } from "./hooks/useSavedListingsState";
@@ -1843,24 +1844,12 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
   // Single source of truth lives in components/types.ts — a second local copy
   // existed here and the two were drifting.
-  const getIcebreaker = useCallback((type: string, seed?: string) => {
-    const pool = ICEBREAKERS[type] || ICEBREAKERS.default;
-    const hash = seed ? seed.split('').reduce((a, c) => a + c.charCodeAt(0), 0) : 0;
-    return pool[hash % pool.length];
-  }, []);
+  // getIcebreaker / getReferralTier / checkProfileBadges / sanitizeInput moved
+  // to ./page-helpers.ts (pure, dependency-free) to keep this file shrinking.
 
-  const getReferralTier = (c:number) => c>=50?{tier:"Platinum",discount:20,perks:"20% off all services",nextThreshold:null}:c>=20?{tier:"Gold",discount:15,perks:"15% off all services",nextThreshold:50}:c>=5?{tier:"Silver",discount:10,perks:"10% off all services",nextThreshold:20}:c>=1?{tier:"Bronze",discount:0,perks:"Exclusive badge",nextThreshold:5}:{tier:"None",discount:0,perks:"Invite friends to earn",nextThreshold:1};
-  const checkProfileBadges = (stats: Partial<typeof currentUser.stats>, createdAt:number):{name:string;desc:string;icon:string;color:string}[] => {
-    const b:{name:string;desc:string;icon:string;color:string}[] = [];
-    if (createdAt && Date.now()-createdAt > 31536000000) b.push({name:"Full Moon",icon:"🌕",color:"#C0C0FF",desc:"1 year on Muses"});
-    if ((stats.bookingsCompleted ?? 0) >= 50) b.push({name:"Golden Hour",icon:"☀️",color:"#FFD700",desc:"50+ shoots completed"});
-    else if ((stats.bookingsCompleted ?? 0) >= 10) b.push({name:"Collab King",icon:"👑",color:"#FFD700",desc:"10+ bookings completed"});
-    if ((stats.matchesReceived ?? 0) >= 100) b.push({name:"Rising Star",icon:"⭐",color:"#FFBF00",desc:"100+ matches"});
-    if ((stats.messagesSent ?? 0) >= 500) b.push({name:"Social Butterfly",icon:"🦋",color:"#FF69B4",desc:"500+ messages"});
-    return b;
-  };
 
-  const unreadNotificationCount = useMemo(() => Math.max(activityFeed.filter(n => !n.read).length, serverNotifCount), [activityFeed, serverNotifCount]);
+  // getReferralTier moved to ./page-helpers.ts
+  const unreadNotificationCount = useMemo(() => computeUnreadCount(activityFeed, serverNotifCount), [activityFeed, serverNotifCount]);
 
   // Audit fix (2026-09-08): the hamburger's Activity > Applied/Saved tabs
   // only ever had the bare brief ID for each entry (appliedBriefs/
@@ -1870,12 +1859,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
   // CollabScreen already uses (userBriefs, then liveBriefs falling back to
   // the static BRIEFS demo set) so the lookup matches what's actually
   // rendered as "the briefs list" elsewhere in the app.
-  const briefTitleById = useMemo(() => {
-    const map: Record<string, string> = {};
-    for (const b of userBriefs) if (b?.id != null && b.title) map[String(b.id)] = b.title;
-    for (const b of (liveBriefs?.length ? liveBriefs : BRIEFS)) if (b?.id != null && b.title && !map[String(b.id)]) map[String(b.id)] = b.title;
-    return map;
-  }, [userBriefs, liveBriefs]);
+  const briefTitleById = useMemo(() => buildBriefTitleMap(userBriefs, liveBriefs, BRIEFS), [userBriefs, liveBriefs]);
 
   // Merge server-side notifications (bookings, connections, check-ins) into the
   // activity feed so the Activity modal shows real DB rows, not just local events.
@@ -2454,7 +2438,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
   const openChat = useCallback((match: Match) => { setChatTarget(match); setScreen("chat"); }, [setChatTarget]);
 
-  const sanitizeInput = (text: string) => text.replace(/[<>]/g, '').slice(0, 500);
+  // sanitizeInput moved to ./page-helpers.ts
   const toggleSocial = useCallback((key: string) => {
     const currentlyConnected = obConnectedSocials[key];
     if (currentlyConnected) {
