@@ -584,7 +584,7 @@ export const FeedScreen = memo(function FeedScreen({
                         full card width edge-to-edge and the image fills it (objectFit:cover),
                         so photos/videos never letterbox, overflow, or leave a gap. Any
                         source aspect ratio is cropped to 4:3 consistently. */}
-                    <Image loading="lazy" src={post.img} alt="Post image" width={800} height={600} className="feed-post-img" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }} onError={handleImgError} />
+                    <Image loading="lazy" src={post.img} alt={`${post.author}'s post image${post.text ? `: ${post.text.slice(0, 60)}` : ""}`} width={800} height={600} className="feed-post-img" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }} onError={handleImgError} />
                   </div>
                 )}
                 <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "8px 18px", borderTop: "1px solid var(--border-subtle)" }}>
@@ -705,7 +705,7 @@ export const FeedScreen = memo(function FeedScreen({
                 </div>
               </div>
               {dp.text && <div style={{ fontSize: 16, lineHeight: 1.6, whiteSpace: "pre-wrap", marginBottom: dp.img ? 14 : 18 }}>{dp.text}</div>}
-              {dp.img && <Image loading="lazy" src={dp.img} alt="Post image" width={800} height={420} style={{ width: "100%", height: "auto", maxHeight: 420, objectFit: "cover", borderRadius: 16, marginBottom: 14, display: "block" }} onError={handleImgError} />}
+              {dp.img && <Image loading="lazy" src={dp.img} alt={`${dp.author}'s post image${dp.text ? `: ${dp.text.slice(0, 60)}` : ""}`} width={800} height={420} style={{ width: "100%", height: "auto", maxHeight: 420, objectFit: "cover", borderRadius: 16, marginBottom: 14, display: "block" }} onError={handleImgError} />}
               {(() => {
                 const dViews = typeof dp.views === "number" ? dp.views : 50 + (dp.likes || 0) * 8 + (dp.comments || 0) * 15 + (dp.shares || 0) * 25;
                 const dEng = (dp.likes || 0) + (dp.comments || 0) * 2 + (dp.shares || 0) * 3;

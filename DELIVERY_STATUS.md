@@ -953,3 +953,7 @@ Given Muse's shape — ~30 hooks already extracted, ~10 screens in `screens/`, ~
 - FIX (`src/app/api/muse/match/route.ts`): the candidate select now reads `last_seen_at`; each scored candidate is returned with `online` (derived from their own `last_seen_at` within 5 minutes, AND gated on their `preferences.showOnline !== false`), an explicit `showOnline` flag, `last_seen_at: undefined` so the raw timestamp is never leaked, and `showAge` passed through to match how the client gates it. `preferences` itself is still stripped.
 - FINDING (needs a product decision, flagged not fixed): **`muse_profiles` has no `age` column at all** — only `age_verified`/`age_verified_at`. So `user.age` is always undefined and the "Show age" toggle is inert by nature; making it work needs a DOB/birthdate field + onboarding capture + migration, which is a product/legal call (age data on a dating app is sensitive).
 - GATES: tsc 0 · eslint 0 · vitest **73 files / 559 tests PASS** · build 0.
+
+## Open task: Feed media alt text — 2026-09-25 (wyzmind)
+- Both Feed post images used the generic `alt="Post image"` (posts list + detail). Now `${author}'s post image: <first 60 chars of the caption>`, falling back to just `${author}'s post image` when there is no caption. Screen readers finally get something meaningful; avatars were already correctly labelled.
+- GATES: tsc 0 · eslint 0 · vitest **73 files / 559 tests PASS**.
