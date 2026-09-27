@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
 
     // Fetch candidates WITH their stored embeddings (single read, no token cost).
     const { data: allProfiles } = await sb.from("muse_profiles")
-      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, photos, collabs, verified, tier, profile_completion_pct, embedding, preferences, nsfw, suspended")
+      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, photos, collabs, verified, tier, profile_completion_pct, embedding, preferences, last_seen_at, nsfw, suspended")
       .limit(200);
 
     // Blocks (either direction) were never consulted here — the swipe deck could
@@ -147,9 +147,18 @@ export async function GET(req: NextRequest) {
         // Respect the candidate's own "Show Distance" privacy preference —
         // don't leak their full preferences blob, just the one derived flag
         // the client needs to decide whether to render a distance figure.
-        preferences: undefined,
-        showDistance: c.preferences?.showDistance !== false,
-        zodiac: showZodiac ? c.zodiac : "",
+      preferences: undefined,
+      showDistance: c.preferences?.showDistance !== false,
+      // Online status: derived from the candidate's own `last_seen_at`, and only
+      // exposed when THEY allow it. Before this, the select did not even read
+      // `last_seen_at` and nothing set `showOnline`, so the "Show online status"
+      // privacy toggle had no observable effect on any profile payload.
+      online: c.preferences?.showOnline !== false &&
+        !!c.last_seen_at && (Date.now() - new Date(c.last_seen_at).getTime()) < 5 * 60 * 1000,
+      showOnline: c.preferences?.showOnline !== false,
+      last_seen_at: undefined,
+      showAge: c.preferences?.showAge !== false,
+      zodiac: showZodiac ? c.zodiac : "",
         mbti: showMbti ? c.mbti : "",
         life_path: showLifePath ? c.life_path : "",
         chinese: showChinese ? c.chinese : "",
