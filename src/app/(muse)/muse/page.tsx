@@ -2839,12 +2839,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
         <main id="muse-main" role="main" tabIndex={-1} style={{flex:1,display:"flex",flexDirection:"column",minHeight:0}}>
           {/* Live status region — non-blocking announcements for async actions */}
           <div role="status" aria-live="polite" aria-atomic="true" id="muse-live-status" className="sr-only" />
-          {/* ═══ VERIFICATION EXPIRY BANNER ═══
-              Moved INSIDE <main id="muse-main"> so it sits within a landmark —
-              axe flagged it as a `region` violation when it rendered as a bare
-              sibling above <main>. It is `position:absolute` against `.phone`
-              (see the .verify-banner keyframes in muse.css), so moving it here
-              changes nothing visually and still never pushes other content. */}
+          {/* VERIFICATION EXPIRY BANNER — inside <main> for the axe region fix; absolute, so visually unchanged. */}
           {((!ageVerified) || verificationExpiringSoon) && !verificationBannerDismissed && (
             <div className={"verify-banner" + (verificationBannerClosing ? " verify-banner-closing" : "")} style={{ position: "absolute", bottom: "var(--nav-h, calc(72px + env(safe-area-inset-bottom, 0px)))", left: 0, right: 0, zIndex: 9999, background: verificationExpiringSoon ? "linear-gradient(135deg, #ff8c00, #ffd700)" : "linear-gradient(135deg, #ff4444, #ff6b6b)", padding: "10px 44px 10px 10px", boxShadow: "0 -4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12)", textAlign: "center", fontSize: 12, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 2, whiteSpace: "nowrap", overflow: "hidden", opacity: 0.85 }}>
               <span>{verificationExpiringSoon ? "Your verification is expiring soon" : "Verify identity for full features."}</span>

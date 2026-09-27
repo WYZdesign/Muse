@@ -888,3 +888,6 @@ STILL OPEN — OWNER/LEGAL (not code):
 - Removed `region` from `KNOWN_A11Y_GAPS` in `tests/helpers/accessibility-helpers.ts` — that is the proof: the accessibility suite (20 passed / 1 skipped) now runs with the baseline deleted, so a regression would hard-fail.
 - GATES: tsc 0 · eslint 0 · build 0 · accessibility **20 / 1 skipped** (region baseline removed).
 - Still baselined (bounded): `target-size` (Discover `card-photo-nav` 36px decorative chrome, `pointer-events:none`).
+
+## Ratchet correction — 2026-09-25 (wyzmind)
+The `page-size-budget` guardrail did its job: the banner move added 5 lines (4,134 -> 4,139) and **CI's Unit Tests job failed**, refusing the growth. **The budget was NOT raised** — the change was compacted to a single-line comment so page.tsx sits at exactly 4,134, the frozen budget. This is the guardrail working as intended on its first live test.
