@@ -10,9 +10,25 @@ function client(url: string, key: string, opts: any) {
   return { url, key, opts, tag: "client" };
 }
 
+// CI sets these to placeholder values at the WORKFLOW level, so
+// `vi.unstubAllEnvs()` restores those placeholders rather than clearing them.
+// Every key the module reads is therefore explicitly blanked first, and the
+// passed env then overrides — otherwise the "env missing" cases would read
+// CI's placeholders locally-passing but CI-failing.
+const ENV_KEYS = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  "SUPABASE_URL",
+  "SUPABASE_SECRET_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_ANON_KEY",
+];
+
 async function load(env: Record<string, string>): Promise<typeof import("./supabase")> {
   vi.resetModules();
   vi.unstubAllEnvs();
+  for (const k of ENV_KEYS) vi.stubEnv(k, "");
   for (const [k, v] of Object.entries(env)) vi.stubEnv(k, v);
   return await import("./supabase");
 }
