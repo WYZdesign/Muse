@@ -1530,7 +1530,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             { k: "busy", l: "Busy", d: "Working — limited availability" },
             { k: "unavailable", l: "Not accepting", d: "Paused all new bookings" },
           ].map(o => (
-            <button key={o.k} onClick={() => setAvailabilityStatus(o.k)}
+            <button key={o.k} aria-pressed={availabilityStatus === o.k} onClick={() => setAvailabilityStatus(o.k)}
               style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", marginBottom: 8, border: "1px solid var(--border-subtle)", borderRadius: 14, background: availabilityStatus === o.k ? "var(--gold)" : "var(--glass)", color: availabilityStatus === o.k ? "#0a0612" : "var(--text)", cursor: "pointer" }}>
               <div style={{ fontSize: 14, fontWeight: 700 }}>{o.l}</div>
               <div style={{ fontSize: 11, opacity: .75, marginTop: 2 }}>{o.d}</div>
