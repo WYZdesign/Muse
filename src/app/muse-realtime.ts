@@ -34,9 +34,9 @@ export async function persistMessage(opts: {
   durationMs?: number;
   transcript?: string;
   clientMsgId?: string;
-}): Promise<boolean> {
-  if (!opts.myId || opts.myId === "local") return false;
-  if (!opts.theirId || (!opts.text.trim() && !opts.img && !opts.mediaUrl)) return false;
+}): Promise<{ ok: boolean; pending?: boolean; message?: string }> {
+  if (!opts.myId || opts.myId === "local") return { ok: false };
+  if (!opts.theirId || (!opts.text.trim() && !opts.img && !opts.mediaUrl)) return { ok: false };
   const convo = convoIdFor(opts.myId, opts.theirId);
   try {
     const res = await authFetch("/api/muse", {
@@ -55,10 +55,23 @@ export async function persistMessage(opts: {
         client_msg_id: opts.clientMsgId || `${opts.myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       }),
     });
-    return res.ok;
+    // Return the BODY, not just `res.ok`. For a non-match the server replies
+    // `200 { success: true, pending: true }` — the message became a Message
+    // Request rather than a delivered message. Collapsing that to `true` is why
+    // the sender saw a delivered bubble and was never told it was a request.
+    try {
+      const data = await res.json();
+      return {
+        ok: res.ok,
+        pending: !!data?.pending,
+        message: typeof data?.message === "string" ? data.message : undefined,
+      };
+    } catch {
+      return { ok: res.ok };
+    }
   } catch (err) {
     trackError("persistMessage_failed", { convo, err: String(err) });
-    return false;
+    return { ok: false };
   }
 }
 

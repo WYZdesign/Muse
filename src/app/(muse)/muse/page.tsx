@@ -116,7 +116,6 @@ const INITIAL_STORIES = [
 
 
 
-
 /* ═══ COMPONENT ═══ */
 
 export default function MusePageWrapper() {
@@ -297,8 +296,8 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       setSessTab(viewerSide(t) === "industry" ? "bookings" : "sessions");
     }
   }, [currentUser?.type]);
-  const [_networkOpenTab, _setNetworkOpenTab] = useState<"pros"|"forum"|undefined>(undefined);
   const [forumSort, setForumSort] = useState<"hot"|"new"|"top">("hot");
+  const [_networkOpenTab, _setNetworkOpenTab] = useState<"pros"|"forum"|undefined>(undefined);
   const [forumCategory, _setForumCategory] = useState<string>("all");
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostBody, setNewPostBody] = useState("");
@@ -318,7 +317,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const editAvatarInputRef = useRef<HTMLInputElement>(null);
 
   // Personality Discovery
-  const [_obStep10Known, _setObStep10Known] = useState<"yes"|"no"|"test"|null>(null);
   const portfolioInputRef = useRef<HTMLInputElement>(null);
   const [matchesView, setMatchesView] = useState<"list"|"grid">("list");
   const [messageRequests, setMessageRequests] = useState<unknown[]>([]);
@@ -443,7 +441,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // applySession. A real external SIGNED_IN (actual login, OAuth) never
   // sets this, so it's unaffected.
   const syncingSdkSessionRef = useRef(false);
-  const _shuffleSeed = useRef(Math.floor(Math.random() * 100000));
   const _matchSwipeRef = useRef<{id:string;startX:number;el:HTMLElement|null}>({id:"",startX:0,el:null});
   const [_matchSwiping, setMatchSwiping] = useState<{id:string;offset:number} | null>(null);
    const [realtimeStatus, setRealtimeStatus] = useState<"connecting"|"connected"|"disconnected">("connecting");
@@ -1833,7 +1830,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     let sent = true;
     try {
-      sent = await persistMessage({ myId, theirId: targetId, text: "", img: "", kind, mediaUrl: url, mediaType, durationMs, transcript, clientMsgId });
+      sent = (await persistMessage({ myId, theirId: targetId, text: "", img: "", kind, mediaUrl: url, mediaType, durationMs, transcript, clientMsgId })).ok;
     } catch { sent = false; }
     if (!sent && myId !== "local") {
       setChatTarget(prev => prev ? { ...prev, messages: prev.messages.filter(m => m !== userMsg) } : prev);
@@ -1844,11 +1841,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
   // Single source of truth lives in components/types.ts — a second local copy
   // existed here and the two were drifting.
-  // getIcebreaker / getReferralTier / checkProfileBadges / sanitizeInput moved
-  // to ./page-helpers.ts (pure, dependency-free) to keep this file shrinking.
 
 
-  // getReferralTier moved to ./page-helpers.ts
   const unreadNotificationCount = useMemo(() => computeUnreadCount(activityFeed, serverNotifCount), [activityFeed, serverNotifCount]);
 
   // Audit fix (2026-09-08): the hamburger's Activity > Applied/Saved tabs
@@ -2438,7 +2432,6 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
 
   const openChat = useCallback((match: Match) => { setChatTarget(match); setScreen("chat"); }, [setChatTarget]);
 
-  // sanitizeInput moved to ./page-helpers.ts
   const toggleSocial = useCallback((key: string) => {
     const currentlyConnected = obConnectedSocials[key];
     if (currentlyConnected) {
@@ -2491,7 +2484,8 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     setChatInput("");
     setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
     let sent = true;
-    try { sent = await persistMessage({ myId, theirId: targetId, text: clean, clientMsgId }); } catch { sent = false; }
+    let pendingRequest = false;
+    try { const r = await persistMessage({ myId, theirId: targetId, text: clean, clientMsgId }); sent = r.ok; pendingRequest = !!r.pending; } catch { sent = false; }
     // persistMessage returns false (never throws) on a real failure — safety
     // block, rate limit, or a block between the two of you. The bubble was
     // already shown optimistically above; without this the sender would see
@@ -2504,6 +2498,12 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     }
     analytics.messageSend(String(chatTarget?.id || ""), false);
     trackQuest("send_message", "first_message");
+    if (pendingRequest) {
+      showToast({ msg: "Sent as a message request — they'll see it in Requests." });
+      const mark = (list: any[]) => list.map(m => m === userMsg ? { ...m, pending: true } : m);
+      setChatTarget(prev => prev ? { ...prev, messages: mark(prev.messages) } : prev);
+      setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: mark(m.messages) } : m));
+    }
     // Show typing + simulated reply only in demo mode (no real remote partner).
     if (!DEMO_MODE) return;
     setTypingTarget(Number(chatTarget.id));
@@ -2529,7 +2529,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
     setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: [...m.messages, userMsg] } : m));
     setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
     let sent = true;
-    try { sent = await persistMessage({ myId, theirId: targetId, text: "", img: imgUrl, clientMsgId }); } catch { sent = false; }
+    try { sent = (await persistMessage({ myId, theirId: targetId, text: "", img: imgUrl, clientMsgId })).ok; } catch { sent = false; }
     if (!sent && myId !== "local") {
       setChatTarget(prev => prev ? { ...prev, messages: prev.messages.filter(m => m !== userMsg) } : prev);
       setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: m.messages.filter(mm => mm !== userMsg) } : m));
@@ -3396,7 +3396,7 @@ const applySession = useCallback((accessToken: string, refreshToken?: string, at
                 const userMsg = { from: "me", text: msg, time: "Just now", clientMsgId };
                 setMatches(prev => prev.map(m => m.id === target.id ? { ...m, messages: [...(m.messages||[]), userMsg] } : m));
                 let sent = true;
-                try { sent = await persistMessage({ myId, theirId: String(target.id), text: msg, clientMsgId }); } catch { sent = false; }
+                try { sent = (await persistMessage({ myId, theirId: String(target.id), text: msg, clientMsgId })).ok; } catch { sent = false; }
                 if (!sent && myId !== "local") {
                   setMatches(prev => prev.map(m => m.id === target.id ? { ...m, messages: m.messages.filter(mm => mm !== userMsg) } : m));
                   showToast("Liked, but the note couldn't be sent");
