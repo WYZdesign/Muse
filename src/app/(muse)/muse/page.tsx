@@ -9,11 +9,9 @@ import { supabase } from "@/lib/supabase";
 import { subscribeToMusePush, unsubscribeFromMusePush, ensureMusePushRegistered } from "@/app/muse-pwa";
 import { persistMessage, subscribeToConversation, fetchConversationHistory, getGeolocation, distanceMiles } from "@/app/muse-realtime";
 import { trackError } from "@/lib/errorTracker";
-import { FiArrowLeft, FiX, FiLink, FiTwitter, FiInstagram } from "react-icons/fi";
+import { FiX } from "react-icons/fi";
 import BackgroundScene from "./components/BackgroundScene";
 import { MatchOverlay } from "./components/MatchOverlay";
-import { ReportModal } from "./components/ReportModal";
-import { DailyLoginModal } from "./components/DailyLoginModal";
 import { announce } from "./a11y";
 import { PageSplash } from "./components/PageSplash";
 import Confetti from "./components/Confetti";
@@ -24,15 +22,10 @@ import { getAccessToken, authFetch, fetchWithTimeout } from "./lib/api";
 import { analytics, setAnalyticsUser, initAnalyticsSession } from "./lib/analytics";
 import { initialsAvatarUrl } from "./lib/initials-avatar";
 import { uid } from "./lib/uid";
-import { getProfileShareUrl, getPostShareUrl, getMuseUrl } from "@/lib/urls";
-import { viewerSide, viewerSideOf, getMuseRole } from "@/lib/role";
+import { viewerSide, viewerSideOf } from "@/lib/role";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
 import { STRINGS } from "@/lib/strings";
-import DisclosureModal from "./components/DisclosureModal";
-import AgeVerificationModal from "./components/AgeVerificationModal";
-import UpsellModal from "./components/UpsellModal";
-import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon } from "./components/traitIcons";
-import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "./components/badgeInfo";
+import type { BadgeInfo } from "./components/badgeInfo";
 import { useChatState } from "./hooks/useChatState";
 import { useCall } from "./hooks/useCall";
 import { useFocusTrap } from "./hooks/useFocusTrap";
@@ -71,11 +64,8 @@ const AnalyticsScreen = React.lazy(() => import("./screens/AnalyticsScreen").the
 const MatchGuideScreen = React.lazy(() => import("./screens/MatchGuideScreen").then(m => ({ default: m.MatchGuideScreen })));
 const PublicProfileScreen = React.lazy(() => import("./screens/PublicProfileScreen").then(m => ({ default: m.PublicProfileScreen })));
 import { CardPreloader } from "@/components/CardPreloader";
-import SafetyCheckinModal from "./components/SafetyCheckinModal";
-import PromptBankModal from "./components/PromptBankModal";
-import ReferralPanel from "./components/ReferralPanel";
-import ConnectPanel from "./components/ConnectPanel";
-import PaymentHistory from "./components/PaymentHistory";
+import { MuseModals } from "./modals/MuseModals";
+import { IntentPickerModal } from "./modals/IntentPickerModal";
 import { PROFILES, AESTHETICS, BEHIND_CAMERA, IN_FRONT_CAMERA, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, ICEBREAKERS, BRIEFS, calcMatch, matchReasons, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen, type LikeAnchor } from "./components/types";
 import { useDiscoveryData } from "./hooks/useDiscoveryData";
 import { useFeedData } from "./hooks/useFeedData";
@@ -87,7 +77,7 @@ import { useSwipeActions } from "./hooks/useSwipeActions";
 import { useBriefsData } from "./hooks/useBriefsData";
 import { useProfileData } from "./hooks/useProfileData";
 import { normalizeCommunity, normalizeEvent, normalizeForumPost, normalizeBrief, normalizeSession, normalizeFeedPost } from "./hooks/normalizers";
-import { AGE_VERIFICATION_VALID_DAYS, DEMO_MODE, MATCH_VARIANTS, OWNER_EMAIL, SUPPORT_EMAIL } from "./page-constants";
+import { AGE_VERIFICATION_VALID_DAYS, DEMO_MODE, MATCH_VARIANTS, OWNER_EMAIL } from "./page-constants";
 import type { Notification, Professional, ProfileReview, ProfileViewer, Quest, RawApiProfile, RawFeedPost, RawForumPost, ViewProfile } from "./page-models";
 
 type DiscoveryProfile = typeof PROFILES[number] & {
@@ -2065,61 +2055,20 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           onImageError={handleImgError}
         />
       )}
-      {showIntentPicker && intentProfile && (
-        <div className="intent-overlay" ref={intentPickerTrap} role="dialog" aria-modal="true" aria-label="Intent picker" onPointerDown={(e) => { if (e.target === e.currentTarget) { setShowIntentPicker(false); setIntentProfile(null); setIntentSelection([]); } }}>
-          <div className="intent-modal">
-            <div style={{textAlign:"center",marginBottom:16}}>
-              <Image loading="lazy" src={intentProfile.img} alt="Avatar" width={60} height={60} style={{borderRadius:"50%",objectFit:"cover",marginBottom:8}} onError={handleImgError} />
-              <div style={{fontSize:16,fontWeight:700,color:"var(--text)"}}>{intentProfile.name}</div>
-              <div style={{fontSize:12,color:"var(--muted)"}}>{intentProfile.type}</div>
-            </div>
-            <div style={{fontSize:13,color:"var(--text2)",textAlign:"center",marginBottom:16}}>What's your intent with {intentProfile.name.split(" ")[0]}? <span style={{opacity:0.7}}>(up to 2)</span></div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {(getMuseRole({ audience: currentUser.audience, type: currentUser.type || obData.type }) === "muse" ? [
-                {icon:"📌",label:"Book / Hire",desc:"Bring them onto a project you're casting or producing",intent:"hire"},
-                {icon:"🤝",label:"Collaborate",desc:"Work together on a project",intent:"collab"},
-                {icon:"📁",label:"Scout for Future Work",desc:"Keep them in mind for upcoming briefs",intent:"scout"},
-                {icon:"🔗",label:"Connect",desc:"Grow your industry network",intent:"connect"},
-              ] : [
-                {icon:"🤝",label:"Collaborate",desc:"Work together on a project",intent:"collab"},
-                {icon:"💼",label:"Hire / Commission",desc:"Professional paid work",intent:"hire"},
-                {icon:"🔗",label:"Connect",desc:"Grow your creative network",intent:"connect"},
-                {icon:"👁️",label:"Inspired By",desc:"Your work inspires me",intent:"inspire"},
-              ]).map(({icon,label,desc,intent})=>(
-                <button key={intent} className={`intent-btn ${intentSelection.includes(intent) ? "selected" : ""}`} onClick={(e)=>{
-                  e.stopPropagation();
-                  // Round 46: two-tap flow — first tap highlights option 1,
-                  // second tap highlights option 2 (and vice-versa). No
-                  // other outline, no ripple, no hover state — just the
-                  // selected background swap. If a third tap lands on an
-                  // already-selected item, it deselects; if it lands on a
-                  // third option while two are already chosen, it's ignored.
-                  if (intentSelection.length >= 2 && !intentSelection.includes(intent)) return;
-                  setIntentSelection(prev => prev.includes(intent) ? prev.filter(i => i !== intent) : [...prev, intent]);
-                }} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,background:intentSelection.includes(intent) ? "var(--gold)" : "var(--glass)",cursor:"pointer",width:"100%",textAlign:"left",transition:"all .15s"}}
-                >
-                  <span style={{fontSize:28}}>{icon}</span>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>{label}</div>
-                    <div style={{fontSize:11,color:"var(--muted)"}}>{desc}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-            {intentSelection.length > 0 && (
-              <button className="intent-submit" onClick={()=>{
-                const chosenIntent = intentSelection.join("+");
-                setUserDefaultIntent(chosenIntent);
-                setShowIntentPicker(false);
-                setIntentProfile(null);
-                setIntentSelection([]);
-                doSwipe("right", chosenIntent);
-              }} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"var(--gold)",color:"var(--text)",fontSize:12,cursor:"pointer",fontWeight:600}}>Submit {intentSelection.length} intent{(intentSelection.length > 1 ? "s" : "")}</button>
-            )}
-            <button className="intent-skip" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null);setIntentSelection([]);setUserDefaultIntent("");doSwipe("left")}} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"none",color:"var(--muted)",fontSize:12,cursor:"pointer"}}>Skip this profile</button>
-          </div>
-        </div>
-      )}
+      <IntentPickerModal
+        showIntentPicker={showIntentPicker}
+        setShowIntentPicker={setShowIntentPicker}
+        intentProfile={intentProfile}
+        setIntentProfile={setIntentProfile}
+        intentSelection={intentSelection}
+        setIntentSelection={setIntentSelection}
+        intentPickerTrap={intentPickerTrap}
+        currentUser={currentUser}
+        obData={obData}
+        handleImgError={handleImgError}
+        setUserDefaultIntent={setUserDefaultIntent}
+        doSwipe={doSwipe}
+      />
       {showAgeGate && (
         <div className="age-gate">
           <div className="age-gate-icon">18+</div>
@@ -2704,791 +2653,172 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
       {/* SETTINGS SCREEN */}
       {screen === "settings" && <ScreenErrorBoundary name="Settings"><SettingsScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} obData={obData} showNsfw={showNsfw} setShowNsfw={setShowNsfw} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} blockedUsers={blockedUsers} setBlockedUsers={setBlockedUsers} obConnectedSocials={obConnectedSocials} toggleSocial={toggleSocial} theme={theme} setTheme={setTheme} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} doLogout={doLogout} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditNsfw={setEditNsfw} setShowNotificationsSettings={setShowNotificationsSettings} showNotificationsSettings={showNotificationsSettings} setShowConnectedAccounts={setShowConnectedAccounts} showConnectedAccounts={showConnectedAccounts} pushEnabled={pushEnabled} setPushEnabled={setPushEnabled} subscribeToMusePush={subscribeToMusePush} unsubscribeFromMusePush={unsubscribeFromMusePush} setShowTerms={setShowTerms} setShowPrivacy={setShowPrivacy} setShowGuidelines={setShowGuidelines} setShowDeleteConfirm={setShowDeleteConfirm} isUnlimited={isUnlimited} setShowConnect={setShowConnect} setShowPaymentHistory={setShowPaymentHistory} setShowReferral={setShowReferral} setShowSafetyCheckin={setShowSafetyCheckin} setShowPromptBank={setShowPromptBank} promptResponses={promptResponses} promptBankData={promptBankData} myGeo={myGeo} setShowAgeGate={setShowAgeGate} setPendingNsfw={setPendingNsfw} setShowAgeVerification={setShowAgeVerification} setScreen={setScreen} setObStep={setObStep} apiFetch={apiFetch} setShowQuests={setShowQuests} questClaimables={claimableQuests} showBlockedUsers={showBlockedUsersPanel} setShowBlockedUsers={setShowBlockedUsersPanel} ageVerified={ageVerified} verificationExpiringSoon={verificationExpiringSoon} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showOnline={showOnline} setShowOnline={setShowOnline} showDistance={showDistance} setShowDistance={setShowDistance} showZodiac={showZodiac} setShowZodiac={setShowZodiac} showAge={showAge} setShowAge={setShowAge} showMbti={showMbti} setShowMbti={setShowMbti} showLifePath={showLifePath} setShowLifePath={setShowLifePath} showChinese={showChinese} setShowChinese={setShowChinese} showMatchPercent={showMatchPercent} setShowMatchPercent={setShowMatchPercent} userTier={userTier} setUpsell={setUpsell} authFetch={authFetch} setSupportOpen={setSupportOpen} preferences={(currentUser as typeof currentUser & { preferences?: Record<string, unknown>; profile?: { preferences?: Record<string, unknown> } }).preferences ?? (currentUser as typeof currentUser & { profile?: { preferences?: Record<string, unknown> } }).profile?.preferences ?? {}} /></ScreenErrorBoundary>}
 
-      {showReport && (
-        <ReportModal
-          target={reportTarget}
-          dialogRef={reportTrap}
-          apiFetch={apiFetch}
-          onClose={() => { setShowReport(false); setReportTarget(null); }}
-          onReported={showToast}
-        />
-      )}
-
-      {/* LIKE + NOTE MODAL */}
-      {showLikeNote && noteTargetProfile && (
-        <div className="modal-overlay" style={{zIndex:500}} ref={likeNoteTrap} role="dialog" aria-modal="true" aria-label="Like and note">
-          <div className="modal-header">
-            <button className="modal-back" aria-label="Back" onClick={()=>{setShowLikeNote(false);setLikeNoteAnchor(null);}}><FiArrowLeft size={20} /></button>
-            <div className="modal-title">Like + Note</div>
-            <button className="modal-close" onClick={()=>{setShowLikeNote(false);setLikeNoteAnchor(null);}} aria-label="Close"><FiX size={18} /></button>
-          </div>
-          <div className="modal-body" style={{display:"flex",flexDirection:"column",gap:16,paddingTop:20}}>
-            <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <Image loading="lazy" src={noteTargetProfile.img} alt={noteTargetProfile.name} width={48} height={48} style={{borderRadius:"50%",objectFit:"cover"}} onError={handleImgError} />
-              <div>
-                <div style={{fontWeight:700,fontSize:16,color:"var(--text)"}}>{noteTargetProfile.name}</div>
-                <div style={{fontSize:13,color:"var(--muted)"}}>{noteTargetProfile.type}</div>
-              </div>
-            </div>
-            {likeNoteAnchor && (
-              <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",borderRadius:10,background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.25)",fontSize:12,color:"var(--gold)",fontWeight:600}}>
-                ✦ Liking {likeNoteAnchor.type === "prompt" ? `their prompt: "${likeNoteAnchor.value}"` : likeNoteAnchor.value.toLowerCase()}
-              </div>
-            )}
-            <textarea className="inp" aria-label="Like note" placeholder="Send a note with your like…" rows={4} value={likeNoteText} onChange={e=>setLikeNoteText(e.target.value)} style={{fontSize:14,resize:"none",borderRadius:12}} />
-            <div style={{fontSize:12,color:"var(--muted)",textAlign:"right"}}>{likeNoteText.length}/200</div>
-            <button className="btn btn-gold" onClick={async ()=>{
-              if (!noteTargetProfile) return;
-              const target = noteTargetProfile;
-              const anchor = likeNoteAnchor;
-              doSwipe("right");
-              const note = likeNoteText.trim().slice(0,200);
-              setShowLikeNote(false);
-              setLikeNoteText("");
-              setNoteTargetProfile(null);
-              setLikeNoteAnchor(null);
-              // Persist the like with its anchor/note so the recipient sees
-              // exactly what was liked (in their notifications). doSwipe only
-              // calls the match action when it judges a mutual match, so an
-              // anchored/annotated like needs its own explicit record —
-              // matchCreate merges anchor/note into the existing row either way.
-              if (target?.id) {
-                apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: target.id, note, anchor_type: anchor?.type, anchor_value: anchor?.value }) }).catch(() => {});
-              }
-              if (note) {
-                const msg = note;
-                const myId = authUser?.profile?.id || authUser?.id || "local";
-                const clientMsgId = `${myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-                const userMsg = { from: "me", text: msg, time: "Just now", clientMsgId };
-                setMatches(prev => prev.map(m => m.id === target.id ? { ...m, messages: [...(m.messages||[]), userMsg] } : m));
-                let sent = true;
-                try { sent = (await persistMessage({ myId, theirId: String(target.id), text: msg, clientMsgId })).ok; } catch { sent = false; }
-                if (!sent && myId !== "local") {
-                  setMatches(prev => prev.map(m => m.id === target.id ? { ...m, messages: m.messages.filter(mm => mm !== userMsg) } : m));
-                  showToast("Liked, but the note couldn't be sent");
-                } else {
-                  showToast("Liked + note sent!");
-                }
-              }
-            }} style={{width:"100%",padding:"14px"}}>
-              ✦ Send Like & Note
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* TERMS OF SERVICE MODAL */}
-      {showTerms && (
-        <div className="modal-overlay lighter" ref={termsTrap} role="dialog" aria-modal="true" aria-label="Terms of Service">
-          <div className="modal-header">
-            <button className="modal-back" aria-label="Back" onClick={()=>setShowTerms(false)}><FiArrowLeft size={20} /></button>
-            <div className="modal-title">Terms of Service</div>
-            <button className="modal-close" onClick={()=>setShowTerms(false)} aria-label="Close"><FiX size={18} /></button>
-          </div>
-          <div className="modal-body" style={{maxHeight:"70vh",overflowY:"auto",lineHeight:1.7,fontSize:13,color:"var(--text2)"}}>
-            <div style={{fontWeight:700,fontSize:16,color:"var(--text)",marginBottom:12}}>Muses by WYZ Terms of Service</div>
-            <p><strong>1. Acceptance of Terms</strong>{"\n"}By accessing or using Muse, a creative networking platform operated by WYZ Design, you agree to be bound by these Terms of Service. If you do not agree, do not use the service.</p>
-            <p><strong>2. Eligibility</strong>{"\n"}You must be at least 18 years old to use Muse. By using the service, you represent that you meet this age requirement.</p>
-            <p><strong>3. User Accounts</strong>{"\n"}You are responsible for maintaining the confidentiality of your account credentials. You agree to provide accurate and complete information during registration and to update it as necessary.</p>
-            <p><strong>4. User Content</strong>{"\n"}You retain ownership of content you post on Muse. By posting content, you grant Muse a non-exclusive, worldwide license to use, display, and distribute your content in connection with the service.</p>
-            <p><strong>5. Prohibited Conduct</strong>{"\n"}You may not: harass other users, post illegal or harmful content, attempt to circumvent security measures, use the service for commercial spam, or violate any applicable laws.</p>
-            <p><strong>6. Intellectual Property</strong>{"\n"}All content, trademarks, and intellectual property on Muse (excluding user content) are owned by WYZ Design. You may not copy, modify, or distribute our intellectual property without written consent.</p>
-            <p><strong>7. Privacy</strong>{"\n"}Your use of Muse is also governed by our Privacy Policy. Please review it to understand how we collect, use, and protect your information.</p>
-            <p><strong>8. Termination</strong>{"\n"}We reserve the right to suspend or terminate your account at our discretion, with or without notice, for conduct that violates these Terms or is otherwise harmful to the service or its users.</p>
-            <p><strong>9. Disclaimer</strong>{"\n"}Muse is provided {"\""}as is{"\""} without warranties of any kind. We are not liable for any damages arising from your use of the service.</p>
-            <p><strong>10. Changes to Terms</strong>{"\n"}We may update these Terms at any time. Continued use of Muse after changes constitutes acceptance of the new Terms.</p>
-            <div style={{textAlign:"center",padding:"16px 0",fontSize:11,color:"var(--muted)"}}>Last updated: July 2026 · WYZ Design LLC</div>
-            <button className="btn btn-gold" style={{width:"100%",marginTop:8}} onClick={()=>setShowTerms(false)}>I Understand</button>
-          </div>
-        </div>
-      )}
-
-      {showPrivacy && (
-        <div className="modal-overlay lighter" ref={privacyTrap} role="dialog" aria-modal="true" aria-label="Privacy Policy">
-          <div className="modal-header">
-            <button className="modal-back" aria-label="Back" onClick={()=>setShowPrivacy(false)}><FiArrowLeft size={20} /></button>
-            <div className="modal-title">Privacy Policy</div>
-            <button className="modal-close" onClick={()=>setShowPrivacy(false)} aria-label="Close"><FiX size={18} /></button>
-          </div>
-          <div className="modal-body" style={{maxHeight:"70vh",overflowY:"auto",lineHeight:1.7,fontSize:13,color:"var(--text2)"}}>
-            <div style={{fontWeight:700,fontSize:16,color:"var(--text)",marginBottom:12}}>Muses by WYZ Privacy Policy</div>
-            <p><strong>1. Information We Collect</strong>{"\n"}Account information (name, email, profile details you provide), content you post (photos, messages, briefs, forum posts), usage data (swipes, matches, interactions), device information (browser type, OS, IP address).</p>
-            <p><strong>2. How We Use Your Information</strong>{"\n"}To provide and improve the Muse service, to match you with compatible creatives, to communicate with you about your account and the service, to detect and prevent fraud or abuse, and to comply with legal obligations.</p>
-            <p><strong>3. Information Sharing</strong>{"\n"}We do not sell your personal information. We may share information with service providers who assist in operating the platform (hosting, analytics), when required by law, or with your explicit consent. Your profile is visible to other Muses users based on your privacy settings.</p>
-            <p><strong>4. Data Storage & Security</strong>{"\n"}Your data is stored on secure servers provided by Supabase. We use industry-standard encryption for data in transit (TLS) and at rest. However, no method of transmission over the Internet is 100% secure.</p>
-             <p><strong>5. Your Rights</strong>{"\n"}You can access, update, or delete your account data at any time through the app settings. You may request a copy of all data we hold about you by contacting {SUPPORT_EMAIL}. You may also request deletion of your account. Access is removed immediately; account data is permanently deleted after 30 days, except where safety, fraud-prevention, or legal obligations require retention.</p>
-            <p><strong>6. Cookies & Tracking</strong>{"\n"}We use essential cookies for authentication and session management. We do not use third-party advertising cookies. Analytics data is collected anonymously to improve the service.</p>
-            <p><strong>7. Children's Privacy</strong>{"\n"}Muse is not intended for users under 18. We do not knowingly collect information from children. If we become aware of such collection, we will delete the information immediately.</p>
-            <p><strong>8. Changes to This Policy</strong>{"\n"}We may update this Privacy Policy from time to time. We will notify you of material changes through the app or by email.</p>
-            <p><strong>9. Contact Us</strong>{"\n"}For questions about this Privacy Policy, contact us at {SUPPORT_EMAIL} or WYZ Design LLC.</p>
-            <div style={{textAlign:"center",padding:"16px 0",fontSize:11,color:"var(--muted)"}}>Last updated: July 2026 · WYZ Design LLC</div>
-            <button className="btn btn-gold" style={{width:"100%",marginTop:8}} onClick={()=>setShowPrivacy(false)}>I Understand</button>
-          </div>
-        </div>
-      )}
-
-      {showGuidelines && (
-        <div className="modal-overlay lighter" ref={guidelinesTrap} role="dialog" aria-modal="true" aria-label="Community Guidelines">
-          <div className="modal-header">
-            <button className="modal-back" aria-label="Back" onClick={()=>setShowGuidelines(false)}><FiArrowLeft size={20} /></button>
-            <div className="modal-title">Community Guidelines</div>
-            <button className="modal-close" onClick={()=>setShowGuidelines(false)} aria-label="Close"><FiX size={18} /></button>
-          </div>
-          <div className="modal-body" style={{maxHeight:"70vh",overflowY:"auto",lineHeight:1.7,fontSize:13,color:"var(--text2)"}}>
-            <div style={{fontWeight:700,fontSize:16,color:"var(--text)",marginBottom:12}}>Muses by WYZ Community Guidelines</div>
-            <p><strong>Be Respectful</strong>{"\n"}Treat every member with dignity. Harassment, hate speech, bullying, discrimination, or personal attacks of any kind will result in immediate account suspension.</p>
-            <p><strong>Be Authentic</strong>{"\n"}Use your real name, real photos, and honest descriptions of your work. Fake profiles, impersonation, and catfishing are strictly prohibited and will be removed without warning.</p>
-            <p><strong>Be Professional</strong>{"\n"}Muse is a creative networking platform. Keep conversations professional and collaborative. Sexual content, explicit material, and solicitation are not permitted in public spaces. NSFW-tagged content is restricted to age-verified users only.</p>
-            <p><strong>Protect Privacy</strong>{"\n"}Do not share others' personal information without consent. Do not screenshot private conversations. Respect the boundaries other members set.</p>
-            <p><strong>No Spam or Scams</strong>{"\n"}Do not post unsolicited advertisements, pyramid schemes, phishing links, or fraudulent opportunities. Legitimate collaborations should be transparent about terms and compensation.</p>
-            <p><strong>Report Problems</strong>{"\n"}If you encounter behavior that violates these guidelines, please use the report feature. Reports are reviewed promptly and taken seriously. All reports are confidential.</p>
-            <p><strong>Content Standards</strong>{"\n"}All content must be original or properly credited. Do not post copyrighted material without permission. Content depicting violence, illegal activities, or harm to others is prohibited.</p>
-            <p><strong>Consequences</strong>{"\n"}Violations may result in content removal, temporary suspension, or permanent ban depending on severity. Repeat offenders will be permanently removed. We reserve the right to take immediate action for serious violations.</p>
-            <div style={{textAlign:"center",padding:"16px 0",fontSize:11,color:"var(--muted)"}}>Last updated: July 2026 · WYZ Design LLC</div>
-            <button className="btn btn-gold" style={{width:"100%",marginTop:8}} onClick={()=>setShowGuidelines(false)}>I Understand</button>
-          </div>
-        </div>
-      )}
-
-      {/* DELETE ACCOUNT CONFIRMATION */}
-      {showDeleteConfirm && (
-        <div className="modal-overlay lighter" ref={deleteConfirmTrap} role="dialog" aria-modal="true" aria-label="Confirm account deletion">
-          <div className="modal-header">
-            <button className="modal-back" aria-label="Back" onClick={()=>setShowDeleteConfirm(false)}><FiArrowLeft size={20} /></button>
-            <div className="modal-title">Delete Account</div>
-            <button className="modal-close" onClick={()=>setShowDeleteConfirm(false)} aria-label="Close"><FiX size={18} /></button>
-          </div>
-          <div className="modal-body" style={{textAlign:"center"}}>
-            <div style={{fontSize:48,marginBottom:16}}>⚠️</div>
-            <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Are you sure?</div>
-            <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>Your access is removed immediately. Your account data is scheduled for permanent deletion after 30 days, except records we must retain for legal, safety, fraud, dispute, or recordkeeping obligations. See the Privacy Policy for details.</div>
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-               <button className="btn btn-gold" style={{width:"100%",borderColor:"var(--coral)",background:"linear-gradient(135deg,var(--coral),#ff4444)"}} onClick={async()=>{try{const res=await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"delete-account"})});if(!res.ok) throw new Error("failed");safeRemoveItem("muse_user");safeRemoveItem("muse_v1");safeRemoveItem("muse_geo");safeRemoveItem("muse_boost");safeRemoveItem("muse_last_reset");safeRemoveItem("muse_local");safeRemoveItem("muse_premium");safeRemoveItem("muse_referral_code");safeRemoveItem("muse_open_count");safeRemoveItem("muse_hide_premium");setAuthUser(null);setShowDeleteConfirm(false);setScreen("auth");showToast("Account deletion is scheduled. Access is removed now; data is purged after 30 days.");return}catch{showToast("Delete failed. Try again")}}}>Schedule Account Deletion</button>
-              <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setShowDeleteConfirm(false)}>{STRINGS.cancel}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* DISCOVERY PREFERENCES MODAL */}
-      {showDiscoveryPrefs && (
-        <div className="modal-overlay" ref={discoveryPrefsTrap} role="dialog" aria-modal="true" aria-label="Discovery preferences" onPointerDown={(e) => { if (e.target === e.currentTarget) setShowDiscoveryPrefs(false); }}>
-          <div className="modal-header">
-            <button className="modal-back" aria-label="Close discovery preferences" onClick={()=>setShowDiscoveryPrefs(false)}><FiArrowLeft size={20} /></button>
-            <div className="modal-title" style={{fontSize:16.5,whiteSpace:"nowrap"}}>Discovery Preferences</div>
-          </div>
-          <div className="modal-body">
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Age Range: {discoveryPrefs.ageMin} to {discoveryPrefs.ageMax}</div>
-              <div style={{display:"flex",gap:10,alignItems:"center"}}>
-              <input type="range" aria-label="Minimum age" min={18} max={65} value={discoveryPrefs.ageMin} onChange={e=>setDiscoveryPrefs(p=>({...p,ageMin:Math.min(Number(e.target.value),p.ageMax-1)}))} style={{flex:1,accentColor:"var(--gold)"}} />
-              <input type="range" aria-label="Maximum age" min={18} max={65} value={discoveryPrefs.ageMax} onChange={e=>setDiscoveryPrefs(p=>({...p,ageMax:Math.max(Number(e.target.value),p.ageMin+1)}))} style={{flex:1,accentColor:"var(--gold)"}} />
-              </div>
-            </div>
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Max Distance: {discoveryPrefs.distance} mi</div>
-              <input type="range" aria-label="Maximum distance in miles" min={1} max={100} value={discoveryPrefs.distance} onChange={e=>setDiscoveryPrefs(p=>({...p,distance:Number(e.target.value)}))} style={{width:"100%",accentColor:"var(--gold)"}} />
-            </div>
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Show Me</div>
-              <div style={{display:"flex",gap:8,overflowX:"auto",whiteSpace:"nowrap",scrollbarWidth:"none",paddingBottom:4,WebkitOverflowScrolling:"touch"}}>
-                {["all","women","men","non-binary"].map(g=>(
-                   <button key={g} type="button" aria-pressed={discoveryPrefs.gender===g} onClick={()=>setDiscoveryPrefs(p=>({...p,gender:g}))} style={{minWidth:44,minHeight:44,padding:"8px 16px",borderRadius:99,cursor:"pointer",fontSize:12,fontWeight:600,transition:"all .25s",whiteSpace:"nowrap",flexShrink:0,background:discoveryPrefs.gender===g?"rgba(255,215,0,0.12)":"rgba(255,255,255,0.04)",border:"1px solid "+(discoveryPrefs.gender===g?"rgba(255,215,0,0.3)":"rgba(255,255,255,0.06)"),color:discoveryPrefs.gender===g?"var(--gold)":"var(--muted)"}}>{g.charAt(0).toUpperCase()+g.slice(1)}</button>
-                ))}
-              </div>
-            </div>
-            <button className="btn btn-outline" style={{width:"100%",marginBottom:10}} onClick={async ()=>{
-              // Auto-name from the active filters; prefer the live search prompt
-              // when the user has typed one (same convention as search).
-              const autoName = `${discoveryPrefs.gender==="all"?"Anyone":discoveryPrefs.gender.charAt(0).toUpperCase()+discoveryPrefs.gender.slice(1)} · ${discoveryPrefs.ageMin}-${discoveryPrefs.ageMax} · ${discoveryPrefs.distance}mi`;
-              const name = (searchQuery||"").trim() || autoName;
-              const filters = { ...discoveryPrefs, filterStyles, filterScore };
-              if (DEMO_MODE) {
-                setSavedSearches(prev => [...prev, { id: `demo-search-${Date.now()}`, name, query: (searchQuery||"").trim(), filters }]);
-                showToast("Search saved for this demo session");
-                return;
-              }
-              try {
-                const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "saved-search-save", name, query: (searchQuery||"").trim(), filters }) });
-                if (!r.ok) throw new Error("failed");
-                showToast("Search saved");
-                try { const lr = await apiFetch("/api/muse?type=saved-search-list"); const ld = await lr.json(); setSavedSearches(Array.isArray(ld.searches)?ld.searches:[]); } catch { console.debug("[muse] saved searches could not be refreshed"); }
-              } catch { showToast("Couldn't save search"); }
-            }}>Save this search</button>
-            <button className="btn btn-gold" style={{width:"100%"}} onClick={()=>{
-              setShowDiscoveryPrefs(false);
-              showToast("Preferences saved!");
-              // Was local-state-only despite the toast claiming it saved — ageMin/
-              // ageMax/distance/gender are already whitelisted server-side (unlike
-              // filterStyles/filterScore, which do have their own persistence
-              // effect), they just were never sent. Persist on this explicit Save
-              // click rather than debouncing every slider tick.
-              if (!DEMO_MODE) apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: discoveryPrefs }) }).catch(() => {});
-            }}>{STRINGS.save}</button>
-            {savedSearches.length > 0 && (
-              <div style={{marginTop:16}}>
-                <div style={{fontSize:12,fontWeight:700,color:"var(--text2)",marginBottom:8}}>Saved Searches</div>
-                <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                  {savedSearches.map(s => (
-                    <div key={s.id} style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 10px"}}>
-                      <button onClick={()=>{
-                        const f = s.filters || {};
-                        setDiscoveryPrefs(p=>({...p, ageMin: typeof f.ageMin==="number"?f.ageMin:p.ageMin, ageMax: typeof f.ageMax==="number"?f.ageMax:p.ageMax, distance: typeof f.distance==="number"?f.distance:p.distance, gender: typeof f.gender==="string"?f.gender:p.gender}));
-                        if (Array.isArray(f.filterStyles)) setFilterStyles(f.filterStyles);
-                        if (typeof f.filterScore==="number") setFilterScore(f.filterScore);
-                        setShowDiscoveryPrefs(false);
-                        showToast("Search applied");
-                      }} style={{flex:1,minHeight:44,textAlign:"left",background:"none",border:"none",color:"var(--text)",fontSize:13,fontWeight:600,cursor:"pointer",padding:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.name}</button>
-                      <button aria-label="Delete saved search" title="Delete" onClick={async (e)=>{
-                        e.stopPropagation();
-                        const prev = savedSearches;
-                        setSavedSearches(p=>p.filter(x=>x.id!==s.id));
-                        if (DEMO_MODE) return;
-                        try {
-                          const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "saved-search-delete", searchId: s.id, id: s.id }) });
-                          if (!r.ok) throw new Error("failed");
-                        } catch { setSavedSearches(prev); showToast("Couldn't delete"); }
-                      }} style={{width:44,minWidth:44,height:44,background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:14,lineHeight:1,padding:"2px 4px"}}>✕</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* UNMATCH CONFIRMATION */}
-      {unmatchTarget && (
-        <div ref={unmatchTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Unmatch">
-          <div className="modal-header">
-            <button className="modal-back" aria-label="Back" onClick={()=>setUnmatchTarget(null)}><FiArrowLeft size={20} /></button>
-            <div className="modal-title">Unmatch</div>
-            <button className="modal-close" onClick={()=>setUnmatchTarget(null)} aria-label="Close"><FiX size={18} /></button>
-          </div>
-          <div className="modal-body" style={{textAlign:"center"}}>
-            <div style={{fontSize:48,marginBottom:16}}>💔</div>
-            <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Unmatch with {unmatchTarget.name}?</div>
-            <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>This will remove them from your matches and delete all messages. This cannot be undone.</div>
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <button className="btn btn-gold" style={{width:"100%",background:"linear-gradient(135deg,var(--coral),#ff4444)",borderColor:"var(--coral)"}} onClick={async()=>{
-                const t=unmatchTarget;
-                const prevMatches=matches;
-                setMatches(prev=>prev.filter(m=>String(m.id)!==String(t.id)));
-                setUnmatchTarget(null);
-                showScreen("matches");
-                showToast("Unmatched");
-                try{
-                  const r=await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"unmatch",target_id:t.id})});
-                  if(!r.ok) throw new Error("unmatch failed");
-                }catch{
-                  setMatches(prevMatches);
-                  showToast("Couldn't unmatch — try again");
-                }
-              }}>{STRINGS.unmatch}</button>
-              <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setUnmatchTarget(null)}>{STRINGS.cancel}</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {blockTarget && (
-        <div ref={blockTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Block user">
-          <div className="modal-header">
-            <button className="modal-back" aria-label="Back" onClick={()=>setBlockTarget(null)}><FiArrowLeft size={20} /></button>
-            <div className="modal-title">Block</div>
-            <button className="modal-close" onClick={()=>setBlockTarget(null)} aria-label="Close"><FiX size={18} /></button>
-          </div>
-          <div className="modal-body" style={{textAlign:"center"}}>
-            <div style={{fontSize:48,marginBottom:16}}>🚫</div>
-            <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Block {blockTarget.name}?</div>
-            <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>They won&apos;t be able to see your profile, message you, or match with you again. This cannot be undone.</div>
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <button className="btn btn-gold" style={{width:"100%",background:"linear-gradient(135deg,#ff4444,#8b0000)",borderColor:"#ff4444"}} onClick={async()=>{const t=blockTarget;const prevMatches=matches;setMatches(prev=>prev.filter(m=>String(m.id)!==String(t.id)));setBlockTarget(null);setBlockedUsers(prev=>prev.includes(String(t.id))?prev:[...prev,String(t.id)]);showScreen("matches");showToast(t.name+" blocked");try{await apiFetch("/api/muse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"block",target_id:t.id})});}catch{setMatches(prevMatches);showToast("Couldn't block — try again")}}}>{STRINGS.block}</button>
-              <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setBlockTarget(null)}>{STRINGS.cancel}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* STORIES VIEWER */}
-      {showStory!==null && (
-        <div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.96)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-          <div style={{position:"absolute",top:18,left:16,right:16,display:"flex",gap:5,zIndex:4}}>
-            {stories.map((s,i)=>(
-              <div key={s.id} style={{flex:1,height:3,borderRadius:2,background:"rgba(255,255,255,0.25)",overflow:"hidden"}}>
-                <div key={showStory} style={{height:"100%",width:"100%",background:"var(--gold)",transformOrigin:"left",transform:i<showStory?"scaleX(1)":"scaleX(0)",animation:i===showStory?"storyProgress 5s linear forwards":"none"}} />
-              </div>
-            ))}
-          </div>
-          <button style={{position:"absolute",top:14,right:14,zIndex:5,background:"none",border:"none",color:"#fff",fontSize:26,cursor:"pointer",padding:6}} onClick={()=>setShowStory(null)} aria-label="Close story">✕</button>
-          {stories[showStory] && (
-            <div style={{textAlign:"center",pointerEvents:"none"}}>
-              <Image loading="lazy" src={stories[showStory].img} alt="Photo" width={800} height={1200} style={{width:"auto",height:"auto",maxWidth:"90%",maxHeight:"70vh",borderRadius:16,objectFit:"contain",backgroundColor:"#1a0a2e"}} />
-              <div style={{display:"flex",alignItems:"center",gap:10,justifyContent:"center",marginTop:16}}>
-                <Image loading="lazy" src={stories[showStory].avatar} alt="Avatar" width={32} height={32} style={{borderRadius:"50%",objectFit:"cover",backgroundColor:"#1a0a2e"}} />
-                <span style={{color:"#fff",fontWeight:700}}>{stories[showStory].author}</span>
-                <span style={{color:"rgba(255,255,255,0.5)",fontSize:12}}>{stories[showStory].time}</span>
-              </div>
-            </div>
-          )}
-          <div style={{position:"absolute",left:0,top:0,bottom:0,width:"30%",zIndex:2}} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation();setShowStory(prev=>prev!==null&&prev>0?prev-1:prev); } }} onClick={(e)=>{e.stopPropagation();setShowStory(prev=>prev!==null&&prev>0?prev-1:prev)}} />
-          <div style={{position:"absolute",right:0,top:0,bottom:0,width:"30%",zIndex:2}} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation();setShowStory(prev=>prev!==null&&prev<stories.length-1?prev+1:null); } }} onClick={(e)=>{e.stopPropagation();setShowStory(prev=>prev!==null&&prev<stories.length-1?prev+1:null)}} />
-          <div style={{position:"absolute",bottom:24,color:"rgba(255,255,255,0.5)",fontSize:12,zIndex:3,pointerEvents:"none"}}>Tap sides to navigate · tap ✕ to close</div>
-        </div>
-      )}
-      {viewProfile && (
-        <div className="modal-overlay" ref={viewProfileTrap} role="dialog" aria-modal="true" aria-label="View profile" onPointerDown={(e) => { if (e.target === e.currentTarget) setViewProfile(null); }}>
-          <div className="modal-panel" style={{maxWidth:420,width:"90%",maxHeight:"88vh",overflowY:"auto",borderRadius:24,padding:0,background:"linear-gradient(180deg,#0f081e,#0a0612)"}}>
-            <div style={{position:"relative",width:"100%",aspectRatio:"3/4",overflow:"hidden"}}>
-              {(() => {
-                const photos = (viewProfile.photos?.length ? viewProfile.photos : [viewProfile.img]).filter((photo): photo is string => Boolean(photo));
-                const curPhoto = photos[viewProfilePhotoIdx] || photos[0] || viewProfile.img || "";
-                return <>
-                  <Image loading="lazy" src={curPhoto} alt={viewProfile.name || "Profile"} fill sizes="(max-width: 600px) 100vw, 400px" style={{objectFit:"cover",filter:viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))?"blur(26px) brightness(0.7)":"none",transition:"filter .3s"}} />
-                  {viewProfile.nsfw&&!revealedNsfw.has(String(viewProfile.id))&&(
-                    <button onClick={(e)=>{e.stopPropagation();setRevealedNsfw(prev=>{const n=new Set(prev);n.add(String(viewProfile.id));return n;})}} style={{position:"absolute",inset:0,zIndex:5,background:"rgba(10,6,18,0.45)",border:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer"}}>
-                      <div style={{fontSize:30,fontWeight:800,color:"#ff8a80"}}>18+</div>
-                      <div style={{fontSize:13,fontWeight:700,color:"#fff",letterSpacing:0.03}}>NSFW content</div>
-                      <div style={{fontSize:11,color:"rgba(255,255,255,0.7)"}}>Tap to reveal</div>
-                    </button>
-                  )}
-                  {photos.length > 1 && (
-                    <div style={{position:"absolute",bottom:70,left:0,right:0,display:"flex",justifyContent:"center",gap:6,zIndex:4}}>
-                      {photos.map((_:string,i:number)=>(
-                        <div key={i} onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(i);}} role="button" tabIndex={0} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setViewProfilePhotoIdx(i);}}} style={{width:7,height:7,borderRadius:"50%",background:i===viewProfilePhotoIdx?"#FFD700":"rgba(255,255,255,0.4)",cursor:"pointer",transition:"all .2s"}} />
-                      ))}
-                    </div>
-                  )}
-                  {photos.length > 1 && <>
-                    <div role="button" tabIndex={0} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setViewProfilePhotoIdx(p=>p>0?p-1:photos.length-1);}}} onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(p=>p>0?p-1:photos.length-1);}} style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:3,cursor:"pointer"}} />
-                    <div role="button" tabIndex={0} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setViewProfilePhotoIdx(p=>p<photos.length-1?p+1:0);}}} onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(p=>p<photos.length-1?p+1:0);}} style={{position:"absolute",right:0,top:0,bottom:0,width:"35%",zIndex:3,cursor:"pointer"}} />
-                  </>}
-                </>;
-              })()}
-              <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px",background:"linear-gradient(to top,rgba(10,6,18,0.95),transparent)"}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                  <div style={{fontSize:24,fontWeight:800,fontFamily:"'Playfair Display',serif",fontStyle:"italic"}}>{viewProfile.name}</div>
-                  {viewProfile.verified && <span role="button" tabIndex={0} onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:"Verified",desc:"Identity verified by Muses by WYZ — we confirmed this member's government ID and professional credentials.",icon:"✓",color:"#FFD700"});}} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setBadgeInfo({name:"Verified",desc:"Identity verified by Muses by WYZ — we confirmed this member's government ID and professional credentials.",icon:"✓",color:"#FFD700"});}}} style={{cursor:"pointer",fontSize:16,color:"#FFD700"}} title="Identity verified">✓</span>}
-                </div>
-                <div style={{fontSize:14,color:"var(--gold)",fontWeight:600}}>{viewProfile.type}</div>
-                {viewProfile.tier && <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{viewProfile.tier}</div>}
-              </div>
-              <button onClick={()=>setViewProfile(null)} aria-label="Close profile" style={{position:"absolute",top:12,right:12,width:32,height:32,borderRadius:"50%",background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5}}>✕</button>
-            </div>
-            <div style={{padding:20}}>
-              <div style={{display:"flex",gap:12,marginBottom:16,justifyContent:"space-around"}}>
-                {[
-                  {label:"Collabs",value:viewProfile.collabs ?? "—"},
-                  {label:"Score",value:viewProfile.score ?? "—"},
-                  {label:"Views",value:viewProfile.views ?? "—"},
-                ].map(s => (
-                  <div key={s.label} style={{textAlign:"center"}}>
-                    <div style={{fontSize:18,fontWeight:800,color:"var(--gold)"}}>{s.value}</div>
-                    <div style={{fontSize:10,color:"var(--muted)"}}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-              {viewProfile.badges && viewProfile.badges.length > 0 && (
-                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
-                  {viewProfile.badges.map((b, i) => (
-                    <span key={i} style={{padding:"3px 8px",borderRadius:99,background:b.bg||"rgba(255,215,0,0.1)",border:`1px solid ${b.bd||"rgba(255,215,0,0.2)"}`,fontSize:10,fontWeight:700,color:b.color||"var(--gold)",cursor:"pointer"}}>{b.icon} {b.name}</span>
-                  ))}
-                </div>
-              )}
-              {viewProfile.bio && <p style={{color:"var(--text2)",lineHeight:1.6,fontSize:14,marginBottom:16}}>{viewProfile.bio}</p>}
-              {viewProfile.location && <div style={{fontSize:13,color:"var(--text2)",marginBottom:12}}>📍 {viewProfile.location}{typeof viewProfile.distanceMi==="number"?` · ${viewProfile.distanceMi} mi`:""}</div>}
-              {(viewProfile.styles || []).length > 0 && (
-                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
-                  {(viewProfile.styles || []).map((s:string)=><button key={s} onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:s,desc:STYLE_FULL[s]||"A creative style this member works in.",icon:"🎨",color:"#FFD700"})}} style={{padding:"3px 8px",borderRadius:99,background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",fontSize:10,fontWeight:600,color:"var(--gold)",cursor:"pointer"}}>{s}</button>)}
-                </div>
-              )}
-              {(viewProfile.looking || []).length > 0 && (
-                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
-                  {(viewProfile.looking || []).map((l:string)=><span key={l} style={{padding:"3px 8px",borderRadius:99,background:"rgba(255,105,180,0.12)",border:"1px solid rgba(255,105,180,0.2)",fontSize:10,fontWeight:600,color:"#FF69B4"}}>looking for {l}</span>)}
-                </div>
-              )}
-              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
-                {viewProfile.zodiac && <button onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:`${viewProfile.zodiac} — ${ZODIAC_FULL[viewProfile.zodiac || ""]?.tag||""}`,desc:ZODIAC_FULL[viewProfile.zodiac || ""]?.desc||"",icon:ZODIAC_GLYPH[viewProfile.zodiac || ""]||"✦",color:"#D4A5FF"})}} style={{padding:"3px 8px",borderRadius:99,background:"rgba(212,165,255,0.12)",border:"1px solid rgba(212,165,255,0.2)",fontSize:10,fontWeight:600,color:"var(--lavender)",cursor:"pointer"}}>{ZODIAC_GLYPH[viewProfile.zodiac || ""]||"✦"} {viewProfile.zodiac}</button>}
-                {viewProfile.mbti && <button onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:`${viewProfile.mbti} — ${MBTI_FULL[viewProfile.mbti || ""]?.tag||""}`,desc:MBTI_FULL[viewProfile.mbti || ""]?.desc||"",icon:<MbtiIcon code={viewProfile.mbti || ""} size={16}/>,color:"#FFD700"})}} style={{padding:"3px 8px",borderRadius:99,background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",fontSize:10,fontWeight:600,color:"var(--gold)",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}><MbtiIcon code={viewProfile.mbti || ""} size={10}/> {viewProfile.mbti}</button>}
-                {viewProfile.lifePath && <button onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:`Life Path ${viewProfile.lifePath}`,desc:LIFE_PATH_FULL[String(viewProfile.lifePath)]||"",icon:<LifePathIcon n={Number(viewProfile.lifePath)} size={16}/>,color:"#98FB98"})}} style={{padding:"3px 8px",borderRadius:99,background:"rgba(152,251,152,0.1)",border:"1px solid rgba(152,251,152,0.2)",fontSize:10,fontWeight:600,color:"var(--mint)",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}><LifePathIcon n={Number(viewProfile.lifePath)} size={10}/> LP {viewProfile.lifePath}</button>}
-              </div>
-              {typeof viewProfile.collabs === "number" && <div style={{fontSize:13,color:"var(--text2)",marginBottom:16}}>🤝 {viewProfile.collabs} collaborations</div>}
-              {viewProfileReviews.length > 0 && (
-                <div style={{marginBottom:16}}>
-                  <div style={{fontSize:14,fontWeight:700,color:"var(--text)",marginBottom:8}}>Reviews</div>
-                  {viewProfileReviews.map((rv) => (
-                    <div key={rv.id} style={{padding:"10px 12px",borderRadius:12,background:"rgba(255,255,255,0.04)",marginBottom:8}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-                        <span style={{fontSize:12,fontWeight:700,color:"var(--text)"}}>{rv.reviewer_id?.name || "Anonymous"}</span>
-                        <span style={{fontSize:12,color:"var(--gold)"}}>{"★".repeat(rv.rating)}{"☆".repeat(5 - rv.rating)}</span>
-                      </div>
-                      {rv.body && <div style={{fontSize:12,color:"var(--text2)",lineHeight:1.5}}>{rv.body}</div>}
-                    </div>
-                  ))}
-                </div>
-              )}
-              <button className="btn btn-gold" style={{width:"100%"}} onClick={() => {const u=viewProfile;setViewProfile(null);setPublicProfileUser({ ...u, badges: u.badges?.map(b => b.name) });}}>View Full Profile</button>
-            </div>
-            <BadgeInfoModal info={badgeInfo} onClose={()=>setBadgeInfo(null)} />
-          </div>
-        </div>
-      )}
-      {/* ══════ PUBLIC PROFILE ══════ */}
-      {publicProfileUser && (
-        <React.Suspense fallback={null}>
-          <ScreenErrorBoundary name="PublicProfile">
-            <PublicProfileScreen
-              user={publicProfileUser}
-              onBack={() => setPublicProfileUser(null)}
-              onMessage={(u) => { setPublicProfileUser(null); setChatTarget(u as unknown as Match); showScreen("chat"); }}
-              onReport={(u) => { setReportTarget({ id: u.id, type: "user", name: u.name || "Unknown" }); setShowReport(true); setPublicProfileUser(null); }}
-              onBlock={(u) => { setBlockTarget({ id: u.id, name: u.name || "Unknown" }); setPublicProfileUser(null); }}
-              handleImgError={handleImgError}
-              currentUser={currentUser}
-              apiFetch={apiFetch}
-              showToast={showToast}
-              lightboxPhotos={lightboxPhotos}
-              lightboxIdx={lightboxIdx}
-              setLightboxPhotos={setLightboxPhotos}
-              setLightboxIdx={setLightboxIdx}
-            />
-          </ScreenErrorBoundary>
-        </React.Suspense>
-      )}
-      {/* ══════ SHARE MODAL ══════ */}
-      {shareTarget && (
-        <div className="modal-overlay" ref={shareTargetTrap} role="dialog" aria-modal="true" aria-label="Share" onPointerDown={(e) => { if (e.target === e.currentTarget) setShareTarget(null); }}>
-          <div className="modal-panel" style={{ maxWidth: 420, width: "90%", borderRadius: 24, padding: "24px 20px", background: "linear-gradient(180deg,#0f081e,#0a0612)" }}>
-            <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", color: "var(--gold)" }}>Share</div>
-              <div style={{ fontSize: 13, color: "var(--text2)", marginTop: 6 }}>Share {shareTarget.author}'s post</div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
-              {[
-                { name: "X", icon: "𝕏", color: "#000", bg: "#fff" },
-                { name: "Facebook", icon: "f", color: "#fff", bg: "#1877F2" },
-                { name: "Instagram", icon: "📸", color: "#fff", bg: "#E4405F" },
-                { name: "WhatsApp", icon: "💬", color: "#fff", bg: "#25D366" },
-                { name: "LinkedIn", icon: "in", color: "#fff", bg: "#0A66C2" },
-                { name: "Email", icon: "✉️", color: "#fff", bg: "#6B7280" },
-                { name: "Copy", icon: "🔗", color: "#fff", bg: "#8B5CF6" },
-                { name: "More", icon: "•••", color: "#fff", bg: "#374151" },
-              ].map(s => {
-                const url = getPostShareUrl(shareTarget.id);
-                const text = encodeURIComponent((shareTarget.text || "Check this out on Muses by WYZ!").slice(0, 200));
-                const href = s.name === "X" ? `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${text}`
-                  : s.name === "Facebook" ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`
-                  : s.name === "LinkedIn" ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
-                  : s.name === "WhatsApp" ? `https://wa.me/?text=${text}%20${encodeURIComponent(url)}`
-                  : s.name === "Email" ? `mailto:?subject=${encodeURIComponent("Check this out on Muses by WYZ")}&body=${text}%20${encodeURIComponent(url)}`
-                  : null;
-                return (
-                  <button key={s.name} onClick={() => {
-                    if (s.name === "Copy") { navigator.clipboard?.writeText(url); showToast("Link copied!"); setShareTarget(null); }
-                    else if (s.name === "More") { if (navigator.share) { navigator.share({ title: "Muses by WYZ", text: shareTarget.text || "Check this out on Muses by WYZ!", url }).catch(() => {}); } else { navigator.clipboard?.writeText(url); showToast("Link copied!"); } setShareTarget(null); }
-                    else if (href) { window.open(href, "_blank", "noopener"); setShareTarget(null); }
-                  }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "14px 6px", cursor: "pointer", transition: "all .2s" }}>
-                    <div style={{ width: 44, height: 44, borderRadius: "50%", background: s.bg, color: s.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800 }}>{s.icon}</div>
-                    <div style={{ fontSize: 11, color: "var(--text2)", fontWeight: 600 }}>{s.name}</div>
-                  </button>
-                );
-              })}
-            </div>
-            <button className="btn btn-outline" style={{ width: "100%", fontSize: 13, fontWeight: 600 }} onClick={() => setShareTarget(null)}>{STRINGS.cancel}</button>
-          </div>
-        </div>
-      )}
-      {/* ══════ EDIT PROFILE MODAL ══════ */}
-      {showEditProfile && (
-        <div ref={editProfileTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Edit profile">
-          <div className="modal-header" style={{ position: "relative" }}>
-            <button className="modal-back" onClick={()=>setShowEditProfile(false)} aria-label="Back"><FiArrowLeft size={20} /></button>
-            <div className="modal-title" style={{ flex: 1, textAlign: "center" }}>Edit Profile</div>
-            <div style={{ width: 42 }} />
-          </div>
-          <div className="modal-body">
-            <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
-              <div style={{position:"relative"}}>
-                <Image src={editAvatar || currentUser.avatar} alt="Avatar" width={88} height={88} style={{borderRadius:"50%",objectFit:"cover",border:"3px solid var(--gold)",background:"#1a0a2e"}} onError={handleImgError} />
-                <button type="button" onClick={()=>editAvatarInputRef.current?.click()} style={{position:"absolute",bottom:0,right:0,width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#ffd700,#ff8a80)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#0a0612"}} title="Upload profile photo" aria-label="Upload profile photo">+</button>
-                <input ref={editAvatarInputRef} type="file" accept="image/*" aria-label="Upload profile photo" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setEditAvatar(url);showToast("Photo added!")}}}} />
-              </div>
-            </div>
-            <input className="inp" aria-label="Display name" placeholder="Display Name" value={editName} onChange={e=>setEditName(e.target.value)} />
-            <textarea className="inp" aria-label="Bio" placeholder="Bio" rows={3} value={editBio} onChange={e=>setEditBio(e.target.value)} />
-            <input className="inp" aria-label="Location" placeholder="Location" value={editLoc} onChange={e=>setEditLoc(e.target.value)} />
-            <input className="inp" aria-label="Media kit link" placeholder="Media Kit link (PDF or portfolio one-pager)" value={editMediaKit} onChange={e=>setEditMediaKit(e.target.value)} />
-            <div style={{ marginBottom: 12 }}>
-              <div className="side-label">Creative Type</div>
-              <div className="side-sub" style={{ marginBottom: 6 }}>🎬 Behind the Camera</div>
-              <div className="chips" style={{ marginBottom: 8 }}>
-                {BEHIND_CAMERA.map(t => <div key={t} className={"chip"+(editType===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(t); setEditCustomTypePending(false); } }} onClick={()=>{setEditType(t);setEditCustomTypePending(false);}}><span>{t}</span></div>)}
-              </div>
-              <div className="side-sub" style={{ marginBottom: 6 }}>📸 In Front of the Camera</div>
-              <div className="chips">
-                {IN_FRONT_CAMERA.map(t => <div key={t} className={"chip"+(editType===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(t); setEditCustomTypePending(false); } }} onClick={()=>{setEditType(t);setEditCustomTypePending(false);}}><span>{t}</span></div>)}
-                {/* Torreé audit item 6 */}
-                <div key="other" className={"chip"+(editCustomTypePending?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(""); setEditCustomTypePending(true); } }} onClick={()=>{setEditType("");setEditCustomTypePending(true);}}><span>Add New +</span></div>
-              </div>
-              {editCustomTypePending && (
-                <input className="inp" aria-label="Creative role" placeholder="Type your creative role..." value={editType} onChange={e=>setEditType(e.target.value)} style={{ marginTop: 10 }} />
-              )}
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <div className="side-label">Looking For</div>
-              <div className="chips">
-                {lookingForOptions(editType || currentUser.type || "").map(l => (
-                  <div key={l} className={"chip"+((editLooking.length?editLooking:obData.looking||[]).includes(l)?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const cur = editLooking.length?editLooking:(obData.looking||[]); setEditLooking(cur.includes(l)?cur.filter(x=>x!==l):[...cur,l]); } }} onClick={()=>{const cur = editLooking.length?editLooking:(obData.looking||[]); setEditLooking(cur.includes(l)?cur.filter(x=>x!==l):[...cur,l]);}}><span>{l}</span></div>
-                ))}
-              </div>
-            </div>
-            <div style={{ marginBottom: 14, padding: "12px 0", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>NSFW Profile</div>
-                  <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 2 }}>Mark your profile as 18+ — content will be age-gated in Discovery</div>
-                </div>
-                <div role="switch" aria-checked={editNsfw} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditNsfw(!editNsfw); } }} onClick={() => setEditNsfw(!editNsfw)} className={"toggle-track" + (editNsfw ? " active" : "")} style={{ width: 44, height: 24, borderRadius: 12, cursor: "pointer", position: "relative", transition: "all .3s", background: editNsfw ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.1)", flexShrink: 0 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 10, background: "#fff", position: "absolute", top: 2, left: editNsfw ? 22 : 2, transition: "all .3s" }} />
-                </div>
-              </div>
-            </div>
-            <button className="btn btn-gold" style={{width:"100%"}} onClick={saveProfileEdits}>{STRINGS.save}</button>
-          </div>
-        </div>
-      )}
-      {/* ══════ SHARE PROFILE SHEET ══════ */}
-      {showShareProfile && (
-        <div className="modal-overlay" ref={shareProfileTrap} role="dialog" aria-modal="true" aria-label="Share profile" onPointerDown={(e) => { if (e.target === e.currentTarget) setShowShareProfile(false); }}>
-          <div className="share-sheet">
-            <div className="share-title">Share Profile</div>
-            <div className="share-options">
-              <div className="share-opt" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigator.clipboard?.writeText(getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"));setShowShareProfile(false); } }} onClick={()=>{navigator.clipboard?.writeText(getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"));setShowShareProfile(false)}}><span className="share-opt-icon"><FiLink size={24} /></span><span className="share-opt-label">Copy</span></div>
-              <div className="share-opt" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.open("https://twitter.com/intent/tweet?text=Check%20out%20my%20Muses%20by%20WYZ%20profile!&url="+encodeURIComponent(getMuseUrl()),"blank"); } }} onClick={()=>{window.open("https://twitter.com/intent/tweet?text=Check%20out%20my%20Muses%20by%20WYZ%20profile!&url="+encodeURIComponent(getMuseUrl()),"blank")}}><span className="share-opt-icon"><FiTwitter size={24} /></span><span className="share-opt-label">Twitter</span></div>
-              <div className="share-opt" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const url=getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase());if(navigator.share){navigator.share({title:"My Muses Profile",text:"Check out my Muses profile!",url}).catch(()=>{});}else{navigator.clipboard?.writeText(url).then(()=>showToast("Link copied! Paste it in your IG bio or story")).catch(()=>window.open("https://www.instagram.com/"));}setShowShareProfile(false); } }} onClick={()=>{const url=getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase());if(navigator.share){navigator.share({title:"My Muses Profile",text:"Check out my Muses profile!",url}).catch(()=>{});}else{navigator.clipboard?.writeText(url).then(()=>showToast("Link copied! Paste it in your IG bio or story")).catch(()=>window.open("https://www.instagram.com/"));}setShowShareProfile(false)}}><span className="share-opt-icon"><FiInstagram size={24} /></span><span className="share-opt-label">IG</span></div>
-            </div>
-            <div className="share-link"><span className="share-link-text">{getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase()).replace(/^https?:\/\//, "")}</span><button className="share-link-copy" onClick={()=>{navigator.clipboard?.writeText(getProfileShareUrl(authUser?.id||currentUser.name.replace(/\s+/g,"-").toLowerCase())).then(()=>showToast("Link copied!")).catch(()=>showToast("Copied!"))}}>Copy</button></div>
-            <button className="btn btn-outline" style={{marginTop:16,width:"100%"}} onClick={()=>setShowShareProfile(false)}>{STRINGS.close}</button>
-          </div>
-        </div>
-      )}
-      {/* ══════ DISCLOSURE MODAL ══════ */}
-      {showDisclosureModal && disclosureTarget && (
-        <DisclosureModal
-          responderName={disclosureTarget.name}
-          responderId={disclosureTarget.id}
-          bookingId={disclosureBookingId}
-          existingDisclosure={existingDisclosure}
-          onSubmit={async (form) => {
-            // Age gate: paid disclosures require verified 18+ identity before proposing
-            const hasPayment = form.compensationAmount && form.compensationAmount !== "0" && form.compensationAmount !== "Free" && form.compensationAmount !== "TFP";
-            if (hasPayment && !ageVerified) {
-              setPendingDisclosureConfirm(null);
-              setPendingDisclosureCreate(form as Record<string, unknown>);
-              setShowDisclosureModal(false);
-              setShowAgeVerification(true);
-              return;
-            }
-            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "create-disclosure", ...form, responderId: disclosureTarget.id, bookingId: disclosureBookingId }) });
-            const d = await r.json();
-            if (d.blocked) { setShowDisclosureModal(false); showToast("Request blocked — violates Muses by WYZ terms"); return; }
-            if (d.success) { setShowDisclosureModal(false); showToast("Disclosure sent for review"); }
-          }}
-          onCancel={() => { setShowDisclosureModal(false); setDisclosureTarget(null); }}
-          onConfirm={existingDisclosure ? async (discId) => {
-            // Age gate: paid disclosure confirmation requires verified 18+ identity
-            const disc = existingDisclosure as Record<string, unknown>;
-            const compAmount = String(disc.compensation_amount || "");
-            const hasPayment = compAmount && compAmount !== "0" && compAmount !== "Free" && compAmount !== "TFP";
-            if (hasPayment && !ageVerified) {
-              setPendingDisclosureConfirm(discId);
-              setShowDisclosureModal(false);
-              setShowAgeVerification(true);
-              return;
-            }
-            await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "confirm-disclosure", disclosureId: discId }) });
-            setShowDisclosureModal(false); showToast("Disclosure confirmed ✓");
-          } : undefined}
-        />
-      )}
-      {/* ══════ AGE VERIFICATION MODAL ══════ */}
-      {showAgeVerification && (
-        <AgeVerificationModal
-          purpose="age_gate"
-          authFetch={authFetch}
-          onVerified={async () => {
-            setAgeVerified(true);
-            setShowAgeVerification(false);
-            // Resume the blocked action after verification
-            if (pendingDisclosureConfirm) {
-              const discId = pendingDisclosureConfirm;
-              setPendingDisclosureConfirm(null);
-              await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "confirm-disclosure", disclosureId: discId }) });
-              showToast("Disclosure confirmed ✓");
-            } else if (pendingDisclosureCreate) {
-              const form = pendingDisclosureCreate;
-              setPendingDisclosureCreate(null);
-              const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "create-disclosure", ...form, responderId: disclosureTarget?.id, bookingId: disclosureBookingId }) });
-              const d = await r.json();
-              if (d.blocked) { showToast("Request blocked — violates Muses by WYZ terms"); return; }
-              if (d.success) { showToast("Disclosure sent for review"); }
-            }
-          }}
-          onClose={() => {
-            setShowAgeVerification(false);
-            setPendingDisclosureConfirm(null);
-            setPendingDisclosureCreate(null);
-          }}
-        />
-      )}
-      {/* ══════ CONTEXTUAL UPSELL MODAL ══════ */}
-      <UpsellModal
-        open={upsell !== null}
-        onClose={closeUpsell}
-        feature={upsell?.feature || ""}
-        reason={upsell?.reason || ""}
-        icon={upsell?.icon}
-        currentUser={currentUser}
+      <MuseModals
+        apiFetch={apiFetch}
+        authFetch={authFetch}
+        showToast={showToast}
+        handleImgError={handleImgError}
+        uploadImage={uploadImage}
+        uploadMedia={uploadMedia}
         showScreen={showScreen}
+        safeSetItem={safeSetItem}
+        currentUser={currentUser}
+        authUser={authUser}
+        matches={matches}
+        setMatches={setMatches}
+        doSwipe={doSwipe}
+        obData={obData}
+        showReport={showReport}
+        setShowReport={setShowReport}
+        reportTarget={reportTarget}
+        reportTrap={reportTrap}
+        showLikeNote={showLikeNote}
+        setShowLikeNote={setShowLikeNote}
+        noteTargetProfile={noteTargetProfile}
+        setNoteTargetProfile={setNoteTargetProfile}
+        likeNoteTrap={likeNoteTrap}
+        likeNoteAnchor={likeNoteAnchor}
+        setLikeNoteAnchor={setLikeNoteAnchor}
+        likeNoteText={likeNoteText}
+        setLikeNoteText={setLikeNoteText}
+        showTerms={showTerms}
+        setShowTerms={setShowTerms}
+        termsTrap={termsTrap}
+        showPrivacy={showPrivacy}
+        setShowPrivacy={setShowPrivacy}
+        privacyTrap={privacyTrap}
+        showGuidelines={showGuidelines}
+        setShowGuidelines={setShowGuidelines}
+        guidelinesTrap={guidelinesTrap}
+        showDeleteConfirm={showDeleteConfirm}
+        setShowDeleteConfirm={setShowDeleteConfirm}
+        deleteConfirmTrap={deleteConfirmTrap}
+        setAuthUser={setAuthUser}
+        setScreen={setScreen}
+        showDiscoveryPrefs={showDiscoveryPrefs}
+        setShowDiscoveryPrefs={setShowDiscoveryPrefs}
+        discoveryPrefsTrap={discoveryPrefsTrap}
+        discoveryPrefs={discoveryPrefs}
+        setDiscoveryPrefs={setDiscoveryPrefs}
+        searchQuery={searchQuery}
+        filterStyles={filterStyles}
+        setFilterStyles={setFilterStyles}
+        filterScore={filterScore}
+        setFilterScore={setFilterScore}
+        savedSearches={savedSearches}
+        setSavedSearches={setSavedSearches}
+        DEMO_MODE={DEMO_MODE}
+        unmatchTarget={unmatchTarget}
+        setUnmatchTarget={setUnmatchTarget}
+        unmatchTrap={unmatchTrap}
+        blockTarget={blockTarget}
+        setBlockTarget={setBlockTarget}
+        blockTrap={blockTrap}
+        setBlockedUsers={setBlockedUsers}
+        showStory={showStory}
+        setShowStory={setShowStory}
+        stories={stories}
+        viewProfile={viewProfile}
+        setViewProfile={setViewProfile}
+        viewProfileTrap={viewProfileTrap}
+        viewProfilePhotoIdx={viewProfilePhotoIdx}
+        setViewProfilePhotoIdx={setViewProfilePhotoIdx}
+        revealedNsfw={revealedNsfw}
+        setRevealedNsfw={setRevealedNsfw}
+        badgeInfo={badgeInfo}
+        setBadgeInfo={setBadgeInfo}
+        viewProfileReviews={viewProfileReviews}
+        setPublicProfileUser={setPublicProfileUser}
+        publicProfileUser={publicProfileUser}
+        setChatTarget={setChatTarget}
+        setReportTarget={setReportTarget}
+        lightboxPhotos={lightboxPhotos}
+        lightboxIdx={lightboxIdx}
+        setLightboxPhotos={setLightboxPhotos}
+        setLightboxIdx={setLightboxIdx}
+        shareTarget={shareTarget}
+        setShareTarget={setShareTarget}
+        shareTargetTrap={shareTargetTrap}
+        showEditProfile={showEditProfile}
+        setShowEditProfile={setShowEditProfile}
+        editProfileTrap={editProfileTrap}
+        editAvatar={editAvatar}
+        setEditAvatar={setEditAvatar}
+        editAvatarInputRef={editAvatarInputRef}
+        editName={editName}
+        setEditName={setEditName}
+        editBio={editBio}
+        setEditBio={setEditBio}
+        editLoc={editLoc}
+        setEditLoc={setEditLoc}
+        editMediaKit={editMediaKit}
+        setEditMediaKit={setEditMediaKit}
+        editType={editType}
+        setEditType={setEditType}
+        editCustomTypePending={editCustomTypePending}
+        setEditCustomTypePending={setEditCustomTypePending}
+        editLooking={editLooking}
+        setEditLooking={setEditLooking}
+        editNsfw={editNsfw}
+        setEditNsfw={setEditNsfw}
+        saveProfileEdits={saveProfileEdits}
+        showShareProfile={showShareProfile}
+        setShowShareProfile={setShowShareProfile}
+        shareProfileTrap={shareProfileTrap}
+        showDisclosureModal={showDisclosureModal}
+        setShowDisclosureModal={setShowDisclosureModal}
+        disclosureTarget={disclosureTarget}
+        setDisclosureTarget={setDisclosureTarget}
+        disclosureBookingId={disclosureBookingId}
+        existingDisclosure={existingDisclosure}
+        ageVerified={ageVerified}
+        setAgeVerified={setAgeVerified}
+        pendingDisclosureConfirm={pendingDisclosureConfirm}
+        setPendingDisclosureConfirm={setPendingDisclosureConfirm}
+        pendingDisclosureCreate={pendingDisclosureCreate}
+        setPendingDisclosureCreate={setPendingDisclosureCreate}
+        showAgeVerification={showAgeVerification}
+        setShowAgeVerification={setShowAgeVerification}
+        upsell={upsell}
+        closeUpsell={closeUpsell}
+        showSafetyCheckin={showSafetyCheckin}
+        setShowSafetyCheckin={setShowSafetyCheckin}
+        safetyCheckins={safetyCheckins}
+        setSafetyCheckins={setSafetyCheckins}
+        safetyProfile={safetyProfile}
+        setSafetyProfile={setSafetyProfile}
+        showPromptBank={showPromptBank}
+        setShowPromptBank={setShowPromptBank}
+        promptBankData={promptBankData}
+        promptResponses={promptResponses}
+        setPromptResponses={setPromptResponses}
+        showReferral={showReferral}
+        setShowReferral={setShowReferral}
+        showConnect={showConnect}
+        setShowConnect={setShowConnect}
+        showPaymentHistory={showPaymentHistory}
+        setShowPaymentHistory={setShowPaymentHistory}
+        showDailyLogin={showDailyLogin}
+        setShowDailyLogin={setShowDailyLogin}
+        weeklyLogins={weeklyLogins}
+        loginStreak={loginStreak}
+        setShowQuests={setShowQuests}
+        activePageTour={activePageTour}
+        setActivePageTour={setActivePageTour}
+        showQuests={showQuests}
+        setClaimableQuests={setClaimableQuests}
+        handleQuestsChange={handleQuestsChange}
+        incomingCall={incomingCall}
+        activeCall={activeCall}
+        declineCall={declineCall}
+        acceptCall={acceptCall}
+        endCall={endCall}
+        leaveVoicemail={leaveVoicemail}
+        callRecording={callRecording}
+        callPeerRecording={callPeerRecording}
+        startCallRecording={startCallRecording}
+        stopCallRecording={stopCallRecording}
       />
-      {/* ══════ SAFETY CHECK-IN MODAL ══════ */}
-      {showSafetyCheckin && (
-        <SafetyCheckinModal
-          checkins={safetyCheckins}
-          safetyProfile={safetyProfile}
-          onRespond={async (id, response, shared, reason) => {
-            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "respond-checkin", checkinId: id, response, sharedWithContact: shared, reason }) });
-            if (!r.ok) { showToast("Failed to save response"); return; }
-            setSafetyCheckins(prev => prev.map(c => c.id === id ? { ...c, status: response, responded_at: new Date().toISOString() } : c));
-          }}
-          onSaveSafetyProfile={async (profile) => {
-            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "save-safety-profile", ...profile }) });
-            if (!r.ok) { showToast("Failed to save safety profile"); return; }
-            setSafetyProfile(profile); showToast("Safety profile saved");
-          }}
-          onShareDetails={async (bookingId, method) => {
-            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "share-safety-details", bookingId, shareMethod: method }) });
-            if (!r.ok) { showToast("Failed to share details"); return; }
-            showToast("Details shared with trusted contact");
-          }}
-          onFetchStrikes={async () => {
-            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-strikes" }) });
-            const d = await r.json();
-            return d.strikes || [];
-          }}
-          onFetchDisclosures={async () => {
-            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "get-disclosures" }) });
-            const d = await r.json();
-            return d.disclosures || [];
-          }}
-          onAppealStrike={async (strikeId, text) => {
-            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "appeal-strike", strikeId, appealText: text }) });
-            return r.ok;
-          }}
-          onClose={() => setShowSafetyCheckin(false)}
-        />
-      )}
-      {/* ══════ PROMPT BANK MODAL ══════ */}
-      {showPromptBank && (
-        <PromptBankModal
-          prompts={promptBankData}
-          responses={promptResponses}
-          onSaveResponse={async (promptId, text, choices) => {
-            const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "save-prompt-response", promptId, responseText: text, responseChoices: choices }) });
-            const d = await r.json();
-            if (!d.success) throw new Error(d.error || "Failed to save");
-            setPromptResponses(prev => {
-              const existing = prev.findIndex(r => r.prompt_id === promptId);
-              const newResp = { id: "new", prompt_id: promptId, response_text: text, response_choices: choices };
-              if (existing >= 0) { const copy = [...prev]; copy[existing] = newResp; return copy; }
-              return [...prev, newResp];
-            });
-          }}
-          onClose={() => setShowPromptBank(false)}
-        />
-      )}
-      {/* ══════ REFERRAL PANEL ══════ */}
-      {showReferral && (
-        <ReferralPanel onClose={() => setShowReferral(false)} />
-      )}
-      {/* ══════ STRIPE CONNECT PANEL ══════ */}
-      {showConnect && (
-        <ConnectPanel onClose={() => setShowConnect(false)} />
-      )}
-      {/* ══════ PAYMENT HISTORY ══════ */}
-      {showPaymentHistory && (
-        <PaymentHistory userId={authUser?.id || ""} onClose={() => setShowPaymentHistory(false)} />
-      )}
-      {showDailyLogin && (
-        <DailyLoginModal
-          name={currentUser.name}
-          creativeType={currentUser.type}
-          weeklyLogins={weeklyLogins}
-          loginStreak={loginStreak}
-          onClose={() => setShowDailyLogin(false)}
-          onViewQuests={() => { setShowDailyLogin(false); setShowQuests(true); }}
-        />
-      )}
-      {activePageTour && (
-        <PageTour
-          open
-          onClose={() => {
-            try { safeSetItem(tourSeenKey(activePageTour), "1"); } catch { console.debug("[muse] tour completion could not be persisted"); }
-            setActivePageTour(null);
-          }}
-          icon={PAGE_TOURS[activePageTour].icon}
-          from={PAGE_TOURS[activePageTour].from}
-          to={PAGE_TOURS[activePageTour].to}
-          slides={PAGE_TOURS[activePageTour].slides}
-          orbitCount={PAGE_TOURS[activePageTour].orbitCount}
-          sparkCount={PAGE_TOURS[activePageTour].sparkCount}
-          ringStyle={PAGE_TOURS[activePageTour].ringStyle}
-          ariaLabel={PAGE_TOURS[activePageTour].ariaLabel}
-        />
-      )}
-      <ScreenErrorBoundary name="QuestPanel">
-        <QuestPanel
-          show={showQuests}
-          onClose={() => setShowQuests(false)}
-          apiFetch={apiFetch}
-          showToast={showToast}
-          onClaimablesChange={setClaimableQuests}
-          onQuestsChange={handleQuestsChange}
-          loginStreak={loginStreak}
-          weeklyLogins={weeklyLogins}
-        />
-      </ScreenErrorBoundary>
-
-      {/* ── Incoming call ring ── */}
-      {incomingCall && !activeCall && (
-        <div role="dialog" aria-modal="true" aria-label="Incoming call" style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(5,3,10,0.94)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: 24, textAlign: "center" }}>
-          <div style={{ width: 104, height: 104, borderRadius: "50%", background: "linear-gradient(135deg,#ffd700,#d4a5ff)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 42, fontWeight: 800, color: "#0a0612" }}>
-            {(incomingCall.fromName || "?").slice(0, 1).toUpperCase()}
-          </div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#f5f0ff" }}>{incomingCall.fromName}</div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>
-            Incoming {incomingCall.kind === "voice" ? "voice" : "video"} call
-          </div>
-          <div style={{ display: "flex", gap: 18, marginTop: 10 }}>
-            <button onClick={declineCall} style={{ width: 66, height: 66, borderRadius: "50%", border: "none", background: "#ff3b30", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Decline</button>
-            <button onClick={acceptCall} style={{ width: 66, height: 66, borderRadius: "50%", border: "none", background: "#34c759", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Accept</button>
-          </div>
-        </div>
-      )}
-
-      {activeCall && (
-        <CallOverlay
-          call={activeCall}
-          onEnd={endCall}
-          onVoicemail={leaveVoicemail}
-          uploadMedia={uploadMedia}
-          recording={!!callRecording}
-          peerRecording={callPeerRecording}
-          onToggleRecording={() => (callRecording ? stopCallRecording() : startCallRecording())}
-          onReport={() => { setReportTarget({ id: activeCall.peerId, type: "user", name: activeCall.peerName }); setShowReport(true); }}
-        />
-      )}
-
       {callError && !activeCall && (
         <div onClick={() => setCallError(null)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCallError(null); } }} style={{ position: "fixed", bottom: 96, left: "50%", transform: "translateX(-50%)", zIndex: 10002, background: "#2a1216", color: "#ff8a80", border: "1px solid rgba(255,138,128,0.35)", borderRadius: 12, padding: "10px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", maxWidth: "90vw" }}>
           {callError}

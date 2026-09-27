@@ -18,10 +18,12 @@ import path from "node:path";
  * page-helpers.ts (getIcebreaker/getReferralTier/checkProfileBadges/sanitizeInput),
  * hooks/useSessionApply.ts (`applySession`), hooks/useBootstrapHydration.ts
  * (the mount bootstrap/hydration effect), hooks/useSwipeActions.ts (doSwipe,
- * doRewind, doLikeWithNote and the four pointer-drag handlers).
- * Good next candidates: the ~1,100-line render tree.
+ * doRewind, doLikeWithNote and the four pointer-drag handlers),
+ * modals/ (the end-of-tree modal stack via `MuseModals`, plus the
+ * `IntentPickerModal` rendered at its original position).
+ * Good next candidates: the screens still mounted inside `page.tsx`.
  */
-const BUDGET_LINES = 3500;
+const BUDGET_LINES = 2830;
 
 const file = path.resolve(__dirname, "page.tsx");
 
