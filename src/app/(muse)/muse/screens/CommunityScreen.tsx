@@ -9,7 +9,7 @@ import { EmptyState } from "../components/EmptyState";
 import { BADGE_COLORS } from "../components/badgeColors";
 import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 import type { Screen, CommunityRule, CommunityMember } from "../components/types";
-import { COMMUNITIES, EVENTS } from "../components/types";
+import { COMMUNITIES, EVENTS, PROFILES } from "../components/types";
 import { getCommunityShareUrl, getEventShareUrl } from "@/lib/urls";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import { useFocusTrap } from "../hooks/useFocusTrap";
@@ -168,9 +168,24 @@ export const CommunityScreen = memo(function CommunityScreen({
     setDetailType("group");
     if (!demo) apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_community"] }) }).catch(() => {});
     // Real member roster (with role) only exists for real, DB-backed groups —
-    // the demo/fallback dataset has no real members to fetch.
-    setGroupMembers([]);
-    setJoinRequests([]);
+    // the demo/fallback dataset has no real members to fetch. Owner requirement:
+    // demo mode must look published, so seed a realistic roster + pending join
+    // requests instead of the empty "no members" state.
+    if (demo) {
+      setGroupMembers(PROFILES.slice(0, 8).map((p, i) => ({
+        id: `demo-mem-${i}`,
+        user_id: { id: p.id, name: p.name, avatar: p.img },
+        role: i === 0 ? "owner" : i <= 2 ? "moderator" : "member",
+        joined_at: new Date(Date.now() - (i + 3) * 86400000).toISOString(),
+      })) as unknown as CommunityMember[]);
+      setJoinRequests([
+        { id: "demo-jr-1", user_id: { id: PROFILES[8]?.id, name: PROFILES[8]?.name, avatar: PROFILES[8]?.img }, status: "pending", created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
+        { id: "demo-jr-2", user_id: { id: PROFILES[9]?.id, name: PROFILES[9]?.name, avatar: PROFILES[9]?.img }, status: "pending", created_at: new Date(Date.now() - 5 * 86400000).toISOString() },
+      ] as unknown as typeof joinRequests);
+    } else {
+      setGroupMembers([]);
+      setJoinRequests([]);
+    }
     setMemberMenuFor(null);
     if (UUID_RE.test(String(c.id))) {
       setMembersLoading(true);

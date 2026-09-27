@@ -818,3 +818,10 @@ Full anon-exposure scan across all `muse_*` tables (production, vault creds, val
 **Confirmed SAFE (no change needed):** `muse_calls` and `muse_boost_purchases` have RLS on with no anon policy (empty for anon); `muse_qr_events` policy is `USING (false)`; `muse_communities` (21), `muse_sessions` (1) and `muse_prompt_bank` (193) are intentionally-public catalogue surfaces; RLS is enabled on every `muse_*` table.
 
 **GATES:** tsc 0 · eslint 0 · vitest 547 · build 0.
+
+## DEMO MODE batch 8: community roster + join requests — 2026-09-25 (wyzmind)
+- Opening a community group in demo mode deliberately emptied the roster (`setGroupMembers([])` / `setJoinRequests([])`) because the member API is UUID-gated and the demo dataset has no DB-backed groups — so every group showed "no members" and an empty requests panel.
+- Seeded in demo mode: an 8-person roster from the deck with real roles (owner / 2 moderators / members) and staggered join dates, plus 2 pending join requests. Real (UUID) groups and non-demo builds are unchanged.
+- `PROFILES` added to the CommunityScreen types import.
+- GATES: tsc 0 · eslint 0 · vitest **547 PASS** · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
+- Reviewed the remaining `"Unknown"`/`"Anonymous"` fallbacks — they are sensible (e.g. `Upload failed: Unknown`, missing-name in the admin queue), not broken, so left as-is.
