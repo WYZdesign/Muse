@@ -96,6 +96,24 @@ describe("preferencesSave — filtering + merging", () => {
     install({});
     expect((await preferencesSave(act({ toggleNotificationPref: { key: "evil", value: false } })) as Response).status).toBe(400);
   });
+  it("persists the structured availability/travel keys in the preferences blob (display back-compat)", async () => {
+    const sb = install({ muse_profiles: () => ({ data: { preferences: {} } }) });
+    const r = await preferencesSave(act({ preferences: {
+      availabilityStatus: "busy",
+      availabilityNote: "Booking 2 weeks out",
+      travelDates: [{ from: "2026-10-01", to: "2026-10-15" }],
+      travelDestinations: ["NYC", "LA"],
+      budgetRange: "$500–$2,000",
+    } }));
+    expect((r as Response).status).toBe(200);
+    expect(updateValue(tableCalls(sb.__log, "muse_profiles")).preferences).toEqual({
+      availabilityStatus: "busy",
+      availabilityNote: "Booking 2 weeks out",
+      travelDates: [{ from: "2026-10-01", to: "2026-10-15" }],
+      travelDestinations: ["NYC", "LA"],
+      budgetRange: "$500–$2,000",
+    });
+  });
 });
 
 describe("notificationsMarkRead", () => {
@@ -168,6 +186,27 @@ describe("searchAll", () => {
     expect(calls.some((c) => c.method === "gte" && c.args[0] === "last_seen_at")).toBe(true);
     expect(calls.some((c) => c.method === "contains" && c.args[0] === "travel_destinations")).toBe(true);
     expect(calls.some((c) => c.method === "order" && c.args[0] === "views_count")).toBe(true);
+  });
+  it("filters availability_status only for a valid status", async () => {
+    const sb = install({ muse_profiles: () => ({ data: [] }), muse_briefs: () => ({ data: [] }), muse_communities: () => ({ data: [] }), muse_forum_posts: () => ({ data: [] }) });
+    await searchAll(act({ query: "photo", availability: "busy" }));
+    expect(tableCalls(sb.__log, "muse_profiles").some((c) => c.method === "eq" && c.args[0] === "availability_status" && c.args[1] === "busy")).toBe(true);
+  });
+  it("ignores an invalid availability value instead of filtering on it", async () => {
+    const sb = install({ muse_profiles: () => ({ data: [] }), muse_briefs: () => ({ data: [] }), muse_communities: () => ({ data: [] }), muse_forum_posts: () => ({ data: [] }) });
+    await searchAll(act({ query: "photo", availability: "online" }));
+    expect(tableCalls(sb.__log, "muse_profiles").some((c) => c.method === "eq" && c.args[0] === "availability_status")).toBe(false);
+  });
+  it("sanitises the destination into a single canonical city before contains", async () => {
+    const sb = install({ muse_profiles: () => ({ data: [] }), muse_briefs: () => ({ data: [] }), muse_communities: () => ({ data: [] }), muse_forum_posts: () => ({ data: [] }) });
+    await searchAll(act({ query: "photo", destination: "  New York, LA  " }));
+    const call = tableCalls(sb.__log, "muse_profiles").find((c) => c.method === "contains" && c.args[0] === "travel_destinations");
+    expect(call?.args[1]).toEqual(["New York"]);
+  });
+  it("drops a blank destination filter", async () => {
+    const sb = install({ muse_profiles: () => ({ data: [] }), muse_briefs: () => ({ data: [] }), muse_communities: () => ({ data: [] }), muse_forum_posts: () => ({ data: [] }) });
+    await searchAll(act({ query: "photo", destination: "   " }));
+    expect(tableCalls(sb.__log, "muse_profiles").some((c) => c.method === "contains" && c.args[0] === "travel_destinations")).toBe(false);
   });
   it("search type=messages searches the caller's conversations and resolves peers", async () => {
     install({

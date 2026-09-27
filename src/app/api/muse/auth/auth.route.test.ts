@@ -117,4 +117,28 @@ describe("auth route (integration)", () => {
     expect(new Date(body.deletionScheduledFor).getTime()).toBeGreaterThanOrEqual(before + 29 * 24 * 60 * 60 * 1000);
     expect(new Date(body.deletionScheduledFor).getTime()).toBeLessThanOrEqual(before + 31 * 24 * 60 * 60 * 1000);
   });
+
+  it("sanitises the structured availability/travel columns it persists", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: "auth-1" } }, error: null });
+    const maybeSingle = vi.fn(async () => ({ data: { id: "profile-1" }, error: null }));
+    const eq = vi.fn(() => ({ maybeSingle, select: () => ({ maybeSingle }) }));
+    const select = vi.fn(() => ({ eq }));
+    const update = vi.fn(() => ({ eq }));
+    (globalThis as any).__authServiceMock = { from: vi.fn(() => ({ select, update })) };
+
+    const r = await POST(mockReq({ action: "update-profile", access_token: "token",
+      travel_dates: [{ from: "2026-10-01", to: "2026-10-15" }, { from: "bad", to: "2026-10-20" }],
+      travel_destinations: "NYC, LA, nyc",
+      availability_status: "bogus",
+      budget_range: "  $500-$2,000  ",
+    }));
+
+    expect(r.status).toBe(200);
+    // Invalid status dropped; dates/destinations normalised; budget trimmed.
+    expect(update).toHaveBeenCalledWith({
+      travel_dates: [{ from: "2026-10-01", to: "2026-10-15" }],
+      travel_destinations: ["NYC", "LA"],
+      budget_range: "$500-$2,000",
+    });
+  });
 });

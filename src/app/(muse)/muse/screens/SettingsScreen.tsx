@@ -13,6 +13,14 @@ import { clearAllPageTourFlags } from "../components/pageTourContent";
 import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
 import { isPaidTier } from "../components/subscriptionTiers";
 import { BoostAnalyticsPanel } from "../components/BoostAnalyticsPanel";
+import {
+  sanitizeAvailabilityStatus,
+  sanitizeBudgetRange,
+  sanitizeTravelDates,
+  sanitizeTravelDestinations,
+  MAX_TRAVEL_DATES,
+  type TravelDateRange,
+} from "@/lib/muse-availability";
 
 const SUPPORT_EMAIL = "info@wyzdesign.com";
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
@@ -310,7 +318,8 @@ export const SettingsScreen = memo(function SettingsScreen({
   const [availabilityStatus, setAvailabilityStatus] = useState<string>(String(preferences.availabilityStatus ?? "available"));
   const [availabilityNote, setAvailabilityNote] = useState<string>(String(preferences.availabilityNote ?? ""));
   const [bookingLeadDays, setBookingLeadDays] = useState<number>(Number(preferences.bookingLeadDays ?? 3));
-  const [travelDates, setTravelDates] = useState<string>(String(preferences.travelDates ?? ""));
+  const [travelDates, setTravelDates] = useState<TravelDateRange[]>(() => sanitizeTravelDates(preferences.travelDates));
+  const [travelDestinations, setTravelDestinations] = useState<string>(() => sanitizeTravelDestinations(preferences.travelDestinations).join(", "));
   const [budgetRange, setBudgetRange] = useState<string>(String(preferences.budgetRange ?? ""));
   const [showRateSettings, setShowRateSettings] = useState(false);
   const [rateHourly, setRateHourly] = useState<string>(String(preferences.rateHourly ?? ""));
@@ -1536,21 +1545,54 @@ export const SettingsScreen = memo(function SettingsScreen({
               <div style={{ fontSize: 11, opacity: .75, marginTop: 2 }}>{o.d}</div>
             </button>
           ))}
-          {[
-            { label: "Booking lead time (days)", value: String(bookingLeadDays), set: (v: string) => setBookingLeadDays(Math.max(0, Math.min(90, Number(v) || 0))), ph: "3", type: "number" },
-            { label: "Away / travel dates", value: travelDates, set: setTravelDates, ph: "e.g. Oct 1–15 (traveling)", type: "text" },
-            { label: "Typical budget range", value: budgetRange, set: setBudgetRange, ph: "e.g. $500–$2,000", type: "text" },
-            { label: "Note shown to clients (optional)", value: availabilityNote, set: setAvailabilityNote, ph: "e.g. Booking 2 weeks out", type: "text" },
-          ].map(f => (
-            <div key={f.label} style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>{f.label}</div>
-              <input type={f.type} aria-label={f.label} placeholder={f.ph} value={f.value} onChange={e => f.set(e.target.value)}
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
-            </div>
-          ))}
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Booking lead time (days)</div>
+            <input type="number" aria-label="Booking lead time (days)" placeholder="3" value={String(bookingLeadDays)} onChange={e => setBookingLeadDays(Math.max(0, Math.min(90, Number(e.target.value) || 0)))}
+              style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Away / travel dates</div>
+            {travelDates.map((r, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <input type="date" aria-label={`Travel from ${i + 1}`} value={r.from} onChange={e => setTravelDates(ds => ds.map((x, j) => j === i ? { ...x, from: e.target.value } : x))}
+                  style={{ flex: 1, minWidth: 0, padding: "10px 12px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
+                <span aria-hidden="true" style={{ color: "var(--muted)" }}>&ndash;</span>
+                <input type="date" aria-label={`Travel to ${i + 1}`} value={r.to} onChange={e => setTravelDates(ds => ds.map((x, j) => j === i ? { ...x, to: e.target.value } : x))}
+                  style={{ flex: 1, minWidth: 0, padding: "10px 12px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
+                <button type="button" aria-label={`Remove travel date range ${i + 1}`} onClick={() => setTravelDates(ds => ds.filter((_, j) => j !== i))}
+                  style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", cursor: "pointer", fontSize: 14 }}>&#10005;</button>
+              </div>
+            ))}
+            {travelDates.length < MAX_TRAVEL_DATES && (
+              <button type="button" className="btn btn-outline" aria-label="Add travel date range" style={{ width: "100%" }} onClick={() => setTravelDates(ds => [...ds, { from: "", to: "" }])}>+ Add date range</button>
+            )}
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Travel destinations</div>
+            <input type="text" aria-label="Travel destinations" placeholder="e.g. New York, Los Angeles" value={travelDestinations} onChange={e => setTravelDestinations(e.target.value)}
+              style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Typical budget range</div>
+            <input type="text" aria-label="Typical budget range" placeholder="e.g. $500&ndash;$2,000" value={budgetRange} onChange={e => setBudgetRange(e.target.value)}
+              style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Note shown to clients (optional)</div>
+            <input type="text" aria-label="Note shown to clients (optional)" placeholder="e.g. Booking 2 weeks out" value={availabilityNote} onChange={e => setAvailabilityNote(e.target.value)}
+              style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
+          </div>
           <button className="btn btn-gold" style={{ width: "100%", marginTop: 16 }} onClick={async () => {
+            // Persist both: the structured profile COLUMNS (what Discover/search
+            // filters actually read) and the preferences blob (display
+            // back-compat). Values are sanitised identically on both paths.
+            const cleanStatus = sanitizeAvailabilityStatus(availabilityStatus) ?? "available";
+            const cleanDates = sanitizeTravelDates(travelDates);
+            const cleanDests = sanitizeTravelDestinations(travelDestinations);
+            const cleanBudget = sanitizeBudgetRange(budgetRange) ?? "";
             try {
-              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { availabilityStatus, availabilityNote, bookingLeadDays, travelDates, budgetRange } }) });
+              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { availabilityStatus: cleanStatus, availabilityNote, bookingLeadDays, travelDates: cleanDates, travelDestinations: cleanDests, budgetRange: cleanBudget } }) });
+              await apiFetch?.("/api/muse/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-profile", availability_status: cleanStatus, travel_dates: cleanDates, travel_destinations: cleanDests, budget_range: cleanBudget }) });
               showToast("Availability saved!");
             } catch { showToast("Couldn't save — try again"); }
           }}>Save Availability</button>

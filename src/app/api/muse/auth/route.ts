@@ -7,6 +7,7 @@ import { enforceRequestSafety, sanitizeText } from "@/lib/request-safety";
 import { signupWelcome, sendEmail } from "@/lib/email";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 import { sanitizeBirthdate } from "@/lib/muse-age";
+import { availabilityColumnUpdates, AVAILABILITY_COLUMN_FIELDS } from "@/lib/muse-availability";
 
 const ACCOUNT_DELETION_RETENTION_DAYS = 30;
 
@@ -258,9 +259,13 @@ export async function POST(req: NextRequest) {
       // list (Torreé audit item 6) — flags the profile for admin review in
       // /muse/admin/moderation without blocking the value from being saved
       // and used immediately like any other type/style.
-      const allowed = ["name", "bio", "loc", "city", "lat", "long", "avatar", "type", "styles", "looking", "preferences", "zodiac", "chinese", "mbti", "life_path", "audience", "nsfw", "status", "custom_type_pending", "custom_style_pending", "birthdate"];
+      const allowed = ["name", "bio", "loc", "city", "lat", "long", "avatar", "type", "styles", "looking", "preferences", "zodiac", "chinese", "mbti", "life_path", "audience", "nsfw", "status", "custom_type_pending", "custom_style_pending", "birthdate", "travel_dates", "availability_status", "budget_range", "travel_destinations"];
       const updates: Record<string, unknown> = {};
-      for (const k of allowed) if (body[k] !== undefined) updates[k] = body[k];
+      for (const k of allowed) {
+        // Availability columns are sanitised below via the shared mapper.
+        if ((AVAILABILITY_COLUMN_FIELDS as readonly string[]).includes(k)) continue;
+        if (body[k] !== undefined) updates[k] = body[k];
+      }
       // birthdate is sanitised like every other profile write: a real
       // YYYY-MM-DD that isn't in the future and yields an age of 18–120, else
       // the field is dropped.
@@ -271,6 +276,9 @@ export async function POST(req: NextRequest) {
       }
       if (updates.custom_type_pending !== undefined) updates.custom_type_pending = updates.custom_type_pending === true;
       if (updates.custom_style_pending !== undefined) updates.custom_style_pending = updates.custom_style_pending === true;
+      // Structured availability/travel columns — same sanitiser the monolith's
+      // `profile` action uses, so both write paths store identical shapes.
+      Object.assign(updates, availabilityColumnUpdates(body));
       if (Object.keys(updates).length === 0) return NextResponse.json({ error: "No updatable fields" }, { status: 400 });
       const sb = getServiceClient();
       const { data: existing } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();

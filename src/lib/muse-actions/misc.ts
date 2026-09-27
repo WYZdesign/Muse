@@ -9,6 +9,7 @@
 // behavior change.
 // ══════════════════════════════════════════════════════════════════════════════
 import { checkRate, checkRateUser } from "@/lib/rate-limit";
+import { sanitizeAvailabilityStatus, sanitizeTravelDestinations } from "@/lib/muse-availability";
 import { UUID_RE, NextResponse, safeServerError, type ActionContext } from "./shared";
 
 export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
@@ -32,7 +33,7 @@ export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
     // These were "coming soon" stubs; now persisted like the other prefs.
     "portfolioVisibility", "portfolioFeatured", "portfolioShowOnProfile",
     "availabilityStatus", "availabilityNote", "bookingLeadDays",
-    "travelDates", "budgetRange",
+    "travelDates", "travelDestinations", "budgetRange",
     // Rate Settings (Settings → "Portfolio & Availability").
     "rateHourly", "rateHalfDay", "rateFullDay", "rateCurrency", "rateNotes", "ratePackages",
     // Brand/business tools (were "coming soon" stubs).
@@ -174,8 +175,16 @@ export const searchAll = async ({ sb, profile, rest, ip }: ActionContext) => {
       const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       query = query.gte("last_seen_at", fiveMinAgo);
     }
-    if (availability) query = query.eq("availability_status", availability);
-    if (destination) query = query.contains("travel_destinations", [destination]);
+    // Only filter on a real status; an unknown value must not silently return
+    // an empty result set (and must never reach the query raw).
+    const availabilityFilter = sanitizeAvailabilityStatus(availability);
+    if (availabilityFilter) query = query.eq("availability_status", availabilityFilter);
+    // travel_destinations is a text[] column, so `.contains` takes an array.
+    // Sanitise to exactly one canonical city name before matching.
+    if (destination) {
+      const dests = sanitizeTravelDestinations(destination);
+      if (dests.length > 0) query = query.contains("travel_destinations", [dests[0]]);
+    }
     if (sort === "popular") query = query.order("views_count", { ascending: false });
     else if (sort === "newest") query = query.order("created_at", { ascending: false });
     const { data: users } = await query.limit(limit);

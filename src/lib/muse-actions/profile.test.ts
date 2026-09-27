@@ -63,3 +63,41 @@ describe("profileUpdate (mass-assignment whitelist)", () => {
     expect((r as Response).status).toBe(400);
   });
 });
+
+describe("profileUpdate (availability columns)", () => {
+  it("sanitises structured travel dates (drops invalid/reversed)", async () => {
+    const r = await profileUpdate(ctx({ name: "Ada", travel_dates: [
+      { from: "2026-10-01", to: "2026-10-15" },
+      { from: "2026-11-01", to: "2026-10-01" },
+      { from: "bad", to: "2026-11-01" },
+    ] }));
+    expect((r as Response).status).toBe(200);
+    expect(state.updates[0].travel_dates).toEqual([{ from: "2026-10-01", to: "2026-10-15" }]);
+  });
+
+  it("drops travel_dates entirely when it is not an array (never wipes stored data)", async () => {
+    const r = await profileUpdate(ctx({ name: "Ada", travel_dates: "Oct 1–15" }));
+    expect((r as Response).status).toBe(200);
+    expect(state.updates[0].travel_dates).toBeUndefined();
+  });
+
+  it("clears travel_dates with an explicit empty array", async () => {
+    await profileUpdate(ctx({ travel_dates: [] }));
+    expect(state.updates[0]).toEqual({ travel_dates: [] });
+  });
+
+  it("normalises comma strings into a destinations array", async () => {
+    await profileUpdate(ctx({ name: "Ada", travel_destinations: "NYC, LA, nyc" }));
+    expect(state.updates[0].travel_destinations).toEqual(["NYC", "LA"]);
+  });
+
+  it("accepts a valid status and bounded budget", async () => {
+    await profileUpdate(ctx({ availability_status: "busy", budget_range: "  $500–$2,000  " }));
+    expect(state.updates[0]).toMatchObject({ availability_status: "busy", budget_range: "$500–$2,000" });
+  });
+
+  it("drops an invalid status (400 when it is the only field)", async () => {
+    const r = await profileUpdate(ctx({ availability_status: "online" }));
+    expect((r as Response).status).toBe(400);
+  });
+});

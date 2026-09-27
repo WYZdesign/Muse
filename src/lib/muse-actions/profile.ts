@@ -9,12 +9,16 @@
 import { sanitizeText } from "@/lib/request-safety";
 import { checkRateUser } from "@/lib/rate-limit";
 import { sanitizeBirthdate } from "@/lib/muse-age";
+import { availabilityColumnUpdates, AVAILABILITY_COLUMN_FIELDS } from "@/lib/muse-availability";
 import { NextResponse, safeServerError, type ActionContext } from "./shared";
 
 export const profileUpdate = async ({ sb, profile, rest }: ActionContext) => {
   const ALLOWED_PROFILE_FIELDS = ["name", "bio", "styles", "loc", "city", "type", "zodiac", "chinese", "mbti", "life_path", "looking", "avatar", "audience", "media_kit_url", "travel_dates", "availability_status", "budget_range", "travel_destinations", "custom_type_pending", "custom_style_pending", "birthdate"];
   const updates: Record<string, unknown> = {};
   for (const k of ALLOWED_PROFILE_FIELDS) {
+    // Availability columns are sanitised below via the shared mapper — never
+    // copy the raw client value, or an invalid one could bypass sanitisation.
+    if ((AVAILABILITY_COLUMN_FIELDS as readonly string[]).includes(k)) continue;
     if (rest[k] !== undefined) updates[k] = rest[k];
   }
   // birthdate is never persisted raw — only a canonical YYYY-MM-DD that is a
@@ -29,14 +33,12 @@ export const profileUpdate = async ({ sb, profile, rest }: ActionContext) => {
   if (typeof updates.bio === "string") updates.bio = sanitizeText(updates.bio as string, 500);
   if (typeof updates.styles === "string") updates.styles = sanitizeText(updates.styles as string, 200);
   if (typeof updates.looking === "string") updates.looking = sanitizeText(updates.looking as string, 200);
-  if (typeof updates.budget_range === "string") updates.budget_range = sanitizeText(updates.budget_range as string, 100);
   if (updates.custom_type_pending !== undefined) updates.custom_type_pending = updates.custom_type_pending === true;
   if (updates.custom_style_pending !== undefined) updates.custom_style_pending = updates.custom_style_pending === true;
-  if (!Array.isArray(updates.travel_dates)) delete updates.travel_dates;
-  if (typeof updates.travel_destinations === "string") {
-    const raw = updates.travel_destinations as string;
-    updates.travel_destinations = raw.split(",").map((s: string) => s.trim()).filter(Boolean).slice(0, 20);
-  }
+  // Structured availability/travel columns (travel_dates, travel_destinations,
+  // availability_status, budget_range) — sanitised shape mapping that also
+  // powers the Discover/search filters in misc.ts.
+  Object.assign(updates, availabilityColumnUpdates(rest));
   if (Object.keys(updates).length === 0) return NextResponse.json({ error: "No updatable fields" }, { status: 400 });
   const { error } = await sb.from("muse_profiles").update(updates).eq("id", profile.id);
   if (error) return safeServerError(error, "db op");
