@@ -882,3 +882,9 @@ STILL OPEN — OWNER/LEGAL (not code):
 - NCMEC ESP approval -> `NCMEC_CLIENT_ID`/`NCMEC_CLIENT_SECRET` (highest-risk legal gate).
 - Production proof: real RLS + signed-URL cross-account matrix, installed-PWA recheck, iOS/Android device suite, manual screen-reader traversal, Web Vitals/load/reconnect benchmarks, restore drill.
 - Owner decisions: duplicate-account-rejection vs anti-enumeration acceptance, coverage-ratchet ratification, D5 Discover header visual direction, seed-real-creatives/partnerships/app-store/RevenueCat.
+
+## Open-task sweep: a11y `region` gap CLOSED — 2026-09-25 (wyzmind)
+- The verification-expiry banner rendered as a bare sibling **above** `<main id="muse-main">`, so axe reported `region` ("page content outside landmarks"). Moved it **inside** `<main>` (it is `position:absolute` against `.phone`, so this is visually identical and still never pushes other content). The banner is still the same conditional block with the same handlers.
+- Removed `region` from `KNOWN_A11Y_GAPS` in `tests/helpers/accessibility-helpers.ts` — that is the proof: the accessibility suite (20 passed / 1 skipped) now runs with the baseline deleted, so a regression would hard-fail.
+- GATES: tsc 0 · eslint 0 · build 0 · accessibility **20 / 1 skipped** (region baseline removed).
+- Still baselined (bounded): `target-size` (Discover `card-photo-nav` 36px decorative chrome, `pointer-events:none`).

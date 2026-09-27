@@ -33,8 +33,8 @@ export type AxeViolationSummary = {
  * Key = axe rule id (optionally scoped "screen:rule" via knownGapIds at call site).
  */
 export const KNOWN_A11Y_GAPS: Record<string, string> = {
-  region:
-    'Page content outside landmarks — verify-banner sits outside #muse-main (page.tsx / Codex-owned)',
+  // 'region' fixed: the verification-expiry banner now renders INSIDE
+  // <main id="muse-main"> (page.tsx) instead of as a bare sibling above it.
   // 'aria-toggle-field-name' fixed in Priority G (ProfileScreen NSFW aria-label)
   // 'aria-required-parent' fixed in Priority G (Network Hiring role=button)
   // 'button-name' fixed in Priority G (CollabScreen brief-btn-save aria-label)
