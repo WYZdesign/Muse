@@ -5,6 +5,7 @@ export type OnboardingData = {
   name?: string;
   loc?: string;
   bio?: string;
+  birthdate?: string;
   type?: string;
   looking?: string[];
   conn?: string[];

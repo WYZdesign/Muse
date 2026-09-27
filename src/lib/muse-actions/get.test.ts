@@ -257,6 +257,36 @@ describe("GET discover-ranked", () => {
     expect(ids[0]).toBe("boosted");
     expect(body.profiles.every((p: any) => typeof p.matchScore === "number")).toBe(true);
   });
+
+  it("exposes derived age only when the owner's showAge allows it", async () => {
+    (globalThis as any).__authUser = { id: "auth-1" };
+    installSb({
+      muse_profiles: (calls) => {
+        const sel = selectArg(calls);
+        if (sel === "id") return { data: { id: "me" } };
+        if (sel.includes("life_path") && sel.includes("age_verified_at")) {
+          return { data: { id: "me", type: "Photographer", styles: [], looking: [], age_verified: false, age_verified_at: null } };
+        }
+        if (sel.includes("boost_expires_at")) {
+          return { data: [
+            { id: "shown", avatar: "a", type: "Model", birthdate: "1990-05-15", preferences: {} },
+            { id: "hidden", avatar: "a", type: "Model", birthdate: "1990-05-15", preferences: { showAge: false } },
+          ] };
+        }
+        return { data: null };
+      },
+      muse_blocks: () => ({ data: [] }),
+    });
+    const body = await (await GET(req("discover-ranked", "tok"))).json();
+    const shown = body.profiles.find((p: any) => p.id === "shown");
+    const hidden = body.profiles.find((p: any) => p.id === "hidden");
+    expect(typeof shown.age).toBe("number");
+    expect(shown.birthdate).toBeUndefined();
+    expect(shown.preferences).toBeUndefined();
+    expect(hidden.age).toBeUndefined();
+    expect(hidden.showAge).toBe(false);
+    expect(hidden.birthdate).toBeUndefined();
+  });
 });
 
 describe("GET matches — blocking", () => {

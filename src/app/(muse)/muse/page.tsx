@@ -1,8 +1,6 @@
 "use client";
-
 import "./muse.css";
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import React from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { supabase } from "@/lib/supabase";
@@ -15,6 +13,7 @@ import { announce } from "./a11y";
 import { PageSplash } from "./components/PageSplash";
 import Confetti from "./components/Confetti";
 import SwipeParticles from "./components/SwipeParticles";
+import { OnboardingBirthdateField } from "./components/OnboardingBirthdateField";
 import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, setRefreshToken, getRefreshToken, clearRefreshToken } from "./lib/safe-storage";
 import { getAccessToken, authFetch, fetchWithTimeout } from "./lib/api";
 import { analytics, setAnalyticsUser, initAnalyticsSession } from "./lib/analytics";
@@ -103,7 +102,6 @@ import { useProfileActions } from "./hooks/useProfileActions";
 import { normalizeCommunity, normalizeEvent, normalizeForumPost, normalizeBrief, normalizeSession, normalizeFeedPost } from "./hooks/normalizers";
 import { AGE_VERIFICATION_VALID_DAYS, DEMO_MODE, MATCH_VARIANTS, OWNER_EMAIL } from "./page-constants";
 import type { Professional, ProfileReview, RawApiProfile, RawFeedPost, RawForumPost, ViewProfile } from "./page-models";
-
 type DiscoveryProfile = typeof PROFILES[number] & {
   showDistance?: boolean;
   matchScore?: number;
@@ -495,7 +493,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         zodiac: p.zodiac || "", chinese: p.chinese || "", mbti: p.mbti || "", lifePath: p.life_path || "",
         photos: Array.isArray(p.photos) ? p.photos : [], collabs: p.collabs || 0, verified: !!p.verified,
         matchScore: p.matchScore, rulesScore: p.rulesScore, cosineScore: p.cosineScore,
-        showDistance: p.showDistance !== false,
+        showDistance: p.showDistance !== false, age: p.age, showAge: p.showAge !== false,
         side: p.side || viewerSide(p.type),
       })));
       if (briefs?.briefs?.length) setLiveBriefs(briefs.briefs.map(normalizeBrief));
@@ -1273,6 +1271,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <input className="inp" aria-label="Display name" placeholder="Display Name" value={obData.name||""} onChange={e=>setObData(d=>({...d,name:e.target.value}))} />
                     <input className="inp" aria-label="Location" placeholder="Location (City, State)" value={obData.loc||""} onChange={e=>setObData(d=>({...d,loc:e.target.value}))} />
                     <textarea className="inp" aria-label="Bio" placeholder="Who are you as a creative?" rows={3} value={obData.bio||""} onChange={e=>setObData(d=>({...d,bio:e.target.value}))} />
+                    <OnboardingBirthdateField value={obData.birthdate} onChange={(v) => setObData(d => ({ ...d, birthdate: v }))} />
                     <button className="btn btn-gold" disabled={!(obData.name||"").trim()} style={!(obData.name||"").trim()?{opacity:0.5}:undefined} onClick={()=>setObStep(2)}>Next</button>
                     <button className="back-link" onClick={()=>setObStep(0)}>Back</button>
                   </div>
@@ -1640,7 +1639,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                           const r = await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"update-profile",
                             name:obData.name,loc:obData.loc,bio:obData.bio,audience:obData.audience||"creative",type:obData.type,
                             looking:obData.looking,styles:obData.styles,
-                            zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,life_path:obData.lifePath,
+                            zodiac:obData.zodiac,chinese:obData.chinese,mbti:obData.mbti,life_path:obData.lifePath,birthdate:obData.birthdate,
                             avatar:obProfilePic,
                             // Torreé audit item 6: carry the "Other" custom-value
                             // review flags through to the saved profile.

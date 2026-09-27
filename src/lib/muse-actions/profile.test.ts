@@ -42,4 +42,24 @@ describe("profileUpdate (mass-assignment whitelist)", () => {
     expect(state.updates[0].suspended).toBeUndefined();
     expect(state.updates[0].name).toBe("Ada");
   });
+
+  it("accepts and canonicalises a valid birthdate", async () => {
+    const r = await profileUpdate(ctx({ name: "Ada", birthdate: "1990-05-15" }));
+    expect((r as Response).status).toBe(200);
+    expect(state.updates[0].birthdate).toBe("1990-05-15");
+  });
+
+  it("drops an invalid birthdate (future / under-18 / malformed)", async () => {
+    for (const bad of ["2999-01-01", "2015-01-01", "1990-13-40", "not-a-date", 12345]) {
+      state.updates = [];
+      const r = await profileUpdate(ctx({ name: "Ada", birthdate: bad }));
+      expect((r as Response).status).toBe(200);
+      expect(state.updates[0].birthdate).toBeUndefined();
+    }
+  });
+
+  it("400s when birthdate is the only field and it is invalid", async () => {
+    const r = await profileUpdate(ctx({ birthdate: "2015-01-01" }));
+    expect((r as Response).status).toBe(400);
+  });
 });

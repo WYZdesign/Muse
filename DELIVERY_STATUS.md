@@ -998,3 +998,13 @@ Owner decision: raise coverage toward 60%. First push **far exceeded it**.
 4. Availability: **RECONCILE to real columns** (`travel_dates`/`budget_range`/`availability_status`) so Discover/search filters work. NOT YET DONE.
 5. Workstreams approved to do all: portfolio-visibility server enforcement · lazy-mount inactive screens · durable video moderation · native-control migration · per-screen UI-state migration. NONE STARTED.
 6. Codex: stays out; owner will have it review when back. Wyzmind remains sole integrator.
+
+## Feature: birthdate field -> the "Show age" toggle now works (migration 0030 APPLIED) — 2026-09-25 (wyzmind)
+Owner-ratified decision. `PublicProfileScreen` rendered `{user.age && user.showAge !== false && …}` but `muse_profiles` had NO age/birthdate column (only `age_verified` flags), so age could never display and the toggle was inert.
+- **Migration `0030_add_birthdate.sql`** — nullable `birthdate date`, idempotent `ADD COLUMN IF NOT EXISTS`. **APPLIED to production** (verified: `birthdate | date | YES`; ledger 30 rows).
+- **Age is DERIVED, never stored, and never leaked:** `src/lib/muse-age.ts` (`sanitizeBirthdate` accepts only a real `YYYY-MM-DD`, rejects future dates and ages <18 / >120; `publicAge(row)` derives age). `birthdate` was added to the profile-update allowlists (`muse-actions/profile.ts`, `api/muse/auth/route.ts` `update-profile`) WITH sanitisation, and to the candidate selects in `api/muse/match/route.ts` + `muse-actions/get.ts` (type=profiles, discover-ranked, matches target_id) — every payload emits `age` gated on `preferences.showAge !== false` and sets `birthdate: undefined` (stripped exactly like `last_seen_at`). The raw date is never sent to another user.
+- **Onboarding capture:** new accessible `components/OnboardingBirthdateField.tsx` (real `<input type="date">` in a `<label>`, `max`=today), mounted in onboarding step 1 and saved via `update-profile`. `OnboardingData` gained `birthdate?`.
+- **page.tsx: 1915 -> 1914 lines** (ratchet LOWERED to 1914). `page-models.ts` `RawApiProfile` gained `age?/showAge?`.
+- Tests: new `src/lib/muse-age.test.ts` (100% stmts/branches/funcs — leap day, 18/120/future boundaries), +4 in `profile.test.ts` (canonicalisation, invalid-drop), +1 each in `match.route.test.ts` / `get.test.ts` (age present, birthdate stripped, opt-out hides age). Suite **78 files / 897 -> 79 files / 918 tests**.
+- COVERAGE: statements 81.14 / branches 69.88 / functions 86.32 / lines 86.32 (thresholds 78/65/84/84).
+- GATES (independently re-run): tsc 0 · eslint --quiet 0 errors · vitest 79/918 PASS · build 0 · size-ratchet PASS · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped** — all against the LIVE database with the column applied.

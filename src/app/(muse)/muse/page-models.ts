@@ -45,6 +45,8 @@ export type RawApiProfile = {
   collabs?: number;
   verified?: boolean;
   showDistance?: boolean;
+  age?: number;
+  showAge?: boolean;
   side?: "behind" | "front";
 };
 

@@ -6,6 +6,7 @@ import { checkRate, clientIp } from "@/lib/rate-limit";
 import { enforceRequestSafety, sanitizeText } from "@/lib/request-safety";
 import { signupWelcome, sendEmail } from "@/lib/email";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
+import { sanitizeBirthdate } from "@/lib/muse-age";
 
 const ACCOUNT_DELETION_RETENTION_DAYS = 30;
 
@@ -257,9 +258,17 @@ export async function POST(req: NextRequest) {
       // list (Torreé audit item 6) — flags the profile for admin review in
       // /muse/admin/moderation without blocking the value from being saved
       // and used immediately like any other type/style.
-      const allowed = ["name", "bio", "loc", "city", "lat", "long", "avatar", "type", "styles", "looking", "preferences", "zodiac", "chinese", "mbti", "life_path", "audience", "nsfw", "status", "custom_type_pending", "custom_style_pending"];
+      const allowed = ["name", "bio", "loc", "city", "lat", "long", "avatar", "type", "styles", "looking", "preferences", "zodiac", "chinese", "mbti", "life_path", "audience", "nsfw", "status", "custom_type_pending", "custom_style_pending", "birthdate"];
       const updates: Record<string, unknown> = {};
       for (const k of allowed) if (body[k] !== undefined) updates[k] = body[k];
+      // birthdate is sanitised like every other profile write: a real
+      // YYYY-MM-DD that isn't in the future and yields an age of 18–120, else
+      // the field is dropped.
+      if (updates.birthdate !== undefined) {
+        const clean = sanitizeBirthdate(updates.birthdate);
+        if (clean === undefined) delete updates.birthdate;
+        else updates.birthdate = clean;
+      }
       if (updates.custom_type_pending !== undefined) updates.custom_type_pending = updates.custom_type_pending === true;
       if (updates.custom_style_pending !== undefined) updates.custom_style_pending = updates.custom_style_pending === true;
       if (Object.keys(updates).length === 0) return NextResponse.json({ error: "No updatable fields" }, { status: 400 });

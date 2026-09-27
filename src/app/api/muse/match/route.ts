@@ -3,6 +3,7 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import { isIndustryType } from "@/lib/role";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { embedText, cosineSimilarity, aiEnabled } from "@/lib/ai";
+import { publicAge } from "@/lib/muse-age";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 /**
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     // Fetch candidates WITH their stored embeddings (single read, no token cost).
     const { data: allProfiles } = await sb.from("muse_profiles")
-      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, photos, collabs, verified, tier, profile_completion_pct, embedding, preferences, last_seen_at, nsfw, suspended")
+      .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, photos, collabs, verified, tier, profile_completion_pct, embedding, preferences, birthdate, last_seen_at, nsfw, suspended")
       .limit(200);
 
     // Blocks (either direction) were never consulted here — the swipe deck could
@@ -134,6 +135,9 @@ export async function GET(req: NextRequest) {
       const showMbti = c.preferences?.showMbti !== false;
       const showLifePath = c.preferences?.showLifePath !== false;
       const showChinese = c.preferences?.showChinese !== false;
+      // Age: derived from the candidate's own birthdate, exposed only when THEY
+      // allow it. The raw birthdate is stripped below (like last_seen_at).
+      const showAge = c.preferences?.showAge !== false;
       // Premium-gated fields: match-% visibility (see UpsellModal-gated
       // toggle in SettingsScreen). Only meaningful for paid tiers; a
       // free-tier candidate's preference here is ignored server-side too,
@@ -157,7 +161,9 @@ export async function GET(req: NextRequest) {
         !!c.last_seen_at && (Date.now() - new Date(c.last_seen_at).getTime()) < 5 * 60 * 1000,
       showOnline: c.preferences?.showOnline !== false,
       last_seen_at: undefined,
-      showAge: c.preferences?.showAge !== false,
+      showAge,
+      age: publicAge(c),
+      birthdate: undefined,
       zodiac: showZodiac ? c.zodiac : "",
         mbti: showMbti ? c.mbti : "",
         life_path: showLifePath ? c.life_path : "",

@@ -11,6 +11,7 @@ import { safeServerError } from "@/lib/http";
 import { sanitizeText } from "@/lib/request-safety";
 import { bearerTokenFromReq, isConvoParticipant, UUID_RE, isAdminEmail, isAgeVerificationCurrent } from "./shared";
 import { getBoostStatus, isBoostActive } from "./misc";
+import { publicAge } from "@/lib/muse-age";
 
 const PRIVATE_ALBUM_PREFIX = "storage://muse-private/";
 async function albumPhotoForViewer(sb: ReturnType<typeof getServiceClient>, photo: any) {
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest) {
         const { data: vp } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profileId).maybeSingle();
         viewerVerified = isAgeVerificationCurrent(vp as any);
       }
-      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, travel_dates, availability_status, budget_range, travel_destinations").limit(100);
+      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, travel_dates, availability_status, budget_range, travel_destinations, preferences, birthdate").limit(100);
       // Blocks were write-only until now — muse_blocks was never consulted
       // anywhere, so a blocked user could still show up in Discover, match,
       // and message the person who blocked them. Filter both directions:
@@ -101,9 +102,13 @@ export async function GET(req: NextRequest) {
         const hasPhotos = Array.isArray(p.photos) && p.photos.length > 0;
         return hasAvatar || hasPhotos;
       }).map((p: any) => {
+        // Derived age only (never the raw birthdate), gated by the owner's own
+        // "Show age" preference — same showDistance/showAge pattern as
+        // app/api/muse/match/route.ts. preferences is stripped after deriving.
+        const out = { ...p, age: publicAge(p), showAge: p.preferences?.showAge !== false, birthdate: undefined, preferences: undefined };
         // Strip NSFW photos entirely unless the viewer is verified.
-        if (p.nsfw && !viewerVerified) return { ...p, photos: undefined, avatar: undefined };
-        return p;
+        if (p.nsfw && !viewerVerified) return { ...out, photos: undefined, avatar: undefined };
+        return out;
       });
       return NextResponse.json({ profiles: visible });
     }
@@ -119,7 +124,7 @@ export async function GET(req: NextRequest) {
       if (!viewer) return NextResponse.json({ error: "Not found" }, { status: 404 });
       const viewerVerified = isAgeVerificationCurrent(viewer as any);
       const { data } = await sb.from("muse_profiles")
-        .select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, zodiac, chinese, mbti, life_path, boost_expires_at")
+        .select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, zodiac, chinese, mbti, life_path, boost_expires_at, preferences, birthdate")
         .limit(400);
       let blockedIds = new Set<string>();
       {
@@ -140,7 +145,9 @@ export async function GET(req: NextRequest) {
         .map((p: any) => {
           const base = calcMatchScore(viewer as any, p);
           const boosted = isBoostActive(p.boost_expires_at);
-          return { ...p, matchScore: base, boosted, sideMatches: !!side && !!CREATIVE_SIDE[p.type] && CREATIVE_SIDE[p.type] !== side };
+          // Derived age only, gated by the owner's own "Show age" preference;
+          // the raw birthdate + preferences blob never leave the server.
+          return { ...p, age: publicAge(p), showAge: p.preferences?.showAge !== false, birthdate: undefined, preferences: undefined, matchScore: base, boosted, sideMatches: !!side && !!CREATIVE_SIDE[p.type] && CREATIVE_SIDE[p.type] !== side };
         });
       // Boosted + complementary-side first, then by match score; capped for payload.
       scored.sort((a: any, b: any) => {
@@ -164,7 +171,7 @@ export async function GET(req: NextRequest) {
         const { data: vp } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profileId).maybeSingle();
         viewerVerified = isAgeVerificationCurrent(vp as any);
       }
-      const { data } = await sb.from("muse_matches").select("id, user_id, target_id(id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path, last_seen_at, nsfw)").eq("user_id", profileId);
+      const { data } = await sb.from("muse_matches").select("id, user_id, target_id(id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path, last_seen_at, nsfw, preferences, birthdate)").eq("user_id", profileId);
       // Same gap the comment above "profiles"/"discover-ranked" describes:
       // blocking someone stops them appearing in future Discover results but
       // never hid an EXISTING match — a blocked person you'd already matched
@@ -178,9 +185,13 @@ export async function GET(req: NextRequest) {
       const gated = (data || [])
         .filter((m: any) => !blockedIds.has(String(m.target_id?.id)))
         .map((m: any) => {
-          const t = m.target_id;
-          if (t?.nsfw && !viewerVerified) return { ...m, target_id: { ...t, avatar: undefined } };
-          return m;
+          const t = m.target_id || {};
+          // Same derived-age gating as the profiles/discover-ranked payloads:
+          // only `age`, only when the target's own showAge allows it, and never
+          // the raw birthdate or the preferences blob.
+          const target = { ...t, age: publicAge(t), showAge: t.preferences?.showAge !== false, birthdate: undefined, preferences: undefined };
+          if (t?.nsfw && !viewerVerified) return { ...m, target_id: { ...target, avatar: undefined } };
+          return { ...m, target_id: target };
         });
       return NextResponse.json({ matches: gated });
     }

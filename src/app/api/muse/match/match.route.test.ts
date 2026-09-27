@@ -97,6 +97,7 @@ describe("match route", () => {
         profile_completion_pct: 80,
         embedding: null,
         preferences: { showZodiac: false, showMbti: false },
+        birthdate: "1990-05-15",
         nsfw: false,
         suspended: false,
       },
@@ -162,5 +163,36 @@ describe("match route", () => {
     expect(body.aiEnabled).toBe(false);
     expect(body.profiles[0].embedding).toBeUndefined();
     expect(body.profiles[0].preferences).toBeUndefined();
+    // Age is derived from birthdate, exposed, and the raw date never leaks.
+    expect(typeof body.profiles[0].age).toBe("number");
+    expect(body.profiles[0].age).toBeGreaterThanOrEqual(18);
+    expect(body.profiles[0].birthdate).toBeUndefined();
+    expect(body.profiles[0].showAge).toBe(true);
+  });
+
+  it("hides age (and never leaks birthdate) when the candidate opts out", async () => {
+    (globalThis as any).__candidates = [
+      {
+        id: "c2",
+        name: "Private",
+        type: "creator",
+        avatar: "b.jpg",
+        photos: ["p.jpg"],
+        collabs: 1,
+        verified: false,
+        tier: "free",
+        embedding: null,
+        preferences: { showAge: false },
+        birthdate: "1990-05-15",
+        nsfw: false,
+        suspended: false,
+      },
+    ];
+    const r = await GET(req({ authorization: "Bearer tok" }));
+    expect(r.status).toBe(200);
+    const body = await r.json();
+    expect(body.profiles[0].age).toBeUndefined();
+    expect(body.profiles[0].showAge).toBe(false);
+    expect(body.profiles[0].birthdate).toBeUndefined();
   });
 });

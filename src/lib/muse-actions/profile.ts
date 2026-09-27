@@ -8,13 +8,22 @@
 // ══════════════════════════════════════════════════════════════════════════════
 import { sanitizeText } from "@/lib/request-safety";
 import { checkRateUser } from "@/lib/rate-limit";
+import { sanitizeBirthdate } from "@/lib/muse-age";
 import { NextResponse, safeServerError, type ActionContext } from "./shared";
 
 export const profileUpdate = async ({ sb, profile, rest }: ActionContext) => {
-  const ALLOWED_PROFILE_FIELDS = ["name", "bio", "styles", "loc", "city", "type", "zodiac", "chinese", "mbti", "life_path", "looking", "avatar", "audience", "media_kit_url", "travel_dates", "availability_status", "budget_range", "travel_destinations", "custom_type_pending", "custom_style_pending"];
+  const ALLOWED_PROFILE_FIELDS = ["name", "bio", "styles", "loc", "city", "type", "zodiac", "chinese", "mbti", "life_path", "looking", "avatar", "audience", "media_kit_url", "travel_dates", "availability_status", "budget_range", "travel_destinations", "custom_type_pending", "custom_style_pending", "birthdate"];
   const updates: Record<string, unknown> = {};
   for (const k of ALLOWED_PROFILE_FIELDS) {
     if (rest[k] !== undefined) updates[k] = rest[k];
+  }
+  // birthdate is never persisted raw — only a canonical YYYY-MM-DD that is a
+  // real calendar date, not in the future, and yields an age of 18–120.
+  // Anything else drops the field entirely.
+  if (updates.birthdate !== undefined) {
+    const clean = sanitizeBirthdate(updates.birthdate);
+    if (clean === undefined) delete updates.birthdate;
+    else updates.birthdate = clean;
   }
   if (typeof updates.name === "string") updates.name = sanitizeText(updates.name as string, 80);
   if (typeof updates.bio === "string") updates.bio = sanitizeText(updates.bio as string, 500);
