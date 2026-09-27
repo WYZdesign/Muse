@@ -19,7 +19,7 @@ import path from "node:path";
  * Good next candidates: the ~300-line `applySession` callback, the ~200-line
  * bootstrap hydration effect, and the ~1,100-line render tree.
  */
-const BUDGET_LINES = 4134;
+const BUDGET_LINES = 3866;
 
 const file = path.resolve(__dirname, "page.tsx");
 
