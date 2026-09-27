@@ -441,7 +441,11 @@ export const savedSearchDelete = async ({ sb, profile, rest }: ActionContext) =>
   return NextResponse.json({ success: true });
 };
 
-export const savedSearchAlerts = async ({ sb, profile }: ActionContext) => {
+// Only reads `sb`/`profile` — narrowed from the full ActionContext so the
+// notification cron can reuse the exact same query/notify logic per user
+// (the monolith registry still assigns it to ActionHandler; a full context
+// is structurally assignable to this narrower parameter).
+export const savedSearchAlerts = async ({ sb, profile }: Pick<ActionContext, "sb" | "profile">) => {
   const { data: searches } = await sb.from("muse_saved_searches")
     .select("id, name, query, filters, last_notified_at")
     .eq("user_id", profile.id);

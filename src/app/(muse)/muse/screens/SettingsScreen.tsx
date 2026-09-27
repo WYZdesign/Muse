@@ -12,6 +12,7 @@ import { STRINGS } from "@/lib/strings";
 import { clearAllPageTourFlags } from "../components/pageTourContent";
 import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
 import { isPaidTier } from "../components/subscriptionTiers";
+import { BoostAnalyticsPanel } from "../components/BoostAnalyticsPanel";
 
 const SUPPORT_EMAIL = "info@wyzdesign.com";
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
@@ -300,6 +301,7 @@ export const SettingsScreen = memo(function SettingsScreen({
   preferences = {},
 }: SettingsScreenProps) {
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showBoostAnalytics, setShowBoostAnalytics] = useState(false);
   const [showPortfolioSettings, setShowPortfolioSettings] = useState(false);
   const [showAvailability, setShowAvailability] = useState(false);
   const [portfolioVisibility, setPortfolioVisibility] = useState<string>(String(preferences.portfolioVisibility ?? "everyone"));
@@ -571,6 +573,7 @@ export const SettingsScreen = memo(function SettingsScreen({
   const rewardsItems = [
     { icon: <FiStar size={18} />, label: "Quests", desc: questClaimables > 0 ? `${questClaimables} reward${questClaimables > 1 ? "s" : ""} ready to claim!` : "Complete challenges, earn free likes", action: () => setShowQuests(true), dot: questClaimables > 0 },
     { icon: <FiStar size={18} />, label: "Prompt Bank", desc: `${Math.round((promptResponses.length / Math.max(promptBankData.length, 1)) * 100)}% completed`, action: () => setShowPromptBank(true), dot: false },
+    { icon: <FiZap size={18} />, label: "Boost Performance", desc: "See how your profile boost is doing", action: () => setShowBoostAnalytics(true), dot: false },
   ];
 
   const legalItems = [
@@ -1002,6 +1005,12 @@ export const SettingsScreen = memo(function SettingsScreen({
               </div>
             ))}
           </div>
+        </SettingsSubPage>
+      )}
+
+      {showBoostAnalytics && (
+        <SettingsSubPage title="Boost Performance" onClose={() => setShowBoostAnalytics(false)}>
+          <BoostAnalyticsPanel apiFetch={apiFetch} />
         </SettingsSubPage>
       )}
 

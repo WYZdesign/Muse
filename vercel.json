@@ -7,7 +7,9 @@
     { "path": "/api/cron/checkins", "schedule": "0 8 * * *" },
     { "path": "/api/cron/capture-bookings", "schedule": "0 */6 * * *" },
     { "path": "/api/cron/purge-deleted-accounts", "schedule": "30 7 * * *" },
-    { "path": "/api/cron/storage-cleanup", "schedule": "*/15 * * * *" }
+    { "path": "/api/cron/storage-cleanup", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/saved-search-alerts", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/notify-claimable-quests", "schedule": "0 9 * * 1" }
   ],
   "headers": [
     {

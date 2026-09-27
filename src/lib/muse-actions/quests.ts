@@ -170,7 +170,11 @@ export async function questClaimQuest({ sb, profile, rest }: ActionContext) {
   });
 }
 
-export async function questNotifyClaimable({ sb, profile }: ActionContext) {
+// Only reads `sb`/`profile` — narrowed from the full ActionContext so the
+// claimable-quests cron can reuse the exact same push logic per user (the
+// monolith registry still assigns it to ActionHandler; a full context is
+// structurally assignable to this narrower parameter).
+export async function questNotifyClaimable({ sb, profile }: Pick<ActionContext, "sb" | "profile">) {
   const { data: claimable } = await sb.from("muse_user_quests")
     .select("quest_id, muse_quests(title, reward_label)")
     .eq("user_id", profile.id)
