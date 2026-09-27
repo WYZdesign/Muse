@@ -904,3 +904,9 @@ The `page-size-budget` guardrail did its job: the banner move added 5 lines (4,1
 - **page.tsx: 4,134 -> 3,866 lines (-268).** The size ratchet budget was then **lowered to 3,866** (ratchet only goes down).
 - GATES (independently re-run, not just the extractor's word): tsc 0 · eslint 0 · vitest **73 files / 559 tests PASS** · build 0 · size-ratchet test PASS · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
 - NEXT PHASES: B = bootstrap hydration effect (~203 lines), C = remaining inline handlers -> `hooks/useMuseActions.ts`, D = the ~1,100-line render tree -> composed components.
+
+## page.tsx PHASE B: bootstrap hydration extracted — 2026-09-25 (wyzmind)
+- Extracted the mount `useEffect` (build-version SW/cache bust + hard reload, remote cache-version kill switch, geolocation, checkout-return toasts, referral restore, session apply, auth-state listener, `loadState` hydration) into `hooks/useBootstrapHydration.ts` (269 lines, options object of 20 outer values). Effect order and the one-shot `loadStateRef` guard preserved; dep array unchanged.
+- **page.tsx: 3,866 -> 3,685 lines (-181 cumulative from Phase A's 4,134 = -449 total).** Ratchet lowered again to 3,685.
+- GATES (independently re-run): tsc 0 · eslint 0 · vitest **73 files / 559 tests PASS** · build 0 · smoke+discover-deck **22/22** · demo-mode **11/11** · accessibility **20 / 1 skipped**.
+- NEXT: Phase C = remaining inline handlers -> `hooks/useMuseActions.ts`; Phase D = the render tree -> composed components.

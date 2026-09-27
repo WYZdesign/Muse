@@ -15,11 +15,12 @@ import path from "node:path";
  * NEVER raise it — if you need room, extract a hook or component first.
  *
  * Already extracted (examples): page-constants.ts, page-models.ts,
- * page-helpers.ts (getIcebreaker/getReferralTier/checkProfileBadges/sanitizeInput).
- * Good next candidates: the ~300-line `applySession` callback, the ~200-line
- * bootstrap hydration effect, and the ~1,100-line render tree.
+ * page-helpers.ts (getIcebreaker/getReferralTier/checkProfileBadges/sanitizeInput),
+ * hooks/useSessionApply.ts (`applySession`), hooks/useBootstrapHydration.ts
+ * (the mount bootstrap/hydration effect).
+ * Good next candidates: the ~1,100-line render tree.
  */
-const BUDGET_LINES = 3866;
+const BUDGET_LINES = 3685;
 
 const file = path.resolve(__dirname, "page.tsx");
 
