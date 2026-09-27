@@ -979,3 +979,22 @@ Three backend admin actions had zero frontend callers, so the features were invi
 - **Fixed (zero-risk a11y):** the Availability Calendar status choices (Available / Busy / Not accepting) were plain buttons whose only state signal was a background fill — no programmatic selected state. They now expose `aria-pressed={availabilityStatus === o.k}`.
 - **FINDING flagged, NOT "fixed" (architecture/product):** the Availability UI saves through `save-preferences` into the **`preferences` JSON blob** (`travelDates`, `budgetRange`, `availabilityNote` as free text), while the `muse_profiles` **columns** `travel_dates` / `budget_range` / `travel_destinations` are what the search action actually filters on (`misc.ts:164,177,178` — `contains("travel_destinations", …)`, `eq("availability_status", …)`). So the Settings values never reach the columns the Discover/search filters read. Note also `profile.ts:26` **drops** `travel_dates` unless it is an ARRAY, so a free-text string can never persist there. Reconciling this (write to the columns, structured date ranges, TZ-awareness, and a "Visiting soon" filter) is a product + schema decision, not a safe surgical change — deliberately left.
 - GATES: tsc 0 · eslint 0 · vitest **75 files / 569 tests PASS** · build 0.
+
+## Coverage push: 32% -> 81% (+328 tests) — 2026-09-25 (wyzmind)
+Owner decision: raise coverage toward 60%. First push **far exceeded it**.
+- Statements 32.03 -> **80.95** | Branches 24.42 -> **69.5** | Functions 36.9 -> **86.19** | Lines 35.02 -> **86.19**.
+- Tests: 75 files / 569 -> **78 files / 897** (+328).
+- Modules taken from near-zero to ~90-100%: `lib/role.ts` (10->100), `lib/supabase.ts` (33->100), `lib/push.ts` (10->100), `lib/ai.ts` (40->100), `lib/aiDocs.ts` (3->98), `lib/questEngine.ts` (24->95), and `muse-actions/{get,sessions,misc,admin,communities,feed,quests,disclosures}.ts` (13-28% -> 86-96%).
+- New: `src/lib/{role,supabase,push}.test.ts`, `src/test-support/sb.ts` (shared fluent Supabase mock placed OUTSIDE `src/lib` so it never enters the coverage denominator). Extended: `ai.test.ts`, `aiDocs.test.ts`, `questEngine.test.ts` (all original assertions preserved), and the 8 `muse-actions/*.test.ts`.
+- Thresholds RAISED in `vitest.config.mts` (ratchet only goes up as coverage improves): lines 84, functions 84, statements 78, branches 65 — each set below the measured number so it protects without flaking.
+- **No production source modified. No bugs found.** Tests assert real branches: error paths, empty inputs, permission gates, null returns, dedupe/limit logic, query shape and transformed output.
+- GATES: vitest **78 files / 897 tests PASS with thresholds enforced** · tsc 0 · eslint --quiet 0 errors · build 0.
+- NOT yet covered (next push): `muse-actions/connect.ts` (29%), `albumTs` (62%), `forum.ts` (42%), `messaging.ts` (39%), `profile.ts` (59%), `feedback.ts` (67%), `shared.ts` (70%), `contentScan.ts` (33%).
+
+## OWNER DECISIONS RATIFIED (2026-09-25)
+1. Duplicate-account rejection: **KEEP** — verified it is already best-of-both-worlds (clear sign-up message + register 5/IP + login 20/IP + generic login/reset wording). No change needed.
+2. Coverage: raise toward 60% -> done (81%).
+3. Show-age toggle: **ADD a birthdate field** (migration + onboarding + display, gated by the `showAge` toggle). NOT YET DONE.
+4. Availability: **RECONCILE to real columns** (`travel_dates`/`budget_range`/`availability_status`) so Discover/search filters work. NOT YET DONE.
+5. Workstreams approved to do all: portfolio-visibility server enforcement · lazy-mount inactive screens · durable video moderation · native-control migration · per-screen UI-state migration. NONE STARTED.
+6. Codex: stays out; owner will have it review when back. Wyzmind remains sole integrator.

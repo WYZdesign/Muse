@@ -24,14 +24,16 @@ export default defineConfig({
       // (historical actual: ~31% statements / ~34% lines), so it silently
       // blocked the Unit Tests job and, transitively, every dependent
       // build/E2E/accessibility/Lighthouse/deploy job on every run.
-      // These values are the measured baseline as of 2026-09-24 and exist to
-      // prevent regression while the src/lib suites are grown. Raising them is
-      // the owner-ratified direction; must never be reduced.
+      // The first coverage push toward the owner's 60% goal (2026-09-27) added
+      // real suites for the biggest/lowest-covered src/lib modules — measured
+      // actual after that push: ~81% statements / ~70% branches / ~86%
+      // functions / ~86% lines. These values sit just below that measured
+      // baseline and exist to prevent regression. They may only go UP.
       thresholds: {
-        lines: 35,
-        functions: 36,
-        statements: 32,
-        branches: 24,
+        lines: 84,
+        functions: 84,
+        statements: 78,
+        branches: 65,
       },
     },
   },
