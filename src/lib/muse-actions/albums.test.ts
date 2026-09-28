@@ -9,6 +9,8 @@ type FailMode = "none" | "storage" | "enqueue";
 const state = {
   albums: null as Row | null,
   photos: null as Row | Row[] | null,
+  profilePrefs: null as Row | null,
+  matches: [] as Row[],
   deletes: [] as { table: string; filters: Record<string, unknown> }[],
   storageRemoves: [] as { bucket: string; paths: string[] }[],
   cleanupUpserts: [] as Row[],
@@ -46,6 +48,8 @@ function makeQuery(table: string) {
   const tableData = (): Row | Row[] | null => {
     if (table === "muse_albums") return state.albums;
     if (table === "muse_album_photos") return state.photos;
+    if (table === "muse_profiles") return state.profilePrefs;
+    if (table === "muse_matches") return state.matches;
     return null;
   };
 
@@ -143,6 +147,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   state.albums = null;
   state.photos = null;
+  state.profilePrefs = null;
+  state.matches = [];
   state.deletes = [];
   state.storageRemoves = [];
   state.cleanupUpserts = [];
@@ -207,6 +213,32 @@ describe("albums actions (ownership gate)", () => {
   it("albumLike returns 404 when album not found", async () => {
     const r = await albumLike(ctx({ albumId: "a1" }, { album: null }));
     expect((r as Response).status).toBe(404);
+  });
+
+  it("albumView 403s a non-owner when the owner's portfolio is private", async () => {
+    const c = ctx({ albumId: "a1" }, { album: { profile_id: "other", access_level: "public", view_count: 0 } });
+    state.profilePrefs = { preferences: { portfolioVisibility: "private" } };
+    expect((await albumView(c) as Response).status).toBe(403);
+  });
+
+  it("albumView 403s an unmatched viewer when visibility is matches", async () => {
+    const c = ctx({ albumId: "a1" }, { album: { profile_id: "other", access_level: "public", view_count: 0 } });
+    state.profilePrefs = { preferences: { portfolioVisibility: "matches" } };
+    state.matches = [];
+    expect((await albumView(c) as Response).status).toBe(403);
+  });
+
+  it("albumView allows a mutually matched viewer on a public album", async () => {
+    const c = ctx({ albumId: "a1" }, { album: { profile_id: "other", access_level: "public", view_count: 0 } });
+    state.profilePrefs = { preferences: { portfolioVisibility: "matches" } };
+    state.matches = [{ user_id: "owner1", target_id: "other" }, { user_id: "other", target_id: "owner1" }];
+    expect((await albumView(c) as Response).status).toBe(200);
+  });
+
+  it("albumLike 403s a non-owner when the owner's portfolio is private", async () => {
+    const c = ctx({ albumId: "a1" }, { album: { profile_id: "other", access_level: "public", like_count: 0 } });
+    state.profilePrefs = { preferences: { portfolioVisibility: "private" } };
+    expect((await albumLike(c) as Response).status).toBe(403);
   });
 });
 

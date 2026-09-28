@@ -10,6 +10,7 @@
 // ══════════════════════════════════════════════════════════════════════════════
 import { checkRate, checkRateUser } from "@/lib/rate-limit";
 import { sanitizeAvailabilityStatus, sanitizeTravelDestinations } from "@/lib/muse-availability";
+import { normalizePortfolioVisibility } from "@/lib/muse-portfolio-visibility";
 import { UUID_RE, NextResponse, safeServerError, type ActionContext } from "./shared";
 
 export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
@@ -44,6 +45,12 @@ export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
   const prefs: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(source as Record<string, unknown>)) {
     if (ALLOWED_PREFS.has(k)) prefs[k] = v;
+  }
+  // Canonicalise the server-read privacy value on write, so the stored
+  // vocabulary can never drift from what the enforcement path understands
+  // (everyone | matches | private). Unknown values collapse to the default.
+  if ("portfolioVisibility" in prefs) {
+    prefs.portfolioVisibility = normalizePortfolioVisibility(prefs.portfolioVisibility);
   }
   // Handle nested notification preference toggles (e.g. notifications.match = false)
   if (rest.toggleNotificationPref && typeof rest.toggleNotificationPref === "object") {

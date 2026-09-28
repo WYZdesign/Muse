@@ -762,6 +762,48 @@ describe("GET albums", () => {
     const body = await (await GET(req("albums", "tok", { profile_id: "me" }))).json();
     expect(body.albums[0].photo_count).toBe(2);
   });
+  it("still returns the owner's albums when their portfolio is private", async () => {
+    (globalThis as any).__authUser = { id: "a" };
+    installSb({
+      muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "private" } } } : profLookup(calls) ?? { data: null }),
+      muse_albums: () => ({ data: [{ id: "al1", profile_id: "me", access_level: "public" }], error: null }),
+      muse_album_photos: () => ({ data: [] }),
+    });
+    const body = await (await GET(req("albums", "tok", { profile_id: "me" }))).json();
+    expect(body.albums.map((a: any) => a.id)).toEqual(["al1"]);
+  });
+  it("strips the whole portfolio from a non-owner when the owner set it private", async () => {
+    (globalThis as any).__authUser = { id: "a" };
+    installSb({
+      muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "private" } } } : profLookup(calls) ?? { data: null }),
+      muse_albums: () => ({ data: [{ id: "pub", profile_id: other, access_level: "public" }], error: null }),
+      muse_album_photos: () => ({ data: [{ album_id: "pub" }] }),
+    });
+    const body = await (await GET(req("albums", "tok", { profile_id: other }))).json();
+    expect(body.albums).toEqual([]);
+  });
+  it("strips the portfolio from an unmatched viewer when the owner set matches-only", async () => {
+    (globalThis as any).__authUser = { id: "a" };
+    installSb({
+      muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "matches" } } } : profLookup(calls) ?? { data: null }),
+      muse_albums: () => ({ data: [{ id: "pub", profile_id: other, access_level: "public" }], error: null }),
+      muse_matches: () => ({ data: [] }),
+    });
+    const body = await (await GET(req("albums", "tok", { profile_id: other }))).json();
+    expect(body.albums).toEqual([]);
+  });
+  it("serves a mutually matched viewer when the owner set matches-only", async () => {
+    (globalThis as any).__authUser = { id: "a" };
+    installSb({
+      muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "matches" } } } : profLookup(calls) ?? { data: null }),
+      muse_albums: () => ({ data: [{ id: "pub", profile_id: other, access_level: "public" }], error: null }),
+      muse_matches: () => ({ data: [{ user_id: "me", target_id: other }, { user_id: other, target_id: "me" }] }),
+      muse_album_photos: () => ({ data: [{ album_id: "pub" }] }),
+    });
+    const body = await (await GET(req("albums", "tok", { profile_id: other }))).json();
+    expect(body.albums.map((a: any) => a.id)).toEqual(["pub"]);
+    expect(body.albums[0].photo_count).toBe(1);
+  });
   it("hides private and ungranted invite albums from non-owners", async () => {
     (globalThis as any).__authUser = { id: "a" };
     installSb({
@@ -789,6 +831,7 @@ describe("GET albums", () => {
 
 describe("GET album-photos", () => {
   const aid = "33333333-3333-4333-8333-333333333333";
+  const other = "22222222-2222-4222-8222-222222222222";
   it("400s without album_id", async () => {
     installSb({});
     expect((await GET(req("album-photos"))).status).toBe(400);
@@ -829,6 +872,45 @@ describe("GET album-photos", () => {
     });
     const body = await (await GET(req("album-photos", "tok", { album_id: aid }))).json();
     expect(body.photos[0].img_url).toBe("https://signed/secret.jpg");
+  });
+  it("403s a non-owner when the owner's portfolio is private (even on a public album)", async () => {
+    (globalThis as any).__authUser = { id: "a" };
+    installSb({
+      muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "private" } } } : profLookup(calls) ?? { data: null }),
+      muse_albums: () => ({ data: { id: aid, profile_id: "other", access_level: "public" } }),
+      muse_album_photos: () => ({ data: [{ id: "ph1", img_url: "storage://muse-private/secret.jpg" }], error: null }),
+    });
+    expect((await GET(req("album-photos", "tok", { album_id: aid }))).status).toBe(403);
+  });
+  it("403s an unmatched viewer when the owner set matches-only", async () => {
+    (globalThis as any).__authUser = { id: "a" };
+    installSb({
+      muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "matches" } } } : profLookup(calls) ?? { data: null }),
+      muse_albums: () => ({ data: { id: aid, profile_id: "other", access_level: "public" } }),
+      muse_matches: () => ({ data: [] }),
+    });
+    expect((await GET(req("album-photos", "tok", { album_id: aid }))).status).toBe(403);
+  });
+  it("serves a mutually matched viewer when the owner set matches-only", async () => {
+    (globalThis as any).__authUser = { id: "a" };
+    installSb({
+      muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "matches" } } } : profLookup(calls) ?? { data: null }),
+      muse_albums: () => ({ data: { id: aid, profile_id: other, access_level: "public" } }),
+      muse_matches: () => ({ data: [{ user_id: "me", target_id: other }, { user_id: other, target_id: "me" }] }),
+      muse_album_photos: () => ({ data: [{ id: "ph1", img_url: "https://cdn.test/x.jpg" }], error: null }),
+    });
+    const body = await (await GET(req("album-photos", "tok", { album_id: aid }))).json();
+    expect(body.photos[0].img_url).toBe("https://cdn.test/x.jpg");
+  });
+  it("still serves the owner's own album when they set the portfolio private", async () => {
+    (globalThis as any).__authUser = { id: "a" };
+    installSb({
+      muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "private" } } } : profLookup(calls) ?? { data: null }),
+      muse_albums: () => ({ data: { id: aid, profile_id: "me", access_level: "public" } }),
+      muse_album_photos: () => ({ data: [{ id: "ph1", img_url: "https://cdn.test/mine.jpg" }], error: null }),
+    });
+    const body = await (await GET(req("album-photos", "tok", { album_id: aid }))).json();
+    expect(body.photos[0].img_url).toBe("https://cdn.test/mine.jpg");
   });
 });
 

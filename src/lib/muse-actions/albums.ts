@@ -8,6 +8,7 @@
 import { NextResponse } from "next/server";
 import { checkRate } from "@/lib/rate-limit";
 import { safeServerError } from "@/lib/http";
+import { resolvePortfolioGate } from "@/lib/muse-portfolio-visibility";
 import { validateInput, type ActionContext } from "./shared";
 
 const PRIVATE_ALBUM_PREFIX = "storage://muse-private/";
@@ -347,6 +348,10 @@ export async function albumView({ sb, profile, rest, ip }: ActionContext) {
   if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
   const { data: album } = await sb.from("muse_albums").select("view_count, access_level, profile_id").eq("id", albumId).maybeSingle();
   if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // Outer privacy gate: a private/matches-only portfolio denies this album even
+  // when the album itself is marked public. Owner always passes.
+  const portfolioGate = await resolvePortfolioGate(sb, String(album.profile_id), profile.id);
+  if (!portfolioGate.allowed) return NextResponse.json({ error: "Album is private" }, { status: 403 });
   if (album.access_level === "private" && String(album.profile_id) !== String(profile.id)) {
     return NextResponse.json({ error: "Album is private" }, { status: 403 });
   }
@@ -364,6 +369,10 @@ export async function albumLike({ sb, profile, rest, ip }: ActionContext) {
   if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
   const { data: album } = await sb.from("muse_albums").select("like_count, access_level, profile_id").eq("id", albumId).maybeSingle();
   if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // Outer privacy gate: same rule as albumView — a user who hid their portfolio
+  // must not have its albums liked (nor learn that they exist) by non-owners.
+  const portfolioGate = await resolvePortfolioGate(sb, String(album.profile_id), profile.id);
+  if (!portfolioGate.allowed) return NextResponse.json({ error: "Album is private" }, { status: 403 });
   if (album.access_level === "private" && String(album.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Album is private" }, { status: 403 });
   if (album.access_level === "invite") {
     const { data: access } = await sb.from("muse_album_access").select("id").eq("album_id", albumId).eq("viewer_profile_id", profile.id).maybeSingle();

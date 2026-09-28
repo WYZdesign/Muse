@@ -96,6 +96,17 @@ describe("preferencesSave — filtering + merging", () => {
     install({});
     expect((await preferencesSave(act({ toggleNotificationPref: { key: "evil", value: false } })) as Response).status).toBe(400);
   });
+  it("persists portfolioVisibility in the server's enforcement vocabulary", async () => {
+    const sb = install({ muse_profiles: () => ({ data: { preferences: {} } }) });
+    const r = await preferencesSave(act({ preferences: { portfolioVisibility: "private" } }));
+    expect((r as Response).status).toBe(200);
+    expect(updateValue(tableCalls(sb.__log, "muse_profiles")).preferences.portfolioVisibility).toBe("private");
+  });
+  it("collapses an unknown portfolioVisibility value to the default", async () => {
+    const sb = install({ muse_profiles: () => ({ data: { preferences: {} } }) });
+    await preferencesSave(act({ preferences: { portfolioVisibility: "invite" } }));
+    expect(updateValue(tableCalls(sb.__log, "muse_profiles")).preferences.portfolioVisibility).toBe("everyone");
+  });
   it("persists the structured availability/travel keys in the preferences blob (display back-compat)", async () => {
     const sb = install({ muse_profiles: () => ({ data: { preferences: {} } }) });
     const r = await preferencesSave(act({ preferences: {

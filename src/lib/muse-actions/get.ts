@@ -11,6 +11,7 @@ import { safeServerError } from "@/lib/http";
 import { sanitizeText } from "@/lib/request-safety";
 import { bearerTokenFromReq, isConvoParticipant, UUID_RE, isAdminEmail, isAgeVerificationCurrent } from "./shared";
 import { getBoostStatus, isBoostActive } from "./misc";
+import { resolvePortfolioGate } from "@/lib/muse-portfolio-visibility";
 import { publicAge } from "@/lib/muse-age";
 
 const PRIVATE_ALBUM_PREFIX = "storage://muse-private/";
@@ -827,6 +828,11 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ albums: [] });
       }
       const isOwner = !!profileId && String(profileId) === String(targetProfileId);
+      // Outer privacy gate: the owner's preferences.portfolioVisibility applies
+      // before any per-album access_level filtering. A denied viewer gets an
+      // empty list, not a 403 — a list route should not leak that albums exist.
+      const portfolioGate = await resolvePortfolioGate(sb, targetProfileId, profileId);
+      if (!portfolioGate.allowed) return NextResponse.json({ albums: [] });
       const query = sb.from("muse_albums").select("id, profile_id, title, description, cover_url, access_level, tags, position, view_count, like_count, created_at").eq("profile_id", targetProfileId).order("position");
       const { data: albums, error } = await query;
       if (error) return safeServerError(error, "db op");
@@ -857,6 +863,13 @@ export async function GET(req: NextRequest) {
       const { data: album } = await sb.from("muse_albums").select("id, profile_id, access_level").eq("id", albumId).maybeSingle();
       if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
       const isOwner = !!profileId && String(profileId) === String(album.profile_id);
+      // Outer privacy gate: the owner's portfolioVisibility applies before the
+      // per-album access_level checks. A denied viewer never reaches the signed
+      // URL step below, so no private storage locator can leak.
+      const portfolioGate = await resolvePortfolioGate(sb, String(album.profile_id), profileId);
+      if (!portfolioGate.allowed) {
+        return NextResponse.json({ error: "This portfolio is private" }, { status: 403 });
+      }
       if (!isOwner && album.access_level === "private") {
         return NextResponse.json({ error: "This album is private" }, { status: 403 });
       }
