@@ -2,8 +2,15 @@
 
 import { useCallback, useRef } from "react";
 import { DEMO_MODE } from "../page-constants";
-import { PROFILES } from "../components/types";
+import { PROFILES, type Match, type Profile, type Screen } from "../components/types";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
+import type { CurrentUser, AuthUser } from "../page-models";
+import type { OnboardingData } from "./useAuthOnboardingState";
+import type { useDiscoveryData } from "./useDiscoveryData";
+import type { useFeedData } from "./useFeedData";
+import type { useCommunityData } from "./useCommunityData";
+import type { useBriefsState } from "./useBriefsState";
+import type { useSavedListingsState } from "./useSavedListingsState";
 
 /**
  * P2 controller-hook extraction (verbatim from page.tsx).
@@ -27,7 +34,113 @@ import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
 export const STORAGE_KEY = "muse_v1";
 export const STATE_VERSION = 2;
 
-export type PersistRecord = Record<string, any>;
+type TestLevels = { zodiac: number; mbti: number; chinese: number; lifePath: number };
+type DiscoveryPrefs = { ageMin: number; ageMax: number; distance: number; gender: string };
+type ProfileViewerRow = { name: string; avatar: string; time: string };
+type ActivityFeedRow = { id: number; type: string; from: string; avatar: string; text: string; time: string; read: boolean };
+type Theme = "lasunset" | "deepspace" | "nebula" | "deepsea" | "cinder" | "boreal" | "sunrise" | "daylight" | "sky" | "rose" | "meadow" | "frost";
+type UserBrief = { id: number; title: string; desc: string; budget: string; tags: string[]; cat: string };
+
+/** The client state persisted to localStorage (muse_v1). */
+export type PersistValues = {
+  currentUser: CurrentUser;
+  obData: OnboardingData;
+  obStep: number;
+  matches: ReturnType<typeof useDiscoveryData>["matches"];
+  dailyLikes: number;
+  superLikes: number;
+  savedBriefs: number[];
+  appliedBriefs: number[];
+  savedSessionIds: ReturnType<typeof useSavedListingsState>["savedSessionIds"];
+  savedProfileIds: ReturnType<typeof useSavedListingsState>["savedProfileIds"];
+  userBriefs: ReturnType<typeof useBriefsState>["userBriefs"];
+  blockedUsers: ReturnType<typeof useDiscoveryData>["blockedUsers"];
+  notifPrefs: Record<string, boolean>;
+  obConnectedSocials: Record<string, boolean>;
+  showNsfw: boolean;
+  showOnline: boolean;
+  showDistance: boolean;
+  showZodiac: boolean;
+  showAge: boolean;
+  showMbti: boolean;
+  showLifePath: boolean;
+  showChinese: boolean;
+  showMatchPercent: boolean;
+  rsvpdEvents: ReturnType<typeof useCommunityData>["rsvpdEvents"];
+  forumPosts: ReturnType<typeof useFeedData>["forumPosts"];
+  feedPosts: ReturnType<typeof useFeedData>["feedPosts"];
+  testLevels: TestLevels;
+  obSelects: string[];
+  obProfilePic: string | null;
+  obPortfolioItems: { img: string; title: string }[];
+  likedBy: ReturnType<typeof useDiscoveryData>["likedBy"];
+  profileViews: number;
+  profileViewers: ProfileViewerRow[];
+  stories: ReturnType<typeof useFeedData>["stories"];
+  theme: Theme;
+  activityFeed: ActivityFeedRow[];
+  discoveryPrefs: DiscoveryPrefs;
+  chatImages: Record<string, string[]>;
+  screen: Screen;
+  filterStyles: string[];
+  filterScore: number;
+  searchQuery: string;
+  connTab: string;
+  museCat: string;
+  authUser: AuthUser;
+  authRemember: boolean;
+  chatTarget: Match | null;
+};
+
+/** The state setters the hydration pass writes into. */
+export type PersistSetters = {
+  setCurrentUser: React.Dispatch<React.SetStateAction<CurrentUser>>;
+  setObData: React.Dispatch<React.SetStateAction<OnboardingData>>;
+  setObStep: React.Dispatch<React.SetStateAction<number>>;
+  setAuthUser: React.Dispatch<React.SetStateAction<AuthUser>>;
+  setMatches: ReturnType<typeof useDiscoveryData>["setMatches"];
+  setBlockedUsers: ReturnType<typeof useDiscoveryData>["setBlockedUsers"];
+  setDailyLikes: React.Dispatch<React.SetStateAction<number>>;
+  setSuperLikes: React.Dispatch<React.SetStateAction<number>>;
+  setSavedBriefs: React.Dispatch<React.SetStateAction<number[]>>;
+  setAppliedBriefs: React.Dispatch<React.SetStateAction<number[]>>;
+  setSavedSessionIds: ReturnType<typeof useSavedListingsState>["setSavedSessionIds"];
+  setSavedProfileIds: ReturnType<typeof useSavedListingsState>["setSavedProfileIds"];
+  setUserBriefs: ReturnType<typeof useBriefsState>["setUserBriefs"];
+  setNotifPrefs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  setObConnectedSocials: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  setShowNsfw: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowOnline: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowDistance: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowZodiac: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowAge: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowMbti: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowLifePath: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowChinese: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowMatchPercent: React.Dispatch<React.SetStateAction<boolean>>;
+  setRsvpdEvents: ReturnType<typeof useCommunityData>["setRsvpdEvents"];
+  setForumPosts: ReturnType<typeof useFeedData>["setForumPosts"];
+  setFeedPosts: ReturnType<typeof useFeedData>["setFeedPosts"];
+  setTestLevels: React.Dispatch<React.SetStateAction<TestLevels>>;
+  setObSelects: React.Dispatch<React.SetStateAction<string[]>>;
+  setObProfilePic: React.Dispatch<React.SetStateAction<string | null>>;
+  setObPortfolioItems: React.Dispatch<React.SetStateAction<{ img: string; title: string }[]>>;
+  setLikedBy: ReturnType<typeof useDiscoveryData>["setLikedBy"];
+  setProfileViews: React.Dispatch<React.SetStateAction<number>>;
+  setProfileViewers: React.Dispatch<React.SetStateAction<ProfileViewerRow[]>>;
+  setStories: ReturnType<typeof useFeedData>["setStories"];
+  setTheme: React.Dispatch<React.SetStateAction<Theme>>;
+  setActivityFeed: React.Dispatch<React.SetStateAction<ActivityFeedRow[]>>;
+  setDiscoveryPrefs: React.Dispatch<React.SetStateAction<DiscoveryPrefs>>;
+  setChatImages: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
+  setChatTarget: React.Dispatch<React.SetStateAction<Match | null>>;
+  setScreen: React.Dispatch<React.SetStateAction<Screen>>;
+  setBoostActive: React.Dispatch<React.SetStateAction<boolean>>;
+  setBoostEnd: React.Dispatch<React.SetStateAction<number>>;
+};
+
+/** Decoded persisted payload (all fields optional — it's untrusted JSON). */
+export type LoadedState = Partial<PersistValues>;
 
 /** Demo story seeds used when there is nothing persisted (DEMO_MODE only). */
 const DEMO_MOMENTS = [
@@ -37,7 +150,7 @@ const DEMO_MOMENTS = [
 ] as unknown[];
 
 /** Pure: assemble the persisted payload from the current state values. */
-export function buildPersistPayload(v: PersistRecord) {
+export function buildPersistPayload(v: PersistValues) {
   const MAX_ITEMS = 50;
   return {
     v: STATE_VERSION,
@@ -46,18 +159,18 @@ export function buildPersistPayload(v: PersistRecord) {
     obConnectedSocials: v.obConnectedSocials, showNsfw: v.showNsfw, showOnline: v.showOnline, showDistance: v.showDistance, showZodiac: v.showZodiac, showAge: v.showAge, showMbti: v.showMbti, showLifePath: v.showLifePath, showChinese: v.showChinese, showMatchPercent: v.showMatchPercent, rsvpdEvents: v.rsvpdEvents, forumPosts: v.forumPosts.slice(-MAX_ITEMS), feedPosts: v.feedPosts.slice(-MAX_ITEMS),
     testLevels: v.testLevels, obSelects: v.obSelects, obProfilePic: v.obProfilePic, obPortfolioItems: v.obPortfolioItems, likedBy: v.likedBy.slice(-MAX_ITEMS),
     profileViews: DEMO_MODE ? v.profileViews : 0, profileViewers: DEMO_MODE ? v.profileViewers.slice(-20) : [], stories: v.stories.slice(-20), theme: v.theme, activityFeed: v.activityFeed.slice(-MAX_ITEMS),
-    discoveryPrefs: v.discoveryPrefs, chatImages: Object.fromEntries(Object.entries(v.chatImages).slice(-20).map(([k, val]) => [k, (val as any).slice(-20)])), screen: v.screen, filterStyles: v.filterStyles, filterScore: v.filterScore,
+    discoveryPrefs: v.discoveryPrefs, chatImages: Object.fromEntries(Object.entries(v.chatImages).slice(-20).map(([k, val]) => [k, (val as string[]).slice(-20)])), screen: v.screen, filterStyles: v.filterStyles, filterScore: v.filterScore,
     searchQuery: v.searchQuery, connTab: v.connTab, museCat: v.museCat, authUser: v.authRemember ? v.authUser : null, chatTarget: v.chatTarget,
   };
 }
 
 /** Pure: apply a decoded persisted record onto the state setters. */
-export function applyLoadedState(d: any, s: PersistRecord) {
-  if (d.currentUser) s.setCurrentUser((prev: any) => ({ ...prev, ...d.currentUser, tier: "free", foundingTier: "", proExpiresAt: "", stats: { ...prev.stats, ...(d.currentUser.stats || {}) }, portfolios: Array.isArray(d.currentUser.portfolios) ? d.currentUser.portfolios : (prev.portfolios || []) }));
+export function applyLoadedState(d: LoadedState, s: PersistSetters) {
+  if (d.currentUser) { const cu = d.currentUser; s.setCurrentUser((prev: CurrentUser) => ({ ...prev, ...cu, tier: "free", foundingTier: "", proExpiresAt: "", stats: { ...prev.stats, ...(cu.stats || {}) }, portfolios: Array.isArray(cu.portfolios) ? cu.portfolios : (prev.portfolios || []) })); }
   if (d.obData) s.setObData(d.obData);
   if (d.obStep) s.setObStep(d.obStep);
   if (d.authUser) s.setAuthUser(d.authUser);
-  if (d.matches) s.setMatches(d.matches.map((m: any) => {
+  if (d.matches) s.setMatches(d.matches.map((m: Match & { target_id?: Partial<Profile> & { last_seen_at?: string } }) => {
     const t = m.target_id || {};
     const lastSeen = t.last_seen_at || null;
     const online = !!lastSeen && (Date.now() - new Date(lastSeen).getTime()) < 5 * 60 * 1000;
@@ -146,8 +259,8 @@ export function applyLoadedState(d: any, s: PersistRecord) {
 }
 
 export type UseMusePersistenceParams = {
-  values: PersistRecord;
-  setters: PersistRecord;
+  values: PersistValues;
+  setters: PersistSetters;
   apiFetch: (url: string, opts?: RequestInit) => Promise<Response>;
   safeSetItem: (key: string, value: string) => void;
   safeGetItem: (key: string) => string | null;

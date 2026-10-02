@@ -1,47 +1,51 @@
 "use client";
 
-import { AESTHETICS, ZODIAC, CHINESE, CE, ZE, MBTI, LIFE_PATHS, lookingForOptions, BEHIND_CAMERA, IN_FRONT_CAMERA, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti } from "../components/types";
+import { AESTHETICS, ZODIAC, CHINESE, CE, ZE, MBTI, LIFE_PATHS, lookingForOptions, BEHIND_CAMERA, IN_FRONT_CAMERA, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Screen } from "../components/types";
 import Image from "next/image";
 import { getGeolocation } from "@/app/muse-realtime";
 import { OnboardingBirthdateField } from "./OnboardingBirthdateField";
+import type { OnboardingData } from "../hooks/useAuthOnboardingState";
+import type { CurrentUser, AuthUser, TestScreen, AuthFetchFn, ShowToastFn } from "../page-models";
 
 /**
  * P2 extraction: the multi-step onboarding flow, moved verbatim out of page.tsx.
  * Pure presentational component — every piece of state and every handler it
  * touches is passed in as a prop; page.tsx keeps ownership of the state.
  */
+type PortfolioItem = { img: string; title: string };
+
 export type OnboardingFlowProps = {
-  obStep: any;
-  setObStep: React.Dispatch<React.SetStateAction<any>>;
-  obData: any;
-  setObData: React.Dispatch<React.SetStateAction<any>>;
-  obConnectedSocials: any;
-  obPortfolioItems: any;
-  setObPortfolioItems: React.Dispatch<React.SetStateAction<any>>;
-  obPortfolioSlot: any;
-  setObPortfolioSlot: React.Dispatch<React.SetStateAction<any>>;
-  obProfilePic: any;
-  setObProfilePic: React.Dispatch<React.SetStateAction<any>>;
-  testScreen: any;
-  setTestScreen: React.Dispatch<React.SetStateAction<any>>;
-  testBirthMonth: any;
-  testBirthDay: any;
-  testBirthYear: any;
-  setTestBirthMonth: React.Dispatch<React.SetStateAction<any>>;
-  setTestBirthDay: React.Dispatch<React.SetStateAction<any>>;
-  setTestBirthYear: React.Dispatch<React.SetStateAction<any>>;
-  testMbtiAnswers: any;
-  setTestMbtiAnswers: React.Dispatch<React.SetStateAction<any>>;
-  setCurrentUser: React.Dispatch<React.SetStateAction<any>>;
-  setScreen: React.Dispatch<React.SetStateAction<any>>;
-  uploadImage: any;
-  toggleObMulti: any;
-  toggleSocial: any;
-  showToast: any;
-  authFetch: any;
-  authUser: any;
-  photoInputRef: any;
-  portfolioInputRef: any;
+  obStep: number;
+  setObStep: React.Dispatch<React.SetStateAction<number>>;
+  obData: OnboardingData;
+  setObData: React.Dispatch<React.SetStateAction<OnboardingData>>;
+  obConnectedSocials: Record<string, boolean>;
+  obPortfolioItems: PortfolioItem[];
+  setObPortfolioItems: React.Dispatch<React.SetStateAction<PortfolioItem[]>>;
+  obPortfolioSlot: number | null;
+  setObPortfolioSlot: React.Dispatch<React.SetStateAction<number | null>>;
+  obProfilePic: string | null;
+  setObProfilePic: React.Dispatch<React.SetStateAction<string | null>>;
+  testScreen: TestScreen;
+  setTestScreen: React.Dispatch<React.SetStateAction<TestScreen>>;
+  testBirthMonth: string;
+  testBirthDay: string;
+  testBirthYear: string;
+  setTestBirthMonth: React.Dispatch<React.SetStateAction<string>>;
+  setTestBirthDay: React.Dispatch<React.SetStateAction<string>>;
+  setTestBirthYear: React.Dispatch<React.SetStateAction<string>>;
+  testMbtiAnswers: Record<string, string>;
+  setTestMbtiAnswers: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  setCurrentUser: React.Dispatch<React.SetStateAction<CurrentUser>>;
+  setScreen: React.Dispatch<React.SetStateAction<Screen>>;
+  uploadImage: (file: File, folder: string) => Promise<string | null>;
+  toggleObMulti: (field: "looking" | "styles", value: string, max: number) => void;
+  toggleSocial: (key: string) => void;
+  showToast: ShowToastFn;
+  authFetch: AuthFetchFn;
+  authUser: AuthUser;
+  photoInputRef: React.RefObject<HTMLInputElement | null>;
+  portfolioInputRef: React.RefObject<HTMLInputElement | null>;
 };
 
 export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnectedSocials, obPortfolioItems, setObPortfolioItems, obPortfolioSlot, setObPortfolioSlot, obProfilePic, setObProfilePic, testScreen, setTestScreen, testBirthMonth, testBirthDay, testBirthYear, setTestBirthMonth, setTestBirthDay, setTestBirthYear, testMbtiAnswers, setTestMbtiAnswers, setCurrentUser, setScreen, uploadImage, toggleObMulti, toggleSocial, showToast, authFetch, authUser, photoInputRef, portfolioInputRef }: OnboardingFlowProps) {
@@ -62,10 +66,10 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                   <div className="onboard-content">
                     <div className="step-title">Your Info</div>
                     <div className="step-sub">Tell us about yourself</div>
-                    <input className="inp" aria-label="Display name" placeholder="Display Name" value={obData.name||""} onChange={(e: any) =>setObData((d: any) =>({...d,name:e.target.value}))} />
-                    <input className="inp" aria-label="Location" placeholder="Location (City, State)" value={obData.loc||""} onChange={(e: any) =>setObData((d: any) =>({...d,loc:e.target.value}))} />
-                    <textarea className="inp" aria-label="Bio" placeholder="Who are you as a creative?" rows={3} value={obData.bio||""} onChange={(e: any) =>setObData((d: any) =>({...d,bio:e.target.value}))} />
-                    <OnboardingBirthdateField value={obData.birthdate} onChange={(v: any) => setObData((d: any) => ({ ...d, birthdate: v }))} />
+                    <input className="inp" aria-label="Display name" placeholder="Display Name" value={obData.name||""} onChange={(e) =>setObData((d) =>({...d,name:e.target.value}))} />
+                    <input className="inp" aria-label="Location" placeholder="Location (City, State)" value={obData.loc||""} onChange={(e) =>setObData((d) =>({...d,loc:e.target.value}))} />
+                    <textarea className="inp" aria-label="Bio" placeholder="Who are you as a creative?" rows={3} value={obData.bio||""} onChange={(e) =>setObData((d) =>({...d,bio:e.target.value}))} />
+                    <OnboardingBirthdateField value={obData.birthdate} onChange={(v) => setObData((d) => ({ ...d, birthdate: v }))} />
                     <button className="btn btn-gold" disabled={!(obData.name||"").trim()} style={!(obData.name||"").trim()?{opacity:0.5}:undefined} onClick={()=>setObStep(2)}>Next</button>
                     <button className="back-link" onClick={()=>setObStep(0)}>Back</button>
                   </div>
@@ -76,15 +80,15 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                     <div className="step-sub">Where do you work — behind the camera or in front of it?</div>
                     <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
                       {([["creative", "I'm here to work & collaborate"], ["industry", "I'm here to hire & book"]] as const).map(([val, label]) => (
-                        <button key={val} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d: any) => ({ ...d, audience: val })); } }} onClick={() => setObData((d: any) => ({ ...d, audience: val }))} style={{ flex: 1, padding: "10px 8px", borderRadius: 12, cursor: "pointer", textAlign: "center", fontSize: 12, fontWeight: 700, transition: "all .25s", background: obData.audience === val ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${obData.audience === val ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"}`, color: obData.audience === val ? "var(--gold)" : "var(--muted)" }}>{label}</button>
+                        <button key={val} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d) => ({ ...d, audience: val })); } }} onClick={() => setObData((d) => ({ ...d, audience: val }))} style={{ flex: 1, padding: "10px 8px", borderRadius: 12, cursor: "pointer", textAlign: "center", fontSize: 12, fontWeight: 700, transition: "all .25s", background: obData.audience === val ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${obData.audience === val ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"}`, color: obData.audience === val ? "var(--gold)" : "var(--muted)" }}>{label}</button>
                       ))}
                     </div>
                     <div className="side-group">
                       <div className="side-label">🎬 Behind the Camera</div>
                       <div className="side-sub">You make the work — crew, direction, craft.</div>
                       <div className="chips">
-                        {BEHIND_CAMERA.map((t: any) => (
-                          <button key={t} className={"chip"+(obData.type===t?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d: any) =>({...d,type:t,customTypePending:false})); } }} onClick={()=>setObData((d: any) =>({...d,type:t,customTypePending:false}))}><span>{t}</span></button>
+                        {BEHIND_CAMERA.map((t) => (
+                          <button key={t} className={"chip"+(obData.type===t?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d) =>({...d,type:t,customTypePending:false})); } }} onClick={()=>setObData((d) =>({...d,type:t,customTypePending:false}))}><span>{t}</span></button>
                         ))}
                       </div>
                     </div>
@@ -92,18 +96,18 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                       <div className="side-label">📸 In Front of the Camera</div>
                       <div className="side-sub">You're the talent — on-camera, performing, audience-facing.</div>
                       <div className="chips">
-                        {IN_FRONT_CAMERA.map((t: any) => (
-                          <button key={t} className={"chip"+(obData.type===t?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d: any) =>({...d,type:t,customTypePending:false})); } }} onClick={()=>setObData((d: any) =>({...d,type:t,customTypePending:false}))}><span>{t}</span></button>
+                        {IN_FRONT_CAMERA.map((t) => (
+                          <button key={t} className={"chip"+(obData.type===t?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d) =>({...d,type:t,customTypePending:false})); } }} onClick={()=>setObData((d) =>({...d,type:t,customTypePending:false}))}><span>{t}</span></button>
                         ))}
                         {/* Torreé audit item 6: not every creative role fits the
                             preset list — "Other" lets someone type their own,
                             saved as a real `type` value immediately and flagged
                             custom_type_pending for admin review. */}
-                        <button key="other" className={"chip"+(obData.customTypePending?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d: any) =>({...d,type:"",customTypePending:true})); } }} onClick={()=>setObData((d: any) =>({...d,type:"",customTypePending:true}))}><span>Add New +</span></button>
+                        <button key="other" className={"chip"+(obData.customTypePending?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d) =>({...d,type:"",customTypePending:true})); } }} onClick={()=>setObData((d) =>({...d,type:"",customTypePending:true}))}><span>Add New +</span></button>
                       </div>
                     </div>
                     {obData.customTypePending && (
-                      <input className="inp" aria-label="Creative role" placeholder="Type your creative role..." value={obData.type||""} onChange={(e: any) =>setObData((d: any) =>({...d,type:e.target.value}))} style={{ marginTop: 10 }} autoFocus />
+                      <input className="inp" aria-label="Creative role" placeholder="Type your creative role..." value={obData.type||""} onChange={(e) =>setObData((d) =>({...d,type:e.target.value}))} style={{ marginTop: 10 }} autoFocus />
                     )}
                     {!obData.type && <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", margin: "6px 0 2px" }}>Select one to continue</div>}
                     <button className="btn btn-gold" disabled={!obData.type} style={!obData.type?{opacity:0.5}:undefined} onClick={()=>setObStep(3)}>Next</button>
@@ -115,8 +119,8 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                     <div className="step-title">Looking For</div>
                     <div className="step-sub">What kind of connections interest you?</div>
                     <div className="chips">
-                      {lookingForOptions(obData.type || "").map((l: any) => (
-                        <button key={l} className={"chip"+((obData.looking||[]).includes(l)?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleObMulti("looking", l, 4); } }} onClick={()=>toggleObMulti("looking", l, 4)}><span>{l}</span></button>
+                      {lookingForOptions(obData.type || "").map((l) => (
+                        <button key={l} className={"chip"+((obData.looking||[]).includes(l)?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleObMulti("looking", l, 4); } }} onClick={()=>toggleObMulti("looking", l, 4)}><span>{l}</span></button>
                       ))}
                     </div>
                     {!(obData.looking||[]).length && <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", margin: "6px 0 2px" }}>Select at least one to continue</div>}
@@ -129,31 +133,31 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                     <div className="step-title">Aesthetic Style</div>
                     <div className="step-sub">What's your creative aesthetic?</div>
                     <div className="chips">
-                      {AESTHETICS.map((s: any) => (
-                        <button key={s} className={"chip"+((obData.styles||[]).includes(s)?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleObMulti("styles", s, 5); } }} onClick={()=>toggleObMulti("styles", s, 5)}><span>{s}</span></button>
+                      {AESTHETICS.map((s) => (
+                        <button key={s} className={"chip"+((obData.styles||[]).includes(s)?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleObMulti("styles", s, 5); } }} onClick={()=>toggleObMulti("styles", s, 5)}><span>{s}</span></button>
                       ))}
                       {/* Torreé audit item 6: aesthetic "Other" — typed values are
                           appended to `styles` immediately and flagged
                           custom_style_pending for admin review. */}
-                      <button key="other" className={"chip"+(obData.showCustomStyleInput?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d: any) =>({...d,showCustomStyleInput:!d.showCustomStyleInput})); } }} onClick={()=>setObData((d: any) =>({...d,showCustomStyleInput:!d.showCustomStyleInput}))}><span>Add New +</span></button>
+                      <button key="other" className={"chip"+(obData.showCustomStyleInput?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d) =>({...d,showCustomStyleInput:!d.showCustomStyleInput})); } }} onClick={()=>setObData((d) =>({...d,showCustomStyleInput:!d.showCustomStyleInput}))}><span>Add New +</span></button>
                     </div>
                     {obData.showCustomStyleInput && (
                       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                        <input className="inp" aria-label="Custom aesthetic" placeholder="Type your own aesthetic..." value={obData.customStyleDraft||""} onChange={(e: any) =>setObData((d: any) =>({...d,customStyleDraft:e.target.value}))} style={{ margin: 0, flex: 1 }} autoFocus />
+                        <input className="inp" aria-label="Custom aesthetic" placeholder="Type your own aesthetic..." value={obData.customStyleDraft||""} onChange={(e) =>setObData((d) =>({...d,customStyleDraft:e.target.value}))} style={{ margin: 0, flex: 1 }} autoFocus />
                         <button className="btn btn-outline" style={{ padding: "0 16px" }} onClick={() => {
                           const v = (obData.customStyleDraft || "").trim();
                           if (!v) return;
                           const cur = obData.styles || [];
                           if (cur.includes(v)) return;
                           if (cur.length >= 5) { showToast("Max 5 selected"); return; }
-                          setObData((d: any) => ({ ...d, styles: [...(d.styles||[]), v], customStylePending: true, customStyleDraft: "" }));
+                          setObData((d) => ({ ...d, styles: [...(d.styles||[]), v], customStylePending: true, customStyleDraft: "" }));
                         }}>Add</button>
                       </div>
                     )}
-                    {(obData.styles||[]).filter((s: any) => !AESTHETICS.includes(s)).length > 0 && (
+                    {(obData.styles||[]).filter((s) => !AESTHETICS.includes(s)).length > 0 && (
                       <div className="chips" style={{ marginTop: 8 }}>
-                        {(obData.styles||[]).filter((s: any) => !AESTHETICS.includes(s)).map((s: any) => (
-                          <button key={s} className="chip sel" tabIndex={0} title="Tap to remove" onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d: any) => ({ ...d, styles: (d.styles||[]).filter((x: any) => x !== s) })); } }} onClick={() => setObData((d: any) => ({ ...d, styles: (d.styles||[]).filter((x: any) => x !== s) }))}><span>✎ {s} ✕</span></button>
+                        {(obData.styles||[]).filter((s) => !AESTHETICS.includes(s)).map((s) => (
+                          <button key={s} className="chip sel" tabIndex={0} title="Tap to remove" onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d) => ({ ...d, styles: (d.styles||[]).filter((x) => x !== s) })); } }} onClick={() => setObData((d) => ({ ...d, styles: (d.styles||[]).filter((x) => x !== s) }))}><span>✎ {s} ✕</span></button>
                         ))}
                       </div>
                     )}
@@ -183,8 +187,8 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                     <div className="step-title">Your Zodiac</div>
                     <div className="step-sub">Select your sun sign</div>
                     <div className="chips">
-                      {ZODIAC.map((z: any) => (
-                        <button key={z} className={"chip"+(obData.zodiac===z?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d: any) =>({...d,zodiac:z})); } }} onClick={()=>setObData((d: any) =>({...d,zodiac:z}))}><span>{ZE[z]} {z}</span></button>
+                      {ZODIAC.map((z) => (
+                        <button key={z} className={"chip"+(obData.zodiac===z?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d) =>({...d,zodiac:z})); } }} onClick={()=>setObData((d) =>({...d,zodiac:z}))}><span>{ZE[z]} {z}</span></button>
                       ))}
                     </div>
                     <button className="btn btn-gold" disabled={!obData.zodiac} onClick={()=>setObStep(7)}>Next</button>
@@ -197,8 +201,8 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                     <div className="step-title">Chinese Zodiac</div>
                     <div className="step-sub">Your year animal</div>
                     <div className="chips">
-                      {CHINESE.map((c: any) => (
-                        <button key={c} className={"chip"+(obData.chinese===c?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d: any) =>({...d,chinese:c})); } }} onClick={()=>setObData((d: any) =>({...d,chinese:c}))}><span>{CE[c]} {c}</span></button>
+                      {CHINESE.map((c) => (
+                        <button key={c} className={"chip"+(obData.chinese===c?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d) =>({...d,chinese:c})); } }} onClick={()=>setObData((d) =>({...d,chinese:c}))}><span>{CE[c]} {c}</span></button>
                       ))}
                     </div>
                     <button className="btn btn-gold" disabled={!obData.chinese} onClick={()=>setObStep(8)}>Next</button>
@@ -211,8 +215,8 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                     <div className="step-title">MBTI Personality</div>
                     <div className="step-sub">Your Myers-Briggs type</div>
                     <div className="chips">
-                      {MBTI.map((m: any) => (
-                        <button key={m} className={"chip"+(obData.mbti===m?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d: any) =>({...d,mbti:m})); } }} onClick={()=>setObData((d: any) =>({...d,mbti:m}))}><span>{m}</span></button>
+                      {MBTI.map((m) => (
+                        <button key={m} className={"chip"+(obData.mbti===m?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d) =>({...d,mbti:m})); } }} onClick={()=>setObData((d) =>({...d,mbti:m}))}><span>{m}</span></button>
                       ))}
                     </div>
                     <button className="btn btn-gold" disabled={!obData.mbti} onClick={()=>setObStep(9)}>Next</button>
@@ -225,8 +229,8 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                     <div className="step-title">Life Path Number</div>
                     <div className="step-sub">Your numerology life path</div>
                     <div className="chips">
-                      {LIFE_PATHS.map((lp: any) => (
-                        <button key={lp} className={"chip"+(obData.lifePath===lp?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d: any) =>({...d,lifePath:lp})); } }} onClick={()=>setObData((d: any) =>({...d,lifePath:lp}))}><span>{lp}</span></button>
+                      {LIFE_PATHS.map((lp) => (
+                        <button key={lp} className={"chip"+(obData.lifePath===lp?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData((d) =>({...d,lifePath:lp})); } }} onClick={()=>setObData((d) =>({...d,lifePath:lp}))}><span>{lp}</span></button>
                       ))}
                     </div>
                     <button className="btn btn-gold" disabled={!obData.lifePath} onClick={()=>setObStep(14)}>Next</button>
@@ -254,12 +258,12 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                       <div>
                         <div className="step-title">Zodiac Calculator</div>
                         <div className="step-sub">Enter your birth date</div>
-                        <select className="inp" aria-label="Birth month" value={testBirthMonth} onChange={(e: any) =>setTestBirthMonth(e.target.value)}>
+                        <select className="inp" aria-label="Birth month" value={testBirthMonth} onChange={(e) =>setTestBirthMonth(e.target.value)}>
                           <option value="">Month</option>
                           {["January","February","March","April","May","June","July","August","September","October","November","December"].map((m,i)=><option key={i} value={String(i+1)}>{m}</option>)}
                         </select>
-                        <input className="inp" aria-label="Birth day" placeholder="Day" type="number" min={1} max={31} value={testBirthDay} onChange={(e: any) =>setTestBirthDay(e.target.value)} />
-                        <button className="btn btn-gold" onClick={()=>{if(testBirthMonth&&testBirthDay){const z=calcZodiac(parseInt(testBirthMonth),parseInt(testBirthDay));setObData((d: any) =>({...d,zodiac:z}));showToast("You are a "+z+"! "+ZE[z]);setObStep(14)}}}>Calculate</button>
+                        <input className="inp" aria-label="Birth day" placeholder="Day" type="number" min={1} max={31} value={testBirthDay} onChange={(e) =>setTestBirthDay(e.target.value)} />
+                        <button className="btn btn-gold" onClick={()=>{if(testBirthMonth&&testBirthDay){const z=calcZodiac(parseInt(testBirthMonth),parseInt(testBirthDay));setObData((d) =>({...d,zodiac:z}));showToast("You are a "+z+"! "+ZE[z]);setObStep(14)}}}>Calculate</button>
                         <button className="back-link" onClick={()=>setObStep(10)}>Back</button>
                       </div>
                     )}
@@ -267,8 +271,8 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                       <div>
                         <div className="step-title">Chinese Zodiac</div>
                         <div className="step-sub">Enter your birth year</div>
-                        <input className="inp" aria-label="Birth year" placeholder="Year (e.g. 1995)" type="number" min={1900} max={2026} value={testBirthYear} onChange={(e: any) =>setTestBirthYear(e.target.value)} />
-                        <button className="btn btn-gold" onClick={()=>{if(testBirthYear){const c=calcChineseZodiac(parseInt(testBirthYear));setObData((d: any) =>({...d,chinese:c}));showToast("You are the "+c+"! "+CE[c]);setObStep(14)}}}>Calculate</button>
+                        <input className="inp" aria-label="Birth year" placeholder="Year (e.g. 1995)" type="number" min={1900} max={2026} value={testBirthYear} onChange={(e) =>setTestBirthYear(e.target.value)} />
+                        <button className="btn btn-gold" onClick={()=>{if(testBirthYear){const c=calcChineseZodiac(parseInt(testBirthYear));setObData((d) =>({...d,chinese:c}));showToast("You are the "+c+"! "+CE[c]);setObStep(14)}}}>Calculate</button>
                         <button className="back-link" onClick={()=>setObStep(10)}>Back</button>
                       </div>
                     )}
@@ -279,25 +283,25 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                         <div style={{width:"100%",maxWidth:320}}>
                           <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:8}}>At a party, you...</div>
                           <div className="chips" style={{marginBottom:16}}>
-                            <button className={"chip"+(testMbtiAnswers.ei==="e"?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p: any) =>({...p,ei:"e"})); } }} onClick={()=>setTestMbtiAnswers((p: any) =>({...p,ei:"e"}))}><span>Talk to everyone</span></button>
-                            <button className={"chip"+(testMbtiAnswers.ei==="i"?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p: any) =>({...p,ei:"i"})); } }} onClick={()=>setTestMbtiAnswers((p: any) =>({...p,ei:"i"}))}><span>Find one person</span></button>
+                            <button className={"chip"+(testMbtiAnswers.ei==="e"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p) =>({...p,ei:"e"})); } }} onClick={()=>setTestMbtiAnswers((p) =>({...p,ei:"e"}))}><span>Talk to everyone</span></button>
+                            <button className={"chip"+(testMbtiAnswers.ei==="i"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p) =>({...p,ei:"i"})); } }} onClick={()=>setTestMbtiAnswers((p) =>({...p,ei:"i"}))}><span>Find one person</span></button>
                           </div>
                           <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:8}}>You prefer...</div>
                           <div className="chips" style={{marginBottom:16}}>
-                            <button className={"chip"+(testMbtiAnswers.sn==="s"?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p: any) =>({...p,sn:"s"})); } }} onClick={()=>setTestMbtiAnswers((p: any) =>({...p,sn:"s"}))}><span>Facts & details</span></button>
-                            <button className={"chip"+(testMbtiAnswers.sn==="n"?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p: any) =>({...p,sn:"n"})); } }} onClick={()=>setTestMbtiAnswers((p: any) =>({...p,sn:"n"}))}><span>Big picture ideas</span></button>
+                            <button className={"chip"+(testMbtiAnswers.sn==="s"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p) =>({...p,sn:"s"})); } }} onClick={()=>setTestMbtiAnswers((p) =>({...p,sn:"s"}))}><span>Facts & details</span></button>
+                            <button className={"chip"+(testMbtiAnswers.sn==="n"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p) =>({...p,sn:"n"})); } }} onClick={()=>setTestMbtiAnswers((p) =>({...p,sn:"n"}))}><span>Big picture ideas</span></button>
                           </div>
                           <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:8}}>Decisions come from...</div>
                           <div className="chips" style={{marginBottom:16}}>
-                            <button className={"chip"+(testMbtiAnswers.tf==="t"?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p: any) =>({...p,tf:"t"})); } }} onClick={()=>setTestMbtiAnswers((p: any) =>({...p,tf:"t"}))}><span>Logic & analysis</span></button>
-                            <button className={"chip"+(testMbtiAnswers.tf==="f"?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p: any) =>({...p,tf:"f"})); } }} onClick={()=>setTestMbtiAnswers((p: any) =>({...p,tf:"f"}))}><span>Values & impact</span></button>
+                            <button className={"chip"+(testMbtiAnswers.tf==="t"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p) =>({...p,tf:"t"})); } }} onClick={()=>setTestMbtiAnswers((p) =>({...p,tf:"t"}))}><span>Logic & analysis</span></button>
+                            <button className={"chip"+(testMbtiAnswers.tf==="f"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p) =>({...p,tf:"f"})); } }} onClick={()=>setTestMbtiAnswers((p) =>({...p,tf:"f"}))}><span>Values & impact</span></button>
                           </div>
                           <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:8}}>You like things...</div>
                           <div className="chips" style={{marginBottom:16}}>
-                            <button className={"chip"+(testMbtiAnswers.jp==="j"?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p: any) =>({...p,jp:"j"})); } }} onClick={()=>setTestMbtiAnswers((p: any) =>({...p,jp:"j"}))}><span>Planned & structured</span></button>
-                            <button className={"chip"+(testMbtiAnswers.jp==="p"?" sel":"")} tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p: any) =>({...p,jp:"p"})); } }} onClick={()=>setTestMbtiAnswers((p: any) =>({...p,jp:"p"}))}><span>Flexible & open</span></button>
+                            <button className={"chip"+(testMbtiAnswers.jp==="j"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p) =>({...p,jp:"j"})); } }} onClick={()=>setTestMbtiAnswers((p) =>({...p,jp:"j"}))}><span>Planned & structured</span></button>
+                            <button className={"chip"+(testMbtiAnswers.jp==="p"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers((p) =>({...p,jp:"p"})); } }} onClick={()=>setTestMbtiAnswers((p) =>({...p,jp:"p"}))}><span>Flexible & open</span></button>
                           </div>
-                          <button className="btn btn-gold" onClick={()=>{const mbti=calcMbti(testMbtiAnswers);setObData((d: any) =>({...d,mbti}));showToast("You are "+mbti+"!");setObStep(14)}}>Calculate</button>
+                          <button className="btn btn-gold" onClick={()=>{const mbti=calcMbti(testMbtiAnswers);setObData((d) =>({...d,mbti}));showToast("You are "+mbti+"!");setObStep(14)}}>Calculate</button>
                           <button className="back-link" onClick={()=>setObStep(10)}>Back</button>
                         </div>
                       </div>
@@ -306,13 +310,13 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                       <div>
                         <div className="step-title">Life Path Number</div>
                         <div className="step-sub">Enter your full birth date</div>
-                        <select className="inp" aria-label="Birth month" value={testBirthMonth} onChange={(e: any) =>setTestBirthMonth(e.target.value)}>
+                        <select className="inp" aria-label="Birth month" value={testBirthMonth} onChange={(e) =>setTestBirthMonth(e.target.value)}>
                           <option value="">Month</option>
                           {["January","February","March","April","May","June","July","August","September","October","November","December"].map((m,i)=><option key={i} value={String(i+1)}>{m}</option>)}
                         </select>
-                        <input className="inp" aria-label="Birth day" placeholder="Day" type="number" min={1} max={31} value={testBirthDay} onChange={(e: any) =>setTestBirthDay(e.target.value)} />
-                        <input className="inp" aria-label="Birth year" placeholder="Year" type="number" min={1900} max={2026} value={testBirthYear} onChange={(e: any) =>setTestBirthYear(e.target.value)} />
-                        <button className="btn btn-gold" onClick={()=>{if(testBirthMonth&&testBirthDay&&testBirthYear){const lp=calcLifePath(parseInt(testBirthMonth),parseInt(testBirthDay),parseInt(testBirthYear));setObData((d: any) =>({...d,lifePath:lp}));showToast("Life Path "+lp+"!");setObStep(14)}}}>Calculate</button>
+                        <input className="inp" aria-label="Birth day" placeholder="Day" type="number" min={1} max={31} value={testBirthDay} onChange={(e) =>setTestBirthDay(e.target.value)} />
+                        <input className="inp" aria-label="Birth year" placeholder="Year" type="number" min={1900} max={2026} value={testBirthYear} onChange={(e) =>setTestBirthYear(e.target.value)} />
+                        <button className="btn btn-gold" onClick={()=>{if(testBirthMonth&&testBirthDay&&testBirthYear){const lp=calcLifePath(parseInt(testBirthMonth),parseInt(testBirthDay),parseInt(testBirthYear));setObData((d) =>({...d,lifePath:lp}));showToast("Life Path "+lp+"!");setObStep(14)}}}>Calculate</button>
                         <button className="back-link" onClick={()=>setObStep(10)}>Back</button>
                       </div>
                     )}
@@ -333,7 +337,7 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                     <div className="step-title">Your Photo</div>
                     <div className="step-sub">Add a profile picture so people can see the real you</div>
                     <input ref={photoInputRef} type="file" accept="image/*" aria-label="Upload profile photo" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setObProfilePic(url);showToast("Photo added!")}}}} />
-                    <div className="ob-upload-zone" role="button" tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); photoInputRef.current?.click(); } }} onClick={() => photoInputRef.current?.click()}>
+                    <div className="ob-upload-zone" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); photoInputRef.current?.click(); } }} onClick={() => photoInputRef.current?.click()}>
                       {obProfilePic ? <Image loading="lazy" src={obProfilePic} alt="Profile" fill sizes="130px" style={{ objectFit: "cover", borderRadius: "50%" }} /> : (
                         <>
                           <div className="ob-upload-icon">📸</div>
@@ -358,7 +362,7 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                         showToast("Uploading...");
                         const url=await uploadImage(f,"portfolio");
                         if(url){
-                          setObPortfolioItems((prev: any) => {
+                          setObPortfolioItems((prev) => {
                             const next=[...prev];
                             next[slot]={img:url,title:"Work "+(slot+1)};
                             return next;
@@ -370,8 +374,8 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                       }
                     }} />
 <div className="ob-portfolio-grid">
-                      {[0,1,2,3,4,5].map((i: any) => (
-                        <div key={i} className="ob-portfolio-slot" role="button" tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObPortfolioSlot(i); portfolioInputRef.current?.click(); } }} onClick={() => {
+                      {[0,1,2,3,4,5].map((i) => (
+                        <div key={i} className="ob-portfolio-slot" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObPortfolioSlot(i); portfolioInputRef.current?.click(); } }} onClick={() => {
                            setObPortfolioSlot(i);
                            portfolioInputRef.current?.click();
                          }}>
@@ -394,7 +398,7 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                         {key:"facebook",icon:"👤",label:"Facebook"},
                         {key:"spotify",icon:"🎵",label:"Spotify"},
                         {key:"soundcloud",icon:"🔊",label:"SoundCloud"},
-                      ].map((s: any) => (
+                      ].map((s) => (
                         <button key={s.key} className={"ob-social-btn"+(obConnectedSocials[s.key]?" connected":"")} onClick={() => toggleSocial(s.key)}>
                           <span className="ob-social-icon">{s.icon}</span>
                           <span>{s.label}</span>
@@ -419,14 +423,14 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                       <div style={{fontSize:12,fontWeight:700,color:"var(--gold)",letterSpacing:0.4,textTransform:"uppercase",marginBottom:4}}>Have a referral code?</div>
                       <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginBottom:10}}>Optional — you and a friend both get a free month.</div>
                       <div style={{display:"flex",gap:8}}>
-                        <input className="inp" aria-label="Referral code" placeholder="MUSE-XXXXXX" value={obData.referralCode || ""} onChange={(e: any) =>setObData((prev: any) =>({...prev,referralCode:e.target.value}))} style={{margin:0,flex:1,textTransform:"uppercase",letterSpacing:1,fontFamily:"monospace"}} />
+                        <input className="inp" aria-label="Referral code" placeholder="MUSE-XXXXXX" value={obData.referralCode || ""} onChange={(e) =>setObData((prev) =>({...prev,referralCode:e.target.value}))} style={{margin:0,flex:1,textTransform:"uppercase",letterSpacing:1,fontFamily:"monospace"}} />
                       </div>
                       {obData.referralCode && obData.referralCode.length >= 6 && (
                         <div style={{fontSize:11,color:"#4ecdc4",marginTop:8}}>🎉 You and your friend will both get a free month when you subscribe!</div>
                       )}
                     </div>
                     <button className="btn btn-gold" style={{padding:"18px 24px",fontSize:17,fontWeight:800,letterSpacing:0.3,marginTop:4}} onClick={async ()=>{
-                      setCurrentUser((prev: any) =>({...prev,name:obData.name||prev.name,type:obData.type||prev.type,avatar:obProfilePic||prev.avatar}));
+                      setCurrentUser((prev) =>({...prev,name:obData.name||prev.name,type:obData.type||prev.type,avatar:obProfilePic||prev.avatar}));
                       const geo = await getGeolocation();
                       if(authUser?.id){
                         try{

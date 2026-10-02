@@ -1,26 +1,34 @@
-import { PROFILES, CITY_GEO, calcMatch, matchReasons } from "../components/types";
+import { PROFILES, CITY_GEO, calcMatch, matchReasons, type Profile } from "../components/types";
 import { DEMO_MODE } from "../page-constants";
 import { distanceMiles } from "@/app/muse-realtime";
+import type { OnboardingData } from "../hooks/useAuthOnboardingState";
 
 /**
  * P2 extraction: the Discover swipe-deck builder, moved verbatim out of page.tsx
  * (the ~70-line `filteredProfiles` useMemo). Pure function — the shuffle seed is
  * passed in so the per-mount randomness stays a page.tsx concern.
  */
-type DiscoveryProfile = any;
+export type DiscoveryProfile = Profile & {
+  lat?: number;
+  lng?: number;
+  distanceMi?: number;
+  matchScore?: number;
+  showDistance?: boolean;
+  matchReasons?: ReturnType<typeof matchReasons>;
+};
 
 export type DiscoverDeckInput = {
   seed: number;
-  liveProfiles: any[] | null;
+  liveProfiles: DiscoveryProfile[] | null;
   showNsfw: boolean;
   filterStyles: string[];
   filterScore: number;
-  myGeo: any;
+  myGeo: { lat: number; long: number } | null;
   discoverSearch: string;
-  obData: any;
+  obData: OnboardingData;
 };
 
-export function buildFilteredProfiles({ seed, liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch, obData }: DiscoverDeckInput): any[] {
+export function buildFilteredProfiles({ seed, liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch, obData }: DiscoverDeckInput): DiscoveryProfile[] {
     // Stable order guarantee: the demo/static deck is shuffled ONCE with a
     // per-mount random seed, then live profiles are APPENDED (never reshuffled),
     // and we do NOT re-sort by distance after first paint. A new seed on every
@@ -76,7 +84,7 @@ export function buildFilteredProfiles({ seed, liveProfiles, showNsfw, filterStyl
         boosted.matchReasons = matchReasons(meForMatch, p);
       } catch { console.debug("[muse] match explanation could not be calculated"); }
       if (boosted.badges?.length) {
-        const badgeBoost = boosted.badges.reduce((acc: number, b: any) => {
+        const badgeBoost = boosted.badges.reduce((acc: number, b: { name: string }) => {
           if (b.name === "Verified Pro") return acc + 5;
           if (b.name === "Top Creator" || b.name === "Creative Sage") return acc + 3;
           if (b.name === "Super Collab") return acc + 4;

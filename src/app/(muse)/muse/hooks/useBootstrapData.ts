@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback } from "react";
-import type { RawApiProfile, RawFeedPost, RawForumPost } from "../page-models";
+import type { RawApiProfile, RawFeedPost, RawForumPost, Professional } from "../page-models";
+import type { useDiscoveryData } from "./useDiscoveryData";
+import type { useFeedData } from "./useFeedData";
+import type { useCommunityData } from "./useCommunityData";
+import type { useSessionData } from "./useSessionData";
+import type { useBriefsData } from "./useBriefsData";
 import { viewerSide } from "@/lib/role";
 import { initialsAvatarUrl } from "../lib/initials-avatar";
 import {
@@ -34,18 +39,18 @@ export type UseBootstrapDataParams = {
   liveEventsLen: number;
   liveCommunitiesLen: number;
   liveSessionsLen: number;
-  setLiveProfiles: (value: any) => void;
-  setLiveBriefs: (value: any) => void;
-  setLiveFeed: (value: any) => void;
-  setFeedPosts: (value: any) => void;
-  setLiveForum: (value: any) => void;
-  setForumPosts: (value: any) => void;
-  setLiveEvents: (value: any) => void;
-  setLiveCommunities: (value: any) => void;
-  setLiveSessions: (value: any) => void;
-  setLiveProfessionals: (value: any) => void;
-  setBootstrapped: (value: any) => void;
-  setDiscoverLoading: (value: any) => void;
+  setLiveProfiles: ReturnType<typeof useDiscoveryData>["setLiveProfiles"];
+  setLiveBriefs: ReturnType<typeof useBriefsData>["setLiveBriefs"];
+  setLiveFeed: ReturnType<typeof useFeedData>["setLiveFeed"];
+  setFeedPosts: ReturnType<typeof useFeedData>["setFeedPosts"];
+  setLiveForum: ReturnType<typeof useFeedData>["setLiveForum"];
+  setForumPosts: ReturnType<typeof useFeedData>["setForumPosts"];
+  setLiveEvents: ReturnType<typeof useCommunityData>["setLiveEvents"];
+  setLiveCommunities: ReturnType<typeof useCommunityData>["setLiveCommunities"];
+  setLiveSessions: ReturnType<typeof useSessionData>["setLiveSessions"];
+  setLiveProfessionals: React.Dispatch<React.SetStateAction<Professional[] | null>>;
+  setBootstrapped: React.Dispatch<React.SetStateAction<boolean>>;
+  setDiscoverLoading: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export function useBootstrapData({
@@ -152,7 +157,7 @@ export function useBootstrapData({
       if (events?.events?.length) setLiveEvents(events.events.map(normalizeEvent));
       if (communities?.communities?.length) setLiveCommunities(communities.communities.map(normalizeCommunity));
       if (sessions?.sessions?.length) setLiveSessions(sessions.sessions.map(normalizeSession));
-      if (professionals?.professionals?.length) setLiveProfessionals(professionals.professionals as unknown[]);
+      if (professionals?.professionals?.length) setLiveProfessionals(professionals.professionals as Professional[]);
     } catch { console.debug("[muse] initial recommendation refresh failed"); }
     setBootstrapped(true);
     setDiscoverLoading(false);

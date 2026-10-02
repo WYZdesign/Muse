@@ -1,4 +1,40 @@
 import type { PublicProfileUser } from "./screens/PublicProfileScreen";
+import type { ToastInput } from "./modals/types";
+
+// Shared controller/component types (P2 type-clean pass).
+export type AuthMode = "login" | "signup";
+export type FormErrors = Record<string, string>;
+export type OAuthProvider = "google" | "facebook" | "x";
+export type AuthFetchFn = (url: string, opts?: RequestInit) => Promise<Response>;
+export type ShowToastFn = (msg: ToastInput) => void;
+export type TestScreen = "zodiac" | "mbti" | "chinese" | "lifepath" | "done" | null;
+export type AuthUser = { id: string; email: string; profile?: { id: string;[key: string]: unknown } } | null;
+export type CurrentUser = {
+  id: string;
+  name: string;
+  type: string;
+  audience: "creative" | "industry";
+  exp: string;
+  avatar: string;
+  stats: {
+    matches: number;
+    likes: number;
+    superLikes: number;
+    passes: number;
+    bookingsCompleted: number;
+    matchesReceived: number;
+    messagesSent: number;
+  };
+  createdAt: number;
+  referrals: number;
+  portfolios: { img: string; title: string; type: string }[];
+  foundingTier: string;
+  proExpiresAt: string;
+  tier: string;
+  nsfw: boolean;
+  status: string;
+  [key: string]: unknown;
+};
 
 export type ProfileBadge = {
   name: string;

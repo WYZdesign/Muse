@@ -1,31 +1,33 @@
 "use client";
 
+import type { AuthMode, FormErrors, OAuthProvider, AuthFetchFn, ShowToastFn } from "../page-models";
+
 /**
  * P2 extraction: the auth (log in / sign up) screen, moved verbatim out of page.tsx.
  * Pure presentational — all state and handlers are passed in as props.
  */
 export type AuthScreenProps = {
-  authMode: any;
-  setAuthMode: React.Dispatch<React.SetStateAction<any>>;
-  authEmail: any;
-  setAuthEmail: React.Dispatch<React.SetStateAction<any>>;
-  formErrors: any;
-  setFormErrors: React.Dispatch<React.SetStateAction<any>>;
-  authPass: any;
-  setAuthPass: React.Dispatch<React.SetStateAction<any>>;
-  showPass: any;
-  setShowPass: React.Dispatch<React.SetStateAction<any>>;
-  authRemember: any;
-  setAuthRemember: React.Dispatch<React.SetStateAction<any>>;
-  authLoading: any;
-  setAuthLoading: React.Dispatch<React.SetStateAction<any>>;
-  authFetch: any;
-  showToast: any;
-  handleAuthClick: any;
-  handleOAuth: any;
-  setShowTerms: React.Dispatch<React.SetStateAction<any>>;
-  setShowPrivacy: React.Dispatch<React.SetStateAction<any>>;
-  setShowGuidelines: React.Dispatch<React.SetStateAction<any>>;
+  authMode: AuthMode;
+  setAuthMode: React.Dispatch<React.SetStateAction<AuthMode>>;
+  authEmail: string;
+  setAuthEmail: React.Dispatch<React.SetStateAction<string>>;
+  formErrors: FormErrors;
+  setFormErrors: React.Dispatch<React.SetStateAction<FormErrors>>;
+  authPass: string;
+  setAuthPass: React.Dispatch<React.SetStateAction<string>>;
+  showPass: boolean;
+  setShowPass: React.Dispatch<React.SetStateAction<boolean>>;
+  authRemember: boolean;
+  setAuthRemember: (value: boolean) => void;
+  authLoading: boolean;
+  setAuthLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  authFetch: AuthFetchFn;
+  showToast: ShowToastFn;
+  handleAuthClick: () => Promise<void>;
+  handleOAuth: (provider: OAuthProvider) => Promise<void>;
+  setShowTerms: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowPrivacy: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowGuidelines: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export function AuthScreen({ authMode, setAuthMode, authEmail, setAuthEmail, formErrors, setFormErrors, authPass, setAuthPass, showPass, setShowPass, authRemember, setAuthRemember, authLoading, setAuthLoading, authFetch, showToast, handleAuthClick, handleOAuth, setShowTerms, setShowPrivacy, setShowGuidelines }: AuthScreenProps) {
@@ -46,16 +48,16 @@ export function AuthScreen({ authMode, setAuthMode, authEmail, setAuthEmail, for
                     <button className={"auth-tab"+(authMode==="login"?" active":"")} role="tab" aria-selected={authMode==="login"} onClick={()=>setAuthMode("login")}>Log In</button>
                     <button className={"auth-tab"+(authMode==="signup"?" active":"")} role="tab" aria-selected={authMode==="signup"} onClick={()=>setAuthMode("signup")}>Sign Up</button>
                   </div>
-                  <input className={"inp"+(formErrors.email?" error":"")} placeholder="Email" type="email" aria-label="Email address" value={authEmail} onChange={(e: any) =>{setAuthEmail(e.target.value);setFormErrors((p: any) =>({...p,email:""}))}} style={authEmail.length>28?{textOverflow:"ellipsis"}:{}} title={authEmail} />
+                  <input className={"inp"+(formErrors.email?" error":"")} placeholder="Email" type="email" aria-label="Email address" value={authEmail} onChange={(e: React.ChangeEvent<HTMLInputElement>)=>{setAuthEmail(e.target.value);setFormErrors((p: FormErrors)=>({...p,email:""}))}} style={authEmail.length>28?{textOverflow:"ellipsis"}:{}} title={authEmail} />
                   {formErrors.email && <div className="error-msg">{formErrors.email}</div>}
                   <div style={{position:"relative"}}>
-                    <input className={"inp"+(formErrors.pass?" error":"")} placeholder="Password" type={showPass?"text":"password"} aria-label="Password" value={authPass} onChange={(e: any) =>{setAuthPass(e.target.value);setFormErrors((p: any) =>({...p,pass:""}))}} style={{paddingRight:44}} />
-                    <button type="button" onClick={()=>setShowPass((p: any) =>!p)} style={{position:"absolute",right:4,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:18,padding:0,lineHeight:1,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center"}} aria-label={showPass?"Hide password":"Show password"}>{showPass?"🙈":"👁️"}</button>
+                    <input className={"inp"+(formErrors.pass?" error":"")} placeholder="Password" type={showPass?"text":"password"} aria-label="Password" value={authPass} onChange={(e: React.ChangeEvent<HTMLInputElement>)=>{setAuthPass(e.target.value);setFormErrors((p: FormErrors)=>({...p,pass:""}))}} style={{paddingRight:44}} />
+                    <button type="button" onClick={()=>setShowPass((p: boolean)=>!p)} style={{position:"absolute",right:4,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:18,padding:0,lineHeight:1,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center"}} aria-label={showPass?"Hide password":"Show password"}>{showPass?"🙈":"👁️"}</button>
                   </div>
                   {authMode==="signup" && authPass && (()=>{const l=authPass.length;const u=/[A-Z]/.test(authPass);const y=/[!@#$%^&*]/.test(authPass);const s=l>=8&&u&&y?l>=12?4:3:l>=6?2:1;const lbl=["","Weak","Fair","Strong","Very strong"][s];const col=["","var(--sunset)","var(--sunset-orange)","var(--amber)","var(--mint)"][s];const t=["","weak","fair","strong","vstrong"][s];return(<div><div className="pw-meter-label" style={{color:col}}>{lbl}</div><div className="pw-meter-wrap"><div className={"pw-meter-bar"+(s>=1?" "+t:"")}/><div className={"pw-meter-bar"+(s>=2?" "+t:"")}/><div className={"pw-meter-bar"+(s>=3?" "+t:"")}/><div className={"pw-meter-bar"+(s>=4?" "+t:"")}/></div></div>);})()}
                   {formErrors.pass && <div className="error-msg">{formErrors.pass}</div>}
                   <div style={{display:"flex",alignItems:"center",gap:8,marginTop:10,minHeight:44}}>
-                    <input id="auth-remember" type="checkbox" checked={authRemember} onChange={(e: any) =>setAuthRemember(e.target.checked)} style={{width:18,height:18,accentColor:"#ffd700",flexShrink:0,cursor:"pointer"}} />
+                    <input id="auth-remember" type="checkbox" checked={authRemember} onChange={(e: React.ChangeEvent<HTMLInputElement>)=>setAuthRemember(e.target.checked)} style={{width:18,height:18,accentColor:"#ffd700",flexShrink:0,cursor:"pointer"}} />
                     <label htmlFor="auth-remember" style={{fontSize:13,color:"rgba(255,255,255,0.7)",cursor:"pointer",display:"block",padding:"13px 0",flex:1}}>Remember me</label>
                   </div>
                   {authMode==="login" && <button type="button" onClick={async()=>{if(!authEmail.trim()){setFormErrors({email:"Enter your email first"});return;}setAuthLoading(true);try{const r=await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"forgot-password",email:authEmail.trim()})});const j=await r.json();showToast(j.message||j.error||"Check your email for a password reset link!");}catch{showToast("Network error");}setAuthLoading(false);}} style={{background:"none",border:"none",color:"var(--gold)",fontSize:12,cursor:"pointer",textAlign:"right",width:"100%",marginTop:4,padding:0}}>Forgot password?</button>}
@@ -68,9 +70,9 @@ export function AuthScreen({ authMode, setAuthMode, authEmail, setAuthEmail, for
                   </div>
                   <div className="auth-terms-wrap">
                     <span style={{fontSize:13,color:"rgba(255,255,255,0.65)"}}>By continuing you agree to our</span>
-                    <button className="auth-terms" tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowTerms(true); } }} onClick={()=>setShowTerms(true)}>Terms</button>
-                    <button className="auth-terms" tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowPrivacy(true); } }} onClick={()=>setShowPrivacy(true)}>Privacy</button>
-                    <button className="auth-terms" tabIndex={0} onKeyDown={(e: any) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowGuidelines(true); } }} onClick={()=>setShowGuidelines(true)}>Guidelines</button>
+                    <button className="auth-terms" tabIndex={0} onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowTerms(true); } }} onClick={()=>setShowTerms(true)}>Terms</button>
+                    <button className="auth-terms" tabIndex={0} onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowPrivacy(true); } }} onClick={()=>setShowPrivacy(true)}>Privacy</button>
+                    <button className="auth-terms" tabIndex={0} onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowGuidelines(true); } }} onClick={()=>setShowGuidelines(true)}>Guidelines</button>
                   </div>
                 </div>
               </div>

@@ -109,7 +109,7 @@ import { useChatActions } from "./hooks/useChatActions";
 import { useProfileActions } from "./hooks/useProfileActions";
 import { normalizeCommunity, normalizeEvent, normalizeForumPost, normalizeBrief, normalizeSession, normalizeFeedPost } from "./hooks/normalizers";
 import { AGE_VERIFICATION_VALID_DAYS, DEMO_MODE, MATCH_VARIANTS, OWNER_EMAIL } from "./page-constants";
-import type { Professional, ProfileReview, RawApiProfile, RawFeedPost, RawForumPost, ViewProfile } from "./page-models";
+import type { CurrentUser, AuthUser, Professional, ProfileReview, RawApiProfile, RawFeedPost, RawForumPost, ViewProfile } from "./page-models";
 type DiscoveryProfile = typeof PROFILES[number] & {
   showDistance?: boolean;
   matchScore?: number;
@@ -176,8 +176,8 @@ function MusePage() {
     obPortfolioSlot, setObPortfolioSlot,
   } = useAuthOnboardingState();
   const [showPass, setShowPass] = useState(false);
-  const [authUser, setAuthUser] = useState<{id:string;email:string;profile?:{id:string;[key:string]:unknown}}|null>(null);
-  const [currentUser, setCurrentUser] = useState({ id:"you", name:"You", type:"Photographer", audience:"creative" as "creative" | "industry", exp:"New here", avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", stats:{matches:0,likes:0,superLikes:0,passes:0,bookingsCompleted:0,matchesReceived:0,messagesSent:0}, createdAt:Date.now(), referrals:0, portfolios:[] as {img:string;title:string;type:string}[], foundingTier:"" as string, proExpiresAt:"" as string, tier:"free", nsfw:false as boolean, status:"" as string });
+  const [authUser, setAuthUser] = useState<AuthUser>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser>({ id:"you", name:"You", type:"Photographer", audience:"creative" as "creative" | "industry", exp:"New here", avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", stats:{matches:0,likes:0,superLikes:0,passes:0,bookingsCompleted:0,matchesReceived:0,messagesSent:0}, createdAt:Date.now(), referrals:0, portfolios:[] as {img:string;title:string;type:string}[], foundingTier:"" as string, proExpiresAt:"" as string, tier:"free", nsfw:false as boolean, status:"" as string });
   const [, _setSelectedPortfolio] = useState<unknown>(null);
   const {
     currentIdx, setCurrentIdx,
