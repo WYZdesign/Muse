@@ -1047,14 +1047,17 @@ export const NetworkScreen = memo(function NetworkScreen({
                   </div>
                 )}
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, minWidth: 36 }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, minWidth: 44 }}>
                     <button
+                      type="button"
                       style={{
                         background: "none",
                         border: "none",
                         color: votedPosts[post.id] === "up" ? "#FFD700" : "var(--muted)",
                         cursor: "pointer",
                         fontSize: 18,
+                        width: 44,
+                        height: 44,
                         padding: 0,
                         transition: "color 0.2s",
                       }}
@@ -1064,12 +1067,15 @@ export const NetworkScreen = memo(function NetworkScreen({
                     </button>
                     <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{post.votes}</span>
                     <button
+                      type="button"
                       style={{
                         background: "none",
                         border: "none",
                         color: votedPosts[post.id] === "down" ? "#ff6b6b" : "var(--muted)",
                         cursor: "pointer",
                         fontSize: 18,
+                        width: 44,
+                        height: 44,
                         padding: 0,
                         transition: "color 0.2s",
                       }}
@@ -1080,25 +1086,17 @@ export const NetworkScreen = memo(function NetworkScreen({
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4, cursor: "pointer" }}
+                    <button
+                      type="button"
+                      style={{ display: "block", width: "100%", minHeight: 44, padding: "4px 0", background: "none", border: "none", textAlign: "left", fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4, cursor: "pointer" }}
                       onClick={() => { openThread(post.id); }}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openThread(post.id); } }}
                     >
                       {post.title}
-                    </div>
+                    </button>
                     <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 6 }}>
                       {post.author} · {post.time}
                     </div>
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.4, cursor: "pointer" }}
-                      onClick={() => { openThread(post.id); }}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openThread(post.id); } }}
-                    >
+                    <div style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.4 }}>
                       {post.body.slice(0, 120)}
                       {post.body.length > 120 ? "..." : ""}
                     </div>
